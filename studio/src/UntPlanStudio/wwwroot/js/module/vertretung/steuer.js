@@ -1,6 +1,7 @@
-// Steuerelemente der Vertretungsplanung: Zeitraum (Tag / Woche / Von-Bis wie die Zeitraumauswahl des Desktops), Reiter mit
+// Steuerelemente der Vertretungsplanung: Zeitraum (Tag / Woche / Von-Bis wie die Zeitraumauswahl), Reiter mit
 // Anzahlen, einfache Listen-Tabelle für Fenster mit eigener Darstellung (Vorschlag, Bereitschaften, Kalender).
 import { h, leeren } from '../../kern/dom.js';
+import { symbol } from '../../kern/symbole.js';
 import { an } from '../../kern/ereignisse.js';
 import { planungsdatum, montag, plusTage, datumSetzen } from './kern.js';
 
@@ -13,8 +14,8 @@ export function zeitraumAuswahl(f, { art = 'tag', beiAenderung, tageProWoche = 5
     h('option', { value: 'tag' }, 'Tag'), h('option', { value: 'woche' }, 'Woche'), h('option', { value: 'vonbis' }, 'Von-Bis'));
   const von = h('input', { class: 'eingabe', type: 'date', title: 'Von' });
   const bis = h('input', { class: 'eingabe', type: 'date', title: 'Bis' });
-  const zurueck = h('button', { class: 'wz-knopf', type: 'button', title: 'Zurück' }, '◂');
-  const vor = h('button', { class: 'wz-knopf', type: 'button', title: 'Weiter' }, '▸');
+  const zurueck = h('button', { class: 'wz-knopf nur-symbol', type: 'button', title: 'Zurück' }, symbol('pfeil_links'));
+  const vor = h('button', { class: 'wz-knopf nur-symbol', type: 'button', title: 'Weiter' }, symbol('pfeil_rechts'));
   const el = h('span', { class: 'vt-zeitraum' }, wahl, zurueck, von, vor, h('span', { class: 'vt-bis' }, '–'), bis);
   const z = { el, von: null, bis: null, art };
   const anwenden = (melden = true) => {

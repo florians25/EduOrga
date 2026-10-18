@@ -1,4 +1,4 @@
-// Modul „Optimierung“: Optimierung als Hintergrundauftrag auf dem Server (Steuerdaten wie im Desktop, Fortschritt, Abbrechen,
+// Modul „Optimierung“: Optimierung als Hintergrundauftrag auf dem Server (Steuerdaten, Fortschritt, Abbrechen,
 // Ergebnisvergleich mit Kennzahlen und Planvorschau, Übernehmen), Stundenplan-Diagnose (Eingabedaten / Stundenplan mit den
 // konkreten Fällen) und Gewichtung (Regler 0–5 je Karteikarte, Gewichtungs-Verteilung, Analyse).
 import { h, leeren, entprellen } from '../kern/dom.js';
@@ -209,12 +209,12 @@ async function steuerdatenDialog() {
   const plaene = zahlFeld('anzahlPlaene', 1, 20), schritte = zahlFeld('schritte', 1, 9), aehnlich = zahlFeld('aehnlichkeit', 0, 4);
   const start = zahlFeld('startProzent', 5, 100), erhoehung = zahlFeld('erhoehungProzent', 5, 100);
   const bedingt = haken('bedingtFixieren', 'Plan bedingt fixieren');
-  const cd = h('fieldset', { class: 'op-gruppe' }, h('legend', null, 'Für Strategie C und D'),
+  const cd = h('fieldset', { class: 'op-gruppe' }, h('legend', null, 'Nur für stufenweise Verfahren'),
     h('label', { class: 'op-zeile2' }, start, ' Start-Prozentsatz'), h('label', { class: 'op-zeile2' }, erhoehung, ' Erhöhungs-Prozentsatz'));
   const inhalt = h('div', { class: 'op-steuerdaten' },
     h('div', { class: 'op-spalte' },
       h('fieldset', { class: 'op-gruppe' }, h('legend', null, 'Ablauf der Optimierung'),
-        h('label', { class: 'op-block' }, 'Optimierungs-Strategie (A, B, …)', strategie),
+        h('label', { class: 'op-block' }, 'Verfahren', strategie),
         h('label', { class: 'op-zeile2' }, plaene, ' Je Serie der Opt.: Anzahl Pläne (1-20)'),
         h('label', { class: 'op-zeile2' }, schritte, ' Optimierungsschritte je Plan (1-9)')),
       h('fieldset', { class: 'op-gruppe' }, h('legend', null, 'Lehrer-Zuordnung'), haken('zuordnen', 'Unterricht ohne Lehrer vorher automatisch zuordnen'))),

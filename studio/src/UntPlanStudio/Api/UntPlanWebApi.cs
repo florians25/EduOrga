@@ -33,7 +33,7 @@ public sealed class UntPlanWebApi : IStudioModul
         d.AddHostedService<UpwAbgleichDienst>();
     }
 
-    /// <summary>Adresse wie im Desktop aus Server, Port, https und optionalem Pfad.</summary>
+    /// <summary>Adresse aus Server, Port, https und optionalem Pfad.</summary>
     public static string Adresse(string? server, int port, bool https, string? pfad)
     {
         if (string.IsNullOrWhiteSpace(server)) return "";
@@ -129,7 +129,7 @@ public sealed class UntPlanWebApi : IStudioModul
         unterrichtEntfaellt = k.UnterrichtEntfaellt, aktiv = k.Aktiv, text = k.Text, importiert = k.Importiert, webId = k.WebId, buchungen = k.Buchungen.Count,
     };
 
-    /// <summary>Kurznamenliste („5a,5b“) in Ids; unbekannte Namen werden wie im Desktop gemeldet.</summary>
+    /// <summary>Kurznamenliste („5a,5b“) in Ids; unbekannte Namen werden gemeldet.</summary>
     public static List<int> Ids(Schuldatei d, ElementTyp typ, string? text)
     {
         var res = new List<int>();

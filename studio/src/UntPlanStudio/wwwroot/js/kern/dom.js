@@ -41,7 +41,7 @@ export function entprellen(f, ms = 200) {
   };
 }
 
-/** Sortiervergleich wie im Desktop: deutsch, Zahlen numerisch, Groß-/Kleinschreibung egal. */
+/** Sortiervergleich: deutsch, Zahlen numerisch, Groß-/Kleinschreibung egal. */
 export const vergleich = new Intl.Collator('de', { numeric: true, sensitivity: 'base' }).compare;
 
 export function textbreite(text, schrift = '12.5px system-ui') {

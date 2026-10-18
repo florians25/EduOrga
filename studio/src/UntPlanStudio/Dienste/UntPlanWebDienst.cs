@@ -9,7 +9,7 @@ using UntPlanStudio.Grundlagen;
 
 namespace UntPlanStudio.Dienste;
 
-/// <summary>Laufender bzw. beendeter Export/Import mit UntPlanWeb (Fortschritt wie im Desktop-Fenster „UntPlanWeb“).</summary>
+/// <summary>Laufender bzw. beendeter Export/Import mit UntPlanWeb (Fortschritt-Fenster „UntPlanWeb“).</summary>
 public sealed class UpwAuftrag
 {
     public string Id { get; init; } = "";
@@ -148,7 +148,7 @@ public sealed class UntPlanWebDienst
         return p;
     }
 
-    /// <summary>Export wie im Desktop: Stammdaten immer mitsenden, Paket außerhalb der Sperre aus einer Kopie erzeugen, übertragen, Revision vermerken.</summary>
+    /// <summary>Export: Stammdaten immer mitsenden, Paket außerhalb der Sperre aus einer Kopie erzeugen, übertragen, Revision vermerken.</summary>
     public async Task ExportierenAsync(Arbeitsdokument a, string teil, string benutzer, UpwAuftrag auftrag)
     {
         var p = await VerbindungAsync(a);

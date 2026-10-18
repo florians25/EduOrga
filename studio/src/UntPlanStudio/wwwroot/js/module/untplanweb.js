@@ -1,7 +1,7 @@
 // Modul „UntPlanWeb“ (Desktop: Fenster „UntPlanWeb“, „UntPlanWeb – Einstellungen“, „Stundenplanänderungen aus UntPlanWeb“,
 // Klausur-Dialog): Export von Stammdaten, Stundenplan* und Vertretungen* mit Fortschritt, Import von Stpl.-Änderungen*,
 // Absenzen*, Studenten* und Kurse, Anfangsdatum, Verbindungseinstellungen, Klausuren, importierte Listen und der optionale
-// automatische Abgleich. Die Logik kommt unverändert aus UntPlan.Core (gleich wie im Desktop).
+// automatische Abgleich. Die Logik kommt unverändert aus UntPlan.Core (gleich).
 import { h } from '../kern/dom.js';
 import { symbol } from '../kern/symbole.js';
 import { api } from '../kern/api.js';
@@ -138,7 +138,7 @@ function hauptFenster(f) {
       h('a', { href: '#', onclick: (e) => { e.preventDefault(); einstellungen.click(); } }, 'Verbindungseinstellungen prüfen'));
   }
 
-  // ---- kleines Fortschrittsfenster wie im Desktop („Unterrichtsbestandteile werden konvertiert (153 von 238)“) ----
+  // ---- kleines Fortschrittsfenster („Unterrichtsbestandteile werden konvertiert (153 von 238)“) ----
   let popup = null;
   function popupZeigen(wert, text) {
     if (!popup) {

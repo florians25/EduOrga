@@ -1,4 +1,4 @@
-// Modul „Übersichtspläne“: Klassen-, Lehrer- und Raum-Übersicht quer wie im Desktop – alle Elemente als Zeilen, Tage × Stunden
+// Modul „Übersichtspläne“: Klassen-, Lehrer- und Raum-Übersicht quer – alle Elemente als Zeilen, Tage × Stunden
 // als Spalten. Schnell auch bei großen Schulen: kompakte Server-Antwort, es werden nur die sichtbaren Zeilen gezeichnet.
 // Drag & Drop: Stunde innerhalb der Zeile verschieben/tauschen; im Raum-Übersichtsplan in eine andere Raumzeile = Raumverlegung.
 // Server: Api/UebersichtApi.cs (/uebersicht/{typ}), Druck: /druck/uebersicht (PDF).

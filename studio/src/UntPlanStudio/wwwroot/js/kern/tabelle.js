@@ -2,7 +2,7 @@
 //
 // Spalten: [{ schluessel, titel, breite, art, editierbar, auswahl, refTyp, liste, ausrichtung, sichtbar, wert(zeile), farbe(zeile) }]
 //   art: 'Text' | 'Ganzzahl' | 'Dezimal' | 'Bool' | 'Bereich' | 'Element' | 'ElementListe' | 'Farbe' | 'Auswahl' | 'Datum' | 'NurLesen'
-// Optionen siehe Konstruktor. Tastatur wie im Desktop: Pfeile, Tab, Enter/F2 (bearbeiten), Esc, Entf (leeren), Leertaste (Haken),
+// Optionen siehe Konstruktor. Tastatur: Pfeile, Tab, Enter/F2 (bearbeiten), Esc, Entf (leeren), Leertaste (Haken),
 // Strg+C/Strg+V (Kopieren/Einfügen als Tabulator-Text), Strg+A, Umschalt+Pfeil/Klick (Bereich), Strg+Klick (einzeln).
 import { h, leeren, entprellen, vergleich, textbreite } from './dom.js';
 import { Vorschlagsliste } from './auswahl.js';
@@ -31,7 +31,7 @@ export class Tabelle {
    * @param {string} [o.leerText]
    */
   constructor(eltern, o) {
-    this.o = { zeilenHoehe: 22, id: (z) => z.id, leerText: 'Keine Einträge', ...o };
+    this.o = { zeilenHoehe: 28, id: (z) => z.id, leerText: 'Keine Einträge', ...o };
     this.H = this.o.zeilenHoehe;
     this.alle = [];
     this.ansicht = [];

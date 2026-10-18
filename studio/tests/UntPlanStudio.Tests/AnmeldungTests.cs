@@ -15,10 +15,10 @@ public sealed class AnmeldungTests : IClassFixture<StudioFabrik>
         var c = _f.Client();
         Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/gesundheit")).StatusCode);
         var html = await c.GetStringAsync("/");
-        Assert.Contains("UntPlan Studio (Beta)", html);
+        Assert.Contains("<title>UntPlan Studio</title>", html);
         Assert.Contains("js/app.js", html);
         var system = await c.GetJsonAsync("/api/system");
-        Assert.True(system["beta"]!.GetValue<bool>());
+        Assert.False(system["beta"]!.GetValue<bool>());
         var sitzung = await c.GetJsonAsync("/api/sitzung");
         Assert.Null(sitzung["benutzer"]);
     }

@@ -40,7 +40,7 @@ export function dialog({ titel, inhalt, knoepfe = [{ text: 'OK', wert: true, pri
   });
 }
 
-export const meldung = (text, titel = 'UntPlan Studio') => dialog({ titel, inhalt: text });
+export const meldung = (text, titel = 'Hinweis') => dialog({ titel, inhalt: text });
 
 export const frage = (text, { titel = 'Bitte bestätigen', ja = 'Ja', nein = 'Nein', gefahr = false } = {}) =>
   dialog({ titel, inhalt: text, knoepfe: [{ text: ja, wert: true, primaer: !gefahr, gefahr }, { text: nein, wert: false }] }).then((w) => w === true);
@@ -108,10 +108,10 @@ export function menue(x, y, eintraege) {
     if (!e) { el.append(h('div', { class: 'm-trenner' })); continue; }
     if (e.titel) { el.append(h('div', { class: 'm-titel' }, e.titel)); continue; }
     const knopf = h('button', { class: 'm-eintrag', type: 'button', role: 'menuitem', disabled: !!e.deaktiviert },
-      e.haken !== undefined ? h('span', { class: 'haken' }, e.haken ? '✓' : '') : (e.symbol ? symbol(e.symbol) : h('span', { class: 'haken' })),
+      e.haken !== undefined ? h('span', { class: 'haken' }, e.haken ? symbol('haken') : null) : (e.symbol ? symbol(e.symbol) : h('span', { class: 'haken' })),
       h('span', null, e.text),
       e.taste ? h('span', { class: 'taste' }, e.taste) : null,
-      e.menue ? h('span', { class: 'taste' }, '▸') : null);
+      e.menue ? h('span', { class: 'taste' }, symbol('pfeil_rechts')) : null);
     knopf.addEventListener('click', (ev) => {
       ev.stopPropagation();
       if (e.menue) {
@@ -162,9 +162,9 @@ export function menueSchliessen() {
 
 let hinweisBereich = null;
 
-/** Kurzer Hinweis unten rechts (art: 'info'|'ok'|'warnung'|'fehler'); erscheint zusätzlich in der Statuszeile. */
+/** Kurzer Hinweis unten rechts (art: 'info'|'ok'|'warnung'|'fehler'). */
 export function hinweis(text, art = 'info', dauer = 3500) {
-  melden('meldung', { text, art });
+  melden('meldung', { text, art, angezeigt: true });
   if (!hinweisBereich) { hinweisBereich = h('div', { class: 'hinweise' }); document.body.append(hinweisBereich); }
   const el = h('div', { class: `h-eintrag ${art}` }, text);
   hinweisBereich.append(el);

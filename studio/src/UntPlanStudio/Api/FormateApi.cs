@@ -9,7 +9,7 @@ namespace UntPlanStudio.Api;
 public sealed record FormatKopie(string Name, string Neu);
 
 /// <summary>
-/// Eigene Stundenplanformate wie im Desktop (Formatdialog: Allgemein, Auswahl (Bereich), Layout 1/2, HTML, Grundform,
+/// Eigene Stundenplanformate (Formatdialog: Allgemein, Auswahl (Bereich), Layout 1/2, HTML, Grundform,
 /// Stundenplan-Stunde mit Feldern). Die Formate liegen in der Schuldatei (<c>Formate</c>) und werden beim Drucken gewählt.
 /// </summary>
 public sealed class FormateApi : IStudioModul

@@ -55,7 +55,7 @@ public sealed class Arbeitsdokument
         Pfad = pfad;
         Dokument = dokument;
         _infoSpeichern = infoSpeichern;
-        // Dokument.PlanaenderungenAbgleichen bleibt wie im Desktop eingeschaltet, damit Dateien austauschbar bleiben.
+        // Dokument.PlanaenderungenAbgleichen bleibt eingeschaltet, damit Dateien austauschbar bleiben.
     }
 
     /// <summary>

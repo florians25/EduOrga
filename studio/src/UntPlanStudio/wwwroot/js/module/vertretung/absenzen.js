@@ -1,4 +1,4 @@
-// Fenster „Absenzen“ wie im Desktop: Reiter Lehrer / Klassen / Räume mit Anzahl, Zeitraum, direkte Eingabe in der Liste
+// Fenster „Absenzen“: Reiter Lehrer / Klassen / Räume mit Anzahl, Zeitraum, direkte Eingabe in der Liste
 // (AbsNr., Element, Von, ab St., Bis, bis St., Grund, Text, Begleitlehrer, offen). Änderungen einer Zeile werden erst beim Verlassen
 // der Zeile übernommen (Zeilen-Commit, Strg+Enter sofort, Esc verwirft); neue Absenzen: Planungsdatum, 1. bis letzte Stunde.
 import { h, entprellen } from '../../kern/dom.js';
@@ -13,7 +13,7 @@ import { zeitraumAuswahl, reiter } from './steuer.js';
 
 const ARTEN = [{ art: 'lehrer', titel: 'Lehrer', typ: 'lehrer' }, { art: 'klasse', titel: 'Klassen', typ: 'klasse' }, { art: 'raum', titel: 'Räume', typ: 'raum' }];
 
-/** Absenzen speichern und die Rückfragen des Desktops stellen (Vertreter abwesend, Veranstaltung, Verlegungen, Sondereinsätze). */
+/** Absenzen speichern und die Rückfragen stellen (Vertreter abwesend, Veranstaltung, Verlegungen, Sondereinsätze). */
 export async function absenzenSpeichern(art, neu, alt, quelle, text) {
   const r = await api.post(vpfad('/absenzen/speichern'), { art, neu, alt, text }, { quelle });
   if (r.doppelt) hinweis('Diese Absenz ist bereits vorhanden.', 'warnung');

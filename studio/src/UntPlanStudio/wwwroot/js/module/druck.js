@@ -81,7 +81,7 @@ function auswahlFenster(f, p) {
     const typWahl = h('div', { class: 'dr-typen' }, TYPEN.map(([k, t]) => h('button', { type: 'button', class: `knopf klein${k === typ ? ' primaer' : ''}`, onclick: () => {
       typ = k; gewaehlt = new Set(daten[typ].map((e) => e.id)); f.parameterSetzen({ typ }); zeichnen();
     } }, t)));
-    const fmt = h('select', { class: 'eingabe' }, h('option', { value: '' }, 'Standard (wie Desktop-Druck)'), formate.map((x) => h('option', { value: x.name, selected: x.name === optionen.format }, x.name)));
+    const fmt = h('select', { class: 'eingabe' }, h('option', { value: '' }, 'Standard'), formate.map((x) => h('option', { value: x.name, selected: x.name === optionen.format }, x.name)));
     fmt.addEventListener('change', () => {
       optionen.format = fmt.value;
       const fo = formate.find((x) => x.name === fmt.value);
@@ -102,7 +102,7 @@ function auswahlFenster(f, p) {
       h('h3', null, 'Ausgabe'),
       ausgabeKnoepfe(() => url()),
       h('div', { class: 'dr-knoepfe' }, h('button', { class: 'knopf', type: 'button', onclick: () => vorschau(url('html'), 'Stundenpläne (HTML)') }, 'HTML-Ausgabe')),
-      h('p', { class: 'leise' }, 'Schwarz-Weiß-Formular wie der Druck der Desktop-Anwendung: Raster mit Pausen, Unterrichtsliste, Fußnoten zu Kopplungen und Fächerlegende; A4 quer.'));
+      h('p', { class: 'leise' }, 'Schwarz-Weiß-Formular: Raster mit Pausen, Unterrichtsliste, Fußnoten zu Kopplungen und Fächerlegende; A4 quer.'));
     zeichneListe();
   }
 
@@ -269,7 +269,7 @@ function vertretungsausgabeFenster(f, p) {
       h('div', { class: 'dr-knoepfe' },
         h('button', { class: 'knopf primaer', type: 'button', disabled: !schreiben, onclick: () => speichern().catch(fehlerMelden) }, 'Layout speichern'),
         h('button', { class: 'knopf', type: 'button', onclick: () => laden_().catch(fehlerMelden) }, 'Verwerfen')),
-      h('p', { class: 'leise' }, 'Das Seitenlayout wird in der Schuldatei gespeichert und gilt auch für den Aushang der Desktop-Anwendung.'));
+      h('p', { class: 'leise' }, 'Das Seitenlayout wird in der Schuldatei gespeichert.'));
   }
   version.addEventListener('change', () => zeichnen());
 

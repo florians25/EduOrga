@@ -1,4 +1,4 @@
-// Modul „Datei“: Datei-Bereich (Backstage) – Neu, Öffnen (Server-Liste, Hochladen .up/BAL), Speichern, Herunterladen,
+// Modul „Datei“: Bereich Schuldateien – Neu, Öffnen (Server-Liste, Hochladen .up/BAL), Speichern, Herunterladen,
 // BAL-Import in die geöffnete Datei, Schließen, Konto (Passwort, Abmelden), Benutzerverwaltung (Admin), Info.
 import { h, leeren, datumDe, groesse } from '../kern/dom.js';
 import { symbol } from '../kern/symbole.js';
@@ -20,7 +20,7 @@ function escape(e) { if (e.key === 'Escape' && !document.querySelector('.dialog-
 function backstage({ seite } = {}) {
   if (!seite) seite = zustand.dokument ? 'info' : 'oeffnen';
   if (!bereich) {
-    bereich = h('div', { class: 'backstage', role: 'dialog', 'aria-label': 'Datei' });
+    bereich = h('div', { class: 'backstage', role: 'dialog', 'aria-label': 'Schuldateien' });
     document.body.append(bereich);
     document.addEventListener('keydown', escape, true);
   }
@@ -29,7 +29,7 @@ function backstage({ seite } = {}) {
   const knopf = (id, text, sym, aktion, deaktiviert = false) =>
     h('button', { type: 'button', class: id === seite ? 'aktiv' : '', disabled: deaktiviert, dataset: { seite: id }, onclick: aktion || (() => backstage({ seite: id })) }, symbol(sym), text);
   const nav = h('nav', null,
-    h('button', { type: 'button', class: 'zurueck', title: 'Zurück (Esc)', onclick: schliessen, disabled: !d }, '←'),
+    h('button', { type: 'button', class: 'zurueck', title: 'Zurück (Esc)', onclick: schliessen, disabled: !d }, symbol('pfeil_links'), 'Zurück zur Arbeit'),
     knopf('info', 'Informationen', 'info', null, !d),
     knopf('neu', 'Neu', 'neu', null, !schreiben),
     knopf('oeffnen', 'Öffnen', 'oeffnen'),
@@ -39,8 +39,8 @@ function backstage({ seite } = {}) {
     knopf('schliessen', 'Schließen', 'schliessen', async () => { await dokumentSchliessen(); backstage({ seite: 'oeffnen' }); }, !d),
     h('hr'),
     knopf('konto', 'Konto', 'benutzer'),
-    zustand.benutzer?.rolle === 'Admin' ? knopf('benutzer', 'Benutzer', 'datenbank') : null,
-    knopf('ueber', 'Über', 'hilfe'));
+    zustand.benutzer?.rolle === 'Admin' ? knopf('benutzer', 'Benutzer', 'klassen') : null,
+    knopf('ueber', 'Über UntPlan Studio', 'hilfe'));
   const inhalt = h('div', { class: 'seite' });
   bereich.append(nav, inhalt);
   const seiten = { info: seiteInfo, neu: seiteNeu, oeffnen: seiteOeffnen, import: seiteImport, konto: seiteKonto, benutzer: seiteBenutzer, ueber: seiteUeber };
@@ -146,7 +146,7 @@ function seiteImport(el) {
   const optionen = [['zeitraster', 'Zeitraster'], ['stammdaten', 'Stammdaten'], ['unterrichtErsetzen', 'Unterricht und Stundenplan der aktiven Periode ersetzen'], ['stundenplan', 'Stundenplan'], ['pausenaufsichten', 'Pausenaufsichten'], ['zeitwuensche', 'Zeitwünsche']];
   const haken = Object.fromEntries(optionen.map(([k]) => [k, h('input', { type: 'checkbox', checked: true })]));
   el.append(h('h1', null, 'BAL-Import'),
-    h('p', null, 'Übernimmt einen Stundenplan aus einer BAL-Datei (WILLI2-Stundenplan) in die geöffnete Schuldatei – wie in der Desktop-Anwendung. Der Import ist rückgängig zu machen (Strg+Z).'),
+    h('p', null, 'Übernimmt einen Stundenplan aus einer BAL-Datei (WILLI2-Stundenplan) in die geöffnete Schuldatei. Der Import lässt sich rückgängig machen (Strg+Z).'),
     h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px', margin: '12px 0 18px' } }, optionen.map(([k, t]) => h('label', { class: 'kontrolle' }, haken[k], t))),
     h('button', { class: 'knopf primaer', type: 'button', onclick: async () => {
       const datei = await dateiWaehlen('.txt,.bal,.csv,text/plain');
@@ -200,9 +200,9 @@ async function seiteBenutzer(el) {
 
 function seiteUeber(el) {
   el.append(h('h1', null, 'Über UntPlan Studio'),
-    h('p', null, `${zustand.system?.anwendung || 'UntPlan Studio (Beta)'} ${zustand.system?.version || ''}`),
-    h('p', null, 'Die Desktop-Anwendung UntPlan als Browser-Anwendung. Alle Berechnungen (Stundenplanung, Optimierung, Vertretungsplanung …) laufen auf dem Server mit derselben Fachlogik wie im Desktop; Schuldateien (.up) sind zwischen beiden austauschbar.'),
-    h('p', { class: 'leise' }, 'Beta: Noch nicht alle Funktionen der Desktop-Anwendung sind verfügbar. Ausgegraute Knöpfe im Menüband folgen in späteren Ausbaustufen.'));
+    h('p', null, `${(zustand.system?.anwendung || 'UntPlan Studio').replace(' (Beta)', '')} ${zustand.system?.version || ''}`),
+    h('p', null, 'Stunden-, Kurs- und Vertretungsplanung für Schulen im Browser. Alle Berechnungen (Planung, Optimierung, Vertretungsvorschläge, Auswertungen) laufen auf dem Server; Schuldateien (.up) lassen sich jederzeit herunterladen und wieder hochladen.'),
+    h('p', { class: 'leise' }, 'Schrift: IBM Plex Sans (SIL Open Font License 1.1). Symbole auf Grundlage von Lucide (ISC-Lizenz).'));
 }
 
 an('dokument', () => { if (bereich && zustand.dokument) schliessen(); });

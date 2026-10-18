@@ -1,4 +1,4 @@
-// Fenster „Kalender“ wie im Desktop: Kalenderwoche und Datum, Woche mit Kennzahlen (Offen, Abw. Kl., Freis., Bl. Räume, Raum-V.,
+// Fenster „Kalender“: Kalenderwoche und Datum, Woche mit Kennzahlen (Offen, Abw. Kl., Freis., Bl. Räume, Raum-V.,
 // Tagestexte, Koll. Lehrer/Räume – Klick wählt den Tag), Reiter Tagestexte (direkte Eingabe) und Kalendertag (Normaler Schultag,
 // Feiertag, Unterrichtsfrei mit Grund, Nur diese Stunden unterrichtsfrei, Notiz). Dazu die Datumsauswahl im Menüband.
 import { h, leeren } from '../../kern/dom.js';
@@ -11,15 +11,15 @@ import { symbol } from '../../kern/symbole.js';
 import { vpfad, planungsdatum, datumSetzen, blaettern, tagKurz, datumText, datumLesen, montag, plusTage } from './kern.js';
 import { reiter, listenTabelle } from './steuer.js';
 
-/** Datumsauswahl im Menüband (Gruppe „Kalender“): ◂◂ ◂ [Mo 02.11.2026] ▸ ▸▸ – Strg+Bild↑ / Strg+Bild↓ blättern. */
+/** Datumsauswahl in der Kopfleiste: « ‹ [Mo 02.11.2026] › » – Strg+Bild↑ / Strg+Bild↓ blättern. */
 export function datumsElement() {
   const text = h('span', { class: 'vt-rb-text' });
   const eingabe = h('input', { type: 'date', class: 'vt-rb-datum', title: 'Planungsdatum wählen' });
   const knopf = (t, titel, f) => h('button', { type: 'button', class: 'vt-rb-pfeil', title: titel, onclick: () => f().catch?.(fehlerMelden) }, t);
-  const el = h('div', { class: 'vt-rb-datumsauswahl', title: 'Planungsdatum: ◂ ▸ blättern (Strg+Bild↑ / Strg+Bild↓), ◂◂ ▸▸ eine Woche' },
-    h('div', { class: 'vt-rb-zeile' }, knopf('◂◂', 'Eine Woche zurück', () => blaettern(-1, true)), knopf('◂', 'Vorheriger Unterrichtstag (Strg+Bild↑)', () => blaettern(-1)),
+  const el = h('div', { class: 'vt-rb-datumsauswahl', title: 'Planungsdatum – Tag blättern mit Strg+Bild↑ / Strg+Bild↓' },
+    h('div', { class: 'vt-rb-zeile' }, knopf(symbol('pfeil_doppel_links'), 'Eine Woche zurück', () => blaettern(-1, true)), knopf(symbol('pfeil_links'), 'Vorheriger Unterrichtstag (Strg+Bild↑)', () => blaettern(-1)),
       h('label', { class: 'vt-rb-mitte' }, symbol('kalender'), text, eingabe),
-      knopf('▸', 'Nächster Unterrichtstag (Strg+Bild↓)', () => blaettern(1)), knopf('▸▸', 'Eine Woche weiter', () => blaettern(1, true))),
+      knopf(symbol('pfeil_rechts'), 'Nächster Unterrichtstag (Strg+Bild↓)', () => blaettern(1)), knopf(symbol('pfeil_doppel_rechts'), 'Eine Woche weiter', () => blaettern(1, true))),
     h('div', { class: 'vt-rb-unter' }, 'Datum'));
   const zeigen = () => {
     const d = planungsdatum();
@@ -81,7 +81,7 @@ function kalenderFenster(f, p) {
   function textZeile(t) {
     const bis = h('input', { class: 'eingabe', value: t ? datumText(t.bis) : '', placeholder: datumText(planungsdatum()), title: 'Gültig bis', disabled: !schreiben });
     const text = h('input', { class: 'eingabe', value: t?.text || '', placeholder: t ? '' : 'Neuer Tagestext …', title: t?.formatiert ? 'Formatierter Tagestext (Formatierung bleibt erhalten, solange der Text nicht geändert wird)' : 'Tagestext', disabled: !schreiben });
-    const portal = h('input', { type: 'checkbox', checked: t ? t.portal : true, title: 'Webportal', disabled: !schreiben });
+    const portal = h('input', { type: 'checkbox', checked: t ? t.portal : true, title: 'In UntPlan Web anzeigen', disabled: !schreiben });
     const art = h('select', { class: 'eingabe', disabled: !schreiben }, TAGESTEXT_ARTEN.map((a) => h('option', { value: a, selected: a === (t?.art || 'Alle') }, a)));
     const elem = h('input', { class: 'eingabe', value: t?.elemente || '', title: 'Elemente (Klassen bzw. Lehrkräfte, Kurznamen)', disabled: !schreiben });
     const loeschen = h('button', { type: 'button', class: 'wz-knopf', title: 'Tagestext löschen', disabled: !schreiben || !t }, symbol('loeschen'));
@@ -94,7 +94,7 @@ function kalenderFenster(f, p) {
     return tr;
   }
   const texteKoerper = h('tbody');
-  texteFlaeche.append(h('table', { class: 'vt-eingabetabelle' }, h('thead', null, h('tr', null, ['Gültig bis', 'Tagestext', 'Webportal', 'Art', 'Elemente', ''].map((t) => h('th', null, t)))), texteKoerper));
+  texteFlaeche.append(h('table', { class: 'vt-eingabetabelle' }, h('thead', null, h('tr', null, ['Gültig bis', 'Tagestext', 'Web', 'Art', 'Elemente', ''].map((t) => h('th', null, t)))), texteKoerper));
   let speichertTexte = false;
   async function texteSpeichern() {
     if (speichertTexte) return;

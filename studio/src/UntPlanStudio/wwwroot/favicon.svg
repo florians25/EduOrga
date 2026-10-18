@@ -1,1 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="4" fill="#125e7a"/><path d="M5 6h14v13H5z" fill="#fff"/><path d="M5 10h14M9.7 6v13M14.3 6v13" stroke="#125e7a" stroke-width="1.2"/><path d="M9.7 10h4.6v4.5H9.7z" fill="#60bae8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>UntPlan</title>
+  <rect width="64" height="64" rx="14" fill="#1C3F7A"/>
+  <rect x="14" y="14" width="10" height="10" rx="2" fill="#FFFFFF"/>
+  <rect x="27" y="14" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
+  <rect x="40" y="14" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
+  <rect x="14" y="27" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
+  <rect x="27" y="27" width="23" height="10" rx="2" fill="#FFFFFF"/>
+  <rect x="14" y="40" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
+  <rect x="27" y="40" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
+  <rect x="40" y="40" width="10" height="10" rx="2" fill="#8FB4EA"/>
+</svg>

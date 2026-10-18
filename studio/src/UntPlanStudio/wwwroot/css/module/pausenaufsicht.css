@@ -7,18 +7,18 @@
 .pa-tabelle th { background: var(--kopf); font-weight: var(--mittel); }
 .pa-tabelle.klein { width: 100%; }
 .pa-zelle { min-width: 96px; height: 34px; cursor: pointer; vertical-align: middle; }
-.pa-zelle.keine { background: #dcdcdc; }
-.pa-zelle.offen { color: #b22222; }
-.pa-zelle.schlecht { background: #ffcdcd; }
-.pa-zelle.moeglich { background: #d7f0d7; }
-.pa-zelle.gesperrt { background: #ffd2d2; }
+.pa-zelle.keine { background: var(--up-schiefer-100); }
+.pa-zelle.offen { color: var(--up-entfall); }
+.pa-zelle.schlecht { background: var(--up-entfall-flaeche); }
+.pa-zelle.moeglich { background: var(--up-ok-flaeche); }
+.pa-zelle.gesperrt { background: var(--up-entfall-flaeche); }
 .pa-zelle.aktiv { outline: 2px solid var(--akzent); outline-offset: -2px; }
-.pa-ueber { color: #b22222; }
+.pa-ueber { color: var(--up-entfall); }
 .pa-lehrerzeile { cursor: pointer; }
 .pa-lehrerzeile:hover { background: var(--hover); }
 .pa-leer { padding: 20px; }
 .pa-vorschlag { height: 380px; display: flex; flex-direction: column; }
-.tabelle .t-zeile.pa-schlecht .t-zelle { color: #b22222; }
+.tabelle .t-zeile.pa-schlecht .t-zelle { color: var(--up-entfall); }
 .pa-gewichtung { display: grid; grid-template-columns: 1fr 200px; gap: 6px 12px; align-items: center; }
 .pa-skala { grid-column: 1 / -1; }
 .pa-vertretung { flex: 1; min-height: 0; overflow: auto; padding: 6px; background: var(--flaeche); }

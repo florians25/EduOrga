@@ -1,6 +1,6 @@
 // Modul „Stundenplan“: Stundenplanfenster je Klasse, Lehrkraft, Raum oder Fach (Wochenraster, Blöcke, Kopplungen nebeneinander).
 // Manuelles Planen per Drag & Drop: Stunden/Blöcke verschieben/tauschen, nicht verplante Blöcke setzen, Mehrfachauswahl,
-// Kontextmenü wie im Desktop (fixieren, entplanen, Raum zuordnen, Tauschvorschläge …) – Planungslogik in planung.js.
+// Kontextmenü (fixieren, entplanen, Raum zuordnen, Tauschvorschläge …) – Planungslogik in planung.js.
 import { h, leeren } from '../kern/dom.js';
 import { api } from '../kern/api.js';
 import { zustand, darfSchreiben } from '../kern/zustand.js';

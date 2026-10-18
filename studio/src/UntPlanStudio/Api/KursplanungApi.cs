@@ -88,7 +88,7 @@ public sealed class KursplanungApi : IStudioModul
                 if (w.Gewaehlt) s.KurswahlIds.Add(w.Kurs);
             }, doc => Klasse(doc, klasse)));
 
-        // Testhilfe wie im Desktop: Schüler ohne Kurswahl erhalten zufällig je Fach höchstens einen Kurs
+        // Testhilfe: Schüler ohne Kurswahl erhalten zufällig je Fach höchstens einen Kurs
         g.MapPost("/{klasse:int}/zufall", (Arbeitsdokument a, int klasse, ClaimsPrincipal p) =>
             a.AendernAsync(p.Benutzername(), "Kurswahlen", AenderungsArt.Stammdaten, d =>
             {

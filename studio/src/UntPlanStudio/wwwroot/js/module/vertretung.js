@@ -1,4 +1,4 @@
-// Modul „Vertretungsplanung“ (Vertretungsmodus) wie in der Desktop-Anwendung: Menüband „Vertretungsplanung“ mit Kalender und
+// Modul „Vertretungsplanung“ (Vertretungsmodus): Menüband „Vertretungsplanung“ mit Kalender und
 // Datumsauswahl (Strg+Bild↑/↓), Absenzen, Vertretungen, Vorschlag, Automatik, Sondereinsätze, Bereitschaften, Planungsdialog,
 // Vormerkungen, tagesaktuelle Stundenpläne, Vertretungsformate und Einstellungen; Bereitschaftsplanung (Dateneingabe/Module).
 // Die Fenster liegen in js/module/vertretung/*.js, die Veranstaltungen im eigenen Modul veranstaltungen.js.
@@ -15,7 +15,7 @@ import { fenster as vorschlagFenster } from './vertretung/vorschlag.js';
 import { fenster as planFenster } from './vertretung/plan.js';
 import { fenster as weitereFenster, sondereinsatzDialog, automatikDialog, einstellungenDialog } from './vertretung/weitere.js';
 
-/** Fenster der Vertretungsplanung öffnen (schaltet bei Bedarf in den Vertretungsmodus, wie im Desktop). */
+/** Fenster der Vertretungsplanung öffnen (schaltet bei Bedarf in den Vertretungsmodus). */
 function oeffnen(typ, p = {}, lage = {}) {
   if (!zustand.dokument) return null;
   if (zustand.modus !== 'vertretung') {

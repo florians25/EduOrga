@@ -28,7 +28,7 @@ public sealed class AnmeldungApi : IStudioModul
         {
             anwendung = Program.Anwendungsname,
             version = typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0] ?? "1.0.0",
-            beta = true,
+            beta = false,
         });
 
         r.Offen.MapPost("/anmeldung", async (AnmeldeDaten daten, Benutzerdienst benutzer, HttpContext ctx) =>

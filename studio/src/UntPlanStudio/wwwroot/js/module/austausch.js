@@ -102,7 +102,7 @@ function austauschFenster(f) {
       karte('Schuldatei',
         h('p', { class: 'leise' }, `${info.schulname || ''} · ${z.lehrer ?? 0} Lehrkräfte, ${z.klassen ?? 0} Klassen, ${z.schueler ?? 0} Schüler, ${z.unterrichte ?? 0} Unterrichte, ${z.stunden ?? 0} verplante Stunden`),
         h('div', { class: 'ax-reihe' },
-          aktion('herunterladen', 'Schuldatei herunterladen (.up)', 'Aktuellen Stand als UntPlan-Schuldatei speichern (mit der Desktop-Anwendung austauschbar)', () => befehl('datei.herunterladen')),
+          aktion('herunterladen', 'Schuldatei herunterladen (.up)', 'Aktuellen Stand als UntPlan-Schuldatei (.up) speichern', () => befehl('datei.herunterladen')),
           aktion('hochladen', 'Schuldatei hochladen …', 'Eine .up- oder BAL-Datei als neue Schuldatei auf den Server laden', () => befehl('datei.hochladen'), true),
           aktion('bal', 'BAL-Datei importieren …', 'Stundenplan aus einer WILLI2-BAL-Datei in diese Schuldatei übernehmen', () => befehl('datei.balImport'), true))),
       karte('Import',

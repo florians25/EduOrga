@@ -12,7 +12,7 @@
 .fm-seite h3 { font-size: 13px; font-weight: var(--mittel); color: var(--akzent); margin: 14px 0 6px; }
 .fm-formular { max-width: 620px; }
 .fm-paar { display: flex; gap: 6px; }
-.fm-zelle { position: relative; width: 340px; height: 150px; border: 2px solid #4b5563; background: #f3f4f6; margin: 6px 0 10px; user-select: none; }
-.fm-feld { position: absolute; display: flex; align-items: center; padding: 0 3px; box-sizing: border-box; border: 1px dashed #6b7280; background: rgba(255,255,255,.85); cursor: move; overflow: hidden; white-space: nowrap; }
+.fm-zelle { position: relative; width: 340px; height: 150px; border: 2px solid var(--text-2); background: var(--up-schiefer-50); margin: 6px 0 10px; user-select: none; }
+.fm-feld { position: absolute; display: flex; align-items: center; padding: 0 3px; box-sizing: border-box; border: 1px dashed var(--text-leise); background: rgba(255,255,255,.85); cursor: move; overflow: hidden; white-space: nowrap; }
 .fm-feld:hover { border-color: var(--akzent); background: var(--akzent-sehrhell); }
 .fm-griff { position: absolute; right: 0; bottom: 0; width: 8px; height: 8px; background: var(--akzent); cursor: nwse-resize; }

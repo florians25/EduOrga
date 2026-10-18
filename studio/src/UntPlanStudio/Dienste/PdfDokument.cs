@@ -230,7 +230,7 @@ public sealed class PdfSeite
     public void Linie(float x1, float y1, float x2, float y2, float staerke = 0.5f, Farbe? f = null) =>
         _sb.Append($"{Strich(f ?? Farbe.Schwarz)} {F(staerke)} w {F(x1)} {F(Y(y1))} m {F(x2)} {F(Y(y2))} l S\n");
 
-    /// <summary>Unterstrichener Text (eigene Linie wie im Desktop-Druck).</summary>
+    /// <summary>Unterstrichener Text (eigene Linie-Druck).</summary>
     public void Unterstrichen(float x, float grundlinie, float groesse, string text, bool fett = false)
     {
         Text(x, grundlinie, groesse, text, fett);

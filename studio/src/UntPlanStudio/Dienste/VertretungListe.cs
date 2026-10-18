@@ -6,7 +6,7 @@ using UntPlanStudio.Api;
 
 namespace UntPlanStudio.Dienste;
 
-/// <summary>Anfrage der Vertretungsliste (Filter wie im Vertretungsfenster des Desktops).</summary>
+/// <summary>Anfrage der Vertretungsliste (Filter wie im Vertretungsfenster).</summary>
 public sealed class ListeAnfrage
 {
     public DateOnly Von { get; set; }
@@ -33,7 +33,7 @@ public sealed class ListeAnfrage
 public sealed record VertretungsSpalte(string Schluessel, string Titel, string Feld, int Breite, bool NurLesen, bool Standard, bool Lang);
 
 /// <summary>
-/// Vertretungsliste wie im Vertretungsfenster des Desktops (<c>VertretungenFenster</c>): Spalten, Filter (offene, Kollisionen, Element,
+/// Vertretungsliste wie im Vertretungsfenster (<c>VertretungenFenster</c>): Spalten, Filter (offene, Kollisionen, Element,
 /// Druckansichten), Veranstaltungen je Tag zusammengefasst, Tausch/Verlegung in einer Zeile, Unterrichtszeilen, Kollisionen.
 /// Die Zeilen tragen die Anzeige-Texte je Spalte und Kennzeichen für die Darstellung.
 /// </summary>

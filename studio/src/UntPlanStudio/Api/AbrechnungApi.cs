@@ -114,7 +114,7 @@ public sealed class AbrechnungApi : IStudioModul
         return new { faecher = faecher.Select(f => new { id = f.Id, kurz = f.Kurzname }), zeilen, abgleich };
     }
 
-    /// <summary>Legt einen Jahrgang an und übernimmt als Vorschlag die Stunden aus dem vorhandenen Unterricht (wie im Desktop).</summary>
+    /// <summary>Legt einen Jahrgang an und übernimmt als Vorschlag die Stunden aus dem vorhandenen Unterricht.</summary>
     private static void JahrgangSicherstellen(Schuldatei d, string jahrgang)
     {
         if (d.Stundentafel.Any(z => z.Jahrgang == jahrgang)) return;

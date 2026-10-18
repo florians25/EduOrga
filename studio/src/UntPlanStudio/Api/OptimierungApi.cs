@@ -13,7 +13,7 @@ public sealed record GewichtungWerte(Dictionary<string, int> Werte);
 
 /// <summary>
 /// Optimierung (Hintergrundauftrag mit Fortschritt, Abbrechen, Ergebnisvergleich, Übernehmen), Stundenplan-Diagnose
-/// (Eingabedaten / Stundenplan mit Fällen) und Gewichtung (Regler 0–5, Analyse) – wie im Desktop (OptimierungDialog, DiagnoseFenster,
+/// (Eingabedaten / Stundenplan mit Fällen) und Gewichtung (Regler 0–5, Analyse) – (OptimierungDialog, DiagnoseFenster,
 /// GewichtungDialog).
 /// </summary>
 public sealed class OptimierungApi : IStudioModul
@@ -22,7 +22,7 @@ public sealed class OptimierungApi : IStudioModul
 
     public void DiensteRegistrieren(IServiceCollection dienste) => dienste.AddSingleton<Optimierungsdienst>();
 
-    /// <summary>Zuordnung Regler → Verstoßarten (Analyse im Gewichtungsdialog des Desktops).</summary>
+    /// <summary>Zuordnung Regler → Verstoßarten (Analyse im Gewichtungsdialog).</summary>
     private static readonly Dictionary<string, VerstossArt[]> Zuordnung = new()
     {
         ["L.Hohlstunden"] = new[] { VerstossArt.HohlstundenLehrer }, ["L.StdTag"] = new[] { VerstossArt.StdTagLehrer }, ["L.Mittagspause"] = new[] { VerstossArt.MittagspauseLehrer },

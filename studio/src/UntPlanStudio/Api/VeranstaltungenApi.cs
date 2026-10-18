@@ -14,7 +14,7 @@ public sealed record VaAusStunde(int Unterricht, DateOnly Datum, int Stunde, int
 public sealed record VaKopieren(DateOnly Datum);
 
 /// <summary>
-/// Veranstaltungen (Exkursion, Klassenfahrt, Schulveranstaltung) wie im Fenster „Veranst. / Lehrer“ des Desktops: Spalten VA-Nr., Klasse,
+/// Veranstaltungen (Exkursion, Klassenfahrt, Schulveranstaltung) wie im Fenster „Veranst. / Lehrer“: Spalten VA-Nr., Klasse,
 /// Kl-Teil, Lehrer, Raum, Von, ab St., Bis, bis St., Grund, Text, zählen, Schülergruppe; Eingabe direkt in der Tabelle („Alle Lehrkräfte“,
 /// „Alle Klassen außer 5a“ …), Ersatzlehrkräfte für entfernte Lehrkräfte („???“), Schnellauswahl nach Abteilung/Jahrgang/Gruppe,
 /// alle aus den Stunden übernehmen, Kopieren auf ein anderes Datum.

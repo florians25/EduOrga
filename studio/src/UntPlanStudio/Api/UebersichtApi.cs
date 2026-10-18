@@ -10,7 +10,7 @@ namespace UntPlanStudio.Api;
 public sealed record Raumverlegung(int Unterricht, int Tag, int Stunde, int AlterRaum, int NeuerRaum);
 
 /// <summary>
-/// Übersichtspläne wie im Desktop („Klassen/Lehrer/Räume Übersicht quer“): alle Elemente einer Art als Zeilen, Tage × Stunden als
+/// Übersichtspläne („Klassen/Lehrer/Räume Übersicht quer“): alle Elemente einer Art als Zeilen, Tage × Stunden als
 /// Spalten. Die Antwort ist kompakt (eine Liste je Element mit Text-Arrays) und wird in einem Durchlauf über den Stundenplan
 /// berechnet – auch bei großen Schulen schnell. Im Raum-Übersichtsplan: Raumverlegung/-tausch per Drag &amp; Drop.
 /// </summary>
@@ -18,7 +18,7 @@ public sealed class UebersichtApi : IStudioModul
 {
     public string Name => "uebersicht";
 
-    /// <summary>Was in einer Zelle steht: Standard wie im Desktop (Lehrerplan: Klassen, Klassenplan: Lehrkräfte, Raumplan: Klassen) oder ein bestimmtes Element.</summary>
+    /// <summary>Was in einer Zelle steht: Standard (Lehrerplan: Klassen, Klassenplan: Lehrkräfte, Raumplan: Klassen) oder ein bestimmtes Element.</summary>
     public enum Inhalt { Standard, Fach, Lehrer, Klasse, Raum }
 
     /// <summary>Eine belegte Zelle eines Übersichtsplans.</summary>

@@ -6,6 +6,13 @@
 //
 // Umgebungsvariablen wie smoke.cjs (STUDIO_URL, STUDIO_BENUTZER, STUDIO_PASSWORT, STUDIO_SCREENSHOTS).
 const { chromium } = require('playwright');
+
+// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
+async function eintrag(page, id) {
+  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
+  if (await k.count() && await k.first().isVisible()) return k.first().click();
+  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
+}
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -72,21 +79,21 @@ function attrappe(rueckmeldungen) {
   page.on('pageerror', (e) => fehler.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error' && !/423|Locked/.test(m.text())) fehler.push(m.text()); });
   const foto = (name) => page.screenshot({ path: path.join(BILDER, name) });
-  const reiter = (name) => page.click(`.ribbon .reiter:text-is("${name}")`);
-  const allesZu = async () => { for (const b of await page.$$('.fenster .fenster-titel button.zu')) await b.click().catch(() => {}); };
+  const reiter = async (name) => {}; // Reiter gibt es nicht mehr – Navigation ist immer sichtbar
+  const allesZu = async () => { await page.evaluate(async () => (await import('/js/kern/fenster.js')).fensterverwaltung.alleSchliessen()); };
 
   try {
     await page.goto(URL);
     await page.fill('input[name=benutzer]', BENUTZER);
     await page.fill('input[name=passwort]', PASSWORT);
     await page.click('button[type=submit]');
-    await page.waitForSelector('.ribbon .reiter.datei');
+    await page.waitForSelector('.navigation .nav-punkt');
     await page.waitForFunction(() => document.title.includes(' – UntPlan'), null, { timeout: 15000 });
     if (await page.isVisible('.backstage')) await page.keyboard.press('Escape');
 
     // ---- UntPlanWeb ----
     await reiter('Module');
-    await page.click('.rb-knopf[data-id="module.untplanweb"]');
+    await eintrag(page, 'module.untplanweb');
     await page.waitForSelector('.fenster[data-typ=untplanweb] .upw-zeile-teil');
     await page.click('.fenster[data-typ=untplanweb] button[data-teil=vertretungen]');
     await page.waitForSelector('.dialog .d-inhalt:has-text("erfolgreich")', { timeout: 30000 });
@@ -107,12 +114,12 @@ function attrappe(rueckmeldungen) {
     await foto('03-stundenplanaenderungen.png');
     await page.click('.fenster[data-typ="untplanweb.stpl"] button:text-is("Übernehmen")');
     await page.waitForSelector('.fenster[data-typ="untplanweb.stpl"] .fenster-fuss:has-text("übernommen")');
-    await page.click('.fenster[data-typ="untplanweb.stpl"] .fenster-titel button.zu');
+    await page.click('.ws-tab[data-typ=\"untplanweb.stpl\"] .ws-tab-zu');
     // Klausuren
     await page.click('.fenster[data-typ=untplanweb] .fenster-werkzeuge button:has-text("Klausuren")');
     await page.waitForSelector('.fenster[data-typ="untplanweb.klausuren"] .t-zeile:has-text("Mathe-Klausur")');
     await foto('04-klausuren.png');
-    await page.click('.fenster[data-typ="untplanweb.klausuren"] .fenster-titel button.zu');
+    await page.click('.ws-tab[data-typ=\"untplanweb.klausuren\"] .ws-tab-zu');
     // Einstellungen-Dialog
     await page.click('.fenster[data-typ=untplanweb] button:text-is("Einstellungen")');
     await page.waitForSelector('.dialog .upw-einstellungen');
@@ -124,7 +131,7 @@ function attrappe(rueckmeldungen) {
 
     // ---- Import/Export ----
     await reiter('Dateneingabe');
-    await page.click('.rb-knopf[data-id="eingabe.importexport"]');
+    await eintrag(page, 'eingabe.importexport');
     await page.click('.menue .m-eintrag:has-text("Import/Export …")');
     await page.waitForSelector('.fenster[data-typ=austausch] .ax-karte');
     await foto('06-import-export.png');
@@ -132,7 +139,7 @@ function attrappe(rueckmeldungen) {
 
     // ---- Wertrechnung / Statistik ----
     await reiter('Module');
-    await page.click('.rb-knopf[data-id="module.sollist"]');
+    await eintrag(page, 'module.sollist');
     await page.waitForSelector('.fenster[data-typ="abrechnung.wertrechnung"] .t-zeile');
     await foto('07-wertrechnung-soll-ist.png');
     await page.click('.fenster[data-typ="abrechnung.wertrechnung"] .abr-reiter button:text-is("Unterrichts-Matrix")');
@@ -143,14 +150,14 @@ function attrappe(rueckmeldungen) {
     await page.waitForSelector('.fenster[data-typ="abrechnung.wertrechnung"] .abr-links .t-zeile');
     await foto('09-stundentafel.png');
     await allesZu();
-    await page.click('.rb-knopf[data-id="module.statistik"]');
+    await eintrag(page, 'module.statistik');
     await page.waitForSelector('.fenster[data-typ="abrechnung.statistik"] .abr-summe');
     await foto('10-vertretungsstatistik.png');
     await allesZu();
 
     // ---- Pausenaufsichten ----
     await reiter('Start');
-    await page.click('.rb-knopf[data-id="start.pausenaufsichten"]');
+    await eintrag(page, 'start.pausenaufsichten');
     await page.waitForSelector('.fenster[data-typ=pausenaufsicht] .pa-zelle');
     await page.click('.fenster[data-typ=pausenaufsicht] .fenster-werkzeuge button:has-text("Optimierung")');
     await page.click('.dialog .knopf.primaer');
@@ -164,12 +171,12 @@ function attrappe(rueckmeldungen) {
     await allesZu();
 
     // ---- Kursplanung, Kommentare ----
-    await page.click('.rb-knopf[data-id="start.kursplanung"]');
+    await eintrag(page, 'start.kursplanung');
     await page.waitForSelector('.fenster[data-typ=kursplanung] .kp-status');
     await foto('13-kursplanung.png');
     await allesZu();
     await reiter('Dateneingabe');
-    await page.click('.rb-knopf[data-id="eingabe.kommentare"]');
+    await eintrag(page, 'eingabe.kommentare');
     await page.waitForSelector('.fenster[data-typ=kommentare]');
     await page.click('.fenster[data-typ=kommentare] .fenster-werkzeuge button:has-text("Neu")');
     await page.waitForSelector('.dialog textarea');
@@ -180,11 +187,11 @@ function attrappe(rueckmeldungen) {
     await allesZu();
 
     // ---- MultiUser ----
-    await page.click('.statuszeile .mu-feld');
+    await page.click('.kl-praesenz .mu-feld');
     await page.waitForSelector('.fenster[data-typ=multiuser] .mu-tabelle');
     await page.waitForSelector('.fenster[data-typ=multiuser] td:has-text("Pia Planer")');
     await foto('15-multiuser.png');
-    if (!(await page.textContent('.statuszeile .mu-feld')).includes('aktiv')) throw new Error('MultiUser-Anzeige in der Statuszeile fehlt.');
+    if (!(await page.textContent('.kl-praesenz .mu-feld')).includes('aktiv')) throw new Error('Anzeige der aktiven Benutzer in der Kopfleiste fehlt.');
     await page.click('.fenster[data-typ=multiuser] .fenster-werkzeuge button:has-text("Gruppen und Rechte")');
     await page.waitForSelector('.fenster[data-typ="multiuser.verwaltung"] .mu-tabelle');
     await foto('16-multiuser-gruppen.png');

@@ -6,6 +6,13 @@
 // Vertretungsvorschlag übernehmen → Entfall mit „-“ → Kalender, tagesaktueller Lehrerplan, Veranstaltung mit allen Lehrkräften →
 // Standardanordnung → Tag blättern (Strg+Bild↓). Bildschirmfotos nach STUDIO_SCREENSHOTS.
 const { chromium } = require('playwright');
+
+// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
+async function eintrag(page, id) {
+  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
+  if (await k.count() && await k.first().isVisible()) return k.first().click();
+  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
+}
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -30,7 +37,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await page.fill('input[name=benutzer]', BENUTZER);
     await page.fill('input[name=passwort]', PASSWORT);
     await page.click('button[type=submit]');
-    await page.waitForSelector('.ribbon .reiter.datei');
+    await page.waitForSelector('.navigation .nav-punkt');
     const kopf = { 'X-UntPlan-Studio': '1' };
     const stand = await (await page.request.post(`${URL}/api/dokumente/beispiel`, { headers: kopf, data: {} })).json();
     const dok = `${URL}/api/dokumente/${stand.id}`;
@@ -50,15 +57,14 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     if (!kurz) throw new Error('keine Lehrkraft mit Unterricht');
 
     // Vertretungsmodus
-    await page.click('.rb-knopf[data-id="start.vertretungsmodus"]');
-    await page.waitForSelector('.ribbon .reiter.aktiv:text-is("Vertretungsplanung")');
+    await eintrag(page, 'start.vertretungsmodus');
+    await page.waitForSelector('html[data-modus=vertretung]');
     await page.waitForFunction((d) => document.querySelector('.vt-rb-datum')?.value === d, datum);
-    await foto('01-vertretungsmodus-menueband.png');
+    await foto('01-vertretungsmodus.png');
     schritt(`Vertretungsmodus, Datum ${datum}, Lehrkraft ${kurz}`);
 
     // Absenz direkt in der Liste eingeben (neue Zeile, Element, Zeile verlassen = speichern)
-    await page.click('.rb-knopf[data-id="vertretung.absenzen"]');
-    await page.click('.menue .m-eintrag:has-text("Absenzen")');
+    await eintrag(page, 'vertretung.absenzen');
     await page.waitForSelector('.fenster[data-typ="vertretung.absenzen"] .t-zeile.t-neu');
     await page.click('.fenster[data-typ="vertretung.absenzen"] .t-zeile.t-neu .t-zelle >> nth=1');
     await page.keyboard.type(kurz);
@@ -72,8 +78,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     schritt('Absenz gespeichert');
 
     // Vertretungen mit offenen Stunden
-    await page.click('.rb-knopf[data-id="vertretung.vertretungen"]');
-    await page.click('.menue .m-eintrag:has-text("Vertretungen")');
+    await eintrag(page, 'vertretung.vertretungen');
     const liste = '.fenster[data-typ="vertretung.liste"]';
     await page.waitForFunction((s) => [...document.querySelectorAll(`${s} .t-zelle.vt-rot`)].some((z) => z.textContent === '???'), liste, { timeout: 15000 });
     await foto('03-vertretungen-offen.png');
@@ -99,7 +104,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await foto('05-vorschlag-uebernommen.png');
 
     // Entfall mit „-“ auf der nächsten offenen Zeile
-    await page.click('button[title^="Vertretungen /"]');
+    await page.click('.ws-tab[data-typ="vertretung.liste"]');
     const o2 = await offeneZeile();
     if (o2) {
       const nr2 = o2.nr;
@@ -115,17 +120,15 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await page.keyboard.press('Escape');
 
     // Kalender, tagesaktueller Lehrerplan, Bereitschaften, Vormerkungen
-    await page.click('.rb-knopf[data-id="vertretung.kalender"]');
-    await page.waitForSelector('.menue .m-eintrag');
-    await page.click('.menue .m-eintrag:has-text("Kalender")');
+    await eintrag(page, 'vertretung.kalender');
     await page.waitForSelector('.fenster[data-typ="vertretung.kalender"] .vt-tabelle tbody tr');
-    await page.click('.rb-knopf[data-id="vertretung.planungsdialog"]');
+    await eintrag(page, 'vertretung.planungsdialog');
     await page.waitForSelector('.fenster[data-typ="vertretung.plan"] .r-eintrag', { timeout: 15000 });
     await foto('07-planungsdialog-tagesaktuell.png');
     schritt('Planungsdialog (Klassen- und Lehrerplan tagesaktuell)');
 
     // Veranstaltung mit allen Lehrkräften und Klassen
-    await page.click('.rb-knopf[data-id="vertretung.veranstaltungen"]');
+    await eintrag(page, 'vertretung.veranstaltungen');
     const va = '.fenster[data-typ="veranstaltungen.liste"]';
     await page.waitForSelector(`${va} .t-zeile.t-neu`);
     await page.click(`${va} .t-zeile.t-neu .t-zelle >> nth=3`);
@@ -137,7 +140,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await foto('08-veranstaltung-alle.png');
 
     // Standardanordnung
-    await page.click('.rb-knopf[data-id="vertretung.formate"]');
+    await eintrag(page, 'vertretung.formate');
     await page.click('.menue .m-eintrag:has-text("Standardanordnung")');
     await page.waitForSelector(`${liste} .t-zeile`, { timeout: 15000 });
     await page.waitForSelector('.fenster[data-typ="vertretung.plan"] .r-eintrag', { timeout: 15000 });
@@ -153,7 +156,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     schritt(`Tag gewechselt: ${await page.inputValue('.vt-rb-datum')}`);
 
     // Einstellungen-Dialog
-    await page.click('.rb-knopf[data-id="vertretung.einstellungen"]');
+    await eintrag(page, 'vertretung.einstellungen');
     await page.click('.menue .m-eintrag:has-text("Vertretungsvorschlag")');
     await page.waitForSelector('.vt-einstellungen');
     await foto('11-einstellungen.png');

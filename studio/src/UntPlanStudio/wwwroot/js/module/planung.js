@@ -1,4 +1,4 @@
-// Modul „Planung“: manuelles Planen im Stundenplanfenster wie im Desktop – Blöcke/Doppelstunden verschieben und setzen
+// Modul „Planung“: manuelles Planen im Stundenplanfenster – Blöcke/Doppelstunden verschieben und setzen
 // (mit „Soll behindernder Unterricht entplant werden?“), Mehrfachauswahl (entplanen, fixieren), Kontextmenüs, Raum zuordnen /
 // löschen (Raumliste), Tauschvorschläge, alle Stunden entplanen bzw. fixieren.
 // Das Stundenplanfenster (stundenplan.js) nutzt die hier exportierten Funktionen; die Menüband-Einträge planung.* stehen unten.
@@ -21,7 +21,7 @@ function breit(versprechen, breite) {
 }
 
 /**
- * Ändernde Anfrage mit Rückfrage wie im Desktop: Antwortet der Server mit { ok:false, frage }, wird gefragt
+ * Ändernde Anfrage mit Rückfrage: Antwortet der Server mit { ok:false, frage }, wird gefragt
  * „Soll behindernder Unterricht entplant werden?“ – Ja = entplanen, Nein = trotzdem (Kollision), Abbrechen = nichts.
  */
 export async function mitRueckfrage(pfad, daten, quelle) {
@@ -71,7 +71,7 @@ export async function entplanen(stunden, quelle) {
   return true;
 }
 
-/** Markierte Stunden fixieren bzw. lösen (Ziel nach der ersten Stunde wie im Desktop). */
+/** Markierte Stunden fixieren bzw. lösen (Ziel nach der ersten Stunde). */
 export async function fixieren(stunden, quelle) {
   if (!stunden.length) { hinweis('Bitte zuerst eine Stunde im Stundenplan anklicken.', 'warnung'); return false; }
   const ziel = !stunden[0].e?.fix;
@@ -276,7 +276,7 @@ export async function tauschDialog(stunde, quelle) {
 // Kontextmenü und Tastatur im Stundenplanfenster
 
 /**
- * Einträge des Kontextmenüs einer Stunde (wie im Desktop). ctx = { f, raster, typ, element(), neuLaden(), schreiben }.
+ * Einträge des Kontextmenüs einer Stunde. ctx = { f, raster, typ, element(), neuLaden(), schreiben }.
  */
 export function kontextEintraege(ctx, e, tag, stunde) {
   const { raster, schreiben } = ctx;
@@ -322,7 +322,7 @@ export function feldEintraege(ctx) {
 
 function blockMarkieren(ctx, a) {
   const stunden = new Set(a.stunden || [a.stunde]);
-  // zusammenhängende Stunden desselben Unterrichts am Tag (Block im Sinne des Desktops)
+  // zusammenhängende Stunden desselben Unterrichts am Tag (Block im Sinne)
   const plan = ctx.raster.plan;
   const belegt = new Set(plan.zellen.filter((z) => z.tag === a.tag && z.eintraege.some((x) => x.u === a.u)).map((z) => z.stunde));
   for (let s = Math.min(...stunden) - 1; belegt.has(s); s--) stunden.add(s);

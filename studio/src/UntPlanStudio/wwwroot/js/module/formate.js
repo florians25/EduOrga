@@ -188,7 +188,7 @@ function editorFenster(f, p) {
     const felder = REITER[reiter] || REITER.Allgemein;
     const teile = [h('div', { class: 'formular fm-formular' }, felder.map(eingabe))];
     if (reiter === 'Stundenplan-Stunde') teile.push(...feldEditor());
-    if (reiter === 'Allgemein') teile.push(h('p', { class: 'leise' }, 'Im Druck wirken: Format groß/kompakt, Langnamen, Uhrzeiten, Einzelstunden, Pausenzeilen, Auswahl (Bereich) und Schwarz-Weiß-Druck (Layout 2). Die übrigen Angaben gelten für die Desktop-Anwendung und bleiben in der Schuldatei erhalten.'));
+    if (reiter === 'Allgemein') teile.push(h('p', { class: 'leise' }, 'Im Druck wirken: Format groß/kompakt, Langnamen, Uhrzeiten, Einzelstunden, Pausenzeilen, Auswahl (Bereich) und Schwarz-Weiß-Druck (Layout 2). Die übrigen Angaben bleiben in der Schuldatei erhalten.'));
     return teile;
   }
 
@@ -260,6 +260,6 @@ export default {
   },
   befehle: { 'formate.oeffnen': (a) => (zustand.dokument ? fensterverwaltung.oeffnen('formate.editor', a) : null) },
   ribbon: [
-    { id: 'stundenplaene.formate', reiter: 'Stundenpläne', gruppe: 'Formate', text: 'Stundenplan-formate', symbol: 'einstellungen', gross: true, befehl: 'formate.oeffnen', braucht: 'dokument', hinweis: 'Eigene Stundenplanformate (Formatdialog wie im Desktop)' },
+    { id: 'stundenplaene.formate', reiter: 'Stundenpläne', gruppe: 'Formate', text: 'Stundenplan-formate', symbol: 'einstellungen', gross: true, befehl: 'formate.oeffnen', braucht: 'dokument', hinweis: 'Eigene Stundenplanformate' },
   ],
 };

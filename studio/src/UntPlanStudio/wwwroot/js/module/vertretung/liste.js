@@ -1,4 +1,4 @@
-// Fenster „Vertretungen“ wie im Desktop: Ansichten (Klasse/Lehrer – Standard, Druck – Klasse/Lehrer, Pausenaufsichten), Element-Auswahl,
+// Fenster „Vertretungen“: Ansichten (Klasse/Lehrer – Standard, Druck – Klasse/Lehrer, Pausenaufsichten), Element-Auswahl,
 // Zeitraum, Filter „Offene Vertretungen“, „Kollisionen“, „Veranstaltungen zusammenfassen“, alle Felder der Ansicht, Vtr-Nr.,
 // direkte Eingabe (Vertreter mit „+“ = Vertr. o. Lehrkr., „-“ = Entfall, Fach, Raum, Text …) für die bearbeitete bzw. alle markierten Zeilen.
 import { h, leeren, entprellen } from '../../kern/dom.js';
@@ -329,7 +329,7 @@ function vertretungenFenster(f, p) {
   f.an('vertretung.auswahl', (a) => { if (a?.quelle !== f.id && a?.id && tabelle.zeilen.some((z) => z.m.v === a.id)) tabelle.waehle(`V${a.id}`); });
   f.an('vertretung.naechsteOffene', () => { if (!naechsteOffene()) hinweis('Keine weitere offene Vertretung.', 'info', 2000); });
 
-  // ---- Kontextmenü wie im Desktop ----
+  // ---- Kontextmenü ----
   function kontextmenue(zeilen) {
     const liste = zeilen.filter((z) => z.m.v);
     const e = [];
@@ -445,7 +445,7 @@ function vertretungenFenster(f, p) {
     await laden();
   }
 
-  // Tasten wie im Desktop: „+“ / „-“ (ohne Bearbeitung im Feld Vertreter bzw. in nicht editierbaren Feldern), Enter = Vorschlag, F3
+  // Tasten: „+“ / „-“ (ohne Bearbeitung im Feld Vertreter bzw. in nicht editierbaren Feldern), Enter = Vorschlag, F3
   tabelle.el.addEventListener('keydown', (e) => {
     if (tabelle.editor) return;
     const s = tabelle.aktiveSpalte();

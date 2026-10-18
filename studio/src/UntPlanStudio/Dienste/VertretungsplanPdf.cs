@@ -79,7 +79,7 @@ public sealed class AushangFeld
 }
 
 /// <summary>
-/// Aushang des Vertretungsplans (Klassen- oder Lehrerversion) als PDF, je Tag eine neue Seite – Aufbau wie im Desktop
+/// Aushang des Vertretungsplans (Klassen- oder Lehrerversion) als PDF, je Tag eine neue Seite – Aufbau
 /// (Druck/VertretungsplanDruck): Kopf, Titel „… am: 24.9. / Donnerstag“, Nachrichten zum Tag, Kästen (blockierte Räume,
 /// abwesende Klassen/Lehrer), Tabelle mit den Feldern des Seitenlayouts, Gruppierung, Raster, kombinierte Klassen, Blockvertretungen.
 /// </summary>

@@ -38,11 +38,11 @@ public sealed record PlanVerlegen(DateOnly Von, int VonStunde, int Unterricht, i
 public sealed record BereitschaftAnfrage(int Tag, int Stunde, int? Lehrer, int? Anzahl);
 
 /// <summary>
-/// Vertretungsplanung (Vertretungsmodus) wie in der Desktop-Anwendung: Kalender und Tagestexte, Absenzen, Vertretungsliste mit allen
+/// Vertretungsplanung (Vertretungsmodus): Kalender und Tagestexte, Absenzen, Vertretungsliste mit allen
 /// Bearbeitungen (Vertreter, Entfall, „+“, Raum, Text, teilen, fixieren …), Vertretungsvorschlag (Kandidaten, Betreuungen, Räume,
 /// Vorziehungen), Automatik, Sondereinsätze, Bereitschaften und Bereitschaftsplanung, Vormerkungen, tagesaktuelle Stundenpläne mit
 /// Verlegen/Tauschen per Drag &amp; Drop sowie die Einstellungen der Vertretungsplanung.
-/// Rückfragen wie im Desktop („Trotzdem verplanen?“) liefert der Server als <c>{ frage: { schluessel, text, optionen } }</c>; die
+/// Rückfragen („Trotzdem verplanen?“) liefert der Server als <c>{ frage: { schluessel, text, optionen } }</c>; die
 /// Oberfläche wiederholt die Anfrage mit <c>antworten: { schluessel: index }</c>.
 /// </summary>
 public sealed class VertretungApi : IStudioModul
@@ -169,7 +169,7 @@ public sealed class VertretungApi : IStudioModul
                 d.Tagestexte.AddRange(neu);
             }, doc => VertretungPlan.Kalenderdaten(doc, t.Datum)));
 
-        // Tageswechsel: offene Vertretungen aus Absenzen, Veranstaltungen und Klausuren erzeugen (nur wenn sich etwas ändert, wie im Desktop)
+        // Tageswechsel: offene Vertretungen aus Absenzen, Veranstaltungen und Klausuren erzeugen (nur wenn sich etwas ändert)
         g.MapPost("/aktualisieren", (Arbeitsdokument a, ZeitraumAnfrage z, ClaimsPrincipal p) =>
             a.AusfuehrenAsync<object>(B(p), doc =>
             {
@@ -559,7 +559,7 @@ public sealed class VertretungApi : IStudioModul
         a.LesenAsync(doc => Bearbeitbare(doc.Daten, ids).Where(v => v.Art != VertretungsArt.Pausenaufsicht).Select(v => v.Id).ToList())
             .ContinueWith(t => Ausfuehren(a, p, "Vertr. o. Lehrkr.", t.Result, (_, v) => Vertretungen.OhneLehrer(v, B(p)))).Unwrap();
 
-    /// <summary>Vertreter eintragen mit den Rückfragen des Desktops: abwesend („Trotzdem verplanen?“), nicht frei („Trotzdem als Vertreter eintragen?“).</summary>
+    /// <summary>Vertreter eintragen mit den Rückfragen: abwesend („Trotzdem verplanen?“), nicht frei („Trotzdem als Vertreter eintragen?“).</summary>
     private static async Task<IResult> VertreterSetzen(Arbeitsdokument a, ClaimsPrincipal p, List<int> ids, int lehrer, bool mitbetreuung, Dictionary<string, int>? antworten)
     {
         var (liste, frage, fix) = await a.LesenAsync(doc =>

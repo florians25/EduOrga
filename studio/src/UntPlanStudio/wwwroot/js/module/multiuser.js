@@ -17,22 +17,22 @@ const beobachter = new Set();
 
 function taetigkeit() {
   const f = fensterverwaltung.aktiv?.();
-  return f?.titelText?.textContent || '';
+  return f?.titelText || '';
 }
 
 function feldZeigen() {
   if (!feld) {
-    const zeile = document.querySelector('.statuszeile');
+    const zeile = document.querySelector('.kl-praesenz');
     if (!zeile) return;
-    feld = h('button', { class: 'feld mu-feld', type: 'button', title: 'Wer arbeitet gerade an dieser Datei? (MultiUser)', onclick: () => oeffnen() });
+    feld = h('button', { class: 'mu-feld', type: 'button', title: 'Wer arbeitet gerade an dieser Datei?', onclick: () => oeffnen() });
     zeile.append(feld);
   }
   if (!zustand.dokument || !stand) { feld.hidden = true; return; }
   feld.hidden = false;
   const andere = stand.aktive.filter((s) => s.aktiv && s.benutzer.toLowerCase() !== stand.ich.toLowerCase());
   const sperre = stand.exklusiv && !stand.exklusiv.eigen ? `exklusiv: ${stand.exklusiv.anzeigename}` : stand.sperren.length ? `${stand.sperren.length} Sperre(n)` : '';
-  feld.replaceChildren(symbol('benutzer'), h('span', null, andere.length ? `${andere.length + 1} aktiv` : 'allein'), sperre ? h('span', { class: 'mu-sperre' }, sperre) : null);
-  feld.title = stand.aktive.filter((s) => s.aktiv).map((s) => `${s.anzeigename}${s.taetigkeit ? ` – ${s.taetigkeit}` : ''}`).join('\n') || 'MultiUser';
+  feld.replaceChildren(...[symbol('benutzer'), h('span', null, andere.length ? `${andere.length + 1} aktiv` : 'nur Sie'), sperre ? h('span', { class: 'mu-sperre' }, sperre) : null].filter(Boolean));
+  feld.title = stand.aktive.filter((s) => s.aktiv).map((s) => `${s.anzeigename}${s.taetigkeit ? ` – ${s.taetigkeit}` : ''}`).join('\n') || 'Mehrbenutzerbetrieb';
 }
 
 async function abfragen() {
@@ -68,7 +68,7 @@ function starten() {
 // ---------------------------------------------------------------------------------------------- Fenster
 
 function multiuserFenster(f) {
-  f.titel('MultiUser – Benutzer an dieser Datei');
+  f.titel('Aktive Benutzer');
   const flaeche = h('div', { class: 'mu-fenster' });
   f.inhalt.append(flaeche);
   f.werkzeug({ text: 'Neuanzeige', symbol: 'wiederholen', aktion: abfragen });
@@ -134,7 +134,7 @@ function multiuserFenster(f) {
 }
 
 function verwaltungFenster(f) {
-  f.titel('MultiUser – Gruppen und Rechte');
+  f.titel('Gruppen und Rechte');
   const flaeche = h('div', { class: 'mu-fenster' });
   f.inhalt.append(flaeche);
   let v = null;
@@ -195,13 +195,13 @@ export default {
   id: 'multiuser',
   css: ['css/module/multiuser.css'],
   fenster: {
-    multiuser: { titel: 'MultiUser', symbol: 'datenbank', breite: 820, hoehe: 600, einzig: () => 'mu', erstellen: multiuserFenster },
+    multiuser: { titel: 'Mehrbenutzerbetrieb', symbol: 'datenbank', breite: 820, hoehe: 600, einzig: () => 'mu', erstellen: multiuserFenster },
     'multiuser.verwaltung': { titel: 'Gruppen und Rechte', symbol: 'einstellungen', breite: 980, hoehe: 560, einzig: () => 'muv', erstellen: verwaltungFenster },
   },
   befehle: { 'multiuser.oeffnen': oeffnen, 'multiuser.verwaltung': () => fensterverwaltung.oeffnen('multiuser.verwaltung', {}) },
   ribbon: [
     {
-      id: 'start.multiuser', reiter: 'Start', gruppe: 'Schule', text: 'MultiUser', symbol: 'datenbank', gross: true, hinweis: 'Mehrere Benutzer an einer Datei: aktive Benutzer, Sperren, Exklusivbetrieb, Rechte',
+      id: 'start.multiuser', reiter: 'Start', gruppe: 'Schule', text: 'Mehrbenutzerbetrieb', symbol: 'klassen', gross: true, hinweis: 'Mehrere Benutzer an einer Datei: aktive Benutzer, Sperren, Exklusivbetrieb, Rechte',
       menue: [
         { text: 'Angemeldete Benutzer …', symbol: 'benutzer', befehl: 'multiuser.oeffnen', braucht: 'dokument' },
         { text: 'Neuanzeige', symbol: 'wiederholen', aktion: abfragen, braucht: 'dokument' },

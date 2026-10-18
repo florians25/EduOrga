@@ -1,8 +1,9 @@
 // Modul „Zeitwünsche“: Raster-Editor für die Zeitwünsche von Klassen, Lehrkräften, Räumen, Fächern und Unterrichten
-// (+3 auf jeden Fall Unterricht … −3 keinesfalls Unterricht, Farben wie im Desktop). Wert wählen und Stunden mit gedrückter
+// (+3 auf jeden Fall Unterricht … −3 keinesfalls Unterricht, Farben). Wert wählen und Stunden mit gedrückter
 // Maustaste (oder dem Finger) überstreichen; Klick auf „Tage“/„Vorm.“/„Nachm.“ setzt den ganzen (Halb-)Tag.
 // Darunter die unbestimmten Zeitwünsche (z. B. „1 freier Tag, absolute Sperrung“).
 import { h, leeren } from '../kern/dom.js';
+import { symbol } from '../kern/symbole.js';
 import { api } from '../kern/api.js';
 import { zustand, darfSchreiben } from '../kern/zustand.js';
 import { betrifft, melden } from '../kern/ereignisse.js';
@@ -36,8 +37,8 @@ function zeitwunschFenster(f, p) {
     const n = liste[Math.max(0, Math.min(liste.length - 1, i + d))];
     if (n) setzen(typ, n.id);
   };
-  f.werkzeuge.append(typWahl, h('button', { class: 'wz-knopf', type: 'button', title: 'Vorheriges Element', onclick: () => blaettern(-1) }, '◂'), elWahl,
-    h('button', { class: 'wz-knopf', type: 'button', title: 'Nächstes Element', onclick: () => blaettern(1) }, '▸'));
+  f.werkzeuge.append(typWahl, h('button', { class: 'wz-knopf nur-symbol', type: 'button', title: 'Vorheriges Element', onclick: () => blaettern(-1) }, symbol('pfeil_links')), elWahl,
+    h('button', { class: 'wz-knopf nur-symbol', type: 'button', title: 'Nächstes Element', onclick: () => blaettern(1) }, symbol('pfeil_rechts')));
   const vk = f.werkzeug({ text: '', symbol: 'verknuepfen', nurSymbol: true, titel: 'Fensterverknüpfung: folgt der Auswahl in anderen Fenstern', aktion: () => { verknuepft = !verknuepft; vk.classList.toggle('gedrueckt', verknuepft); f.parameterSetzen({ verknuepft }); } });
   vk.classList.toggle('gedrueckt', verknuepft);
   f.trenner();

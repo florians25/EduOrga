@@ -11,8 +11,8 @@
 .abr-titel { padding: 4px 6px; font-weight: var(--mittel); background: var(--kopf); }
 .abr-summe { flex: none; padding: 5px 8px; background: var(--kopf); border-top: 1px solid var(--rand-leise); font-size: 12px; }
 .abr-summe.gross { min-height: 44px; }
-.tabelle .t-zeile.abr-zuwenig .t-zelle { color: #8b0000; }
-.tabelle .t-zeile.abr-zuviel .t-zelle { color: #00008b; }
-.tabelle .t-zeile.abr-verguetung { background: #fff0c8; }
+.tabelle .t-zeile.abr-zuwenig .t-zelle { color: var(--up-entfall); }
+.tabelle .t-zeile.abr-zuviel .t-zelle { color: var(--up-marine-700); }
+.tabelle .t-zeile.abr-verguetung { background: var(--up-pruefung-flaeche); }
 .tabelle .t-zeile.abr-minus .t-zelle { color: var(--gefahr); }
 .tabelle .t-zeile.abr-gruppe { font-weight: var(--mittel); background: var(--kopf); }

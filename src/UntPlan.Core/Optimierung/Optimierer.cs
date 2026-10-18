@@ -4,13 +4,13 @@ namespace UntPlan.Core.Optimierung;
 
 public enum Strategie
 {
-    /// <summary>A – Schnelle Optimierung (eignet sich zum Finden von Eingabefehlern).</summary>
+    /// <summary>A – Kompakt: ein schneller Durchlauf (eignet sich zum Finden von Eingabefehlern).</summary>
     A,
-    /// <summary>B – Aufwändige Optimierung.</summary>
+    /// <summary>B – Gründlich: mehrere Durchläufe.</summary>
     B,
-    /// <summary>C – Schnelle Prozentverplanung.</summary>
+    /// <summary>C – Stufenweise, schnell.</summary>
     C,
-    /// <summary>D – Aufwändige Prozentverplanung (Start- und Erhöhungs-Prozentsatz).</summary>
+    /// <summary>D – Stufenweise, gründlich (Start- und Erhöhungs-Prozentsatz).</summary>
     D,
     /// <summary>E – Übernacht-Optimierung.</summary>
     E,
@@ -42,11 +42,11 @@ public static class StrategieInfo
 {
     public static string Name(Strategie s) => s switch
     {
-        Strategie.A => "A Schnelle Optimierung",
-        Strategie.B => "B Aufwändige Optimierung",
-        Strategie.C => "C Schnelle Prozentverplanung",
-        Strategie.D => "D Aufwändige Prozentverplanung",
-        _ => "E Übernacht-Optimierung",
+        Strategie.A => "Kompakt – ein schneller Durchlauf",
+        Strategie.B => "Gründlich – mehrere Durchläufe",
+        Strategie.C => "Stufenweise – schnell",
+        Strategie.D => "Stufenweise – gründlich",
+        _ => "Langlauf – über Nacht",
     };
 }
 

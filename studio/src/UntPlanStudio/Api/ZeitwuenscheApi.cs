@@ -15,7 +15,7 @@ public sealed record UnbestimmteWuensche(List<UnbestimmterWunsch> Liste);
 
 /// <summary>
 /// Zeitwünsche (−3 keinesfalls … +3 auf jeden Fall Unterricht) für Klassen, Lehrkräfte, Räume, Fächer und Unterrichte sowie die
-/// unbestimmten Zeitwünsche (freie Tage/Halbtage) – wie das Zeitwünsche-Fenster des Desktops.
+/// unbestimmten Zeitwünsche (freie Tage/Halbtage) – wie das Zeitwünsche-Fenster.
 /// </summary>
 public sealed class ZeitwuenscheApi : IStudioModul
 {

@@ -1,4 +1,4 @@
-// Modul „Veranstaltungen“ (Vertretungsmodus): Fenster „Veranst. / Lehrer“ wie im Desktop – VA-Nr., Klasse, Kl-Teil, Lehrer, Raum, Von,
+// Modul „Veranstaltungen“ (Vertretungsmodus): Fenster „Veranst. / Lehrer“ – VA-Nr., Klasse, Kl-Teil, Lehrer, Raum, Von,
 // ab St., Bis, bis St., Grund, Text, zählen, Schülergruppe. Eingabe direkt in der Tabelle („Alle Lehrkräfte“, „Alle Klassen außer 5a“),
 // Ersatzlehrkräfte statt „???“, Schnellauswahl (alle, nach Abteilung, Jahrgang, Gruppe …), alle aus den Stunden bzw. aus der gewählten
 // Stunde übernehmen, Kopieren auf das eingestellte Datum.

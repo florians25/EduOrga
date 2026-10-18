@@ -1,7 +1,7 @@
 // Stundenplan-Raster: Woche (Tage × Stunden), zusammenhängende Stunden als Block (Doppel-/Blockstunden),
 // Kopplungen nebeneinander, gesperrte Zeiten schraffiert. Drag & Drop: Stunden verschieben bzw. nicht verplante Stunden setzen
 // (Zielfelder werden nach dem Zielstatus des Servers eingefärbt: grün frei, rot Vorgabe verletzt, violett kein Raum, Rahmen = Tausch;
-// liefert der Server Gründe je Feld, erscheinen sie beim Ziehen am Mauszeiger – Kollisionsanzeige wie im Desktop).
+// liefert der Server Gründe je Feld, erscheinen sie beim Ziehen am Mauszeiger – Kollisionsanzeige).
 // Mehrfachauswahl (Option mehrfach): Strg/Umschalt+Klick markiert weitere Stunden; ein Block wird an der Stelle gegriffen, an der
 // man ihn anfasst (Umschalt beim Ziehen = nur diese eine Stunde des Blocks).
 import { h, leeren } from './dom.js';
@@ -65,9 +65,9 @@ export class Stundenplanraster {
     if (!p) return;
     const { tage, stunden, belegung } = p.zeitraster;
     this.gitter.style.setProperty('--tage', tage.length);
-    this.gitter.style.gridTemplateRows = `26px repeat(${stunden.length}, minmax(${this.o.kompakt ? 30 : 46}px, 1fr))`;
+    this.gitter.style.gridTemplateRows = `32px repeat(${stunden.length}, minmax(${this.o.kompakt ? 32 : 50}px, 1fr))`;
     this.gitter.append(h('div', { class: 'r-ecke', style: { gridRow: '1', gridColumn: '1' } }));
-    tage.forEach((t, i) => this.gitter.append(h('div', { class: 'r-kopf', style: { gridRow: '1', gridColumn: String(i + 2) }, title: t.lang }, t.kurz)));
+    tage.forEach((t, i) => this.gitter.append(h('div', { class: 'r-kopf', style: { gridRow: '1', gridColumn: String(i + 2) }, title: t.lang }, h('span', { class: 'tag-kurz' }, t.kurz), h('span', { class: 'tag-lang' }, t.lang || t.kurz))));
     stunden.forEach((s, j) => {
       const pause = s.pauseDanach ? ' pause-danach' : '';
       this.gitter.append(h('div', { class: `r-stunde${pause}`, style: { gridRow: String(j + 2), gridColumn: '1' }, title: s.pauseDanach ? `danach Pause: ${s.pauseDanach}` : '' },
@@ -123,14 +123,14 @@ export class Stundenplanraster {
       title: `U-Nr. ${e.u}${e.gekoppelt ? ' (gekoppelt)' : ''}${e.woche ? ` · Woche ${e.woche}` : ''}\n${e.fach} – ${e.klassen} – ${e.lehrer}${e.raum ? ` – ${e.raum}` : ''}${e.text ? `\n${e.text}` : ''}${e.fix ? '\nfixiert' : ''}`,
       draggable: this.o.ziehen && !e.fix ? 'true' : null,
     },
-    h('span', { class: 'fach' }, e.fach || '—'),
+    h('span', { class: 'r-kopfzeile' },
+      h('span', { class: 'fach' }, e.fach || '—'),
+      e.woche ? h('span', { class: 'woche', title: `Woche ${e.woche}` }, e.woche) : null,
+      this.o.kompakt ? null : h('span', { class: 'zeile3' }, zeilen[1] || '')),
     h('span', { class: 'zeile2' }, zeilen[0] || ''),
-    this.o.kompakt ? null : h('span', { class: 'zeile3' }, zeilen[1] || ''),
-    e.fix ? h('span', { class: 'fix' }, '*') : null,
-    e.woche ? h('span', { class: 'woche', title: `Woche ${e.woche}` }, e.woche) : null);
+    e.fix ? h('span', { class: 'fix', title: 'fixiert' }) : null);
     el._daten = { e, tag, stunde, stunden: stundenListe, laenge: stundenListe.length };
-    if (e.farbe) el.style.background = `color-mix(in srgb, ${e.farbe} 55%, white)`;
-    if (e.schrift) el.style.color = e.schrift;
+    if (e.farbe) el.style.setProperty('--fachfarbe', e.farbe);
     el.addEventListener('click', (ev) => {
       ev.stopPropagation();
       if (this.o.mehrfach && (ev.ctrlKey || ev.metaKey || ev.shiftKey)) {

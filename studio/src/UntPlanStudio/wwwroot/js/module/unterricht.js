@@ -2,6 +2,7 @@
 // Desktop-Anwendung (U-Nr, Kl,Le, Nvpl.Std., Wst, Fach, Lehrer, Klasse(n), Fachraum, Stammraum, Dopp.Std., Block, Text …).
 // Kopplungszeilen erscheinen als eigene Zeilen unter dem Unterricht.
 import { h, leeren } from '../kern/dom.js';
+import { symbol } from '../kern/symbole.js';
 import { api } from '../kern/api.js';
 import { zustand, elemente, darfSchreiben } from '../kern/zustand.js';
 import { betrifft, melden } from '../kern/ereignisse.js';
@@ -23,8 +24,8 @@ export async function elementAuswahl(f, typ, gewaehlt, beiWahl) {
     const n = liste[Math.max(0, Math.min(liste.length - 1, i + d))];
     if (n) wahl(n.id);
   };
-  const zurueck = h('button', { class: 'wz-knopf', type: 'button', title: 'Vorheriges Element', onclick: () => blaettern(-1) }, '◂');
-  const vor = h('button', { class: 'wz-knopf', type: 'button', title: 'Nächstes Element', onclick: () => blaettern(1) }, '▸');
+  const zurueck = h('button', { class: 'wz-knopf nur-symbol', type: 'button', title: 'Vorheriges Element', onclick: () => blaettern(-1) }, symbol('pfeil_links'));
+  const vor = h('button', { class: 'wz-knopf nur-symbol', type: 'button', title: 'Nächstes Element', onclick: () => blaettern(1) }, symbol('pfeil_rechts'));
   f.werkzeuge.prepend(zurueck, sel, vor, h('span', { class: 'trenner' }));
   return {
     liste,

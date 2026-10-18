@@ -1,10 +1,10 @@
 /* Modul UntPlanWeb (Präfix upw-) – Optik angelehnt an das Desktop-Fenster „UntPlanWeb“ */
-.upw-fenster { flex: 1; min-height: 0; overflow: auto; padding: 8px 12px; background: var(--akzent-sehrhell); display: flex; flex-direction: column; gap: 8px; position: relative; }
-.upw-fenster fieldset { border: 1px solid var(--rand); border-radius: var(--radius); background: rgba(255,255,255,.55); padding: 8px 12px; margin: 0; }
+.upw-fenster { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; background: var(--up-hintergrund); display: flex; flex-direction: column; gap: 8px; position: relative; }
+.upw-fenster fieldset { border: 1px solid var(--rand); border-radius: var(--radius); background: #fff; padding: 12px 16px; margin: 0; }
 .upw-fenster legend { padding: 0 4px; font-weight: var(--mittel); }
 .upw-oben { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .upw-kopf { min-height: 92px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
-.upw-gruen { background: var(--akzent-hell); border-color: var(--akzent); align-self: flex-start; min-width: 130px; }
+.upw-gruen { background: var(--akzent); border-color: var(--akzent); color: #fff; align-self: flex-start; min-width: 130px; }
 .upw-exportstatus { text-align: center; color: var(--text-leise); }
 .upw-anfang { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
 .upw-anfang .kontrolle { flex-basis: 100%; }
@@ -17,7 +17,7 @@
 .upw-titel.upw-link { cursor: pointer; text-decoration: underline dotted; }
 .upw-datum { font-weight: var(--mittel); display: flex; align-items: center; gap: 6px; }
 .upw-datum.normal { font-weight: var(--normal); }
-.upw-info { display: inline-flex; width: 16px; height: 16px; border: 1.3px solid #0066cc; color: #0066cc; border-radius: 50%; font-size: 11px; align-items: center; justify-content: center; cursor: help; }
+.upw-info { display: inline-flex; width: 16px; height: 16px; border: 1.3px solid var(--up-marine-600); color: var(--up-marine-600); border-radius: 50%; font-size: 11px; align-items: center; justify-content: center; cursor: help; }
 .upw-knopf { background: #fff; }
 .upw-knopf:hover:not(:disabled), .upw-knopf.upw-vorgabe { background: var(--akzent-hell); border-color: var(--akzent); }
 .upw-status { margin-top: 10px; display: flex; flex-direction: column; gap: 3px; }
@@ -26,8 +26,8 @@
 .upw-x { width: 16px; height: 16px; border-radius: 50%; background: var(--gefahr); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
 .upw-statustext { color: var(--text-leise); font-size: 12px; }
 .upw-balken { height: 12px; border: 1px solid var(--rand); background: #fff; border-radius: 2px; overflow: hidden; }
-.upw-balken > div { height: 100%; background: #00a03c; width: 0; transition: width .2s; }
-.upw-popup { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); width: 340px; padding: 16px 18px; background: var(--flaeche); border: 1px solid #969696;
+.upw-balken > div { height: 100%; background: var(--up-ok); width: 0; transition: width .2s; }
+.upw-popup { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); width: 340px; padding: 16px 18px; background: var(--flaeche); border: 1px solid var(--up-schiefer-400);
   box-shadow: var(--schatten); z-index: 20; display: flex; flex-direction: column; gap: 8px; }
 .upw-popup-text { font-size: 12px; }
 .upw-abgleich .upw-zeile { flex-wrap: wrap; }
@@ -40,9 +40,9 @@
 .upw-rechts { margin-left: auto; display: inline-flex; gap: 6px; align-items: center; }
 .upw-rechts .eingabe { width: 140px; }
 .upw-fussknoepfe { display: inline-flex; gap: 6px; }
-.tabelle .t-zeile.upw-datumzeile { background: #fffad7; font-weight: var(--mittel); }
-.tabelle .t-zeile.upw-erledigt { background: #f0f0f0; color: var(--text-leise); }
-.tabelle .t-zeile.upw-aktivitaet .t-zelle { color: #007800; }
+.tabelle .t-zeile.upw-datumzeile { background: var(--up-pruefung-flaeche); font-weight: var(--mittel); }
+.tabelle .t-zeile.upw-erledigt { background: var(--up-schiefer-50); color: var(--text-leise); }
+.tabelle .t-zeile.upw-aktivitaet .t-zelle { color: var(--up-ok); }
 .tabelle .t-zeile.upw-fehlerzeile .t-zelle { color: var(--gefahr); }
 .tabelle .t-zeile.upw-importiert .t-zelle:first-child { box-shadow: inset 3px 0 0 var(--akzent-leuchtend); }
 @media (max-width: 700px) { .upw-oben, .upw-einstellungen { grid-template-columns: 1fr; } .upw-zeile-teil { grid-template-columns: 1fr 1fr; } .upw-zeile-teil .upw-knopf { grid-column: auto !important; } }

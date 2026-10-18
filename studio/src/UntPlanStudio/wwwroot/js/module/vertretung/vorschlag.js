@@ -1,4 +1,4 @@
-// Fenster „Vertretungsvorschlag“ wie im Desktop: folgt der markierten Vertretung. Kopf „30.8. Mo-1 Se/Mu/05D“ (aufklappbar),
+// Fenster „Vertretungsvorschlag“: folgt der markierten Vertretung. Kopf „30.8. Mo-1 Se/Mu/05D“ (aufklappbar),
 // Optionen (Stundenblock, Dislozierungen ignorieren, Dauervertretung …), Reiter Vertretungsvorschläge / Betreuungen / Räume mit
 // Anzahlen, unten aufklappbar die Vorziehungen. Übernehmen per Doppelklick, Enter oder Knopf; „Weiter zur nächsten offenen“.
 import { h, leeren } from '../../kern/dom.js';

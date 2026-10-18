@@ -13,10 +13,10 @@
 .dr-element b { font-weight: var(--mittel); min-width: 36px; }
 .dr-element .leise { overflow: hidden; text-overflow: ellipsis; }
 .dr-berichte { display: flex; flex: 1; min-height: 0; }
-.dr-berichtliste { flex: 0 0 250px; overflow: auto; padding: 8px 10px; border-right: 1px solid var(--rand-leise); background: var(--leiste); }
-.dr-bericht { display: block; width: 100%; text-align: left; border: 0; background: none; font: inherit; padding: 5px 8px; border-radius: var(--radius); cursor: pointer; color: var(--text); }
+.dr-berichtliste { flex: 0 0 250px; overflow: auto; padding: 8px 10px; border-right: 1px solid var(--rand-leise); background: var(--up-schiefer-25); }
+.dr-bericht { display: block; width: 100%; text-align: left; border: 0; background: none; font: inherit; padding: 7px 10px; border-radius: var(--radius); cursor: pointer; color: var(--text); }
 .dr-bericht:hover { background: var(--hover); }
-.dr-bericht.aktiv { background: var(--akzent-hell); font-weight: var(--mittel); }
+.dr-bericht.aktiv { background: #fff; font-weight: var(--mittel); box-shadow: 0 0 0 1px var(--rand), var(--up-schatten-1); }
 .dr-berichtvorschau { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .dr-berichtkopf { flex: none; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--rand-leise); }
 .dr-zeitraum { display: flex; gap: 6px; align-items: center; }

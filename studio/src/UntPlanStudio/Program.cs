@@ -13,11 +13,11 @@ using UntPlanStudio.Grundlagen;
 namespace UntPlanStudio;
 
 /// <summary>
-/// UntPlan Studio (Beta): Server für die Browser-Fassung der Desktop-Anwendung. Aufbau siehe ARCHITEKTUR.md.
+/// UntPlan Studio: Server der Planungsanwendung im Browser. Aufbau siehe ARCHITEKTUR.md.
 /// </summary>
 public partial class Program
 {
-    public const string Anwendungsname = "UntPlan Studio (Beta)";
+    public const string Anwendungsname = "UntPlan Studio";
     /// <summary>Kopfzeile, die jede ändernde API-Anfrage tragen muss (Schutz gegen Cross-Site-Anfragen).</summary>
     public const string Schutzkopf = "X-UntPlan-Studio";
 

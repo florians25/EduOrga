@@ -6,6 +6,13 @@
 // Raum zuordnen, Tauschvorschläge → Diagnose → Gewichtung → Zeitwünsche malen → Optimierung starten, Fortschritt, Ergebnis,
 // Vergleich, Übernehmen. Bildschirmfotos nach STUDIO_SCREENSHOTS.
 const { chromium } = require('playwright');
+
+// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
+async function eintrag(page, id) {
+  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
+  if (await k.count() && await k.first().isVisible()) return k.first().click();
+  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
+}
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -33,8 +40,8 @@ async function api(pfad, optionen = {}) {
   page.on('pageerror', (e) => fehler.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error' && !/status of 4\d\d/.test(m.text())) fehler.push(m.text()); });
   const foto = async (n) => { await page.waitForTimeout(250); await page.screenshot({ path: path.join(BILDER, n) }); };
-  const reiter = (n) => page.click(`.ribbon .reiter:text-is("${n}")`);
-  const knopf = (id) => page.click(`.rb-knopf[data-id="${id}"]`);
+  const reiter = async (n) => {}; // Reiter gibt es nicht mehr – Navigation ist immer sichtbar
+  const knopf = (id) => eintrag(page, id);
   const dialogZu = async () => { await page.keyboard.press('Escape'); await page.waitForTimeout(200); };
 
   try {
@@ -47,7 +54,7 @@ async function api(pfad, optionen = {}) {
 
     // Planung → Planen (Klassenplan)
     await reiter('Planung');
-    await page.waitForSelector('.rb-knopf[data-id="planung.tausch"]:not(.geplant)');
+    await page.waitForSelector('.navigation .nav-punkt');
     await foto('01-reiter-planung.png');
     await knopf('planung.planen');
     await page.waitForSelector('.fenster[data-typ=stundenplan] .r-eintrag');
@@ -151,7 +158,7 @@ async function api(pfad, optionen = {}) {
     await foto('12-optimierung-ergebnis.png');
     await page.click('.fenster[data-typ="optimierung.lauf"] .wz-knopf:has-text("Vergleich")');
     await page.waitForSelector('.op-plaene .r-eintrag', { timeout: 15000 });
-    await page.locator('.fenster[data-typ="optimierung.lauf"]').evaluate((el) => el.querySelector('.fenster-titel').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })));
+    await page.locator('.fenster[data-typ="optimierung.lauf"]').evaluate((el) => el.closest('.ws-bereich').querySelector('.ws-kopf').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })));
     await page.waitForTimeout(500);
     await foto('13-ergebnisvergleich.png');
     await page.click('.fenster[data-typ="optimierung.lauf"] .wz-knopf:has-text("Plan übernehmen")');

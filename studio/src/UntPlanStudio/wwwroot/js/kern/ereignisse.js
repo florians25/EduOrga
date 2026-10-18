@@ -5,7 +5,7 @@
 //   'stand'      – Stand des Dokuments aktualisiert (Titel, Rückgängig, geändert …)
 //   'daten'      – Daten geändert: { version, bereich: 'Stammdaten'|'Unterricht'|'Stundenplan'|'Vertretung'|'Einstellungen'|'Alles', quelle, benutzer }
 //   'modus'      – Stundenplan-/Vertretungsmodus gewechselt ('stundenplan'|'vertretung')
-//   'element'    – Element in einem Fenster gewählt { typ, id, quelle } (Fensterverknüpfung wie im Desktop)
+//   'element'    – Element in einem Fenster gewählt { typ, id, quelle } (Fensterverknüpfung)
 //   'meldung'    – Text für die Statuszeile { text, art }
 //   'abgemeldet' – Sitzung abgelaufen
 

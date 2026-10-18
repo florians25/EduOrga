@@ -20,7 +20,7 @@ public sealed record RaumZuordnung(int Unterricht, int Tag, int Stunde, int Zeil
 public sealed record Stundentausch2(StundenRef A, StundenRef B);
 
 /// <summary>
-/// Planung im Stundenplanfenster (wie im Desktop): Zielstatus mit Kollisionsgründen beim Ziehen, Blöcke/Doppelstunden verschieben
+/// Planung im Stundenplanfenster: Zielstatus mit Kollisionsgründen beim Ziehen, Blöcke/Doppelstunden verschieben
 /// bzw. setzen mit „Soll behindernder Unterricht entplant werden?“, Mehrfachauswahl (entplanen, fixieren), alle entplanen/fixieren,
 /// Raum zuordnen/löschen (Raumliste), Tauschvorschläge und Tausch.
 /// </summary>

@@ -1,5 +1,5 @@
 // Stundenpläne im Vertretungsmodus (tagesaktuell): Woche des Planungsdatums für Klasse, Lehrkraft, Raum oder Fach mit allen Vertretungen –
-// Änderungen rot, Entfälle durchgestrichen, offene Stunden „???“. Drag & Drop wie im Desktop: Verlegen, Tauschen („Was wollen Sie …
+// Änderungen rot, Entfälle durchgestrichen, offene Stunden „???“. Drag & Drop: Verlegen, Tauschen („Was wollen Sie …
 // machen?“), Verdrängen; Vormerkungen in den Plan ziehen. Kontextmenü: Stunde entfallen lassen, Entfall rückgängig (auch Block),
 // neben den Plan legen (Vormerkung), Text, Änderungen rückgängig, Vertretungsvorschlag, Sondereinsatz.
 import { h, leeren } from '../../kern/dom.js';
@@ -65,6 +65,8 @@ function planFenster(f, p) {
     }
   }
 
+  const STATUSTEXT = { Entfall: 'Entfall', Offen: 'Offen', Zusaetzlich: 'Zusatz', Vertreten: 'Vertretung', Frei: 'Frei' };
+
   function eintrag(e, t, stunde) {
     const zeilen = typ === 'lehrer' ? [e.klassen, e.raum] : typ === 'raum' ? [e.klassen, e.lehrer] : [e.lehrer, e.raum];
     const alt = typ === 'lehrer' ? [null, e.raumAlt] : typ === 'raum' ? [null, e.lehrerAlt] : [e.lehrerAlt, e.raumAlt];
@@ -75,11 +77,13 @@ function planFenster(f, p) {
       title: [`${e.u ? `U-Nr. ${e.u}` : ''}${e.vtr ? ` · Vtr-Nr. ${e.vtr}` : ''}`, `${e.fach} – ${e.klassen} – ${e.lehrer || '???'}${e.raum ? ` – ${e.raum}` : ''}`,
         e.art ? `${e.art}${e.text ? `: ${e.text}` : ''}` : e.text, e.lehrerAlt ? `statt ${e.lehrerAlt}` : '', e.fix ? 'fixiert' : ''].filter(Boolean).join('\n'),
     },
-    h('span', { class: `fach${e.fachAlt ? ' vt-rottext' : ''}` }, e.fach || e.art || '—'),
+    h('span', { class: 'r-kopfzeile' },
+      h('span', { class: `fach${e.fachAlt ? ' vt-rottext' : ''}` }, e.fach || e.art || '—'),
+      kompakt ? null : h('span', { class: 'zeile3' }, ...wert(zeilen[1], alt[1], e))),
     h('span', { class: 'zeile2' }, ...wert(zeilen[0], alt[0], e)),
-    kompakt ? null : h('span', { class: 'zeile3' }, ...wert(zeilen[1], alt[1], e)),
-    e.fix ? h('span', { class: 'fix' }, '*') : null);
-    if (e.farbe && !geaendert) el.style.background = `color-mix(in srgb, ${e.farbe} 55%, white)`;
+    geaendert && e.status ? h('span', { class: `vt-plakette vt-pl-${e.status}` }, STATUSTEXT[e.status] || e.art || e.status) : null,
+    e.fix ? h('span', { class: 'fix', title: 'fixiert' }) : null);
+    if (e.farbe && !geaendert) el.style.setProperty('--fachfarbe', e.farbe);
     el.addEventListener('click', () => {
       gitter.querySelector('.r-eintrag.gewaehlt')?.classList.remove('gewaehlt');
       el.classList.add('gewaehlt');

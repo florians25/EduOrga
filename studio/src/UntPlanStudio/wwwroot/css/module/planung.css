@@ -7,15 +7,15 @@
 
 .pl-tabelle { border-collapse: collapse; width: 100%; font-size: 12.5px; background: #fff; }
 .pl-tabelle th {
-  position: sticky; top: 0; z-index: 1; background: var(--kopf); text-align: left; font-weight: var(--mittel); padding: 4px 6px;
-  border-bottom: 1px solid var(--rand); white-space: nowrap; color: #3c4450;
+  position: sticky; top: 0; z-index: 1; background: var(--up-schiefer-25); text-align: left; font-weight: var(--mittel); font-size: 12px; padding: 8px;
+  border-bottom: 1px solid var(--rand); white-space: nowrap; color: var(--text-2);
 }
-.pl-tabelle td { padding: 3px 6px; border-bottom: 1px solid var(--rand-leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+.pl-tabelle td { padding: 6px 8px; border-bottom: 1px solid var(--rand-leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
 .pl-tabelle tbody tr { cursor: default; }
-.pl-tabelle tbody tr:hover { background: var(--hover); }
+.pl-tabelle tbody tr:hover { background: var(--up-schiefer-25); }
 .pl-tabelle tbody tr.gewaehlt, .pl-tabelle tbody tr.gewaehlt:hover { background: var(--auswahl); }
 .pl-tabelle td.z { text-align: right; font-variant-numeric: tabular-nums; }
-.pl-tabelle td.m { text-align: center; color: #3b6ea8; }
+.pl-tabelle td.m { text-align: center; color: var(--up-marine-600); }
 .pl-tabelle td.m.ok { color: var(--ok); }
 .pl-tabelle td.rot { color: var(--gefahr); }
 .pl-tabelle td.gruen { color: var(--ok); }
@@ -32,15 +32,15 @@
 .pl-filter .eingabe { margin-top: 4px; width: 200px; }
 .pl-mitte { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 5fr) auto minmax(360px, 7fr); gap: 8px; }
 .pl-links, .pl-rechts { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.pl-titel { font-size: 12px; color: #4b5563; margin-bottom: 4px; }
+.pl-titel { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
 .pl-links .pl-rollen, .pl-rechts .pl-rollen { flex: 1; }
 .pl-pfeile { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
 .pl-pfeile .knopf { width: 36px; height: 34px; padding: 0; font-size: 16px; }
 .pl-pfeile .knopf svg { width: 16px; height: 16px; }
-.pl-unr { background: #f0dec8; }
-.pl-raeume tr.wunsch td { background: #e2f6e2; }
-.pl-raeume tr.besetzt td { background: #ffeeee; }
-.pl-raeume tr.gesperrt td { background: #e8e8e8; color: #777; }
+.pl-unr { background: var(--up-schiefer-50); }
+.pl-raeume tr.wunsch td { background: var(--up-ok-flaeche); }
+.pl-raeume tr.besetzt td { background: var(--up-entfall-flaeche); }
+.pl-raeume tr.gesperrt td { background: var(--up-schiefer-100); color: var(--text-leise); }
 .pl-raeume tr.gewaehlt td { background: var(--auswahl); }
 .pl-raeume:focus { outline: none; }
 

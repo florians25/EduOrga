@@ -1,4 +1,4 @@
-// Modul „Einstellungen“: Einstellungen der Schuldatei wie im Desktop – Schuldaten (Allgemein, Werte, Vertretungsplanung, Diverses),
+// Modul „Einstellungen“: Einstellungen der Schuldatei – Schuldaten (Allgemein, Werte, Vertretungsplanung, Diverses),
 // Zeitraster (Zeiten, Vormittag/Nachmittag/leer, Pausen, Mittagspause), Kalender/Ferien (Jahreskalender, NRW-Vorschlag,
 // Unterrichtsfrei/Feiertag je Tag), Perioden (Tochterperioden, aktive Periode, Fixierung) und Unterrichtsgruppen (Mehrwochen).
 // Server: Api/EinstellungenSchuleApi.cs (/api/dokumente/{dok}/schule/…).
@@ -117,7 +117,7 @@ function schuldatenFenster(f, p) {
         h('h3', null, 'Diverses'),
         h('div', { class: 'formular' },
           zeile('Unterrichtsänderungen in Folgeperioden übernehmen', feld('unterrichtInFolgeperioden', haken(daten.unterrichtInFolgeperioden), 'bool')),
-          zeile('Farbschema (Desktop)', feld('farbschema', auswahl(daten.farbschema, ['Blau', 'Grün', 'Grau', 'Dunkel'].map((x) => ({ wert: x, text: x })))))),
+          zeile('Farbschema (Druck)', feld('farbschema', auswahl(daten.farbschema, ['Blau', 'Grün', 'Grau', 'Dunkel'].map((x) => ({ wert: x, text: x })))))),
         h('h3', null, 'Weitere Einstellungen'),
         h('div', { class: 'es-knoepfe' },
           knopf('Zeitraster …', 'stundenplan', () => fensterverwaltung.oeffnen('einstellungen.zeitraster')),
@@ -197,7 +197,7 @@ function zeitrasterFenster(f) {
   const standard = (st) => (st <= z.letzteVormittagsstunde ? 'V' : 'N');
 
   function anpassen() {
-    // Zeiten und Belegung an Tage/Stunden anpassen (neue Stunden: 55 Minuten Abstand wie im Desktop)
+    // Zeiten und Belegung an Tage/Stunden anpassen (neue Stunden: 55 Minuten Abstand)
     while (z.zeiten.length < z.stundenProTag) {
       const l = z.zeiten[z.zeiten.length - 1];
       const [hh, mm] = (l?.beginn || '07:05').split(':').map(Number);
@@ -256,7 +256,7 @@ function zeitrasterFenster(f) {
         const el = h('input', { class: 'es-zeit', value: t[art], disabled: lesen, title: `Stunde ${label(t.nr)}: ${titel}` });
         el.addEventListener('change', () => {
           if (art === 'beginn' && t.beginn && t.ende) {
-            // Beginn verschiebt das Ende um die bisherige Dauer (wie im Desktop)
+            // Beginn verschiebt das Ende um die bisherige Dauer
             const m = (s) => { const [a, b] = s.split(':').map(Number); return a * 60 + b; };
             const neu = /^\d{1,2}[:.]\d{2}$/.test(el.value.trim()) ? m(el.value.trim().replace('.', ':')) : null;
             if (neu !== null) {

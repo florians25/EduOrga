@@ -19,7 +19,7 @@ public static class AustauschUpload
 {
     public sealed record Datei(string Name, byte[] Inhalt)
     {
-        /// <summary>Text wie im Desktop (<see cref="Csv.DateiLesen"/>): UTF-8, sonst Windows-1252/Latin-1.</summary>
+        /// <summary>Text (<see cref="Csv.DateiLesen"/>): UTF-8, sonst Windows-1252/Latin-1.</summary>
         public string Text => Dokumentdienst.Text(Inhalt);
     }
 
@@ -85,7 +85,7 @@ public sealed class AustauschApi : IStudioModul
             zaehler = new { lehrer = doc.Daten.Lehrer.Count, klassen = doc.Daten.Klassen.Count, schueler = doc.Daten.Schueler.Count, unterrichte = doc.Daten.Unterrichte.Count, stunden = doc.Daten.Stundenplan.Count },
         }));
 
-        // ---- Importe (je eine Rückgängig-Stufe wie im Desktop) ----
+        // ---- Importe (je eine Rückgängig-Stufe) ----
         g.MapPost("/csv/{art}", async (Arbeitsdokument a, string art, HttpRequest req, ClaimsPrincipal p) =>
         {
             var datei = await AustauschUpload.EineAsync(req);

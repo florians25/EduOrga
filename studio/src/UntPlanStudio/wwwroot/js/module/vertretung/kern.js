@@ -1,4 +1,4 @@
-// Gemeinsame Bausteine der Vertretungsplanung: Planungsdatum (wie im Menüband des Desktops), Auswahl der aktiven Vertretung
+// Gemeinsame Bausteine der Vertretungsplanung: Planungsdatum (wie im Menüband), Auswahl der aktiven Vertretung
 // (Fensterverknüpfung zwischen Vertretungsliste, Vorschlag, Absenzen und tagesaktuellen Plänen), API-Pfade, Rückfragen und Datumshilfen.
 import { api } from '../../kern/api.js';
 import { an, melden } from '../../kern/ereignisse.js';
@@ -23,11 +23,11 @@ export const montag = (iso) => { const d = dateAus(iso); return plusTage(iso, -(
 export const tagKurz = (iso) => TAGE[dateAus(iso).getDay()];
 /** „02.11.2026“ */
 export const datumText = (iso) => (iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}` : '');
-/** „Mo 02.11.26“ wie die Datumsspalten des Desktops */
+/** „Mo 02.11.26“ wie die Datumsspalten */
 export const tagText = (iso) => (iso ? `${tagKurz(iso)} ${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}` : '');
 export const kurzText = (iso) => (iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.` : '');
 
-/** Datumseingabe lesen wie im Desktop: „2.11.“, „02.11.26“, „2.11.2026“, „+1“/„-1“ (Tage), ISO, leer = Basis. */
+/** Datumseingabe lesen: „2.11.“, „02.11.26“, „2.11.2026“, „+1“/„-1“ (Tage), ISO, leer = Basis. */
 export function datumLesen(text, basis) {
   const t = String(text ?? '').trim().replace(/^(Mo|Di|Mi|Do|Fr|Sa|So)\s+/i, '');
   if (!t) return basis;
@@ -51,7 +51,7 @@ export const planungsdatum = () => datum;
 function speicherSchluessel() { return `vertretung.datum.${zustand.dokument?.id || ''}`; }
 
 /**
- * Planungsdatum setzen: alle verknüpften Fenster folgen (Ereignis „vertretung.datum“). Im Vertretungsmodus werden wie im Desktop beim
+ * Planungsdatum setzen: alle verknüpften Fenster folgen (Ereignis „vertretung.datum“). Im Vertretungsmodus werden beim
  * Tageswechsel die Vertretungen aus Absenzen, Veranstaltungen und Klausuren berechnet (nur wenn sich etwas ändert).
  */
 export async function datumSetzen(neu, { aktualisieren = true } = {}) {
@@ -103,7 +103,7 @@ export const aktuelleAuswahl = () => auswahl;
 an('dokument', () => { auswahl = null; datumInitialisieren().catch(() => {}); });
 
 // ---------------------------------------------------------------------------------------------
-// Rückfragen wie im Desktop: Server antwortet { frage: { schluessel, text, optionen } }, die Anfrage wird mit der Antwort wiederholt.
+// Rückfragen: Server antwortet { frage: { schluessel, text, optionen } }, die Anfrage wird mit der Antwort wiederholt.
 
 export async function rueckfrage(f) {
   const knoepfe = f.optionen.map((o, i) => ({ text: o, wert: i, primaer: i === 0 }));

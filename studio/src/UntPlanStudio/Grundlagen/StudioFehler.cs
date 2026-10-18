@@ -16,7 +16,7 @@ public sealed class StudioFehler : Exception
 
 /// <summary>
 /// Einheitliche Fehlerantworten der API: <c>{ "fehler": "Meldung" }</c>. Fachliche Fehler aus UntPlan.Core
-/// (InvalidOperationException, FormatException) werden als 400 mit der Meldung des Core gemeldet – wie im Desktop als Hinweis.
+/// (InvalidOperationException, FormatException) werden als 400 mit der Meldung des Core gemeldet – als Hinweis.
 /// </summary>
 public sealed class Fehlerbehandlung
 {

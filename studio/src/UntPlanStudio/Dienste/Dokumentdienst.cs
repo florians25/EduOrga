@@ -149,7 +149,7 @@ public sealed partial class Dokumentdienst
         if (BalImport.IstBal(text))
         {
             var d = Demo.NeueDatei(name, "GY");
-            // wie im Desktop „Neu“ + „BAL-Import“ (das Normalisieren übernimmt das neue Dokument)
+            // „Neu“ + „BAL-Import“ (das Normalisieren übernimmt das neue Dokument)
             var bericht = BalImport.Importieren(d, text);
             var schulname = string.IsNullOrWhiteSpace(d.Einstellungen.Schulname) ? name : d.Einstellungen.Schulname;
             return (Anlegen(d, schulname, besitzer, "BAL: " + Path.GetFileName(dateiname)), bericht);

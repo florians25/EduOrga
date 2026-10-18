@@ -13,7 +13,7 @@ public sealed record NeuerUnterricht(string? Sicht, int? Element, Dictionary<str
 
 /// <summary>
 /// Unterricht der aktiven Periode: Tabelle je Klasse/Lehrkraft/Fach bzw. alle, Werte ändern, Anlegen, Kopplungszeilen,
-/// Kopieren, Löschen. Spalten und Eingabelogik wie im Desktop (<see cref="Unterrichtsspalten"/>).
+/// Kopieren, Löschen. Spalten und Eingabelogik (<see cref="Unterrichtsspalten"/>).
 /// </summary>
 public sealed class UnterrichtApi : IStudioModul
 {
@@ -127,7 +127,7 @@ public sealed class UnterrichtApi : IStudioModul
         });
     }
 
-    /// <summary>Neuer Unterricht (1 Wochenstunde), vorbelegt mit dem Element der Sicht – wie im Desktop.</summary>
+    /// <summary>Neuer Unterricht (1 Wochenstunde), vorbelegt mit dem Element der Sicht –.</summary>
     private static Unterricht Anlegen(Schuldatei d, ElementTyp? sicht, int? element)
     {
         var z = new Kopplungszeile();

@@ -18,7 +18,7 @@ public sealed record Auswahleintrag(int Id, string K, string L);
 /// <summary>
 /// Stammdaten (Klassen, Lehrkräfte, Räume, Fächer, Raumgruppen, Gänge, Abteilungen, Abwesenheitsgründe, Schüler):
 /// Felder, Tabelle, Werte ändern (einzeln oder mehrere in einer Rückgängig-Stufe), Anlegen, Löschen, Auswahllisten.
-/// Werte werden als Text übertragen – genau wie im Desktop eingegeben (z. B. Bereich „1-2“, Liste „5a,5b“, Bool „X“).
+/// Werte werden als Text übertragen – genau eingegeben (z. B. Bereich „1-2“, Liste „5a,5b“, Bool „X“).
 /// </summary>
 public sealed class StammdatenApi : IStudioModul
 {
@@ -33,7 +33,7 @@ public sealed class StammdatenApi : IStudioModul
     public static ElementZeile Zeile(Element e, List<Feld> felder, DatenIndex ix) =>
         new(e.Id, felder.Select(f => f.Anzeige(e, ix)).ToArray(), Farbe(e.Hintergrund));
 
-    /// <summary>Setzt einen Feldwert (Text wie im Desktop). Kurzname = Umbenennen mit Prüfung auf Eindeutigkeit.</summary>
+    /// <summary>Setzt einen Feldwert (Text). Kurzname = Umbenennen mit Prüfung auf Eindeutigkeit.</summary>
     public static void Setzen(Schuldatei d, List<Feld> felder, ElementTyp typ, int id, string feld, string? wert)
     {
         var e = d.AlleElemente(typ).FirstOrDefault(x => x.Id == id) ?? throw StudioFehler.NichtGefunden($"{Typnamen.Name(typ)} Nr. {id}");

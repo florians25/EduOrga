@@ -6,6 +6,13 @@
 // Unterrichtsgruppen → Lehrer-Übersicht → Druckauswahl mit Vorschau → Berichte → Stundenplanformate → Vertretungsplan-Ausgabe.
 // Bildschirmfotos nach STUDIO_SCREENSHOTS.
 const { chromium } = require('playwright');
+
+// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
+async function eintrag(page, id) {
+  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
+  if (await k.count() && await k.first().isVisible()) return k.first().click();
+  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
+}
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -23,8 +30,8 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
   page.on('pageerror', (e) => fehler.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) fehler.push(m.text()); });
   const foto = (name) => page.screenshot({ path: path.join(BILDER, `${name}.png`) });
-  const reiter = (name) => page.click(`.ribbon .reiter:text-is("${name}")`);
-  const knopf = (id) => page.click(`.rb-knopf[data-id="${id}"]`);
+  const reiter = async (name) => {}; // Reiter gibt es nicht mehr – Navigation ist immer sichtbar
+  const knopf = (id) => eintrag(page, id);
   const alleZu = async () => { await reiter('Start'); await knopf('start.fenster.alle'); };
 
   try {
@@ -32,7 +39,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await page.fill('input[name=benutzer]', BENUTZER);
     await page.fill('input[name=passwort]', PASSWORT);
     await page.click('button[type=submit]');
-    await page.waitForSelector('.ribbon .reiter.datei');
+    await page.waitForSelector('.navigation .nav-punkt');
     // Beispielschule mit Stundenplan über die API anlegen und öffnen
     await page.evaluate(async () => {
       const r = await fetch('/api/dokumente/beispiel', { method: 'POST', headers: { 'X-UntPlan-Studio': '1', 'Content-Type': 'application/json' }, body: '{}' });
@@ -55,7 +62,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     const name = page.locator('.fenster[data-typ="einstellungen.schule"] .es-seite input').first();
     await name.fill('Städtisches Beispiel-Gymnasium Smoke');
     await page.click('.fenster[data-typ="einstellungen.schule"] .wz-knopf:has-text("Übernehmen")');
-    await page.waitForFunction(() => document.title.includes('Smoke') || document.querySelector('.statuszeile')?.textContent.includes('übernommen'), null, { timeout: 5000 }).catch(() => {});
+    await page.waitForFunction(() => document.title.includes('Smoke') || document.querySelector('.kl-status')?.textContent.includes('übernommen'), null, { timeout: 5000 }).catch(() => {});
     await alleZu();
 
     // Zeitraster
@@ -98,7 +105,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await reiter('Stundenpläne');
     await knopf('stundenplaene.uebersicht.lehrer');
     await page.waitForSelector('.fenster[data-typ=uebersicht] .ue-zelle');
-    await page.locator('.fenster[data-typ=uebersicht] .fenster-titel').dblclick();
+    await page.locator('.fenster[data-typ=uebersicht] ').evaluate((el) => el.closest('.ws-bereich').querySelector('.ws-kopf').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })));
     await page.waitForTimeout(300);
     await foto('07-lehrer-uebersicht');
     await alleZu();
@@ -122,7 +129,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await page.waitForTimeout(1200);
     await foto('10-druckvorschau');
     // HTML-Ausgabe (wird auch im kopflosen Browser angezeigt)
-    await page.locator('.fenster[data-typ="druck.vorschau"] .fenster-titel button.zu').click();
+    await page.click('.ws-tab[data-typ=\"druck.vorschau\"] .ws-tab-zu');
     await page.click('.fenster[data-typ="druck.auswahl"] button:has-text("HTML-Ausgabe")');
     await page.waitForSelector('.fenster[data-typ="druck.vorschau"] iframe');
     await page.waitForTimeout(1200);

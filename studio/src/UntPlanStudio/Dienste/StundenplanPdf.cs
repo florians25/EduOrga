@@ -39,7 +39,7 @@ public sealed record StundenplanDruckOptionen
 }
 
 /// <summary>
-/// Stundenplan als schlichtes Schulformular in Schwarz-Weiß wie der Desktop-Druck (Druck/StundenplanFormular): Kopf mit Schule,
+/// Stundenplan als schlichtes Schulformular in Schwarz-Weiß-Druck (Druck/StundenplanFormular): Kopf mit Schule,
 /// Schuljahr, „Gilt ab“ und Druckdatum, großer Kurzname mit Langname, links das Raster mit Pausenzeilen und grau hinterlegten
 /// belegten Stunden (Doppelstunden zusammengefasst, Kopplungen mit „*“ und Fußnote), rechts die Unterrichtsliste, unten Fußnoten
 /// und Fächerlegende, ganz unten Periode und Seitenzahl. Kompakt: zwei Pläne je Seite (A4 quer) ohne Liste und Legenden.

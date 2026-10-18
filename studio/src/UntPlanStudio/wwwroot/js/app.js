@@ -1,4 +1,4 @@
-// UntPlan Studio (Beta) – Start der Oberfläche: Anmeldung, Shell, Module, zuletzt geöffnetes Dokument.
+// UntPlan Studio – Start der Oberfläche: Anmeldung, Shell, Module, zuletzt geöffnetes Dokument.
 import { api } from './kern/api.js';
 import { an } from './kern/ereignisse.js';
 import { zustand } from './kern/zustand.js';
@@ -9,7 +9,7 @@ import { fehlerMelden } from './kern/dialog.js';
 import { module } from './module/register.js';
 
 async function starten() {
-  zustand.system = await api.get('/api/system').catch(() => ({ anwendung: 'UntPlan Studio (Beta)', version: '', beta: true }));
+  zustand.system = await api.get('/api/system').catch(() => ({ anwendung: 'UntPlan Studio', version: '' }));
   zustand.benutzer = (await api.get('/api/sitzung').catch(() => ({}))).benutzer || await anmelden();
   an('abgemeldet', async () => {
     if (document.querySelector('.anmeldung')) return;
@@ -19,7 +19,7 @@ async function starten() {
 
   shellAufbauen(document.getElementById('app'));
   await moduleLaden(module);
-  shell.ribbon.zeichnen(); // Menüband mit den Einträgen der Module
+  shell.navigation.zeichnen(); // Navigation mit den Einträgen der Module
 
   // zuletzt bearbeitetes Dokument wieder öffnen
   let id = null;

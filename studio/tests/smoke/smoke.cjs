@@ -7,6 +7,13 @@
 // Ablauf: Anmelden → Beispiel-Schuldatei als .up hochladen (Datei → Öffnen) → Fenster Lehrkräfte und Klassenplan öffnen →
 // Wert in der Tabelle ändern → Fenster nebeneinander anordnen → Bildschirmfotos.
 const { chromium } = require('playwright');
+
+// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
+async function eintrag(page, id) {
+  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
+  if (await k.count() && await k.first().isVisible()) return k.first().click();
+  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
+}
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -44,12 +51,12 @@ async function api(pfad, optionen = {}) {
   await page.fill('input[name=benutzer]', BENUTZER);
   await page.fill('input[name=passwort]', PASSWORT);
   await page.click('button[type=submit]');
-  await page.waitForSelector('.ribbon .reiter.datei');
+  await page.waitForSelector('.navigation .nav-punkt');
   await page.screenshot({ path: path.join(BILDER, '01-start.png') });
 
   // Datei → Öffnen → Hochladen
   // ohne zuletzt geöffnete Datei (frische Installation) ist die Dateiansicht schon offen
-  if (!(await page.isVisible('.backstage'))) await page.click('.ribbon .reiter.datei');
+  if (!(await page.isVisible('.backstage'))) await page.click('.nav-punkt[data-id="nav:dateien"]');
   await page.click('.backstage nav button[data-seite=oeffnen]');
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('.backstage .ablage button')]);
   await chooser.setFiles(upDatei);
@@ -57,8 +64,7 @@ async function api(pfad, optionen = {}) {
   await page.waitForSelector('.backstage', { state: 'detached' });
 
   // Dateneingabe → Lehrer
-  await page.click('.ribbon .reiter:text-is("Dateneingabe")');
-  await page.click('.rb-knopf[data-id="eingabe.lehrer"]');
+  await eintrag(page, 'eingabe.lehrer');
   await page.waitForSelector('.fenster[data-typ=stammdaten] .t-zeile');
   // Wert ändern: erste Zeile, Spalte Nachname
   const zelle = page.locator('.fenster[data-typ=stammdaten] .t-zeile[data-r="0"] .t-zelle').nth(1);
@@ -69,28 +75,24 @@ async function api(pfad, optionen = {}) {
   await page.waitForFunction(() => [...document.querySelectorAll('.fenster[data-typ=stammdaten] .t-zelle')].some((z) => z.textContent === 'Smoketest'));
 
   // Stundenpläne → Klassenplan
-  await page.click('.ribbon .reiter:text-is("Stundenpläne")');
-  await page.click('.rb-knopf[data-id="stundenplaene.klasse"]');
+  await eintrag(page, 'stundenplaene.klasse');
   await page.waitForSelector('.fenster[data-typ=stundenplan] .r-eintrag');
-  await page.click('.ribbon .reiter:text-is("Start")');
-  await page.click('.rb-knopf[data-id="start.fenster.nebeneinander"]');
+  await eintrag(page, 'start.fenster.nebeneinander');
   await page.waitForTimeout(400);
   await page.screenshot({ path: path.join(BILDER, '02-lehrkraefte-stundenplan.png') });
 
   // Unterricht der Klasse
-  await page.click('.ribbon .reiter:text-is("Dateneingabe")');
-  await page.click('.rb-knopf[data-id="eingabe.unterricht.klassen"]');
+  await eintrag(page, 'eingabe.unterricht.klassen');
   await page.waitForSelector('.fenster[data-typ=unterricht] .t-zeile');
-  await page.click('.ribbon .reiter:text-is("Start")');
-  await page.click('.rb-knopf[data-id="start.fenster.untereinander"]');
+  await eintrag(page, 'start.fenster.untereinander');
   await page.waitForTimeout(400);
   await page.screenshot({ path: path.join(BILDER, '03-drei-fenster.png') });
 
   // Vertretungsmodus (grün)
-  await page.click('.rb-knopf[data-id="start.vertretungsmodus"]');
+  await eintrag(page, 'start.vertretungsmodus');
   await page.waitForTimeout(300);
   await page.screenshot({ path: path.join(BILDER, '04-vertretungsmodus.png') });
-  await page.click('.rb-knopf[data-id="vertretung.modus"]');
+  await eintrag(page, 'vertretung.modus');
   } catch (e) {
     await page.screenshot({ path: path.join(BILDER, 'fehler.png') }).catch(() => {});
     console.error('Seitenfehler:', fehler.join('\n'));

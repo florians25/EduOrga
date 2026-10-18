@@ -36,7 +36,7 @@ public sealed record SchuleZahl(int Wert);
 public sealed record SchuleSchalter(bool Wert);
 
 /// <summary>
-/// Einstellungen der Schuldatei wie im Desktop (Dialoge Einstellungen, Zeitraster, Perioden, Fenster Kalender/Ferien und
+/// Einstellungen der Schuldatei (Dialoge Einstellungen, Zeitraster, Perioden, Fenster Kalender/Ferien und
 /// Unterrichtsgruppen): Schuldaten und Programmeinstellungen, Zeitraster mit Pausen, Ferien/Feiertage (NRW-Vorschlag),
 /// Perioden (anlegen, ändern, löschen, aktive Periode), Unterrichtsgruppen und Mehrwochen-Periodizität.
 /// Endpunkte unter <c>/api/dokumente/{dok}/schule/…</c>.
@@ -143,7 +143,7 @@ public sealed class EinstellungenSchuleApi : IStudioModul
         throw StudioFehler.Ungueltig($"Ungültige Uhrzeit bei {was}: „{text}“ (Beispiel 07:55).");
     }
 
-    /// <summary>Datum wie im Desktop: „TT.MM.“ (Jahr aus dem Bezug), „TT.MM.JJJJ“ oder ISO.</summary>
+    /// <summary>Datum: „TT.MM.“ (Jahr aus dem Bezug), „TT.MM.JJJJ“ oder ISO.</summary>
     internal static DateOnly DatumLesen(string text, DateOnly bezug)
     {
         var t = text.Trim();
@@ -308,7 +308,7 @@ public sealed class EinstellungenSchuleApi : IStudioModul
                 Nrw.FerienEintragen(d);
                 Kalender.CacheLeeren();
             }, doc => FerienDto(doc.Daten)));
-        // Häkchen „Unterrichtsfrei“/„Feiertag“ für einen Tag (wie im Kalender des Desktops): eintägigen Eintrag anlegen bzw. Tag herausnehmen
+        // Häkchen „Unterrichtsfrei“/„Feiertag“ für einen Tag (wie im Kalender): eintägigen Eintrag anlegen bzw. Tag herausnehmen
         g.MapPost("/ferien/tag", (Arbeitsdokument a, FerienTag n, ClaimsPrincipal p) =>
             a.AendernAsync(p.Benutzername(), $"Kalender {Format.Datum(n.Datum)}", AenderungsArt.Einstellungen, d =>
             {

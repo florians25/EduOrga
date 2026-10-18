@@ -7,7 +7,7 @@ using UntPlanStudio.Grundlagen;
 
 namespace UntPlanStudio.Dienste;
 
-/// <summary>Zuordnung eines Studio-Benutzers zu einer MultiUser-Gruppe (mit Einschränkungen wie im Desktop).</summary>
+/// <summary>Zuordnung eines Studio-Benutzers zu einer MultiUser-Gruppe (mit Einschränkungen).</summary>
 public sealed class MuZuordnung
 {
     public int GruppeId { get; set; }
@@ -156,7 +156,7 @@ public sealed class MultiUserDienst
 
     /// <summary>
     /// Wirksame Rechte eines Studio-Benutzers: Rolle Admin = alle Rechte, Rolle Leser = alles nur lesen; sonst die zugeordnete Gruppe
-    /// (mit „Nur lesen“) bzw. ohne Zuordnung alle Bereiche bearbeiten (Einzelplatzbetrieb wie im Desktop ohne Datenbank).
+    /// (mit „Nur lesen“) bzw. ohne Zuordnung alle Bereiche bearbeiten (Einzelplatzbetrieb ohne Datenbank).
     /// </summary>
     public (Rechte Rechte, string Gruppe) RechteVon(string benutzer)
     {
