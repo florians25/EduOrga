@@ -103,7 +103,7 @@ export default function Liste({ p }: AnsichtProps) {
         if (!alt) void feldEinstellungen(an, d.spalten).then(setFelder);
         return d;
       });
-      if (schlank) melden('vertretung.liste', { von: z.von, bis: z.bis, offen: d.offen, entfall: d.zeilen.filter((x) => x.m.entfall && !x.m.unterricht).length, zeilen: d.zeilen.length });
+      if (schlank) melden('vertretung.liste', { von: z.von, bis: z.bis, offen: d.offen, entfall: d.zeilen.filter((x) => x.m.entfall && !x.m.freisetzung && !x.m.unterricht).length, zeilen: d.zeilen.length });
     } catch (e) { fehlerMelden(e); }
   }
   const entprelltLaden = useMemo(() => entprellen(() => { void laden(); }, 150), []); // eslint-disable-line react-hooks/exhaustive-deps

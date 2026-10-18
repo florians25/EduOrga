@@ -85,7 +85,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   const art = artVon(k, typ);
   const kompakt = hoehe < 44;
   const sehrKlein = hoehe < 30;
-  const mittel = !kompakt && hoehe < 74 && !gross;
+  const mittel = !kompakt && hoehe < 74;
   const zeilen = kachelZeilen(k, typ);
   const raeume = kopfRaeume(k, typ);
   const pl = plaketten(k, typ);
@@ -123,15 +123,15 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
       slotProps={{ tooltip: { sx: { bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', boxShadow: '0 8px 24px rgba(21,26,33,.14)', p: 1.5, maxWidth: 360 } }, arrow: { sx: { color: 'background.paper', '&:before': { border: 1, borderColor: 'divider' } } } }}>
       <Box role="button" tabIndex={0} aria-label={titelText(k)} onClick={() => onOpen?.(k)} onKeyDown={tasten} data-karte="" data-art={art}
         sx={{
-          position: 'relative', ...kachelStil(k, typ, t), borderRadius: '3px', px: 1, py: sehrKlein ? 0 : kompakt ? 0.375 : 0.75, overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default',
+          position: 'relative', ...kachelStil(k, typ, t), borderRadius: '3px', px: 1, py: sehrKlein ? 0 : kompakt ? 0.375 : 0.625, overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default',
           display: 'flex', flexDirection: 'column', gap: '1px', fontSize: 12, lineHeight: 1.25, color: entfall ? undefined : 'text.primary', fontVariantNumeric: 'tabular-nums',
           opacity: gedimmt ? 0.3 : vorbei ? 0.6 : 1, transition: 'opacity .12s, background-color .12s, border-color .12s',
           '&:hover': { ...hover, zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
           ...style,
         }}>
-        <Stack direction="row" alignItems="center" gap={0.75} sx={{ minWidth: 0, flex: 'none', height: gross ? 20 : 17 }}>
+        <Stack direction="row" alignItems="center" gap={0.75} sx={{ minWidth: 0, flex: 'none', height: 17 }}>
           {k.fach && <FachQuadrat farbe={k.farbe} />}
-          <Typography component="span" noWrap sx={{ fontWeight: 600, fontSize: gross ? 14 : 13, lineHeight: 1.2, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, minWidth: 0, flex: '0 1 auto' }}>{titel}</Typography>
+          <Typography component="span" noWrap sx={{ fontWeight: 600, fontSize: gross ? 14 : 13, lineHeight: '17px', color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, minWidth: 0, flex: '0 1 auto' }}>{titel}</Typography>
           {kompakt && zeilen[0] && (
             <Typography component="span" noWrap sx={{ fontSize: 12, color: 'text.secondary', textDecoration: durch, minWidth: 0 }}>
               <WerteListe werte={zeilen[0].werte} entfall={entfall} mitAlt={false} abwesend={zeilen[0].art === 'klassen' ? abw : undefined} />

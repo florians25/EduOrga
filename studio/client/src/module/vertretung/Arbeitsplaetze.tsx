@@ -10,7 +10,7 @@ import { useDarfSchreiben, useStudio } from '@/kern/zustand';
 import { fehlerMelden } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import { Bereich, Teilung } from '@/shell/arbeitsplatz';
-import { aktuelleAuswahl, blaettern, datumSetzen, isoAus, usePlanungsdatum, vpfad } from './kern';
+import { aktuelleAuswahl, blaettern, datumSetzen, isoAus, tagKurz, usePlanungsdatum, vpfad } from './kern';
 
 const useStile = makeStyles({
   seite: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, gap: '8px' },
@@ -19,8 +19,8 @@ const useStile = makeStyles({
     border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusLarge, backgroundColor: tokens.colorNeutralBackground1,
   },
   datum: { display: 'inline-flex', alignItems: 'center', gap: '2px' },
-  datumFeld: { width: '136px', fontVariantNumeric: 'tabular-nums' },
-  tag: { fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', marginLeft: '6px' },
+  datumFeld: { width: '150px', fontVariantNumeric: 'tabular-nums' },
+  tag: { fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', marginLeft: '6px', '@media (max-width: 1500px)': { display: 'none' } },
   woche: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap' },
   frei: { color: 'var(--up-frei)', fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap' },
   summe: { display: 'inline-flex', alignItems: 'center', gap: '6px', color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
@@ -80,7 +80,7 @@ function Tageskopf() {
         <Tooltip content="Vorheriger Unterrichtstag (Strg+Bild↑)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={los(() => blaettern(-1))} /></Tooltip>
         <Button size="small" appearance="subtle" onClick={los(() => datumSetzen(isoAus(new Date())))}>Heute</Button>
         <Tooltip content="Nächster Unterrichtstag (Strg+Bild↓)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={los(() => blaettern(1))} /></Tooltip>
-        <Input size="small" type="date" className={s.datumFeld} value={datum || ''} aria-label="Datum der Tagesplanung" onChange={(_, x) => { if (x.value) void datumSetzen(x.value); }} />
+        <Input size="small" type="date" className={s.datumFeld} value={datum || ''} aria-label="Datum der Tagesplanung" contentBefore={datum ? <span style={{ fontSize: 12 }}>{tagKurz(datum)}</span> : undefined} onChange={(_, x) => { if (x.value) void datumSetzen(x.value); }} />
         {datum ? <span className={s.tag}>{tagLang(datum)}</span> : null}
       </span>
       {daten?.wochentyp ? <span className={s.woche}>{`${daten.wochentyp}-Woche`}</span> : null}

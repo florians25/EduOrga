@@ -5,6 +5,7 @@ import { Tab, TabList } from '@fluentui/react-components';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { api, einstellungLesen, einstellungSchreiben } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
+import { arbeitsplatzOeffnen } from '@/kern/befehle';
 import { betrifft, useEreignis } from '@/kern/ereignisse';
 import { entprellen } from '@/kern/hilfen';
 import { elemente, useDarfSchreiben } from '@/kern/zustand';
@@ -261,7 +262,8 @@ export default function Absenzen({ p }: AnsichtProps) {
         </> : null}
         <MenueKnopf text="Weitere Aktionen" eintraege={() => [...weitere(), null, { text: 'Veranstaltungen …', aktion: () => a.oeffnen('veranstaltungen.liste', {}) }]} />
         <Rechts><Schalter text="Veranstaltungen zeigen" an={!!vaZeigen} titel="Veranstaltungen des Zeitraums in der Liste mit anzeigen"
-          beiAenderung={(w) => { setVaZeigen(w); void einstellungSchreiben('vertretung.absenzen.va', w); }} /></Rechts>
+          beiAenderung={(w) => { setVaZeigen(w); void einstellungSchreiben('vertretung.absenzen.va', w); }} />
+          {a.lage === 'seite' ? <Werkzeug text="Zur Tagesplanung" titel="Vertretungen des Planungsdatums bearbeiten" aktion={() => arbeitsplatzOeffnen('tagesplanung')} /> : null}</Rechts>
       </>}
       filter={<>
         <TabList size="small" selectedValue={String(artIndex)} onTabSelect={async (_, d) => { await entwurfUebernehmen(); const i = Number(d.value); setArtIndex(i); a.parameterSetzen({ art: ARTEN[i]!.art }); }}>

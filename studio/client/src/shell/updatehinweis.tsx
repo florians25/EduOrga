@@ -178,7 +178,7 @@ function UpdateDialogInhalt({ stand, schliessen }: { stand: Versionsstand; schli
       ) : null}
       <div className={s.abschnitt}>
         <Text weight="semibold">Update installieren</Text>
-        <div className={s.leise}>Auf dem Server im Installationsordner (z. B. <code>/opt/untplan</code>) ausführen – die Datenbank wird vorher gesichert, Migrationen laufen beim Start automatisch:</div>
+        <div className={s.leise}>Auf dem Server im Installationsordner (z. B. <code>/opt/untplannext</code>) ausführen – die Datenbank wird vorher gesichert, Migrationen laufen beim Start automatisch:</div>
         <UpdateBefehl befehl={stand.befehl} />
       </div>
     </StandardDialog>

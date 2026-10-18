@@ -28,7 +28,7 @@
 .tb-zeile.vt-ausweich .tb-zelle:first-child { font-weight: 600; }
 .tb-zelle.vt-mini { font-size: 12px; padding: 0 4px; }
 .tb-zelle.vt-mini.entfallen > span.t { text-decoration: line-through; color: var(--colorNeutralForeground3); }
-.tb-zelle.vt-mini.ziel { box-shadow: inset 0 0 0 1.5px var(--up-aenderung); }
+.tb-zelle.vt-mini.ziel { box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--up-aenderung) 55%, transparent); }
 
 /* Vertretungsliste: Unterrichtszeilen, Kollisionen, zusammengefasste Veranstaltungen, gerade bearbeitete Zeilen */
 .tb-zeile.vt-unterricht .tb-zelle { color: var(--colorNeutralForeground3); }

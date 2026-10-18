@@ -51,9 +51,9 @@ interface GruppeDaten { titel: string; href?: string; zeilen: ZeileDaten[]; zahl
 
 function Zeile({ z }: { z: ZeileDaten }) {
   const inhalt = (
-    <Stack direction="row" alignItems="center" gap={1.25} sx={{ width: '100%', minHeight: 36, px: 1, borderRadius: 2, opacity: z.blass ? 0.55 : 1 }}>
+    <Stack direction="row" alignItems="center" gap={1.25} sx={{ width: '100%', minHeight: 34, px: 1, borderRadius: '4px', opacity: z.blass ? 0.55 : 1 }}>
       <Typography variant="body2" color="text.secondary" sx={{ width: 78, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }} noWrap>{z.links}</Typography>
-      {z.farbe !== undefined && <Box sx={{ width: 4, alignSelf: 'stretch', my: 0.75, borderRadius: 2, bgcolor: z.farbe ?? 'divider', flexShrink: 0 }} />}
+      {z.farbe !== undefined && <Box aria-hidden sx={{ width: 8, height: 8, borderRadius: '1px', bgcolor: z.farbe ?? 'transparent', border: z.farbe ? 0 : 1, borderColor: 'text.disabled', flexShrink: 0 }} />}
       <Box sx={{ minWidth: 0, flex: 1, display: 'flex', gap: 1, alignItems: 'baseline' }}>
         <Typography noWrap sx={{ fontSize: 14, fontWeight: z.fett ? 600 : 500, textDecoration: z.durch ? 'line-through' : 'none', flexShrink: 0, maxWidth: '60%' }}>{z.titel}</Typography>
         {z.neben && <Typography noWrap variant="body2" color="text.secondary" sx={{ minWidth: 0 }}>{z.neben}</Typography>}
@@ -61,8 +61,8 @@ function Zeile({ z }: { z: ZeileDaten }) {
       {z.rechts && <Box sx={{ flexShrink: 0, fontSize: 13, color: 'text.secondary', display: 'flex', gap: 0.5, alignItems: 'center' }}>{z.rechts}</Box>}
     </Stack>
   );
-  if (z.href) return <ButtonBase component="a" href={z.href} sx={{ width: '100%', borderRadius: 2, textAlign: 'left', color: 'inherit', '&:hover': { bgcolor: 'action.hover' } }}>{inhalt}</ButtonBase>;
-  if (z.onClick) return <ButtonBase onClick={z.onClick} sx={{ width: '100%', borderRadius: 2, textAlign: 'left', '&:hover': { bgcolor: 'action.hover' } }}>{inhalt}</ButtonBase>;
+  if (z.href) return <ButtonBase component="a" href={z.href} sx={{ width: '100%', borderRadius: '4px', textAlign: 'left', color: 'inherit', '&:hover': { bgcolor: 'action.hover' } }}>{inhalt}</ButtonBase>;
+  if (z.onClick) return <ButtonBase onClick={z.onClick} sx={{ width: '100%', borderRadius: '4px', textAlign: 'left', '&:hover': { bgcolor: 'action.hover' } }}>{inhalt}</ButtonBase>;
   return inhalt;
 }
 

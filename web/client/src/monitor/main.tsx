@@ -50,15 +50,15 @@ function Rollbereich({ children }: { children: React.ReactNode }) {
 function TagKarte({ t, lehrer, mitNachrichten }: { t: Tag; lehrer: boolean; mitNachrichten: boolean }) {
   const infos = [t.abwesendeKlassen.length ? `Abwesende Klassen: ${t.abwesendeKlassen.join(', ')}` : '', lehrer && t.abwesendeLehrer.length ? `Abwesende Lehrkräfte: ${t.abwesendeLehrer.join(', ')}` : '',
     t.blockierteRaeume.length ? `Nicht verfügbare Räume: ${t.blockierteRaeume.join(', ')}` : ''].filter(Boolean);
-  const art = (z: Zeile) => ({ background: z.status === 'entfall' ? 'rgba(180,35,24,.55)' : z.status === 'geaendert' || z.status === 'offen' ? 'rgba(11,122,117,.6)' : 'rgba(255,255,255,.1)' });
+  const art = (z: Zeile) => ({ color: z.status === 'entfall' ? '#ff9b91' : z.status === 'geaendert' || z.status === 'offen' ? '#5fd3ca' : M[200] });
   return (
-    <Box component="section" sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, bgcolor: M[800], border: '1px solid rgba(255,255,255,.1)', borderRadius: 4, overflow: 'hidden' }}>
+    <Box component="section" sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, bgcolor: M[800], border: '1px solid rgba(255,255,255,.1)', borderRadius: '4px', overflow: 'hidden' }}>
       <Box component="header" sx={{ px: 2.5, py: 1.75, borderBottom: '1px solid rgba(255,255,255,.1)', fontSize: 22, fontWeight: 600, color: '#fff' }}>
         {datumLang(t.datum)}{t.woche && <Box component="small" sx={{ fontSize: 16, fontWeight: 400, color: M[200], ml: 1.25 }}>{t.woche}-Woche</Box>}
       </Box>
       {(mitNachrichten && t.nachrichten.length > 0) || (t.veranstaltungen ?? []).length > 0 || infos.length > 0 ? (
         <Box sx={{ px: 2.5, pt: 1.5, pb: 0.5 }}>
-          {mitNachrichten && t.nachrichten.map((n, i) => <Box key={i} sx={{ px: 1.5, py: 1, mb: 1, borderLeft: `3px solid ${M[300]}`, bgcolor: 'rgba(255,255,255,.05)', borderRadius: '0 6px 6px 0' }}>{n}</Box>)}
+          {mitNachrichten && t.nachrichten.map((n, i) => <Box key={i} sx={{ px: 1.5, py: 1, mb: 1, borderLeft: `3px solid ${M[300]}`, bgcolor: 'rgba(255,255,255,.05)', borderRadius: '0 3px 3px 0' }}>{n}</Box>)}
           {(t.veranstaltungen ?? []).map((v, i) => <Box key={`v${i}`} sx={{ mb: 0.75, fontSize: 16, color: M[200] }}>Veranstaltung: {v}</Box>)}
           {infos.map((x, i) => <Box key={`i${i}`} sx={{ mb: 0.75, fontSize: 16, color: M[200] }}>{x}</Box>)}
         </Box>
@@ -77,7 +77,7 @@ function TagKarte({ t, lehrer, mitNachrichten }: { t: Tag; lehrer: boolean; mitN
                     <td>{e ? <><Alt w={z.fachAlt} />{z.fach}</> : <Wechsel a={z.fachAlt} n={z.fach} />}</td>
                     <Box component="td" sx={z.status === 'offen' ? { color: '#ffb4ab' } : undefined}>{z.status === 'offen' ? <><Alt w={z.lehrerAlt} />???</> : e ? <><Alt w={z.lehrerAlt} />{z.lehrer}</> : <Wechsel a={z.lehrerAlt} n={z.lehrer} trenn="|" />}</Box>
                     <td>{e ? <><Alt w={z.raumAlt} />{z.raum}</> : <Wechsel a={z.raumAlt} n={z.raum} />}</td>
-                    <td><Box component="span" sx={{ display: 'inline-block', px: 1, py: 0.1, borderRadius: 1, fontSize: 15, fontWeight: 500, color: '#fff', ...art(z) }}>{z.art}</Box></td>
+                    <td><Box component="span" sx={{ display: 'inline-block', fontSize: { xs: 12, md: 14 }, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', ...art(z) }}>{z.art}</Box></td>
                     <td>{z.text}</td>
                   </Box>
                 );

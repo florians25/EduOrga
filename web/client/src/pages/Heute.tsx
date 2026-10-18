@@ -18,6 +18,7 @@ import { Abschnitt, Geladen, Leer, Seite } from '../components/Seite';
 import { Plakette } from '../components/Bausteine';
 import { WerteListe } from '../components/plan/Werte';
 import { Stundendetails } from '../components/plan/Stundendetails';
+import { FachQuadrat } from '../components/plan/Kachel';
 import { gueltigeFarbe } from '../components/plan/logik';
 import { datumDe, datumText, heuteIso, jetztMinuten, minuten, wochentag, zeitstempel } from '../lib/datum';
 import { htmlBereinigt } from '../lib/html';
@@ -106,16 +107,16 @@ export default function Heute() {
                           const mitKb = ich.kollegium && !!s.unterricht && !entfall && s.status !== 'abwesend';
                           const info = [s.text && s.fach ? `Vertretungstext: ${s.text}` : '', s.notizLehrer ? `Notizen für Lehrkräfte: ${s.notizLehrer}` : '', s.notizSchueler ? `Notizen für Schüler*innen: ${s.notizSchueler}` : ''].filter(Boolean).join('\n');
                           return (
-                            <ButtonBase key={i} onClick={() => setDetails({ k: karten[i], liste: eindeutig })} sx={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'stretch', gap: 2, px: 1.5, py: 1.25, borderRadius: 3,
-                              bgcolor: laeuft ? alpha(t.palette.primary.main, 0.06) : 'transparent', '&:hover': { bgcolor: 'action.hover' } }}>
-                              <Box sx={{ width: 54, flex: 'none', pt: 0.25 }}>
-                                <Typography sx={{ fontWeight: 600, fontSize: 14, color: laeuft ? 'primary.main' : 'text.primary' }}>{s.beginn}</Typography>
-                                <Typography variant="caption" color="text.secondary">{s.ende}</Typography>
+                            <ButtonBase key={i} onClick={() => setDetails({ k: karten[i], liste: eindeutig })} sx={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'stretch', gap: 1.5, px: 1.5, py: 1.25, borderRadius: '4px',
+                              bgcolor: laeuft ? alpha(t.palette.primary.main, 0.04) : 'transparent', boxShadow: laeuft ? `inset 2px 0 0 ${t.palette.primary.main}` : 'none', '&:hover': { bgcolor: 'action.hover' } }}>
+                              <Box sx={{ width: 48, flex: 'none', fontVariantNumeric: 'tabular-nums' }}>
+                                <Typography sx={{ fontWeight: 600, fontSize: 13.5, lineHeight: '20px', color: laeuft ? 'primary.main' : 'text.primary' }}>{s.beginn}</Typography>
+                                <Typography sx={{ fontSize: 12, lineHeight: '16px', color: 'text.secondary' }}>{s.ende}</Typography>
                               </Box>
-                              <Box sx={{ width: 4, borderRadius: 2, bgcolor: entfall ? t.palette.status.entfall.main : farbe, flex: 'none', opacity: entfall ? 0.5 : 1 }} />
                               <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                                  <Typography sx={{ fontWeight: 600, fontSize: 15, textDecoration: entfall ? 'line-through' : 'none' }}>
+                                  <FachQuadrat farbe={entfall ? null : farbe} />
+                                  <Typography sx={{ fontWeight: 600, fontSize: 14, lineHeight: '20px', color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: entfall ? 'line-through' : 'none' }}>
                                     {s.fachAlt && !entfall ? <><s style={{ opacity: 0.6 }}>{s.fachAlt}</s> → {s.fach}</> : s.fach || s.text || s.art || '–'}
                                   </Typography>
                                   {s.fachName && s.fachName !== s.fach && !entfall && <Typography variant="body2" color="text.secondary">{s.fachName}</Typography>}

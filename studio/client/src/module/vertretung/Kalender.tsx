@@ -8,9 +8,10 @@ import { ChevronLeft20Regular, ChevronRight20Regular, Delete20Regular } from '@f
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
+import { arbeitsplatzOeffnen } from '@/kern/befehle';
 import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben } from '@/kern/zustand';
-import { AnsichtRahmen, Feld, Werkzeug } from '@/komponenten/ansicht';
+import { AnsichtRahmen, Feld, Rechts, Werkzeug } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { Tabelle, type Spalte } from '@/komponenten/tabelle/Tabelle';
 import { useElemente } from '../gemeinsam';
@@ -106,6 +107,7 @@ export default function Kalender({ p }: AnsichtProps) {
         <Werkzeug titel="Vorheriger Unterrichtstag (Strg+Bild↑)" icon={<ChevronLeft20Regular />} aktion={() => blaettern(-1)} />
         <Werkzeug text="Heute" titel="Zum heutigen Tag" aktion={() => datumSetzen(isoAus(new Date()))} />
         <Werkzeug titel="Nächster Unterrichtstag (Strg+Bild↓)" icon={<ChevronRight20Regular />} aktion={() => blaettern(1)} />
+        {a.lage === 'seite' ? <Rechts><Werkzeug text="Zur Tagesplanung" titel="Gewählten Tag in der Tagesplanung bearbeiten (Doppelklick auf einen Tag)" aktion={() => arbeitsplatzOeffnen('tagesplanung')} /></Rechts> : null}
       </>}
       filter={<>
         <Feld titel="Kalenderwoche"><Input size="small" type="number" min={1} max={53} style={{ width: 80 }} value={daten ? String(daten.kw) : ''} onChange={(_, x) => kwSetzen(Number(x.value))} /></Feld>
@@ -116,7 +118,8 @@ export default function Kalender({ p }: AnsichtProps) {
         <div className={s.oben}>
           <Tabelle<Wochentag> name="kalender-woche" spalten={spalten} zeilen={daten?.woche || []} id={(w) => w.datum} sortierbar={false} leerText="Keine Tage."
             zeilenKlasse={(w) => `${w.unterrichtstag ? '' : 'vt-frei'} ${w.datum === datum ? 'gewaehlt' : ''}`}
-            beiAuswahl={(_, w) => { if (w && w.datum !== datum) void datumSetzen(w.datum); }} />
+            beiAuswahl={(_, w) => { if (w && w.datum !== datum) void datumSetzen(w.datum); }}
+            beiDoppelklick={(w) => { void datumSetzen(w.datum).then(() => { if (a.lage === 'seite') arbeitsplatzOeffnen('tagesplanung'); }); }} />
         </div>
         <div className={s.unten}>
           <TabList className={s.reiter} size="small" selectedValue={String(reiter)} onTabSelect={(_, x) => { const r = Number(x.value); setReiter(r); a.parameterSetzen({ reiter: r }); }}>
