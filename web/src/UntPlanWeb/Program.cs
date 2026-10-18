@@ -17,9 +17,11 @@ public class Program
         // Gesundheitsprüfung für Docker (das Laufzeit-Image enthält weder curl noch wget)
         if (args.Contains("--gesundheitspruefung")) return Gesundheitspruefung();
         // Kommandozeile: SQLite-Daten nach MySQL/MariaDB übernehmen bzw. sichern (siehe README, „Datenmigration“ und „Update“)
-        if (args.Contains(Datenmigration.Befehlsname) || args.Contains(Sicherung.Befehlsname))
+        // … bzw. das Passwort eines Kontos setzen (z. B. vergessenes Admin-Passwort, siehe README „Passwort vergessen“)
+        if (args.Contains(Datenmigration.Befehlsname) || args.Contains(Sicherung.Befehlsname) || args.Contains(Passwortbefehl.Befehlsname))
         {
             var konfig = new ConfigurationBuilder().SetBasePath(AppContext.BaseDirectory).AddJsonFile("appsettings.json", optional: true).AddEnvironmentVariables().Build();
+            if (args.Contains(Passwortbefehl.Befehlsname)) return Passwortbefehl.Befehl(args, konfig);
             return args.Contains(Sicherung.Befehlsname) ? Sicherung.Befehl(konfig) : Datenmigration.Befehl(args, konfig);
         }
         Erstellen(args).Run();

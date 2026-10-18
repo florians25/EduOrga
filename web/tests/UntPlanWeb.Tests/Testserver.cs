@@ -26,6 +26,8 @@ public sealed class Testserver : IAsyncDisposable
     private readonly WebApplication _app;
     private readonly string _ordner;
     public Uri Adresse { get; }
+    /// <summary>Datenordner des Servers (z. B. für Kommandozeilenbefehle gegen dieselbe Datenbank).</summary>
+    public string Datenordner => _ordner;
 
     private Testserver(WebApplication app, string ordner)
     {

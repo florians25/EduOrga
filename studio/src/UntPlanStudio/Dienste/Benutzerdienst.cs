@@ -45,7 +45,7 @@ public sealed class Benutzerdienst
     public Benutzerdienst(StudioKonfiguration k, StudioDatenbank db, ILogger<Benutzerdienst> log)
     {
         _db = db;
-        _benutzer = db.AblageListe(Ablagebereiche.Benutzer).Select(e => JsonSerializer.Deserialize<StudioBenutzer>(e.Inhalt)).OfType<StudioBenutzer>().ToList();
+        _benutzer = Lesen();
         if (_benutzer.Count == 0)
         {
             var passwort = k.AdminPasswort;
@@ -62,7 +62,11 @@ public sealed class Benutzerdienst
 
     public IReadOnlyList<StudioBenutzer> Alle()
     {
-        lock (_sperre) return _benutzer.ToList();
+        lock (_sperre)
+        {
+            Neuladen();
+            return _benutzer.ToList();
+        }
     }
 
     public StudioBenutzer? Holen(string name)
@@ -75,6 +79,8 @@ public sealed class Benutzerdienst
     {
         lock (_sperre)
         {
+            // neu lesen: das Passwort kann auch über die Kommandozeile (--passwort-setzen) geändert worden sein
+            Neuladen();
             var b = _benutzer.FirstOrDefault(x => x.Name.Equals(name?.Trim(), StringComparison.OrdinalIgnoreCase));
             if (b is null || string.IsNullOrEmpty(passwort)) return null;
             var erg = _hasher.VerifyHashedPassword(b.Name, b.Hash, passwort);
@@ -95,6 +101,7 @@ public sealed class Benutzerdienst
         PasswortPruefen(passwort);
         lock (_sperre)
         {
+            Neuladen();
             if (_benutzer.Any(b => b.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw StudioFehler.Ungueltig($"Den Benutzer \"{name}\" gibt es bereits.");
             var neu = new StudioBenutzer { Name = name, Anzeigename = string.IsNullOrWhiteSpace(anzeigename) ? name : anzeigename.Trim(), Rolle = rolle, Hash = _hasher.HashPassword(name, passwort) };
@@ -109,6 +116,7 @@ public sealed class Benutzerdienst
         PasswortPruefen(passwort);
         lock (_sperre)
         {
+            Neuladen();
             var b = _benutzer.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? throw StudioFehler.NichtGefunden("Der Benutzer");
             b.Hash = _hasher.HashPassword(b.Name, passwort);
             Schreiben(b);
@@ -119,6 +127,7 @@ public sealed class Benutzerdienst
     {
         lock (_sperre)
         {
+            Neuladen();
             var b = _benutzer.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? throw StudioFehler.NichtGefunden("Der Benutzer");
             if (b.Rolle == Rollen.Admin && _benutzer.Count(x => x.Rolle == Rollen.Admin) == 1)
                 throw StudioFehler.Ungueltig("Der letzte Administrator kann nicht gelöscht werden.");
@@ -130,6 +139,20 @@ public sealed class Benutzerdienst
     private static void PasswortPruefen(string passwort)
     {
         if (string.IsNullOrEmpty(passwort) || passwort.Length < 6) throw StudioFehler.Ungueltig("Das Passwort muss mindestens 6 Zeichen lang sein.");
+    }
+
+    private List<StudioBenutzer> Lesen() =>
+        _db.AblageListe(Ablagebereiche.Benutzer).Select(e => JsonSerializer.Deserialize<StudioBenutzer>(e.Inhalt)).OfType<StudioBenutzer>().ToList();
+
+    /// <summary>
+    /// Benutzer neu aus der Datenbank lesen (unter <c>_sperre</c>): andere Prozesse – <c>dotnet UntPlanStudio.dll --passwort-setzen</c> –
+    /// können Benutzer anlegen oder Passwörter ändern, während der Server läuft. Geschieht bei Anmeldung, Liste und Änderungen.
+    /// </summary>
+    private void Neuladen()
+    {
+        var neu = Lesen();
+        _benutzer.Clear();
+        _benutzer.AddRange(neu);
     }
 
     private static string Schluessel(string name) => name.ToLowerInvariant();

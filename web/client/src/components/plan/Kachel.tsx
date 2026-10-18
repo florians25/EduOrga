@@ -1,7 +1,8 @@
-// Stundenkachel: weiße Fläche mit 1-px-Linie (Radius 3 px), Fachfarbe nur als 8-px-Quadrat vor dem Fachkürzel; Kopfzeile Fach und Raum,
-// darunter Lehrkraft bzw. Klasse. Status: Entfall rot durchgestrichen mit feiner Schraffur, Änderung/Prüfung über die Linienfarbe und eine
-// Plakette in Großbuchstaben (ohne Fläche), Termin und vertretene Stunde gestrichelt. Unten Plaketten und Symbole (online, Hausaufgabe
-// fällig, Notizen). Überfahren zeigt eine Kurzinfo, Klick öffnet die Stundendetails.
+// Stundenkachel: helle neutrale Fläche mit kräftigerer 1-px-Linie (Radius 3 px), Fachfarbe nur als 8-px-Quadrat vor dem Fachkürzel;
+// Kopfzeile Fach und Raum (Kürzel-Plakette), darunter Lehrkraft bzw. Klasse. Status ohne Wörter: Entfall rot durchgestrichen mit feiner
+// Schraffur, Änderung mit Petrol-Linie und petrolfarbenen Kürzel-Plaketten (bisheriger Wert grau durchgestrichen, offene Vertretung „?“),
+// Prüfung Bernstein-Linie, Termin und vertretene Stunde gestrichelt. Als Wort nur, was sich sonst nicht ablesen lässt (Prüfung, Termin,
+// Buchung, Verlegung). Die Bedeutung steht im aria-label und in der Kurzinfo beim Überfahren; Klick öffnet die Stundendetails.
 import { memo, type CSSProperties, type KeyboardEvent } from 'react';
 import { alpha, Box, Stack, Tooltip, Typography, useTheme, type Theme } from '@mui/material';
 import LinkRounded from '@mui/icons-material/LinkRounded';
@@ -154,7 +155,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
           </Box>
         )}
         {!kompakt && (pl.length > 0 || hatSymbole || zeit) && (
-          <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: 'auto', pl: k.fach ? '14px' : 0, minWidth: 0, flex: 'none', flexWrap: 'nowrap', overflow: 'hidden', height: 15 }}>
+          <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: 'auto', pl: k.fach ? '14px' : 0, minWidth: 0, flex: 'none', flexWrap: 'nowrap', overflow: 'hidden', height: 15, '@container (max-width: 64px)': { display: 'none' } }}>
             {pl.slice(0, mittel ? 2 : 3).map((p, i) => <PlaketteChip key={i} p={p} klein={!gross} />)}
             {zeit && <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary' }}>{zeit}</Typography>}
             <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>{symbole}</Box>

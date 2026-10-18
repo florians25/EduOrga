@@ -27,6 +27,8 @@ public partial class Program
         if (args.Contains("--gesundheitspruefung")) return Gesundheitspruefung();
         // Sicherung der Datenbank über die Kommandozeile (z. B. vor einem Update), siehe README „Sicherung“
         if (args.Contains(SichernBefehl)) return Sichern();
+        // Passwort eines Benutzers setzen (z. B. vergessenes Admin-Passwort), siehe README „Passwort vergessen“
+        if (args.Contains(PasswortBefehl)) return PasswortSetzen(args);
         Erstellen(args).Run();
         return 0;
     }

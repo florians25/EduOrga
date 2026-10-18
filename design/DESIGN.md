@@ -30,7 +30,7 @@ Grundwerte in `design/tokens.css` (Präfix `--up-`). Marke **Marine** `#234f96` 
 |---|---|---|
 | Primär | `--up-marine-600` #234f96 | Primärknopf, aktiver Navigationspunkt, Links, Fokus, Auswahl |
 | Navigation dunkel | `--up-marine-900` #11264a | Seitenleiste Studio, Kopfleiste Web |
-| Hintergrund | `--up-schiefer-50` #f4f6f8 | Seitenhintergrund |
+| Hintergrund | #eef1f4 (Web) bzw. `--up-schiefer-50` #f4f6f8 | Seitenhintergrund |
 | Fläche | #ffffff | Karten, Tabellen, Raster |
 | Rand | `--up-schiefer-200` #dce1e7 | alle 1-px-Linien |
 | Text | #232a33 / #4d5866 / #6b7684 | Haupt-, Zweit-, Hinweistext |
@@ -39,9 +39,9 @@ Grundwerte in `design/tokens.css` (Präfix `--up-`). Marke **Marine** `#234f96` 
 
 | Status | Farbe | Darstellung |
 |---|---|---|
-| Entfall | `--up-entfall` #b42318 | Kachel fast weiß, fein schraffiert (45°, 1 px, 7 % Deckkraft), Fach rot und durchgestrichen, Plakette „Entfall“ |
-| Vertretung / Änderung / Raumwechsel | `--up-aenderung` #0b7a75 | 1-px-Linie in Petrol, geänderter Wert petrolfarben dünn unterstrichen, alter Wert grau durchgestrichen davor, Plakette „Vertretung“, „Raum“ bzw. „Fach“ |
-| Prüfung / Klausur | `--up-pruefung` #a15c07 | 1-px-Linie in Bernstein, Plakette „Prüfung“ |
+| Entfall | `--up-entfall` #b42318 | Kachel weiß, fein schraffiert (45°, 1 px, 9 % Deckkraft), rötliche Linie, Fach rot und durchgestrichen (ohne Wort auf der Kachel) |
+| Vertretung / Änderung / Raumwechsel | `--up-aenderung` #0b7a75 | Kachel weiß mit 1-px-Linie in Petrol; neues Kürzel als gefüllte Petrol-Plakette, bisheriges als graue durchgestrichene Plakette davor, hinzugefügtes umrandet, offene Vertretung als gestrichelte „?“-Plakette – keine Wörter wie „Vertretung“ oder „offen“ auf der Kachel |
+| Prüfung / Klausur | `--up-pruefung` #a15c07 | Kachel weiß, 1-px-Linie in Bernstein, Plakette „Prüfung“ |
 | Veranstaltung / Termin | `--up-termin` #5a4fb3 | weiße Kachel mit gestrichelter neutraler Linie, Plakette „Termin“ |
 | Ferien / unterrichtsfrei | `--up-frei` #2f6f9f | ganzflächig hellblau mit Name und Zeitraum |
 
@@ -70,18 +70,23 @@ iOS verwendet die Systemschrift (SF Pro) – das ist dort der Standard und wirkt
 
 Leitbild: nüchterner Fachkalender – gerade Linien, weiße Flächen, Farbe nur als Information, nie als Fläche.
 
+* **Kontrast:** Seite #eef1f4, Rasterfläche weiß, Spaltenköpfe und Zeitspalte #f6f8fa, Kacheln #f6f8fa mit kräftigerer Linie
+  #c9d1db – die Kacheln heben sich klar vom Raster ab, ohne Pastellflächen.
 * **Raster:** weiße Fläche in einem Rahmen mit Radius 4 px, gerade 1-px-Linien (`--up-linie`). Spaltenköpfe linksbündig
   „Mo 19.10.“ (Wochentag 600, Datum 400 `--up-text-2`); heute: Marine-Text, 2-px-Marine-Linie oben am Kopf und sehr
   leichte Marine-Tönung (≈ 3 %) der Spalte. Zeitspalte links schmal mit Trennlinie: Stundennummer 13 px/600, darunter
   Beginn und Ende 11 px in `--up-text-2`, tabellarische Ziffern. Pausen als schmale graue Bänder (`--up-schiefer-50`)
   ohne Text. Ganztägige Termine im Tageskopf als gestrichelt umrandete Zeile mit Plakette „Termin“.
-* **Stundenkachel:** weiße Fläche, 1-px-Linie `--up-linie`, Radius 3 px, Innenabstand 5–6 px oben/unten, 8 px seitlich;
-  Überfahren: Fläche `--up-schiefer-50`. **Keine Fachfarbe als Fläche, kein farbiger Seitenbalken:** die Fachfarbe steht
-  nur als 8-px-Quadrat vor dem Fachkürzel. Kopfzeile: Quadrat, Fachkürzel 13 px/600 `--up-text`, Raum rechtsbündig
-  12 px/500 `--up-text-2` (tabellarische Ziffern). Zweite Zeile (unter dem Kürzel eingerückt): Lehrkraft bzw. Klasse
+* **Stundenkachel:** Fläche #f6f8fa, 1-px-Linie #c9d1db, Radius 3 px, Innenabstand 5–6 px oben/unten, 8 px seitlich;
+  Überfahren: Fläche #edf0f4. **Keine Fachfarbe als Fläche, kein farbiger Seitenbalken:** die Fachfarbe steht
+  nur als 8-px-Quadrat vor dem Fachkürzel. Kopfzeile: Quadrat, Fachkürzel 13 px/600 `--up-text`, Raum rechtsbündig als
+  Kürzel-Plakette (11 px/600, Radius 3 px, Linie #c9d1db, tabellarische Ziffern; in sehr schmalen Kacheln ausgeblendet). Zweite Zeile (unter dem Kürzel eingerückt): Lehrkraft bzw. Klasse
   12 px `--up-text-2`.
-* **Status** wie in Abschnitt 2; Plaketten in der Kachel unten links als reiner Text: 10–11 px/600 Großbuchstaben,
-  Laufweite +0,04 em, in der Statusfarbe, **ohne Fläche**. „Online“ ebenso, mit Link-Symbol.
+* **Status** wie in Abschnitt 2 – abzulesen an Linie, Schraffur, Durchstreichung und Kürzel-Plaketten, **nicht an Wörtern**.
+  Als Wort (unten links, 10–11 px/600 Großbuchstaben, Laufweite +0,04 em, Statusfarbe, ohne Fläche) erscheint nur, was sich
+  sonst nicht ablesen lässt: „Prüfung“, „Termin“, „Buchung“, „Vorgemerkt“, „Verlegt“/„Verlegung“, „Online“ (mit Link-Symbol).
+  Die ausführliche Bedeutung steht im zugänglichen Namen der Kachel, in der Kurzinfo und in der Legende; die
+  Stundendetails verwenden ganze Wörter.
 * **Legende** über dem Raster als Text mit kleinen Mustern (10 px) und Anzahl – keine Pillen.
 * **Werkzeugleiste** flach (Trennlinie unten, keine schwebende Karte); Woche/Tag und die Tagauswahl der Tagesansicht als
   Segmentschalter.
