@@ -183,7 +183,7 @@ struct SprechtagView: View {
             Button {
                 Task { await laden() }
             } label: {
-                Label("Aktualisieren", systemImage: "arrow.clockwise")
+                Text("Aktualisieren")
             }
             if !istEltern, aenderbar, let d = lehrkraft {
                 let frei = d.zeitfenster.filter(\.frei).map(\.beginn)
@@ -192,14 +192,14 @@ struct SprechtagView: View {
                     Button {
                         sammel = Sammelaktion(beginne: frei, sperren: true)
                     } label: {
-                        Label("Alle freien Zeiten sperren", systemImage: "lock")
+                        Text("Alle freien Zeiten sperren")
                     }
                 }
                 if !gesperrt.isEmpty {
                     Button {
                         sammel = Sammelaktion(beginne: gesperrt, sperren: false)
                     } label: {
-                        Label("Alle gesperrten Zeiten freigeben", systemImage: "lock.open")
+                        Text("Alle gesperrten Zeiten freigeben")
                     }
                 }
             }
@@ -238,7 +238,7 @@ struct SprechtagView: View {
                     }
                     Spacer(minLength: 4)
                     if !istEltern, let raum = lehrkraft?.lehrer?.raum, !raum.isEmpty {
-                        Label("Raum \(raum)", systemImage: Symbole.raum)
+                        Text("Raum \(raum)")
                             .font(.system(size: 14))
                             .foregroundStyle(Farben.text2)
                             .lineLimit(1)
@@ -265,17 +265,15 @@ struct SprechtagView: View {
                     }
                 }
                 if info.angekuendigt && !info.abgesagt {
-                    Label(info.ankuendigungText, systemImage: "megaphone")
+                    Text(info.ankuendigungText)
                         .font(.system(size: 14))
                         .foregroundStyle(Farben.text2)
                 }
                 if !istEltern, let d = lehrkraft, !d.zeitfenster.isEmpty {
-                    HStack(spacing: 0) {
-                        kennzahl(d.zeitfenster.filter(\.gebucht).count, "Gebucht", Farben.akzent)
-                        kennzahl(d.zeitfenster.filter(\.frei).count, "Frei", Farben.ok)
-                        kennzahl(d.zeitfenster.filter(\.gesperrt).count, "Gesperrt", Farben.text3)
-                    }
-                    .padding(.top, 2)
+                    Text("Gebucht \(d.zeitfenster.filter(\.gebucht).count) · Frei \(d.zeitfenster.filter(\.frei).count) · Gesperrt \(d.zeitfenster.filter(\.gesperrt).count)")
+                        .font(.subheadline)
+                        .monospacedDigit()
+                        .foregroundStyle(Farben.text2)
                 }
                 if info.abgesagt {
                     Label("Der Sprechtag wurde abgesagt." + (info.absageGrund.isEmpty ? "" : " Grund: \(info.absageGrund)"),
@@ -284,7 +282,7 @@ struct SprechtagView: View {
                         .foregroundStyle(Farben.entfall)
                 }
                 if !info.hinweis.isEmpty {
-                    Label(info.hinweis, systemImage: "info.circle")
+                    Text(info.hinweis)
                         .font(.system(size: 14))
                         .foregroundStyle(Farben.text2)
                 }
@@ -315,28 +313,17 @@ struct SprechtagView: View {
                     }
                 }
                 if !k.text.isEmpty {
-                    Label(k.text, systemImage: k.angekuendigt ? "megaphone" : "info.circle")
+                    Text(k.text)
                         .font(.system(size: 14))
                         .foregroundStyle(Farben.text2)
                 } else if k.angekuendigt && !k.anmeldungVonText.isEmpty {
-                    Label("Anmeldung ab \(k.anmeldungVonText)", systemImage: "megaphone")
+                    Text("Anmeldung ab \(k.anmeldungVonText)")
                         .font(.system(size: 14))
                         .foregroundStyle(Farben.text2)
                 }
             }
             .padding(.vertical, 6)
         }
-    }
-
-    private func kennzahl(_ zahl: Int, _ text: String, _ farbe: Color) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text("\(zahl)")
-                .font(.system(size: 22, weight: .semibold).monospacedDigit())
-                .foregroundStyle(Farben.text)
-            Statusmarke(text: text, farbe: farbe)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Lehrkraft
@@ -520,7 +507,6 @@ struct SprechtagView: View {
                 }
             } header: {
                 HStack(spacing: 8) {
-                    Initialen(name: kind.anzeige, groesse: 22)
                     Text(kind.klasse.isEmpty ? kind.anzeige : "\(kind.anzeige) · \(kind.klasse)")
                 }
             }
@@ -552,7 +538,7 @@ struct SprechtagView: View {
                 }
                 if t.online, let url = Karte.onlineURL(t.link) {
                     Link(destination: url) {
-                        Label("Online-Termin öffnen", systemImage: "video")
+                        Text("Online-Termin öffnen")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Farben.akzent)
                     }
@@ -577,7 +563,6 @@ struct SprechtagView: View {
     private func lehrkraftKarte(_ l: SprechtagKindLehrkraft, kind: SprechtagKind, buchbar: Bool) -> some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .top, spacing: 11) {
-                Initialen(name: l.anzeige, groesse: 34)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(l.anzeige)

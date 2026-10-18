@@ -1,9 +1,13 @@
-# UntPlan – Benutzerhandbuch
+# UntPlan Studio – Benutzerhandbuch
 
-Das Handbuch folgt dem Arbeitsablauf einer Stundenplanerstellung: Schuldaten → Stammdaten → Unterricht → automatische Planung → manuelles Planen → Stundenpläne → Vertretungsplanung → Module.
-In der Anwendung erreichen Sie die passende Hilfeseite jederzeit mit **F1**.
+UntPlan Studio ist die Anwendung für Stunden-, Kurs- und Vertretungsplanung. Sie läuft im Browser; alle Berechnungen
+(Planung, Optimierung, Vertretungsvorschläge, Auswertungen) führt der Server aus. Mehrere Personen können gleichzeitig
+an derselben Schuldatei arbeiten.
 
-> Die Bildschirmfotos stammen aus dem automatischen Selbsttest (`UntPlan.exe --selbsttest=…`) mit der Beispielschule. Sie wurden unter Wine aufgenommen, deshalb sehen Schriften und Fenstertitel unter Windows etwas anders aus.
+Das Handbuch folgt dem Arbeitsablauf einer Stundenplanerstellung: Schuldaten → Stammdaten → Unterricht → automatische
+Planung → manuelles Planen → Stundenpläne → Vertretungsplanung → Auswertung und Ausgabe → Datenaustausch.
+Bedienschritte sind in der Form *Bereich → Eintrag* angegeben, z. B. *Stammdaten → Lehrkräfte*. Jede Funktion lässt
+sich außerdem über die Befehlssuche (**Strg+K**) aufrufen.
 
 ## Inhalt
 
@@ -11,264 +15,331 @@ In der Anwendung erreichen Sie die passende Hilfeseite jederzeit mit **F1**.
 2. [Schuldaten](#2-schuldaten)
 3. [Stammdaten](#3-stammdaten)
 4. [Unterricht](#4-unterricht)
-5. [Automatisches Verplanen](#5-automatisches-verplanen)
+5. [Automatische Planung](#5-automatische-planung)
 6. [Manuelles Planen](#6-manuelles-planen)
 7. [Stundenpläne](#7-stundenpläne)
 8. [Vertretungsplanung](#8-vertretungsplanung)
-9. [Module](#9-module)
-10. [Import, Export und WebPortal](#10-import-export-und-webportal)
-11. [Tastenkürzel](#11-tastenkürzel)
-12. [MultiUser](#12-multiuser)
-13. [Bedienung: Tabellen, Suche, Formate](#13-bedienung-tabellen-suche-formate)
+9. [Auswertung und weitere Module](#9-auswertung-und-weitere-module)
+10. [Ausgabe](#10-ausgabe)
+11. [Datenaustausch und UntPlan Web](#11-datenaustausch-und-untplan-web)
+12. [Mehrbenutzerbetrieb und Konten](#12-mehrbenutzerbetrieb-und-konten)
+13. [Bedienung von Tabellen](#13-bedienung-von-tabellen)
+14. [Tastenkürzel](#14-tastenkürzel)
 
 ---
 
 ## 1. Erste Schritte
 
-### Programmoberfläche
+### Anmelden
 
-![Arbeitsbereich](bilder/01_Arbeitsbereich.png)
+Öffnen Sie die Adresse Ihres Studio-Servers im Browser und melden Sie sich mit Benutzername und Passwort an. Die
+Konten verwaltet die Administration (siehe [Abschnitt 12](#12-mehrbenutzerbetrieb-und-konten)).
 
-| Bereich | Beschreibung |
+### Oberfläche
+
+| Element | Inhalt |
 |---|---|
-| Schnellzugriff (oben links) | Neu, Öffnen, Speichern, Rückgängig, Wiederholen, Drucken, Seitenansicht, Element-Rollup |
-| Menüband | Registerkarten **Start**, **Dateneingabe**, **Planung**, **Stundenpläne**, **Kursplanung**, **Vertretungsplanung**, **Module**; links das Menü **Datei** |
-| Arbeitsbereich | beliebig viele Fenster, die Sie verschieben und in der Größe ändern können; *Start → Standard-Fenstergruppe* stellt die abgebildete Anordnung her |
-| Eingabeassistent (rechts) | Schritt-für-Schritt-Anleitung der Ersteingabe; ein- und ausblenden unter *Start → Hilfethemen* |
-| Statuszeile | aktive Periode sowie Anzahl der Klassen, Lehrer und Unterrichte |
+| Navigation | Bereiche der Planung, z. B. *Stammdaten*, *Unterricht*, *Planung*, *Stundenpläne*. Selten gebrauchte Einträge stehen unter „weitere“. |
+| Kopfleiste | geöffnete Schuldatei, Rückgängig und Wiederholen, Speichern mit Speicherstand, Befehlssuche, Umschalter *Stundenplanung / Vertretungsplanung*, im Vertretungsmodus das Planungsdatum, Konto |
+| Übersicht | Kennzahlen der Schuldatei (Klassen, Lehrkräfte, Räume, Fächer, Unterrichte, Planstunden), Planqualität mit Bewertungszahl und Schnellzugriff |
 
-### Neue Schuldatei
+**Befehlssuche:** **Strg+K** (bzw. ⌘K) öffnet ein Suchfeld. Tippen Sie einen Teil des Namens, z. B. „zeitw“ oder
+„drucken“; die Pfeiltasten wählen, Enter führt aus, Esc schließt. Gefunden werden alle Einträge der Navigation und
+alle weiteren Befehle der Module.
 
-*Datei → Neu*: Geben Sie den Schulnamen ein und wählen Sie die NRW-Schulform. UntPlan übernimmt dabei die NRW-Ferien und Feiertage sowie den NRW-Fächerkatalog (inkl. Bereitschaft BER).
-*Datei → Beispielschule öffnen* lädt ein vollständiges Gymnasium zum Ausprobieren.
+### Schuldateien
 
-Eine Schuldatei (`*.up`) enthält alle Daten eines Schuljahres. Beim Speichern legt UntPlan automatisch eine Sicherung `*.bak` an.
-Jede Änderung lässt sich mit **Strg+Z** rückgängig machen (50 Schritte).
+Eine Schuldatei enthält alle Daten eines Schuljahres. Die Schuldateien liegen auf dem Server. Über das Menü der
+Schuldatei in der Kopfleiste erreichen Sie:
 
-**Automatisch speichern:** Unter *Einstellungen → Diverses* legen Sie das Intervall fest (Standard 10 Minuten, 0 = aus). Geänderte Daten werden dann in die geöffnete Datei gespeichert. Eine Datei ohne Namen landet als Wiederherstellungskopie im Benutzerordner (`%APPDATA%\UntPlan\Wiederherstellung`).
+- **Zuletzt verwendet** und **Alle Schuldateien …** – Datei öffnen.
+- **Neue Schuldatei …** – *Leere Schuldatei* (Schulname und Schulform; Fächer und Zeitraster nach NRW-Vorgaben werden
+  angelegt) oder *Beispielschule* (fiktives Gymnasium mit verplantem Stundenplan zum Ausprobieren).
+- **Datei hochladen …** – eine Schuldatei (`.up`) oder eine BAL-Datei vom Rechner übernehmen.
+- **Informationen**, **Speichern**, **Herunterladen (.up)**, **Schließen**.
 
-**Fensteranordnungen:** *Start → Fensteranordnungen* bzw. im Vertretungsmodus *Modus → Eigene Fensteranordnungen* speichert die aktuelle Anordnung unter einem Namen. Von dort laden und löschen Sie gespeicherte Anordnungen auch wieder. UntPlan öffnet beim Start den zuletzt benutzten Modus; abschaltbar unter *Einstellungen → Diverses*.
+**Speichern:** Geänderte Dateien speichert der Server automatisch nach kurzer Zeit. **Strg+S** speichert sofort. Die
+Kopfleiste zeigt „Nicht gespeicherte Änderungen“ bzw. den Zeitpunkt der letzten Speicherung.
+**Rückgängig:** Jede Änderung lässt sich mit **Strg+Z** rückgängig machen und mit **Strg+Y** wiederholen (50 Schritte).
 
 ### Stundenplanung und Vertretungsplanung
 
-UntPlan arbeitet in zwei Modi, die Sie unten im Menüband (*Modus*) oder mit **Strg+M** umschalten:
+Studio arbeitet in zwei Modi, die Sie in der Kopfleiste oder mit **Strg+Umschalt+V** umschalten:
 
-| Modus | Farbe | Inhalt |
-|---|---|---|
-| Stundenplanung | blau | Stammdaten, Unterricht, Planung, Optimierung, Module |
-| Vertretungsplanung | grün | Kalender, Absenzen, Vertretungen, Vorschlag, Veranstaltungen, Klausuren, Pausenaufsichten, Statistik |
+| Modus | Inhalt |
+|---|---|
+| Stundenplanung | Stammdaten, Unterricht, Planung, Optimierung, Stundenpläne, Oberstufe, Auswertung |
+| Vertretungsplanung | Kalender, Abwesenheiten, Vertretungen, Vorschlag, Veranstaltungen, Bereitschaften, Pausenaufsichten, tagesaktuelle Pläne, Statistik |
 
-Jeder Modus merkt sich seine eigene Fensteranordnung. Titelleisten, Menüband und Fenster nehmen die Farbe des Modus an.
-Unter Windows 11 gilt das auch für die Titelleiste des Hauptfensters.
+Stammdaten, Stundenpläne, Ausgabe, Datenaustausch und Schule stehen in beiden Modi zur Verfügung.
 
-**Auswahl wirkt auf alle Fenster:** Wählen Sie eine Vertretung, eine Stunde im Unterrichtsfenster oder eine Abwesenheit, zeigen alle geöffneten Stundenpläne mit eingeschalteter Synchronisation den zugehörigen Lehrer-, Klassen- bzw. Raumplan.
-Die betroffene Stunde ist gestrichelt markiert.
+**Auswahl wirkt auf alle Ansichten:** Wählen Sie eine Lehrkraft, eine Stunde oder eine Vertretung, folgen die
+geöffneten Stundenpläne mit eingeschalteter **Fensterverknüpfung** (Kettensymbol) dieser Auswahl.
 
 ---
 
 ## 2. Schuldaten
 
-### Schuljahr und Einstellungen
+### Schuldaten und Einstellungen
 
-*Start → Einstellungen*: Schulname, Schulnummer, Schulform, Region, Schuljahr von/bis und Wochenperiodizität (2 = A/B-Wochen).
-Weitere Karteikarten:
+*Schule → Schuldaten* enthält mehrere Seiten:
 
-- **Werte:** Wertrechnung, tagesgenau.
-- **Vertretungsplanung:**
-  - Mehrarbeitsgrenze, Standard 3 Stunden je Kalendermonat.
-  - Entfall ab Jahrgang, Standard EF.
-  - Titel des Vertretungsplans.
-- **Diverses**
+- **Allgemein:** Schulbezeichnung, Zusatz/Ort, Adresse, Schulnummer (NRW: 6-stellig), Land, Region, Schulform;
+  Schuljahr von/bis (die Sommerferien gehören nicht zum Schuljahr), **Wochenperiodizität** (1 = jede Woche gleich,
+  2 = A/B-Wochen …) und Wochenbuchstabe der ersten Schulwoche.
+- **Werte:** tagesgenaue Soll/Ist-Rechnung; Grenze, ab der Mehrarbeit vergütungsfähig ist (Standard: mehr als
+  3 Stunden je Kalendermonat).
+- **Vertretungsplanung:** Titel des Vertretungsplans, Entfall in Randstunden ab Jahrgang (Standard EF), Bereitschaften
+  nur als Doppelstunden, Vertretungsgewichtung (siehe [Abschnitt 8](#vertretungsvorschlag)).
+- **Diverses:** Unterrichtsänderungen in Folgeperioden übernehmen, Farbschema für den Druck.
 
-![Einstellungen](bilder/14_Einstellungen.png)
+Änderungen werden mit **Übernehmen** gespeichert.
 
-### Ferien
+### Ferien und Kalender
 
-*Start → Kalender/Ferien*: Mit **NRW-Ferien und Feiertage eintragen** übernehmen Sie alle amtlichen Termine. Weitere freie Tage, z. B. bewegliche Ferientage, ziehen Sie mit gedrückter Maustaste im Jahreskalender auf.
-Grün dargestellt sind Ferien, rot Feiertage und grau Wochenenden.
-
-![Ferien](bilder/15_Ferien.png)
+*Schule → Ferien und Kalender*: **Ferien NRW eintragen** übernimmt alle amtlichen Ferien und Feiertage. Weitere freie
+Tage, z. B. bewegliche Ferientage, legen Sie im Jahreskalender an: Tag anklicken, mit Umschalt+Klick einen Zeitraum
+wählen und **Ferien für den Zeitraum …** wählen (oder Doppelklick). Für einen einzelnen Tag setzen Sie
+*Unterrichtsfrei* bzw. *Feiertag* direkt.
+Der Kalender unterscheidet Ferien, Feiertage und Schultage farblich; unten stehen die Kennzahlen des Schuljahres
+(Tage, Wochen, Ferientage).
 
 ### Zeitraster
 
-*Dateneingabe → Zeitraster*:
+*Schule → Zeitraster*, Seite **Allgemein**:
 
-- Tage pro Woche, Stunden pro Tag, letzte Vormittagsstunde.
+- Anzahl Tage, maximale Stundenzahl pro Tag, letzte Vormittagsstunde, maximale Nachmittagsstunden, Länge einer
+  Normalstunde, erster Schultag der Woche, Nummer der ersten Stunde.
 - Beginn und Ende jeder Stunde.
-- Belegung jeder Stunde: Vormittag, Nachmittag oder leer (Mittagspause).
+- Belegung jeder Stunde: **Vormittag**, **Nachmittag** oder **leer** (z. B. Mittagspause). Zellen markieren (ziehen,
+  Strg+Klick) und mit der Schaltfläche belegen.
 
-Auf der Karteikarte **Pausen** tragen Sie die Pausen mit Dauer ein. Ist **Aufsicht** markiert, plant das Modul Pausenaufsichten diese Pause.
-
-![Zeitraster](bilder/13_Zeitraster.png)
+Seite **Pausen:** Pausen mit Dauer. Ist **Pausenaufsicht** markiert, plant das Modul Pausenaufsichten diese Pause.
+Außerdem die Mittagspause (von/bis Stunde) und die Zahl der Klassen, die höchstens gleichzeitig Mittagspause haben.
 
 ---
 
 ## 3. Stammdaten
 
-Stammdaten sind die Grundelemente der Planung. Für jedes Element gibt es ein Stammdatenfenster mit **Rasteransicht** (Tabelle) und **Formularansicht** (Karteikarten).
+Stammdaten sind die Grundelemente der Planung: *Stammdaten → Klassen, Lehrkräfte, Räume, Fächer, Schülerinnen und
+Schüler*, unter „weitere“ außerdem Raumgruppen, Aufsichtsbereiche, Abteilungen, Abwesenheitsgründe und Kommentare.
+Jede Liste ist eine bearbeitbare Tabelle (Bedienung siehe [Abschnitt 13](#13-bedienung-von-tabellen)).
 
-- **Neues Element:** in die letzte, leere Zeile schreiben.
-- **Umbenennen:** Doppelklick auf den Kurznamen. Alle Verweise werden mitgeführt.
-- **Löschen:** Entf bzw. Schaltfläche. UntPlan zeigt, wo das Element verwendet wird.
-- **Felder:** Ziehen Sie ein Feld per Drag & Drop aus der Formularansicht in die Tabelle, um es anzuzeigen; mit Strg+Ziehen blenden Sie es aus. Alternativ wählen Sie die Spalten unter *Felder der Ansicht*.
-- **Ansichten:** Spaltenauswahl, Breiten und Sortierung lassen sich unter einem Namen speichern.
-- **Sortieren:** mit bis zu drei Kriterien; *Umreihen* speichert die Reihenfolge dauerhaft.
-- **Serienänderung:** mehrere Zeilen markieren und einem Feld für alle denselben Wert geben.
-- **Kommentare:** über die rechte Maustaste. Kommentierte Felder tragen ein rotes Dreieck.
+- **Neues Element:** Kurzname in die letzte Zeile „Neu: …“ schreiben oder **Neu** wählen.
+- **Löschen:** Entf bzw. **Löschen**. Wird das Element im Unterricht verwendet, nennt Studio die Zahl der betroffenen
+  Unterrichte; die Verweise werden entfernt.
+- **Spalten:** **Spalten** (oder Rechtsklick auf die Kopfzeile) blendet weitere Felder ein. **Anpassen** passt die
+  Breiten an den Inhalt an.
+- **Suchen:** Das Suchfeld filtert die Zeilen.
+- **Unterricht** und **Stundenplan** öffnen Unterricht bzw. Plan des gewählten Elements.
 
-![Klassen](bilder/02_Klassen.png)
+Gemeinsame Felder aller Elemente: Name (Kurzname), Langname, Text, Beschreibung, Aliasname, Statistik-Kennzeichen,
+Abteilung, **Fix (X)** (Unterricht des Elements wird von der Optimierung nicht verändert), **Ignore (i)** (Element wird
+nicht verplant), Farbe.
 
 ### Räume
 
-![Räume](bilder/04_Raeume.png)
-
-- **Ausweichraum:** Ist der gewünschte Raum belegt, wird der Ausweichraum verwendet. Mehrere Ausweichräume können einen **Ring** bilden (R101 → R102 → … → R101). Die Optimierung nutzt dann jeden freien Raum des Rings.
+- **Ausweichraum:** Ist der gewünschte Raum belegt, wird der Ausweichraum verwendet. Mehrere Ausweichräume können einen
+  **Ring** bilden (R101 → R102 → … → R101); die Optimierung nutzt dann jeden freien Raum des Rings.
 - **Wanderklassen:** Klassen ohne festen Stammraum erhalten einen freien Raum aus einem Ausweichraum-Ring.
-- **Raumgewicht 0–4:** 0 bedeutet, der Unterricht darf auch ohne Raum stattfinden; 4 bedeutet, der Raum ist unverzichtbar (z. B. Sporthalle).
-- **Raumgruppen:** gleichwertige Fachräume (EDV1, EDV2). Als Fachraum im Unterricht wählt die Optimierung einen freien Raum der Gruppe.
-- **Raum sperren:** im Zeitwunschfenster den Wert **−3** eintragen.
+- **Raumgewicht 0–4:** 0 bedeutet, der Unterricht darf auch ohne Raum stattfinden; 4 bedeutet, der Raum ist
+  unverzichtbar (z. B. Sporthalle).
+- **Raumgruppen** (*Stammdaten → Raumgruppen*): gleichwertige Fachräume (EDV1, EDV2). Ist eine Raumgruppe als Fachraum
+  angegeben, wählt die Optimierung einen freien Raum der Gruppe.
+- Weitere Felder: Kapazität, Aufsichtsbereich (Gang), Stockwerk, Raumart, *buchbar (Web)* für Raumbuchungen in UntPlan
+  Web.
+- **Raum sperren:** in den Zeitwünschen des Raums den Wert **−3** eintragen.
 
 ### Klassen
 
-Stammraum, Jahrgang, Klassenlehrer, Hauptfächer pro Tag und hintereinander, Mittagspause (min./max.), max. Nachmittage, Stunden pro Tag.
+Stammraum, Jahrgang, Stufe, Klassenlehrer, Hauptfächer pro Tag und hintereinander, Mittagspause (min.–max.),
+Stunden pro Tag, max. Nachmittage, Schülerzahlen, Klassengruppe, Gültigkeit von/bis.
 Die **Kernzeit** (Zeitwunsch +3) markiert Stunden, die unbedingt belegt sein sollen.
 
-### Lehrer
+### Lehrkräfte
 
-![Lehrer](bilder/03_Lehrer.png)
-
-- **Wochensoll, Ermäßigungen und Lehrbefähigung (Fächer):** relevant für die Wertrechnung und den Lehrervorschlag.
-- **Planung:** Hohlstunden min.–max., Stunden pro Tag, max. Nachmittage, Mittagspause.
-- **Vertretung:** max. Vertretungen pro Woche/Monat, „keine Vertretung“.
-- **Pausenaufsichten:** Aufsichten min./max., „keine Aufsicht“.
+- **Werte:** Wochensoll, Ermäßigungen (Form `Grund:Wert; Grund:Wert`), Soll abzüglich Ermäßigungen, Ist, Wertkorrektur.
+- **Unterricht:** Lehrbefähigung (Fächer), Hohlstunden min.–max., Stunden pro Tag, Mittagspause, max. Nachmittage,
+  Stammraum.
+- **Vertretungsplanung:** max. Vertretungen pro Woche/Monat, „Keine Vertretung“, Sperrvermerk (0–9, je höher, desto
+  seltener wird die Lehrkraft vorgeschlagen), Bereitschaften max.
+- **Pausenaufsicht:** Aufsichten min./max., maximale Aufsichtsminuten, „Keine Aufsicht“.
+- **Allgemeine Daten:** E-Mail, Telefon, Personalnummer, Geburtsdatum, Geschlecht, Status.
 
 ### Fächer
 
-![Fächer](bilder/05_Faecher.png)
+Fachraum oder Raumgruppe, Hauptfach, Doppelstunden (min.–max.), **(M)** mehrmals pro Tag, **(R)** Randstunde,
+**(N)** kein Nachmittag, Fachgruppe, Werte-Faktor, Farbe. Für die Vertretungsplanung: Entfall nicht zählen, keine
+Vertretung, nicht drucken, keine Pausenaufsicht.
 
-Fachraum oder Fachraumgruppe, Hauptfach, Werte-Faktor, Doppelstunden, „mehrmals pro Tag“, „Randstunde“, „kein Nachmittag“, Farbe.
-
-**Bereitschaft:** Ein Fach mit dem Merkmal *Bereitschaft* (im NRW-Katalog: **BER**) ist kein echter Unterricht.
+**Bereitschaft:** Ein Fach mit dem Merkmal **(B) Bereitschaft** (im NRW-Katalog: **BER**) ist kein echter Unterricht.
 
 - Bereitschaftsstunden werden wie Unterricht verplant.
-- In dieser Stunde steht der Lehrer für Vertretungen zur Verfügung und wird im Vertretungsvorschlag bevorzugt.
+- In dieser Stunde steht die Lehrkraft für Vertretungen zur Verfügung und wird im Vertretungsvorschlag bevorzugt.
 - Bereitschaftsvertretungen zählen **nicht** als Mehrarbeit.
+- *Bereitsch. im Deputat* legt fest, ob die Bereitschaftsstunden auf das Deputat angerechnet werden.
+
+### Abwesenheitsgründe
+
+Je Grund: *Statistik* (zählt in der Statistik), *Vertraulich* (wird nie an UntPlan Web übertragen), *Entfall zählen*,
+*Freisetzung nicht zählen*, *nicht im Kopf* (erscheint nicht im Kopf des Vertretungsplans), Farbe.
 
 ### Zeitwünsche
 
-![Zeitwünsche](bilder/06_Zeitwuensche.png)
+*Unterricht → Zeitwünsche*: Oben wählen Sie die Art (Klasse, Lehrkraft, Raum, Fach, Unterricht) und das Element;
+die Pfeile blättern zum vorherigen bzw. nächsten Element. Elemente mit Zeitwünschen sind in der Auswahl mit einem Punkt
+markiert.
 
 | Wert | Bedeutung |
 |---|---|
-| −3 | gesperrt (Stunde darf nicht belegt werden) |
-| −2, −1 | möglichst nicht |
-| 0 | neutral |
-| +1, +2 | gern |
-| +3 | unbedingt (Kernzeit) |
+| −3 | keinesfalls Unterricht (absolute Sperrung) |
+| −2 | eigentlich nicht |
+| −1 | lieber nicht |
+| 0 | kein Wunsch |
+| +1 | eher ja |
+| +2 | eigentlich schon |
+| +3 | auf jeden Fall Unterricht (Kernzeit) |
 
-Wählen Sie den Wert oben und überstreichen Sie die Stunden mit gedrückter Maustaste. Ein Klick auf den Tagesnamen belegt den ganzen Tag, die Spalten **Vorm.** und **Nachm.** belegen nur den Vor- bzw. Nachmittag.
+Wählen Sie den Wert oben und überstreichen Sie die Stunden mit gedrückter Maustaste. Ein Klick auf **Tage**, **Vorm.**
+oder **Nachm.** belegt den ganzen Tag bzw. Vor- oder Nachmittag. Die Tasten 3 2 1 0 und Umschalt+1 2 3 (= −1 −2 −3)
+wählen den Wert.
 
-Im unteren Teil werden **unbestimmte Zeitwünsche** eingegeben, z. B. „1 Vormittag frei, Gewicht −2“: Der Lehrer möchte einen freien Vormittag, egal welchen.
+Darunter stehen die **unbestimmten Zeitwünsche**, z. B. „1 Tag, Freihalten (−3)“: Die Lehrkraft möchte einen freien
+Tag, gleich welchen. Bereiche: Tage, Vormittage, Nachmittage; Stärke −1 bis −3.
+
+Zeitwünsche für einzelne Unterrichte: *Unterricht → Zeitwünsche je Unterricht* (unter „weitere“).
 
 ---
 
 ## 4. Unterricht
 
-![Unterricht](bilder/07_Unterricht.png)
+*Unterricht → Nach Klassen*, *Nach Lehrkräften*, *Nach Fächern* bzw. *Alle Unterrichte*.
 
-*Dateneingabe → Klassen → Unterricht*:
-
-- **Spalten:** U-Nr. (wird automatisch vergeben), Wst. (Wochenstunden), Lehrer, Fach, Klasse(n), Fachraum, Stammraum, Doppelstunden, Block, Text.
-- **Raumvorschlag:** Fachraum (aus dem Fach) und Stammraum (aus der Klasse) werden automatisch vorgeschlagen.
-- **Spalte Nvpl.:** zeigt die nicht verplanten Stunden. Ziehen Sie eine Zahl in einen Stundenplan, um die Stunde dort zu verplanen.
+- **Spalten:** U-Nr (wird automatisch vergeben), Kl,Le (Anzahl Klassen und Lehrkräfte einer Kopplung), Nvpl.Std. (nicht
+  verplante Stunden), Wst (Wochenstunden), Jst (Jahresstunden), Fach, Lehrer, Klasse(n), Fachraum, Stammraum,
+  Dopp.Std., Block, Text, Fix, Ignore. Weitere Spalten (Band, Kursname, Schülergruppe, Werte, Woche A/B,
+  Unterrichtsgruppe, von/bis, Statistik …) blenden Sie über **Spalten** ein.
+- **Neuer Unterricht:** in die letzte Zeile schreiben oder **Neu** wählen.
+- **Raumvorschlag:** Beim Eintragen werden der Fachraum (aus dem Fach) und der Stammraum (aus der Klasse bzw.
+  Lehrkraft) übernommen.
 
 Unterrichtsformen:
 
-- **Kopplung:** Mehrere Lehrer und Klassen unterrichten gleichzeitig, z. B. Religion KR/ER/PP für 6a und 6b. Fügen Sie dafür Kopplungszeilen hinzu; mit **⊞** blenden Sie die Zeilen ein und aus.
-- **Doppelstunde:** Feld Doppelstd. min–max, z. B. `1-1`.
+- **Kopplung:** Mehrere Lehrkräfte und Klassen unterrichten gleichzeitig, z. B. Religion KR/ER/PP für 6a und 6b.
+  **Kopplung** fügt eine Kopplungszeile hinzu; die Zeilen stehen unter dem Unterricht.
+- **Doppelstunde:** Feld Dopp.Std. min–max, z. B. `1-1`.
 - **Block:** z. B. `3` für Dreierblöcke.
 - **Band:** Unterrichte mit gleichem Band (z. B. Kursschiene `EF-1`) werden immer parallel gelegt.
-- **A/B-Woche, befristet von–bis, Werte-Faktor:** in der Formularansicht.
+- **A/B-Woche, befristet von–bis, Werte-Faktor:** in den gleichnamigen Spalten.
 
-**Lehrervorschlag:** Für die markierte Kopplungszeile schlägt UntPlan Lehrer mit passender Lehrbefähigung und freiem Deputat vor.
+Weitere Funktionen (Werkzeugleiste und Kontextmenü): Kopplungszeile löschen, Unterricht kopieren, Unterricht löschen,
+Stundenplan des Elements öffnen.
+
+**Unterrichtsgruppen (A/B-Wochen):** *Unterricht → Unterrichtsgruppen* (unter „weitere“) legt Gruppen wie *A-Woche*,
+*B-Woche* oder *1. Halbjahr* mit Kalenderwochen bzw. Zeitraum und Unterbrechungen fest. Weisen Sie einem Unterricht
+oder einer Kopplungszeile eine Gruppe zu. Zwei Stunden zur gleichen Zeit gelten nur dann als Kollision, wenn sich ihre
+Wochen überschneiden; Raumbelegung und Wertrechnung rechnen anteilig.
+
+**Stundentafel:** *Unterricht → Stundentafel* (unter „weitere“): Soll-Stunden je Jahrgang und Fach mit Abgleich
+gegen den eingegebenen Unterricht.
 
 ---
 
-## 5. Automatisches Verplanen
+## 5. Automatische Planung
 
 ### Gewichtung
 
-![Gewichtung](bilder/12_Gewichtung.png)
-
-*Planung → Gewichtung*: 26 Kriterien in den Karteikarten Lehrer, Klassen, Fächer, Hauptfächer, Räume, Stundenverteilung und Zeitwünsche. Jedes Kriterium hat ein Gewicht von 0 (unwichtig) bis 5 (extrem wichtig).
+*Planung → Gewichtung*: 26 Kriterien auf den Seiten Lehrer, Klassen, Fächer, Hauptfächer, Räume, Stundenverteilung und
+Zeitwünsche. Jedes Kriterium hat ein Gewicht von 0 (unwichtig) bis 5 (extrem wichtig).
 
 - *Gewichtungs-Verteilung* zeigt die Gewichte im Verhältnis zueinander.
 - *Analyse* nennt die Kriterien, die mit den aktuellen Daten schwer zu erfüllen sind.
+- *Voreinstellung* stellt die Standardgewichte wieder her.
 
-Tipp: Verwenden Sie die Stufen 4 und 5 sparsam.
-
-### Optimierung
-
-*Planung → Optimierung*:
-
-| Strategie | Verwendung |
-|---|---|
-| A – Schnelloptimierung | erster Überblick, wenige Sekunden bis Minuten |
-| B – Normaloptimierung | Standard |
-| D – Intensivoptimierung | mehrere Pläne mit Tauschoptimierung |
-| E – Nächtliche Optimierung | lange Laufzeit, viele Pläne |
-
-Optional stellen Sie ein:
-
-- Anzahl der Pläne.
-- Optimierungsschritte 1–9.
-- Start- und Erhöhungsprozentsatz für schrittweises Verplanen.
-
-Nach dem Lauf erscheinen alle Pläne mit **Bewertungszahl** und Kennzahlen (nicht verplant, Hohlstunden, Zeitwunschverletzungen …). Kleiner ist besser. Der beste Plan ist gelb markiert und wird mit **OK** übernommen.
-Fixierte Stunden (*) bleiben unverändert.
-
-Zur Mittagspause: Mit *fix* ist eine Stunde immer frei. Mit *flexibel* bleibt innerhalb des Bereichs (z. B. 6.–7. Stunde) mindestens eine Stunde frei.
+Verwenden Sie die Stufen 4 und 5 sparsam.
 
 ### Diagnose
 
-![Diagnose](bilder/11_Diagnose.png)
+*Planung → Diagnose*: Die Seite **Eingabedaten** prüft vor der Optimierung, z. B. Lehrkräfte mit mehr Stunden als
+verfügbaren Zeiten, Unterricht ohne Lehrkraft oder Raum und Soll-Ist-Differenzen.
+Die Seite **Stundenplan** listet die Verstöße des aktuellen Plans mit Gewicht und Anzahl. Rechts stehen Beschreibung
+und Einzelfälle; **Betroffenen Stundenplan anzeigen** (oder Doppelklick) öffnet den Plan des Falls.
+Prüfen Sie vor den ersten Optimierungsläufen Ihre Eingabedaten mit der Diagnose.
 
-*Planung → Diagnose*: Die Karteikarte **Eingabedaten** prüft vor der Optimierung, z. B. Lehrer mit mehr Stunden als verfügbaren Zeiten, Unterricht ohne Lehrer oder Raum und Soll-Ist-Differenzen.
-Die Karteikarte **Stundenplan** listet die Verstöße des aktuellen Plans. Rechts stehen Beschreibung und Einzelfälle; ein Doppelklick öffnet den betroffenen Stundenplan.
+### Optimierung
+
+*Planung → Automatische Planung* öffnet die **Steuerdaten zur Optimierung**:
+
+| Verfahren | Verwendung |
+|---|---|
+| Kompakt – ein schneller Durchlauf | erster Überblick; eignet sich zum Finden von Eingabefehlern |
+| Gründlich – mehrere Durchläufe | Standard |
+| Stufenweise – schnell | Unterricht wird schrittweise verplant |
+| Stufenweise – gründlich | schrittweise mit mehreren Durchläufen |
+| Langlauf – über Nacht | lange Laufzeit, viele Pläne |
+
+Weitere Einstellungen:
+
+- Anzahl Pläne je Serie (1–20) und Optimierungsschritte je Plan (1–9).
+- Start- und Erhöhungs-Prozentsatz (nur für die stufenweisen Verfahren).
+- Ähnlichkeit zum Vorplan (0 = nicht ähnlich … 4 = sehr ähnlich).
+- **Plan bedingt fixieren:** Vorhandene Stunden werden nur verlegt, wenn es nicht anders geht.
+- Lehrkräfte nur gewünschte freie Tage, Doppelstunden besonders optimieren, nur nicht verplante Stunden setzen.
+- Unterricht ohne Lehrkraft vorher automatisch zuordnen.
+
+Die Optimierung läuft auf dem Server im Hintergrund; Sie können währenddessen weiterarbeiten. Die Ansicht
+*Optimierung* zeigt Fortschritt und Dauer; **Abbrechen** beendet den Lauf.
+
+Nach dem Lauf erscheinen der aktuelle Plan und alle neuen Pläne mit **Bewertungszahl** und Kennzahlen (nicht verplante
+Stunden, Hohlstunden, Kernzeitverletzungen, Fach zweimal am Tag, Doppelstundenfehler, Zeitwunschverletzungen,
+Lehrer-Hohlstunden, kein Raum, Kollisionen, Abweichungen zum aktuellen Plan). Kleiner ist besser; grüne Werte sind
+besser als im aktuellen Plan. Der beste Plan ist vorausgewählt. **Vergleich** zeigt aktuellen und gewählten Plan
+nebeneinander, **Plan übernehmen** (oder Doppelklick) übernimmt ihn, **Verwerfen** löscht die Ergebnisse.
+Fixierte Stunden bleiben immer unverändert. Wurde das Dokument seit dem Start geändert, weist Studio darauf hin: Beim
+Übernehmen gehen diese Stundenplanänderungen verloren.
+
+Zur Mittagspause: Mit *fix* ist eine Stunde immer frei. Mit *flexibel* bleibt innerhalb des Bereichs (z. B.
+6.–7. Stunde) mindestens eine Stunde frei.
 
 ---
 
 ## 6. Manuelles Planen
 
-![Klassenplan](bilder/08_Stundenplan_Klasse.png)
+*Planung → Manuell planen* öffnet den Stundenplan einer Klasse mit eingeschaltetem **Planen**. Nicht verplante Stunden
+stehen unter dem Plan (z. B. „2× D 5a“, Blöcke mit Länge).
 
 ### Verplanen, Verschieben, Tauschen
 
-Ziehen Sie eine Stunde aus der Liste *Nicht verplant* oder aus dem Plan auf ein Feld. Während des Ziehens sind die Felder eingefärbt:
+Ziehen Sie eine nicht verplante Stunde oder eine Stunde des Plans auf ein Feld. Während des Ziehens sind die Felder
+eingefärbt:
 
 | Farbe | Bedeutung |
 |---|---|
 | grün | Verplanung ohne Kollision möglich |
 | rot | kollisionsfrei, aber Vorgabe verletzt (Sperrung, negativer Zeitwunsch) |
 | violett | kollisionsfrei, aber kein passender Raum frei |
-| grün hinterlegte Stunde | Tausch möglich |
+| Rahmen | Tausch möglich |
 | ohne Farbe | Kollision |
 
-Wird auf eine belegte Stunde gezogen, fragt UntPlan nach **Tauschen** oder **Verdrängen** (die behindernde Stunde wird entplant).
+Kommt es zu einer Kollision, fragt Studio, ob der **behindernde Unterricht entplant** werden soll (Ja: er erscheint unter
+„nicht verplant“; Nein: trotzdem ausführen, die Kollision bleibt bestehen).
 
-- **Fixieren** (*): Die Stunde wird von der Optimierung nicht verändert.
-- **Entplanen** (Entf): Die Stunde wandert zurück in die Liste der nicht verplanten Stunden.
-- **Tauschvorschläge:** Für die markierte Stunde zeigt UntPlan alle kollisionsfreien Tausche, sortiert nach **Gewinn** (Verbesserung der Bewertungszahl). Ein Doppelklick führt den Tausch aus.
+- **Markieren:** Klick wählt eine Stunde, Strg+Klick weitere; **Strg+A** markiert alle, **Esc** hebt die Markierung auf.
+- **Fixieren** (**F**): Die Stunde wird von der Optimierung nicht verändert.
+- **Entplanen** (**Entf**): Die Stunde wandert zurück zu den nicht verplanten Stunden.
+- **Tauschvorschläge:** Für die markierte Stunde zeigt Studio alle Tausche ohne neue Kollisionen, sortiert nach
+  **Gewinn** (Verbesserung der Bewertungszahl). **Tauschen** führt den gewählten Tausch aus.
+- Das Kontextmenü (rechte Maustaste) bietet außerdem: ganzen Block bzw. alle Stunden des Unterrichts markieren,
+  Unterricht bearbeiten, Zeitwünsche des Unterrichts.
+- *Planung → Fixierungen* fixiert alle Stunden bzw. hebt alle Fixierungen auf; *Planung → Alle Stunden entplanen*
+  leert den Plan (beide unter „weitere“).
 
 ### Raumzuordnung
 
-![Raum zuordnen](bilder/25e_Raumzuordnung.png)
+*Raum zuordnen / löschen* (Kontextmenü einer Stunde oder *Planung → Räume zuordnen*) zeigt links die Kopplungszeilen
+des Unterrichts und rechts alle Räume.
 
-*Raum zuordnen / löschen* zeigt links die Kopplungszeilen des Unterrichts und rechts alle möglichen Räume.
-
-**Anwenden auf:** die markierte Unterrichtsstunde, den ganzen Stundenblock oder alle Stunden des Unterrichts.
-
-**Spalten der Raumliste:**
+**Anwenden auf:** die Unterrichtsstunde, den Stundenblock oder alle Stunden des Unterrichts.
 
 | Spalte | Bedeutung |
 |---|---|
@@ -281,358 +352,409 @@ Wird auf eine belegte Stunde gezogen, fragt UntPlan nach **Tauschen** oder **Ver
 | Std.frei | in wie vielen der betroffenen Stunden der Raum frei ist |
 | Kap.Diff. | Kapazität minus Schülerzahl der Klassen |
 
-**Farben:** grün = Wunschraum bzw. Raumgruppe, rot = besetzt, grau = gesperrt.
-
-**Filter:**
-
-- nur freie Räume
-- nur Wunschräume
-- nur ausreichende Kapazität
-- Suchfeld
-- Langnamen anzeigen
-
+Wunschräume bzw. Räume der Raumgruppe, besetzte und gesperrte Räume sind farblich unterschieden.
+**Filter:** nur freie Räume, nur Wunschräume/Raumgruppe, nur ausreichende Kapazität, Suchfeld, Langname anzeigen.
 **Bedienung:** Doppelklick, Enter oder ← ordnet den Raum zu; das Löschsymbol bzw. Entf entfernt ihn.
 
 Ist der gewählte Raum belegt, haben Sie drei Möglichkeiten:
 
-- **Verdrängen:** Der andere Unterricht verliert den Raum.
+- **Behindernden Unterricht aus dem Raum verdrängen.**
 - **Räume tauschen.**
 - **Kollision zulassen.**
 
-In der **Übersicht** (Raumplan quer) verlegen Sie Räume per Drag & Drop.
-
-![Übersicht](bilder/10_Uebersicht.png)
+In der **Gesamtübersicht Räume** verlegen Sie Räume per Drag & Drop in eine andere Raumzeile.
 
 ---
 
 ## 7. Stundenpläne
 
-- **Planarten:** Klassen-, Lehrer-, Raum- und Fachpläne, jeweils normal oder groß.
-- **Blöcke:** Doppelstunden und Blöcke erscheinen als ein Feld. Gleichzeitige Stunden und Blöcke stehen immer nebeneinander.
-- **Synchronisation:** Ein Klick auf eine Stunde, z. B. im Lehrerplan, stellt die geöffneten Klassen- und Raumpläne auf die Klasse bzw. den Raum dieser Stunde um. Bei Kopplungen gilt nur die Zeile der Lehrkraft. Das funktioniert auch im tagesaktuellen Plan des Vertretungsmodus.
-- **Vertretungsmodus:** Die Pläne sind kompakter und passen ohne Blättern auf die Seite.
-- **Durchschalten:** ◄ ► neben der Elementauswahl wechselt zum vorherigen bzw. nächsten Element.
-- **Auswahl:** oben im Fenster. Mit **Synchronisation** folgt der Plan der Auswahl in anderen Fenstern.
-- **Woche:** Mit *Woche* sehen Sie den Plan einer bestimmten Kalenderwoche mit eingetragenen Vertretungen.
-- **Stundenlupe:** zeigt unten alle Details der markierten Stunde.
-- **Eigene Stundenplanformate:** Die Auswahl in der Werkzeugleiste wechselt zwischen den Formaten der Planart. Über das Zahnrad legen Sie neue Formate an (als Kopie), bearbeiten, benennen sie um oder löschen sie. Jedes Fenster merkt sich das zuletzt gewählte Format.
-- **Formate:** In den *Stundenplaneinstellungen* legen Sie Schriftgröße, Farben, Zeitanzeige und die angezeigten Felder fest. Im Grafik-Editor *Stpl-Stunde* positionieren Sie die Felder einer Stunde frei, mit Hilfslinien.
-- **Ausgabe:** Druck (mit Druckauswahl mehrerer Elemente), HTML für die Homepage, Info-Stundenplan (alle Pläne als Webseiten), iCal-Kalender je Lehrer.
+*Stundenpläne → Klassen, Lehrkräfte, Räume, Fächer*.
 
-![Lehrerplan](bilder/09_Stundenplan_Lehrer.png)
+- **Element wählen:** Auswahl oben; die Pfeile wechseln zum vorherigen bzw. nächsten Element.
+- **Blöcke:** Doppelstunden und Blöcke erscheinen als ein Feld. Gekoppelte und gleichzeitige Stunden stehen
+  nebeneinander.
+- **Fensterverknüpfung:** Ein Klick auf eine Stunde, z. B. im Lehrerplan, stellt die verknüpften Klassen- und Raumpläne
+  auf die Klasse bzw. den Raum dieser Stunde um.
+- **Planen:** schaltet das Verschieben per Drag & Drop ein oder aus (siehe [Abschnitt 6](#6-manuelles-planen)).
+- **Kompakte Darstellung:** kleinere Pläne, die ohne Blättern auf den Bildschirm passen; *Stundenpläne → Kompaktpläne*
+  (unter „weitere“).
+- **Doppelklick** auf eine Stunde öffnet den Unterricht.
+- **Gesamtübersichten:** *Stundenpläne → Gesamtübersicht Klassen / Lehrkräfte / Räume*: alle Elemente als Zeilen, Tage
+  × Stunden als Spalten. Stunden lassen sich innerhalb der Zeile verschieben oder tauschen. Drucken bzw. als PDF
+  herunterladen.
+- **Planformate:** *Stundenpläne → Planformate* (unter „weitere“): eigene Formate als Kopie einer Vorlage anlegen,
+  bearbeiten und löschen – Schriftgröße, Farben, Zeitanzeige, Layout, HTML-Ausgabe und die Felder einer Stunde (mit
+  grafischem Editor). **Probedruck** zeigt das Ergebnis. Die Formate liegen in der Schuldatei und werden beim Drucken
+  gewählt.
+
+Ausgabe der Pläne siehe [Abschnitt 10](#10-ausgabe).
 
 ---
 
 ## 8. Vertretungsplanung
 
+Schalten Sie in den Modus **Vertretungsplanung**. Das **Planungsdatum** steht in der Kopfleiste; die Pfeile bzw.
+**Strg+Bild↑ / Strg+Bild↓** blättern zum vorherigen bzw. nächsten Unterrichtstag, die Doppelpfeile um eine Woche.
+Mit dem Datum wechselt automatisch die gültige Periode.
+
+*Vertretungsplanung → Tagesplanung* stellt Kalender, Abwesenheiten, Vertretungen, Vorschlag und Tagespläne zusammen dar.
+
+### Kalender und Nachrichten zum Tag
+
+*Vertretungsplanung → Kalender*: Wochenübersicht mit Wochentyp und je Tag offene Vertretungen, abwesende Klassen,
+Freisetzungen, blockierte Räume, Raumvertretungen, Tagestexte sowie Kollisionen von Lehrkräften und Räumen.
+
+- **Tagestexte** (Nachrichten zum Tag): Text, gültig bis, Anzeige in UntPlan Web, Art (für alle oder nur für
+  Lehrkräfte) und betroffene Elemente.
+- **Kalendertag:** normaler Schultag, Feiertag, unterrichtsfrei (mit Grund) oder nur bestimmte Stunden unterrichtsfrei,
+  dazu eine Notiz des Vertretungsplaners (wird nicht gedruckt).
+
 ### Abwesenheiten
 
-![Abwesenheiten](bilder/17_Abwesenheiten.png)
+*Vertretungsplanung → Abwesenheiten* (**Strg+M**): Lehrer-, Klassen- und Raumabwesenheiten mit Von/ab Stunde,
+Bis/bis Stunde, Grund und Text.
 
-*Vertretungsplanung → Abwesenheiten*: Geben Sie Lehrer-, Klassen- und Raumabwesenheiten mit Datum, Stunde von/bis, Grund und Text ein.
+- **Direkteingabe:** In der letzten Zeile „Neue Abwesenheit …“ tippen Sie Element, Datum und Stunden direkt ein.
+  Datumsfelder akzeptieren z. B. `14.10.`. **Neu** öffnet stattdessen einen Dialog.
+- **Klassenabwesenheit:** Begleitlehrer gelten ebenfalls als abwesend. Der Unterricht der Klasse wird zur
+  **Freisetzung**; die freigesetzten Lehrkräfte stehen für Vertretungen zur Verfügung (Minusstunden).
+- Mit dem Speichern erzeugt Studio sofort die **offenen Vertretungen**. Die Spalte *offen* zeigt ihre Zahl.
+- **Hinweis bei geplanten Vertretern:** Wird eine Lehrkraft abwesend, die bereits als Vertreter eingeteilt ist, meldet
+  Studio die betroffenen Vertretungen. Diese werden wieder offen.
+- **Teilen**, **Kopieren** (für weitere Elemente) und **Zusammenfassen** bearbeiten Abwesenheiten; **Strg+Entf** löscht.
 
-- **Klassenabwesenheit:** Begleitlehrer gelten ebenfalls als abwesend. Der Unterricht der Klasse wird zur **Freisetzung**; die freigesetzten Lehrer stehen für Vertretungen zur Verfügung (Minusstunden).
-- Mit dem Speichern erzeugt UntPlan sofort die **offenen Vertretungen** (rot `???`, nicht fett).
-- **Datumsfelder** in Tabellen (Absenzen, Veranstaltungen, Klausuren, Tagestexte, Ferien, Unterrichtsgruppen) haben eine Datumsauswahl mit Kalender. Eintippen ist weiterhin möglich, z. B. `14.10.`, `h` für heute oder `+3`.
-- **Direkteingabe:** Am Ende der Liste steht immer eine leere Zeile *neu*. Tippen Sie dort Lehrer, Datum und Stunden ein, ohne einen Dialog zu öffnen. Das gilt ebenso für **Veranstaltungen**, **Klausuren** und **Tagestexte**.
-- **Hinweis bei geplanten Vertretern:** Wird ein Lehrer abwesend, der bereits als Vertreter eingeteilt ist, meldet UntPlan die betroffenen Vertretungen. Diese werden wieder offen.
-- Mit **Teilen**, **Kopieren** und **Zusammenfassen** bearbeiten Sie mehrere Abwesenheiten auf einmal.
+### Vertretungen
 
-### Vertretungsfenster
-
-![Vertretungen](bilder/16_Vertretungen.png)
+*Vertretungsplanung → Vertretungen* (**Strg+T**).
 
 **Kopfbereich:**
 
-- **Klasse(n)** bzw. **Lehrer:** Auswahl mit „(alle)“ und ◄ ►.
-- **Von-Bis:** Datum mit Wochentag und ◄ ►. Über die Kalenderschaltfläche wählen Sie **Tag**, **Woche** oder **Von-Bis**.
-- **Ansicht einschränken auf …:** offene Vertretungen, Kollisionen, Veranstaltungszeilen.
-- **Vtr-Nr.** (unten): zeigt die Nummer der markierten Vertretung. Eine eingetippte Nummer springt zu dieser Vertretung.
-
-Bei Veranstaltungen zeigt die Liste nur die Freisetzungen, Entfälle und Vertretungen. Die Zeilen der Veranstaltung selbst blendet *Veranstaltungszeilen* ein.
+- **Klasse(n)** bzw. **Vertreter:** Auswahl mit „(alle)“.
+- **Von-Bis:** Tag, Woche oder Zeitraum.
+- **Ansicht einschränken auf …:** offene Vertretungen, Kollisionen; *Veranstaltungen zusammenfassen* zeigt Entfälle und
+  Freisetzungen einer Veranstaltung je Tag in einer Zeile („Alle Klassen“, Stunde „1-6“).
+- **Vtr-Nr.** (unten): Nummer eingeben und Enter springt zu dieser Vertretung.
+- **Ansicht** (unten): Klasse – Standard, Lehrer – Standard, Druck – Klasse, Druck – Lehrer, Pausenaufsichten. Die
+  angezeigten Felder legen Sie unter *Felder der Ansicht* fest, die angezeigten Vertretungsarten unter
+  *Einstellungen Vertretungsfenster*.
 
 Arbeitsablauf:
 
-1. Tag wählen. Oben sehen Sie Wochentyp, Anzahl offener Vertretungen sowie abwesende Lehrer und Klassen.
-2. Offene Vertretung markieren. Der **Vertretungsvorschlag** zeigt alle freien Lehrer mit Punkten und Kriterien:
-   - Bereitschaft, freigesetzt, kennt die Klasse, Fachlehrer.
-   - Lage: Hohlstunde, anschließend, verlängert den Tag, sonst frei.
-   - Vertretungen in Woche, Monat und Jahr, Saldo.
-3. Mit Doppelklick oder **Vertreter zuweisen** übernehmen. Alternativ:
-   - **Entfall** – UntPlan schlägt ihn ab Jahrgang EF in Randstunden vor.
-   - **Betreuung**, **Raumvertretung** (Liste freier und frei gewordener Räume), **Verlegung** (mit Prüfung, ob Lehrer und Klasse frei sind).
-   - **Sondereinsatz**, **Klausur**.
-4. **Automatische Vertretung des Tages** plant alle offenen Vertretungen nach dem Vorschlag.
+1. Tag wählen.
+2. Offene Vertretung markieren und den **Vertretungsvorschlag** öffnen (**Strg+G**, Enter oder Doppelklick).
+3. Vertreter übernehmen. Alternativ:
+   - **Entfall** (Taste `-`) – Studio schlägt ihn ab dem eingestellten Jahrgang (Standard EF) in Randstunden vor.
+   - **Vertretung ohne Lehrkraft** (Taste `+`).
+   - **Raum zuordnen / löschen**, **Vertretung teilen**, **Sondereinsatz**, **Als Vormerkung beiseitelegen**.
+4. **Nächste offene** (**F3**, Umschalt+F3 rückwärts) springt zur nächsten offenen Vertretung.
+5. *Vertretungsplanung → Automatische Vertretung* bearbeitet alle offenen Vertretungen eines Zeitraums nacheinander
+   (bester Vertreter des Vorschlags, sonst Entfall, wenn sinnvoll).
 
-Die Spalten **Vertreter**, **Fach**, **Raum** und **Text** können Sie direkt überschreiben.
-In der Auswahlliste *Vertreter* sind belegte Lehrer rot und Lehrer mit Bereitschaft grün; Sie können in der Liste suchen, indem Sie tippen.
+Die Spalten **Vertreter**, **Fach**, **Raum** und **Text** können Sie direkt überschreiben. **Zurücksetzen** (Entf)
+macht eine Vertretung wieder offen. Vertretungen, die aus einer Abwesenheit oder Veranstaltung entstehen, lassen sich
+nicht löschen – ändern Sie dafür die Abwesenheit. Weitere Kennzeichen: **(X) Fixieren**, **Nicht drucken**.
+**Neu berechnen** gleicht die Vertretungen mit Abwesenheiten, Veranstaltungen und Klausuren ab.
+Offene Vertretungen und Kollisionen sind farblich hervorgehoben.
 
-- **Zusammenhängende Stunden** (Doppel- und Blockstunden) erscheinen im Tagesplan als ein Block.
-- **Drag & Drop im Tagesplan:** Beim Ziehen fragt UntPlan, ob nur die Stunde oder der ganze Block verlegt werden soll und wie mit Kollisionen umzugehen ist (Tauschen, Verdrängen, Kollision zulassen).
-- **Ansichten:** Klasse, Lehrer, Druck und Pausenaufsichten.
-- **Filter:** *Offene Vertretungen*, *Kollisionen*.
-- **Tasten:** `+` setzt *Vertretung ohne Lehrkraft*, `-` setzt *Entfall*, **F3** springt zur nächsten offenen Vertretung (Umschalt+F3 zur vorherigen).
-- **Flüssige Auswahl:** Beim Blättern mit den Pfeiltasten werden die Stundenpläne erst aufgebaut, wenn die Auswahl stehen bleibt. Mit *Weiter zur nächsten offenen* im Vertretungsvorschlag wählt UntPlan nach jedem Zuweisen automatisch die nächste offene Vertretung.
-- **Betreuungen:** Der Reiter *Betreuungen* sortiert nach Nähe: gekoppelt, gleicher Gang, gleiches Stockwerk. Danach zählt, ob die Lehrkraft die Klasse kennt, wie viele Betreuungen sie heute schon hat und ihr Vertretungszähler. *Nur in der Nähe* blendet weiter entfernte Lehrkräfte aus.
+### Vertretungsvorschlag
 
-- **Bereitschaft:** Lehrer mit Bereitschaftsstunde stehen grün ganz oben; ihre Vertretung ist keine Mehrarbeit, im Aushang steht die Bemerkung „Bereitschaft“. Bereitschaften selbst werden nie vertreten: Fehlt die Lehrkraft, entfällt die Bereitschaft.
-- **statt-Vertretung:** Ein freigesetzter Lehrer vertritt.
-- **Vertretungsgewichtung** (Menüband): Hier legen Sie fest, wie stark jedes Kriterium im Vorschlag zählt (0–5).
-- **Pausenaufsicht-Vertretungen:** Fällt eine Aufsicht durch Abwesenheit aus, erscheint sie auf der gleichnamigen Karteikarte. Dort wählen Sie einen Vertreter.
-- **Tagestext:** Nachrichten zum Tag für alle oder nur für Lehrer.
+Der Vorschlag hat die Seiten **Vertretungsvorschläge**, **Betreuungen** und **Räume**:
+
+- **Vertretungsvorschläge:** freie Lehrkräfte mit Punkten und Kriterien – Merker zur Stunde, Vertretungen und Entfälle,
+  Zähler, Zeitwunsch, Jahressaldo, Kennzeichen, reguläre Bereitschaft, Deputat, Fach- und Klassenkenntnis, Stunden am
+  Tag, Vertretungen in Woche und Monat.
+- **Betreuungen:** sortiert nach Nähe (gekoppelt, gleicher Gang, gleiches Stockwerk), danach ob die Lehrkraft die
+  Klasse kennt, wie viele Betreuungen sie heute schon hat und nach ihrem Vertretungszähler. *Nur in der Nähe* blendet
+  weiter entfernte Lehrkräfte aus.
+- **Räume:** freie und frei gewordene Räume für eine Raumvertretung.
+- **Vorziehungen:** Unterricht, der in die offene Stunde verlegt werden kann.
+
+Optionen: *Stundenblock* (Vorschlag für alle Stunden einer Doppelstunde), *Wegzeiten ignorieren*, *Dauervertretung*
+(Vertreter für alle Stunden dieses Unterrichts während der Abwesenheit), *Alle Lehrer* (auch gesperrte und weit
+entfernte). Mit *Weiter zur nächsten offenen* wählt Studio nach jedem Zuweisen automatisch die nächste offene
+Vertretung.
+
+- **Bereitschaft:** Lehrkräfte mit Bereitschaftsstunde werden bevorzugt; ihre Vertretung ist keine Mehrarbeit, im
+  Aushang steht die Bemerkung „Bereitschaft“. Bereitschaften selbst werden nie vertreten: Fehlt die Lehrkraft, entfällt
+  die Bereitschaft.
+- **statt-Vertretung:** Eine freigesetzte Lehrkraft vertritt.
+
+**Vertretungsgewichtung:** Unter *Schule → Schuldaten → Vertretungsplanung* legen Sie fest, wie stark jedes Kriterium
+im Vorschlag zählt (0–5). Die Einstellungen der Vertretungsplanung (*Auswertung und Ausgabe → Einstellungen*)
+enthalten außerdem Vertretungszeitraster, Vertretungszähler (was zählt, Durchrechnungszeitraum, Anzahl oder Werte),
+Bonus- und Schlechtpunkte des Vorschlags, Vorziehungen, Raum für EVA, Lehrer-Raum-Prinzip sowie Farben und
+Bezeichnungen der Vertretungsarten.
+
+### Tagespläne, Verlegen und Tauschen, Vormerkungen
+
+- *Tagespläne → Klassen / Lehrkräfte / Räume* zeigen den tagesaktuellen Plan mit eingetragenen Vertretungen;
+  *Kompaktpläne* stellen kleine Pläne der gewählten Vertretung nebeneinander.
+- Im Kontextmenü einer Stunde: Stunde entfallen lassen bzw. Entfall rückgängig, Sondereinsatz, Text zur Stunde, neben
+  den Plan legen (Vormerkung), Vertretungsvorschlag, Änderungen rückgängig, Lehrkraft abwesend melden.
+- *Vertretungsplanung → Verlegen und Tauschen* öffnet Klassen- und Lehrerplan tagesaktuell nebeneinander. Stunden
+  lassen sich per Drag & Drop verlegen oder tauschen.
+- *Vertretungsplanung → Vormerkungen:* beiseitegelegter Unterricht. Ziehen Sie eine Vormerkung in einen tagesaktuellen
+  Plan oder wählen Sie *Am Planungsdatum verplanen*.
+
+### Veranstaltungen, Sondereinsätze, Bereitschaften
+
+- *Ereignisse → Veranstaltungen* (Exkursionen, Konferenzen, Projekttage): direkt in der Tabelle eintragen, auch
+  „Alle Lehrkräfte“ oder „Alle Klassen außer 5a“. **Hinzufügen** übernimmt schnell alle Lehrkräfte, Klassen oder Räume,
+  auch nach Abteilung, Jahrgang oder Gruppe; *Aus den Stunden* übernimmt alle Beteiligten der betroffenen Stunden.
+  Beteiligte Klassen, Lehrkräfte und Räume gelten im Zeitraum als abwesend bzw. belegt. Kopieren und Einfügen legt
+  eine Veranstaltung am eingestellten Datum erneut an.
+- *Ereignisse → Sondereinsätze:* Einsätze mit Datum, Stunden, Lehrkraft, Klassen, Fach, Raum und Text;
+  **Klassenkonferenz** trägt alle Lehrkräfte ein, die die Klassen unterrichten.
+- *Ereignisse → Bereitschaften:* wer am gewählten Tag in welcher Stunde Bereitschaft hat und ob sie schon für eine
+  Vertretung eingesetzt ist.
+- *Ereignisse → Bereitschaftsplanung:* Tage × Stunden mit Bedarf und eingeteilten Lehrkräften. *Bedarf Vormittag* setzt
+  den Bedarf für alle Vormittagsstunden; der Lehrervorschlag listet freie Lehrkräfte mit Punkten, Bereitschaften pro
+  Woche, freiem Deputat und Lage (Doppelklick teilt ein). *Automatisch besetzen* verteilt den offenen Bedarf
+  gleichmäßig. Mit *Nur Doppelstunden* besetzt die Automatik immer zwei aufeinanderfolgende Stunden mit derselben
+  Lehrkraft; Zeitwünsche und Wertrechnung werden beachtet.
 
 ### Pausenaufsichten
 
-![Pausenaufsichten](bilder/18_Pausenaufsichten.png)
-
-Das Fenster hat die Karteikarten **Gang** und **Lehrer**:
-
-- **Gang:** Wählen Sie oben den Aufsichtsbereich. Die Matrix zeigt Tage × Aufsichtspausen. Der Spaltenkopf nennt die Pause mit Ende und Beginn der angrenzenden Stunden.
-- **Lehrer:** zeigt die Aufsichten des gewählten Lehrers; grün = anwesend, rot = eigentlich nicht verfügbar.
-- Neben der Auswahl stehen die Minuten des Elements und wie viele davon noch offen sind.
-
-**Zellen der Matrix:**
+*Ereignisse → Pausenaufsichten* (im Modus Stundenplanung: *Auswertung → Pausenaufsichten*). Die Ansicht zeigt wahlweise
+einen **Gang** (Aufsichtsbereich) oder eine **Lehrkraft** mit der Matrix Tage × Aufsichtspausen sowie die Minuten des
+Elements und wie viele davon noch offen sind.
 
 | Anzeige | Bedeutung |
 |---|---|
-| Kürzel | eingeteilter Lehrer |
+| Kürzel | eingeteilte Lehrkraft |
 | `???` | Aufsicht nötig, noch niemand eingeteilt |
 | grau | keine Aufsicht |
 | rot | Einteilung verletzt eine Vorgabe |
 
-Sie können ein Lehrer-Kürzel direkt in die Zelle tippen.
+- **Vorschlag:** alle Lehrkräfte mit Bewertung (Anwesenheit vor bzw. nach der Pause, Zeitwünsche, Minimal- und
+  Maximalwerte). Ein Doppelklick trägt die Lehrkraft ein.
+- **Entfernen**, **Keine Aufsicht**, **Teilen** (bis zu neun Lehrkräfte je Pause, z. B. erste und zweite Hälfte),
+  **Teilung –**.
+- **Optimierung** verteilt die offenen Aufsichten automatisch. Die **Gewichtung** legt fest, wie stark jedes Kriterium
+  zählt und wie viele Aufsichten eine Lehrkraft höchstens pro Tag hat.
 
-**Werkzeugleiste:**
-
-- **Lehrervorschlag:** listet alle Lehrer mit Bewertung (Anwesenheit vor bzw. nach der Pause, Zeitwünsche, Minimal- und Maximalwerte). Ein Doppelklick trägt den Lehrer ein.
-- **Aufsicht löschen** und **Aufsicht (???) / Keine Aufsicht** bearbeiten die markierte Zelle.
-- **Aufsicht teilen** bzw. **Teilung entfernen:** teilt eine Pause auf bis zu neun Lehrer auf, z. B. für die erste und zweite Hälfte.
-- **Optimierung** verteilt die offenen Aufsichten automatisch. Die **Gewichtung** legt fest, wie stark jedes Kriterium zählt und wie viele Aufsichten ein Lehrer höchstens pro Tag hat.
-
-Rechts steht die Übersicht aller Lehrer mit Soll, Ist, Anzahl und Pausenaufsicht-Vertretungen. Ein Doppelklick öffnet die Lehreransicht.
-
-### Kalender, Veranstaltungen, Klausuren, Bereitschaften
-
-- **Kalender:** Wochenübersicht mit der Anzahl der Abwesenheiten und Vertretungen je Tag. Auf der zweiten Karteikarte bearbeiten Sie die Tagestexte direkt.
-- **Veranstaltungen** (Exkursionen, Konferenzen, Projekttage) und **Klausuren** werden in der Liste direkt eingetragen. Das Veranstaltungsfenster zeigt den gewählten Zeitraum (Tag, Woche, Von-Bis); *VA-Nr.* springt zu einer Veranstaltung. Beteiligte Klassen, Lehrer und Räume gelten in diesem Zeitraum als abwesend bzw. belegt.
-- **Sondereinsätze:** Raster mit Klassen und Lehrern, dazu eine Schaltfläche für eine Klassenkonferenz.
-- **Bereitschaften:** zeigt, wer am gewählten Tag in welcher Stunde Bereitschaft hat und ob diese schon für eine Vertretung verbraucht ist.
-- **Vormerkungen:** Ziehen Sie eine Vormerkung in den Tagesplan, um sie zu verplanen.
+Die Lehrerliste zeigt Soll, Ist und Anzahl. Fällt eine Aufsicht durch Abwesenheit aus, erscheint sie in der
+**Vertretung der Pausenaufsichten** des Tages; dort wählen Sie einen Vertreter.
 
 ### Statistik und NRW-Mehrarbeit
 
-![Statistik](bilder/19_Statistik.png)
+*Auswertung und Ausgabe → Statistik und Abrechnung*: Je Lehrkraft Vertretungen, Betreuungen, Sondereinsätze,
+Pausenaufsichten, Mehrarbeit, Entfälle, Freisetzungen, Saldo und **vergütungsfähige Mehrarbeit nach NRW-Regel**:
+Werden in einem Kalendermonat mehr als 3 Stunden Mehrarbeit geleistet (Grenze einstellbar, Minderstunden werden
+verrechnet), sind alle Stunden vergütungsfähig.
 
-Je Lehrer zeigt die Statistik Vertretungen, Betreuungen, Sondereinsätze, Pausenaufsichten, Mehrarbeit, Entfälle, Freisetzungen, Saldo und **vergütungsfähige Mehrarbeit nach NRW-Regel**:
-Werden in einem Kalendermonat mehr als 3 Stunden Mehrarbeit geleistet (Grenze einstellbar, Minderstunden werden verrechnet), sind alle Stunden vergütungsfähig.
-Die Liste lässt sich drucken oder als CSV exportieren.
-
-Weitere Berichte:
-
-- Abrechnung und Einzelnachweis je Lehrer.
-- Mehrarbeit NRW und Monatsabrechnung, mit Unterschriftszeile.
-- Entfalltage.
-- Übersicht und Wochenwerte.
+Berichte: Abrechnung, Einzelnachweis, Mehrarbeit NRW, Monatsabrechnung (mit Unterschriftszeile), Entfalltage,
+Übersicht und Wochenwerte. Zeitraum: aktueller Monat, Vormonat, aktuelle Woche, Schuljahr oder frei. Ausgabe als HTML
+(auch je Lehrkraft eine Seite) oder CSV.
 
 ### Vertretungsplan ausgeben
 
-![Aushang](bilder/27a_Druck_Klassen.png)
+*Auswertung und Ausgabe → Vertretungsplan ausgeben*:
 
-- **Druck (Aushang):** *Vertretungsplan drucken* im Vertretungsfenster, eine Seite je Tag.
-  - **Kopf:** Schule, Schuljahr, Adresse, Druckzeitpunkt.
-  - **Titel:** z. B. „Vertretungsplan Klassen am: 24.9. / Donnerstag“.
-  - **Kästen:** Nachrichten zum Tag, blockierte Räume, abwesende Klassen bzw. Lehrer.
-  - **Tabelle:** Klasse(n), Stunde, Vertreter, Abwesend (durchgestrichen), Fach, Raum, Bemerkungen und Hinweise (z. B. Bereitschaft, Raumänderung, verlegt von …). Gruppen sind durch Linien getrennt.
-  - **Optionen vor der Seitenansicht:** Klassen- oder Lehrerversion, Schriftart und -größe, Hoch-/Querformat und welche Kästen erscheinen.
-- **Liste drucken:** druckt die Tabelle so, wie sie angezeigt wird (mit eigenem Spaltenformat).
-- **HTML:** Schüler- und Lehrerversion, die Lehrerversion mit abwesenden Lehrern und Pausenaufsichten.
-- **Monitor:** Vollbild für Info-Bildschirme mit heute und dem nächsten Schultag, automatischem Seitenwechsel und Aktualisierung. ESC beendet.
+- **Zeitraum** und **Version:** Klassenversion (Schüler) oder Lehrerversion.
+- **Ausgabe:** PDF, HTML und **Monitor (HTML)** – Vollbild für Info-Bildschirme mit automatischem Seitenwechsel und
+  Aktualisierung.
+- **Seitenlayout** (wird in der Schuldatei gespeichert): Überschrift, Schriftgröße, Gruppierung, nur bestimmte Klassen
+  bzw. Lehrkräfte, Hoch-/Querformat, Raster, Kästen (Nachrichten zum Tag, blockierte Räume, abwesende Klassen,
+  abwesende Lehrkräfte in der Lehrerversion), eine Seite bzw. Überschrift je Element, Entfallslehrer durchstreichen,
+  kombinierte Klassen (2a,2b → 2ab), Blockvertretungen zusammenfassen, nur neue Vertretungen u. a.
+- **Felder:** welche Spalten mit welcher Überschrift und Breite gedruckt werden.
 
-![Monitor](bilder/27_Monitor.png)
+Der Aushang enthält Kopf (Schule, Schuljahr, Druckzeitpunkt), Titel mit Datum und Wochentag, die gewählten Kästen und
+die Tabelle mit Klasse(n), Stunde, Vertreter, abwesender Lehrkraft (durchgestrichen), Fach, Raum, Bemerkungen und
+Hinweisen (z. B. Bereitschaft, Raumänderung, verlegt von …).
 
 ---
 
-## 9. Module
+## 9. Auswertung und weitere Module
 
-### Unterrichtsplanung und Wertrechnung
+### Soll und Ist (Wertrechnung)
 
-![Wertrechnung](bilder/20_Wertrechnung.png)
+*Auswertung → Soll und Ist*:
 
-- **Lehrer Soll/Ist:** Soll = Wochensoll − Ermäßigungen. Ist = Summe der Werte (Wochenstunden × Werte-Faktor, anteilig bei A/B-Wochen und befristetem Unterricht) + Wertkorrektur. Wochensoll und Wertkorrektur sind direkt editierbar.
-- **Unterrichts-Matrix:** Klassen × Fächer mit Lehrern und Stunden.
-- **Stundentafel:** Soll-Stunden je Jahrgang und Fach mit Abgleich gegen den eingegebenen Unterricht.
-
-![Stundentafel](bilder/22_Stundentafel.png)
+- **Lehrer Soll/Ist:** Soll = Wochensoll − Ermäßigungen. Ist = Summe der Werte (Wochenstunden × Werte-Faktor, anteilig
+  bei A/B-Wochen und befristetem Unterricht) + Wertkorrektur. Wochensoll und Wertkorrektur sind direkt änderbar.
+- **Unterrichtsmatrix** (*Auswertung → Unterrichtsmatrix*): Klassen × Fächer mit Lehrkräften, Stunden oder beidem;
+  Doppelklick öffnet den Unterricht der Klasse.
+- **Stundentafel:** siehe [Abschnitt 4](#4-unterricht).
 
 ### Kursplanung (Oberstufe)
 
-![Kursplanung](bilder/23_Kursplanung.png)
+*Oberstufe → Kurse und Bänder*:
 
-- **Kurse:** Unterrichte mit Kursname, Band und Teilnehmerzahl.
-- **Kurswahlen:** Schüler × Kurse zum Ankreuzen.
-- **Kollisionsmatrix:** Anzahl der Schüler mit beiden Kursen. Rot bedeutet Kollision im selben Band.
-- **Bandbildung:** Die Kurse werden automatisch auf möglichst wenige Bänder verteilt, ohne Schüler- oder Lehrerkollision. *Bänder übernehmen* schreibt das Ergebnis in den Unterricht.
+- **Kurse:** Unterrichte einer Klasse bzw. eines Jahrgangs mit Kursname, Band und Teilnehmerzahl.
+- **Kurswahlen:** Schülerinnen und Schüler × Kurse.
+- **Kollisionsmatrix:** Anzahl der Schülerinnen und Schüler mit beiden Kursen; rot bedeutet Kollision im selben Band.
+- **Bandbildung:** Die Kurse werden automatisch auf möglichst wenige Bänder verteilt, ohne Schüler- oder
+  Lehrerkollision. *Bänder übernehmen* schreibt das Ergebnis mit einem Präfix in den Unterricht.
+
+Kurswahlen übernehmen Sie mit *Oberstufe → Kurswahlen importieren* (CSV mit Name, Vorname, Klasse, Kursen).
 
 ### Perioden
 
-![Perioden](bilder/25_Perioden.png)
+Perioden sind verschiedene Stundenpläne für Abschnitte des Schuljahres, z. B. ab dem 2. Halbjahr oder für eine
+Projektwoche. Sie verwalten sie unter *Schule → Perioden*. Die aktive Periode steht unter dem Namen der Schuldatei in
+der Kopfleiste.
 
-Perioden sind verschiedene Stundenpläne für Abschnitte des Schuljahres, z. B. ab dem 2. Halbjahr oder für eine Projektwoche. Sie verwalten sie unter *Planung → Perioden*.
-
-- **Neue Periode:** wird als Tochter der markierten (Mutter-)Periode angelegt. Sie übernimmt deren Unterricht, Stundenplan und Pausenaufsichten.
+- **Neue Periode:** *Neue Periode zu dieser Mutterperiode …* legt eine Tochter der markierten Periode an. Sie übernimmt
+  deren Unterricht, Stundenplan und Pausenaufsichten.
   - Beginn und Ende müssen im Schuljahr und innerhalb der Mutterperiode liegen.
-  - Ohne Endedatum gilt die Periode bis zum Beginn der nächsten Periode derselben Ebene.
-- **Gültigkeit:** An jedem Tag gilt die innerste Periode. Die Spalte *Schultage* zeigt, an wie vielen Unterrichtstagen sie tatsächlich gilt.
-- **Fixieren:** Eine fixierte Periode lässt sich nicht ändern oder löschen. Weitergegebene Änderungen erreichen sie ebenfalls nicht.
-- **Änderungen weitergeben** (Kontrollkästchen *Unterrichtsänderungen in Folgeperioden übernehmen* im Periodendialog): Unterrichtsänderungen werden in die Tochterperioden übernommen, sofern der Unterricht dort noch unverändert ist. Bewusst abweichender Unterricht bleibt erhalten.
-- **Löschen:** Stammdaten werden aus allen Perioden entfernt. Tochterperioden einer gelöschten Periode hängen danach an deren Mutter.
-- **Vertretungsplanung:** Mit dem Datum wechselt automatisch die gültige Periode. Die Statuszeile zeigt sie an; ein Klick darauf wählt eine andere Periode.
-
-### Bereitschaftsplanung
-
-![Bereitschaftsplanung](bilder/25b_Bereitschaftsplanung.png)
-
-*Dateneingabe → Bereitschaftsplanung* zeigt Tage × Stunden mit Bedarf, Anzahl eingeteilter Lehrer und deren Kürzeln.
-
-- **Bedarf einer Stunde:** links wählen. **Bedarf für alle Vormittagsstunden setzen** füllt die übliche Grundversorgung auf einmal.
-- **Lehrervorschlag:** listet freie Lehrer mit Punkten, Bereitschaften pro Woche, freien Stunden und Lage (Hohlstunde, Tagesrand). Ein Doppelklick teilt den Lehrer ein.
-- **Fehlende Bereitschaften automatisch besetzen** verteilt den offenen Bedarf gleichmäßig.
-- **Bereitschaften nur als Doppelstunden verplanen:** Die Automatik besetzt dann immer zwei aufeinanderfolgende Stunden mit demselben Lehrer, bevorzugt zwei Stunden mit offenem Bedarf. Dabei werden Zeitwünsche und die Wertrechnung beachtet.
-
-### Unterrichtsgruppen (A/B-Wochen)
-
-*Dateneingabe → Unterrichtsgruppen* legt Gruppen wie *A-Woche*, *B-Woche* oder *1. Halbjahr* mit Kalenderwochen bzw. Zeitraum fest.
-Weisen Sie im Unterrichtsfenster einem Unterricht oder einer Unterrichtszeile eine Gruppe zu. Dann gelten zwei Stunden zur gleichen Zeit nur als Kollision, wenn sich ihre Wochen überschneiden. Raumbelegung und Wertrechnung rechnen anteilig.
+  - Ohne Ende gilt die Periode bis zum Beginn der nächsten Periode derselben Ebene.
+- **Gültigkeit:** An jedem Tag gilt die innerste Periode. Die Spalte *Schultage* zeigt, an wie vielen Unterrichtstagen
+  sie tatsächlich gilt.
+- **Als aktive Periode** legt fest, welche Periode in der Stundenplanung bearbeitet wird.
+- **Fixieren:** Unterricht und Stundenplan einer fixierten Periode können nicht geändert werden; weitergegebene
+  Änderungen erreichen sie ebenfalls nicht.
+- **Änderungen weitergeben** (*Schuldaten → Diverses → Unterrichtsänderungen in Folgeperioden übernehmen*):
+  Unterrichtsänderungen werden in die Tochterperioden übernommen, sofern der Unterricht dort noch unverändert ist.
+  Bewusst abweichender Unterricht bleibt erhalten.
+- **Löschen:** Die Periode wird mit Unterricht und Stundenplan gelöscht; ihre Tochterperioden hängen danach an der
+  Mutterperiode.
+- **Vertretungsplanung:** Mit dem Planungsdatum wechselt automatisch die gültige Periode.
 
 ### Abteilungsplanung
 
-Exportieren Sie eine Abteilungsdatei, planen Sie die Abteilung getrennt und führen Sie das Ergebnis wieder zusammen. Elemente und Unterrichte werden über das Feld *Abteilung* zugeordnet.
+Elemente und Unterrichte werden über das Feld *Abteilung* zugeordnet (Abteilungen unter *Stammdaten → Abteilungen*).
+Unter *Datenaustausch → Import und Export* exportieren Sie eine **Abteilungsdatei** (alle Stammdaten, nur die
+Unterrichte der Abteilung beweglich), planen sie getrennt und **führen sie wieder zusammen**.
+
+### Kommentare
+
+*Stammdaten → Kommentare* (unter „weitere“) listet alle Kommentare zu Elementen mit Kategorie (Farbe), Element, Feld
+und Text. Kommentare lassen sich anlegen, bearbeiten und löschen; *Element öffnen* springt zu den Stammdaten.
 
 ---
 
-## 10. Import, Export und WebPortal
+## 10. Ausgabe
 
-| Funktion | Format |
+- *Ausgabe → Drucken:* Stundenpläne, Lehrer- und Raumpläne (**Strg+P**), Vertretungsplan sowie Berichte. In der
+  **Druckauswahl** wählen Sie Planart, Elemente, Stundenplanformat, kompakt (zwei Pläne je Seite) und Fachfarben statt
+  grau. Die Ausgabe erfolgt als PDF in der Druckvorschau, die Sie im Browser drucken oder herunterladen.
+- *Ausgabe → Berichte und Listen:* Listen und Statistiken als PDF, HTML oder CSV, teils mit Zeitraum.
+- *Ausgabe → Aushang (HTML):* alle Pläne als statische Webseiten (z. B. für die Homepage oder einen Aushang).
+- *Ausgabe → Kalenderdateien (iCal):* Stundenplan einer Lehrkraft für einen Zeitraum als iCalendar-Datei (`.ics`).
+
+---
+
+## 11. Datenaustausch und UntPlan Web
+
+### Import und Export
+
+*Datenaustausch → Import und Export*:
+
+| Bereich | Funktion |
 |---|---|
-| Lehrer-, Klassen-, Schülerimport | CSV (z. B. aus SchILD-NRW), Spalten werden anhand der Überschriften erkannt |
-| Umstieg aus anderen Programmen | GPU-Dateien (GPU001–GPU006) |
-| Export | GPU, HTML-Stundenpläne, Info-Stundenplan, Vertretungsplan, iCal, CSV |
+| Schuldatei | herunterladen (`.up`), hochladen (`.up` oder BAL), BAL-Datei importieren |
+| Import | Lehrkräfte und Klassen aus Schild-NRW (CSV; Spalten werden anhand der Überschriften erkannt), Schülerinnen und Schüler mit Kurswahlen (CSV), GPU-Dateien GPU001–GPU006 (mehrere Dateien oder ZIP) |
+| Export | GPU-Dateien (ZIP), Unterrichtsverteilung (CSV), Aushang (HTML, ZIP), UntPlan-Web-Paket (JSON), Lehrer-Kalender (iCal) |
+| Abteilungsplanung | Abteilungsdatei exportieren und zusammenführen |
 
-**BAL-Import:** *Dateneingabe → BAL-Import* (oder *Import/Export*) übernimmt einen Stundenplan aus einer WILLI2-BAL-Datei. Wahlweise werden Zeitraster, Stammdaten, Zeitwünsche, Unterricht, Stundenplan und Pausenaufsichten übernommen. Fehlende Elemente werden angelegt.
+Das Protokoll zeigt, was angelegt bzw. geändert wurde.
 
-**UntPlanWeb** (oberste Leiste *UntPlanWeb*: alles oder einzelne Teile direkt übertragen; ausführlich im Menü *Datei → UntPlanWeb → Datenaustausch*):
+**BAL-Import:** *Datenaustausch → BAL-Import* (unter „weitere“) übernimmt einen Stundenplan aus einer WILLI2-BAL-Datei
+in die geöffnete Schuldatei. Wahlweise werden Zeitraster, Stammdaten, Unterricht und Stundenplan der aktiven Periode,
+Stundenplan, Pausenaufsichten und Zeitwünsche übernommen. Fehlende Elemente werden angelegt. Der Import lässt sich mit
+Strg+Z rückgängig machen.
 
-![UntPlanWeb](bilder/25d_UntPlanWeb.png)
+### UntPlan Web
 
-| Zeile | Inhalt |
+*Datenaustausch → UntPlan Web* (im Vertretungsmodus *Auswertung und Ausgabe → UntPlan Web*) überträgt Daten an das
+Portal für Lehrkräfte, Schülerinnen, Schüler und Eltern und übernimmt Rückmeldungen.
+
+| Teil | Inhalt |
 |---|---|
-| Stammdaten | Schule, Zeitraster, Klassen, Lehrer, Räume, Fächer, Ferien |
-| Unterricht* | Perioden mit Unterricht und Stundenplan, Pausenaufsichten |
-| Vertretungen* | tagesaktuelle Pläne, Vertretungen, Absenzen, Termine, Nachrichten zum Tag |
-| Absenzen* (Import) | Krankmeldungen und Nachrichten aus UntPlanWeb |
-| Buchungen* (Import) | Raumbuchungen aus UntPlanWeb, je Stunde eine Zeile der Art *Raumbuchung*; nur wenn der Raum frei ist |
-| Klausuren* (Import) | Klausuren aus UntPlanWeb mit Klassen, Aufsichten und Räumen; der Unterricht der Klassen entfällt. Führt die Lehrkraft des Unterrichts selbst Aufsicht, ersetzt die Klausur ihn (eine Zeile *Klausur* je Stunde). Erneuter Import aktualisiert nur, eine bestehende Raumbuchung derselben Zeit wird zur Klausur |
+| Stammdaten | Schule, Zeitraster, Klassen, Lehrkräfte, Räume, Fächer, Ferien |
+| Stundenplan* | Perioden mit Unterricht und Stundenplan, Pausenaufsichten |
+| Vertretungen* | tagesaktuelle Pläne, Vertretungen, Abwesenheiten, Termine, Nachrichten zum Tag |
+| Absenzen* (Import) | Krankmeldungen und Nachrichten aus UntPlan Web |
+| Buchungen* (Import) | Raumbuchungen, je Stunde eine Zeile der Art *Raumbuchung*; nur wenn der Raum frei ist |
+| Klausuren* (Import) | Klausuren mit Klassen, Aufsichten und Räumen; der Unterricht der Klassen entfällt. Führt die Lehrkraft des Unterrichts selbst Aufsicht, ersetzt die Klausur ihn (eine Zeile *Klausur* je Stunde). Erneuter Import aktualisiert nur; eine bestehende Raumbuchung derselben Zeit wird zur Klausur |
 
-- Jeder Teil lässt sich einzeln exportieren; UntPlanWeb ersetzt nur die übertragenen Teile. *Alles exportieren* überträgt alles.
-- Mit * markierte Daten gelten ab heute oder ab dem aktivierten Anfangsdatum.
-- Schlägt die Übertragung fehl, erscheint oben ein Hinweis mit dem Grund und einem Link zu den Verbindungseinstellungen.
-- **Einstellungen:** Schul-ID, Server, Port, https, API-Schlüssel, Tage voraus und *Verbindung prüfen*.
-- **Optionen:** ignorierten Unterricht übertragen, Ferien nicht als Stammdaten exportieren, E-Mail-Adressen, Lehrer-Absenzen, Absenzgründe (vertrauliche Gründe nie).
-- *Paket als Datei exportieren* erzeugt das Paket offline als JSON-Datei.
+- Jeder Teil lässt sich einzeln übertragen; UntPlan Web ersetzt nur die übertragenen Teile.
+- Mit * markierte Daten gelten ab heute oder ab dem gewählten Anfangsdatum (Tagesdatum, nächster Montag,
+  Schuljahresbeginn, Periodenbeginn).
+- **Einstellungen:** Schul-ID, Server, Port, https, API-Schlüssel, Tage voraus (oder unbegrenzt bis Schuljahresende),
+  *Verbindung prüfen*. **Exportoptionen:** personenbezogene Daten (z. B. E-Mail-Adressen, Lehrer-Abwesenheiten,
+  Abwesenheitsgründe) werden nur übertragen, wenn sie ausdrücklich freigegeben sind; vertrauliche Gründe nie.
+- **Automatischer Abgleich (optional):** überträgt Änderungen regelmäßig ohne manuellen Anstoß.
+- **Stundenplanänderungen** aus UntPlan Web prüfen und übernehmen oder ignorieren; **Klausuren** bearbeiten (bei
+  übernommenen nur Aufsicht, Raum und Aktiv); Listen der **Schülerabwesenheiten** und des **Klassenbuchs** ansehen.
+- **Paket als Datei** speichert das Paket offline als JSON-Datei.
 - Schema und Schnittstelle stehen in [UNTPLANWEB.md](UNTPLANWEB.md).
 
-**WebPortal** (*Module → Web-Portal*): Tragen Sie Adresse, Schul-ID und API-Schlüssel ein. **Synchronisieren** lädt Stundenplan, Vertretungen, Tagestexte und Ferien hoch und übernimmt Krankmeldungen aus dem Portal als Abwesenheiten.
-Die Schnittstelle ist in [SYNC_API.md](SYNC_API.md) beschrieben.
+---
+
+## 12. Mehrbenutzerbetrieb und Konten
+
+Alle Schuldateien liegen auf dem Server. Mehrere Personen können gleichzeitig an derselben Schuldatei arbeiten;
+Änderungen anderer erscheinen sofort (Live-Verbindung, Anzeige in der Kopfleiste).
+
+### Konten und Rollen
+
+Im Kontomenü (Kopfleiste rechts) ändern Sie unter *Konto und Passwort* Ihr Passwort (mindestens 6 Zeichen) und melden
+sich ab. Administratoren legen unter *Benutzerverwaltung* Konten an, setzen Passwörter und vergeben eine Rolle:
+
+| Rolle | Rechte |
+|---|---|
+| Administrator | alles, einschließlich Benutzerverwaltung und Gruppen |
+| Planer | Schuldateien bearbeiten |
+| Leser | nur lesen |
+
+### Mehrbenutzerbetrieb
+
+*Schule → Mehrbenutzerbetrieb*:
+
+- **Aktive Benutzer** mit Tätigkeit (aktive Ansicht), Anmeldezeit und letzter Aktivität. **Nachricht** sendet eine
+  Mitteilung an alle oder an einzelne Benutzer.
+- **Exklusivbetrieb:** Nur Sie können ändern. Empfohlen für Datenimport, Schuldaten/Zeitraster, Perioden, Ferien und den
+  Wechsel in ein neues Schuljahr.
+- **Bereiche – Ihre Rechte:** Ihre Rechtestufe je Bereich. Ein Bereich lässt sich zur alleinigen Bearbeitung
+  **sperren** und wieder **freigeben**. Sperren verfallen automatisch, wenn ihr Inhaber einige Minuten nicht mehr aktiv
+  ist.
+- **Gruppen und Rechte** (Administratoren): Ja/Nein-Rechte (z. B. Optimierung, Drucken, Vertretungsstatistik,
+  Web-Export, Datenimport/-export) und Rechtestufen *Keine / Nur lesen / Ansichten bearbeiten / Bearbeiten* je Bereich
+  (Stundenplan, Stammdaten, Unterricht, Perioden, Vertretungsplanung, Absenzen, Kursplanung …); Zuordnung der Benutzer
+  zu Gruppen.
+
+Änderungen, für die das Recht fehlt, werden abgelehnt.
 
 ---
 
-## 11. Tastenkürzel
+## 13. Bedienung von Tabellen
+
+- **Bearbeiten:** Enter oder F2 oder einfach lostippen. Tab bzw. Pfeiltasten wechseln die Zelle, Esc bricht ab.
+- **Leeren:** Entf. **Haken setzen:** Leertaste.
+- **Kopieren und Einfügen:** Strg+C / Strg+V, auch aus und in Tabellenkalkulationen. Mehrere Zeilen erhalten so in
+  einem Schritt neue Werte.
+- **Markieren:** Umschalt+Klick bzw. Umschalt+Pfeil markiert einen Bereich, Strg+Klick einzelne Zeilen, Strg+A alle.
+- **Auswahllisten:** In Feldern mit Elementen (z. B. Lehrkraft, Raum) können Sie tippen; gesucht wird im Kurz- und im
+  Langnamen.
+- **Spalten:** Rechtsklick auf die Kopfzeile blendet Spalten ein oder aus und passt Breiten an; *Standardspalten*
+  stellt die Vorgabe wieder her. Kopfzeile ziehen verschiebt Spalten, ein Klick sortiert. Breiten, Reihenfolge,
+  Sichtbarkeit und Sortierung werden je Benutzer gemerkt.
+
+---
+
+## 14. Tastenkürzel
 
 | Taste | Funktion |
 |---|---|
-| F1 | Hilfe zum aktiven Fenster |
-| Strg+N / Strg+O / Strg+S | Neu / Öffnen / Speichern |
+| Strg+K | Befehlssuche |
+| Strg+S | Speichern |
 | Strg+Z / Strg+Y | Rückgängig / Wiederholen |
-| Strg+P | Drucken |
-| Strg+M | Stundenplanung ↔ Vertretungsplanung |
-| Strg+T | Vertretungen |
-| Strg+G | Vertretungsvorschlag |
-| + / - (Vertretungsfenster) | Vertretung ohne Lehrkraft / Entfall |
-| Entf | Element löschen bzw. Stunde entplanen |
-| F | markierte Stunde fixieren / Fixierung lösen |
-| Doppelklick auf Kurzname | Umbenennen |
-| Strg+Ziehen eines Feldes | Feld aus der Rasteransicht entfernen |
-
----
-
-## 12. MultiUser
-
-Im MultiUser-Betrieb arbeiten mehrere Planer gleichzeitig mit denselben Daten. Statt in einer Datei `*.up` liegen alle Daten in einer gemeinsamen Datenbank, gegliedert nach **Schule → Schuljahr (JJJJ/JJJJ) → Version** (Nummer und Bezeichnung). Alle Arbeitsplätze müssen dieselbe UntPlan-Version verwenden.
-
-### Einrichtung (MultiUser-Assistent)
-
-| Schritt | Inhalt |
-|---|---|
-| 1. Datenbanksystem | **SQLite** (Datei, z. B. auf einem Netzlaufwerk – für kleine Schulen), **Microsoft SQL Server / Express**, **MySQL / MariaDB** oder **Microsoft Access** (nur Windows, ACE-Treiber erforderlich) |
-| 2. Verbindung | Datei bzw. Server, Port, Datenbank, Datenbank-Benutzer und -Passwort; bei SQL Server wahlweise Windows-Authentifizierung. **Verbindung testen** prüft die Angaben; „Datenbank anlegen, falls sie noch nicht existiert" erstellt eine leere Datenbank. |
-| 3. Datenbank einrichten | Beim ersten Verbinden legt UntPlan alle Tabellen an (versioniertes Schema). Hier stellen Sie auch die **automatische Abmeldung** nach X Minuten Inaktivität ein. |
-| 4. Administrator-Passwort | Der Benutzer **Administrator** (Gruppe Administrator) wird ohne Passwort angelegt und kann nicht gelöscht werden. Vergeben Sie sofort ein Passwort. |
-| 5. Erste Version | Optional wird die geöffnete Schuldatei als erste Version hochgeladen (Schulnummer, Schuljahr, Versionsnummer, Bezeichnung). |
-
-Die Verbindungsdaten werden je Windows-Benutzer in `%APPDATA%\UntPlan\multiuser.json` gespeichert; das Datenbank-Passwort ist mit Windows-DPAPI verschlüsselt.
-
-### Anmelden
-
-Im Anmeldedialog wählen Sie **Schulnummer**, **Schuljahr** und **Version** und geben **Benutzer** und **Passwort** ein. Über den Eintrag **&lt;Neu&gt;** legen Sie eine neue Schule, ein neues Schuljahr oder eine neue Version an (Recht „Schule/Schuljahr/Version anlegen" nötig; eine neue Version entsteht als Kopie der letzten Version oder aus der geöffneten Schuldatei). Mit **Passwort ändern** ändern Sie Ihr eigenes Passwort. Benutzer ohne Passwort werden nach der Anmeldung zur Vergabe aufgefordert.
-
-Anmeldung über die Befehlszeile: `UntPlan.exe DB~123456~2024-2025~1 /user=Meier /pw=geheim`.
-
-### Arbeiten im MultiUser-Betrieb
-
-- **Kein Speichern nötig:** Jede Änderung wird sofort einzeln in die Datenbank geschrieben.
-- **Gleichzeitige Änderungen:** Der erste Schreiber gewinnt. Hat ein anderer Benutzer die Daten inzwischen geändert, erscheint „Die Änderung konnte nicht durchgeführt werden, da ein anderer Benutzer die Daten inzwischen geändert hat." – die Daten werden neu geladen, die Eingabe ist zu wiederholen.
-- **Fremde Änderungen** werden etwa alle 10 Sekunden erkannt und automatisch angezeigt; **Neuanzeige** lädt sofort neu.
-- **Exklusivbetrieb** ist nur möglich, wenn kein anderer Benutzer an der Version angemeldet ist. Er wird für Datenimport, Schuldaten/Zeitraster, Perioden, Ferien und den Wechsel in ein neues Schuljahr empfohlen. Während des Exklusivbetriebs kann sich niemand sonst anmelden.
-- **Datei in Datenbank speichern** schreibt die geöffneten Daten oder eine `*.up`-Datei als neue Version bzw. überschreibt eine vorhandene Version. **Version als Datei exportieren** erzeugt eine Schuldatei (z. B. zur Sicherung).
-- **Automatische Abmeldung:** Nach der eingestellten Zeit ohne Aktivität fragt UntPlan „Sitzung beenden?" und meldet nach 10 Sekunden ab.
-
-### Benutzerverwaltung
-
-Die Benutzerverwaltung (Recht „Benutzerverwaltung") hat drei Karteikarten:
-
-| Karteikarte | Inhalt |
-|---|---|
-| Benutzer | Name, Gruppe, letztes Login, Abteilung (Einschränkung auf eine Abteilung), Passwort setzen/löschen |
-| Gruppen und Rechte | Ja/Nein-Rechte: Schule/Schuljahr/Version anlegen, Administrator, Benutzerverwaltung, Optimierung, Drucken, Vertretungsstatistik, Web-Export, Datenimport/-export, Info-Stundenplan. Stufen *Keine / Nur lesen / Ansichten bearbeiten / Bearbeiten* für Stundenplan, Stammdaten, Besondere Daten, Unterricht, Perioden, Vertretungsplanung, Absenzen, Kursplanung und Anrechnungen. Vorgegeben sind die Gruppen Administrator, Stundenplaner, Vertretungsplaner und Info. |
-| Einschränkungen | Je Gruppe: Schule, Schuljahr, Version, Periode, Abteilung, Nur lesen. Leere Felder gelten für alle; hat eine Gruppe Einschränkungen, ist die Anmeldung nur an passenden Versionen möglich. |
-
-Änderungen, für die das Recht fehlt, werden nicht gespeichert; die Daten werden neu geladen.
-
-### Angemeldete Benutzer und Nachrichten
-
-**Angemeldete Benutzer** zeigt alle Sitzungen mit Rechner, Version, Anmeldezeit, letzter Aktivität und aktueller Tätigkeit (aktives Fenster). Sie können eine **Nachricht an alle** oder an einen Benutzer senden; sie erscheint beim Empfänger innerhalb von 10 Sekunden. Administratoren können Benutzer **abmelden**.
-
----
-
-## 13. Bedienung: Tabellen, Suche, Formate
-
-- **Ein Klick genügt:** Ein Klick in ein änderbares Tabellenfeld startet die Bearbeitung.
-- **Suche in Auswahllisten:** In allen Auswahllisten, auch in Tabellen, können Sie tippen. Die Liste öffnet sich und markiert den besten Treffer; es gibt keine zusätzliche Vorschlagsliste.
-  - Gesucht wird im Kurz- und im Langnamen.
-  - Enter oder Verlassen des Feldes übernimmt den Eintrag.
-  - Neben dem Kurznamen steht grau der Langname.
-  - Die Liste öffnet immer nach unten.
-- **Spaltenformatierung:** Ein Rechtsklick auf einen Spaltenkopf öffnet das Formatmenü.
-  - **Spalten ein-/ausblenden** über eine Liste, die beim Anklicken offen bleibt.
-  - **Spalten anpassen…** öffnet einen Dialog: Zeigen, Reihenfolge (▲ ▼), eigene Überschrift, Breite, Ausrichtung, Fixieren (bleibt beim waagerechten Blättern stehen).
-  - **Spaltenbreiten an Inhalt anpassen.**
-  - **Tabellenformat:** eigene Formate speichern, wechseln, löschen; Standard wiederherstellen.
-
-  Jede Änderung, auch Verschieben und Verbreitern mit der Maus, wird sofort gemerkt und gilt nach jedem Neuaufbau und beim nächsten Öffnen. Ausgeblendete Spalten bleiben ausgeblendet.
-- **Druckformat-Editor:** Vor der Seitenansicht einer Liste öffnet sich das *Druckformular*. Dort legen Sie fest:
-  - Überschrift, Fußzeile und Summenzeile.
-  - Schriftgröße und Hoch- oder Querformat.
-  - Gitterlinien und Zebrastreifen.
-  - Welche Spalten mit welcher Breite gedruckt werden.
-
-  Jede Liste merkt sich ihr eigenes Drucklayout.
+| Strg+Umschalt+V | Stundenplanung ↔ Vertretungsplanung |
+| Strg+P | Stundenpläne drucken |
+| Strg+Bild↑ / Strg+Bild↓ | vorheriger / nächster Unterrichtstag (Vertretungsmodus) |
+| Strg+M | Abwesenheiten (Vertretungsmodus) |
+| Strg+T | Vertretungen (Vertretungsmodus) |
+| Strg+G | Vertretungsvorschlag (Vertretungsmodus) |
+| + / - (Vertretungen) | Vertretung ohne Lehrkraft / Entfall |
+| F3 / Umschalt+F3 (Vertretungen) | nächste / vorherige offene Vertretung |
+| Entf (Vertretungen) | Vertretung zurücksetzen (wieder offen) |
+| Strg+Entf (Abwesenheiten) | Abwesenheit löschen |
+| Entf (Stundenplan) | markierte Stunden entplanen |
+| F (Stundenplan) | markierte Stunden fixieren / Fixierung lösen |
+| Strg+A / Esc (Stundenplan) | alle Stunden markieren / Markierung aufheben |
+| Entf (Stammdaten) | markierte Einträge löschen |
+| Enter, F2 (Tabellen) | Zelle bearbeiten |
+| Strg+C / Strg+V (Tabellen) | kopieren / einfügen |

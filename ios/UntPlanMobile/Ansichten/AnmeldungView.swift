@@ -55,17 +55,16 @@ struct AnmeldungView: View {
             Form {
                 if !hinzufuegen {
                 Section {
-                    VStack(spacing: 10) {
-                        Signet(groesse: 64)
+                    // Wortmarke als Text, kein Bildzeichen
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("UntPlan")
                             .font(.largeTitle.weight(.semibold))
                             .foregroundStyle(Farben.text)
-                        Text("Stundenplan, Vertretungen und Mitteilungen Ihrer Schule")
+                        Text("Anmeldung mit dem Konto Ihrer Schule")
                             .font(.subheadline)
                             .foregroundStyle(Farben.text2)
-                            .multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 8)
                     .listRowBackground(Color.clear)
                 }
@@ -82,7 +81,6 @@ struct AnmeldungView: View {
                                 }
                             } label: {
                                 HStack(spacing: 12) {
-                                    Initialen(name: konto.name, groesse: 34)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(konto.rollenname.isEmpty ? konto.login : "\(konto.login) · \(konto.rollenname)")
                                             .foregroundStyle(Farben.text)

@@ -97,9 +97,6 @@ struct StartView: View {
             .task { await laden() }
             .navigationTitle("Heute")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { KontoKnopf() }
-            }
             .navigationDestination(for: Startziel.self) { ziel in
                 Startzielseite(ziel: ziel, heute: heute, sprechtage: sprechtage) { gewaehlteKarte = $0 }
                     .environmentObject(zustand)
@@ -226,10 +223,6 @@ struct StartView: View {
             break
         }
         return HStack(spacing: 12) {
-            Image(systemName: "person.crop.circle.badge.xmark")
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(Farben.text3)
-                .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(hinweis.lowercased().hasPrefix("klasse") ? "Klasse abwesend" : "Abwesend")
                     .font(.body.weight(.semibold))
@@ -254,13 +247,13 @@ struct StartView: View {
                                symbol: "lock", flaeche: Farben.flaeche)
         }
         if let f = h.ferien ?? ferien {
-            return Hinweisfeld(titel: f.titel.isEmpty ? "Ferien" : f.titel, text: f.zeitraum, symbol: "calendar",
+            return Hinweisfeld(titel: f.titel.isEmpty ? "Ferien" : f.titel, text: f.zeitraum,
                                flaeche: Farben.freiFlaeche, tonfarbe: Farben.frei)
         }
         let text = h.karten.isEmpty
             ? (Datumsformat.istHeute(h.datum) ? "Heute ist kein Unterricht geplant." : "An diesem Tag ist kein Unterricht geplant.")
             : "Heute stehen keine weiteren Stunden an."
-        return Hinweisfeld(titel: "Keine Stunden", text: text, symbol: "checkmark.circle", flaeche: Farben.flaeche)
+        return Hinweisfeld(titel: "Keine Stunden", text: text, flaeche: Farben.flaeche)
     }
 
     // MARK: - Mitteilungen des Tages
@@ -305,7 +298,6 @@ struct StartView: View {
     private struct Listeneintrag: Identifiable {
         let ziel: Startziel
         let titel: String
-        let symbol: String
         let zahl: Int
         var untertitel: String? = nil
         var id: Startziel { ziel }
@@ -313,26 +305,26 @@ struct StartView: View {
 
     private func eintraege(_ h: Heute) -> [Listeneintrag] {
         var liste: [Listeneintrag] = [
-            Listeneintrag(ziel: .termine, titel: "Meine Termine", symbol: "calendar.badge.clock", zahl: h.termine.count)
+            Listeneintrag(ziel: .termine, titel: "Meine Termine", zahl: h.termine.count)
         ]
         if zustand.istKollegium {
-            liste.append(Listeneintrag(ziel: .abwesenheiten, titel: "Meine Abwesenheiten", symbol: "person.badge.clock", zahl: 0))
+            liste.append(Listeneintrag(ziel: .abwesenheiten, titel: "Meine Abwesenheiten", zahl: 0))
             if zustand.entschuldigungsrechte?.irgendwas == true {
-                liste.append(Listeneintrag(ziel: .entschuldigungen, titel: "Entschuldigungen", symbol: "checkmark.seal", zahl: 0))
+                liste.append(Listeneintrag(ziel: .entschuldigungen, titel: "Entschuldigungen", zahl: 0))
             }
         } else if zustand.istFamilie {
-            liste.append(Listeneintrag(ziel: .familieAbwesenheiten, titel: "Meine Abwesenheiten", symbol: "person.badge.clock", zahl: 0))
+            liste.append(Listeneintrag(ziel: .familieAbwesenheiten, titel: "Meine Abwesenheiten", zahl: 0))
         }
         if !h.hausaufgaben.isEmpty || h.typ == "klasse" {
-            liste.append(Listeneintrag(ziel: .hausaufgaben, titel: "Hausaufgaben", symbol: Symbole.hausaufgaben, zahl: h.hausaufgaben.count))
+            liste.append(Listeneintrag(ziel: .hausaufgaben, titel: "Hausaufgaben", zahl: h.hausaufgaben.count))
         }
         // Auch angekündigte Sprechtage (noch keine Buchung möglich) erscheinen mit Datum, Ort und Anmeldebeginn
         for t in sprechtage {
-            liste.append(Listeneintrag(ziel: .sprechtag(t.id), titel: t.titel, symbol: t.angekuendigt ? "megaphone" : "person.2",
+            liste.append(Listeneintrag(ziel: .sprechtag(t.id), titel: t.titel,
                                        zahl: t.termine, untertitel: t.untertitel))
         }
         if h.aenderungen > 0 {
-            liste.append(Listeneintrag(ziel: .aenderungen, titel: "Änderungen heute", symbol: "arrow.triangle.2.circlepath", zahl: h.aenderungen))
+            liste.append(Listeneintrag(ziel: .aenderungen, titel: "Änderungen heute", zahl: h.aenderungen))
         }
         return liste
     }
@@ -344,12 +336,12 @@ struct StartView: View {
                     Button {
                         sprechtagWahl = SprechtagWahl(id: sid, titel: e.titel)
                     } label: {
-                        Uebersichtszeile(symbol: e.symbol, titel: e.titel, untertitel: e.untertitel, zahl: e.zahl, pfeil: true)
+                        Uebersichtszeile(titel: e.titel, untertitel: e.untertitel, zahl: e.zahl, pfeil: true)
                     }
                     .buttonStyle(.plain)
                 } else {
                     NavigationLink(value: e.ziel) {
-                        Uebersichtszeile(symbol: e.symbol, titel: e.titel, untertitel: e.untertitel, zahl: e.zahl, pfeil: false)
+                        Uebersichtszeile(titel: e.titel, untertitel: e.untertitel, zahl: e.zahl, pfeil: false)
                     }
                 }
             }
@@ -415,9 +407,8 @@ struct StartView: View {
 
 // MARK: - Bausteine der Seite „Heute“
 
-/// Zeile der Übersicht: Symbol in der Akzentfarbe, Titel (und Untertitel), rechts die Zahl.
+/// Zeile der Übersicht: Titel (und Untertitel), rechts die Zahl – ohne Symbol davor.
 struct Uebersichtszeile: View {
-    let symbol: String
     let titel: String
     var untertitel: String? = nil
     var zahl: Int = 0
@@ -426,10 +417,6 @@ struct Uebersichtszeile: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: symbol)
-                .font(.system(size: 17, weight: .regular))
-                .foregroundStyle(Farben.akzent)
-                .frame(width: 26)
             VStack(alignment: .leading, spacing: 2) {
                 Text(titel)
                     .foregroundStyle(Farben.text)
@@ -455,38 +442,33 @@ struct Uebersichtszeile: View {
     }
 }
 
-/// Zeile „Mitteilungen des Tages“: Symbol je Art, Titel und bis zu drei Zeilen Text.
+/// Zeile „Mitteilungen des Tages“: Art klein und grau, Titel und bis zu vier Zeilen Text.
 struct Infozeile: View {
     let info: Tagesinfo
 
-    private var symbol: String {
+    private var art: String {
         switch info.art {
-        case .nachricht: return "megaphone"
-        case .veranstaltung: return "calendar"
-        case .hinweis: return Symbole.info
+        case .nachricht: return "Nachricht"
+        case .veranstaltung: return "Veranstaltung"
+        case .hinweis: return "Hinweis"
         }
     }
 
-    private var farbe: Color {
-        info.art == .veranstaltung ? Farben.termin : Farben.akzent
-    }
-
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: symbol)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(farbe)
-                .frame(width: 26)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(info.titel)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Farben.text)
-                    .lineLimit(2)
-                Text(info.text)
-                    .font(.subheadline)
-                    .foregroundStyle(Farben.text2)
-                    .lineLimit(4)
+        VStack(alignment: .leading, spacing: 3) {
+            if info.titel != art {
+                Text(art)
+                    .font(.caption)
+                    .foregroundStyle(Farben.text3)
             }
+            Text(info.titel)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Farben.text)
+                .lineLimit(2)
+            Text(info.text)
+                .font(.subheadline)
+                .foregroundStyle(Farben.text2)
+                .lineLimit(4)
         }
         .padding(.vertical, 3)
         .accessibilityElement(children: .combine)

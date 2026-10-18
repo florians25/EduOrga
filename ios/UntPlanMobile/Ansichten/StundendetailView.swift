@@ -177,7 +177,7 @@ struct StundendetailInhalt: View {
         Menu {
             Section(Datumsformat.anzeige(karte.datum, "EEEE, d. MMMM yyyy")) {
                 Button {} label: {
-                    Label(karte.beginn.isEmpty ? stundentext : "\(stundentext) · \(karte.beginn) - \(karte.ende)", systemImage: "clock")
+                    Text(karte.beginn.isEmpty ? stundentext : "\(stundentext) · \(karte.beginn) - \(karte.ende)")
                 }
                 .disabled(true)
             }
@@ -186,15 +186,13 @@ struct StundendetailInhalt: View {
                     Button {
                         bereichBinding.wrappedValue = 0
                     } label: {
-                        Label("Ganzer Block (\(karte.von).–\(karte.bis). Stunde)",
-                              systemImage: daten.einzelstunde == nil ? "checkmark" : "square.stack")
+                        Menuezeile(titel: "Ganzer Block (\(karte.von).–\(karte.bis). Stunde)", gewaehlt: daten.einzelstunde == nil)
                     }
                     ForEach(daten.blockStunden) { s in
                         Button {
                             bereichBinding.wrappedValue = s.stunde
                         } label: {
-                            Label(stundentitel(s, mitZeit: true) + (s.eintrag ? " •" : ""),
-                                  systemImage: daten.einzelstunde == s.stunde ? "checkmark" : "clock")
+                            Menuezeile(titel: stundentitel(s, mitZeit: true) + (s.eintrag ? " •" : ""), gewaehlt: daten.einzelstunde == s.stunde)
                         }
                     }
                 }
@@ -205,7 +203,7 @@ struct StundendetailInhalt: View {
                         Button {
                             auswahl = eintrag.offset
                         } label: {
-                            Label(reitertitel(eintrag.element), systemImage: eintrag.offset == auswahl ? "checkmark" : "book.closed")
+                            Menuezeile(titel: reitertitel(eintrag.element), gewaehlt: eintrag.offset == auswahl)
                         }
                     }
                 }
@@ -228,7 +226,7 @@ struct StundendetailInhalt: View {
                             zustand.planZeigen(plan)
                             schliessen()
                         } label: {
-                            Label(plan.anzeige, systemImage: plan.bild)
+                            Text(plan.anzeige)
                         }
                     }
                 }
@@ -333,7 +331,6 @@ struct StundendetailInhalt: View {
     /// Zeile „Verlegt“ bzw. „Hierher verlegt“: Ursprung und Ziel untereinander (fehlt die Gegenseite, nur der Titel).
     private func verlegungZeile(_ richtung: String) -> some View {
         HStack(spacing: 12) {
-            Listensymbol(name: Symbole.verlegung)
             VStack(alignment: .leading, spacing: 2) {
                 Text(richtung == "von" ? "Verlegt" : "Hierher verlegt")
                     .font(.body)
@@ -495,7 +492,7 @@ struct StundendetailInhalt: View {
     }
 
     /// Kopfblock: Fach groß und halbfett mit Status-Plakette (Entfall, Prüfung, Veranstaltung, Zusatzstunde), darunter
-    /// der Fachname und je eine Zeile mit Symbol für Zeit, Klassen, Räume und Lehrkräfte. Änderungen als „alt → neu“
+    /// der Fachname und je eine beschriftete Zeile für Zeit, Klassen, Räume und Lehrkräfte. Änderungen als „alt → neu“
     /// (alt durchgestrichen, neu petrolfarben unterstrichen), fehlende Werte durchgestrichen. Jede Angabe steht in genau
     /// einer Zeile, die sich bei vielen Werten waagrecht scrollen lässt; sehr viele Werte (z. B. alle Lehrkräfte oder
     /// Klassen) werden auf „… +N“ gekürzt und lassen sich aufklappen. Veranstaltung: oben keine Bezeichnung (die steht
@@ -539,30 +536,30 @@ struct StundendetailInhalt: View {
                     .lineLimit(1)
             }
             VStack(alignment: .leading, spacing: 6) {
-                kopfzeile(symbol: "clock") {
+                kopfzeile("Zeit") {
                     Wertzeile(bausteine: [.text(zeitzeile)], schrift: Detailmass.klein, farbe: Farben.text)
                 }
                 let kopfteile = titelBausteine
                 if !kopfteile.isEmpty {
-                    kopfzeile(symbol: Symbole.klasse) {
+                    kopfzeile("Klasse") {
                         Wertzeile(bausteine: kopfteile, schrift: Detailmass.klein, farbe: Farben.text,
                                   kuerzenAb: Wertzeile.kuerzungsgrenze)
                     }
                 }
                 if !raeume.isEmpty {
-                    kopfzeile(symbol: Symbole.raum) {
+                    kopfzeile("Raum") {
                         Wertzeile(bausteine: raeume, schrift: Detailmass.klein, farbe: Farben.text,
                                   kuerzenAb: Wertzeile.kuerzungsgrenze)
                     }
                 }
                 if !lehrer.isEmpty {
-                    kopfzeile(symbol: Symbole.lehrkraft) {
+                    kopfzeile("Lehrkraft") {
                         Wertzeile(bausteine: lehrer, schrift: Detailmass.klein, farbe: Farben.text,
                                   kuerzenAb: Wertzeile.kuerzungsgrenze)
                     }
                 }
                 if !karte.abwesendeKlassen.isEmpty {
-                    kopfzeile(symbol: "person.crop.circle.badge.xmark") {
+                    kopfzeile("Fehlt") {
                         Wertzeile(bausteine: [.text("\(karte.abwesendeKlassen.joined(separator: ", ")) – \(karte.abwesendText.isEmpty ? "abwesend" : karte.abwesendText)")],
                                   schrift: Detailmass.klein, farbe: Farben.text2)
                     }
@@ -579,14 +576,13 @@ struct StundendetailInhalt: View {
         return "\(stundentext) · \(Detailmass.uhrzeit(karte.beginn)) – \(Detailmass.uhrzeit(karte.ende))"
     }
 
-    /// Zeile im Kopfblock: graues Symbol in fester Breite, daneben der Inhalt.
-    private func kopfzeile<Inhalt: View>(symbol: String, @ViewBuilder inhalt: () -> Inhalt) -> some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: symbol)
-                .font(.system(size: 14, weight: .regular))
+    /// Zeile im Kopfblock: graue Beschriftung in fester Breite, daneben der Inhalt.
+    private func kopfzeile<Inhalt: View>(_ beschriftung: String, @ViewBuilder inhalt: () -> Inhalt) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(beschriftung)
+                .font(.subheadline)
                 .foregroundStyle(Farben.text3)
-                .frame(width: 20)
-                .accessibilityHidden(true)
+                .frame(width: 72, alignment: .leading)
             inhalt()
         }
         .frame(minHeight: Detailmass.zeile)
@@ -610,7 +606,7 @@ struct StundendetailInhalt: View {
             }
             // Prüfung: eigene Zeile mit dem Fach als Untertitel
             if karte.istPruefung && !karte.istEntfall {
-                link(.pruefung, Detailzeile(symbol: Symbole.pruefung, titel: "Prüfung", untertitel: pruefungsUntertitel))
+                link(.pruefung, Detailzeile(titel: "Prüfung", untertitel: pruefungsUntertitel))
             }
             // Verlegung: Ursprung → Ziel mit Datum und Uhrzeit (ohne Verlegungszeichen)
             if let richtung = karte.verlegung, !istVeranstaltung {
@@ -621,20 +617,19 @@ struct StundendetailInhalt: View {
             }
             if istVeranstaltung {
                 if !veranstaltungsInfo.isEmpty {
-                    link(.info, Detailzeile(symbol: Symbole.info, titel: "Information zur Stunde", untertitel: veranstaltungsInfo))
+                    link(.info, Detailzeile(titel: "Information zur Stunde", untertitel: veranstaltungsInfo))
                 }
             } else if !detailText.isEmpty {
                 // Information zur Stunde mit dem Info-Symbol, Vertretungstext mit dem Notizsymbol; bloße
                 // Art-Bezeichnungen wie „Sondereinsatz“ erscheinen nicht; Zusatzstunde: Plakette „Zusatzstunde“ im
                 // Kopf, dazu nur ein manuell eingegebener Vertretungstext
-                link(.text, Detailzeile(symbol: textTitel == "Information zur Stunde" ? Symbole.info : Symbole.notiz,
-                                        titel: textTitel, untertitel: detailText))
+                link(.text, Detailzeile(titel: textTitel, untertitel: detailText))
             }
             if mitUnterricht && (kollegium || !(daten.eintrag?.thema ?? "").isEmpty) {
                 let thema = daten.eintrag?.thema ?? ""
                 // Einzelstunde ohne eigenen Lehrstoff: der Lehrstoff des ganzen Blocks gilt (grau, nur lesend)
                 let geerbt = daten.geerbterEintrag?.thema ?? ""
-                link(.lehrstoff, Detailzeile(symbol: Symbole.lehrstoff, titel: "Lehrstoff",
+                link(.lehrstoff, Detailzeile(titel: "Lehrstoff",
                                              untertitel: thema.isEmpty && !geerbt.isEmpty ? "Block: \(geerbt)" : thema) {
                     if !thema.isEmpty {
                         Image(systemName: "checkmark.circle.fill")
@@ -645,7 +640,7 @@ struct StundendetailInhalt: View {
                 })
             }
             if kollegium && mitUnterricht {
-                link(.schueler, Detailzeile(symbol: Symbole.schueler, titel: "Schüler*innen") {
+                link(.schueler, Detailzeile(titel: "Schüler*innen") {
                     if daten.anwesenheit != nil || daten.geladen {
                         SchuelerPlakette(zahl: daten.abwesendAnzahl, kontrolliert: daten.anwesenheit?.kontrolliert == true)
                             .padding(.trailing, 4)
@@ -653,22 +648,22 @@ struct StundendetailInhalt: View {
                 })
             }
             if mitUnterricht {
-                link(.hausaufgaben, Detailzeile(symbol: Symbole.hausaufgaben, titel: "Hausaufgaben",
+                link(.hausaufgaben, Detailzeile(titel: "Hausaufgaben",
                                                 zahl: daten.hausaufgaben.map { $0.liste.count } ?? (daten.geladen ? 0 : nil)))
             }
             if kollegium && !daten.klassen.isEmpty && !istVeranstaltung {
-                link(.klassenbuch, Detailzeile(symbol: Symbole.klassenbuch, titel: "Klassenbucheinträge",
+                link(.klassenbuch, Detailzeile(titel: "Klassenbucheinträge",
                                                zahl: daten.geladen ? daten.vermerke.count : nil))
             }
             if (kollegium && mitUnterricht) || !daten.notizSchueler.isEmpty {
-                link(.notizSchueler, Detailzeile(symbol: Symbole.notiz, titel: "Notizen für Schüler*innen", untertitel: daten.notizSchueler))
+                link(.notizSchueler, Detailzeile(titel: "Notizen für Schüler*innen", untertitel: daten.notizSchueler))
             }
             // Notizen für Lehrkräfte sehen (und bearbeiten) nur Lehrkräfte
             if kollegium && (mitUnterricht || !daten.notizLehrer.isEmpty) {
-                link(.notizLehrer, Detailzeile(symbol: Symbole.notiz, titel: "Notizen für Lehrkräfte", untertitel: daten.notizLehrer))
+                link(.notizLehrer, Detailzeile(titel: "Notizen für Lehrkräfte", untertitel: daten.notizLehrer))
             }
             if karte.hausaufgabeFaellig {
-                Detailzeile(symbol: Symbole.hausaufgaben, titel: "Zu dieser Stunde ist eine Hausaufgabe fällig", pfeil: false)
+                Detailzeile(titel: "Zu dieser Stunde ist eine Hausaufgabe fällig", pfeil: false)
             }
         }
     }
@@ -683,7 +678,7 @@ struct StundendetailInhalt: View {
 
     /// „Findet online statt“ – speicherbar für Lehrkräfte mit Schreibrecht (optimistisch, bei Fehler zurück).
     private var onlineZeile: some View {
-        Detailzeile(symbol: Symbole.online, titel: "Findet online statt", pfeil: false) {
+        Detailzeile(titel: "Findet online statt", pfeil: false) {
             Toggle("Findet online statt", isOn: Binding(
                 get: { daten.istOnline },
                 set: { neu in
@@ -708,7 +703,7 @@ struct StundendetailInhalt: View {
             Button {
                 oeffneURL(url)
             } label: {
-                Detailzeile(symbol: Symbole.online, titel: "Online-Unterricht beitreten", untertitel: url.host ?? daten.onlineLink) {
+                Detailzeile(titel: "Online-Unterricht beitreten", untertitel: url.host ?? daten.onlineLink) {
                     Image(systemName: "arrow.up.forward.app")
                         .font(.system(size: 17, weight: .regular))
                         .foregroundStyle(Farben.akzent)
@@ -717,7 +712,7 @@ struct StundendetailInhalt: View {
             .buttonStyle(ZeilenKnopfStil())
             .accessibilityHint("Öffnet den Link zum Online-Unterricht")
         } else {
-            Detailzeile(symbol: Symbole.online, titel: "Findet online statt", untertitel: "Noch kein Link hinterlegt", pfeil: false)
+            Detailzeile(titel: "Findet online statt", untertitel: "Noch kein Link hinterlegt", pfeil: false)
         }
     }
 

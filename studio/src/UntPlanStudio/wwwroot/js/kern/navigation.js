@@ -16,9 +16,9 @@ import { einstellungLesen, einstellungSchreiben } from './api.js';
 export const NAVIGATION = [
   {
     id: 'vertretung', titel: 'Vertretungsplanung', modus: 'vertretung', eintraege: [
-      { text: 'Tagesplanung', symbol: 'anordnung', befehl: 'vertretung.standard', braucht: 'dokument', hinweis: 'Kalender, Abwesenheiten, Vertretungen, Vorschlag und Tagespläne zusammen' },
+      { text: 'Tagesplanung', befehl: 'vertretung.standard', braucht: 'dokument', hinweis: 'Kalender, Abwesenheiten, Vertretungen, Vorschlag und Tagespläne zusammen' },
       { ref: 'vertretung.kalender', text: 'Kalender', symbol: 'kalender', befehl: 'vertretung.kalender' },
-      { ref: 'vertretung.absenzen', text: 'Abwesenheiten', symbol: 'abwesenheit', befehl: 'vertretung.absenzen' },
+      { ref: 'vertretung.absenzen', text: 'Abwesenheiten', befehl: 'vertretung.absenzen' },
       { ref: 'vertretung.vertretungen', text: 'Vertretungen', symbol: 'vertretung', befehl: 'vertretung.liste' },
       { ref: 'vertretung.vorschlag', text: 'Vertretungsvorschlag', symbol: 'zuweisen' },
       { ref: 'vertretung.automatik', text: 'Automatische Vertretung', symbol: 'optimierung' },
@@ -60,7 +60,7 @@ export const NAVIGATION = [
       { ref: 'eingabe.faecher', text: 'Fächer', symbol: 'faecher' },
       { ref: 'eingabe.schueler', text: 'Schülerinnen und Schüler', symbol: 'schueler' },
       { ref: 'eingabe.raumgruppen', text: 'Raumgruppen', symbol: 'raeume', weitere: true },
-      { ref: 'eingabe.gaenge', text: 'Aufsichtsbereiche', symbol: 'gaenge', weitere: true },
+      { ref: 'eingabe.gaenge', text: 'Gänge (Aufsichtsbereiche)', symbol: 'gaenge', weitere: true },
       { ref: 'eingabe.abteilungen', text: 'Abteilungen', symbol: 'abteilungen', weitere: true },
       { ref: 'eingabe.gruende', text: 'Abwesenheitsgründe', symbol: 'abwesenheit', weitere: true },
       { ref: 'eingabe.kommentare', text: 'Kommentare', symbol: 'info', weitere: true },
@@ -80,7 +80,7 @@ export const NAVIGATION = [
   },
   {
     id: 'planung', titel: 'Planung', modus: 'stundenplan', eintraege: [
-      { ref: 'planung.planen', text: 'Manuell planen', symbol: 'stundenplan' },
+      { text: 'Manuell planen', befehl: 'fenster.standard', braucht: 'dokument', hinweis: 'Unterricht und Klassenplan nebeneinander' },
       { ref: 'planung.optimierung', text: 'Automatische Planung', symbol: 'optimierung' },
       { ref: 'planung.diagnose', text: 'Diagnose', symbol: 'diagnose' },
       { ref: 'planung.gewichtung', text: 'Gewichtung', symbol: 'gewichtung' },
@@ -150,6 +150,13 @@ export const NAVIGATION = [
 
 // ---------------------------------------------------------------------------------------------
 
+/** Eintrag aus Navigation/Suche ausführen: öffnet seine Ansicht als neue Seite. */
+async function neueSeite(e) {
+  const { fensterverwaltung } = await import('./fenster.js');
+  fensterverwaltung.naechsterAufrufNeueSeite();
+  return eintragAusfuehren(e);
+}
+
 function registriert() {
   return new Map(alleRibbonEintraege().map((e) => [e.id, e]));
 }
@@ -178,16 +185,12 @@ export class Navigation {
     this.liste = h('nav', { class: 'nav-liste', 'aria-label': 'Arbeitsbereiche' });
     this.fuss = h('div', { class: 'nav-fuss' });
     this.el = h('aside', { class: 'navigation' },
-      h('div', { class: 'nav-kopf' },
-        h('span', { class: 'nav-signet' }, symbol('logo')),
-        h('span', { class: 'nav-produkt' }, h('b', null, 'UntPlan'), h('span', null, 'Studio')),
-        h('button', { type: 'button', class: 'nav-einklappen', title: 'Seitenleiste ein-/ausklappen', onclick: () => this.einklappen(!this.eingeklappt) }, symbol('seitenleiste'))),
+      h('div', { class: 'nav-kopf' }, h('span', { class: 'nav-marke' }, h('b', null, 'UntPlan'), h('span', null, 'Studio'))),
       this.liste, this.fuss);
     eltern.append(this.el);
     for (const name of ['stand', 'dokument', 'benutzer']) an(name, () => this.aktualisieren());
     an('modus', () => this.zeichnen());
-    an('fenster-aktiv', () => this.markieren());
-    an('arbeitsbereich', () => this.markieren());
+    an('seite', ({ arbeitsplatz }) => { this.seitentitel = arbeitsplatz || null; this.markieren(); });
     Promise.all([einstellungLesen('navigation.eingeklappt'), einstellungLesen('navigation.offen')]).then(([ein, offen]) => {
       if (offen && typeof offen === 'object') this.offen = offen;
       if (ein) this.einklappen(true, false);
@@ -195,6 +198,7 @@ export class Navigation {
     }).catch(() => {});
   }
 
+  /** Seitenleiste aus- bzw. einblenden (Strg+B). */
   einklappen(ein, speichern = true) {
     this.eingeklappt = ein;
     document.documentElement.classList.toggle('nav-eingeklappt', ein);
@@ -206,22 +210,13 @@ export class Navigation {
     leeren(this.liste);
     this.knoepfe = [];
     const reg = registriert();
-    this.liste.append(this._knopf({ id: 'nav:uebersicht', text: 'Übersicht', symbol: 'start', befehl: 'start.uebersicht', braucht: 'dokument' }, 'haupt'));
+    this.liste.append(this._knopf({ id: 'nav:uebersicht', text: 'Übersicht', befehl: 'start.uebersicht', braucht: 'dokument' }, 'haupt'));
     for (const g of NAVIGATION.filter(sichtbar)) {
       const eintraege = g.eintraege.map((n) => aufloesen(n, reg)).filter(Boolean);
       if (!eintraege.length) continue;
       const offen = this.offen[g.id] !== false;
-      const mehr = !!this.offen[`${g.id}:weitere`];
-      const inhalt = h('div', { class: 'nav-eintraege', hidden: !offen && !this.eingeklappt });
-      const haupt = eintraege.filter((e) => !e.weitere), weitere = eintraege.filter((e) => e.weitere);
-      for (const e of haupt) inhalt.append(this._knopf(e));
-      if (weitere.length) {
-        if (mehr || this.eingeklappt) for (const e of weitere) inhalt.append(this._knopf(e));
-        if (!this.eingeklappt) {
-          inhalt.append(h('button', { type: 'button', class: 'nav-mehr', onclick: () => { this.offen[`${g.id}:weitere`] = !mehr; einstellungSchreiben('navigation.offen', this.offen); this.zeichnen(); } },
-            mehr ? 'Weniger anzeigen' : `${weitere.length} weitere`));
-        }
-      }
+      const inhalt = h('div', { class: 'nav-eintraege', hidden: !offen });
+      for (const e of eintraege) inhalt.append(this._knopf(e));
       const kopf = h('button', {
         type: 'button', class: `nav-gruppe${offen ? ' offen' : ''}`, 'aria-expanded': offen ? 'true' : 'false',
         onclick: () => { this.offen[g.id] = !offen; einstellungSchreiben('navigation.offen', this.offen); this.zeichnen(); },
@@ -230,22 +225,20 @@ export class Navigation {
     }
     leeren(this.fuss);
     this.fuss.append(
-      this._knopf({ id: 'nav:modus', text: zustand.modus === 'vertretung' ? 'Zur Stundenplanung' : 'Zur Vertretungsplanung', symbol: 'wechsel', befehl: 'modus.umschalten', taste: 'Strg+Umschalt+V' }, 'fussknopf'),
-      this._knopf({ id: 'nav:dateien', text: 'Schuldateien', symbol: 'dokument', befehl: 'datei.backstage', args: { seite: 'oeffnen' } }, 'fussknopf'));
+      this._knopf({ id: 'nav:dateien', text: 'Schuldateien', befehl: 'datei.backstage', args: { seite: 'oeffnen' } }, 'fussknopf'));
     this.aktualisieren();
     this.markieren();
   }
 
   _knopf(e, art = '') {
     const k = h('button', {
-      class: `nav-punkt ${art}`, type: 'button', title: this.eingeklappt ? e.text : (e.hinweis || ''),
-      dataset: { id: e.id },
-    }, symbol(e.symbol || 'modul'), h('span', { class: 'text' }, e.text), e.menue ? symbol('pfeil_rechts', 'nav-pfeil') : null);
+      class: `nav-punkt ${art}`, type: 'button', title: e.hinweis || '', dataset: { id: e.id },
+    }, h('span', { class: 'text' }, e.text), e.menue ? symbol('pfeil_rechts', 'nav-pfeil') : null);
     k.addEventListener('click', () => {
       if (e.menue) {
         const r = k.getBoundingClientRect();
-        menue(r.right + 6, r.top, e.menue.map((m) => (m ? { ...m, deaktiviert: !verfuegbar({ braucht: e.braucht, ...m }), aktion: () => eintragAusfuehren(m) } : null)));
-      } else eintragAusfuehren(e);
+        menue(r.right + 4, r.top, e.menue.map((m) => (m ? { ...m, symbol: undefined, deaktiviert: !verfuegbar({ braucht: e.braucht, ...m }), aktion: () => neueSeite(m) } : null)));
+      } else neueSeite(e);
     });
     this.knoepfe.push({ k, e });
     return k;
@@ -259,11 +252,17 @@ export class Navigation {
     }
   }
 
-  /** Markiert den Eintrag, der zur gerade sichtbaren Ansicht gehört. */
+  /** Markiert den Eintrag, der zur gezeigten Seite gehört (Arbeitsplatz über den Titel, sonst über die Hauptansicht). */
   async markieren() {
     const { fensterverwaltung } = await import('./fenster.js');
-    const f = fensterverwaltung.aktiv();
-    for (const { k, e } of this.knoepfe) k.classList.toggle('aktiv', !!f && passt(e, f));
+    const haupt = fensterverwaltung.anordnung()[0];
+    const titel = this.seitentitel;
+    let gefunden = false;
+    for (const { k, e } of this.knoepfe) {
+      const an_ = !gefunden && (titel ? e.text === titel : !!haupt && passt(e, haupt));
+      if (an_) gefunden = true;
+      k.classList.toggle('aktiv', an_);
+    }
   }
 
   /** Kompatibilität mit älteren Modulen (Menüband). */
@@ -336,11 +335,12 @@ export function befehlssuche() {
   const eingabe = h('input', { class: 'bs-eingabe', type: 'text', placeholder: 'Befehl oder Ansicht suchen …', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Befehl suchen' });
   const ergebnis = h('div', { class: 'bs-liste', role: 'listbox' });
   const box = h('div', { class: 'bs-box', role: 'dialog', 'aria-label': 'Befehlssuche' },
-    h('div', { class: 'bs-kopf' }, symbol('suchen'), eingabe, h('kbd', null, 'Esc')), ergebnis);
+    h('div', { class: 'bs-kopf' }, symbol('suchen'), eingabe, h('kbd', null, 'Esc')), ergebnis,
+    h('div', { class: 'bs-fuss' }, h('span', null, h('kbd', null, '↑'), h('kbd', null, '↓'), ' auswählen'), h('span', null, h('kbd', null, 'Enter'), ' öffnen')));
   const hg = h('div', { class: 'bs-hintergrund' }, box);
   let treffer = [], index = 0;
   const zu = () => { hg.remove(); suchOffen = null; };
-  const ausfuehren = (b) => { zu(); eintragAusfuehren(b.e); };
+  const ausfuehren = (b) => { zu(); neueSeite(b.e); };
   const zeichnen = () => {
     const q = normal(eingabe.value.trim());
     const teile = q.split(/\s+/).filter(Boolean);
@@ -355,7 +355,7 @@ export function befehlssuche() {
     if (!treffer.length) ergebnis.append(h('div', { class: 'bs-leer' }, 'Keine passenden Befehle.'));
     treffer.forEach((b, i) => {
       const z = h('button', { type: 'button', class: `bs-treffer${i === index ? ' aktiv' : ''}`, role: 'option', 'aria-selected': i === index ? 'true' : 'false' },
-        symbol(b.symbol), h('span', { class: 'bs-text' }, b.text), h('span', { class: 'bs-ort' }, b.ort), b.e.taste ? h('kbd', null, b.e.taste) : null);
+        h('span', { class: 'bs-text' }, b.text), h('span', { class: 'bs-ort' }, b.ort), b.e.taste ? h('kbd', null, b.e.taste) : null);
       z.addEventListener('click', () => ausfuehren(b));
       z.addEventListener('pointermove', () => { if (index !== i) { index = i; markieren(); } });
       ergebnis.append(z);

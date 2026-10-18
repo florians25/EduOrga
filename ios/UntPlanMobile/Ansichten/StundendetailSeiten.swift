@@ -699,7 +699,6 @@ struct OnlineLinkZeile: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Listensymbol(name: "link")
             TextField("Link zum Online-Unterricht", text: $eingabe)
                 .font(.system(size: 17))
                 .foregroundStyle(Farben.text)
@@ -849,7 +848,7 @@ struct HausaufgabenSeite: View {
                     Button {
                         formular = HausaufgabeFormular.Startwerte(eintrag: nil, stundenDatum: daten.karte.datum)
                     } label: {
-                        Label("Neue Hausaufgabe", systemImage: "plus.circle.fill")
+                        Text("Neue Hausaufgabe")
                     }
                 }
             } header: {
@@ -1137,10 +1136,13 @@ struct KlassenbuchSeite: View {
             let wann = [v.datum.isEmpty ? "" : Datumsformat.anzeige(v.datum, "EE, dd.MM.yyyy"), v.zeit, v.lehrer]
                 .filter { !$0.isEmpty }.joined(separator: ", ")
             if !wann.isEmpty {
-                Label(wann, systemImage: "calendar")
+                Text(wann)
+                    .font(.footnote)
+                    .foregroundStyle(Farben.text3)
             }
             if !v.art.isEmpty {
-                Label(v.art, systemImage: "info.circle")
+                Text(v.art)
+                    .font(.subheadline.weight(.semibold))
             }
             if !v.text.isEmpty {
                 Text(v.text)
@@ -1149,23 +1151,10 @@ struct KlassenbuchSeite: View {
         }
         .font(.system(size: 15))
         .foregroundStyle(Farben.text)
-        .labelStyle(EintragLabelStil())
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .accessibilityElement(children: .combine)
-    }
-}
-
-/// Symbol klein und grau vor dem Text (Datum, Art eines Klassenbucheintrags).
-private struct EintragLabelStil: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 5) {
-            configuration.icon
-                .font(.system(size: 13, weight: .light))
-                .foregroundStyle(Farben.text3)
-            configuration.title
-        }
     }
 }
 

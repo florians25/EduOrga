@@ -18,16 +18,6 @@ enum Planansicht: String, CaseIterable, Identifiable {
         }
     }
 
-    /// SF Symbol der Ansicht.
-    var symbol: String {
-        switch self {
-        case .tag: return "rectangle"
-        case .zweiTage: return "rectangle.split.2x1"
-        case .dreiTage: return "rectangle.split.3x1"
-        case .woche: return "calendar"
-        }
-    }
-
     /// Zahl der Tage je Seite (Woche: alle Tage der Woche)
     var tage: Int {
         switch self {
@@ -375,12 +365,12 @@ struct StundenplanView: View {
             Button {
                 zeigeDatum = true
             } label: {
-                Label("Gehe zu Datum", systemImage: Symbole.datum)
+                Text("Gehe zu Datum")
             }
             Section("Ansicht") {
                 Picker("Ansicht", selection: Binding(get: { ansicht }, set: { ansichtWechseln($0) })) {
                     ForEach(Planansicht.allCases) { a in
-                        Label(a.titel, systemImage: a.symbol)
+                        Text(a.titel)
                             .tag(a)
                     }
                 }
@@ -390,9 +380,7 @@ struct StundenplanView: View {
             if auswahl == nil {
                 Section {
                     // Eigene Abwesenheit als Fläche hinter den Stunden ein- bzw. ausblenden
-                    Toggle(isOn: $zeigeAbwesenheiten) {
-                        Label("Abwesenheiten anzeigen", systemImage: "person.badge.clock")
-                    }
+                    Toggle("Abwesenheiten anzeigen", isOn: $zeigeAbwesenheiten)
                 }
             }
             Section {
@@ -400,24 +388,23 @@ struct StundenplanView: View {
                     Button {
                         favoriten.umschalten(auswahl)
                     } label: {
-                        Label(favoriten.enthaelt(auswahl) ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen",
-                              systemImage: favoriten.enthaelt(auswahl) ? "star.slash" : "star")
+                        Text(favoriten.enthaelt(auswahl) ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")
                     }
                 }
                 Button {
                     Task { await laden(neu: true) }
                 } label: {
-                    Label("Aktualisieren", systemImage: "arrow.clockwise")
+                    Text("Aktualisieren")
                 }
                 Button {
                     zeigeInfo = true
                 } label: {
-                    Label("Legende und Planangaben", systemImage: "info.circle")
+                    Text("Legende und Planangaben")
                 }
                 Button {
                     zeigeHilfe = true
                 } label: {
-                    Label("Hilfe", systemImage: "questionmark.circle")
+                    Text("Hilfe")
                 }
             }
         } label: {
@@ -780,13 +767,6 @@ struct Platzhalterwoche: View {
 enum Wochenkopf {
     /// Höhe des Spaltenkopfs
     static let hoehe: CGFloat = 40
-
-    /// Kurzer Monatsname ohne Punkt, z. B. „Okt“.
-    static func monat(_ datum: Date) -> String {
-        var s = Datumsformat.anzeige(datum, "LLL")
-        if s.hasSuffix(".") { s.removeLast() }
-        return s
-    }
 }
 
 /// Legende und Angaben zum Plan bzw. Hilfe (Menü): Bedienung (nur Hilfe), Legende mit echten Beispielkacheln und
@@ -807,18 +787,18 @@ struct PlanInfoView: View {
             List {
                 if hilfe {
                     Section("Bedienung") {
-                        hilfezeile("hand.draw", "Waagrecht wischen: nächste bzw. vorherige Woche (in der Tagesansicht die nächsten Tage).")
-                        hilfezeile("hand.tap", "Stunde antippen: Details mit Lehrstoff, Schüler*innen, Hausaufgaben und Notizen.")
-                        hilfezeile("calendar.day.timeline.left", "Tag im Spaltenkopf antippen: Tagesansicht; erneut antippen: zurück zur Woche.")
-                        hilfezeile("arrow.uturn.backward", "„Heute“ bzw. den Reiter „Plan“ erneut antippen: zurück zum heutigen Tag.")
-                        hilfezeile("rectangle.split.3x1", "Menü → Ansicht: Tag, 2 Tage, 3 Tage oder Woche.")
-                        hilfezeile("calendar", "Menü → Gehe zu Datum: Tag im Kalender wählen und „Auswählen“ tippen.")
-                        hilfezeile("chevron.down", "Planname oben antippen: anderen Stundenplan (Klasse, Lehrkraft, Raum) wählen.")
+                        hilfezeile("Waagrecht wischen: nächste bzw. vorherige Woche (in der Tagesansicht die nächsten Tage).")
+                        hilfezeile("Stunde antippen: Details mit Lehrstoff, Schüler*innen, Hausaufgaben und Notizen.")
+                        hilfezeile("Tag im Spaltenkopf antippen: Tagesansicht; erneut antippen: zurück zur Woche.")
+                        hilfezeile("„Heute“ bzw. den Reiter „Plan“ erneut antippen: zurück zum heutigen Tag.")
+                        hilfezeile("Menü → Ansicht: Tag, 2 Tage, 3 Tage oder Woche.")
+                        hilfezeile("Menü → Gehe zu Datum: Tag im Kalender wählen und „Auswählen“ tippen.")
+                        hilfezeile("Planname oben antippen: anderen Stundenplan (Klasse, Lehrkraft, Raum) wählen.")
                     }
                     Section("Schüler*innen (Lehrkräfte)") {
-                        hilfezeile("checkmark.circle", "Von links nach rechts wischen: anwesend.")
-                        hilfezeile("clock", "Von rechts nach links wischen: abwesend; ein Hinweis zeigt Fehlzeiten in der Vorstunde.")
-                        hilfezeile("book.closed", "Buch: neuer Klassenbucheintrag; Uhr: Abwesenheiten der Person bearbeiten.")
+                        hilfezeile("Von links nach rechts wischen: anwesend.")
+                        hilfezeile("Von rechts nach links wischen: abwesend; ein Hinweis zeigt Fehlzeiten in der Vorstunde.")
+                        hilfezeile("Buch: neuer Klassenbucheintrag; Uhr: Abwesenheiten der Person bearbeiten.")
                     }
                 }
                 if let plan {
@@ -882,15 +862,9 @@ struct PlanInfoView: View {
         }
     }
 
-    private func hilfezeile(_ symbol: String, _ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: symbol)
-                .font(.system(size: 15, weight: .regular))
-                .foregroundStyle(Farben.akzent)
-                .frame(width: 26)
-            Text(text)
-                .font(.subheadline)
-        }
+    private func hilfezeile(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline)
     }
 
     /// Beispielkachel einer Art mit Erklärung.
@@ -1674,7 +1648,7 @@ struct AufsichtDetailView: View {
                                     zustand.planZeigen(plan)
                                     schliessen()
                                 } label: {
-                                    Label(plan.anzeige, systemImage: Symbole.lehrkraft)
+                                    Text(plan.anzeige)
                                 }
                             }
                         }
@@ -1707,19 +1681,19 @@ struct AufsichtDetailView: View {
                                 .foregroundStyle(Farben.text2)
                         }
                         VStack(alignment: .leading, spacing: 6) {
-                            Label {
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                Text("Zeit")
+                                    .foregroundStyle(Farben.text3)
+                                    .frame(width: 72, alignment: .leading)
                                 Text(aufsicht.beginn.isEmpty ? pause : "\(zeit) · \(pause)")
                                     .monospacedDigit()
-                            } icon: {
-                                Image(systemName: "clock")
-                                    .foregroundStyle(Farben.text3)
                             }
                             if !lehrkraft.isEmpty {
-                                Label {
-                                    Wertzeile(bausteine: lehrkraft, schrift: Detailmass.klein, farbe: Farben.text)
-                                } icon: {
-                                    Image(systemName: Symbole.lehrkraft)
+                                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                    Text("Lehrkraft")
                                         .foregroundStyle(Farben.text3)
+                                        .frame(width: 72, alignment: .leading)
+                                    Wertzeile(bausteine: lehrkraft, schrift: Detailmass.klein, farbe: Farben.text)
                                 }
                             }
                         }
@@ -1737,14 +1711,14 @@ struct AufsichtDetailView: View {
                         .frame(height: 1)
                     VStack(spacing: 0) {
                         if !aufsicht.gang.isEmpty && aufsicht.gang != ort {
-                            Detailzeile(symbol: "mappin.and.ellipse", titel: "Ort", untertitel: aufsicht.gang, pfeil: false)
+                            Detailzeile(titel: "Ort", untertitel: aufsicht.gang, pfeil: false)
                         }
                         ForEach(planziele) { plan in
                             Button {
                                 zustand.planZeigen(plan)
                                 schliessen()
                             } label: {
-                                Detailzeile(symbol: Symbole.lehrkraft, titel: "Im Stundenplan anzeigen", untertitel: plan.anzeige)
+                                Detailzeile(titel: "Im Stundenplan anzeigen", untertitel: plan.anzeige)
                             }
                             .buttonStyle(ZeilenKnopfStil())
                         }

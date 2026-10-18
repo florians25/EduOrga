@@ -24,9 +24,6 @@ enum Plankategorie: String, Hashable, CaseIterable, Identifiable {
         }
     }
 
-    /// SF Symbol der Planart (Zeilen unter „Stundenpläne“ und Favoriten).
-    var bild: String { PlanAuswahl.bild(rawValue) }
-
     func liste(_ e: Elemente) -> [Planelement] {
         switch self {
         case .klasse: return e.klassen
@@ -123,10 +120,6 @@ struct PlanAuswahlView: View {
                 waehlen(nil)
             } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "star.square")
-                        .font(.system(size: 20, weight: .regular))
-                        .foregroundStyle(Farben.akzent)
-                        .frame(width: 28)
                     Text("Mein Stundenplan")
                         .foregroundStyle(Farben.text)
                     Spacer(minLength: 4)
@@ -149,10 +142,6 @@ struct PlanAuswahlView: View {
                             waehlen(fav)
                         } label: {
                             HStack(spacing: 12) {
-                                Image(systemName: fav.bild)
-                                    .font(.system(size: 17, weight: .regular))
-                                    .foregroundStyle(Farben.akzent)
-                                    .frame(width: 28)
                                 Text(fav.anzeige)
                                     .foregroundStyle(Farben.text)
                                     .lineLimit(1)
@@ -182,10 +171,6 @@ struct PlanAuswahlView: View {
             ForEach(kategorien) { kategorie in
                 NavigationLink(value: kategorie) {
                     HStack(spacing: 12) {
-                        Image(systemName: kategorie.bild)
-                            .font(.system(size: 17, weight: .regular))
-                            .foregroundStyle(Farben.akzent)
-                            .frame(width: 28)
                         Text(kategorie.titel)
                             .foregroundStyle(Farben.text)
                         Spacer(minLength: 4)

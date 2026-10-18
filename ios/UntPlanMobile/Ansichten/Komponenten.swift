@@ -105,32 +105,6 @@ struct Plakette: View {
     }
 }
 
-/// Runder Kreis mit Initialen (Marine auf heller Marine-Fläche).
-struct Initialen: View {
-    let name: String
-    var groesse: CGFloat = 40
-    /// Fertige Initialen (z. B. vom Server); nil = aus dem Namen bilden
-    var vorgabe: String? = nil
-
-    var body: some View {
-        Text(vorgabe.map { String($0.prefix(3)) } ?? Self.kuerzel(name))
-            .font(.system(size: groesse * 0.38, weight: .semibold))
-            .foregroundStyle(Farben.akzent)
-            .frame(width: groesse, height: groesse)
-            .background(Farben.primaerFlaeche, in: Circle())
-            .accessibilityHidden(true)
-    }
-
-    /// "Muster Erika" wird zu "ME".
-    static func kuerzel(_ name: String) -> String {
-        let teile = name.split(whereSeparator: { $0 == " " || $0 == "-" }).filter { !$0.isEmpty }
-        guard let erstes = teile.first?.first else { return "?" }
-        var s = String(erstes)
-        if teile.count > 1, let zweites = teile[1].first { s.append(zweites) }
-        return s.uppercased()
-    }
-}
-
 /// Zahl in einer neutralen Kapsel (Zahl der Termine, Hausaufgaben …).
 struct ZahlPlakette: View {
     let zahl: Int
@@ -146,27 +120,7 @@ struct ZahlPlakette: View {
     }
 }
 
-// MARK: - Karten
-
-/// Fläche mit feinem Rand statt Schatten (Radius 8 pt).
-struct Kartenhintergrund: ViewModifier {
-    var radius: CGFloat = 8
-
-    func body(content: Content) -> some View {
-        content
-            .background(Farben.flaeche, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(Farben.rand, lineWidth: 1)
-            }
-    }
-}
-
 extension View {
-    func alsKarte(radius: CGFloat = 8) -> some View {
-        modifier(Kartenhintergrund(radius: radius))
-    }
-
     /// Inhalt mittig mit höchstens dieser Breite (iPad: nicht über die ganze Breite).
     func zentriert(maxBreite: CGFloat = 700) -> some View {
         frame(maxWidth: maxBreite)
@@ -174,133 +128,7 @@ extension View {
     }
 }
 
-// MARK: - Knöpfe in Leisten, Konto
-
-/// Symbolknopf in einer Kopfleiste: Symbol in der Akzentfarbe, 44 pt Tippfläche, ohne Hintergrund.
-struct Leistenknopf<Inhalt: View>: View {
-    @ViewBuilder let inhalt: () -> Inhalt
-
-    var body: some View {
-        inhalt()
-            .font(.system(size: 17, weight: .regular))
-            .foregroundStyle(Farben.akzent)
-            .frame(minWidth: 32, minHeight: 32)
-            .contentShape(Rectangle())
-    }
-}
-
-/// Initialen des angemeldeten Kontos als Knopfbeschriftung (Konto wechseln).
-struct KontoSymbol: View {
-    @EnvironmentObject var zustand: AppZustand
-    var groesse: CGFloat = 30
-
-    var body: some View {
-        Initialen(name: zustand.benutzer?.name ?? zustand.benutzer?.login ?? "?", groesse: groesse)
-    }
-}
-
-/// Öffnet die Kontenauswahl (mehrere Konten gleichzeitig angemeldet – wechseln ohne Abmelden, Konto hinzufügen bzw.
-/// entfernen).
-struct KontoMenue<Beschriftung: View>: View {
-    @EnvironmentObject var zustand: AppZustand
-    @State private var zeigen = false
-    @Environment(\.horizontalSizeClass) private var groessenklasse
-    @ViewBuilder let beschriftung: () -> Beschriftung
-
-    var body: some View {
-        Button {
-            zeigen = true
-        } label: {
-            beschriftung()
-        }
-        .accessibilityLabel("Konto wechseln")
-        .accessibilityHint("Öffnet die Kontenauswahl")
-        .blattPraesentation(isPresented: $zeigen, breit: groessenklasse == .regular) {
-            KontenauswahlView()
-                .environmentObject(zustand)
-        }
-    }
-}
-
-/// Konto-Knopf in der Navigationsleiste: Initialen des Kontos, öffnet die Kontenauswahl.
-struct KontoKnopf: View {
-    var body: some View {
-        KontoMenue {
-            KontoSymbol()
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Zeilen
-
-/// Zeile einer gruppierten Fläche: Symbol links, Titel (und Untertitel), Zahl, Pfeil.
-struct Listenzeile: View {
-    let symbol: String
-    let titel: String
-    var untertitel: String? = nil
-    var zahl: Int? = nil
-    var pfeil: Bool = true
-    var titelFarbe: Color = Farben.text
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: symbol)
-                .font(.system(size: 17, weight: .regular))
-                .foregroundStyle(Farben.akzent)
-                .frame(width: 26)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(titel)
-                    .font(.body)
-                    .foregroundStyle(titelFarbe)
-                    .lineLimit(1)
-                if let untertitel, !untertitel.isEmpty {
-                    Text(untertitel)
-                        .font(.footnote)
-                        .foregroundStyle(Farben.text2)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                }
-            }
-            Spacer(minLength: 4)
-            if let zahl {
-                ZahlPlakette(zahl: zahl)
-            }
-            if pfeil {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Farben.pfeil)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .frame(minHeight: 48)
-        .contentShape(Rectangle())
-    }
-}
-
-/// Trennlinie zwischen Listenzeilen (eingerückt bis hinter das Symbol).
-struct Zeilentrenner: View {
-    var body: some View {
-        Rectangle()
-            .fill(Farben.rand)
-            .frame(height: 0.5)
-            .padding(.leading, 54)
-    }
-}
-
-/// Gruppierte Fläche mit feinem Rand.
-struct Zeilengruppe<Inhalt: View>: View {
-    @ViewBuilder let inhalt: () -> Inhalt
-
-    var body: some View {
-        VStack(spacing: 0) {
-            inhalt()
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .alsKarte(radius: 8)
-    }
-}
 
 /// Zeile einer Fläche: beim Drücken leicht grau hinterlegt.
 struct ZeilenKnopfStil: ButtonStyle {
@@ -390,42 +218,6 @@ private struct LadebalkenLauf: View {
             }
         }
         .frame(height: hoehe)
-    }
-}
-
-// MARK: - Signet
-
-/// Signet von UntPlan (wie `design/logo/mark.svg`): Marine-Fläche mit einem 3×3-Raster aus Stundenfeldern, ein
-/// durchgehender Doppelblock in der Mitte und ein hervorgehobenes Feld unten rechts. Flach, ohne Verläufe.
-struct Signet: View {
-    var groesse: CGFloat = 64
-
-    var body: some View {
-        let s = groesse / 64
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 14 * s, style: .continuous)
-                .fill(Color(hexWert: 0x1C3F7A))
-            feld(14, 14, 10, 1, s)
-            feld(27, 14, 10, 0.32, s)
-            feld(40, 14, 10, 0.32, s)
-            feld(14, 27, 10, 0.32, s)
-            feld(27, 27, 23, 1, s)
-            feld(14, 40, 10, 0.32, s)
-            feld(27, 40, 10, 0.32, s)
-            RoundedRectangle(cornerRadius: 2 * s, style: .continuous)
-                .fill(Color(hexWert: 0x8FB4EA))
-                .frame(width: 10 * s, height: 10 * s)
-                .offset(x: 40 * s, y: 40 * s)
-        }
-        .frame(width: groesse, height: groesse, alignment: .topLeading)
-        .accessibilityLabel("UntPlan")
-    }
-
-    private func feld(_ x: CGFloat, _ y: CGFloat, _ breite: CGFloat, _ deckkraft: Double, _ s: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: 2 * s, style: .continuous)
-            .fill(Color.white.opacity(deckkraft))
-            .frame(width: breite * s, height: 10 * s)
-            .offset(x: x * s, y: y * s)
     }
 }
 

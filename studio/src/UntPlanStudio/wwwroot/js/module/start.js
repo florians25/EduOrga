@@ -33,14 +33,15 @@ function uebersicht(f) {
   f.titel('Übersicht');
   const seite = h('div', { class: 'st-seite' });
   f.inhalt.append(seite);
-  f.werkzeug({ text: 'Aktualisieren', symbol: 'wiederholen', aktion: () => laden() });
+  f.werkzeug({ text: 'Aktualisieren', aktion: () => laden() });
 
-  const kachel = (sym, wert, text, befehlName, args) => h('button', { type: 'button', class: 'st-kachel', onclick: () => befehl(befehlName, args) },
-    h('span', { class: 'st-kachel-kopf' }, symbol(sym), text), h('span', { class: 'st-wert' }, String(wert ?? '–')));
+  const zuSeite = (befehlName, args) => { fensterverwaltung.naechsterAufrufNeueSeite(); return befehl(befehlName, args); };
+  const kachel = (_sym, wert, text, befehlName, args) => h('button', { type: 'button', class: 'st-kachel', onclick: () => zuSeite(befehlName, args) },
+    h('span', { class: 'st-wert' }, String(wert ?? '–')), h('span', { class: 'st-kachel-kopf' }, text));
   const zeile = (text, wert, schlecht) => h('div', { class: `st-kz${schlecht ? ' achtung' : ''}` },
-    h('span', { class: 'st-kz-symbol' }, symbol(schlecht ? 'warnung' : 'haken')), h('span', { class: 'st-kz-text' }, text),
+    h('span', { class: 'st-kz-text' }, text),
     h('span', { class: 'st-kz-wert' }, String(wert ?? 0)));
-  const aktion = (sym, text, befehlName, args) => h('button', { type: 'button', class: 'st-aktion', onclick: () => befehl(befehlName, args) }, symbol(sym), h('span', null, text), symbol('pfeil_rechts'));
+  const aktion = (_sym, text, befehlName, args) => h('button', { type: 'button', class: 'st-aktion', onclick: () => zuSeite(befehlName, args) }, h('span', null, text), symbol('pfeil_rechts'));
 
   async function laden() {
     const d = zustand.dokument;
@@ -51,7 +52,7 @@ function uebersicht(f) {
     const offen = KENNZAHLEN.filter(([s]) => (k[s] ?? 0) > 0).length;
     leeren(seite).append(
       h('header', { class: 'st-kopf' },
-        h('div', null, h('h1', null, d.schulname || d.name),
+        h('div', null, h('h2', null, d.schulname || d.name),
           h('div', { class: 'st-meta' }, [d.schuljahr && `Schuljahr ${d.schuljahr}`, d.periode && `${d.periode}${d.periodeFixiert ? ' (fixiert)' : ''}`,
             d.geaendert ? 'Nicht gespeicherte Änderungen' : d.gespeichert ? `Gespeichert ${datumDe(d.gespeichert)}` : null].filter(Boolean).map((t) => h('span', null, t))))),
       h('div', { class: 'st-kacheln' },
@@ -68,10 +69,10 @@ function uebersicht(f) {
           k.bewertung !== undefined ? h('div', { class: 'st-bewertung' }, h('span', { class: 'leise' }, 'Bewertungszahl'), h('b', null, String(k.bewertung)), h('span', { class: 'leise' }, 'kleiner ist besser')) : null,
           h('div', { class: 'st-kz-liste' }, KENNZAHLEN.map(([s, t]) => zeile(t, k[s], (k[s] ?? 0) > 0))),
           h('div', { class: 'st-karte-fuss' },
-            h('button', { type: 'button', class: 'knopf klein', onclick: () => befehl('optimierung.diagnose') }, symbol('diagnose'), 'Diagnose'),
-            h('button', { type: 'button', class: 'knopf klein', onclick: () => befehl('optimierung.starten') }, symbol('optimierung'), 'Automatische Planung'))),
+            h('button', { type: 'button', class: 'knopf klein', onclick: () => zuSeite('optimierung.diagnose') }, 'Diagnose öffnen'),
+            h('button', { type: 'button', class: 'knopf klein', onclick: () => befehl('optimierung.starten') }, 'Automatische Planung …'))),
         h('section', { class: 'st-karte' },
-          h('div', { class: 'st-karte-kopf' }, h('h2', null, 'Schnellzugriff')),
+          h('div', { class: 'st-karte-kopf' }, h('h2', null, 'Häufige Aufgaben')),
           h('div', { class: 'st-aktionen' },
             aktion('unterricht', 'Unterricht nach Klassen', 'unterricht.oeffnen', { sicht: 'klasse' }),
             aktion('stundenplan', 'Manuell planen', 'fenster.standard'),
@@ -92,36 +93,37 @@ async function anordnungenMenue() {
   const alle = (await einstellungLesen(ANORDNUNGEN)) || {};
   const namen = Object.keys(alle).sort();
   menue(r.left, r.bottom + 2, [
-    { text: 'Aktuelle Anordnung speichern …', symbol: 'speichern', aktion: anordnungSpeichern },
+    { text: 'Aktuelle Seite als Arbeitsplatz speichern …', aktion: anordnungSpeichern },
     null,
-    namen.length ? { titel: 'Laden' } : { text: 'Noch keine gespeicherten Anordnungen', deaktiviert: true },
-    ...namen.map((n) => ({ text: n, symbol: 'anordnung', aktion: () => fensterverwaltung.anordnungLaden(alle[n]) })),
+    namen.length ? { titel: 'Öffnen' } : { text: 'Noch keine gespeicherten Arbeitsplätze', deaktiviert: true },
+    ...namen.map((n) => ({ text: n, aktion: () => fensterverwaltung.anordnungLaden(alle[n], n) })),
     namen.length ? null : undefined,
-    namen.length ? { text: 'Löschen', symbol: 'loeschen', menue: namen.map((n) => ({ text: n, aktion: () => anordnungLoeschen(n) })) } : undefined,
+    namen.length ? { text: 'Löschen', menue: namen.map((n) => ({ text: n, aktion: () => anordnungLoeschen(n) })) } : undefined,
   ].filter((x) => x !== undefined));
 }
 
 async function anordnungSpeichern() {
-  const w = await formular('Fensteranordnung speichern', [{ name: 'name', titel: 'Name', pflicht: true, hinweis: 'Gleicher Name überschreibt eine vorhandene Anordnung.' }], { okText: 'Speichern' });
+  const w = await formular('Arbeitsplatz speichern', [{ name: 'name', titel: 'Name', pflicht: true, hinweis: 'Gleicher Name überschreibt einen vorhandenen Arbeitsplatz.' }], { okText: 'Speichern' });
   if (!w) return;
   const alle = (await einstellungLesen(ANORDNUNGEN)) || {};
   alle[w.name.trim()] = fensterverwaltung.anordnung();
   await einstellungSchreiben(ANORDNUNGEN, alle);
-  hinweis(`Fensteranordnung „${w.name}“ gespeichert.`, 'ok');
+  hinweis(`Arbeitsplatz „${w.name}“ gespeichert.`, 'ok');
 }
 
 async function anordnungLoeschen(name) {
-  if (!(await frage(`Fensteranordnung „${name}“ löschen?`))) return;
+  if (!(await frage(`Arbeitsplatz „${name}“ löschen?`))) return;
   const alle = (await einstellungLesen(ANORDNUNGEN)) || {};
   delete alle[name];
   await einstellungSchreiben(ANORDNUNGEN, alle);
 }
 
-/** Standard-Fenstergruppe: Unterricht links, Klassenplan rechts. */
+/** Arbeitsplatz „Manuell planen“: Unterricht links, Klassenplan rechts. */
 function standardFenster() {
-  fensterverwaltung.alleSchliessen();
-  fensterverwaltung.oeffnen('unterricht', { sicht: 'klasse' }, { andock: 'links' });
-  fensterverwaltung.oeffnen('stundenplan', { typ: 'klasse' }, { andock: 'rechts' });
+  return fensterverwaltung.arbeitsplatz('Manuell planen', () => {
+    fensterverwaltung.oeffnen('unterricht', { sicht: 'klasse' }, { andock: 'links' });
+    fensterverwaltung.oeffnen('stundenplan', { typ: 'klasse' }, { andock: 'rechts' });
+  });
 }
 
 function modusUmschalten() {
@@ -152,12 +154,7 @@ export default {
     { id: 'start.faecher', reiter: 'Start', gruppe: 'Übersicht', text: 'Fächer', symbol: 'faecher', gross: true, braucht: 'dokument', menue: elementMenue('fach', 'Fach') },
     { id: 'start.vertretungsmodus', reiter: 'Start', gruppe: 'Module', text: 'Vertretungs-planung', symbol: 'vertretung', gross: true, befehl: 'modus.umschalten', taste: 'Strg+Umschalt+V',
       gedrueckt: () => zustand.modus === 'vertretung', hinweis: 'Zwischen Stundenplanung und Vertretungsplanung wechseln' },
-    { id: 'start.fenster.standard', reiter: 'Start', gruppe: 'Fenster', text: 'Standard-Fenstergruppe', symbol: 'fenster', befehl: 'fenster.standard', braucht: 'dokument' },
-    { id: 'start.fenster.anordnungen', reiter: 'Start', gruppe: 'Fenster', text: 'Fensteranordnungen', symbol: 'anordnung', befehl: 'fenster.anordnungen', hinweis: 'Eigene Fensteranordnungen speichern, laden und löschen' },
-    { id: 'start.fenster.alle', reiter: 'Start', gruppe: 'Fenster', text: 'Alle schließen', symbol: 'schliessen', befehl: 'fenster.alleSchliessen' },
-    { id: 'start.fenster.ueberlappend', reiter: 'Start', gruppe: 'Fenster', text: 'Überlappend', symbol: 'ueberlappend', befehl: 'fenster.anordnen', args: { art: 'ueberlappend' } },
-    { id: 'start.fenster.nebeneinander', reiter: 'Start', gruppe: 'Fenster', text: 'Nebeneinander', symbol: 'nebeneinander', befehl: 'fenster.anordnen', args: { art: 'nebeneinander' } },
-    { id: 'start.fenster.untereinander', reiter: 'Start', gruppe: 'Fenster', text: 'Untereinander', symbol: 'untereinander', befehl: 'fenster.anordnen', args: { art: 'untereinander' } },
+    { id: 'start.fenster.anordnungen', reiter: 'Start', gruppe: 'Fenster', text: 'Gespeicherte Arbeitsplätze', befehl: 'fenster.anordnungen', hinweis: 'Aktuelle Seite als Arbeitsplatz speichern, laden und löschen' },
     { id: 'vertretung.modus', reiter: 'Vertretungsplanung', gruppe: 'Modus', text: 'Vertretungs-planung', symbol: 'vertretung', gross: true, befehl: 'modus.umschalten',
       gedrueckt: () => zustand.modus === 'vertretung', hinweis: 'Zurück zur Stundenplanung (Strg+Umschalt+V)' },
   ],

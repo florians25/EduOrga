@@ -2,7 +2,7 @@ import QuickLook
 import SwiftUI
 
 /// Postfach: großer Titel, Suchfeld des Systems, rechts „Neue Mitteilung“ (Menü „Kolleg*innen“ bzw. „Individuell“);
-/// darunter der Segmentschalter Posteingang | Gesendet | Entwürfe und die Liste (Initialen, Absender, Betreff,
+/// darunter der Segmentschalter Posteingang | Gesendet | Entwürfe und die Liste (Absender, Betreff,
 /// Vorschau, Büroklammer bei Anhängen, Punkt bei ungelesenen Mitteilungen). Löschen per Wischen.
 struct MitteilungenView: View {
     enum Ordner: String, CaseIterable, Identifiable {
@@ -133,16 +133,8 @@ struct MitteilungenView: View {
         if zustand.istKollegium {
             Menu {
                 Section("An wen soll die Mitteilung gehen?") {
-                    Button {
-                        verfassen = Verfassen(typ: .kollegium)
-                    } label: {
-                        Label("Kolleg*innen", systemImage: "person.3")
-                    }
-                    Button {
-                        verfassen = Verfassen(typ: .individuell)
-                    } label: {
-                        Label("Individuell", systemImage: "person")
-                    }
+                    Button("Kolleg*innen") { verfassen = Verfassen(typ: .kollegium) }
+                    Button("Individuell") { verfassen = Verfassen(typ: .individuell) }
                 }
             } label: {
                 Image(systemName: "square.and.pencil")
@@ -230,15 +222,16 @@ func mitteilungsdatumLang(_ erstellt: String) -> String {
     return "\(tag), \(zeit)"
 }
 
-/// Zeile im Postfach: Punkt bei ungelesenen Mitteilungen, Initialen, Absender (bzw. Empfänger) und Datum, Betreff,
-/// Vorschau in zwei Zeilen, Büroklammer bei Anhängen.
+/// Zeile im Postfach: Punkt bei ungelesenen Mitteilungen, Absender (bzw. Empfänger) und Datum, Betreff, Vorschau in
+/// zwei Zeilen, Büroklammer bei Anhängen.
 struct Mitteilungszeile: View {
     let mitteilung: Mitteilung
     let gesendet: Bool
 
-    static let avatarGroesse: CGFloat = 40
+    /// Breite der Spalte für den Ungelesen-Punkt
+    static let punktBreite: CGFloat = 12
     /// Beginn des Texts (Trennlinie der Liste beginnt hier)
-    static let textLinks: CGFloat = 12 + avatarGroesse + 12
+    static let textLinks: CGFloat = 20 + punktBreite + 6
 
     private var name: String {
         if gesendet {
@@ -250,22 +243,13 @@ struct Mitteilungszeile: View {
 
     private var ungelesen: Bool { !gesendet && mitteilung.ungelesen }
 
-    private var avatarName: String {
-        gesendet ? (mitteilung.empfaenger.first ?? "?") : mitteilung.absenderKuerzel
-    }
-
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Initialen(name: avatarName.isEmpty ? "?" : avatarName, groesse: Self.avatarGroesse)
-                .overlay(alignment: .leading) {
-                    if ungelesen {
-                        Circle()
-                            .fill(Farben.akzent)
-                            .frame(width: 8, height: 8)
-                            .offset(x: -12)
-                            .accessibilityHidden(true)
-                    }
-                }
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Circle()
+                .fill(ungelesen ? Farben.akzent : Color.clear)
+                .frame(width: 8, height: 8)
+                .frame(width: Self.punktBreite)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(name)
@@ -427,12 +411,11 @@ struct MitteilungDetailView: View {
         }
     }
 
-    /// Initialen, „Von …“ bzw. „An …“ und rechts das Datum.
+    /// „Von …“ bzw. „An …“ und rechts das Datum.
     private var kopfzeile: some View {
         let person = gesendet ? (m.empfaengerText.isEmpty ? m.empfaenger.joined(separator: ", ") : m.empfaengerText)
                               : m.absenderKuerzel
-        return HStack(alignment: .center, spacing: 12) {
-            Initialen(name: person.isEmpty ? "?" : person, groesse: 40)
+        return HStack(alignment: .firstTextBaseline, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(person)
                     .font(.body.weight(.semibold))
@@ -465,7 +448,7 @@ struct MitteilungDetailView: View {
             Button {
                 Task { await bestaetigen() }
             } label: {
-                Label("Lesebestätigung senden", systemImage: "envelope.open")
+                Text("Lesebestätigung senden")
             }
             .buttonStyle(.bordered)
             .tint(Farben.akzent)

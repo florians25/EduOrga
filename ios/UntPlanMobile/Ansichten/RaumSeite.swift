@@ -124,7 +124,6 @@ struct RaumSeite: View {
 
     private func zeile(_ r: FreierRaum) -> some View {
         HStack(spacing: 12) {
-            Listensymbol(name: Symbole.raum, groesse: 26)
             VStack(alignment: .leading, spacing: 2) {
                 Text(r.kurz)
                     .font(.body.weight(.semibold))

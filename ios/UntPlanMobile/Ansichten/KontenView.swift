@@ -63,7 +63,7 @@ struct KontenauswahlView: View {
                         AnmeldungView(hinzufuegen: true) { schliessen() }
                             .environmentObject(zustand)
                     } label: {
-                        Label("Konto hinzufügen", systemImage: "person.badge.plus")
+                        Text("Konto hinzufügen")
                             .foregroundStyle(Farben.akzent)
                     }
                 }
@@ -88,7 +88,6 @@ struct KontenauswahlView: View {
 
     private func zeile(_ konto: Konto) -> some View {
         HStack(spacing: 12) {
-            Initialen(name: konto.name, groesse: 38)
             VStack(alignment: .leading, spacing: 2) {
                 Text(konto.name)
                     .font(.body.weight(konto.id == aktivId ? .semibold : .regular))

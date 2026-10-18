@@ -171,14 +171,14 @@ struct Abwesenheitskarte: View {
                 Spacer(minLength: 8)
                 Plakette(text: status.text, farbe: status.farbe, flaeche: status.flaeche)
             }
-            zeileMitSymbol("clock", zeit)
+            textzeile(zeit)
             if !anlass.isEmpty {
-                zeileMitSymbol("info.circle", anlass)
+                textzeile(anlass)
             }
             // Bemerkung bzw. Text als eigene Zeile – nur wenn vorhanden
             let bemerkung = zeile.bemerkung.trimmingCharacters(in: .whitespacesAndNewlines)
             if !bemerkung.isEmpty {
-                zeileMitSymbol("text.bubble", bemerkung)
+                textzeile(bemerkung)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -186,18 +186,12 @@ struct Abwesenheitskarte: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func zeileMitSymbol(_ symbol: String, _ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Image(systemName: symbol)
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Farben.text3)
-                .frame(width: 18, alignment: .leading)
-            Text(text)
-                .font(.subheadline)
-                .monospacedDigit()
-                .foregroundStyle(Farben.text2)
-                .lineLimit(4)
-        }
+    private func textzeile(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline)
+            .monospacedDigit()
+            .foregroundStyle(Farben.text2)
+            .lineLimit(4)
     }
 }
 

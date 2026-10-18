@@ -1,31 +1,30 @@
-// Arbeitsbereich: Ansichten (Fenstertypen der Module) als Reiter in Bereichen, die sich in Spalten und Zeilen teilen.
-// Kein Überlappen: Der Arbeitsbereich ist immer vollständig aufgeteilt. Reiter lassen sich per Ziehen in einen anderen
-// Bereich verschieben oder an dessen Rand ablegen (teilt den Bereich), Trenner zwischen Spalten/Zeilen sind verschiebbar,
-// ein Bereich lässt sich vergrößern (füllt den Arbeitsbereich). Anordnungen werden je Dokument gespeichert.
+// Seitenverwaltung: Studio zeigt immer genau eine Seite. Eine Seite besteht aus einer Ansicht (Fenstertyp eines Moduls)
+// oder – bei Arbeitsplätzen wie der Tagesplanung der Vertretung – aus mehreren fest angeordneten Bereichen.
+//
+//   * Aufruf aus der Navigation, der Befehlssuche oder der Übersicht → neue Seite (Adresse in der URL, Zurück-Taste).
+//   * Aufruf aus einer Ansicht heraus (z. B. „Unterricht“ im Stundenplan) → Nebenbereich rechts auf derselben Seite.
+//   * Aufruf mit lage (andock links/rechts/lo/lu/ro/ru bzw. x/y/b/h) → Bereich eines Arbeitsplatzes (Spalten und Zeilen).
 //
 // Fenstertypen registrieren die Module (siehe modulsystem.js):
-//   { titel, symbol, symbolFuer(parameter), breite, hoehe, einzig(parameter) → Schlüssel|null, erneutGeoeffnet(fenster, parameter), erstellen(fenster, parameter) }
-//
-// lage beim Öffnen (optional): { andock: 'links'|'rechts'|'lo'|'lu'|'ro'|'ru'|'max' } oder { x, y, b, h } (Pixel im
-// Arbeitsbereich) – daraus wird die Spalte/Zeile bestimmt. Ohne lage öffnet die Ansicht als Reiter im aktiven Bereich.
+//   { titel, symbol, symbolFuer(parameter), einzig(parameter) → Schlüssel|null, erneutGeoeffnet(fenster, parameter), erstellen(fenster, parameter) }
+// Die API der Ansichten (f.titel, f.werkzeug, f.inhalt, f.fuss, f.an …) heißt aus historischen Gründen „Fenster“.
 import { h, leeren, entprellen } from './dom.js';
 import { symbol } from './symbole.js';
 import { an, melden } from './ereignisse.js';
-import { fehlerMelden, menue } from './dialog.js';
+import { fehlerMelden } from './dialog.js';
 
 const typen = new Map();
 const fenster = [];
-let flaeche = null;
+let flaeche = null, kopf = null;
 let zaehler = 0;
 let aenderungMelden = () => {};
 
-/** Spalten des Arbeitsbereichs: [{ id, anteil, x, zeilen: [Bereich] }] (anteil in Pixeln, relativ zueinander). */
+/** Spalten der Seite: [{ id, anteil, x, zeilen: [Bereich] }] (anteil in Pixeln, relativ zueinander). */
 let spalten = [];
 let aktiverBereich = null;
-let grosserBereich = null;
-
-const ZIEH_TYP = 'application/x-studio-ansicht';
-let gezogeneAnsicht = null;
+let seitentitel = null;
+let seitenwechselBis = 0;
+let geschichteAus = false;
 
 export function fenstertypRegistrieren(name, def) {
   typen.set(name, def);
@@ -33,7 +32,7 @@ export function fenstertypRegistrieren(name, def) {
 
 export function fenstertyp(name) { return typen.get(name); }
 
-/** Reitertitel vereinheitlichen: „Element / Art“ → „Element – Art“, doppelte Langnamen („Klasse 5a (Klasse 5a)“) kürzen. */
+/** Titel vereinheitlichen: „Element / Art“ → „Element – Art“, doppelte Langnamen („Klasse 5a (Klasse 5a)“) kürzen. */
 function titelFormen(t) {
   const m = String(t).match(/^(.*) \/ (.*)$/);
   if (m) t = m[2] === 'Stammdaten' ? m[1] : `${m[1]} – ${m[2]}`;
@@ -41,171 +40,50 @@ function titelFormen(t) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Bereich: Reiterleiste + Ansichten
+// Bereich: eine Ansicht mit schmaler Kopfzeile (nur auf Seiten mit mehreren Bereichen sichtbar)
 
 class Bereich {
   constructor({ anteil, y } = {}) {
     this.id = `b${++zaehler}`;
     this.anteil = anteil || 1000;
     this.y = y ?? null;
-    this.fenster = [];
-    this.aktiv = null;
-    this.reiter = h('div', { class: 'ws-reiter', role: 'tablist' });
-    this.aktionen = h('div', { class: 'ws-aktionen' },
-      h('button', { type: 'button', class: 'ws-aktion', title: 'Rechts teilen', onclick: () => this.teilen('rechts') }, symbol('nebeneinander')),
-      h('button', { type: 'button', class: 'ws-aktion', title: 'Unten teilen', onclick: () => this.teilen('unten') }, symbol('untereinander')),
-      this.zoomKnopf = h('button', { type: 'button', class: 'ws-aktion', title: 'Bereich vergrößern', onclick: () => this.zoom() }, symbol('maximieren')),
-      h('button', { type: 'button', class: 'ws-aktion', title: 'Weitere Aktionen', onclick: (e) => this.menue(e.currentTarget) }, symbol('mehr')));
-    this.kopf = h('div', { class: 'ws-kopf' }, this.reiter, this.aktionen);
-    this.ansichten = h('div', { class: 'ws-ansichten' });
-    this.ablage = h('div', { class: 'ws-ablage', hidden: true });
-    this.el = h('section', { class: 'ws-bereich', dataset: { bereich: this.id } }, this.kopf, this.ansichten, this.ablage);
+    this.ansicht = null;
+    this.titel = h('span', { class: 'pn-titel' });
+    this.aktionen = h('div', { class: 'pn-aktionen' },
+      h('button', { type: 'button', class: 'pn-knopf', title: 'Als eigene Seite öffnen', onclick: () => this.alsSeite() }, 'Öffnen'),
+      h('button', { type: 'button', class: 'pn-knopf zu', title: 'Bereich schließen', 'aria-label': 'Bereich schließen', onclick: () => this.ansicht?.schliessen() }, symbol('schliessen')));
+    this.kopf = h('div', { class: 'pn-kopf' }, this.titel, this.aktionen);
+    this.ansichten = h('div', { class: 'pn-inhalt' });
+    this.el = h('section', { class: 'pn-bereich', dataset: { bereich: this.id } }, this.kopf, this.ansichten);
     this.el.addEventListener('pointerdown', () => bereichAktivieren(this), true);
-    this.kopf.addEventListener('dblclick', (e) => { if (!e.target.closest('button')) this.zoom(); });
-    this._ablageEinrichten();
   }
 
-  aufnehmen(f, index = this.fenster.length) {
+  aufnehmen(f) {
+    if (this.ansicht && this.ansicht !== f) this.ansicht.schliessen(true);
     if (f.bereich && f.bereich !== this) f.bereich.abgeben(f);
     f.bereich = this;
-    if (!this.fenster.includes(f)) this.fenster.splice(index, 0, f);
+    this.ansicht = f;
     this.ansichten.append(f.el);
-    this.zeigen(f);
+    this.titelZeigen();
   }
 
   abgeben(f) {
-    const i = this.fenster.indexOf(f);
-    if (i < 0) return;
-    this.fenster.splice(i, 1);
+    if (this.ansicht !== f) return;
     if (f.el.parentNode === this.ansichten) f.el.remove();
     f.bereich = null;
-    if (this.aktiv === f) this.aktiv = null;
-    if (!this.fenster.length) bereichEntfernen(this);
-    else {
-      if (!this.aktiv) this.zeigen(this.fenster[Math.min(i, this.fenster.length - 1)]);
-      this.reiterZeichnen();
-    }
+    this.ansicht = null;
+    bereichEntfernen(this);
   }
 
-  zeigen(f) {
-    this.aktiv = f;
-    for (const x of this.fenster) x.el.hidden = x !== f;
-    this.reiterZeichnen();
-  }
+  titelZeigen() { this.titel.textContent = this.ansicht?.titelText || ''; }
 
-  reiterZeichnen() {
-    leeren(this.reiter);
-    for (const f of this.fenster) {
-      const aktiv = f === this.aktiv;
-      const knopf = h('div', {
-        class: `ws-tab${aktiv ? ' aktiv' : ''}`, role: 'tab', 'aria-selected': aktiv ? 'true' : 'false', tabindex: aktiv ? '0' : '-1',
-        title: f.titelText, draggable: 'true', dataset: { typ: f.typ },
-      }, h('span', { class: 'ws-tab-symbol' }, symbol(f.symbolName)), h('span', { class: 'ws-tab-text' }, f.titelText),
-      h('button', { type: 'button', class: 'ws-tab-zu', title: 'Schließen', onclick: (e) => { e.stopPropagation(); f.schliessen(); } }, symbol('schliessen')));
-      knopf.addEventListener('click', () => f.aktivieren());
-      knopf.addEventListener('auxclick', (e) => { if (e.button === 1) { e.preventDefault(); f.schliessen(); } });
-      knopf.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f.aktivieren(); }
-        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-          const i = this.fenster.indexOf(f) + (e.key === 'ArrowRight' ? 1 : -1);
-          const n = this.fenster[(i + this.fenster.length) % this.fenster.length];
-          n.aktivieren();
-          this.reiter.querySelector('.ws-tab.aktiv')?.focus();
-        }
-      });
-      knopf.addEventListener('contextmenu', (e) => { e.preventDefault(); this.menue(null, f, e.clientX, e.clientY); });
-      knopf.addEventListener('dragstart', (e) => {
-        gezogeneAnsicht = f;
-        e.dataTransfer.setData(ZIEH_TYP, f.id);
-        e.dataTransfer.effectAllowed = 'move';
-        document.body.classList.add('ws-zieht');
-      });
-      knopf.addEventListener('dragend', () => { gezogeneAnsicht = null; document.body.classList.remove('ws-zieht'); ablagenVerbergen(); });
-      this.reiter.append(knopf);
-    }
-    this.el.classList.toggle('mehrere', this.fenster.length > 1);
-  }
-
-  /** Aktive Ansicht in einen neuen Bereich rechts bzw. unten verschieben. */
-  teilen(richtung, f = this.aktiv) {
+  /** Ansicht dieses Bereichs als eigene Seite öffnen. */
+  alsSeite() {
+    const f = this.ansicht;
     if (!f) return;
-    if (this.fenster.length < 2) {
-      // einzige Ansicht: Bereich leer teilen ist nicht sinnvoll – stattdessen eine Kopie anbieten, falls möglich
-      if (f.def?.einzig?.(f.parameter)) return;
-      const neu = neuerBereichNeben(this, richtung);
-      fensterverwaltung.oeffnenIn(neu, f.typ, { ...f.parameter });
-      return;
-    }
-    const neu = neuerBereichNeben(this, richtung);
-    neu.aufnehmen(f);
-    bereichAktivieren(neu);
-    layoutZeichnen();
-    aenderungMelden();
+    const typ = f.typ, p = { ...f.parameter };
+    fensterverwaltung.seiteOeffnen(typ, p);
   }
-
-  zoom() {
-    grosserBereich = grosserBereich === this ? null : this;
-    layoutZeichnen();
-    aenderungMelden();
-  }
-
-  menue(knopf, f = this.aktiv, x, y) {
-    if (knopf) { const r = knopf.getBoundingClientRect(); x = r.right - 220; y = r.bottom + 4; }
-    menue(x, y, [
-      { text: 'Rechts teilen', symbol: 'nebeneinander', aktion: () => this.teilen('rechts', f), deaktiviert: !f },
-      { text: 'Unten teilen', symbol: 'untereinander', aktion: () => this.teilen('unten', f), deaktiviert: !f },
-      { text: grosserBereich === this ? 'Verkleinern' : 'Vergrößern', symbol: grosserBereich === this ? 'wiederherstellen' : 'maximieren', aktion: () => this.zoom() },
-      null,
-      { text: 'Schließen', symbol: 'schliessen', aktion: () => f?.schliessen(), deaktiviert: !f },
-      { text: 'Andere Reiter schließen', aktion: () => { for (const x2 of [...this.fenster]) if (x2 !== f) x2.schliessen(); }, deaktiviert: this.fenster.length < 2 },
-      { text: 'Bereich schließen', aktion: () => { for (const x2 of [...this.fenster]) x2.schliessen(); } },
-    ]);
-  }
-
-  _ablageEinrichten() {
-    const zone = (e) => {
-      const r = this.el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-      if (e.clientY - r.top < 40) return 'mitte';
-      if (x < 0.22) return 'links';
-      if (x > 0.78) return 'rechts';
-      if (y < 0.25) return 'oben';
-      if (y > 0.75) return 'unten';
-      return 'mitte';
-    };
-    this.el.addEventListener('dragover', (e) => {
-      if (!gezogeneAnsicht || !e.dataTransfer.types.includes(ZIEH_TYP)) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      const z = zone(e);
-      ablagenVerbergen(this);
-      this.ablage.hidden = false;
-      this.ablage.dataset.zone = z;
-    });
-    this.el.addEventListener('dragleave', (e) => { if (!this.el.contains(e.relatedTarget)) this.ablage.hidden = true; });
-    this.el.addEventListener('drop', (e) => {
-      if (!gezogeneAnsicht || !e.dataTransfer.types.includes(ZIEH_TYP)) return;
-      e.preventDefault();
-      const f = gezogeneAnsicht, z = zone(e);
-      gezogeneAnsicht = null;
-      ablagenVerbergen();
-      if (z === 'mitte') {
-        if (f.bereich === this) return;
-        this.aufnehmen(f);
-      } else {
-        if (f.bereich === this && this.fenster.length === 1) return;
-        const neu = neuerBereichNeben(this, z);
-        neu.aufnehmen(f);
-      }
-      bereichAktivieren(f.bereich);
-      layoutZeichnen();
-      aenderungMelden();
-    });
-  }
-}
-
-function ablagenVerbergen(ausser) {
-  for (const s of spalten) for (const b of s.zeilen) if (b !== ausser) b.ablage.hidden = true;
 }
 
 function alleBereiche() { return spalten.flatMap((s) => s.zeilen); }
@@ -216,19 +94,18 @@ function bereichAktivieren(b) {
   if (!b || aktiverBereich === b) return;
   aktiverBereich = b;
   for (const x of alleBereiche()) x.el.classList.toggle('aktiv', x === b);
-  if (b.aktiv) melden('fenster-aktiv', b.aktiv);
+  if (b.ansicht) melden('fenster-aktiv', b.ansicht);
 }
 
 /** Neuen Bereich neben b anlegen: 'rechts'/'links' = neue Spalte, 'unten'/'oben' = neue Zeile in der Spalte von b. */
-function neuerBereichNeben(b, richtung) {
+function neuerBereichNeben(b, richtung, anteilNeu) {
   const s = spalteVon(b);
   if (richtung === 'rechts' || richtung === 'links') {
-    const anteil = s.anteil / 2;
-    s.anteil = anteil;
+    const anteil = anteilNeu ?? s.anteil * 0.8;
+    if (anteilNeu === undefined) s.anteil = s.anteil * 1.2;
     const neu = new Bereich();
-    const spalte = { id: `s${++zaehler}`, anteil, x: null, zeilen: [neu] };
     const i = spalten.indexOf(s);
-    spalten.splice(richtung === 'rechts' ? i + 1 : i, 0, spalte);
+    spalten.splice(richtung === 'rechts' ? i + 1 : i, 0, { id: `s${++zaehler}`, anteil, x: null, zeilen: [neu] });
     return neu;
   }
   const anteil = b.anteil / 2;
@@ -251,16 +128,16 @@ function bereichEntfernen(b) {
     spalten.splice(j, 1);
     if (spalten.length) (spalten[j] || spalten[j - 1]).anteil += s.anteil;
   }
-  if (grosserBereich === b) grosserBereich = null;
   if (aktiverBereich === b) {
     aktiverBereich = null;
     bereichAktivieren(alleBereiche()[0]);
   }
+  if (alleBereiche().length <= 1) seitentitel = null;
   layoutZeichnen();
 }
 
-/** Bereich für ein neues Fenster bestimmen (siehe lage oben). */
-function zielBereich(lage) {
+/** Bereich für eine Ansicht mit Lageangabe (Arbeitsplätze, gespeicherte Anordnungen). */
+function bereichFuerLage(lage) {
   const breite = flaeche?.clientWidth || 1200, hoehe = flaeche?.clientHeight || 800;
   if (!spalten.length) {
     const b = new Bereich({ anteil: hoehe, y: lage.y ?? null });
@@ -269,46 +146,52 @@ function zielBereich(lage) {
     return b;
   }
   const a = lage.andock;
-  if (a === 'links' || a === 'lo' || a === 'lu' || a === 'rechts' || a === 'ro' || a === 'ru') {
+  if (['links', 'lo', 'lu', 'rechts', 'ro', 'ru'].includes(a)) {
     const rechts = a === 'rechts' || a === 'ro' || a === 'ru';
-    if (rechts && spalten.length < 2) neuerBereichNeben(spalten[0].zeilen[0], 'rechts');
+    if (rechts && spalten.length < 2) neuerBereichNeben(spalten[0].zeilen[0], 'rechts', spalten[0].anteil);
     const s = rechts ? spalten[spalten.length - 1] : spalten[0];
     if (a === 'lo' || a === 'ro') return s.zeilen[0];
     if (a === 'lu' || a === 'ru') return s.zeilen.length > 1 ? s.zeilen[s.zeilen.length - 1] : neuerBereichNeben(s.zeilen[0], 'unten');
     return s.zeilen[0];
   }
-  if (lage.x !== undefined && lage.x !== null) {
-    // absolute Lage (Standardanordnungen, ältere gespeicherte Fensteranordnungen): Spalte nach x, Zeile nach y
-    const tol = 24;
-    let s = spalten.find((x) => x.x !== null && Math.abs(x.x - lage.x) <= tol);
-    if (!s) {
-      s = { id: `s${++zaehler}`, anteil: lage.b ?? breite / (spalten.length + 1), x: lage.x, zeilen: [] };
-      const i = spalten.findIndex((x) => x.x !== null && x.x > lage.x);
-      spalten.splice(i < 0 ? spalten.length : i, 0, s);
-    }
-    const y = lage.y ?? 0;
-    let b = s.zeilen.find((x) => x.y !== null && Math.abs(x.y - y) <= tol);
-    if (!b) {
-      b = new Bereich({ anteil: lage.h ?? hoehe, y });
-      const i = s.zeilen.findIndex((x) => x.y !== null && x.y > y);
-      s.zeilen.splice(i < 0 ? s.zeilen.length : i, 0, b);
-    }
-    return b;
+  if (a === 'max') return alleBereiche()[0];
+  const tol = 24;
+  let s = spalten.find((x) => x.x !== null && Math.abs(x.x - lage.x) <= tol);
+  if (!s) {
+    s = { id: `s${++zaehler}`, anteil: lage.b ?? breite / (spalten.length + 1), x: lage.x, zeilen: [] };
+    const i = spalten.findIndex((x) => x.x !== null && x.x > lage.x);
+    spalten.splice(i < 0 ? spalten.length : i, 0, s);
   }
-  return aktiverBereich && alleBereiche().includes(aktiverBereich) ? aktiverBereich : alleBereiche()[0];
+  const y = lage.y ?? 0;
+  let b = s.zeilen.find((x) => x.y !== null && Math.abs(x.y - y) <= tol);
+  if (!b) {
+    b = new Bereich({ anteil: lage.h ?? hoehe, y });
+    const i = s.zeilen.findIndex((x) => x.y !== null && x.y > y);
+    s.zeilen.splice(i < 0 ? s.zeilen.length : i, 0, b);
+  }
+  return b;
+}
+
+/** Nebenbereich rechts (Aufruf aus einer Ansicht heraus). */
+function nebenbereich() {
+  if (spalten.length === 1 && spalten[0].zeilen.length === 1) {
+    const s = spalten[0];
+    return neuerBereichNeben(s.zeilen[0], 'rechts', s.anteil * 0.8);
+  }
+  const s = spalten[spalten.length - 1];
+  return s.zeilen[s.zeilen.length - 1];
 }
 
 // ---------------------------------------------------------------------------------------------
-// Layout (Spalten/Zeilen mit Trennern)
+// Layout und Seitenkopf
 
 function layoutZeichnen() {
   if (!flaeche) return;
-  const alt = [...flaeche.children].filter((c) => c.classList.contains('ws-spalte') || c.classList.contains('ws-trenner'));
-  for (const c of alt) c.remove();
+  for (const c of [...flaeche.children]) if (c.classList.contains('pn-spalte') || c.classList.contains('pn-trenner')) c.remove();
   const vor = flaeche.querySelector('.willkommen');
   spalten.forEach((s, i) => {
     if (i > 0) flaeche.insertBefore(trenner('senkrecht', spalten[i - 1], s), vor);
-    const el = h('div', { class: 'ws-spalte', style: { flex: `${s.anteil} 1 0` } });
+    const el = h('div', { class: 'pn-spalte', style: { flex: `${s.anteil} 1 0` } });
     s.zeilen.forEach((b, j) => {
       if (j > 0) el.append(trenner('waagerecht', s.zeilen[j - 1], b));
       b.el.style.flex = `${b.anteil} 1 0`;
@@ -316,29 +199,32 @@ function layoutZeichnen() {
     });
     flaeche.insertBefore(el, vor);
   });
-  flaeche.classList.toggle('ws-gross', !!grosserBereich);
-  for (const b of alleBereiche()) {
-    b.el.classList.toggle('gross', b === grosserBereich);
-    b.zoomKnopf.replaceChildren(symbol(b === grosserBereich ? 'wiederherstellen' : 'maximieren'));
-    b.zoomKnopf.title = b === grosserBereich ? 'Verkleinern' : 'Bereich vergrößern';
-    b.el.classList.toggle('aktiv', b === aktiverBereich);
-    b.el.classList.toggle('einzeln', alleBereiche().length === 1);
-  }
+  const mehrere = alleBereiche().length > 1;
+  flaeche.classList.toggle('mehrere', mehrere);
+  for (const b of alleBereiche()) b.el.classList.toggle('aktiv', mehrere && b === aktiverBereich);
+  kopfZeichnen();
+}
+
+function kopfZeichnen() {
+  if (!kopf) return;
+  const haupt = alleBereiche()[0]?.ansicht;
+  const titel = seitentitel || haupt?.titelText || '';
+  kopf.hidden = !haupt;
+  kopf.querySelector('.sk-titel').textContent = titel;
+  melden('seite', { titel, haupt, arbeitsplatz: seitentitel });
 }
 
 function trenner(art, a, b) {
-  const t = h('div', { class: `ws-trenner ${art}`, role: 'separator', 'aria-orientation': art === 'senkrecht' ? 'vertical' : 'horizontal' });
+  const t = h('div', { class: `pn-trenner ${art}`, role: 'separator', 'aria-orientation': art === 'senkrecht' ? 'vertical' : 'horizontal' });
   t.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     t.setPointerCapture(e.pointerId);
     const senkrecht = art === 'senkrecht';
-    const elA = senkrecht ? t.previousElementSibling : t.previousElementSibling, elB = t.nextElementSibling;
+    const elA = t.previousElementSibling, elB = t.nextElementSibling;
     const gA = senkrecht ? elA.offsetWidth : elA.offsetHeight, gB = senkrecht ? elB.offsetWidth : elB.offsetHeight;
     const summe = a.anteil + b.anteil, start = senkrecht ? e.clientX : e.clientY;
-    t.classList.add('zieht');
     const bewegen = (ev) => {
-      const d = (senkrecht ? ev.clientX : ev.clientY) - start;
-      const neuA = Math.max(160, Math.min(gA + gB - 160, gA + d));
+      const neuA = Math.max(200, Math.min(gA + gB - 200, gA + (senkrecht ? ev.clientX : ev.clientY) - start));
       a.anteil = summe * (neuA / (gA + gB));
       b.anteil = summe - a.anteil;
       elA.style.flex = `${a.anteil} 1 0`;
@@ -347,24 +233,16 @@ function trenner(art, a, b) {
     const ende = () => {
       t.removeEventListener('pointermove', bewegen);
       t.removeEventListener('pointerup', ende);
-      t.classList.remove('zieht');
       aenderungMelden();
     };
     t.addEventListener('pointermove', bewegen);
     t.addEventListener('pointerup', ende);
   });
-  t.addEventListener('dblclick', () => {
-    const summe = a.anteil + b.anteil;
-    a.anteil = summe / 2;
-    b.anteil = summe / 2;
-    layoutZeichnen();
-    aenderungMelden();
-  });
   return t;
 }
 
 // ---------------------------------------------------------------------------------------------
-// Ansicht (bisher „Fenster“) – API für die Module unverändert
+// Ansicht – API für die Module
 
 export class Fenster {
   constructor(typName, parameter) {
@@ -374,35 +252,34 @@ export class Fenster {
     this.parameter = parameter ?? {};
     this.bereich = null;
     this.symbolName = this.def?.symbolFuer?.(this.parameter) || this.def?.symbol || 'fenster';
-    this.titelText = this.def?.titel || typName;
+    this.titelText = titelFormen(this.def?.titel || typName);
     this._abmelden = [];
     this._schliessenRueckrufe = [];
 
     this.werkzeuge = h('div', { class: 'fenster-werkzeuge', role: 'toolbar' });
     this.inhalt = h('div', { class: 'fenster-inhalt' });
     this.fuss = h('div', { class: 'fenster-fuss' });
-    this.el = h('section', { class: 'fenster', 'aria-label': this.titelText, role: 'tabpanel' }, this.werkzeuge, this.inhalt, this.fuss);
+    this.el = h('section', { class: 'fenster', 'aria-label': this.titelText }, this.werkzeuge, this.inhalt, this.fuss);
     this.el.dataset.typ = typName;
-    this.el.addEventListener('pointerdown', () => { if (this.bereich) bereichAktivieren(this.bereich); }, true);
   }
-
-  // ---- für die Inhalte ----
 
   /** Titel setzen. */
   titel(text) {
     this.titelText = titelFormen(text);
     this.el.setAttribute('aria-label', this.titelText);
-    this.bereich?.reiterZeichnen();
+    this.bereich?.titelZeigen();
+    kopfZeichnen();
     if (this.istAktiv()) melden('fenster-titel', this);
   }
 
-  /** Parameter ändern (z. B. gewähltes Element) – wird in der Anordnung gespeichert. */
+  /** Parameter ändern (z. B. gewähltes Element) – fließt in die Adresse und gespeicherte Anordnungen. */
   parameterSetzen(p) { this.parameter = { ...this.parameter, ...p }; aenderungMelden(); }
 
-  /** Knopf in der Werkzeugleiste. */
+  /** Knopf in der Werkzeugleiste (mit Text: Textknopf; nurSymbol: Symbolknopf mit Hinweis). */
   werkzeug({ text, symbol: sym, titel, aktion, nurSymbol = false }) {
-    const k = h('button', { class: `wz-knopf${nurSymbol ? ' nur-symbol' : ''}`, type: 'button', title: titel || text },
-      sym ? symbol(sym) : null, nurSymbol ? null : h('span', null, text));
+    const mitText = !nurSymbol && text;
+    const k = h('button', { class: `wz-knopf${mitText ? '' : ' nur-symbol'}`, type: 'button', title: titel || text, 'aria-label': titel || text },
+      mitText ? null : (sym ? symbol(sym) : null), mitText ? h('span', null, text) : null);
     k.addEventListener('click', () => Promise.resolve().then(aktion).catch(fehlerMelden));
     this.werkzeuge.append(k);
     return k;
@@ -415,58 +292,45 @@ export class Fenster {
 
   beimSchliessen(f) { this._schliessenRueckrufe.push(f); }
 
-  istAktiv() { return !!this.bereich && this.bereich === aktiverBereich && this.bereich.aktiv === this; }
-
-  // ---- Funktionen ----
+  istAktiv() { return !!this.bereich && this.bereich === aktiverBereich; }
 
   aktivieren() {
     if (!this.bereich) return;
-    if (this.bereich.aktiv !== this) this.bereich.zeigen(this);
     if (aktiverBereich !== this.bereich) bereichAktivieren(this.bereich);
     else melden('fenster-aktiv', this);
   }
 
-  /** Andere Ansicht des Bereichs zeigen (ersetzt das Minimieren). */
-  minimieren() {
-    const b = this.bereich;
-    if (!b || b.fenster.length < 2) return;
-    b.zeigen(b.fenster[(b.fenster.indexOf(this) + 1) % b.fenster.length]);
-    aenderungMelden();
-  }
+  /** Früher „minimieren“ – auf Seiten ohne Bedeutung. */
+  minimieren() {}
 
-  /** Bereich vergrößern bzw. wieder einpassen. */
-  maximieren() { this.bereich?.zoom(); }
+  /** Früher „maximieren“ – öffnet die Ansicht als eigene Seite. */
+  maximieren() { this.bereich?.alsSeite(); }
 
-  schliessen() {
+  schliessen(ersetzt = false) {
     const i = fenster.indexOf(this);
     if (i < 0) return;
     fenster.splice(i, 1);
     for (const f of this._schliessenRueckrufe) { try { f(); } catch (e) { console.error(e); } }
     for (const ab of this._abmelden) ab();
-    this.bereich?.abgeben(this);
+    if (!ersetzt) this.bereich?.abgeben(this);
+    else { this.el.remove(); this.bereich = null; }
     this.el.remove();
     melden('fenster-geschlossen', this);
     aenderungMelden();
   }
 
-  /** Beschreibung für gespeicherte Anordnungen. */
+  /** Beschreibung für Anordnungen und Adressen. */
   beschreibung() {
     const s = spalten.findIndex((x) => x.zeilen.includes(this.bereich));
     const sp = spalten[s];
     const z = sp ? sp.zeilen.indexOf(this.bereich) : 0;
-    return {
-      typ: this.typ, parameter: this.parameter, spalte: s, zeile: z, spalteAnteil: sp?.anteil, zeileAnteil: this.bereich?.anteil,
-      sichtbar: this.bereich?.aktiv === this, fokus: this.istAktiv(), gross: grosserBereich === this.bereich,
-    };
+    return { typ: this.typ, parameter: this.parameter, spalte: s, zeile: z, spalteAnteil: sp?.anteil, zeileAnteil: this.bereich?.anteil, fokus: this.istAktiv() };
   }
 }
 
-// ---------------------------------------------------------------------------------------------
-
 function ansichtErstellen(f) {
-  const def = f.def;
   try {
-    const erg = def.erstellen(f, f.parameter);
+    const erg = f.def.erstellen(f, f.parameter);
     if (erg?.catch) erg.catch((e) => { fehlerMelden(e); f.inhalt.append(h('div', { class: 'fehlertext', style: { padding: '16px' } }, String(e.message || e))); });
   } catch (e) {
     fehlerMelden(e);
@@ -474,37 +338,114 @@ function ansichtErstellen(f) {
   }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Adresse (URL) und Zurück-Taste
+
+function adresse() {
+  const haupt = alleBereiche()[0]?.ansicht;
+  if (!haupt) return '#/';
+  const p = Object.keys(haupt.parameter || {}).length ? `?${encodeURIComponent(JSON.stringify(haupt.parameter))}` : '';
+  return `#/${haupt.typ}${p}`;
+}
+
+function geschichteMerken(ersetzen = false) {
+  if (geschichteAus) return;
+  const zustand = { studio: true, titel: seitentitel, anordnung: fensterverwaltung.anordnung() };
+  try {
+    if (ersetzen || !history.state?.studio) history.replaceState(zustand, '', adresse());
+    else history.pushState(zustand, '', adresse());
+  } catch { /* z. B. in eingebetteten Vorschauen */ }
+}
+
+addEventListener('popstate', (e) => {
+  const z = e.state;
+  if (!z?.studio || !flaeche) return;
+  geschichteAus = true;
+  try {
+    fensterverwaltung.anordnungLaden(z.anordnung || []);
+    seitentitel = z.titel || null;
+    kopfZeichnen();
+  } finally { geschichteAus = false; }
+});
+
+/** Ansicht aus der aktuellen Adresse (beim Start bzw. nach Neuladen). */
+export function ansichtAusAdresse() {
+  const m = location.hash.match(/^#\/([^?]+)(?:\?(.*))?$/);
+  if (!m || !typen.has(m[1])) return null;
+  let p = {};
+  try { p = m[2] ? JSON.parse(decodeURIComponent(m[2])) : {}; } catch { p = {}; }
+  return { typ: m[1], parameter: p };
+}
+
+// ---------------------------------------------------------------------------------------------
+
 export const fensterverwaltung = {
-  /** Arbeitsbereich einrichten (einmalig durch die Shell). */
-  einrichten(flaecheEl, _leiste, beiAenderung) {
+  /** Arbeitsfläche einrichten (einmalig durch die Shell). kopfEl: Seitenkopf mit .sk-titel */
+  einrichten(flaecheEl, kopfEl, beiAenderung) {
     flaeche = flaecheEl;
-    flaeche.classList.add('ws');
-    aenderungMelden = entprellen(() => { beiAenderung?.(); melden('arbeitsbereich'); }, 400);
+    kopf = kopfEl;
+    flaeche.classList.add('pn');
+    aenderungMelden = entprellen(() => { beiAenderung?.(); geschichteMerken(true); melden('arbeitsbereich'); }, 400);
   },
 
+  /** Der nächste Öffnen-Aufruf ohne Lage beginnt eine neue Seite (Navigation, Befehlssuche, Übersicht). */
+  naechsterAufrufNeueSeite() { seitenwechselBis = Date.now() + 2000; },
+
+  /** Titel der Seite (für Arbeitsplätze mit mehreren Bereichen). */
+  seitentitel(t) { seitentitel = t || null; kopfZeichnen(); },
+
   /**
-   * Ansicht öffnen. Ist der Typ „einzig“ (gleicher Schlüssel), wird die vorhandene Ansicht gezeigt.
+   * Ansicht öffnen. Ist der Typ „einzig“ (gleicher Schlüssel) und schon offen, wird er gezeigt.
    * lage: siehe Kopf der Datei.
    */
   oeffnen(typ, parameter = {}, lage = {}) {
     const def = typen.get(typ);
     if (!def) { fehlerMelden(new Error(`Unbekannte Ansicht „${typ}“.`)); return null; }
+    lage = lage || {};
+    const neueSeite = Date.now() < seitenwechselBis;
+    seitenwechselBis = 0;
     const key = def.einzig?.(parameter);
     if (key) {
       const vorhanden = fenster.find((f) => f.typ === typ && f.def.einzig?.(f.parameter) === key);
-      if (vorhanden) { vorhanden.aktivieren(); vorhanden.def.erneutGeoeffnet?.(vorhanden, parameter); return vorhanden; }
+      if (vorhanden && !(neueSeite && alleBereiche().length > 1)) {
+        vorhanden.aktivieren(); vorhanden.def.erneutGeoeffnet?.(vorhanden, parameter); return vorhanden;
+      }
     }
-    return this.oeffnenIn(zielBereich(lage || {}), typ, parameter, lage);
+    const mitLage = !!(lage.andock || (lage.x !== undefined && lage.x !== null));
+    if (mitLage) return this.oeffnenIn(bereichFuerLage(lage), typ, parameter, false);
+    if (neueSeite || !spalten.length) return this.seiteOeffnen(typ, parameter);
+    return this.oeffnenIn(nebenbereich(), typ, parameter, false);
   },
 
-  /** Ansicht in einem bestimmten Bereich öffnen (intern und für „Teilen“). */
-  oeffnenIn(bereich, typ, parameter = {}, lage = {}) {
+  /** Arbeitsplatz: neue Seite mit mehreren Bereichen; aufbauen() öffnet die Ansichten mit Lageangaben. */
+  async arbeitsplatz(titel, aufbauen) {
+    seitenwechselBis = 0;
+    geschichteAus = true;
+    try {
+      this.alleSchliessen();
+      await aufbauen();
+      seitentitel = titel;
+      kopfZeichnen();
+    } finally { geschichteAus = false; }
+    geschichteMerken(false);
+  },
+
+  /** Ansicht als neue Seite öffnen (bisherige Seite wird geschlossen). */
+  seiteOeffnen(typ, parameter = {}) {
+    geschichteAus = true;
+    try { this.alleSchliessen(); } finally { geschichteAus = false; }
+    seitentitel = null;
+    const f = this.oeffnenIn(bereichFuerLage({}), typ, parameter, true);
+    geschichteMerken(false);
+    return f;
+  },
+
+  /** Ansicht in einem bestimmten Bereich öffnen (ersetzt dessen bisherige Ansicht). */
+  oeffnenIn(bereich, typ, parameter = {}, _neu = false) {
     const f = new Fenster(typ, parameter);
     fenster.push(f);
     bereich.aufnehmen(f);
-    if (lage?.andock === 'max') grosserBereich = bereich;
     layoutZeichnen();
-    if (lage?.minimiert === true && bereich.fenster.length > 1) bereich.zeigen(bereich.fenster[0]);
     bereichAktivieren(bereich);
     ansichtErstellen(f);
     melden('fenster-aktiv', f);
@@ -513,78 +454,68 @@ export const fensterverwaltung = {
   },
 
   alle: () => [...fenster],
-  aktiv: () => aktiverBereich?.aktiv || null,
+  aktiv: () => aktiverBereich?.ansicht || null,
 
-  /** Anordnen: 'nebeneinander' (je Ansicht eine Spalte) | 'untereinander' (je Ansicht eine Zeile) | 'ueberlappend' (alle als Reiter). */
+  /** Früher Fensteranordnung; heute ohne sichtbare Wirkung außer „nebeneinander“ (Bereiche nebeneinander). */
   anordnen(art) {
-    if (!fenster.length) return;
-    const fokus = this.aktiv();
-    const liste = alleBereiche().flatMap((b) => b.fenster);
+    if (art !== 'nebeneinander' || fenster.length < 2) return;
+    const liste = alleBereiche().map((b) => b.ansicht).filter(Boolean);
     for (const b of alleBereiche()) b.el.remove();
     spalten = [];
-    grosserBereich = null;
-    aktiverBereich = null;
     const breite = flaeche.clientWidth || 1200, hoehe = flaeche.clientHeight || 800;
-    if (art === 'ueberlappend') {
+    for (const f of liste) {
       const b = new Bereich({ anteil: hoehe });
-      spalten.push({ id: `s${++zaehler}`, anteil: breite, x: null, zeilen: [b] });
-      for (const f of liste) { f.bereich = null; b.aufnehmen(f); }
-      if (fokus) b.zeigen(fokus);
-    } else if (art === 'untereinander') {
-      const s = { id: `s${++zaehler}`, anteil: breite, x: null, zeilen: [] };
-      spalten.push(s);
-      for (const f of liste) { const b = new Bereich({ anteil: hoehe / liste.length }); s.zeilen.push(b); f.bereich = null; b.aufnehmen(f); }
-    } else {
-      for (const f of liste) {
-        const b = new Bereich({ anteil: hoehe });
-        spalten.push({ id: `s${++zaehler}`, anteil: breite / liste.length, x: null, zeilen: [b] });
-        f.bereich = null;
-        b.aufnehmen(f);
-      }
+      spalten.push({ id: `s${++zaehler}`, anteil: breite / liste.length, x: null, zeilen: [b] });
+      f.bereich = null;
+      b.aufnehmen(f);
     }
     layoutZeichnen();
-    bereichAktivieren(fokus?.bereich || alleBereiche()[0]);
     aenderungMelden();
   },
 
   alleSchliessen() {
     for (const f of [...fenster]) f.schliessen();
     spalten = [];
-    grosserBereich = null;
     aktiverBereich = null;
+    seitentitel = null;
     layoutZeichnen();
   },
 
   /** Aktuelle Anordnung (serialisierbar). */
-  anordnung: () => alleBereiche().flatMap((b) => b.fenster).map((f) => f.beschreibung()),
+  anordnung: () => alleBereiche().map((b) => b.ansicht).filter(Boolean).map((f) => f.beschreibung()),
 
-  /** Anordnung wiederherstellen (vorhandene Ansichten werden geschlossen). Versteht auch ältere Formate mit x/y/b/h. */
-  anordnungLaden(liste) {
-    this.alleSchliessen();
-    const gueltig = (liste || []).filter((b) => typen.has(b.typ));
-    if (!gueltig.length) return;
-    if (gueltig.every((b) => Number.isInteger(b.spalte))) {
-      const breite = flaeche.clientWidth || 1200, hoehe = flaeche.clientHeight || 800;
-      let fokus = null, gross = null;
-      for (const b of gueltig) {
-        while (spalten.length <= b.spalte) spalten.push({ id: `s${++zaehler}`, anteil: breite, x: null, zeilen: [] });
-        const s = spalten[b.spalte];
-        if (b.spalteAnteil) s.anteil = b.spalteAnteil;
-        while (s.zeilen.length <= b.zeile) s.zeilen.push(new Bereich({ anteil: hoehe }));
-        const ber = s.zeilen[b.zeile];
-        if (b.zeileAnteil) ber.anteil = b.zeileAnteil;
-        const f = this.oeffnenIn(ber, b.typ, b.parameter);
-        if (b.sichtbar) ber.zeigen(f);
-        if (b.fokus) fokus = f;
-        if (b.gross) gross = ber;
+  /** Anordnung wiederherstellen. Versteht auch ältere Formate mit x/y/b/h. */
+  anordnungLaden(liste, titel) {
+    const vorher = geschichteAus;
+    geschichteAus = true;
+    try {
+      this.alleSchliessen();
+      const gueltig = (liste || []).filter((b) => typen.has(b.typ));
+      if (gueltig.length) {
+        if (gueltig.every((b) => Number.isInteger(b.spalte) && b.spalte >= 0)) {
+          const breite = flaeche.clientWidth || 1200, hoehe = flaeche.clientHeight || 800;
+          let fokus = null;
+          for (const b of gueltig) {
+            while (spalten.length <= b.spalte) spalten.push({ id: `s${++zaehler}`, anteil: breite, x: null, zeilen: [] });
+            const s = spalten[b.spalte];
+            if (b.spalteAnteil) s.anteil = b.spalteAnteil;
+            while (s.zeilen.length <= b.zeile) s.zeilen.push(new Bereich({ anteil: hoehe }));
+            const ber = s.zeilen[b.zeile];
+            if (b.zeileAnteil) ber.anteil = b.zeileAnteil;
+            if (ber.ansicht) continue;
+            const f = this.oeffnenIn(ber, b.typ, b.parameter);
+            if (b.fokus) fokus = f;
+          }
+          for (const s of [...spalten]) for (const ber of [...s.zeilen]) if (!ber.ansicht) bereichEntfernen(ber);
+          layoutZeichnen();
+          fokus?.aktivieren();
+        } else {
+          for (const b of gueltig) this.oeffnen(b.typ, b.parameter, b.andock ? { andock: b.andock } : b);
+        }
       }
-      // leere Platzhalter (z. B. übersprungene Typen) entfernen
-      for (const s of [...spalten]) for (const ber of [...s.zeilen]) if (!ber.fenster.length) bereichEntfernen(ber);
-      grosserBereich = gross;
-      layoutZeichnen();
-      if (fokus) fokus.aktivieren();
-      return;
-    }
-    for (const b of gueltig) this.oeffnen(b.typ, b.parameter, b.andock ? { andock: b.andock } : b);
+      if (titel !== undefined) seitentitel = titel;
+      kopfZeichnen();
+    } finally { geschichteAus = vorher; }
+    geschichteMerken(false);
   },
 };

@@ -48,7 +48,7 @@
   --normal: 400;
   --mittel: 500;
   --fett: 600;
-  --radius: 6px;
+  --radius: 4px;
   --radius-klein: 4px;
   --schatten: var(--up-schatten-3);
   --schatten-klein: var(--up-schatten-2);

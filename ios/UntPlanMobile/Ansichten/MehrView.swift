@@ -62,7 +62,7 @@ struct MehrView: View {
                     Button(role: .destructive) {
                         bestaetigen = true
                     } label: {
-                        Label("Abmelden", systemImage: "rectangle.portrait.and.arrow.right")
+                        Text("Abmelden")
                             .foregroundStyle(Farben.entfall)
                     }
                 } footer: {
@@ -117,12 +117,11 @@ struct MehrView: View {
 
     // MARK: - Abschnitte
 
-    /// Profil: Initialen, Name, Rolle und Schule; darunter Konten wechseln bzw. hinzufügen.
+    /// Profil: Name, Rolle und Schule; darunter Konten wechseln bzw. hinzufügen.
     private var profilAbschnitt: some View {
         Section {
             NavigationLink(value: Mehrseite.kontaktdaten) {
                 HStack(spacing: 12) {
-                    Initialen(name: name.isEmpty ? "?" : name, groesse: 44)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name)
                             .font(.headline)
@@ -143,7 +142,7 @@ struct MehrView: View {
             Button {
                 konten = true
             } label: {
-                Mehrzeile(symbol: "person.2.circle", titel: "Konten",
+                Mehrzeile(titel: "Konten",
                           wert: zustand.konten.count > 1 ? "\(zustand.konten.count)" : nil, pfeil: true)
             }
             .buttonStyle(.plain)
@@ -156,30 +155,30 @@ struct MehrView: View {
     private var unterrichtAbschnitt: some View {
         Section("Schule und Unterricht") {
             NavigationLink(value: Startziel.termine) {
-                Mehrzeile(symbol: "calendar.badge.clock", titel: "Meine Termine")
+                Mehrzeile(titel: "Meine Termine")
             }
             if zustand.istKollegium {
                 NavigationLink(value: Startziel.abwesenheiten) {
-                    Mehrzeile(symbol: "person.badge.clock", titel: "Meine Abwesenheiten")
+                    Mehrzeile(titel: "Meine Abwesenheiten")
                 }
                 if zustand.entschuldigungsrechte?.irgendwas == true {
                     NavigationLink(value: Startziel.entschuldigungen) {
-                        Mehrzeile(symbol: "checkmark.seal", titel: "Entschuldigungen")
+                        Mehrzeile(titel: "Entschuldigungen")
                     }
                 }
                 NavigationLink(value: Startziel.aufsichten) {
-                    Mehrzeile(symbol: "figure.walk", titel: "Pausenaufsichten heute")
+                    Mehrzeile(titel: "Pausenaufsichten heute")
                 }
             } else if zustand.istFamilie {
                 NavigationLink(value: Startziel.familieAbwesenheiten) {
-                    Mehrzeile(symbol: "person.badge.clock", titel: "Meine Abwesenheiten")
+                    Mehrzeile(titel: "Meine Abwesenheiten")
                 }
             }
             NavigationLink(value: Startziel.hausaufgaben) {
-                Mehrzeile(symbol: Symbole.hausaufgaben, titel: "Hausaufgaben")
+                Mehrzeile(titel: "Hausaufgaben")
             }
             NavigationLink(value: Startziel.aenderungen) {
-                Mehrzeile(symbol: "arrow.triangle.2.circlepath", titel: "Änderungen heute")
+                Mehrzeile(titel: "Änderungen heute")
             }
         }
     }
@@ -191,7 +190,7 @@ struct MehrView: View {
                 Button {
                     sprechtagWahl = StartView.SprechtagWahl(id: t.id, titel: t.titel)
                 } label: {
-                    Uebersichtszeile(symbol: t.angekuendigt ? "megaphone" : "person.2", titel: t.titel,
+                    Uebersichtszeile(titel: t.titel,
                                      untertitel: t.untertitel, zahl: t.termine, pfeil: true)
                 }
                 .buttonStyle(.plain)
@@ -203,15 +202,15 @@ struct MehrView: View {
     private var planAbschnitt: some View {
         Section {
             NavigationLink(value: Mehrseite.plaene(.klasse)) {
-                Mehrzeile(symbol: Symbole.klasse, titel: "Klassen")
+                Mehrzeile(titel: "Klassen")
             }
             if zustand.darfLehrerplaene {
                 NavigationLink(value: Mehrseite.plaene(.lehrer)) {
-                    Mehrzeile(symbol: Symbole.lehrkraft, titel: "Lehrkräfte")
+                    Mehrzeile(titel: "Lehrkräfte")
                 }
             }
             NavigationLink(value: Mehrseite.plaene(.raum)) {
-                Mehrzeile(symbol: Symbole.raum, titel: "Räume")
+                Mehrzeile(titel: "Räume")
             }
         } header: {
             Text("Pläne")
@@ -228,16 +227,16 @@ struct MehrView: View {
                 PlanmitteilungenSchalter()
             }
             NavigationLink(value: Mehrseite.kontaktdaten) {
-                Mehrzeile(symbol: "person.text.rectangle", titel: "Kontaktdaten und Kalender")
+                Mehrzeile(titel: "Kontaktdaten und Kalender")
             }
             NavigationLink(value: Mehrseite.passwort) {
-                Mehrzeile(symbol: "lock", titel: "Passwort ändern")
+                Mehrzeile(titel: "Passwort ändern")
             }
             NavigationLink(value: Mehrseite.neues) {
-                Mehrzeile(symbol: "newspaper", titel: "Neu in dieser Version")
+                Mehrzeile(titel: "Neu in dieser Version")
             }
             NavigationLink(value: Mehrseite.ueber) {
-                Mehrzeile(symbol: Symbole.info, titel: "Über")
+                Mehrzeile(titel: "Über")
             }
         }
     }
@@ -263,9 +262,8 @@ struct MehrView: View {
     }
 }
 
-/// Zeile im Reiter „Mehr“: Symbol in der Akzentfarbe, Titel, optional ein Wert rechts.
+/// Zeile im Reiter „Mehr“: Titel, optional ein Wert rechts – ohne Symbol davor.
 struct Mehrzeile: View {
-    let symbol: String
     let titel: String
     var wert: String? = nil
     /// Eigener Pfeil (bei Knöpfen; NavigationLinks zeichnen ihn selbst)
@@ -273,10 +271,6 @@ struct Mehrzeile: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: symbol)
-                .font(.system(size: 17, weight: .regular))
-                .foregroundStyle(Farben.akzent)
-                .frame(width: 26)
             Text(titel)
                 .foregroundStyle(Farben.text)
             Spacer(minLength: 4)
@@ -337,10 +331,6 @@ struct PlanmitteilungenSchalter: View {
         VStack(alignment: .leading, spacing: 6) {
             Toggle(isOn: $aktiv) {
                 HStack(spacing: 12) {
-                    Image(systemName: "bell.badge")
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundStyle(Farben.akzent)
-                        .frame(width: 26)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Mitteilungen bei Planänderungen")
                             .foregroundStyle(Farben.text)
@@ -365,7 +355,6 @@ struct PlanmitteilungenSchalter: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(.plain)
-                .padding(.leading, 38)
             }
         }
         .padding(.vertical, 2)

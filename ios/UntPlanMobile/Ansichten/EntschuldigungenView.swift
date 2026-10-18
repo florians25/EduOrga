@@ -32,7 +32,7 @@ struct Entschuldigungsauftrag: Identifiable {
 // MARK: - Dialog
 
 /// Dialog „Entschuldigung“ im Stil von „Abwesenheit bearbeiten“: Kopf mit „Schließen“, Titel und „Sichern“
-/// (Klassenleitung zusätzlich „Zurücknehmen“); Initialen mit Name und Klasse; Abwesenheit (Zeitraum, Grund, Stand der
+/// (Klassenleitung zusätzlich „Zurücknehmen“); Name und Klasse; Abwesenheit (Zeitraum, Grund, Stand der
 /// Lehrkräfte), Status als Segmentschalter, Datum der Entschuldigung, Nachweis (Klassenleitung), Text; darunter die
 /// Fehlstunden mit den Texten der Lehrkräfte (Klassenleitung) bzw. die Texte anderer Lehrkräfte derselben Abwesenheit
 /// (Fachlehrkraft).
@@ -174,7 +174,6 @@ struct EntschuldigenView: View {
 
     private var kopf: some View {
         HStack(spacing: 12) {
-            Initialen(name: name.isEmpty ? "?" : name, groesse: 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text(name.isEmpty ? "Schüler*in" : name)
                     .font(.headline)
@@ -797,7 +796,7 @@ struct EntschuldigungenView: View {
             let gleich = gewaehlt.allSatisfy { $0.schuelerId == erste.schuelerId }
             oeffnen(.fehlstunden(gewaehlt), name: gleich ? erste.schueler : "\(gewaehlt.count) Fehlstunden", klasse: gleich ? erste.klasse : "")
         } label: {
-            Label(gewaehlt.isEmpty ? "Fehlstunden auswählen" : "Entschuldigen (\(gewaehlt.count))", systemImage: "checkmark.seal")
+            Text(gewaehlt.isEmpty ? "Fehlstunden auswählen" : "Entschuldigen (\(gewaehlt.count))")
                 .font(.body.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)

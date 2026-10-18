@@ -11,18 +11,6 @@ struct PlanAuswahl: Hashable, Codable, Identifiable {
 
     /// Kurzer Anzeigename (Kürzel), z. B. „FIS4A“.
     var anzeige: String { element.isEmpty ? name : element }
-
-    /// SF Symbol je Planart.
-    var bild: String { PlanAuswahl.bild(typ) }
-
-    static func bild(_ typ: String) -> String {
-        switch typ {
-        case "lehrer": return Symbole.lehrkraft
-        case "raum": return Symbole.raum
-        case "schueler": return Symbole.schuelerplan
-        default: return Symbole.klasse
-        }
-    }
 }
 
 /// Favorisierte Pläne, lokal in den UserDefaults gespeichert (Reihenfolge wie vom Benutzer sortiert).

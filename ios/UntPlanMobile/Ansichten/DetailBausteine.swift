@@ -359,28 +359,17 @@ struct SichernKnopf: View {
 
 // MARK: - Zeilen der Liste
 
-/// Zahl in einer neutralen Kapsel (Hausaufgaben, Klassenbucheinträge) – auch bei 0.
-struct GrauePlakette: View {
-    let zahl: Int
-
-    var body: some View {
-        ZahlPlakette(zahl: zahl)
-    }
-}
-
-/// Zeile der Detailliste: SF Symbol links in der Akzentfarbe, Titel, optional grauer Untertitel (einzeilig), rechts
-/// Zahl und Pfeil. Mindesthöhe 52 pt.
+/// Zeile der Detailliste: Titel, optional grauer Untertitel (einzeilig), rechts Zahl und Pfeil – ohne Symbol davor.
+/// Mindesthöhe 48 pt.
 struct Detailzeile<Rechts: View>: View {
-    let symbol: String
     let titel: String
     var untertitel: String? = nil
     var zahl: Int? = nil
     var pfeil: Bool = true
     let rechts: Rechts
 
-    init(symbol: String, titel: String, untertitel: String? = nil, zahl: Int? = nil, pfeil: Bool = true,
+    init(titel: String, untertitel: String? = nil, zahl: Int? = nil, pfeil: Bool = true,
          @ViewBuilder rechts: () -> Rechts) {
-        self.symbol = symbol
         self.titel = titel
         self.untertitel = untertitel
         self.zahl = zahl
@@ -390,7 +379,6 @@ struct Detailzeile<Rechts: View>: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Listensymbol(name: symbol)
             VStack(alignment: .leading, spacing: 2) {
                 Text(titel)
                     .font(.body)
@@ -418,14 +406,14 @@ struct Detailzeile<Rechts: View>: View {
         .padding(.leading, Detailmass.rand)
         .padding(.trailing, 16)
         .padding(.vertical, 8)
-        .frame(minHeight: 52)
+        .frame(minHeight: 48)
         .contentShape(Rectangle())
     }
 }
 
 extension Detailzeile where Rechts == EmptyView {
-    init(symbol: String, titel: String, untertitel: String? = nil, zahl: Int? = nil, pfeil: Bool = true) {
-        self.init(symbol: symbol, titel: titel, untertitel: untertitel, zahl: zahl, pfeil: pfeil, rechts: { EmptyView() })
+    init(titel: String, untertitel: String? = nil, zahl: Int? = nil, pfeil: Bool = true) {
+        self.init(titel: titel, untertitel: untertitel, zahl: zahl, pfeil: pfeil, rechts: { EmptyView() })
     }
 }
 
@@ -694,40 +682,13 @@ struct EinzeilenScroller<Inhalt: View>: View {
     }
 }
 
-// MARK: - Symbole der Liste
+// MARK: - Symbole
 
-/// SF-Symbol-Namen für die Listen der App (an einer Stelle, damit Details, Planauswahl und Favoriten gleich bleiben).
+/// SF-Symbol-Namen für funktionale Zeichen (Kacheln, Status) an einer Stelle.
 enum Symbole {
-    static let raum = "door.left.hand.closed"
-    static let klasse = "person.3"
-    static let lehrkraft = "person"
-    static let schuelerplan = "graduationcap"
-    static let schueler = "person.2"
     static let hausaufgaben = "checklist"
-    static let klassenbuch = "book.closed"
-    static let lehrstoff = "text.book.closed"
-    static let notiz = "note.text"
     static let info = "info.circle"
-    static let hinweis = "exclamationmark.circle"
     static let online = "video"
-    static let pruefung = "list.clipboard"
-    static let verlegung = "arrow.right.square"
-    static let datum = "calendar"
-    static let konto = "person.crop.circle"
-}
-
-/// Symbol links in einer Detailzeile: SF Symbol in der Akzentfarbe in einem festen Feld, damit die Titel bündig stehen.
-struct Listensymbol: View {
-    let name: String
-    var groesse: CGFloat = 28
-
-    var body: some View {
-        Image(systemName: name)
-            .font(.system(size: 17 * min(1, groesse / 28), weight: .regular))
-            .foregroundStyle(Farben.akzent)
-            .frame(width: groesse, height: groesse)
-            .accessibilityHidden(true)
-    }
 }
 
 // MARK: - Schüler*innen-Plakette
@@ -789,7 +750,6 @@ struct RaumZeile: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Listensymbol(name: Symbole.raum)
             EinzeilenScroller {
                 HStack(spacing: 8) {
                     if aktuelle.isEmpty {
@@ -802,12 +762,12 @@ struct RaumZeile: View {
                             Button {
                                 ziel = RaumZiel(aktion: "ersetzen", alt: raum)
                             } label: {
-                                Label("Ersetzen", systemImage: "arrow.left.arrow.right")
+                                Text("Ersetzen")
                             }
                             Button(role: .destructive) {
                                 Task { await loeschen(raum) }
                             } label: {
-                                Label("Löschen", systemImage: "trash")
+                                Text("Löschen")
                             }
                             .disabled(aktuelle.count < 2)
                         } label: {

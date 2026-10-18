@@ -8,6 +8,9 @@ Gestaltung anderer Stundenplanprogramme.
 ## 1. Haltung
 
 * **Werkzeug, nicht Werbung.** Dichte, gut lesbare Informationen; ruhige Flächen; eine Akzentfarbe.
+* **Kein „KI-Look“:** keine Logo-Kachel/Würfel, keine farbigen Symbol-Kacheln, keine Symbole vor Menüpunkten, keine
+  Begrüßungs- oder Marketingtexte, keine großen Kennzahl-Kacheln mit Symbolen, keine Pillen-Plaketten als Dekoration,
+  keine dunkle Seitenleiste mit Symbolspalte. Vorbild sind nüchterne Fachanwendungen (Verwaltung, Finanzen, ERP).
 * **Keine Effekte um der Effekte willen:** keine Farbverläufe, kein Glas/Blur, keine Emojis, keine Illustrationen,
   keine „Hero“-Flächen, keine verspielten Animationen. Übergänge höchstens 120 ms (Farbe/Deckkraft).
 * **Klare Kanten:** Radius 6 px (Steuerelemente, Karten), 4 px (Plaketten, Stundenkacheln), 8 px (Dialoge).
@@ -49,11 +52,16 @@ IBM Plex Sans (SIL OFL 1.1, Dateien in `design/fonts`, lokal ausgeliefert – ni
 Größen: 11 / 12 / 13 / 14 / 16 / 20 / 24 px. Grundgröße Studio 13 px, Web 14 px, Mobile 15 px.
 iOS verwendet die Systemschrift (SF Pro) – das ist dort der Standard und wirkt am hochwertigsten.
 
-## 4. Symbole
+## 4. Marke und Symbole
 
-Linien-Symbole im Stil **Lucide** (ISC-Lizenz, `design/LUCIDE-LICENSE.txt`): 24×24, Strich 1,75 px, runde Enden,
-`currentColor`. Größe 16 px (dicht) bzw. 20 px (Navigation). Keine farbigen oder zweifarbigen Symbole, keine
-Symbolbilder aus anderen Produkten. iOS: SF Symbols.
+* **Wortmarke** „UntPlan“ in IBM Plex Sans 600 (`design/logo/wortmarke.svg`), Produktzusatz („Studio“, „Web“) in 400 und
+  `--up-text-3`. **Kein Bildzeichen** in Kopfleisten und Navigation.
+* **Monogramm** (`design/logo/monogramm.svg`, identisch `mark.svg`): weißes „U“ auf Marine-900, eckig – nur dort, wo ein
+  Bild technisch nötig ist (Favicon, App-Symbol, Startbildschirm).
+* **Symbole nur funktional:** Schließen, Pfeile/Chevrons, Suchen, Mehr (…), Kalender in Datumsfeldern, Status-Hinweise.
+  Linien im Stil Lucide (ISC-Lizenz, `design/LUCIDE-LICENSE.txt`), 16 px, Strich 1,75 px, `currentColor`.
+  **Navigation, Menüs, Seitentitel, Karten und Knöpfe mit Text haben keine Symbole.** iOS: SF Symbols nur in der
+  Tab-Leiste und für Funktionen.
 
 ## 5. Stundenplan-Darstellung (gemeinsam für alle Oberflächen)
 
@@ -82,9 +90,9 @@ Symbolbilder aus anderen Produkten. iOS: SF Symbols.
 
 | Produkt | Navigation |
 |---|---|
-| **Studio** | Dunkle Seitenleiste (Marine-900) mit Arbeitsbereichen und einklappbaren Gruppen, oben Dokumentleiste mit Dokumentwahl, Befehlssuche (Strg+K), Rückgängig/Wiederholen, Speichern, Modusschalter *Stundenplan / Vertretung*. Inhalte als Ansichten mit Reitern, optional geteilt (zwei Ansichten nebeneinander). Kein Menüband, keine schwebenden Fenster. |
-| **Web** | Kopfleiste (Marine-900) mit Signet, Schulname, Hauptbereichen als horizontale Navigation, Suche, Mitteilungen, Konto. Darunter je Bereich eine Unternavigation als Reiterleiste. Telefon: untere Leiste mit vier Hauptpunkten + „Mehr“. |
-| **Mobile (PWA)** | Untere Leiste *Heute · Plan · Postfach · Mehr*, große Seitentitel, Karten auf `--up-hintergrund`. |
+| **Studio** | Seitenbasierte Web-Anwendung (eine Seite je Aufgabe, Adresse in der URL, Zurück-Taste funktioniert). Helle Seitenleiste nur mit Text (Bereiche und Seiten), Kopfleiste mit Wortmarke, Schuldatei, Modus, Suche, Konto. Jede Seite: Seitenkopf (Titel 20 px, Untertitel, Aktionen rechts als Textknöpfe), Filterleiste, Inhalt; Details in einem Seitenbereich rechts; Bearbeiten in Dialogen. Arbeitsplätze, die mehrere Inhalte gleichzeitig brauchen (Vertretungsplanung, manuelles Planen), sind fest gestaltete Seiten mit Haupt- und Nebenbereich – keine frei schwebenden oder frei teilbaren Fenster, keine Reiterleisten mit Fenstern. |
+| **Web** | Kopfleiste weiß mit Wortmarke und Schulname, Hauptbereichen als Textnavigation, Suche und Konto rechts. Darunter je Bereich eine Unternavigation als Textreiter. Telefon: untere Leiste mit vier Hauptpunkten + „Mehr“. Keine Symbole in der Navigation. |
+| **Mobile (PWA)** | Untere Leiste *Heute · Plan · Postfach · Mehr* (Linien-Symbol + Beschriftung, das ist auf Telefonen Standard), große Seitentitel, Listen statt Karten-Kacheln, keine Logo-Kachel. |
 | **iOS** | `TabView` *Heute · Plan · Postfach · Mehr* mit SF Symbols, `NavigationStack` mit großen Titeln, Akzentfarbe Marine. |
 
 ## 8. Sprache und Abgrenzung

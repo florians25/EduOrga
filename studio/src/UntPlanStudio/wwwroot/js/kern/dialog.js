@@ -108,7 +108,7 @@ export function menue(x, y, eintraege) {
     if (!e) { el.append(h('div', { class: 'm-trenner' })); continue; }
     if (e.titel) { el.append(h('div', { class: 'm-titel' }, e.titel)); continue; }
     const knopf = h('button', { class: 'm-eintrag', type: 'button', role: 'menuitem', disabled: !!e.deaktiviert },
-      e.haken !== undefined ? h('span', { class: 'haken' }, e.haken ? symbol('haken') : null) : (e.symbol ? symbol(e.symbol) : h('span', { class: 'haken' })),
+      e.haken !== undefined ? h('span', { class: 'haken' }, e.haken ? symbol('haken') : null) : null,
       h('span', null, e.text),
       e.taste ? h('span', { class: 'taste' }, e.taste) : null,
       e.menue ? h('span', { class: 'taste' }, symbol('pfeil_rechts')) : null);

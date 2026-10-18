@@ -43,11 +43,11 @@ struct KontaktdatenView: View {
                 Section {
                     if let abo = URL(string: ical.replacingOccurrences(of: "https://", with: "webcal://").replacingOccurrences(of: "http://", with: "webcal://")) {
                         Link(destination: abo) {
-                            Label("Kalender abonnieren", systemImage: "calendar.badge.plus")
+                            Text("Kalender abonnieren")
                         }
                     }
                     ShareLink(item: url) {
-                        Label("Kalenderadresse teilen", systemImage: "square.and.arrow.up")
+                        Text("Kalenderadresse teilen")
                     }
                 } header: {
                     Text("Kalender")
@@ -156,28 +156,23 @@ struct PasswortView: View {
 
 struct NeuigkeitenView: View {
     private struct Punkt: Identifiable {
-        let symbol: String
         let titel: String
         let text: String
         var id: String { titel }
     }
 
     private let punkte: [Punkt] = [
-        Punkt(symbol: "square.grid.3x3", titel: "Neue Gestaltung", text: "Ruhigeres Erscheinungsbild mit Systemschrift, klaren Kanten und einer Akzentfarbe; Status wie Entfall oder Prüfung auf einen Blick."),
-        Punkt(symbol: "rectangle.split.3x1", titel: "Stundenplan", text: "Kacheln in der Fachfarbe, Entfall schraffiert, Änderungen mit Rahmen; Woche, Tage und Tag per Menü."),
-        Punkt(symbol: "list.bullet.rectangle", titel: "Stundendetails", text: "Lehrstoff, Hausaufgaben, Schüler*innen, Klassenbucheinträge und Notizen direkt aus der Stunde – als Blatt mit Ziehgriff."),
-        Punkt(symbol: "ellipsis.circle", titel: "Reiter „Mehr“", text: "Profil, Konten, Abwesenheiten, Entschuldigungen, Sprechtage, Pläne und Einstellungen an einer Stelle."),
-        Punkt(symbol: "ipad", titel: "Für das iPad", text: "Inhalte mittig statt über die ganze Breite, Details als festes Blatt über dem Plan."),
+        Punkt(titel: "Neue Gestaltung", text: "Ruhigeres Erscheinungsbild mit Systemschrift, klaren Kanten und einer Akzentfarbe; Status wie Entfall oder Prüfung auf einen Blick."),
+        Punkt(titel: "Stundenplan", text: "Kacheln in der Fachfarbe, Entfall schraffiert, Änderungen mit Rahmen; Woche, Tage und Tag per Menü."),
+        Punkt(titel: "Stundendetails", text: "Lehrstoff, Hausaufgaben, Schüler*innen, Klassenbucheinträge und Notizen direkt aus der Stunde – als Blatt mit Ziehgriff."),
+        Punkt(titel: "Reiter „Mehr“", text: "Profil, Konten, Abwesenheiten, Entschuldigungen, Sprechtage, Pläne und Einstellungen an einer Stelle."),
+        Punkt(titel: "Für das iPad", text: "Inhalte mittig statt über die ganze Breite, Details als festes Blatt über dem Plan."),
     ]
 
     var body: some View {
         List {
             ForEach(punkte) { punkt in
                 HStack(alignment: .top, spacing: 14) {
-                    Image(systemName: punkt.symbol)
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundStyle(Farben.akzent)
-                        .frame(width: 26)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(punkt.titel)
                             .font(.body.weight(.semibold))

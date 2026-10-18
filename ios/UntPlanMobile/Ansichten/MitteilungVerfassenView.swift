@@ -291,13 +291,9 @@ struct MitteilungVerfassenView: View {
     private var werkzeuge: some View {
         HStack(spacing: 4) {
             Menu {
-                Toggle(isOn: $lesebestaetigung) {
-                    Label("Lesebestätigung anfordern", systemImage: "envelope.open")
-                }
+                Toggle("Lesebestätigung anfordern", isOn: $lesebestaetigung)
                 if start.typ != .antwort || zustand.istKollegium {
-                    Toggle(isOn: $antwortGesperrt) {
-                        Label("Antworten nicht erlauben", systemImage: "arrowshape.turn.up.left")
-                    }
+                    Toggle("Antworten nicht erlauben", isOn: $antwortGesperrt)
                 }
             } label: {
                 Image(systemName: "slider.horizontal.3")
@@ -411,7 +407,7 @@ struct MitteilungVerfassenView: View {
 
 /// Empfängerauswahl als Blatt: „Abbrechen“ links, „Fertig“ rechts, Titel „Mitteilung an“ / „Kolleg*innen“; darunter das
 /// Suchfeld, waagrecht scrollbare Filter (Ausgewählt, Liste, Klasse, Abteilung), „Alle auswählen“ und die Personen mit
-/// Auswahlkreis, Initialen, Kürzel und Rollen.
+/// Auswahlkreis, Kürzel und Rollen.
 struct EmpfaengerauswahlView: View {
     let typ: Verfassenstyp
     let daten: Personenauswahl?
@@ -703,7 +699,7 @@ struct Auswahlkreis: View {
     }
 }
 
-/// Zeile der Empfängerauswahl: Auswahlkreis, Initialen bzw. Gruppensymbol, Kürzel und Rollen.
+/// Zeile der Empfängerauswahl: Auswahlkreis, Kürzel bzw. Gruppenname und Rollen.
 struct Personenzeile: View {
     let empfaenger: Empfaenger
     let gewaehlt: Bool
@@ -714,17 +710,6 @@ struct Personenzeile: View {
             HStack(spacing: 14) {
                 Auswahlkreis(gewaehlt: gewaehlt)
                 HStack(spacing: 10) {
-                    Group {
-                        if empfaenger.istPerson {
-                            Initialen(name: empfaenger.name, groesse: 36, vorgabe: empfaenger.initialen)
-                        } else {
-                            Image(systemName: empfaenger.id.hasPrefix("liste:") ? "list.bullet" : "person.3")
-                                .font(.system(size: 15, weight: .regular))
-                                .foregroundStyle(Farben.akzent)
-                                .frame(width: 36, height: 36)
-                                .background(Farben.primaerFlaeche, in: Circle())
-                        }
-                    }
                     VStack(alignment: .leading, spacing: 4) {
                         Text(empfaenger.istPerson ? empfaenger.kuerzel : empfaenger.name)
                             .font(.body)

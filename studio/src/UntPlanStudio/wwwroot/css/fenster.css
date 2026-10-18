@@ -1,98 +1,70 @@
-/* Arbeitsbereich: Bereiche mit Reitern, in Spalten und Zeilen geteilt; Ansichten mit Werkzeugleiste, Inhalt und Fußzeile. */
+/* Seite: eine Ansicht oder – bei Arbeitsplätzen – mehrere fest angeordnete Bereiche. Ansichten: Werkzeugleiste,
+   Inhalt, Fußzeile. */
 
-.arbeitsbereich { grid-area: arbeit; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--arbeitsbereich); }
-.arbeitsbereich .flaeche { position: absolute; inset: 0; overflow: hidden; }
-.flaeche.ws { display: flex; gap: 0; padding: 8px; }
+.arbeitsbereich { grid-area: arbeit; position: relative; min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--up-hintergrund); }
+.arbeitsbereich .flaeche { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.flaeche.pn { display: flex; padding: 0 28px 24px; }
 
-.ws-spalte { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-.ws-trenner { flex: none; position: relative; z-index: 2; touch-action: none; }
-.ws-trenner.senkrecht { width: 8px; cursor: col-resize; }
-.ws-trenner.waagerecht { height: 8px; cursor: row-resize; }
-.ws-trenner::after { content: ""; position: absolute; border-radius: 2px; background: transparent; transition: background-color var(--up-dauer); }
-.ws-trenner.senkrecht::after { left: 3px; top: 0; bottom: 0; width: 2px; }
-.ws-trenner.waagerecht::after { top: 3px; left: 0; right: 0; height: 2px; }
-.ws-trenner:hover::after, .ws-trenner.zieht::after { background: var(--up-marine-300); }
+.pn-spalte { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.pn-trenner { flex: none; position: relative; z-index: 2; touch-action: none; }
+.pn-trenner.senkrecht { width: 12px; cursor: col-resize; }
+.pn-trenner.waagerecht { height: 12px; cursor: row-resize; }
+.pn-trenner::after { content: ""; position: absolute; background: transparent; }
+.pn-trenner.senkrecht::after { left: 5px; top: 0; bottom: 0; width: 2px; }
+.pn-trenner.waagerecht::after { top: 5px; left: 0; right: 0; height: 2px; }
+.pn-trenner:hover::after { background: var(--up-schiefer-300); }
 
-.ws-bereich {
+.pn-bereich {
   position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column;
-  background: var(--flaeche); border: 1px solid var(--rand); border-radius: 8px; overflow: hidden;
+  background: var(--flaeche); border: 1px solid var(--rand); border-radius: 6px; overflow: hidden;
 }
-.ws-bereich.aktiv:not(.einzeln) { border-color: var(--up-schiefer-300); box-shadow: 0 0 0 1px var(--up-schiefer-300); }
-.flaeche.ws-gross > .ws-spalte, .flaeche.ws-gross > .ws-trenner { visibility: hidden; }
-.ws-bereich.gross { visibility: visible; position: absolute; inset: 8px; z-index: 10; box-shadow: var(--schatten-klein); }
-
-/* Reiterleiste */
-.ws-kopf { flex: none; height: 40px; display: flex; align-items: stretch; background: var(--up-schiefer-25); border-bottom: 1px solid var(--rand); }
-.ws-reiter { flex: 1; min-width: 0; display: flex; align-items: stretch; overflow-x: auto; scrollbar-width: none; }
-.ws-reiter::-webkit-scrollbar { display: none; }
-.ws-tab {
-  position: relative; flex: 0 1 auto; min-width: 72px; max-width: 260px; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px;
-  border-right: 1px solid var(--rand-leise); color: var(--text-leise); cursor: pointer; user-select: none; white-space: nowrap; outline: none;
+.pn-kopf { flex: none; height: 38px; display: none; align-items: center; gap: 8px; padding: 0 6px 0 14px; border-bottom: 1px solid var(--rand); background: #fff; }
+.flaeche.mehrere .pn-kopf { display: flex; }
+.pn-titel { flex: 1; min-width: 0; font-weight: var(--fett); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flaeche.mehrere .pn-bereich.aktiv { border-color: var(--up-schiefer-400); }
+.pn-aktionen { display: flex; align-items: center; gap: 2px; }
+.pn-knopf {
+  height: 26px; min-width: 26px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: var(--text-leise);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: var(--mittel);
 }
-.ws-tab:hover { color: var(--text); background: var(--up-schiefer-50); }
-.ws-tab.aktiv { color: var(--text); background: var(--flaeche); }
-.ws-tab.aktiv::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--flaeche); }
-.ws-bereich.aktiv .ws-tab.aktiv::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--akzent); }
-.ws-tab:focus-visible { box-shadow: inset 0 0 0 2px var(--up-fokus); }
-.ws-tab-symbol { display: inline-flex; flex: none; }
-.ws-tab-symbol svg { width: 15px; height: 15px; }
-.ws-tab.aktiv .ws-tab-symbol { color: var(--akzent); }
-.ws-tab-text { overflow: hidden; text-overflow: ellipsis; font-weight: var(--mittel); font-size: 12.5px; }
-.ws-tab-zu {
-  width: 22px; height: 22px; flex: none; border: 0; border-radius: 4px; background: transparent; color: var(--text-leise);
-  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0;
-}
-.ws-tab:hover .ws-tab-zu, .ws-tab.aktiv .ws-tab-zu { opacity: 1; }
-.ws-tab-zu:hover { background: var(--up-schiefer-100); color: var(--text); }
-.ws-tab-zu svg { width: 14px; height: 14px; }
-
-.ws-aktionen { flex: none; display: flex; align-items: center; gap: 2px; padding: 0 6px; }
-.ws-aktion {
-  width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--text-leise);
-  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
-}
-.ws-aktion:hover { background: var(--up-schiefer-100); color: var(--text); }
-.ws-aktion svg { width: 16px; height: 16px; }
-.ws-bereich:not(.aktiv) .ws-aktionen .ws-aktion:not(:last-child) { display: none; }
-
-.ws-ansichten { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
-
-/* Ablagezonen beim Ziehen eines Reiters */
-.ws-ablage { position: absolute; z-index: 20; pointer-events: none; background: rgba(51, 100, 176, .12); border: 2px solid var(--up-marine-400); border-radius: 6px; transition: all .08s ease-out; }
-.ws-ablage[data-zone="mitte"] { inset: 40px 4px 4px; }
-.ws-ablage[data-zone="links"] { top: 40px; bottom: 4px; left: 4px; width: 48%; }
-.ws-ablage[data-zone="rechts"] { top: 40px; bottom: 4px; right: 4px; width: 48%; }
-.ws-ablage[data-zone="oben"] { top: 40px; left: 4px; right: 4px; height: 46%; }
-.ws-ablage[data-zone="unten"] { bottom: 4px; left: 4px; right: 4px; height: 46%; }
+.pn-knopf:hover { background: var(--up-schiefer-100); color: var(--text); }
+.pn-knopf svg { width: 14px; height: 14px; }
+.pn-knopf.zu { padding: 0; }
+.pn-inhalt { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
 
 /* Ansicht */
 .fenster { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--flaeche); }
 .fenster-werkzeuge {
-  flex: none; display: flex; align-items: center; gap: 2px; padding: 6px 8px; min-height: 44px;
-  background: var(--flaeche); border-bottom: 1px solid var(--rand-leise); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+  flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 10px 12px; min-height: 52px;
+  background: var(--flaeche); border-bottom: 1px solid var(--rand); overflow: hidden;
 }
 .fenster-werkzeuge:empty { display: none; }
-.fenster-werkzeuge .trenner { width: 1px; height: 20px; align-self: center; margin: 0 6px; background: var(--rand); flex: none; }
+.fenster-werkzeuge .trenner { width: 1px; height: 20px; align-self: center; margin: 0 4px; background: var(--rand); flex: none; }
 .fenster-werkzeuge .wz-knopf {
-  height: 30px; min-width: 30px; padding: 0 9px; border: 1px solid transparent; border-radius: 6px; background: transparent; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; font-size: 12.5px; font-weight: var(--mittel); color: var(--text-2); flex: none;
+  height: 30px; min-width: 30px; padding: 0 11px; border: 1px solid var(--rand-stark); border-radius: 4px; background: #fff; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; font-size: 12.5px; font-weight: var(--mittel); color: var(--text); flex: none;
 }
-.fenster-werkzeuge .wz-knopf:hover:not(:disabled) { background: var(--up-schiefer-50); border-color: var(--rand); color: var(--text); }
-.fenster-werkzeuge .wz-knopf.gedrueckt { background: var(--akzent-sehrhell); border-color: var(--hover-rand); color: var(--akzent); }
+.fenster-werkzeuge .wz-knopf:hover:not(:disabled) { background: var(--up-schiefer-50); border-color: var(--up-schiefer-400); }
+.fenster-werkzeuge .wz-knopf.gedrueckt { background: var(--akzent-sehrhell); border-color: var(--akzent); color: var(--akzent-titel); }
 .fenster-werkzeuge .wz-knopf:disabled { opacity: .4; cursor: default; }
-.fenster-werkzeuge .wz-knopf svg { width: 16px; height: 16px; flex: none; }
-.fenster-werkzeuge .wz-knopf.nur-symbol { padding: 0; width: 30px; }
-.fenster-werkzeuge select, .fenster-werkzeuge input:not([type="checkbox"]):not([type="radio"]) { height: 30px; min-height: 30px; padding: 0 10px; font-size: 12.5px; flex: none; }
+.fenster-werkzeuge .wz-knopf svg { width: 15px; height: 15px; flex: none; }
+/* Knöpfe mit Text zeigen kein Symbol */
+.fenster-werkzeuge .wz-knopf:has(> span) > svg { display: none; }
+.fenster-werkzeuge .wz-knopf.nur-symbol { padding: 0; width: 30px; color: var(--text-2); }
+.fenster-werkzeuge select, .fenster-werkzeuge input:not([type="checkbox"]):not([type="radio"]) { height: 30px; min-height: 30px; padding: 0 10px; font-size: 12.5px; flex: none; border-radius: 4px; }
 .fenster-werkzeuge select.eingabe { padding-right: 28px; }
 .fenster-werkzeuge > span:not(.trenner):not([class*="-"]) { color: var(--text-leise); font-size: 12.5px; padding: 0 2px; white-space: nowrap; }
 .fenster-werkzeuge label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12.5px; color: var(--text-2); flex: none; }
 .fenster-werkzeuge .rechts { margin-left: auto; }
 .fenster-inhalt { flex: 1; min-height: 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
 .fenster-fuss {
-  flex: none; height: 30px; display: flex; align-items: center; gap: 14px; padding: 0 12px; font-size: 12px; color: var(--text-leise);
-  background: var(--up-schiefer-25); border-top: 1px solid var(--rand-leise); white-space: nowrap; overflow: hidden;
+  flex: none; height: 32px; display: flex; align-items: center; gap: 16px; padding: 0 14px; font-size: 12px; color: var(--text-leise);
+  background: var(--up-schiefer-25); border-top: 1px solid var(--rand); white-space: nowrap; overflow: hidden;
 }
 .fenster-fuss:empty { display: none; }
 .fenster-fuss .rechts { margin-left: auto; overflow: hidden; text-overflow: ellipsis; }
 
-body.ws-zieht .ws-tab { pointer-events: auto; }
+/* Arbeitsplätze mit mehreren Bereichen: dichtere Werkzeugleisten */
+.flaeche.mehrere .fenster-werkzeuge { padding: 6px 8px; min-height: 42px; gap: 4px; }
+.flaeche.mehrere .fenster-werkzeuge .wz-knopf { height: 28px; padding: 0 9px; }
+.flaeche.mehrere .fenster-werkzeuge .wz-knopf.nur-symbol { width: 28px; padding: 0; }

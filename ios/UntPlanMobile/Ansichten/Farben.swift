@@ -108,16 +108,6 @@ enum Farben {
 
     // MARK: Fachfarben
 
-    /// Fachfarbe aus dem Plan (nil = keine Fachfarbe).
-    static func fachfarbe(_ hex: String) -> Color? {
-        Color(hex: hex)
-    }
-
-    /// Fachfarbe für Markierungen, ohne Fachfarbe ein neutrales Schiefergrau.
-    static func fach(_ hex: String) -> Color {
-        Color(hex: hex) ?? Color(hell: 0x98A2AF, dunkel: 0x6B7684)
-    }
-
     /// Tönung einer Stundenkachel: Fachfarbe mit 14 % Deckkraft über der Fläche (im Dunkelmodus 22 %, damit die Tönung
     /// auf dem dunklen Raster sichtbar bleibt).
     static func fachTon(_ hex: String) -> Color? {

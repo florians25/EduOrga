@@ -377,31 +377,20 @@ struct SchuelerAbwesenheitenView: View {
     private func zeile(_ e: AbwesenheitsEintrag) -> some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundStyle(Farben.text3)
-                        .frame(width: 18)
-                        .padding(.top, 2)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(e.datumstext)
-                        Text(e.zeitraum)
-                    }
-                    .font(.system(size: 15))
-                    .foregroundStyle(Farben.text)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(e.datumstext)
+                        .font(.body.weight(.semibold))
+                    Text(e.zeitraum)
+                        .font(.subheadline)
+                        .monospacedDigit()
                 }
+                .foregroundStyle(Farben.text)
                 let grund = [daten.grundName(e.grund), e.text].filter { !$0.isEmpty }.joined(separator: " – ")
                 if !grund.isEmpty {
-                    HStack(spacing: 12) {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundStyle(Farben.text3)
-                            .frame(width: 18)
-                        Text(grund)
-                            .font(.system(size: 15))
-                            .foregroundStyle(Farben.text)
-                            .lineLimit(2)
-                    }
+                    Text(grund)
+                        .font(.subheadline)
+                        .foregroundStyle(Farben.text2)
+                        .lineLimit(2)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -446,7 +435,7 @@ struct SchuelerAbwesenheitenView: View {
 
 // MARK: - Abwesenheit bearbeiten
 
-/// Seite „Abwesenheit bearbeiten“: Kopf mit „Schließen“, Titel, Papierkorb und „Sichern“; Initialen mit Name und
+/// Seite „Abwesenheit bearbeiten“: Kopf mit „Schließen“, Titel, Papierkorb und „Sichern“; Name und
 /// Klasse; Beginn und Ende je Datum und Uhrzeit (minutengenau), Abwesenheitsgrund (Auswahl), Text und der Schalter
 /// „Erziehungsberechtigte benachrichtigt“. Lehrkräfte ohne Klassenleitung erfassen nur am Tag der Stunde.
 struct AbwesenheitBearbeitenView: View {
@@ -572,7 +561,6 @@ struct AbwesenheitBearbeitenView: View {
 
     private var kopf: some View {
         HStack(spacing: 12) {
-            Initialen(name: schueler.anzeige, groesse: 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text(schueler.anzeige)
                     .font(.headline)

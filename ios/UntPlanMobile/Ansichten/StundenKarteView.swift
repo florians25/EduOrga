@@ -251,12 +251,6 @@ struct KachelView: View {
     private func pille(_ a: Kachelaussehen) -> some View {
         let form = RoundedRectangle(cornerRadius: 4, style: .continuous)
         return HStack(spacing: 4) {
-            if kachel.art == .aufsicht && breite >= 64 {
-                Image(systemName: "figure.walk")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(a.titelFarbe.opacity(0.8))
-                    .accessibilityHidden(true)
-            }
             // Immer nur der Ort bzw. Titel; entfallene Aufsicht durchgestrichen
             Text(kachel.titel)
                 .font(.system(size: gross ? 12 : 11, weight: .medium))

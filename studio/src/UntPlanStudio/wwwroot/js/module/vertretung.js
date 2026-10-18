@@ -33,8 +33,10 @@ function flaeche() {
 /** Planungsdialog: Klassen- und Lehrerplan tagesaktuell nebeneinander (Drag & Drop: Verlegen, Tauschen). */
 function planungsdialog() {
   const a = aktuelleAuswahl()?.zeile;
-  oeffnen('vertretung.plan', { typ: 'klasse', element: a?.klasse ?? undefined }, { andock: 'links' });
-  fensterverwaltung.oeffnen('vertretung.plan', { typ: 'lehrer', element: a?.lehrer ?? undefined }, { andock: 'rechts' });
+  return fensterverwaltung.arbeitsplatz('Verlegen und Tauschen', () => {
+    oeffnen('vertretung.plan', { typ: 'klasse', element: a?.klasse ?? undefined }, { andock: 'links' });
+    fensterverwaltung.oeffnen('vertretung.plan', { typ: 'lehrer', element: a?.lehrer ?? undefined }, { andock: 'rechts' });
+  });
 }
 
 /** Kleine Pläne nebeneinander am rechten Rand: Klasse, Lehrkraft, Vertreter und Raum der gewählten Vertretung. */
@@ -47,8 +49,11 @@ function kleinePlaene() {
 
 /** Standardanordnung des Vertretungsmodus: Kalender, Absenzen, Vertretungen, Vertretungsvorschlag und tagesaktuelle Pläne. */
 function standardanordnung() {
-  if (!zustand.dokument) return;
-  fensterverwaltung.alleSchliessen();
+  if (!zustand.dokument) return undefined;
+  return fensterverwaltung.arbeitsplatz('Tagesplanung', () => aufbauen());
+}
+
+function aufbauen() {
   const { b, h } = flaeche();
   const links = Math.max(380, Math.round(b * 0.27));
   const mitte = Math.round(b * 0.45);
