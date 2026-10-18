@@ -49,22 +49,8 @@ export function symbol(name, klasse = '') {
 /** Alle verwendeten Lucide-Namen (für das Erzeugen von css/symbole.css). */
 export const symbolNamen = [...new Set(Object.values(S))];
 
-/** Signet von UntPlan (Raster mit hervorgehobener Stunde) – farbig auf Marine-Fläche. Gleiches Motiv wie img/logo.svg. */
-export const SIGNET = `<svg class="signet" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-  <rect width="64" height="64" rx="14" fill="#1C3F7A"/>
-  <rect x="14" y="14" width="10" height="10" rx="2" fill="#fff"/><rect x="27" y="14" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/>
-  <rect x="40" y="14" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/><rect x="14" y="27" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/>
-  <rect x="27" y="27" width="23" height="10" rx="2" fill="#fff"/><rect x="14" y="40" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/>
-  <rect x="27" y="40" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/><rect x="40" y="40" width="10" height="10" rx="2" fill="#8FB4EA"/>
-</svg>`;
+/** Wortmarke „UntPlan“ (Text in IBM Plex Sans 600) für Kopfleiste, Anmeldung und Monitor – kein Bildzeichen. */
+export const WORTMARKE = '<span class="wortmarke">UntPlan</span>';
 
-/** Signet einfarbig (currentColor), z. B. auf dunklem Grund ohne eigene Fläche. */
-export const SIGNET_MONO = `<svg class="signet mono" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g fill="currentColor">
-  <rect x="14" y="14" width="10" height="10" rx="2"/><rect x="27" y="14" width="10" height="10" rx="2" fill-opacity=".35"/>
-  <rect x="40" y="14" width="10" height="10" rx="2" fill-opacity=".35"/><rect x="14" y="27" width="10" height="10" rx="2" fill-opacity=".35"/>
-  <rect x="27" y="27" width="23" height="10" rx="2"/><rect x="14" y="40" width="10" height="10" rx="2" fill-opacity=".35"/>
-  <rect x="27" y="40" width="10" height="10" rx="2" fill-opacity=".35"/><rect x="40" y="40" width="10" height="10" rx="2" fill-opacity=".7"/>
-</g></svg>`;
-
-/** Bildmarke (Signet) für Kopfleiste, Anmeldung und Monitor. */
-export const LOGO = SIGNET;
+/** Marke in der Oberfläche (Wortmarke). Das Monogramm (img/logo.svg) dient nur als Favicon und App-Symbol. */
+export const LOGO = WORTMARKE;

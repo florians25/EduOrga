@@ -4,8 +4,8 @@ using System.Text.RegularExpressions;
 namespace UntPlanMobile.Tests;
 
 /// <summary>
-/// Parität zur iOS-App: Wischen zwischen Wochen/Tagen sperrt die Richtung (waagerecht kein senkrechtes Rollen, senkrecht
-/// kein Wochenwechsel), Sperrhinweis-Texte mit Standardsatz, vergangene Stunden und Plaketten wie im Original.
+/// Gleichstand mit UntPlan für iOS: Wischen zwischen Wochen/Tagen sperrt die Richtung (waagerecht kein senkrechtes Rollen, senkrecht
+/// kein Wochenwechsel), Sperrhinweis-Texte mit Standardsatz, vergangene Stunden und Plaketten.
 /// </summary>
 public class WischenUndSperreTests
 {
@@ -116,15 +116,15 @@ public class WischenUndSperreTests
         var js = AppJs;
         MitNode(Abschnitt(js, "SPERRE"), """
             const s = window.UntPlanSperre;
-            pruefe(s.titel, 'Es werden hier keine Termine angezeigt.');
-            pruefe(s.standard, 'Die Anzeige des Stundenplans ist durch Ihren Administrator beschränkt');
+            pruefe(s.titel, 'Für diesen Zeitraum ist kein Plan freigegeben.');
+            pruefe(s.standard, 'Die Schule zeigt den Plan nur für einen begrenzten Zeitraum an.');
             pruefe(s.erklaerung(''), s.standard);
             pruefe(s.erklaerung('   '), s.standard);
             pruefe(s.erklaerung(null), s.standard);
             pruefe(s.erklaerung(undefined), s.standard);
             pruefe(s.erklaerung(' Der Plan ist nur 2 Wochen im Voraus sichtbar. '), 'Der Plan ist nur 2 Wochen im Voraus sichtbar.');
             """);
-        // Raster: Titel immer, darunter der Hinweis (oder der Standardsatz); Startseite: Sperrsatz statt „Genieße die Zeit!“
+        // Raster: Titel immer, darunter der Hinweis (oder der Standardsatz); „Heute“: Sperrsatz statt „Kein Unterricht“
         Assert.Contains("<p class=\"sperre__text\">${SPERRE_TITEL}</p>", js);
         Assert.Contains("<p class=\"sperre__hinweis\">${esc(sperrErklaerung(w.sperrhinweis))}</p>", js);
         Assert.Contains("nextnone--sperre", js);
@@ -134,24 +134,30 @@ public class WischenUndSperreTests
     // ------------------------------------------------------------------------------------------ Vergangene Stunden, Plaketten
 
     [Fact]
-    public void Vergangene_Stunden_und_Plaketten_wie_im_Original()
+    public void Kacheln_nach_dem_Designsystem()
     {
         var css = AppCss;
-        var start = css.IndexOf("Vergangene Stunden und Plaketten – Feinabgleich", StringComparison.Ordinal);
-        Assert.True(start > 0);
-        var teil = css[start..];
-        // Sprint 26: Balken auch vergangen in voller Fachfarbe (keine Abschwächung auf 50 %)
-        Assert.Contains(".card.is-past::before{ opacity:1; }", teil);
-        Assert.DoesNotContain(".card.is-past::before{ opacity:.5; }", teil);
-        Assert.Contains("color:#3c4950;", teil);
-        Assert.Contains("color:#dee6ee;", teil);
-        Assert.Contains("html.is-dark .card--change.is-past{ border-color:#0b7b67; }", teil);
-        Assert.Contains("html.is-dark .card--cancelled.is-past{ border-color:#d70446; }", teil);
-        Assert.Contains("html.is-dark .card--exam.is-past{ border-color:#c27c07; }", teil);
-        // Raumplakette so groß wie jede andere, Plakettenzeile ohne Zusatzpolster, Schrift über der Zeilenschrift
-        Assert.Contains(".card .badge.badge--raum:not(.badge--removed){ padding:0.33px 2.27px 0; border-radius:2px; font-size:inherit; }", teil);
-        Assert.Contains(".card .card__line--badge{ padding-bottom:0; }", teil);
-        Assert.Contains(".card:not(.card--cancelled) .card__line--badge{ margin-left:-.77px; }", teil);
+        // Fachfarbe als Tönung der Fläche, kein farbiger Seitenbalken
+        Assert.Contains("background-color:color-mix(in srgb, var(--fach) var(--anteil), var(--up-flaeche));", css);
+        Assert.DoesNotContain(".card::before", css);
+        // vergangene Stunden: schwächere Tönung, Zustände bleiben erkennbar
+        Assert.Contains(".card.is-past{ --anteil:var(--kachel-anteil-vorbei);", css);
+        // Änderung: Petrol-Rahmen, geänderter Wert unterstrichen, alter Wert durchgestrichen in der Plakette
+        Assert.Contains(".card--change{ box-shadow:inset 0 0 0 1.5px var(--st-aenderung); }", css);
+        Assert.Contains("text-decoration:underline;", css);
+        Assert.Contains(".badge.badge--removed.badge--open{", css);
+        // Entfall schraffiert, Prüfung bernstein, Veranstaltung gestrichelt violett, Ferien hellblau
+        Assert.Contains("repeating-linear-gradient(-45deg, var(--schraffur) 0 1px, transparent 1px 6px)", css);
+        Assert.Contains("background-color:var(--up-pruefung-flaeche);", css);
+        Assert.Contains("border:1px dashed color-mix(in srgb, var(--st-termin) 70%, transparent);", css);
+        Assert.Contains("background-color:var(--up-frei-flaeche);", css);
+        // „ohne mich“: gepunkteter Rahmen statt Eckklammern
+        Assert.Contains("outline:1.5px dotted", css);
+        Assert.DoesNotContain(".corners", css);
+        Assert.DoesNotContain("corners", AppJs);
+        // Statusfarben und Dunkelmodus kommen aus den Grundwerten (tokens.css)
+        Assert.Contains(":root[data-thema=\"dunkel\"]{", css);
+        Assert.Contains("--up-aenderung: #0b7a75;", Datei("wwwroot", "assets", "css", "tokens.css"));
     }
 
     [Fact]

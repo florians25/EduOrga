@@ -15,16 +15,15 @@ function tagHtml(t, lehrer, mitNachrichten = true) {
     lehrer && t.abwesendeLehrer.length ? `Abwesende Lehrkräfte: ${e(t.abwesendeLehrer.join(', '))}` : '',
     t.blockierteRaeume.length ? `Nicht verfügbare Räume: ${e(t.blockierteRaeume.join(', '))}` : '',
   ].filter(Boolean);
-  return `<section class="card h-100"><div class="card-header">${e(datumLang(t.datum))}${t.woche ? ` <span class="fw-normal opacity-75">· ${e(t.woche)}-Woche</span>` : ''}</div>
-    <div class="card-body pb-0">
-      ${mitNachrichten ? t.nachrichten.map(n => `<div class="nachricht">${e(n)}</div>`).join('') : ''}
-      ${(t.veranstaltungen ?? []).map(v => `<div class="small mb-1"><span class="opacity-75">Veranstaltung:</span> ${e(v)}</div>`).join('')}
-      ${infos.map(i => `<div class="small opacity-75 mb-1">${i}</div>`).join('')}
-    </div>
+  const kopf = [mitNachrichten ? t.nachrichten.map(n => `<div class="nachricht">${e(n)}</div>`).join('') : '',
+    (t.veranstaltungen ?? []).map(v => `<div class="monitor-zusatz">Veranstaltung: ${e(v)}</div>`).join(''),
+    infos.map(i => `<div class="monitor-zusatz">${i}</div>`).join('')].join('');
+  return `<section class="monitor-tag"><header>${e(datumLang(t.datum))}${t.woche ? ` <small>${e(t.woche)}-Woche</small>` : ''}</header>
+    ${kopf ? `<div class="monitor-info">${kopf}</div>` : ''}
     <div class="monitor-rollbereich"><div>
-    ${t.frei ? `<p class="px-3">${e(t.freiGrund || 'Unterrichtsfrei')}</p>` : !t.zeilen.length ? '<p class="px-3 opacity-75">Keine Vertretungen.</p>' : `<table class="table table-card mb-0"><thead><tr><th>Klasse</th><th>Std.</th><th>Fach</th><th>Lehrkraft</th><th>Raum</th><th>Art</th><th>Text</th></tr></thead><tbody>
-      ${t.zeilen.map(z => `<tr class="${e(z.status)}"><td class="fw-semibold">${e(z.klassen)}</td><td>${e(z.stunde)}</td><td>${z.status === 'entfall' ? alt(z.fachAlt) + e(z.fach) : wechsel(z.fachAlt, z.fach)}</td>
-        <td class="vt-lehrer">${z.status === 'offen' ? alt(z.lehrerAlt) + '???' : z.status === 'entfall' ? alt(z.lehrerAlt) + e(z.lehrer) : wechsel(z.lehrerAlt, z.lehrer, '|')}</td><td>${z.status === 'entfall' ? alt(z.raumAlt) + e(z.raum) : wechsel(z.raumAlt, z.raum)}</td><td>${e(z.art)}</td><td>${e(z.text)}</td></tr>`).join('')}
+    ${t.frei ? `<p class="monitor-leer">${e(t.freiGrund || 'Unterrichtsfrei')}</p>` : !t.zeilen.length ? '<p class="monitor-leer">Keine Vertretungen.</p>' : `<table><thead><tr><th>Klasse</th><th>Std.</th><th>Fach</th><th>Lehrkraft</th><th>Raum</th><th>Art</th><th>Text</th></tr></thead><tbody>
+      ${t.zeilen.map(z => `<tr class="${e(z.status)}"><td>${e(z.klassen)}</td><td>${e(z.stunde)}</td><td>${z.status === 'entfall' ? alt(z.fachAlt) + e(z.fach) : wechsel(z.fachAlt, z.fach)}</td>
+        <td class="vt-lehrer">${z.status === 'offen' ? alt(z.lehrerAlt) + '???' : z.status === 'entfall' ? alt(z.lehrerAlt) + e(z.lehrer) : wechsel(z.lehrerAlt, z.lehrer, '|')}</td><td>${z.status === 'entfall' ? alt(z.raumAlt) + e(z.raum) : wechsel(z.raumAlt, z.raum)}</td><td><span class="art">${e(z.art)}</span></td><td>${e(z.text)}</td></tr>`).join('')}
     </tbody></table>`}</div></div></section>`;
 }
 
@@ -57,15 +56,15 @@ function rollen() {
 async function laden() {
   try {
     const r = await fetch(`/api/monitor/${encodeURIComponent(token)}`, { cache: 'no-store' });
-    if (r.status === 404) { wurzel.innerHTML = '<h1 class="h3">Monitor nicht gefunden</h1><p>Der Link ist ungültig oder wurde zurückgesetzt.</p>'; return; }
+    if (r.status === 404) { wurzel.innerHTML = '<header class="monitor-kopf"><div><h1>Monitor nicht gefunden</h1><div class="schule">Der Link ist ungültig oder wurde zurückgesetzt.</div></div></header>'; return; }
     const d = await r.json();
     versatz = new Date(d.jetzt).getTime() - Date.now();
-    document.title = `${d.name} · UntPlanWeb`;
+    document.title = `${d.name} · UntPlan`;
     // Monitoransichten (Administration): Nachrichten in der Kopfzeile der Tage, Laufschrift, Aktualisierungsintervall
     const anzeige = d.anzeige ?? {};
     const ticker = anzeige.ticker && d.tage[0]?.nachrichten.length ? d.tage[0].nachrichten.join('   +++   ') : '';
-    wurzel.innerHTML = `<header class="monitor-kopf">${LOGO}<div><h1>Vertretungsplan</h1><div class="opacity-75">${e(d.schule)}</div></div><div class="uhr"></div></header>
-      <div class="row g-3 row-cols-1 ${d.tage.length > 1 ? 'row-cols-xl-2' : ''}">${d.tage.map(t => `<div class="col">${tagHtml(t, d.version === 'lehrer', anzeige.kopfzeile !== false)}</div>`).join('') || '<p>Keine Daten.</p>'}</div>
+    wurzel.innerHTML = `<header class="monitor-kopf">${LOGO}<div><h1>Vertretungsplan</h1><div class="schule">${e(d.schule)}</div></div><div class="uhr"></div></header>
+      <div class="monitor-tage">${d.tage.map(t => tagHtml(t, d.version === 'lehrer', anzeige.kopfzeile !== false)).join('') || '<p class="monitor-leer">Keine Daten.</p>'}</div>
       ${ticker ? `<div class="monitor-ticker"><span>${e(ticker)}</span></div>` : ''}`;
     const takt = Math.max(15, Number(anzeige.aktualisierung) || 60) * 1000;
     if (takt !== aktualisierung) { aktualisierung = takt; clearInterval(zeitgeber); zeitgeber = setInterval(laden, takt); }

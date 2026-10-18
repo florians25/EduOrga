@@ -116,23 +116,19 @@
       <h2 class="gruppe__titel">Übersicht</h2>
       <div class="rows">
         <button class="row row--nav" id="btnAppointments">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-calendar-clock"></use></svg></span>
           <span class="row__main"><b>Termine und Prüfungen</b></span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <button class="row row--nav" id="btnAbsences">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-user-x"></use></svg></span>
           <span class="row__main"><b>Meine Abwesenheiten</b><i id="absSub"></i></span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <button class="row row--nav" id="btnClassLead" hidden>
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg></span>
           <span class="row__main"><b>Klassenleitung</b><i id="clSub"></i></span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <!-- Sprechtag: Lehrkräfte sehen ihre Termine (frei, gebucht, gesperrt), Eltern buchen -->
         <button class="row row--nav" id="btnSprechtag" hidden>
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-messages-square"></use></svg></span>
           <span class="row__main"><b>Sprechtag</b><i id="sptSub"></i></span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
@@ -235,10 +231,10 @@
     </div>
     <div class="werkzeugleiste msgread__acts" id="msgReadActs" hidden>
       <button type="button" class="knopf knopf--sekundaer" id="msgReply">
-        <svg class="ico" aria-hidden="true"><use href="#i-reply"></use></svg><span>Antworten</span>
+        <span>Antworten</span>
       </button>
       <button type="button" class="knopf knopf--gefahr" id="msgDelete">
-        <svg class="ico" aria-hidden="true"><use href="#i-trash-2"></use></svg><span>Löschen</span>
+        <span>Löschen</span>
       </button>
     </div>
   </main>
@@ -259,7 +255,6 @@
       <h2 class="gruppe__titel">Konto</h2>
       <div class="rows">
         <button class="row row--user" id="btnSwitchAccount">
-          <span class="avatar" id="profileAvatar">–</span>
           <span class="row--user__main">
             <b id="profileName">–</b>
             <span class="row--user__sub"><span id="profileFullName"></span><span class="chip" id="profileRole">–</span></span>
@@ -267,7 +262,6 @@
           <svg class="ico ico--updown" aria-hidden="true"><use href="#i-chevrons-up-down"></use></svg>
         </button>
         <button class="row row--nav" id="btnAddProfile">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-user-plus"></use></svg></span>
           <span class="row__main"><b>Weiteres Profil anmelden</b></span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
@@ -276,7 +270,6 @@
       <h2 class="gruppe__titel">Darstellung</h2>
       <div class="rows">
         <div class="row row--seg">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-sun-moon"></use></svg></span>
           <span class="row__main"><b>Erscheinungsbild</b></span>
           <span class="seg" id="themeSeg" role="group" aria-label="Erscheinungsbild">
             <button type="button" data-theme="auto">Auto</button>
@@ -285,19 +278,16 @@
           </span>
         </div>
         <label class="row row--switch">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg></span>
           <span class="row__main"><b>Zeiten auf den Kacheln</b></span>
           <input type="checkbox" id="optCardTimes">
           <span class="switch" aria-hidden="true"></span>
         </label>
         <label class="row row--switch">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-type"></use></svg></span>
           <span class="row__main"><b>Langnamen in den Details</b></span>
           <input type="checkbox" id="optLongNames" checked>
           <span class="switch" aria-hidden="true"></span>
         </label>
         <label class="row row--switch">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-calendar-x"></use></svg></span>
           <span class="row__main"><b>Entfallene Stunden anzeigen</b></span>
           <input type="checkbox" id="optShowCancelled" checked>
           <span class="switch" aria-hidden="true"></span>
@@ -308,25 +298,21 @@
       <div class="rows">
         <!-- Benachrichtigungen bei Änderungen im eigenen Plan -->
         <label class="row row--switch" id="rowNotify" hidden>
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-bell"></use></svg></span>
           <span class="row__main row__txt"><b>Benachrichtigungen</b><small id="notifyHint">Bei Änderungen im eigenen Plan</small></span>
           <input type="checkbox" id="optNotify">
           <span class="switch" aria-hidden="true"></span>
         </label>
         <button class="row row--nav" id="btnInstall" hidden>
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-smartphone"></use></svg></span>
           <span class="row__main"><b>App installieren</b></span>
           <span class="row__hint">Zum Home-Bildschirm</span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <button class="row row--nav" id="btnRefresh">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-refresh-cw"></use></svg></span>
           <span class="row__main"><b>Daten aktualisieren</b></span>
           <span class="row__hint" id="lastSync">–</span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <button class="row row--nav" id="btnAbout">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-info"></use></svg></span>
           <span class="row__main"><b>Über UntPlan Mobile</b></span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
@@ -334,7 +320,6 @@
 
       <div class="rows">
         <button class="row row--nav row--gefahr" id="btnLogout">
-          <span class="row__ico"><svg class="ico" aria-hidden="true"><use href="#i-log-out"></use></svg></span>
           <span class="row__main"><b>Abmelden</b></span>
         </button>
       </div>
@@ -396,25 +381,22 @@
     <div class="pk__level" id="pickerRoot">
       <div class="rows">
         <button class="pk__mine" data-type="mine" data-id="me">
-          <span class="pk__ava"><svg class="ico" aria-hidden="true"><use href="#i-calendar-check"></use></svg></span>
           <span id="pickerMineLabel">Mein Stundenplan</span>
+          <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
       </div>
 
       <div class="pk__section gruppe__titel">Pläne</div>
       <div class="rows">
         <button class="pk__row" data-open="class">
-          <svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg>
           <span>Klassen</span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <button class="pk__row" data-open="teacher">
-          <svg class="ico" aria-hidden="true"><use href="#i-user-round"></use></svg>
           <span>Lehrkräfte</span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <button class="pk__row" data-open="room">
-          <svg class="ico" aria-hidden="true"><use href="#i-door-open"></use></svg>
           <span>Räume</span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
@@ -538,7 +520,6 @@
 <section class="sheet sheet--menu" id="sheetMenu" role="dialog" aria-modal="true" aria-label="Ansicht und Optionen" hidden>
   <div class="menu-list" role="menu">
     <button class="menu-item" data-act="pickweek" role="menuitem">
-      <span class="menu-item__ico"><svg class="ico" aria-hidden="true"><use href="#i-calendar-search"></use></svg></span>
       <span class="menu-item__label">Gehe zu Datum</span>
     </button>
 
@@ -546,22 +527,18 @@
     <p class="menu-section">Ansicht</p>
 
     <button class="menu-item menu-item--view" data-act="view-day" role="menuitemradio">
-      <span class="menu-item__ico"><svg class="ico" aria-hidden="true"><use href="#i-square"></use></svg></span>
       <span class="menu-item__label">Tag</span>
       <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
     </button>
     <button class="menu-item menu-item--view" data-act="view-day2" role="menuitemradio">
-      <span class="menu-item__ico"><svg class="ico" aria-hidden="true"><use href="#i-columns-2"></use></svg></span>
       <span class="menu-item__label">2 Tage</span>
       <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
     </button>
     <button class="menu-item menu-item--view" data-act="view-day3" role="menuitemradio">
-      <span class="menu-item__ico"><svg class="ico" aria-hidden="true"><use href="#i-columns-3"></use></svg></span>
       <span class="menu-item__label">3 Tage</span>
       <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
     </button>
     <button class="menu-item menu-item--view" data-act="view-week" role="menuitemradio">
-      <span class="menu-item__ico"><svg class="ico" aria-hidden="true"><use href="#i-calendar-range"></use></svg></span>
       <span class="menu-item__label">Woche</span>
       <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
     </button>
@@ -569,7 +546,6 @@
     <!-- Eigene Abwesenheiten im eigenen Plan als graues Feld hinter den Stunden (an/aus, bleibt gespeichert) -->
     <div class="menu-sep" role="separator" id="menuAbsencesSep"></div>
     <button class="menu-item menu-item--toggle" id="menuAbsences" data-act="toggle-absences" role="menuitemcheckbox" aria-checked="true">
-      <span class="menu-item__ico"><svg class="ico" aria-hidden="true"><use href="#i-user-x"></use></svg></span>
       <span class="menu-item__label">Abwesenheiten anzeigen</span>
       <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
     </button>
@@ -577,7 +553,6 @@
     <div class="menu-sep" role="separator"></div>
 
     <button class="menu-item" data-act="legend" role="menuitem">
-      <span class="menu-item__ico"><svg class="ico" aria-hidden="true"><use href="#i-circle-help"></use></svg></span>
       <span class="menu-item__label">Zeichenerklärung</span>
     </button>
   </div>
@@ -726,19 +701,9 @@
 <!-- ==================== ANMELDUNG ==================== -->
 <section class="login" id="login" hidden>
   <div class="login__box">
-    <svg class="login__mark" viewBox="0 0 64 64" aria-hidden="true">
-      <rect width="64" height="64" rx="14" fill="#1C3F7A"/>
-      <rect x="14" y="14" width="10" height="10" rx="2" fill="#FFFFFF"/>
-      <rect x="27" y="14" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-      <rect x="40" y="14" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-      <rect x="14" y="27" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-      <rect x="27" y="27" width="23" height="10" rx="2" fill="#FFFFFF"/>
-      <rect x="14" y="40" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-      <rect x="27" y="40" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-      <rect x="40" y="40" width="10" height="10" rx="2" fill="#8FB4EA"/>
-    </svg>
-    <h1>UntPlan Mobile</h1>
-    <p>Mit dem Konto von UntPlan Web anmelden.</p>
+    <p class="login__marke" aria-hidden="true">UntPlan <span>Mobile</span></p>
+    <h1>Anmelden</h1>
+    <p>Mit dem Konto von UntPlan Web.</p>
 
     <a class="knopf knopf--primaer knopf--gross login__sso" id="loginSso" href="sso/start">Über UntPlan Web anmelden</a>
     <p class="login__oder"><span>oder mit Benutzername und Passwort</span></p>

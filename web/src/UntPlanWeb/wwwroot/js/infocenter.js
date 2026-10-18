@@ -176,7 +176,7 @@ export async function starten(kontext, platz = null) {
   w.className = 'ic-wurzel nicht-drucken';
   w.dataset.icWurzel = '';
   w.innerHTML = `<button type="button" class="ic-knopf u-kopfknopf" data-ic-knopf aria-haspopup="dialog" aria-expanded="false" aria-controls="ic-panel" title="Infocenter">
-      <i class="bi bi-bell" aria-hidden="true"></i><span class="ic-zahl" data-ic-zahl hidden></span></button>
+      <span>Infos</span><span class="ic-zahl" data-ic-zahl hidden></span></button>
     <section class="ic-panel" id="ic-panel" data-ic-panel role="dialog" aria-label="Infocenter" hidden>
       <header class="ic-panel-kopf"><h2>Infocenter</h2>
         <button type="button" class="ic-link" data-ic-alle disabled>Alle als gelesen markieren</button>

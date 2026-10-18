@@ -46,8 +46,8 @@ const minutenVon = hhmm => { const [h, m] = String(hhmm || '0:0').split(':').map
 const uhrPlus = (hhmm, n) => { if (!hhmm) return ''; const x = Math.max(0, Math.min(1439, minutenVon(hhmm) + Number(n || 0))); return `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(x % 60).padStart(2, '0')}`; };
 /** Link zum Online-Unterricht: nur absolute http-/https-Adressen (wie auf dem Server geprüft). */
 const sichererLink = x => { try { const u = new URL(x); return (u.protocol === 'http:' || u.protocol === 'https:') && !!u.hostname && !/\s/.test(x); } catch { return false; } };
-/** Linien-Symbol eines Abschnitts (css/symbole.css). */
-const sdIcon = name => `<i class="sym sym-${name} kb-icon" aria-hidden="true"></i>`;
+/** Abschnitte und Angaben ohne Symbol (Symbole nur funktional, design/DESIGN.md); der Name bleibt als Hinweis im Aufruf. */
+const sdIcon = () => '';
 /** Weiche Linien-Symbole (dünne, abgerundete Striche) für „abwesend“ bzw. „anwesend“ in den Schülerkacheln. */
 const KREUZ = '<svg class="sd-linie" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6"/><path d="M5.9 5.9l4.2 4.2M10.1 5.9l-4.2 4.2"/></svg>';
 const HAKEN = '<svg class="sd-linie" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6"/><path d="M5.3 8.2l1.9 1.9 3.6-3.9"/></svg>';

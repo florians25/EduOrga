@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
@@ -7,7 +8,7 @@ using UntPlanMobile.Api;
 namespace UntPlanMobile.Tests;
 
 /// <summary>
-/// Sprint 24 (Parität zur iOS-App): Alphabet-Register der Planauswahl, Info-Zeichen nicht invertiert, Einzelstunden in
+/// Sprint 24 (Gleichstand mit UntPlan für iOS): Alphabet-Register der Planauswahl, Info-Zeichen nicht invertiert, Einzelstunden in
 /// Doppel-/Blockstunden (Vertrag Einzelstunde) und das neue Mitteilungsmodul (Empfängerauswahl, Editor, Detail mit Anhängen).
 /// </summary>
 public class Sprint24Tests
@@ -87,21 +88,33 @@ public class Sprint24Tests
     // ------------------------------------------------------------------------------------------ Info-Zeichen
 
     [Fact]
-    public void Info_Zeichen_wie_im_Original()
+    public void Zeichen_kommen_aus_der_eigenen_Symbolsammlung()
     {
-        // Sprint 26: auf der Kachel wie im Original – abgerundetes Feld, graue Scheibe mit ausgespartem „i“ (eigene Formen,
-        // keine Farbumkehr per Filter); die Stundendetails behalten ihr Linienzeichen
+        // Kachel- und Detailzeichen sind Linien-Symbole (Lucide, ISC) aus der eingebetteten Sammlung – keine fremden
+        // Grafiken, keine Farbumkehr per Filter; Farbe über currentColor
         var js = AppJs;
         var beginn = js.IndexOf("const KACHEL_INFO", StringComparison.Ordinal);
         var info = js[beginn..js.IndexOf('\n', beginn)];
-        Assert.Contains("ticon__feld", info);
-        Assert.Contains("ticon__scheibe", info);
-        Assert.DoesNotContain("evenodd", info);
+        Assert.Contains("sym('info', 'ticon ticon--info')", info);
+        Assert.Contains("const sym = (name, cls = '') =>", js);
         var css = Datei("wwwroot", "assets", "css", "app.css");
         Assert.DoesNotContain("invert(", css);
-        Assert.Contains(".card .ticon--info .ticon__scheibe{ fill:#818e9c; }", css);
-        Assert.Contains("html.is-dark .card .ticon--info .ticon__feld{ fill:#313d44; }", css);
-        Assert.DoesNotContain("dico--info\" aria-hidden=\"true\"><use href=\"#ic-tt-info-icon\"", js);
+        Assert.Contains(".ico{", css);
+        Assert.Contains("stroke:currentColor; stroke-width:1.75;", css);
+        var sammlung = Datei("wwwroot", "assets", "icons", "symbole-sprite.svg");
+        Assert.Contains("Lucide", sammlung);
+        Assert.Contains("<symbol id=\"i-info\"", sammlung);
+        Assert.DoesNotContain("id=\"ic-", sammlung);
+        Assert.True(File.Exists(Path.Combine(Umgebung.Wurzel(), "mobile", "src", "UntPlanMobile", "wwwroot", "assets", "icons", "LUCIDE-LICENSE.txt")));
+        // Jedes verwendete Symbol liegt in der Sammlung
+        foreach (Match m in Regex.Matches(js + Datei("Vorlagen", "index.html"), @"(?:sym|z)\('([a-z0-9-]+)'|#i-([a-z0-9-]+)"))
+        {
+            var name = m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value;
+            if (name == "name") continue;   // Platzhalter im Kommentar
+            Assert.Contains($"<symbol id=\"i-{name}\"", sammlung);
+        }
+        Assert.DoesNotContain("#ic-", js);
+        Assert.DoesNotContain("#ic-", Datei("Vorlagen", "index.html"));
     }
 
     // ------------------------------------------------------------------------------------------ Einzelstunden

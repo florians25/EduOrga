@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace UntPlanMobile.Tests;
 
 /// <summary>
-/// Stundendetails nach den Mobile-Sollbildern: Trennzeichen (Kachel Komma, Details „ | “), Raumbuchung (ersetzen, hinzufügen,
+/// Stundendetails: Trennzeichen (Kachel Komma, Details „ | “), Raumbuchung (ersetzen, hinzufügen,
 /// löschen), Schülerliste (Sortierung, Dienste, gemeinsamer Klassenbucheintrag) und „Findet online statt“.
 /// </summary>
 public class StundendetailsTests

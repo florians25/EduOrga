@@ -10,15 +10,15 @@ function stil() {
   const s = document.createElement('style');
   s.id = 'import-stil';
   s.textContent = `
-    .si-schritt { display: flex; align-items: center; gap: .5rem; font-weight: 700; margin-bottom: .5rem; }
-    .si-schritt b { display: inline-flex; width: 1.6rem; height: 1.6rem; border-radius: 50%; align-items: center; justify-content: center; background: var(--u-akzent, #f26b38); color: #fff; font-size: .85rem; }
+    .si-schritt { display: flex; align-items: center; gap: .5rem; font-weight: 600; margin-bottom: .5rem; }
+    .si-schritt b { display: inline-flex; width: 1.6rem; height: 1.6rem; border-radius: 50%; align-items: center; justify-content: center; background: var(--u-akzent, var(--up-primaer)); color: var(--up-flaeche); font-size: .85rem; }
     .si-tabelle { font-size: .8rem; }
     .si-tabelle th { white-space: nowrap; vertical-align: bottom; }
     .si-tabelle th select { min-width: 10rem; font-size: .78rem; margin-top: .25rem; }
     .si-tabelle td { white-space: nowrap; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
-    .si-tabelle tr.kopf td { color: var(--u-grau-2, #6c757d); font-style: italic; }
-    .si-zeile-fehler td { background: #fdecec !important; }
-    .si-aenderung { font-size: .75rem; color: var(--u-grau-2, #6c757d); }
+    .si-tabelle tr.kopf td { color: var(--u-grau-2, var(--up-text-2)); font-style: italic; }
+    .si-zeile-fehler td { background: var(--up-entfall-flaeche) !important; }
+    .si-aenderung { font-size: .75rem; color: var(--u-grau-2, var(--up-text-2)); }
   `;
   document.head.append(s);
 }

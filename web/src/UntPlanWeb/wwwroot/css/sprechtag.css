@@ -2,7 +2,7 @@
    Elternansicht, Formular der Administration und Hinweis auf der Startseite. Wird von js/ansichten/sprechtag.js geladen. */
 
 /* Karten: einheitlich 20px Innenabstand, Kopf immer 36px hoch (Symbol, Titel, Zähler, Knöpfe auf einer Linie), 16px bis zum Inhalt */
-.st-karte { display: flex; flex-direction: column; background: #fff; border: 1px solid #dfe3e7; border-radius: 10px; padding: 20px; margin-bottom: 16px; min-width: 0; }
+.st-karte { display: flex; flex-direction: column; background: var(--up-flaeche); border: 1px solid var(--up-rand); border-radius: 10px; padding: 20px; margin-bottom: 16px; min-width: 0; }
 .st-karte > header { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; height: 36px; margin: 0 0 16px; color: var(--u-titel); min-width: 0; }
 .st-karte > header > i { font-size: 1.15rem; line-height: 1; color: var(--u-akzent); flex: none; }
 .st-karte > header h2 { font-size: 1.05rem; line-height: 1.2; font-weight: 500; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -10,7 +10,7 @@
 .st-karte > header .st-rechts { margin-left: auto; }
 .st-kopf-knoepfe { display: flex; flex-wrap: nowrap; gap: 8px; margin-left: auto; flex: none; }
 .st-karte > header .nl-knopf { height: 32px; padding: 0 12px; }
-.st-karte > .nl-tabelle { margin: 0 -20px -20px; border: 0; border-top: 1px solid #e3e7eb; border-radius: 0 0 10px 10px; }
+.st-karte > .nl-tabelle { margin: 0 -20px -20px; border: 0; border-top: 1px solid var(--up-rand); border-radius: 0 0 10px 10px; }
 .st-karte > .nl-unter { margin: -6px 0 12px; }
 @media (max-width: 575.98px) {
   .st-karte > header { flex-wrap: wrap; height: auto; min-height: 36px; }
@@ -23,8 +23,8 @@
 .st-kopf-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 28px; min-width: 0; }
 .st-kopf-datum { font-size: 1.05rem; line-height: 28px; color: var(--u-titel); font-weight: 500; }
 .st-kopf-zeile .nl-chip { height: 24px; padding: 0 10px; line-height: 1; font-weight: 500; }
-.st-kopf-phase { font-size: .85rem; color: #67747e; }
-.st-kopf-unter { min-height: 22px; gap: 4px 6px; font-size: .85rem; color: #67747e; }
+.st-kopf-phase { font-size: .85rem; color: var(--up-text-2); }
+.st-kopf-unter { min-height: 22px; gap: 4px 6px; font-size: .85rem; color: var(--up-text-2); }
 
 /* Liste */
 .st-liste tr[data-oeffnen], .nl-tabelle tr[data-lehrer][tabindex] { cursor: pointer; }
@@ -52,14 +52,14 @@
 .st-zeitraster td .nl-icon { vertical-align: middle; }
 
 .st-zeitraster td { padding-top: 0; padding-bottom: 0; }
-.st-zeitraster tr.st-frei td { background: #fafbfc; }
-.st-zeitraster tr.st-gesperrt td { background: #fdf3f3; }
-.st-zeitraster tr.nl-gewaehlt td { background: #fff6f1; }
-.st-zeit { display: inline-block; min-width: 54px; padding: 3px 10px; border-radius: 999px; background: #eef1f4; color: #414d55; font-size: .85rem; font-weight: 500; text-align: center;
+.st-zeitraster tr.st-frei td { background: var(--up-flaeche-2); }
+.st-zeitraster tr.st-gesperrt td { background: var(--up-hintergrund); }
+.st-zeitraster tr.nl-gewaehlt td { background: var(--up-primaer-flaeche); }
+.st-zeit { display: inline-block; min-width: 54px; padding: 3px 10px; border-radius: var(--up-radius); background: var(--up-schiefer-100); color: var(--up-text); font-size: .85rem; font-weight: 500; text-align: center;
   font-variant-numeric: tabular-nums; }
-tr.st-gebucht .st-zeit, .st-zeit.gebucht { background: #fde3cf; color: #8a3a0c; }
-tr.st-gesperrt .st-zeit { background: #f3d4d4; color: #8a1f24; }
-.st-abwesend { display: inline-block; padding: 3px 12px; border-radius: 6px; background: #d9363e; color: #fff; font-size: .8rem; font-weight: 500; }
+tr.st-gebucht .st-zeit, .st-zeit.gebucht { background: var(--up-primaer-flaeche); color: var(--up-primaer); }
+tr.st-gesperrt .st-zeit { background: var(--up-entfall-flaeche); color: var(--up-entfall); }
+.st-abwesend { display: inline-block; padding: 3px 12px; border-radius: 6px; background: var(--up-entfall); color: var(--up-flaeche); font-size: .8rem; font-weight: 500; }
 .st-zeitraster .nl-fuss { position: sticky; bottom: 0; flex-wrap: nowrap; min-height: 56px; padding-top: 0; padding-bottom: 0; }
 .st-zeitraster .nl-fuss [data-gewaehlt] { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-zeitraster .nl-fuss .nl-knopf { flex: none; height: 32px; }
@@ -87,9 +87,9 @@ tr.st-gesperrt .st-zeit { background: #f3d4d4; color: #8a1f24; }
 .st-phasen { list-style: none; margin: 8px 0 4px; padding: 0; display: grid; gap: 6px; }
 .st-phasen li { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
 .st-phasen .nl-chip { min-width: 96px; justify-content: center; font-weight: 500; }
-.st-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid #e3e7eb; }
-.st-slot { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 6px 8px; border-radius: 8px; background: #fafbfc; border: 1px solid #eceff2; font-size: .78rem; }
-.st-slot-pause { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 8px; background: #fff6f1; color: #8a3a0c; font-size: .8rem; font-weight: 500; }
+.st-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--up-rand); }
+.st-slot { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 6px 8px; border-radius: 8px; background: var(--up-flaeche-2); border: 1px solid var(--up-schiefer-100); font-size: .78rem; }
+.st-slot-pause { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 8px; background: var(--up-primaer-flaeche); color: var(--up-primaer); font-size: .8rem; font-weight: 500; }
 .st-weitere { display: flex; gap: 8px; }
 .st-weitere .form-control { min-width: 0; }
 .st-weiterliste { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -119,11 +119,11 @@ tr.st-gesperrt .st-zeit { background: #f3d4d4; color: #8a1f24; }
 
 /* Startseite */
 .heute-karte.st-start { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
-.st-start-sym { display: inline-grid; place-content: center; width: 34px; height: 34px; border-radius: 50%; background: var(--u-akzent); color: #fff; flex: none; }
+.st-start-sym { display: inline-grid; place-content: center; width: 34px; height: 34px; border-radius: 50%; background: var(--u-akzent); color: var(--up-flaeche); flex: none; }
 .st-start-sym .u-sym { width: 22px; height: 22px; }
 .st-start-titel { color: var(--u-akzent); font-weight: 500; text-decoration: none; }
 .st-start-titel:hover { text-decoration: none; color: var(--u-akzent-dunkel); }
-.st-start-datum { color: var(--u-grau, #67747e); font-size: .85rem; }
+.st-start-datum { color: var(--u-grau, var(--up-text-2)); font-size: .85rem; }
 .st-start-text { font-size: .875rem; color: var(--u-text); }
 .st-start-link { font-size: .8125rem; white-space: nowrap; }
 @media (max-width: 575.98px) { .st-start-link { display: none; } }
@@ -133,13 +133,13 @@ tr.st-gesperrt .st-zeit { background: #f3d4d4; color: #8a1f24; }
 }
 
 /* Absage: Hinweis bei abgesagter Teilnahme bzw. abgesagtem Sprechtag */
-.nl-hinweis.rot { background: #fdecec; color: #a12d31; }
-.nl-hinweis.rot .bi { color: #c8363b; }
+.nl-hinweis.rot { background: var(--up-entfall-flaeche); color: var(--up-entfall); }
+.nl-hinweis.rot .bi { color: var(--up-entfall); }
 
 /* angekündigter Sprechtag (Familien, Startseite) und Online-Termine */
 .st-ankuendigung { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 20px; }
 .st-ankuendigung div { display: flex; flex-direction: column; gap: 2px; }
-.st-ankuendigung span { font-size: .78rem; color: #67747e; }
+.st-ankuendigung span { font-size: .78rem; color: var(--up-text-2); }
 .st-ankuendigung b { font-weight: 500; color: var(--u-titel); }
 .st-start-chip { margin-left: 6px; vertical-align: middle; height: 20px; font-size: .72rem; }
 .st-link { font-size: .85rem; overflow-wrap: anywhere; }

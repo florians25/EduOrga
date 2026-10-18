@@ -7,7 +7,7 @@ using UntPlanMobile.Api;
 namespace UntPlanMobile.Tests;
 
 /// <summary>
-/// Sprint 26 (Parität zur iOS-App): Kachelzeichen (Info wie im Original, Online statt Raumlabel, Verlegung), vertretene
+/// Sprint 26 (Gleichstand mit UntPlan für iOS): Kachelzeichen (Info, Online statt Raumlabel, Verlegung), vertretene
 /// Aufsichten wie Stundenkarten mit abwesender Lehrkraft, Einzelstundenauswahl im Titel der Stundendetails, Ferien auf der
 /// Startseite, gesperrte Woche im Stil der Startseiten-Kachel und Entschuldigungen der Klassenleitung (Vertrag Entschuldigungen).
 /// </summary>
@@ -60,7 +60,7 @@ public class Sprint26Tests
     }
 
     [Fact]
-    public void Vertretene_Aufsicht_zeigt_nur_den_Ort_und_das_gruene_Menuezeichen()
+    public void Vertretene_Aufsicht_zeigt_nur_den_Ort_und_das_Menuezeichen()
     {
         MitNode(Abschnitt(AppJs, "AUFSICHT"), """
             const { inhalt, klassen } = window.UntPlanAufsicht;
@@ -94,9 +94,9 @@ public class Sprint26Tests
     public void Kachelzeichen_Online_Verlegung_und_Balken()
     {
         var js = AppJs;
-        // Online: Raumzeile entfällt, Zeichen online_lesson.svg unten in der Zeichenecke, auch in den Details
+        // Online: Raumzeile entfällt, Kamerazeichen unten in der Zeichenecke, auch in den Details
         Assert.Contains("if (online) lines = lines.filter(l => l.key !== 'room');", js);
-        Assert.Contains("const KACHEL_ONLINE = '<svg class=\"ticon ticon--online\" viewBox=\"0 0 28 28\"", js);
+        Assert.Contains("const KACHEL_ONLINE = sym('video', 'ticon ticon--online');", js);
         Assert.Contains("dline--online", js);
         Assert.DoesNotContain("card__video", js);
         // Sprint 27: kein Verlegungszeichen auf der Kachel (wie iOS) – die Verlegung steht in den Details
@@ -104,11 +104,11 @@ public class Sprint26Tests
         Assert.DoesNotContain("card__ic--verlegt", js);
         var css = AppCss;
         Assert.DoesNotContain(".card .ticon--verlegt", css);
-        // vergangene Stunden: Balken voll deckend, Kartentexte enger (13,5 bzw. 13,8 px wie iOS)
-        Assert.Contains(".card.is-past::before{ opacity:1; }", css);
-        Assert.Contains("? 13.5 : 13.8;", js);
-        // Raumlabel so knapp gepolstert wie jedes andere
-        Assert.Contains(".card .badge.badge--raum:not(.badge--removed){ padding:0.33px 2.27px 0; border-radius:2px; }", css);
+        // kein Seitenbalken; Zeilenabstand der Kachel in app.js wie in app.css (14 bzw. 16 px)
+        Assert.DoesNotContain(".card::before", css);
+        Assert.Contains("? 14 : 16;", js);
+        Assert.Contains(".card__line{\n  display:block;\n  font-size:12px; line-height:14px;", css);
+        Assert.Contains(".card__line{ font-size:13px; line-height:16px; }", css);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class Sprint26Tests
     {
         var js = AppJs;
         // Zusatzstunde: Plakette statt Vertretungstext
-        Assert.Contains("'Zusätzl. Unterrichtsstunde'", js);
+        Assert.Contains("'Zusatzstunde'", js);
         // Sprint 27: manuelle Vertretungstexte stehen auch bei Zusatzstunden (Standardtexte filtert der Server)
         Assert.Contains("} else if (c.info){", js);
         // Einzelstunden über das Auswahlmenü im Titel, kein Segmentschalter mehr
@@ -127,27 +127,36 @@ public class Sprint26Tests
         Assert.Contains("nextnone--ferien", js);
         Assert.Contains("nextrow--ferien", js);
         Assert.Contains("const mo2 = iso(addDays(parseISO(mo), 7));", js);
-        // gesperrte Woche im Stil der Startseiten-Kachel
+        // gesperrte Woche als Karte über dem Raster
         Assert.Contains("<div class=\"sperre__karte\">", js);
         var css = AppCss;
-        Assert.Contains("html.is-dark .sperre .sperre__karte{ background:#313d44; }", css);
-        Assert.Contains("html.is-dark .nextnone{ background:#313d44; }", css);
-        // Ferientexte kleiner
-        Assert.Contains(".card--holiday .card__line, .card--holiday .card__line:first-of-type{ font-size:13px; line-height:16px; }", css);
+        Assert.Contains(".sperre__karte{", css);
+        Assert.Contains(".nextnone--ferien{ background:var(--up-frei-flaeche); }", css);
+        // Ferien: Name und Zeitraum auf hellblauer Fläche
+        Assert.Contains(".card--holiday .card__line.holiday-range{", css);
     }
 
     [Fact]
-    public void Textgroessen_wie_in_der_iOS_App()
+    public void Schrift_und_Groessen_nach_dem_Designsystem()
     {
         var css = AppCss;
-        var teil = css[css.IndexOf("Sprint 26 – Textgrößen wie in der iOS-App", StringComparison.Ordinal)..];
-        Assert.Contains("html body #startSchool{ font-size:32px;", teil);
-        Assert.Contains("html body .dayhead__num{ font-size:17px; font-weight:500; }", teil);
-        Assert.Contains("html body .sheet--detail .drow2__main b{ font-size:19px; font-weight:400; }", teil);
-        Assert.Contains("html body .msgrow__main b{ font-size:18px; }", teil);
-        Assert.Contains(".lstcard b{ font-size:21px;", css);
-        // nur Regular und Medium (Semibold allein für die Tableiste)
-        Assert.DoesNotContain("font-weight:700", teil);
+        var tokens = File.ReadAllText(Path.Combine(Umgebung.Wurzel(), "mobile", "src", "UntPlanMobile", "wwwroot", "assets", "css", "tokens.css"));
+        // IBM Plex Sans lokal (kein Netz), Grundgröße Mobile 15 px
+        Assert.Contains("font-family:var(--up-schrift);", css);
+        Assert.Contains("font-size:15px;", css);
+        Assert.Contains("url(\"../fonts/plex-sans-400.woff2\")", tokens);
+        foreach (var gewicht in new[] { 400, 500, 600 })
+            Assert.True(File.Exists(Path.Combine(Umgebung.Wurzel(), "mobile", "src", "UntPlanMobile", "wwwroot", "assets", "fonts", $"plex-sans-{gewicht}.woff2")));
+        // große Seitentitel 28 px/600, untere Leiste 11 px
+        Assert.Contains(".grosstitel{\n  font-size:28px; font-weight:600;", css);
+        Assert.Contains("font-size:11px; font-weight:500; line-height:13px;", css);
+        // nur 400, 500 und 600 – nie fett
+        Assert.DoesNotContain("font-weight:700", css);
+        Assert.DoesNotContain("font-weight:bold", css);
+        // keine Effekte: keine Verläufe, kein Glas
+        Assert.DoesNotContain("linear-gradient(180deg", css.Replace("repeating-linear-gradient(180deg", ""));
+        Assert.DoesNotContain("radial-gradient", css);
+        Assert.DoesNotContain("backdrop-filter", css);
     }
 
     [Fact]

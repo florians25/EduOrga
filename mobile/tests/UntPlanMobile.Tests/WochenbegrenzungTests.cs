@@ -118,7 +118,7 @@ public class WochenbegrenzungTests
     public void Oberflaeche_zeigt_Sperre_und_kennt_keine_Eintragsgrenze()
     {
         var js = File.ReadAllText(Path.Combine(Umgebung.Wurzel(), "mobile", "src", "UntPlanMobile", "wwwroot", "assets", "js", "app.js"));
-        Assert.Contains("Es werden hier keine Termine angezeigt.", js);
+        Assert.Contains("Für diesen Zeitraum ist kein Plan freigegeben.", js);
         Assert.Contains("sperrhinweis", js);
         Assert.DoesNotContain("CB_VORAUS_TAGE", js);
         Assert.DoesNotContain("zwei Wochen im Voraus", js);

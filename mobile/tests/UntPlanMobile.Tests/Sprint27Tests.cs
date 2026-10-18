@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -6,7 +7,7 @@ using UntPlanMobile.Dienste;
 namespace UntPlanMobile.Tests;
 
 /// <summary>
-/// Sprint 27 (Parität zur iOS-App, Vertrag Stundenkarten und Sprechtag): Verlegung mit Ursprung und Ziel (ohne Marker oben rechts),
+/// Sprint 27 (Gleichstand mit UntPlan für iOS, Vertrag Stundenkarten und Sprechtag): Verlegung mit Ursprung und Ziel (ohne Marker oben rechts),
 /// hinzugekommene Werte mit „+“, manuelle Vertretungstexte bei Zusatzstunden, Kopplungen nebeneinander, nur geänderte Werte im
 /// grünen Label, Sprechtag „angekündigt“ auf der Startseite, andere Klassenpläne für Schüler*innen, neues App-Symbol.
 /// </summary>
@@ -235,7 +236,7 @@ public class Sprint27Tests
     }
 
     [Fact]
-    public void App_Symbol_wie_in_der_iOS_App()
+    public void App_Symbol_aus_dem_Monogramm()
     {
         var wurzel = Path.Combine(Umgebung.Wurzel(), "mobile", "src", "UntPlanMobile", "wwwroot", "assets", "icons");
         foreach (var (datei, groesse) in new[] { ("icon-192.png", 192), ("icon-512.png", 512), ("maskable-192.png", 192), ("maskable-512.png", 512), ("apple-touch-icon.png", 180) })
@@ -245,19 +246,34 @@ public class Sprint27Tests
             Assert.Equal(groesse, (b[16] << 24) | (b[17] << 16) | (b[18] << 8) | b[19]);
             Assert.Equal(groesse, (b[20] << 24) | (b[21] << 16) | (b[22] << 8) | b[23]);
         }
-        // Akzentfarbe des iOS-Symbols
-        Assert.Contains("#F56B2A", File.ReadAllText(Path.Combine(wurzel, "favicon.svg")));
+        // Monogramm von UntPlan (weißes „U“ auf Marine-900)
+        Assert.Equal(File.ReadAllText(Path.Combine(Umgebung.Wurzel(), "design", "logo", "monogramm.svg")), File.ReadAllText(Path.Combine(wurzel, "favicon.svg")));
+        Assert.Contains("#11264a", File.ReadAllText(Path.Combine(wurzel, "favicon.svg")));
         var manifest = JsonNode.Parse(Datei("wwwroot", "manifest.webmanifest"))!;
         Assert.Contains(manifest["icons"]!.AsArray(), i => i!["purpose"]!.GetValue<string>() == "maskable" && i["sizes"]!.GetValue<string>() == "512x512");
     }
 
     [Fact]
-    public void Kleinere_Knoepfe_und_hoehere_Zeilen()
+    public void Navigation_und_Zeilen_nach_dem_Designsystem()
     {
+        var html = Datei("Vorlagen", "index.html");
+        // untere Leiste: Heute · Plan · Postfach · Mehr
+        var leiste = html[html.IndexOf("<nav class=\"tabbar\"", StringComparison.Ordinal)..html.IndexOf("</nav>", html.IndexOf("<nav class=\"tabbar\"", StringComparison.Ordinal), StringComparison.Ordinal)];
+        var reiter = Regex.Matches(leiste, @"<span>([^<]+)</span>").Select(m => m.Groups[1].Value).ToArray();
+        Assert.Equal(new[] { "Heute", "Plan", "Postfach", "Mehr" }, reiter);
+        // alle bisherigen Funktionen bleiben erreichbar
+        foreach (var id in new[] { "btnSwitchAccount", "btnAddProfile", "themeSeg", "optCardTimes", "optLongNames", "optShowCancelled",
+                                   "optNotify", "btnRefresh", "btnLogout", "btnAppointments", "btnAbsences", "btnClassLead", "btnSprechtag",
+                                   "msgTabs", "msgNew", "msgSearch", "btnEntityPicker", "btnMenu", "btnInfo" })
+            Assert.Contains($"id=\"{id}\"", html);
+        // keine Bildzeichen in der App, keine Symbole vor Listeneinträgen und Menüpunkten
+        Assert.DoesNotContain("row__ico", html);
+        Assert.DoesNotContain("menu-item__ico", html);
+        Assert.DoesNotContain("drow2__ico", AppJs);
+        Assert.DoesNotContain("login__mark\"", html);
         var css = AppCss;
-        var teil = css[css.IndexOf("Sprint 27 – Gleichstand mit der iOS-App", StringComparison.Ordinal)..];
-        Assert.Contains(".card .card__line ~ .card__line{ position:relative; top:-.8px; }", teil);
-        Assert.Contains("html body .sheet--detail .drow2__done{ width:23px !important; height:23px !important; }", teil);
-        Assert.Contains("min-width:28px; height:28px; border-radius:14px; padding:0 7px; font-size:15px;", teil);
+        Assert.Contains(".tab.is-active{ color:var(--up-primaer); }", css);
+        Assert.Contains(".drow2{\n  display:grid;", css);
+        Assert.Contains(".drow2__count{", css);
     }
 }

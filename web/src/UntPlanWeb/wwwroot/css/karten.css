@@ -93,7 +93,7 @@
 .tt-zeit { font-size: var(--up-gr-xs); color: var(--up-text-3); line-height: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tt-zeit.beginn { margin-top: 2px; }
 .tt-spalte { position: relative; }
-.tt-spalte.heute { background: rgba(238, 243, 251, .55); }
+.tt-spalte.heute { background: #f6f9fd; }
 .tt-linie { position: absolute; left: calc(var(--tt-spalt) / -2); right: calc(var(--tt-spalt) / -2); border-top: 1px solid var(--up-linie); }
 .tt-achse + .tt-spalte .tt-linie { left: calc(var(--tt-spalt) * -1); }
 .tt-spalte:last-child .tt-linie { right: 0; }
@@ -105,8 +105,7 @@
 /* Jetzt-Linie: 1px Marine über die Woche, am heutigen Tag kräftiger mit Punkt am Rand der Zeitspalte */
 .tt-jetzt { position: absolute; left: calc(var(--tt-spalt) / -2); right: calc(var(--tt-spalt) / -2); border-top: 1px solid rgba(35, 79, 150, .35); z-index: 6; pointer-events: none; }
 .tt-jetzt.heute { left: 0; right: 0; border-top-color: var(--up-primaer); }
-.tt-jetzt-zeit { position: absolute; right: -4px; z-index: 7; transform: translateY(-50%); padding: 0 10px 0 4px; background: var(--up-flaeche); color: var(--up-primaer);
-  font-size: var(--up-gr-xs); font-weight: 600; line-height: 14px; font-variant-numeric: tabular-nums; }
+.tt-jetzt-zeit { position: absolute; right: -4px; z-index: 7; width: 8px; height: 8px; transform: translateY(-50%); font-size: 0; color: transparent; }
 .tt-jetzt-zeit::after { content: ""; position: absolute; right: 0; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--up-primaer); }
 /* Ferien und freie Tage: hellblaue Fläche über die Spalte mit Art, Name und Zeitraum */
 .tt-ferien { position: absolute; inset: 2px 0; z-index: 3; display: flex; align-items: center; justify-content: center; border-radius: var(--up-radius-s);
@@ -299,7 +298,7 @@
 [data-ansicht="plan"] .planleiste::before { content: ""; position: absolute; left: -1px; right: -1px; top: -9px; height: 9px; background: var(--up-hintergrund); }
 [data-ansicht="plan"] .tt > .tt-tag, [data-ansicht="plan"] .tt > .tt-ecke:first-child { position: sticky; top: calc(var(--u-kopf) + var(--u-reiter) + 8px + var(--plankopf) + 12px); z-index: 19; background: var(--up-flaeche); }
 [data-ansicht="plan"].ohne-reiter .tt > .tt-tag, [data-ansicht="plan"].ohne-reiter .tt > .tt-ecke:first-child { top: calc(var(--u-kopf) + 8px + var(--plankopf) + 12px); }
-[data-ansicht="plan"] .tt > .tt-tag.heute { background: linear-gradient(rgba(238, 243, 251, .55), rgba(238, 243, 251, .55)), var(--up-flaeche); }
+[data-ansicht="plan"] .tt > .tt-tag.heute { background: #f6f9fd; }
 @media (min-width: 1200px) { .u-app[data-ansicht="plan"] .u-inhalt { padding-left: 24px; padding-right: 24px; } }
 @media print { [data-ansicht="plan"] .planleiste, [data-ansicht="plan"] .tt > .tt-tag, [data-ansicht="plan"] .tt > .tt-ecke:first-child { position: static; } }
 

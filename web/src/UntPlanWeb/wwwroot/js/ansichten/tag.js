@@ -10,18 +10,19 @@ export async function zeigen(seite, kontext, [typParam, datumParam]) {
   const datum = /^\d{4}-\d{2}-\d{2}$/.test(datumParam ?? '') ? datumParam : heuteIso();
   const ziel = (t, d) => `#/tag/${t}/${d}`;
   kontext.titel('');
-  document.title = `Tag - ${TYPEN[typ]} – UntPlanWeb`;
+  document.title = `${TYPEN[typ]} am Tag – UntPlan`;
 
-  // Kopfzeile wie im Stundenplan: Filter links, Tag mittig mit Blättern, „Heute“ rechts
+  // Werkzeugleiste wie im Stundenplan: Filter links, Tag mit Blättern und „Heute“, Drucken rechts
   seite.innerHTML = `
     <div class="planleiste nicht-drucken">
-      <div class="links"><input type="search" class="form-control" data-filter placeholder="${TYPEN[typ]} filtern" style="width:200px;border-radius:999px" aria-label="Filtern"></div>
+      <div class="links"><input type="search" class="form-control" data-filter placeholder="${TYPEN[typ]} filtern" style="width:220px" aria-label="Filtern"></div>
       <div class="mitte">
         <button type="button" class="rundknopf" data-tage="-1" title="Vorheriger Tag" aria-label="Vorheriger Tag">${icon('links')}</button>
         <span class="position-relative"><button type="button" class="zeitraum" data-datum title="Datum wählen" aria-haspopup="dialog">${e(datumLang(datum))}</button></span>
         <button type="button" class="rundknopf" data-tage="1" title="Nächster Tag" aria-label="Nächster Tag">${icon('rechts')}</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm heute-pill" data-tage="0">Heute</button>
       </div>
-      <div class="rechts"><button type="button" class="rundknopf" data-drucken title="Drucken" aria-label="Drucken">${icon('drucken')}</button><button type="button" class="heute-pill" data-tage="0">Heute</button></div>
+      <div class="rechts"><button type="button" class="btn btn-outline-secondary btn-sm" data-drucken>Drucken</button></div>
     </div>
     <div data-inhalt>${lade()}</div>`;
   seite.querySelector('[data-drucken]').onclick = () => window.print();
@@ -42,7 +43,7 @@ export async function zeigen(seite, kontext, [typParam, datumParam]) {
     const sicht = { ...tag, zeilen: f ? tag.zeilen.filter(z => (z.kurz + ' ' + z.name).toLowerCase().includes(f)) : tag.zeilen };
     const k = tag.kopf;
     const { html, karten } = tagesGitter(sicht);
-    inhalt.innerHTML = `<div class="d-flex flex-wrap align-items-baseline gap-2 mb-2"><h2 class="h6 fw-bold mb-0">Tag - ${e(TYPEN[typ])}</h2>
+    inhalt.innerHTML = `<div class="d-flex flex-wrap align-items-baseline gap-2 mb-2"><h2 class="h6 fw-bold mb-0">${e(TYPEN[typ])} am Tag</h2>
         ${tag.gesperrt ? '' : `<span class="badge ${k.tagesaktuell ? 'text-bg-success' : 'text-bg-secondary'}">${k.tagesaktuell ? 'tagesaktuell' : 'Regelplan'}</span>`}</div>
       ${k.hinweise.map(h => `<div class="alert alert-warning py-2 small mb-2">${e(h)}</div>`).join('')}
       ${tag.gesperrt ? `<div class="tt-gesperrt tag-gesperrt">${sperreHtml(tag.sperrhinweis)}</div>`

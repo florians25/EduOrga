@@ -1,7 +1,7 @@
 // UntPlan Web – Einstieg: Sitzung laden, Anmeldung/Einrichtung, Hülle und Hash-Router.
-// Hülle: Kopfleiste (Signet, Schule, Hauptbereiche, Suche, Mitteilungen, Infocenter, Konto), darunter je Bereich eine Reiterleiste;
-// auf dem Telefon eine untere Leiste mit vier Hauptbereichen und „Mehr“ (Blatt mit allen übrigen Bereichen).
-import { LOGO, icon, e, holen, senden, api, fehler, alarm, lade, initialen, toast } from './ui.js';
+// Hülle: helle Kopfleiste (Wortmarke, Schule, Hauptbereiche als Text, Suche, Infos, Konto), darunter je Bereich eine Reiterleiste;
+// auf dem Telefon eine untere Leiste mit vier Hauptbereichen und „Mehr“ (Blatt mit allen übrigen Bereichen). Keine Symbole in der Navigation.
+import { LOGO, icon, e, holen, senden, api, fehler, alarm, lade, toast } from './ui.js';
 import { beobachten as auswahlBeobachten } from './auswahl.js';
 import { beobachten as kalenderBeobachten } from './kalender.js';
 
@@ -146,28 +146,19 @@ async function start() {
 // ------------------------------------------------------------------ Anmeldung und Einrichtung
 
 /**
- * Anmeldeseite: zweigeteilt. Links eine ruhige Marine-Fläche mit Signet, Schulname, heutigem Datum und den öffentlichen Hinweisen
- * der Schule; rechts auf hellem Grund das Formular. Auf dem Telefon steht ein schmaler Kopf mit Signet und Schulname über dem Formular.
+ * Anmeldeseite: schlicht und zentriert. Oben Wortmarke und Schulname, darunter das Formular, darunter die öffentlichen Hinweise der Schule.
  */
 function anmeldeRahmen(titel, inhalt, untertitel = '') {
-  const heute = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const schule = sitzung?.schule?.name || '';
   app.innerHTML = `<main class="anmeldung an-seite">
-    <section class="an-seite-info" aria-label="${e(schule || 'UntPlan')}">
-      <div class="an-marke">${LOGO}<span>UntPlan</span></div>
-      <div class="an-text">
-        <p class="an-datum">${e(heute)}</p>
-        ${schule ? `<h2 class="an-schule">${e(schule)}</h2>` : ''}
-        <p class="an-zeile">Stundenplan, Vertretungen und Klassenbuch der Schule.</p>
-      </div>
-      <div class="an-hinweise" data-hinweise hidden></div>
-    </section>
+    <header class="an-kopfzeile">${LOGO}${schule ? `<span class="an-schule">${e(schule)}</span>` : ''}</header>
     <section class="an-bereich">
       <div class="an-karte">
-        <div class="an-kopf">${LOGO}<div><h1 class="an-titel">${e(titel)}</h1>${untertitel ? `<p class="an-unter">${e(untertitel)}</p>` : ''}</div></div>
+        <div class="an-kopf"><h1 class="an-titel">${e(titel)}</h1>${untertitel ? `<p class="an-unter">${e(untertitel)}</p>` : ''}</div>
         <div class="lg-form">${inhalt}</div>
       </div>
-      <footer class="an-fuss"><button type="button" class="btn btn-outline-secondary lg-app d-none" data-pwa>${icon('herunterladen')}Als App installieren</button>
+      <div class="an-hinweise" data-hinweise hidden></div>
+      <footer class="an-fuss"><button type="button" class="btn btn-outline-secondary btn-sm lg-app d-none" data-pwa>Als App installieren</button>
         <span class="lg-app-text" data-pwa-text>Auf dem Smartphone lässt sich UntPlan über „Zum Startbildschirm hinzufügen“ wie eine App nutzen.</span></footer>
     </section></main>`;
   // App installieren (PWA), sobald der Browser es anbietet
@@ -199,7 +190,7 @@ async function oeffentlicheHinweise(box) {
   } catch { return; }
   if (!Array.isArray(liste) || !liste.length || !box.isConnected) return;
   box.innerHTML = `<h2 class="an-hinweise-titel">Hinweise der Schule</h2>${liste.map(h => `<article class="an-hinweis">
-      <i class="bi bi-megaphone" aria-hidden="true"></i><div><h3>${e(h.titel)}</h3>${h.text ? `<p>${e(h.text).replace(/\n/g, '<br>')}</p>` : ''}</div></article>`).join('')}`;
+      <div><h3>${e(h.titel)}</h3>${h.text ? `<p>${e(h.text).replace(/\n/g, '<br>')}</p>` : ''}</div></article>`).join('')}`;
   box.hidden = false;
 }
 window.addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); window.__pwaAngebot = ev; window.dispatchEvent(new Event('untplan:pwa')); });
@@ -218,7 +209,7 @@ function anmeldung() {
     </form>`, 'Mit dem Konto Ihrer Schule.');
   // Zugriff gesperrt (Wartungsmodus): Hinweis der Administration über dem Formular
   holen('/api/app/zugriff').then(z => {
-    if (z.gesperrt) form.querySelector('[data-meldung]').insertAdjacentHTML('beforebegin', `<div class="lg-wartung" role="status"><i class="bi bi-lock" aria-hidden="true"></i><span>${e(z.hinweis)}</span></div>`);
+    if (z.gesperrt) form.querySelector('[data-meldung]').insertAdjacentHTML('beforebegin', `<div class="lg-wartung" role="status"><span>${e(z.hinweis)}</span></div>`);
   }).catch(() => { /* ohne Hinweis */ });
   form.querySelector('[data-vergessen]').onclick = ev => {
     const t = form.querySelector('[data-vergessen-text]');
@@ -512,17 +503,16 @@ function huelle() {
     <div class="u-app">
       <header class="u-kopf nicht-drucken">
         <div class="u-marke">
-          <a class="u-marke-signet" href="#/heute" aria-label="Startseite">${LOGO}</a>
-          <div class="u-marke-text"><a href="#/heute" class="u-schule" title="${e(sitzung.schule.name || 'UntPlan')}">${e(sitzung.schule.name || 'UntPlan')}</a><span data-jahr></span></div>
+          <a class="u-marke-wort" href="#/heute" title="Startseite">${LOGO}</a>
+          <div class="u-marke-text"><span class="u-schule" title="${e(sitzung.schule.name || '')}">${e(sitzung.schule.name || '')}</span><span data-jahr></span></div>
           <b class="u-kopftitel" id="kopftitel">UntPlan</b>
         </div>
         <nav class="u-bereiche" aria-label="Hauptbereiche" data-bereiche></nav>
         <div class="u-kopf-rechts">
-          <button type="button" class="u-kopfknopf u-suchknopf" data-suche-oeffnen title="Suchen (Strg+K)" aria-label="Suchen">${icon('suchen')}<span>Klasse, Lehrkraft, Raum …</span><kbd>Strg K</kbd></button>
-          <a class="u-kopfknopf" href="#/mitteilungen" data-kopf-post title="Mitteilungen" aria-label="Mitteilungen">${icon('kommunikation')}<span class="u-zahl d-none" data-zaehler></span></a>
+          <button type="button" class="u-suchknopf" data-suche-oeffnen title="Suchen (Strg+K)" aria-label="Suchen">${icon('suchen')}<span>Suchen</span><kbd>Strg K</kbd></button>
           <span class="u-ic-platz" data-ic-platz></span>
           <div class="u-konto-platz">
-            <button type="button" class="u-konto" data-kontomenue title="Konto" aria-haspopup="menu" aria-expanded="false"><span class="u-avatar">${e(initialen(b.anzeigename || b.login))}</span>${icon('unten', 'u-konto-pfeil')}</button>
+            <button type="button" class="u-konto" data-kontomenue title="Konto" aria-haspopup="menu" aria-expanded="false"><span class="u-konto-name">${e(b.anzeigename || b.login)}</span>${icon('unten', 'u-konto-pfeil')}</button>
             <div class="u-kontomenue d-none" role="menu" data-konten></div>
           </div>
         </div>
@@ -709,9 +699,10 @@ function untenZeichnen(gruppen, aktiv) {
   if (!leiste) return;
   const vier = [...gruppen].sort((a, b) => (a.prio ?? 9) - (b.prio ?? 9)).slice(0, 4).sort((a, b) => gruppen.indexOf(a) - gruppen.indexOf(b));
   const mehrAktiv = aktiv && !vier.includes(vier.find(g => g.id === aktiv.id));
+  const kurz = { 'Melden & Buchen': 'Melden', Kommunikation: 'Post', Stundenplan: 'Plan', Vertretungen: 'Vertretung' };
   leiste.innerHTML = vier.map(g => `<a class="u-unten-punkt ${g.id === aktiv?.id ? 'aktiv' : ''}" href="${bereichZiel(g)}" ${g.id === aktiv?.id ? 'aria-current="page"' : ''}>
-      <span class="u-unten-sym">${icon(g.icon)}${g.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</span><span>${e(g.text === 'Melden & Buchen' ? 'Melden' : g.text)}</span></a>`).join('')
-    + `<button type="button" class="u-unten-punkt ${mehrAktiv ? 'aktiv' : ''}" data-blatt-auf aria-haspopup="dialog"><span class="u-unten-sym">${icon('mehr')}</span><span>Mehr</span></button>`;
+      <span>${e(kurz[g.text] ?? g.text)}</span>${g.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</a>`).join('')
+    + `<button type="button" class="u-unten-punkt ${mehrAktiv ? 'aktiv' : ''}" data-blatt-auf aria-haspopup="dialog"><span>Mehr</span></button>`;
   leiste.querySelector('[data-blatt-auf]').onclick = () => blattAuf();
 }
 
@@ -722,11 +713,11 @@ function blattAuf() {
   const b = sitzung.benutzer;
   const gw = gewaehltesSchuljahr();
   blatt.innerHTML = `<div class="u-blatt-griff" aria-hidden="true"></div>
-    <header class="u-blatt-kopf"><span class="u-avatar">${e(initialen(b.anzeigename || b.login))}</span><div><b>${e(b.anzeigename || b.login)}</b><small>${e(b.rollenname)}${gw.text ? ` · Schuljahr ${e(gw.text)}` : ''}</small></div>
+    <header class="u-blatt-kopf"><div><b>${e(b.anzeigename || b.login)}</b><small>${e(b.rollenname)}${gw.text ? ` · Schuljahr ${e(gw.text)}` : ''}</small></div>
       <button type="button" class="u-kopfknopf" data-blatt-zu aria-label="Schließen">${icon('x')}</button></header>
-    <div class="u-blatt-inhalt">${menue().map(g => `<section class="u-blatt-gruppe"><h2>${icon(g.icon)}${e(g.text)}</h2>
+    <div class="u-blatt-inhalt">${menue().map(g => `<section class="u-blatt-gruppe"><h2>${e(g.text)}</h2>
       <div class="u-blatt-liste">${reiterVon(g).filter(p => !p.verborgen).map(p => `<a href="${p.href}" class="${p.nav === aktiverPunkt ? 'aktiv' : ''}">${e(p.text)}</a>`).join('')}</div></section>`).join('')}
-      <section class="u-blatt-gruppe"><h2>${icon('profil')}Konto</h2><div class="u-blatt-liste"><a href="#/profil">Mein Profil</a><a href="#/neuigkeiten">Neuigkeiten</a>
+      <section class="u-blatt-gruppe"><h2>Konto</h2><div class="u-blatt-liste"><a href="#/profil">Mein Profil</a><a href="#/neuigkeiten">Neuigkeiten</a>
         <button type="button" data-blatt-abmelden>Abmelden</button></div></section></div>`;
   blatt.hidden = false;
   document.querySelector('[data-blatt-schleier]').hidden = false;
@@ -787,7 +778,7 @@ async function sucheOeffnen() {
     wahl = Math.min(wahl, Math.max(0, treffer.length - 1));
     liste.innerHTML = treffer.length ? treffer.map((x, i) => `<a href="${x.href}" role="option" class="u-suche-treffer ${i === wahl ? 'an' : ''}" aria-selected="${i === wahl}" data-i="${i}">
         <span class="u-suche-art">${e(x.art)}</span><b>${e(x.text)}</b><span class="u-suche-zusatz">${e(x.zusatz)}</span></a>`).join('')
-      : `<div class="u-suche-leer">${icon('suchen')}<span>Keine Treffer für „${e(eingabe.value)}“.</span></div>`;
+      : `<div class="u-suche-leer">Keine Treffer für „${e(eingabe.value)}“.</div>`;
     if (!f) liste.insertAdjacentHTML('afterbegin', '<div class="u-suche-kopf">Seiten</div>');
   };
   const taste = ev => {
@@ -822,10 +813,10 @@ async function kontomenue() {
   document.querySelector('[data-kontomenue]').setAttribute('aria-expanded', 'true');
   const b = sitzung.benutzer;
   m.innerHTML = `<div class="u-konto-kopf"><b>${e(b.anzeigename || b.login)}</b><small>${e(b.login)} · ${e(b.rollenname)}</small></div>
-    <a href="#/profil" role="menuitem" data-profil>${icon('profil')}<span>Mein Profil</span></a>
-    <a href="#/neuigkeiten" role="menuitem" data-neuigkeiten>${icon('neuigkeiten')}<span>Neuigkeiten</span></a>
+    <a href="#/profil" role="menuitem" data-profil><span>Mein Profil</span></a>
+    <a href="#/neuigkeiten" role="menuitem" data-neuigkeiten><span>Neuigkeiten</span></a>
     <div class="u-kontoliste">${lade()}</div>
-    <button type="button" role="menuitem" class="u-konto-ab" data-abmelden>${icon('abmelden')}<span>Abmelden</span></button>`;
+    <button type="button" role="menuitem" class="u-konto-ab" data-abmelden><span>Abmelden</span></button>`;
   m.querySelectorAll('[data-profil], [data-neuigkeiten]').forEach(a => a.onclick = () => kontomenueZu());
   m.querySelector('[data-abmelden]').onclick = abmelden;
   import('./infocenter.js').then(x => x.zahlSetzen?.()).catch(() => { /* ohne Zahl */ });
@@ -833,9 +824,9 @@ async function kontomenue() {
   try { konten = await holen('/api/app/konten'); } catch { /* still */ }
   const andere = konten.filter(k => !k.aktuell);
   m.querySelector('.u-kontoliste').innerHTML = `${andere.length ? '<div class="u-kontokopf">Konto wechseln</div>' : ''}
-    ${andere.map(k => `<div class="u-konto-zeile"><button type="button" role="menuitem" data-wechseln="${k.id}"><span class="u-avatar klein">${e(initialen(k.anzeigename || k.login))}</span>
+    ${andere.map(k => `<div class="u-konto-zeile"><button type="button" role="menuitem" data-wechseln="${k.id}">
       <span><b>${e(k.login)}</b><small>${e(k.rolle)}</small></span></button><button type="button" class="u-konto-weg" data-vergessen="${k.id}" title="Vom Gerät entfernen" aria-label="Konto vom Gerät entfernen">${icon('x')}</button></div>`).join('')}
-    <button type="button" role="menuitem" class="u-konto-neu" data-weiteres>${icon('wechseln')}<span>Weiteres Konto anmelden</span></button>`;
+    <button type="button" role="menuitem" class="u-konto-neu" data-weiteres><span>Weiteres Konto anmelden</span></button>`;
   m.querySelectorAll('[data-wechseln]').forEach(x => x.onclick = async () => {
     try { await senden(`/api/app/konten/${x.dataset.wechseln}/wechseln`, {}); history.replaceState(null, '', '#/heute'); await start(); toast('Konto gewechselt.'); }
     catch (err) { fehler(err); }

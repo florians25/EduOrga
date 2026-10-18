@@ -450,3 +450,28 @@ export async function druckenMitAusrichtung(vorgabe = 'quer', schluessel = 'druc
   setTimeout(weg, 1500);
   return true;
 }
+
+// ------------------------------------------------------------------ Symbole nur funktional
+
+/**
+ * Knöpfe, Links, Überschriften, Karten- und Abschnittsköpfe mit Text tragen keine Symbole (design/DESIGN.md Abschnitt 4). Die Ansichten
+ * zeichnen ihre Knöpfe teils mit einem Symbol vor dem Text; dieses wird hier zentral ausgeblendet (Klasse „sym-aus“). Funktionale
+ * Symbole bleiben: Pfeile und Chevrons, Schließen, Suchen, Kalender, Haken und Statushinweise; Knöpfe ohne Text behalten ihr Symbol.
+ */
+const FUNKTIONAL = /\b(?:bi|sym)-(?:chevron|caret|arrow-(?:left|right|up|down)(?!-right)|chevrons|x\b|x-lg|search|calendar\b|calendar-days|check\b|check-lg|check2\b|three-dots|ellipsis)/;
+const MIT_TEXT = 'button, a, label.btn, summary, .nav-link, .dropdown-item, h1, h2, h3, h4, h5, h6, .card-header, .u-panel > header, .sd-abschnitt-kopf, .sd-detail, .u-kennzahl, .fm-uebersicht > header, .heute-karte > header, .br-gruppe h3, .u-menue > *, .nl-kopf, .modal-title';
+function symboleBereinigen(wurzel) {
+  if (!wurzel?.querySelectorAll) return;
+  for (const s of wurzel.querySelectorAll('i.bi, i.sym, .u-sym, .kb-icon, .fm-sym')) {
+    if (s.classList.contains('sym-aus') || FUNKTIONAL.test(s.className) || s.closest('.u-leer, .ic-leer, .sd-statusbild, .std, .u-suchfilter, .u-suchfeld, .nl-suche, .au-suchfeld, .u-suche, .u-suche-feld, .lg-auge, .haken, kbd')) continue;
+    const eltern = s.parentElement?.closest(MIT_TEXT);
+    if (!eltern) continue;
+    const text = [...eltern.childNodes].filter(n => n !== s && !(n.nodeType === 1 && n.matches?.('i.bi, i.sym, .u-sym, .kb-icon'))).map(n => n.textContent).join('').trim();
+    if (text) s.classList.add('sym-aus');
+  }
+}
+if (typeof document !== 'undefined' && typeof MutationObserver === 'function') {
+  let wartet = false;
+  const lauf = () => { wartet = false; symboleBereinigen(document.body); };
+  new MutationObserver(() => { if (!wartet) { wartet = true; requestAnimationFrame(lauf); } }).observe(document.documentElement, { childList: true, subtree: true });
+}

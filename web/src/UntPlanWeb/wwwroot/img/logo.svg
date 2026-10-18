@@ -1,12 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>UntPlan</title>
-  <rect width="64" height="64" rx="14" fill="#1C3F7A"/>
-  <rect x="14" y="14" width="10" height="10" rx="2" fill="#FFFFFF"/>
-  <rect x="27" y="14" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-  <rect x="40" y="14" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-  <rect x="14" y="27" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-  <rect x="27" y="27" width="23" height="10" rx="2" fill="#FFFFFF"/>
-  <rect x="14" y="40" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-  <rect x="27" y="40" width="10" height="10" rx="2" fill="#FFFFFF" fill-opacity=".32"/>
-  <rect x="40" y="40" width="10" height="10" rx="2" fill="#8FB4EA"/>
+  <rect width="64" height="64" fill="#11264a"/>
+  <path d="M18 14v22c0 8.3 5.4 14 14 14s14-5.7 14-14V14" fill="none" stroke="#ffffff" stroke-width="6"/>
 </svg>

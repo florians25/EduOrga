@@ -1,4 +1,4 @@
-// Klassenbuch → Offene Stunden im Original-Look (nl-design): oben – direkt auf dem grauen Seitengrund wie bei allen Listenseiten – das gemeinsame
+// Klassenbuch → Unbearbeitete Stunden (offene Klassenbucheinträge): oben – direkt auf dem grauen Seitengrund wie bei allen Listenseiten – das gemeinsame
 // Suchfeld mit Filter (ui.js suchfeldMitFilter): Chips für Lehrkraft und Klasse (Klassenleitungen bekommen „Meine Klassen“ zuerst), die Art der
 // Anzeige als Dropdown im Suchfeld wie bei den Hausaufgaben, rechts der Zeitraum zum Anklicken (Kalender mit zwei Monaten)
 // und die Auswahlbox mit vordefinierten Zeitbereichen. Darunter eine schlichte Tabelle ○ | Lehrkraft | Klasse | Fach | Datum | Art | Raum |
@@ -12,7 +12,7 @@ import { LEHRFORMEN } from '../stundendetails.js';
 import { kalenderOeffnen, offenerKalender } from '../kalender.js';
 
 const ART = {
-  offen: 'Offene Stunden',
+  offen: 'Unbearbeitete Stunden',
   kontrolle: 'Abwesenheiten nicht kontrolliert',
   lehrstoff: 'Lehrstoff fehlt',
   alle: 'Alle gehaltenen Stunden',
@@ -32,7 +32,7 @@ export async function zeigen(seite, kontext, [bereichParam, artParam, lehrerPara
   const bereichWahl = bereichParam && bereichParam !== '-' ? bereichParam : '';
   const individuell = bereichWahl === 'individuell' && istDatum(vonParam) && istDatum(bisParam);
 
-  kontext.titel('Offene Stunden');
+  kontext.titel('Unbearbeitete Stunden');
   seite.innerHTML = lade();
   const q = new URLSearchParams({ art: 'alle' });
   if (bereichWahl) q.set('bereich', bereichWahl);
@@ -88,7 +88,7 @@ export async function zeigen(seite, kontext, [bereichParam, artParam, lehrerPara
   const sichtbar = () => zeilen.filter(z => passtArt(art, z) && (!text || `${z.lehrer} ${z.klassen.join(' ')} ${z.fach} ${z.fachName} ${z.raeume.join(' ')} ${datumDe(z.datum)}`.toLowerCase().includes(text)));
   const zeichnen = () => {
     const liste = sichtbar();
-    kontext.titel('Offene Stunden', `${nachricht ? `<button type="button" class="btn btn-outline-secondary" data-nachricht ${liste.length ? '' : 'disabled'}>Nachricht senden</button>` : ''}
+    kontext.titel('Unbearbeitete Stunden', `${nachricht ? `<button type="button" class="btn btn-outline-secondary" data-nachricht ${liste.length ? '' : 'disabled'}>Nachricht senden</button>` : ''}
       <button type="button" class="btn btn-outline-secondary" data-bericht ${liste.length ? '' : 'disabled'}>Bericht</button>`, `${liste.length}`);
     const alleGewaehlt = liste.length > 0 && liste.every(z => auswahl.has(z.i));
     inhalt.innerHTML = `<div class="os-seite os-original">

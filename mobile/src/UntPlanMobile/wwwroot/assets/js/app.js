@@ -290,12 +290,12 @@ function stampDates(cards, date){
 
 /* Eine Raumänderung ist nie eine Prüfung.
    ---------------------------------------------------------------------
-   Gelb mit braunem Rahmen steht ausschließlich für Klausuren und
+   Die Bernstein-Fläche steht ausschließlich für Klausuren und
    Prüfungen. Kommt eine Stunde als „klausur“ herein, deren Art aber nur
    einen Raumwechsel nennt („Raumänderung“, „Raumvertretung“,
    „Raumwechsel“) und nirgends eine Klausur oder Prüfung erwähnt, wird
-   sie als grüne Änderung gezeigt — mit dem neuen Raum in der grünen
-   Plakette. Gilt für Woche, Tag, Liste, Details und vergangene Stunden,
+   sie als Änderung (Petrol-Rahmen) gezeigt — mit dem neuen Raum als geändertem
+   Wert. Gilt für Woche, Tag, Liste, Details und vergangene Stunden,
    weil es hier beim Einlesen geschieht. */
 function nurRaumKeinePruefung(c){
   if (!c || c.blockType !== 'klausur') return c;
@@ -467,11 +467,11 @@ const viewKind = e => {
 const KACHEL_INFO = sym('info', 'ticon ticon--info');
 const KACHEL_ONLINE = sym('video', 'ticon ticon--online');
 /* Verlegung: Ursprungsstunde mit Pfeil nach rechts (rotes Feld), Zielstunde
-   mit Pfeil nach links (grünes Feld). */
+   mit Pfeil nach links (Änderung). */
 
 
 /* PLUS-BEGINN (wird von den Tests ausgeführt) */
-/* Hinzugekommene Werte (classPlus, teacherPlus, roomPlus): grünes Label mit
+/* Hinzugekommene Werte (classPlus, teacherPlus, roomPlus): Änderungsauszeichnung mit
    „+“ davor, z. B. „+B070“. */
 function plusWert(card, key, text){
   const liste = String((card && card[key + 'Plus']) || '').split(/\s*,\s*/).filter(Boolean).map(x => x.toUpperCase());
@@ -535,7 +535,7 @@ function lineValue(card, key){
 
 /* AUFSICHT-BEGINN (wird von den Tests ausgeführt) */
 /* Inhalt einer Pausenaufsicht auf der Kachel: immer nur der Ort. Bei einer
-   Vertretung (eingesprungen oder abgegeben) steht ganz rechts das grüne
+   Vertretung (eingesprungen oder abgegeben) steht ganz rechts das
    „…“ — wer vertritt bzw. wer fehlt, steht in den Details (Tippen). Keine
    Kürzel, keine Labels, nichts Durchgestrichenes auf der Kachel. Eine
    entfallene Aufsicht (`_supCancelled`) trägt kein Zeichen: Sie steht im
@@ -568,7 +568,7 @@ if (typeof window !== 'undefined') window.UntPlanAufsicht = { inhalt: aufsichtIn
    Zustände: `ok` hält die Stunde, `absent` fällt aus (durchgestrichen),
    `sub` springt für jemanden ein (Plakette). */
 /* Fehlt eine Lehrkraft der Kopplung und vertritt sie niemand, ist ihre
-   Vertretung offen: Kürzel durchgestrichen in der grünen Plakette. Ist eine
+   Vertretung offen: Kürzel durchgestrichen in der Plakette. Ist eine
    Vertretung eingeteilt, steht das alte Kürzel ohne Fläche da. */
 function koppOffen(t, toks){
   if (t.state !== 'absent') return false;
@@ -631,7 +631,7 @@ function klassTokens(card, kind, alle){
    Raum für sich, nicht mit Komma zu einem Wert verschmolzen. Hervorgehoben
    wird nur, was neu hinzugekommen bzw. ersetzt ist — der bisherige Raum
    bleibt ein gewöhnliches Label daneben. Ein entfernter Raum (roomRemoved)
-   steht durchgestrichen in der grünen Plakette dahinter. null = eine
+   steht durchgestrichen in der Plakette dahinter. null = eine
    gewöhnliche Raumzeile. */
 function raumTokens(card, changed){
   const gross = x => x.toUpperCase();
@@ -643,7 +643,7 @@ function raumTokens(card, changed){
   const neu = x => !!changed && (neuListe.length ? neuListe.includes(gross(x))
                                  : !weg.length && (!vorher.length || !vorher.includes(gross(x))));
   /* Der neue Raum steht vorn: Auf einer schmalen Kachel kürzt sich die
-     Zeile mit „…“, und die grüne Plakette darf dabei nie wegfallen. */
+     Zeile mit „…“, und die Änderungsauszeichnung darf dabei nie wegfallen. */
   return jetzt.map(x => ({ text:x, state: neu(x) ? 'sub' : 'ok' }))
     .sort((a, b) => (b.state === 'sub') - (a.state === 'sub'))
     .concat(weg.map(x => ({ text:x, state:'absent', open:true })));
@@ -837,9 +837,9 @@ if (typeof window !== 'undefined') window.UntPlanAbwesenheit = { abwesenheitsFel
 
 /* PARALLEL-BEGINN (wird von den Tests ausgeführt) */
 /* Läuft die Stunde ohne mich — abgegeben, offen vertreten, Kopplung ohne
-   mich, Klasse abwesend? Dann zeigt der Plan sie mit Eckklammern statt als
-   grüne Änderung. Gemeinsam genutzt von der Darstellung und der Rangfolge
-   paralleler Karten (grüne Karten stehen vorne). */
+   mich, Klasse abwesend? Dann zeigt der Plan sie mit gepunktetem Rahmen statt als
+   Änderung (Petrol-Rahmen). Gemeinsam genutzt von der Darstellung und der Rangfolge
+   paralleler Karten (Änderungen stehen vorne). */
 function freigegeben(card, kind){
   const isStandby = card.blockType === 'standby';
   const myCode = (state.entity.code || state.entity.label || '').toUpperCase();
@@ -847,13 +847,13 @@ function freigegeben(card, kind){
     && (card.changed || []).includes('teacher')
     && (card.teacherOrig || '').toUpperCase() === myCode
     && (card.teacher || '').toUpperCase() !== myCode;
-  /* Der verlegte Block am Zielort bleibt eine grüne Änderung, auch wenn
+  /* Der verlegte Block am Zielort bleibt eine Änderung (Petrol-Rahmen), auch wenn
      die Stunde damit formal aus dem eigenen Plan wandert. */
   const isMovedTarget = card._isNewPlace
     || (/verleg/i.test(card.type || '') && card.blockType === 'change');
   /* Fehle ich in einer Kopplung, die die übrigen weiterhalten, läuft
      die Stunde ohne mich — dieselbe Darstellung wie bei jeder anderen
-     abgegebenen Stunde: Eckklammern, kein Entfall. Auch dann, wenn die
+     abgegebenen Stunde: gepunkteter Rahmen, kein Entfall. Auch dann, wenn die
      Zeile für mich als Entfall hereinkommt. */
   const koppL = Array.isArray(card.teacherList) ? card.teacherList : null;
   const koppOhneMich = !!koppL && kind !== 'class' && !!myCode
@@ -861,7 +861,7 @@ function freigegeben(card, kind){
                     && (t.state || 'ok') === 'absent')
     && koppL.some(t => (t.state || 'ok') !== 'absent');
   /* Eine Aufsicht wird nicht „abgegeben“ — sie findet statt oder nicht.
-     Die Eckklammern-Darstellung würde ihr die eigene Kennzeichnung
+     Die gepunkteter Rahmen-Darstellung würde ihr die eigene Kennzeichnung
      nehmen: Balkenfarbe und Menüzeichen hängen an `card--supervision`,
      und die wurde für freigegebene Karten nicht gesetzt. */
   const isSup = card.blockType === 'supervision' || !!card._supervision;
@@ -871,20 +871,20 @@ function freigegeben(card, kind){
      deren Kopplung ohne sie weiterläuft. */
   const klasseWeg = kind === 'class' && !!card._klasseWeg;
   /* Ist die Klasse abwesend (Freisetzung), läuft die Stunde im Lehrer- und
-     Raumplan wie eine abgegebene Stunde (Eckklammern, Klasse durchgestrichen
-     in der Plakette); im Klassenplan bleibt sie eine grüne Änderung. Nur ein
+     Raumplan wie eine abgegebene Stunde (gepunkteter Rahmen, Klasse durchgestrichen
+     in der Plakette); im Klassenplan bleibt sie eine Änderung (Petrol-Rahmen). Nur ein
      echter Entfall ist rot. */
   /* `teacherAbsent` liefert der Server, wenn die Stunde im eigenen Plan
      ohne die (abwesende) Lehrkraft läuft – gleiche Darstellung. */
   /* Im Raumplan ist eine abwesende Lehrkraft (offen oder vertreten) eine
-     grüne Änderung wie im Klassenplan – keine Eckklammern, kein Entfall. */
+     Änderung (Petrol-Rahmen) wie im Klassenplan – keine gepunkteter Rahmen, kein Entfall. */
   const lehrerWegHier = (card.openSub || card.teacherAbsent) && kind !== 'room';
   return (((lehrerWegHier || handedOver || koppOhneMich || card.classAbsent) && kind !== 'class')
                     || klasseWeg)
                 && !isStandby && !isSup && !isMovedTarget;
 }
 
-/* Grün gezeigte Karte: Änderung, Vertretung, Raumänderung, Zusatzstunde. */
+/* Als Änderung gezeigte Karte: Änderung, Vertretung, Raumänderung, Zusatzstunde. */
 function istGrueneKarte(card, kind){
   return card.blockType === 'change' && !freigegeben(card, kind);
 }
@@ -946,15 +946,15 @@ function assignParallel(cards){
     if (c.blockType === 'change' || (c.changed || []).length) return 0;
     return 1;                          /* findet unverändert statt */
   };
-  /* Grüne Karten (Änderung, Vertretung, Raumänderung, Zusatzstunde) haben
+  /* Änderungskarten (Änderung, Vertretung, Raumänderung, Zusatzstunde) haben
      bei parallelen Blöcken immer Vorrang: Sie stehen ganz links, und wenn
-     wegen Platzmangel nur ein Block mit Zählkarte bleibt, ist es die grüne.
+     wegen Platzmangel nur ein Block mit Zählkarte bleibt, ist es die Änderung.
      Danach gilt die übrige Rangfolge wie bisher. Eine Kopplung, in der
      niemand mehr hält, bleibt ein Entfall. */
   const kind = viewKind(state.entity);
   const vorrang = c => rank(c) < 4 && istGrueneKarte(c, kind) ? -1 : rank(c);
   /* Der Rang entscheidet vor der Anfangsstunde. Ein vierstündiger Entfall
-     beginnt früher als die grüne Stunde, die in der 3. und 4. hineingezogen
+     beginnt früher als die geänderte Stunde, die in der 3. und 4. hineingezogen
      wurde — nach Startzeit sortiert stünde er deshalb vorn und die Stunde,
      die tatsächlich stattfindet, dahinter. Vorne steht, was stattfindet. */
   const sorted = cards.slice().sort((a,b) =>
@@ -1001,8 +1001,8 @@ function assignParallel(cards){
   groups.forEach(g => {
     const cols = [];
     g.forEach(c => {
-      /* Was nicht grün ist, steht erst rechts neben jeder gleichzeitigen
-         grünen Karte — nie links davon, auch wenn dort eine Spalte frei ist. */
+      /* Was keine Änderung ist, steht erst rechts neben jeder gleichzeitigen
+         Änderungskarte — nie links davon, auch wenn dort eine Spalte frei ist. */
       let ab = 0;
       if (!gruen.has(c)) cols.forEach((col, i) => { if (col.some(o => gruen.has(o) && ueber(o, c))) ab = i + 1; });
       let k = cols.findIndex((col, i) => i >= ab && col.every(o => !ueber(o, c)));
@@ -1471,7 +1471,7 @@ function renderGrid(){
       /* Wochenansicht: nur die erste Karte einer Parallelgruppe zeigen,
          daneben steht eine schmale Zählkarte mit der Anzahl der übrigen.
          Reicht der Platz nicht (Handy), tritt diese Zählkarte an die Stelle
-         der verdrängten Kacheln — rot bei Entfall dahinter, grün bei einer
+         der verdrängten Kacheln — rot bei Entfall dahinter, Petrol bei einer
          Vertretung, sonst weiß. Tagesansicht: alle nebeneinander. */
       /* Verdrängte Karte: Sie tritt hinter die Karte in der ersten Spalte
          zurück. Wo diese aber gar nicht liegt — bei einem vierstündigen
@@ -1545,7 +1545,7 @@ function renderGrid(){
 
       /* Im eigenen Plan gilt: sobald die Stunde von jemand anderem übernommen
          wird — ob schon eingeteilt oder noch offen — läuft sie ohne mich.
-         Dargestellt mit Eckklammern und dem eigenen Kürzel durchgestrichen.
+         Dargestellt mit gepunktetem Rahmen und dem eigenen Kürzel durchgestrichen.
          Das muss feststehen, bevor die Zeilen gebaut werden. */
       /* Im eigenen Plan steht als Beschriftung „Mein Stundenplan" — zum
          Vergleichen taugt nur das Kürzel dahinter. Genau hier fehlte es,
@@ -1553,7 +1553,7 @@ function renderGrid(){
       const myCode = (state.entity.code || state.entity.label || '').toUpperCase();
       const isSup = card.blockType === 'supervision' || !!card._supervision;
       /* Läuft die Stunde ohne mich (bzw. ohne die eigene Klasse)? Dieselbe
-         Regel entscheidet in `assignParallel`, ob die Karte grün ist. */
+         Regel entscheidet in `assignParallel`, ob die Karte als Änderung gilt. */
       card._released = freigegeben(card, kind);
 
       let lines = cardLines(card, kind);
@@ -1588,7 +1588,7 @@ function renderGrid(){
       if (card.blockType === 'gs')           cls.push('card--gs');
       if (card.blockType === 'class-absent') cls.push('card--class-absent');
       /* Offene Vertretung im Plan der ausgefallenen Lehrkraft: die Stunde
-         läuft ohne sie — dargestellt mit Eckklammern statt grüner Fläche. */
+         läuft ohne sie — dargestellt mit gepunktetem Rahmen statt Änderungsrahmen. */
       if (card.highlight)                    cls.push('is-highlight');
 
       const released = card._released;
@@ -1676,9 +1676,9 @@ function renderGrid(){
 
       /* Inhalt einer Kartenzeile: Plaketten, Kopplungs-Kürzel oder Text. */
       /* Offene Vertretung (noch niemand eingeteilt): Die bisherige Lehrkraft
-         steht immer durchgestrichen IN der grünen Plakette — ebenso ein noch
+         steht immer durchgestrichen IN der Plakette — ebenso ein noch
          offener Raum. Nur wo eine Vertretung eingeteilt ist (Kopplung), steht
-         das alte Kürzel ohne Fläche und das neue grün. */
+         das alte Kürzel ohne Fläche und das neue hervorgehoben. */
       const zeileInnen = l => {
         const offenGruen = l.removed && (l.key === 'teacher' || l.key === 'room')
           && card.blockType !== 'cancelled';
@@ -1687,13 +1687,13 @@ function renderGrid(){
           ? l.tokens.map((t, ti) => {
               /* Auf der Kachel trennt immer ein Komma — auch mehrere Lehrkräfte. */
               const komma = ti < l.tokens.length - 1 ? (l.key === 'room' ? '' : l.key === 'teacher' ? '<i class="tok__trenn">,</i> ' : '<i>,</i>') : '';
-              /* Hinzugekommener Wert: grünes Label mit „+“ davor. */
+              /* Hinzugekommener Wert: Änderungsauszeichnung mit „+“ davor. */
               const plusT = plusWert(card, l.key, t.text);
               const kern  = t.state === 'absent'
                 ? `<span class="badge badge--removed${koppOffen(t, l.tokens) ? ' badge--open' : ''}">${esc(t.text)}</span>`
                 : t.state === 'sub'
                 /* Alle Lehrkräfte stehen da: die vertretene durchgestrichen,
-                   daneben die Vertretung als grüne Plakette — auch im Plan
+                   daneben die Vertretung als geänderter Wert — auch im Plan
                    der abwesenden Lehrkraft selbst. */
                 ? (t.for && l.key === 'teacher'
                     ? `<span class="badge badge--removed">${esc(t.for)}</span><i class="tok__trenn">,</i> <span class="badge">${esc(t.text)}</span>`
@@ -1708,19 +1708,18 @@ function renderGrid(){
 
       const body = isHoliday
         ? `<span class="holiday-inner">
-             <span class="holiday-mark" aria-hidden="true">${sym('sun')}</span>
              <span class="card__line">${esc(card.subject || 'Ferien')}</span>
              ${card.holidayName ? `<span class="card__line holiday-name">${esc(card.holidayName)}</span>` : ''}
              ${card.holidayRange ? `<span class="card__line holiday-range">${esc(card.holidayRange)}</span>` : ''}
            </span>`
         /* Bereitschaft der abwesenden Lehrkraft: Das eigene Kürzel steht
-           durchgestrichen im grünen Label — dieselbe Sprache wie bei einer
+           durchgestrichen in der Plakette — dieselbe Sprache wie bei einer
            offenen Vertretung. */
         : (isStandby && card.standbyAbsent)
         ? `<span class="card__line card__line--primary">${esc(card.subject || 'Bereitschaft')}</span>
            ${card.teacherOrig ? `<span class="card__line card__line--badge"><span class="badge badge--removed badge--open">${esc(card.teacherOrig)}</span></span>` : ''}`
         /* Pausenaufsicht: immer nur der Ort; bei einer Vertretung
-           (eingesprungen oder abgegeben) ganz rechts das grüne „…“ – wer
+           (eingesprungen oder abgegeben) ganz rechts das „…“ – wer
            vertritt, steht im Detail. Entfallen: Entfall-Stil, kein Zeichen. */
         : (card.blockType === 'supervision' || card._supervision)
         ? aufsichtInhalt(card)
@@ -3109,7 +3108,6 @@ function renderStart(){
   if (!upcoming.length && ferienVorher.length){
     const f = ferienVorher[0];
     box.innerHTML = `<div class="nextnone nextnone--ferien">
-      ${sym('sun')}
       <b>${esc(f.name)}</b>
       <span>${esc(ferienText(f))}</span>
       ${ferienVorher.slice(1).map(g => `<span>${esc(g.name)} · ${esc(ferienText(g))}</span>`).join('')}</div>`;
@@ -3117,7 +3115,6 @@ function renderStart(){
   }
   if (!upcoming.length){
     box.innerHTML = `<div class="nextnone">
-      ${sym('calendar-off')}
       <b>Kein Unterricht</b>
       <span>In den nächsten 7 Tagen ist kein Unterricht geplant.</span></div>`;
     return;
@@ -3126,7 +3123,7 @@ function renderStart(){
   let last = '';
   /* Ferienzeile vor bzw. nach den Stunden: hellblaues Feld mit Name und Zeitraum. */
   const ferienZeile = f => `<div class="nextrow nextrow--ferien">
-      <span class="nextrow__zeit">${sym('sun')}</span>
+      <span class="nextrow__zeit"></span>
       <span class="nextrow__main"><b>${esc(f.name)}</b><span>${esc(ferienText(f))}</span></span>
     </div>`;
   const tagName = d => {
@@ -3166,18 +3163,15 @@ function renderStart(){
   }));
 }
 
-/* Infos zum Tag oben auf „Heute“: je Nachricht bzw. Veranstaltung eine Karte mit Symbol, Art und Text –
-   mehrere Karten werden waagrecht gewischt. */
+/* Infos zum Tag oben auf „Heute“: je Nachricht bzw. Veranstaltung eine Zeile mit Titel und Text. */
 function newsZeichnen(liste){
   const box = $('#startNews');
   if (!box) return;
   box.hidden = !liste.length;
-  const MEGAFON = sym('megaphone');
-  const GRUPPE = sym('users');
-  box.innerHTML = liste.map(n => `<article class="newscard newscard--${n.kind === 'event' ? 'event' : 'news'}">
-      <header class="newscard__head">${n.kind === 'event' ? GRUPPE : MEGAFON}<b>${esc(n.title || (n.kind === 'event' ? 'Veranstaltung' : 'Nachricht zum Tag'))}</b><span class="newscard__neu">neu</span></header>
-      <div class="newscard__body"><p>${esc(n.text || '')}</p></div>
-    </article>`).join('');
+  box.innerHTML = '<h2 class="gruppe__titel">Hinweise</h2><div class="karte">' + liste.map(n => `<article class="newscard newscard--${n.kind === 'event' ? 'event' : 'news'}">
+      <b>${esc(n.title || (n.kind === 'event' ? 'Veranstaltung' : 'Nachricht zum Tag'))}</b>
+      <p>${esc(n.text || '')}</p>
+    </article>`).join('') + '</div>';
 }
 
 function tile(c){
@@ -3280,7 +3274,6 @@ function msgZeile(m){
     : (m.recipientsText || (m.recipients || []).map(r => r.label).join(', ') || 'Ohne Empfänger');
   const vorschau = String(m.body || '').replace(/\s+/g, ' ').trim();
   return `<button class="msgrow ${m.read === false ? 'is-unread' : ''}" data-msg="${m.id}">
-      <span class="msgrow__ava">${esc(msgBox === 'in' && m.initials ? m.initials : initialen(wer))}</span>
       <span class="msgrow__main">
         <b>${esc(wer)}</b>
         <span>${esc(m.subject || 'Ohne Betreff')}</span>
@@ -3606,7 +3599,6 @@ function toZeigen(){
       `<span class="to__rolle ${String(r.text).length > 34 ? 'is-lang' : ''}">${esc(r.text)}</span>`).join('');
     return `<button type="button" class="to__row" data-i="${i}" role="checkbox" aria-checked="${an}">
         ${radio(an)}
-        <span class="to__ava">${esc(p.initials || initialen(p.label))}</span>
         <span class="to__main"><span class="to__name">${esc(p.label)}</span>${rollen ? `<span class="to__rollen">${rollen}</span>` : ''}</span>
       </button>`;
   };
@@ -3771,7 +3763,6 @@ const deTag = iso => {
   return `${d.getDate()}. ${MONTHS_SHORT[d.getMonth()]}`;
 };
 
-const STAND_ICO = { ok:'circle-check', open:'circle-dashed', no:'circle-x' };
 
 function listeOeffnen(art, extra){
   /* Die Klassenleitung startet mit den eigenen Klassen und den offenen
@@ -3800,7 +3791,7 @@ async function listeZeichnen(){
   /* Sprechtag: eigene Ansicht ohne Filter und Suche. */
   $('#screenList').classList.toggle('is-spt', art === 'sprechtag');
   if (art === 'sprechtag') return sprechtagZeichnen();
-  const titel = { exams:'Meine Termine', absences:'Meine Abwesenheiten',
+  const titel = { exams:'Termine und Prüfungen', absences:'Meine Abwesenheiten',
                   leadabsent:'Abwesenheiten', classlead:'Klassenleitung' }[art] || '';
   $('#lstTitle').textContent = titel;
 
@@ -3834,8 +3825,8 @@ async function listeZeichnen(){
     $('#lstBody').innerHTML = d.items.length ? d.items.map(x => `
       <article class="lstcard">
         <b>${esc(deTag(x.date))}</b>
-        <p class="lstcard__line">${sym('clock', 'lstcard__ico')}${esc(x.timeFrom)} – ${esc(x.timeTo)}</p>
-        <p class="lstcard__line">${sym('info', 'lstcard__ico')}${esc([x.art, x.subject, x.class].filter(Boolean).join(' · '))}</p>
+        <p class="lstcard__line">${esc(x.timeFrom)} – ${esc(x.timeTo)}</p>
+        <p class="lstcard__line">${esc([x.art, x.subject, x.class].filter(Boolean).join(' · '))}</p>
         ${x.room ? `<p class="lstcard__sub">Raum ${esc(x.room)}</p>` : ''}
         ${x.text ? `<p class="lstcard__sub">${esc(x.text)}</p>` : ''}
       </article>`).join('')
@@ -3956,21 +3947,21 @@ function entKarte(a, i){
   return `<div class="ent-row" data-i="${i}">
       ${darf ? `<div class="ent-row__acts ent-row__acts--l">
         <button type="button" class="ent-row__act is-gruen" data-ent="entschuldigt">
-          ${sym('check')}Entschuldigt</button>
+          Entschuldigt</button>
       </div>
       <div class="ent-row__acts ent-row__acts--r">
         <button type="button" class="ent-row__act is-rot" data-ent="unentschuldigt">
-          ${sym('x')}Nicht entsch.</button>
+          Nicht entsch.</button>
         ${zurueck ? `<button type="button" class="ent-row__act is-grau" data-ent="offen">
-          ${sym('undo-2')}Zurück&shy;nehmen</button>` : ''}
+          Zurück&shy;nehmen</button>` : ''}
       </div>` : ''}
       <article class="lstcard ent-row__front" role="button" tabindex="0">
         <b>${esc(a.schueler || '')}</b>
         <p class="lstcard__sub">${esc(a.klasse || '')}${a.fehlstunden ? ` · ${a.fehlstunden} ${a.fehlstunden === 1 ? 'Stunde' : 'Stunden'}` : ''}</p>
-        <p class="lstcard__line">${sym('clock', 'lstcard__ico')}${esc(entZeitraum(a))}</p>
-        ${text ? `<p class="lstcard__line lstcard__line--note">${sym('notebook-text', 'lstcard__ico')}<span>${esc(text)}</span></p>` : ''}
+        <p class="lstcard__line">${esc(entZeitraum(a))}</p>
+        ${text ? `<p class="lstcard__line lstcard__line--note"><span>${esc(text)}</span></p>` : ''}
         <p class="lstcard__line lstcard__stand lstcard__stand--${ton}">
-          ${sym(STAND_ICO[ton] || 'circle-dashed', 'lstcard__ico')}${esc(stand)}${
+          ${esc(stand)}${
           a.lehrerGesamt ? ` <span class="lstcard__sm">· ${a.lehrerBearbeitet || 0}/${a.lehrerGesamt} Lehrkräfte bearbeitet</span>` : ''}</p>
       </article>
     </div>`;
@@ -4115,7 +4106,6 @@ function entZeichnen(){
   $('#entTitel').textContent = 'Entschuldigung';
   $('#entBody').innerHTML = `
     <div class="dabs__who">
-      <span class="dabs__ava">${esc(absInitials(a.schueler || ''))}</span>
       <span class="dabs__id"><b>${esc(a.schueler || '')}</b>${a.klasse ? `<span class="dabs__chip">${esc(a.klasse)}</span>` : ''}</span>
     </div>
     <p class="ent__zeit">${esc(entZeitraum(a))}${a.fehlstunden ? ` · ${a.fehlstunden} ${a.fehlstunden === 1 ? 'Stunde' : 'Stunden'}` : ''}</p>
@@ -4199,12 +4189,12 @@ function karteAbwesenheit(x, mitName){
             ? tagP(x.from) + ' - ' + tagP(x.to)
             : tagP(x.from)))}</b>
       ${mitName ? `<p class="lstcard__sub">${esc(deDate(x.from))}${x.from !== x.to ? ' – ' + esc(deDate(x.to)) : ''}</p>` : ''}
-      <p class="lstcard__line">${sym('clock', 'lstcard__ico')}${zeit}${
+      <p class="lstcard__line">${zeit}${
         x.lessons ? ` <span class="lstcard__sm">(${esc(x.lessons)})</span>` : ''}</p>
-      ${anlass ? `<p class="lstcard__line">${sym('info', 'lstcard__ico')}${esc(anlass)}</p>` : ''}
-      ${String(x.note || '').trim() ? `<p class="lstcard__line lstcard__line--note">${sym('notebook-text', 'lstcard__ico')}<span>${esc(String(x.note).trim())}</span></p>` : ''}
+      ${anlass ? `<p class="lstcard__line">${esc(anlass)}</p>` : ''}
+      ${String(x.note || '').trim() ? `<p class="lstcard__line lstcard__line--note"><span>${esc(String(x.note).trim())}</span></p>` : ''}
       <p class="lstcard__line lstcard__stand lstcard__stand--${x.tone}">
-        ${sym(STAND_ICO[x.tone] || 'circle-dashed', 'lstcard__ico')}${esc(x.label)}${
+        ${esc(x.label)}${
         x.source ? ` <span class="lstcard__sm">· ${esc(x.source)}</span>` : ''}</p>
       ${mitName ? `
         <div class="lstcard__acts">
@@ -4286,19 +4276,12 @@ const sptKind = k => k ? [k.vorname, k.name].filter(Boolean).join(' ') + (k.klas
    auch angekündigte Sprechtage (noch keine Buchung möglich) mit Datum, Ort
    und Anmeldebeginn. Die Karten kommen mit der Startseite (aus /heute) oder
    einzeln über api/sprechtag/start. */
-const SPT_MEGAFON = sym('megaphone');
-let sptIcoNormal = null;
 function sptStartZeigen(karten){
   const row = $('#btnSprechtag');
   if (!row) return;
   spt.karten = Array.isArray(karten) ? karten : [];
   if (!spt.karten.length){ row.hidden = true; return; }
   const k = spt.karten[0];
-  const ico = row.querySelector('.row__ico');
-  if (ico){
-    if (sptIcoNormal === null) sptIcoNormal = ico.innerHTML;
-    ico.innerHTML = sptStatus(k) === 'angekuendigt' ? SPT_MEGAFON : sptIcoNormal;
-  }
   row.classList.toggle('is-angekuendigt', sptStatus(k) === 'angekuendigt');
   $('#sptSub').textContent = sptUntertitel(k);
   row.hidden = false;
@@ -4380,16 +4363,6 @@ const SPT_MONATE = ['Jan.', 'Feb.', 'März', 'Apr.', 'Mai', 'Juni', 'Juli', 'Aug
 const sptTagZahl = d => { const m = /^\d{4}-(\d{2})-(\d{2})/.exec(d || ''); return m ? String(+m[2]) : ''; };
 const sptMonat = d => { const m = /^\d{4}-(\d{2})/.exec(d || ''); return m ? SPT_MONATE[+m[1] - 1] || '' : ''; };
 const sptKuerzel = n => String(n || '').split(/\s+/).filter(Boolean).slice(-2).map(w => w[0]).join('').toUpperCase();
-const SPT_ICO = {
-  uhr:  sym('clock'),
-  raum: sym('door-open'),
-  sperr:sym('lock'),
-  frei: sym('lock-open'),
-  weg:  sym('circle-x'),
-  kal:  sym('calendar'),
-  ort:  sym('map-pin'),
-  video:sym('video')
-};
 
 /* Bestätigung als Aktionsblatt wie in iOS: Gruppe mit Titel, Text,
    optionalem Eingabefeld und den Knöpfen; darunter abgesetzt „Abbrechen“.
@@ -4432,14 +4405,14 @@ function sptKopf(t, raum){
         <span class="spt__kal"><i>${esc(sptMonat(t.datum))}</i><b>${esc(sptTagZahl(t.datum))}</b></span>
         <span class="spt__kopfText">
           <b>${esc(t.name)}</b>
-          <span>${SPT_ICO.uhr}${esc(sptZeiten(t))} Uhr${t.dauer ? ` · je ${esc(t.dauer)} Min.` : ''}</span>
-          ${raum ? `<span>${SPT_ICO.raum}Raum ${esc(raum)}</span>` : ''}
-          ${t.ort ? `<span>${SPT_ICO.ort}${esc(t.ort)}</span>` : ''}
+          <span>${esc(sptZeiten(t))} Uhr${t.dauer ? ` · je ${esc(t.dauer)} Min.` : ''}</span>
+          ${raum ? `<span>Raum ${esc(raum)}</span>` : ''}
+          ${t.ort ? `<span>${esc(t.ort)}</span>` : ''}
         </span>
       </div>
       <span class="spt__phase spt__phase--${esc(t.phase)} spt__phase--${esc(sptStatus(t))}"><i></i>${esc(SPT_STATUS[sptStatus(t)] || SPT_PHASE[t.phase] || t.phase)}</span>
       ${t.abgesagt ? `<p class="spt__hinweis spt__hinweis--rot">Der Sprechtag wurde abgesagt.${t.absageGrund ? ' Grund: ' + esc(t.absageGrund) : ''}</p>`
-        : sptStatus(t) === 'angekuendigt' ? `<p class="spt__hinweis spt__hinweis--ankuendigung">${SPT_MEGAFON}<span>${esc(sptAnkuendigung(t))}</span></p>`
+        : sptStatus(t) === 'angekuendigt' ? `<p class="spt__hinweis spt__hinweis--ankuendigung"><span>${esc(sptAnkuendigung(t))}</span></p>`
         : ''}
       ${!t.abgesagt && t.hinweis ? `<p class="spt__hinweis">${esc(t.hinweis)}</p>` : ''}
     </div>`;
@@ -4517,10 +4490,10 @@ function sptLehrkraftZeichnen(){
       ? [x.gebuchtVon ? 'gebucht von ' + x.gebuchtVon : '', x.bemerkung || ''].filter(Boolean).map(esc).join(' · ')
       : f.status === 'gesperrt' ? 'Nicht buchbar' : 'Noch buchbar';
     const akt = !aktiv ? '' : f.status === 'gebucht'
-      ? `<button class="spt-row__act is-rot" data-absagen="${x ? x.id : ''}" type="button">${SPT_ICO.weg}<span>Absagen</span></button>`
+      ? `<button class="spt-row__act is-rot" data-absagen="${x ? x.id : ''}" type="button"><span>Absagen</span></button>`
       : f.status === 'gesperrt'
-      ? `<button class="spt-row__act is-gruen" data-sperren="0" type="button">${SPT_ICO.frei}<span>Freigeben</span></button>`
-      : `<button class="spt-row__act is-grau" data-sperren="1" type="button">${SPT_ICO.sperr}<span>Sperren</span></button>`;
+      ? `<button class="spt-row__act is-gruen" data-sperren="0" type="button"><span>Freigeben</span></button>`
+      : `<button class="spt-row__act is-grau" data-sperren="1" type="button"><span>Sperren</span></button>`;
     return `<div class="spt-row spt-row--${f.status}" data-beginn="${esc(f.beginn)}">
         ${akt ? `<div class="spt-row__acts">${akt}</div>` : ''}
         <div class="spt-row__front" role="button" tabindex="0">
@@ -4546,7 +4519,7 @@ function sptLehrkraftZeichnen(){
     ${bloecke.length ? bloecke.map(b => `
       <p class="spt__gruppe">${esc(sptZeit(b[0].beginn))} – ${esc(sptZeit(b[b.length - 1].ende))} Uhr<span>${b.length} ${b.length === 1 ? 'Termin' : 'Termine'}</span></p>
       <div class="spt__liste">${b.map(zeile).join('')}</div>`).join('')
-      : `<div class="spt__leerBox">${SPT_ICO.kal}<b>${leer[0]}</b><span>${leer[1]}</span></div>`}
+      : `<div class="spt__leerBox"><b>${leer[0]}</b><span>${leer[1]}</span></div>`}
     ${aktiv && bloecke.length ? `<p class="spt__fuss">Zum Sperren, Freigeben oder Absagen auf ein Zeitfenster tippen oder nach links wischen.${zahl('gesperrt') ? ` ${zahl('gesperrt')} gesperrt.` : ''}</p>` : ''}
   </div>`;
 
@@ -4616,16 +4589,16 @@ function sptElternZeichnen(){
   html.push(`<p class="spt__gruppe">Meine Termine<span>${termine.length || ''}</span></p>`);
   html.push(termine.length ? `<div class="spt__liste">${termine.map(x => `
       <div class="spt-row spt-row--gebucht" data-tid="${x.id}">
-        ${absagbar ? `<div class="spt-row__acts"><button class="spt-row__act is-rot" data-absagen="${x.id}" type="button">${SPT_ICO.weg}<span>Absagen</span></button></div>` : ''}
+        ${absagbar ? `<div class="spt-row__acts"><button class="spt-row__act is-rot" data-absagen="${x.id}" type="button"><span>Absagen</span></button></div>` : ''}
         <div class="spt-row__front" role="button" tabindex="0">
           <span class="spt__zeit"><b>${esc(sptZeit(x.beginn))}</b><small>bis ${esc(sptZeit(x.ende))}</small></span>
           <span class="spt__punkt" aria-hidden="true"></span>
           <span class="spt__was"><b>${esc(x.lehrerName || x.lehrer)}</b><span>${esc([sptKind(x.schueler), x.online ? 'Online' : x.raum ? 'Raum ' + x.raum : ''].filter(Boolean).join(' · '))}</span>${
-            x.online && /^https?:\/\//i.test(x.link || '') ? `<a class="spt__link" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">${SPT_ICO.video}Online-Termin öffnen</a>` : ''}</span>
+            x.online && /^https?:\/\//i.test(x.link || '') ? `<a class="spt__link" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">Online-Termin öffnen</a>` : ''}</span>
           ${absagbar ? sym('chevron-right', 'spt__chev') : ''}
         </div>
       </div>`).join('')}</div>`
-    : `<div class="spt__leerBox spt__leerBox--klein">${SPT_ICO.kal}<b>Noch keine Termine</b><span>${d.buchbar && !nurLesen ? 'Tippen Sie unten auf eine freie Zeit, um einen Termin zu buchen.' : 'Es sind keine Termine gebucht.'}</span></div>`);
+    : `<div class="spt__leerBox spt__leerBox--klein"><b>Noch keine Termine</b><span>${d.buchbar && !nurLesen ? 'Tippen Sie unten auf eine freie Zeit, um einen Termin zu buchen.' : 'Es sind keine Termine gebucht.'}</span></div>`);
 
   (d.kinder || []).forEach(k => {
     html.push(`<p class="spt__gruppe">${esc(sptKind(k))}</p>`);
@@ -4641,7 +4614,7 @@ function sptElternZeichnen(){
         : d.buchbar && !nurLesen ? `<span class="spt__badge spt__badge--frei">${fenster.filter(f => !f.konflikt).length} frei</span>` : '';
       let unten = '';
       if (l.abgesagt) unten = '<p class="spt__karteText">Diese Lehrkraft nimmt am Sprechtag nicht teil.</p>';
-      else if (l.termin) unten = `<p class="spt__karteText spt__karteText--ok">${SPT_ICO.uhr}Termin um ${esc(sptZeit(l.termin.beginn))} Uhr gebucht</p>`;
+      else if (l.termin) unten = `<p class="spt__karteText spt__karteText--ok">Termin um ${esc(sptZeit(l.termin.beginn))} Uhr gebucht</p>`;
       else if (vorschau) unten = fenster.length
         ? `<div class="spt__slots spt__slots--vorschau" aria-label="Vorschau">${fenster.map(f => `<span class="spt__slot is-vorschau">${esc(sptZeit(f.beginn))}</span>`).join('')}</div>`
         : '';
@@ -4652,7 +4625,6 @@ function sptElternZeichnen(){
         : '<p class="spt__karteText">Keine freien Zeiten mehr.</p>';
       html.push(`<div class="spt__karte${l.abgesagt ? ' is-aus' : ''}">
           <div class="spt__karteKopf">
-            <span class="spt__ava">${esc(sptKuerzel(l.name || l.kurz))}</span>
             <span class="spt__was"><b>${esc(l.name || l.kurz)}${l.eingeladen ? ' <i class="spt__einl">eingeladen</i>' : ''}</b>${zusatz ? `<span>${esc(zusatz)}</span>` : ''}</span>
             ${status}
           </div>
@@ -5112,7 +5084,6 @@ function renderPicker(){
   const CHECK = sym('check');
   const TYPE_CHIP = { class:'Klasse', teacher:'Lehrkraft', room:'Raum', student:'Schüler*in', mine:'Mein Stundenplan' };
   /* Zeichen je Planart — dieselben wie in der Übersicht darüber. */
-  const PICK_SYM = { class:'users', teacher:'user-round', room:'door-open', student:'graduation-cap', mine:'calendar-check' };
   const grouped = !q && pickerType && pickerType !== 'mine';
 
   let html = q ? `<div class="pk__count">${list.length} ${list.length === 1 ? 'Treffer' : 'Treffer'}</div>` : '';
@@ -5131,7 +5102,6 @@ function renderPicker(){
     const active = e === state.entity;
     html += `<button class="picker-item ${active ? 'is-active' : ''}"${anker}
       data-type="${e.type}" data-id="${e.id}">
-      <span class="picker-item__ava picker-item__ava--sym">${PICK_SYM[e.type] ? sym(PICK_SYM[e.type]) : esc((e.label || '?').slice(0, 3).toUpperCase())}</span>
       <span class="picker-item__main"><b>${esc(e.label)}</b>
         ${TYPE_CHIP[e.type] && !grouped ? `<span class="picker-item__chip">${esc(TYPE_CHIP[e.type])}</span>` : ''}
         ${e.classTeacher ? `<span class="picker-item__chip picker-item__chip--kl">Klassenlehrkraft: ${esc(e.classTeacher)}</span>` : ''}</span>
@@ -5873,7 +5843,6 @@ function renderDetail(){
                 sub:cbText('notes_teachers') || cbErbe('notes_teachers') });
 
   const zeilen = state.isStudent ? detailFuerSchueler(rows) : rows;
-  const ico = r => `<span class="drow2__ico">${DICO[r.ico] || DICO.note}</span>`;
   const PFEIL = sym('chevron-right', 'drow2__chev');
 
   $('#detailBody').innerHTML = `
@@ -5900,18 +5869,16 @@ function renderDetail(){
     <div class="drows">
       ${zeilen.map(r => r.key === 'onlinelink' ? `
         <div class="drow2 drow2--link" data-key="onlinelink">
-          <span class="drow2__ico">${DICO.link}</span>
           <input type="url" class="dlink" id="dOnlineLink" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false"
                  enterkeyhint="done" placeholder="Link zum Online-Unterricht (https://…)" value="${esc(r.link || '')}">
           ${r.link ? `<a class="dlink__go" href="${esc(r.link)}" target="_blank" rel="noopener noreferrer" aria-label="Link öffnen">
             ${sym('external-link')}</a>` : '<span></span>'}
         </div>` : r.key === 'moved' ? `
         <div class="drow2 drow2--moved" data-key="moved" aria-label="${esc([r.title].concat(r.lines).join(', '))}">
-          <span class="drow2__ico">${DICO.moved}</span>
           <span class="drow2__main"><b>${esc(r.title)}</b>${r.lines.map(t => `<span>${esc(t)}</span>`).join('')}</span>
         </div>` : r.key === 'room' ? `
         <div class="drow2 drow2--room" data-key="room">
-          ${ico(r)}
+          <span class="droom__lab">Raum</span>
           <span class="droom">${r.chips.length ? r.chips.map((x, i) =>
             `<button type="button" class="droom__chip" data-chip="${i}">${esc(x)}</button>`).join('')
             : '<button type="button" class="droom__chip droom__neu">Raum hinzufügen</button>'}</span>
@@ -5920,7 +5887,6 @@ function renderDetail(){
           </button>` : '<span></span>'}
         </div>` : `
         <div class="drow2" data-key="${r.key || ''}" role="button">
-          ${ico(r)}
           <span class="drow2__main"><b>${esc(r.title)}</b>${r.sub ? `<span>${esc(r.sub)}</span>` : ''}</span>
           <span class="drow2__end">
             ${r.toggle !== undefined
@@ -5962,27 +5928,6 @@ function renderDetail(){
   if (state.isStudent) rechteAnwenden();
 }
 
-/* Symbole der Aktionszeilen (Lucide). */
-const DICO = (() => {
-  const z = name => sym(name, 'dico');
-  return {
-    note:          z('notebook-text'),
-    substitution:  z('replace'),
-    lehrstoff:     z('book-open'),
-    notes_students:z('sticky-note'),
-    notes_teachers:z('notebook-text'),
-    online:        z('video'),
-    students:      z('users'),
-    homework:      z('notebook-pen'),
-    classbook:     z('book-marked'),
-    info:          z('info'),
-    room:          z('door-open'),
-    exam:          z('clipboard-list'),
-    /* Verlegung: Pfeil von der Ursprungs- zur Zielstunde */
-    moved:         z('arrow-right-left'),
-    link:          z('link')
-  };
-})();
 
 /* =====================================================================
    Klassenbuch — Vertretungstext, Lehrstoff, Notizen, Anwesenheit
@@ -6090,7 +6035,6 @@ function raumListeZeichnen(){
   const treffer = st.liste.filter(x =>
     (!st.abteilung || x.kind === st.abteilung) &&
     (!q || String(x.code).toLowerCase().includes(q) || String(x.name || '').toLowerCase().includes(q)));
-  const TUER = sym('door-open', 'rzeile__sym');
   const neu = !body.querySelector('.rsuche');
   if (neu){
     body.innerHTML = `
@@ -6113,7 +6057,6 @@ function raumListeZeichnen(){
   $('#raumListe').innerHTML = treffer.length
     ? treffer.map(x => `
         <button type="button" class="rzeile" data-raum="${esc(x.code)}">
-          <span class="rzeile__ico">${TUER}</span>
           <span class="rzeile__main"><b>${esc(x.code)}</b>${x.name && x.name !== x.code ? `<span>${esc(x.name)}</span>` : ''}</span>
         </button>`).join('')
     : cbEmpty(st.liste.length ? 'Kein Raum gefunden' : 'Kein buchbarer Raum frei');
@@ -6591,7 +6534,7 @@ let attList = [], attFilter = 'all';
 /* Mehrfachauswahl für einen gemeinsamen Klassenbucheintrag (Buch-Symbol). */
 let attPick = new Set();
 const ATT_BESEN = sym('check-check');
-/* Erst wenn wirklich kontrolliert wurde, steht das grüne Häkchen da.
+/* Erst wenn wirklich kontrolliert wurde, steht das Häkchen da.
    Beides gehört zu genau einer Stunde — welcher, hält attFor fest. Ohne
    das zeigte die Übersicht die Werte der zuletzt geöffneten Stunde. */
 let attChecked = false, attAbsent = 0, attFor = null;
@@ -6864,7 +6807,6 @@ function drawAttendance(c){
       </div>`
     : (!state.isStudent && !store.get('att.hinweisZu', false)) ? `
       <div class="att__hint" role="note">
-        <span class="att__hint-ico" aria-hidden="true">${DICO.classbook}</span>
         <span class="att__hint-text"><b>Klassenbucheintrag</b>
           <span>Tippen Sie mehrere Schüler*innen an, um einen gemeinsamen Eintrag zu erstellen.</span></span>
         <button type="button" class="att__hint-x" aria-label="Hinweis schließen">
@@ -6966,7 +6908,7 @@ function drawAttendance(c){
 
 /* ---------------------------------------------------------------------
    Wisch-Geste: die Zeile wandert mit dem Finger, aus
-   der frei werdenden Kante wächst eine farbige Pille — links grün mit
+   der frei werdenden Kante wächst eine farbige Pille — links „anwesend“ mit
    Haken (anwesend), rechts rot mit Uhr (abwesend). Über die Schwelle
    hinaus wird der Zustand gesetzt.
    --------------------------------------------------------------------- */
@@ -7142,7 +7084,6 @@ function drawForm(){
   $('#dformBody').innerHTML = f.map(x => {
     if (x.t === 'hint')
       return `<p class="dform__hint">
-                ${sym('info')}
                 ${esc(x.text)}</p>`;
     if (x.t === 'people')
       return `<button class="dform__row dform__row--nav dform__row--people" type="button" data-people>
@@ -7464,10 +7405,8 @@ function ablZeichnen(){
   const datum = x => x.toDate && x.toDate !== x.fromDate ? `${deDate(x.fromDate)} – ${deDate(x.toDate)}` : deDate(x.fromDate);
   $('#dablBody').innerHTML = liste.length ? liste.map(x => `
     <button type="button" class="dabl__item" data-i="${ablItems.indexOf(x)}">
-      ${sym('clock', 'dabl__ico')}
       <span class="dabl__when"><span>${esc(datum(x))}</span><span>${esc(hm(x.fromTime))} - ${esc(hm(x.toTime))}</span></span>
       ${sym('chevron-right', 'dabl__chev')}
-      ${sym('info', 'dabl__ico')}
       <span class="dabl__grund">${esc(x.reasonName || attReasonName(x.reason) || 'Ohne Angabe')}${x.text ? ` <i>· ${esc(x.text)}</i>` : ''}</span>
     </button>`).join('')
     : cbEmpty(q ? 'Keine Treffer' : 'Keine Abwesenheiten');
@@ -7547,7 +7486,6 @@ function drawAbsence(){
       rec.locked ? 'Entschuldigt — geändert wird das dort, wo die Entschuldigung gepflegt ist.'
                  : 'Eintragen ist erst ab Stundenbeginn möglich.'}</p>` : ''}
     <div class="dabs__who">
-      <span class="dabs__ava">${esc(absInitials(rec.name))}</span>
       <span class="dabs__id">
         <b>${esc(rec.name)}</b>
         ${klasse ? `<span class="dabs__chip">${esc(klasse)}</span>` : ''}
@@ -7905,13 +7843,6 @@ function renderDetailMenu(){
   const pop = $('#detailMenuPop');
   if (!c){ pop.hidden = true; return; }
 
-  /* Symbole je Planart: Klasse = Personengruppe, Lehrkraft = Person,
-     Raum = Tür. */
-  const ICO = {
-    class:   'users',
-    teacher: 'user-round',
-    room:    'door-open'
-  };
   const LBL = { class:'Klasse', teacher:'Lehrkraft', room:'Raum' };
 
   /* Sowohl die aktuelle als auch die abwesende (ursprüngliche) Lehrkraft,
@@ -7949,8 +7880,7 @@ function renderDetailMenu(){
   pop.innerHTML = items.length
     ? `<div class="dmenu__head">Im Stundenplan anzeigen</div>`
       + items.map((i, n) => `<button data-n="${n}">
-         ${sym(ICO[i.type] || 'users')}
-         <span>${esc(i.label)}</span>
+         <span>${esc(i.label)}</span><small>${esc(LBL[i.type] || '')}</small>
        </button>`).join('')
     : '<div class="dmenu__empty">Keine weiteren Pläne zu dieser Stunde.</div>';
 
@@ -8320,7 +8250,6 @@ document.addEventListener('visibilitychange', () => {
   const istSchueler = art ? art === 'class' : !!state.isStudent;
   $('#profileRole').textContent = (state.user && state.user.role)
     || (istSchueler ? 'Schüler*in' : 'Lehrkraft');
-  $('#profileAvatar').textContent = (login || name || kurz || '?').trim().charAt(0).toUpperCase();
   renderMessages();
 
   /* Ohne Bootdaten (z. B. beim reinen Vorschaubetrieb) den Endpunkt fragen. */
@@ -8345,7 +8274,6 @@ document.addEventListener('visibilitychange', () => {
 
       $('#profileName').textContent = own.label;
       $('#profileRole').textContent = own.info || '';
-      $('#profileAvatar').textContent = (own.label || '?').slice(0, 2).toUpperCase();
     } catch (e){
       state.source = 'demo';
     }
