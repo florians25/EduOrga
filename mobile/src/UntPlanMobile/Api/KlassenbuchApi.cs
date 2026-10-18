@@ -35,6 +35,9 @@ public static class KlassenbuchApi
 
     private static string Stunde(Schluessel k) => $"datum={Iso(k.Datum)}&stunde={k.Stunde}&unterricht={k.Unterricht}{(k.Lehrer.Length > 0 ? "&lehrer=" + Uri.EscapeDataString(k.Lehrer) : "")}{(k.Einzelstunde is int e ? $"&einzelstunde={e}" : "")}";
 
+    /// <summary>Antwort auf das frühere Umschalten „Findet online statt“ (ältere Apps).</summary>
+    public const string OnlineNurStudio = "„Findet online statt“ wird in UntPlan Studio festgelegt.";
+
     private static IResult Fehler(string meldung, int status = 400) => Results.Json(new { ok = false, error = meldung }, statusCode: status);
 
     private static readonly object LeereInhalte = new
@@ -70,13 +73,15 @@ public static class KlassenbuchApi
                 case "all":
                 {
                     var (inhalte, darf, eintrag, roh) = await InhalteRohAsync(c, web, konto, k);
-                    var online = eintrag.Online;
-                    var onlineLink = online ? Kachelbau.OnlineLinkGueltig(eintrag.OnlineLink) ?? "" : "";
+                    // „Findet online statt“ (nur Anzeige, festgelegt in UntPlan Studio): Stand der Stunde aus UntPlanWeb, ältere Server: Eintrag
+                    var online = roh?["online"] is JsonValue ov && ov.GetValueKind() is JsonValueKind.True or JsonValueKind.False ? ov.GetValue<bool>() : eintrag.Online;
+                    var linkRoh = roh?["onlineLink"] is JsonValue lv && lv.GetValueKind() == JsonValueKind.String ? lv.GetValue<string>() : eintrag.OnlineLink;
+                    var onlineLink = online ? Kachelbau.OnlineLinkGueltig(linkRoh) ?? "" : "";
                     var (schueler, geprueft, _) = konto.Kollegium ? await SchuelerAsync(c, web, konto, k) : (new List<JsonObject>(), false, null);
                     return Results.Json(new
                     {
-                        // canEdit: eigene Stunde (UntPlanWeb erlaubt das Klassenbuch), online: „Findet online statt“
-                        ok = true, canEdit = darf && konto.Kollegium, online, onlineLink, data = inhalte, students = schueler, absentClasses = Array.Empty<string>(),
+                        // canEdit: eigene Stunde (UntPlanWeb erlaubt das Klassenbuch), online: „Findet online statt“ (nur lesend, onlineEditable = false)
+                        ok = true, canEdit = darf && konto.Kollegium, online, onlineLink, onlineEditable = false, data = inhalte, students = schueler, absentClasses = Array.Empty<string>(),
                         dueHomework = await FaelligAsync(c, web, k), @checked = geprueft,
                         absent = schueler.Count(s => s["state"]?.GetValue<string>() == "absent"), reasons = konto.Kollegium ? await GruendeAsync(c, web) : new List<object>(),
                         // Ganzer Block / Einzelstunde (Vertrag Einzelstunde)
@@ -105,21 +110,8 @@ public static class KlassenbuchApi
                 case "remarkTypes":
                     return Results.Json(new { ok = true, types = await ArtenAsync(c, web, k) });
                 case "online":
-                {
-                    // „Findet online statt“ (Schalter in den Stundendetails) → Klassenbuch der Stunde in UntPlanWeb
-                    var an = p["value"] is "1" or "true" or "on";
-                    // Link zum Online-Unterricht (nur wenn mitgeschickt; leer löscht ihn)
-                    string? link = null;
-                    if (p.Hat("link"))
-                    {
-                        link = p["link"].Trim();
-                        if (link.Length > 0 && !link.Contains("://", StringComparison.Ordinal)) link = "https://" + link;
-                        if (link.Length > 0 && Kachelbau.OnlineLinkGueltig(link) is null) return Fehler("Bitte einen gültigen Link (https://…) eingeben.");
-                    }
-                    var antwort = await web.PutAsync(c, "api/app/klassenbuch/online", new { datum = Iso(k.Datum), stunde = k.Stunde, unterricht = k.Unterricht, online = an, onlineLink = link, einzelstunde = k.Einzelstunde });
-                    var gespeichert = antwort?["onlineLink"] is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>() : link;
-                    return Results.Json(new { ok = true, online = an, onlineLink = an ? gespeichert ?? "" : "" });
-                }
+                    // „Findet online statt“ wird in UntPlan Studio festgelegt (Unterricht bzw. einzelne Stunde) – hier nur noch Anzeige
+                    return Fehler(OnlineNurStudio, 409);
                 case "remarkMany":
                 {
                     // Gemeinsamer Klassenbucheintrag für mehrere Schüler*innen (Mehrfachauswahl in der Schülerliste): je Person ein Vermerk

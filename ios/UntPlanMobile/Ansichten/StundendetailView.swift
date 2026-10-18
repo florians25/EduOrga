@@ -53,7 +53,6 @@ struct StundendetailInhalt: View {
     @Environment(\.blattSchliessen) private var blattSchliessen
     @Environment(\.openURL) private var oeffneURL
     @StateObject private var daten: Stundendaten
-    @State private var onlineFehler: String? = nil
     /// Raumliste („Ersetzen“ bzw. „Raum hinzufügen“) aus der Raumzeile
     @State private var raumZiel: RaumZiel? = nil
 
@@ -150,11 +149,6 @@ struct StundendetailInhalt: View {
         }
         .task { await daten.laden(kollegium: kollegium) }
         .environmentObject(daten)
-        .alert("Speichern fehlgeschlagen", isPresented: Binding(get: { onlineFehler != nil }, set: { if !$0 { onlineFehler = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(onlineFehler ?? "")
-        }
     }
 
     // MARK: - Kopf (Datum, Uhrzeit, ⋮)
@@ -590,19 +584,13 @@ struct StundendetailInhalt: View {
 
     // MARK: - Liste
 
-    /// Reihenfolge: „Findet online statt“ ganz oben, Raum, Vertretungstext bzw. Information, Lehrstoff,
+    /// Reihenfolge: Online-Unterricht ganz oben, Raum, Vertretungstext bzw. Information, Lehrstoff,
     /// Schüler*innen, Hausaufgaben, Klassenbucheinträge, Notizen.
     private var zeilen: some View {
         VStack(spacing: 0) {
-            if kollegium && mitUnterricht && !istVeranstaltung {
+            // „Findet online statt“ wird in UntPlan Studio festgelegt – hier für alle nur Anzeige (mit Link zum Beitreten)
+            if !istVeranstaltung && !karte.istEntfall && daten.istOnline {
                 onlineZeile
-                // „Findet online statt“: Link zum Online-Unterricht (Lehrkräfte mit Schreibrecht bearbeiten ihn)
-                if daten.istOnline && daten.darf {
-                    OnlineLinkZeile()
-                }
-            }
-            if !istVeranstaltung && daten.istOnline && !(kollegium && daten.darf) {
-                beitretenZeile
             }
             // Prüfung: eigene Zeile mit dem Fach als Untertitel
             if karte.istPruefung && !karte.istEntfall {
@@ -676,43 +664,24 @@ struct StundendetailInhalt: View {
         .buttonStyle(ZeilenKnopfStil())
     }
 
-    /// „Findet online statt“ – speicherbar für Lehrkräfte mit Schreibrecht (optimistisch, bei Fehler zurück).
-    private var onlineZeile: some View {
-        Detailzeile(titel: "Findet online statt", pfeil: false) {
-            Toggle("Findet online statt", isOn: Binding(
-                get: { daten.istOnline },
-                set: { neu in
-                    Task {
-                        do {
-                            try await daten.onlineSetzen(neu)
-                        } catch {
-                            onlineFehler = zustand.fehlertext(error)
-                        }
-                    }
-                }))
-                .labelsHidden()
-                .tint(Farben.akzent)
-                .disabled(!daten.darf || !daten.geladen)
-        }
-    }
-
-    /// Schüler*innen (und Lehrkräfte ohne Schreibrecht): „Online-Unterricht beitreten“ öffnet den Link; ohne Link nur der Hinweis.
+    /// „Online-Unterricht“ (nur Anzeige): mit Link öffnet die Zeile den Online-Unterricht, ohne Link nur der Hinweis.
     @ViewBuilder
-    private var beitretenZeile: some View {
+    private var onlineZeile: some View {
         if let url = Karte.onlineURL(daten.onlineLink) {
             Button {
                 oeffneURL(url)
             } label: {
-                Detailzeile(titel: "Online-Unterricht beitreten", untertitel: url.host ?? daten.onlineLink) {
+                Detailzeile(titel: "Online-Unterricht", untertitel: url.host ?? daten.onlineLink) {
                     Image(systemName: "arrow.up.forward.app")
                         .font(.system(size: 17, weight: .regular))
                         .foregroundStyle(Farben.akzent)
                 }
             }
             .buttonStyle(ZeilenKnopfStil())
+            .accessibilityLabel("Online-Unterricht beitreten")
             .accessibilityHint("Öffnet den Link zum Online-Unterricht")
         } else {
-            Detailzeile(titel: "Findet online statt", untertitel: "Noch kein Link hinterlegt", pfeil: false)
+            Detailzeile(titel: "Online-Unterricht", untertitel: "Findet online statt", pfeil: false)
         }
     }
 

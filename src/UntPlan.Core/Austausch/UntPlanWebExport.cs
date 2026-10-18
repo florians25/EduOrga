@@ -110,8 +110,11 @@ public static class UntPlanWebExport
                 var vaStunden = tp.Eintraege.Where(e => e.Vertretung is { Art: VertretungsArt.Veranstaltung, VeranstaltungId: int })
                     .GroupBy(e => (Va: e.Vertretung!.VeranstaltungId!.Value, e.Stunde)).Where(g => g.Count() > 1)
                     .ToDictionary(g => g.Key, g => g.OrderBy(e => e.Vertretung!.Id).ToList());
-                foreach (var e in tp.Eintraege.Where(e => !nurAenderungen || e.Status != TagesStatus.Regulaer).OrderBy(e => e.Stunde))
+                // „Findet online statt“ je Stunde (Unterricht bzw. Abweichung am Datum); bei „nur Änderungen“ auch Stunden mit abweichendem Online-Stand
+                var online = tp.Eintraege.ToDictionary(e => e, e => OnlineUnterricht.Am(d, tp, e));
+                foreach (var e in tp.Eintraege.Where(e => !nurAenderungen || e.Status != TagesStatus.Regulaer || online[e].Abweichend).OrderBy(e => e.Stunde))
                 {
+                    var on = online[e];
                     if (e.Vertretung is { Art: VertretungsArt.Veranstaltung, VeranstaltungId: int gva } && vaStunden.TryGetValue((gva, e.Stunde), out var gruppe))
                     {
                         if (!ReferenceEquals(gruppe[0], e)) continue;
@@ -143,6 +146,7 @@ public static class UntPlanWebExport
                                 && ((kv.UnterrichtId.HasValue && kl.UnterrichtId == kv.UnterrichtId) || kl.KlassenIds.Intersect(kv.KlassenIds).Any()))) ? kid : null,
                         // Veranstaltungsstunde bzw. wegen der Veranstaltung entfallener/freigesetzter Unterricht
                         Veranstaltung = e.Vertretung is { VeranstaltungId: int vid } vv && (vv.Art == VertretungsArt.Veranstaltung || vv.Quelle == VertretungsQuelle.Veranstaltung) ? vid : null,
+                        Online = on.Online, OnlineLink = on.Online ? on.Link : "",
                     };
                     // Prüfung ersetzt den Unterricht ihrer Aufsicht (eine Zeile im Desktop): im Paket wie gewohnt als entfallener
                     // Unterricht (mit Klausur-Id) und Prüfungsstunde – UntPlanWeb fasst beides zu einer Karte zusammen
@@ -239,7 +243,7 @@ public static class UntPlanWebExport
                 Unterricht = (p.Unterrichte ?? new()).Where(u => o.IgnoriertenUnterricht || !u.Ignorieren).Select(u => new WebUnterricht(u.Id, u.Wochenstunden,
                     u.Zeilen.Select(z => new WebZeile(K(ElementTyp.Fach, z.FachId), K(ElementTyp.Lehrer, z.LehrerId), Kl(z.KlassenIds), z.Zeilentext)).ToList(),
                     u.Periodizitaet switch { Periodizitaet.AWoche => "A", Periodizitaet.BWoche => "B", _ => u.UGruppeId is int g ? d.UGruppen.FirstOrDefault(x => x.Id == g)?.Wochen ?? "" : "" },
-                    u.Kursname, u.Text)).ToList(),
+                    u.Kursname, u.Text) { Online = OnlineUnterricht.Regel(u).Online, OnlineLink = OnlineUnterricht.Regel(u).Link }).ToList(),
                 Stundenplan = p.Plan.Select(s => new WebPlanstunde(s.UnterrichtId, s.Tag, s.Stunde, s.Raeume.Where(r => r.HasValue).Select(r => ix.KRaum(r)).ToList())).ToList(),
             }).ToList(),
             Tage = tage,

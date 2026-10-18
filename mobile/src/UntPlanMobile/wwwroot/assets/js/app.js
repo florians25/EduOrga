@@ -5784,15 +5784,13 @@ function renderDetail(){
   const voll = eigen && !off;
   const rows = [];
 
-  if (voll){
-    rows.push({ ico:'online', title:'Findet online statt', key:'online', toggle:!!cbOnline });
-    /* Mit eingeschaltetem Schalter: Feld für den Link zur Videokonferenz. */
-    if (cbOnline) rows.push({ key:'onlinelink', link: cbOnlineLink });
-  }
-  /* Schüler*innen (und alle anderen): Online-Unterricht mit Link beitreten. */
+  /* „Findet online statt“ legt UntPlan Studio fest – hier nur Anzeige:
+     mit Link „Online-Unterricht beitreten“, sonst der Hinweis. */
   const beitreten = (cbOnline || c.online) ? (cbOnlineLink || c.onlineLink || '') : '';
-  if (beitreten && !voll && !off)
+  if (beitreten && !off)
     rows.push({ ico:'online', title:'Online-Unterricht beitreten', key:'join', sub: linkKurz(beitreten), link: beitreten });
+  else if (onlineD && !state.isStudent)
+    rows.push({ ico:'online', title:'Online-Unterricht', key:'onlineinfo', sub:'Findet online statt' });
   if (voll && c.date >= iso(new Date())) rows.push({ ico:'room', key:'room', chips:werteListe(c.room) });
   /* Prüfung: eigene Zeile mit dem Fach. */
   if (c.blockType === 'klausur')
@@ -5893,7 +5891,7 @@ function renderDetail(){
               ? `<span class="dtoggle ${r.toggle ? 'is-on' : ''}" role="switch" aria-checked="${r.toggle ? 'true' : 'false'}"></span>`
               : `${r.done ? sym('circle-check', 'drow2__done') : ''}
                  ${r.count !== undefined ? `<span class="drow2__count ${r.tone === 'red' ? 'is-red' : ''} ${r.checked ? 'is-checked' : ''}">${r.count}</span>` : ''}
-                 ${PFEIL}`}
+                 ${r.key === 'onlineinfo' ? '' : PFEIL}`}
           </span>
         </div>`).join('')}
     </div>`;
@@ -5902,14 +5900,7 @@ function renderDetail(){
   $$('#detailBody .drow2').forEach(el => {
     const key = el.dataset.key;
     if (!key || key === 'room' || key === 'moved') return;
-    if (key === 'online'){
-      el.addEventListener('click', () => onlineUmschalten(c));
-      return;
-    }
-    if (key === 'onlinelink'){
-      onlineLinkBinden(c, el);
-      return;
-    }
+    if (key === 'onlineinfo') return;
     if (key === 'join'){
       el.addEventListener('click', () => {
         const l = (zeilen.find(r => r.key === 'join') || {}).link;
@@ -6154,53 +6145,12 @@ function linkKurz(l){
   try { const u = new URL(l); return u.host + (u.pathname.length > 1 ? '/…' : ''); } catch (e){ return String(l || ''); }
 }
 
-/* Feld für den Link: gespeichert wird beim Verlassen und mit der Eingabetaste. */
-function onlineLinkBinden(c, row){
-  const inp = row.querySelector('input');
-  if (!inp) return;
-  let alt = inp.value.trim();
-  const sichern = async () => {
-    let wert = inp.value.trim();
-    if (wert === alt) return;
-    if (wert && !/^[a-z][a-z0-9+.-]*:\/\//i.test(wert)) wert = 'https://' + wert;
-    if (wert && !/^https?:\/\/[^\s]+\.[^\s]+/i.test(wert)){ toast('Bitte einen gültigen Link (https://…) eingeben'); return; }
-    alt = wert;
-    try {
-      const r = await cbPost(c, { action:'online', value:'1', link: wert });
-      cbOnlineLink = r.onlineLink !== undefined ? r.onlineLink : wert;
-      [c, state.detail, state.detailFull].filter(Boolean).forEach(x => { x.online = true; x.onlineLink = cbOnlineLink || null; });
-      toast(cbOnlineLink ? 'Link gespeichert' : 'Link entfernt');
-      renderDetail();
-      wochenVergessen(); planNachladen();
-    } catch (e){ toast('Nicht gespeichert: ' + e.message); }
-  };
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); inp.blur(); } });
-  inp.addEventListener('blur', sichern);
-  inp.addEventListener('click', e => e.stopPropagation());
-}
-
 /* Eigene Stunde: Das sagt UntPlanWeb beim Laden. Bis dahin gilt als eigen,
    was die eigene Lehrkraft trägt – so stehen die Zeilen gleich da. */
 function cbDarf(c){
   if (cbEdit !== null) return cbEdit;
   const ich = String(state.ownCode || '').toUpperCase();
   return !!ich && werteListe(c.teacher).some(t => t.toUpperCase() === ich);
-}
-
-/* „Findet online statt“ – Schalter in den Stundendetails. */
-async function onlineUmschalten(c){
-  const neu = !cbOnline;
-  cbOnline = neu;
-  renderDetail();
-  /* Eingeschaltet ohne Link: gleich ins Feld für den Link. */
-  if (neu && !cbOnlineLink) setTimeout(() => { const f = $('#dOnlineLink'); if (f) f.focus(); }, 60);
-  try {
-    const r = await cbPost(c, { action:'online', value: neu ? '1' : '0' });
-    if (r && r.onlineLink !== undefined) cbOnlineLink = r.onlineLink || '';
-    [c, state.detail, state.detailFull].filter(Boolean).forEach(x => { x.online = neu || null; if (!neu) x.onlineLink = null; });
-    wochenVergessen(); planNachladen();
-  }
-  catch (e){ cbOnline = !neu; renderDetail(); toast('Nicht gespeichert: ' + e.message); }
 }
 
 function cbParams(c, extra){

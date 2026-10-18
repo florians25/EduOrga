@@ -79,6 +79,13 @@ public sealed class Unterricht
     public decimal? WerteFaktor { get; set; }
     public Zeitwuensche Zeitwuensche { get; set; } = new();
     public string Kommentar { get; set; } = "";
+    /// <summary>
+    /// Findet regelmäßig online statt (in UntPlan Studio festgelegt, an UntPlanWeb übertragen). Einzelne Stunden können an einem
+    /// Datum abweichen (<see cref="OnlineStunde"/>). Ältere Dateien: false.
+    /// </summary>
+    public bool Online { get; set; }
+    /// <summary>Link zum Online-Unterricht (Videokonferenz, absolute http-/https-Adresse) oder leer.</summary>
+    public string OnlineLink { get; set; } = "";
 
     [JsonIgnore] public IEnumerable<int> LehrerIds => Zeilen.Where(z => z.LehrerId.HasValue).Select(z => z.LehrerId!.Value).Distinct();
     [JsonIgnore] public IEnumerable<int> KlassenIds => Zeilen.SelectMany(z => z.KlassenIds).Distinct();
@@ -114,7 +121,7 @@ public sealed class Unterricht
         Block = Block, Schuelergruppe = Schuelergruppe, Text = Text, Statistik = Statistik, Fix = Fix, Ignorieren = Ignorieren,
         MehrmalsProTag = MehrmalsProTag, KeineVertretung = KeineVertretung, Band = Band, Kursname = Kursname, MaxSchueler = MaxSchueler, VonDatum = VonDatum,
         BisDatum = BisDatum, Periodizitaet = Periodizitaet, WerteFaktor = WerteFaktor, Zeitwuensche = Zeitwuensche.Kopie(),
-        UGruppeId = UGruppeId, BetreuungLehrerId = BetreuungLehrerId, Kommentar = Kommentar,
+        UGruppeId = UGruppeId, BetreuungLehrerId = BetreuungLehrerId, Kommentar = Kommentar, Online = Online, OnlineLink = OnlineLink,
     };
 
     public bool GiltAm(DateOnly datum, int schulwoche)

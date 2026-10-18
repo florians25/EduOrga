@@ -197,8 +197,7 @@ public sealed partial class Klassenbuchdienst
                 NotizSchueler = string.Join("\n", e.Where(x => x.NotizSchueler.Length > 0).Select(x => NotizMitStunde(k, x, x.NotizSchueler)).Distinct()),
                 NotizLehrer = kollegium ? string.Join("\n", e.Where(x => x.Notiz.Length > 0).Select(x => NotizMitStunde(k, x, x.Notiz)).Distinct()) : "",
                 HausaufgabeFaellig = hf,
-                Online = e.Any(x => x.Online),
-                OnlineLink = e.Where(x => x.Online).Select(x => x.OnlineLink).FirstOrDefault(x => x.Length > 0) ?? "",
+                // „Findet online statt“ stammt aus dem Paket (UntPlan Studio) und steht bereits auf der Karte
             };
         }).ToList();
     }

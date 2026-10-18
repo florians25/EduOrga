@@ -8,8 +8,8 @@ namespace UntPlanWeb.Dienste;
 /// <summary>
 /// Klassenbuch | Einstellungen (Administration): Hauptseite (Stundendetails), Allgemein, Erinnerung an offene Stunden und
 /// Unterricht (Prüfungen). Gespeichert als JSON in der Tabelle einstellungen; fehlende Werte erhalten ihren Standard.
-/// Zahlen ohne Wert (null) bedeuten „unbegrenzt“ – Standard für alle Eingabegrenzen, damit Lehrstoff, Notizen und
-/// „Findet online statt“ ohne zeitliche Begrenzung bleiben.
+/// Zahlen ohne Wert (null) bedeuten „unbegrenzt“ – Standard für alle Eingabegrenzen, damit Lehrstoff und Notizen
+/// ohne zeitliche Begrenzung bleiben.
 /// </summary>
 public sealed record KlassenbuchEinstellungen
 {

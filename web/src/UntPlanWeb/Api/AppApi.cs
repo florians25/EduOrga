@@ -37,6 +37,7 @@ public static class AppApi
     public sealed record VerlaengernDaten(DateOnly Datum, int Stunde, int Unterricht, List<int>? SchuelerIds, string? Bis, int? Einzelstunde = null);
     public sealed record KlassenbuchDaten(DateOnly Datum, int Stunde, int Unterricht, string? Thema, string? Hausaufgabe, DateOnly? Faellig, string? Notiz, string? NotizSchueler = null,
         string? Lehrform = null, string? Anmerkung = null, string? Lehrer = null, bool? Online = null, string? OnlineLink = null, int? Einzelstunde = null);
+    // Online/OnlineLink: nur noch zur Abwärtskompatibilität älterer Apps angenommen und ignoriert – „Findet online statt“ legt UntPlan Studio fest.
 
     private static Benutzer Ich(HttpContext c) => c.Ich() ?? throw new NichtAngemeldetException();
 
@@ -412,16 +413,24 @@ public static class AppApi
 
         // Ohne einzelstunde: Eintrag des ganzen Blocks (wie bisher). Mit einzelstunde (Stunde eines Doppel-/Blocks): Eintrag nur dieser Stunde,
         // dazu immer blockEintrag (gilt für alle Stunden), block, einzelstunden (Auswahlmenü) und einzelEintraege.
-        api.MapGet("/klassenbuch/stunde", (DateOnly datum, int stunde, int unterricht, string? lehrer, int? einzelstunde, HttpContext c, Paketdienst p, Klassenbuchdienst kb) =>
+        api.MapGet("/klassenbuch/stunde", (DateOnly datum, int stunde, int unterricht, string? lehrer, int? einzelstunde, HttpContext c, Paketdienst p, Klassenbuchdienst kb, Plandienst plan) =>
         {
             var b = Ich(c);
             var s = Paket(p);
-            Klassenbucheintrag Sichtbar(Klassenbucheintrag e) => b.Kollegium ? e : e with { Notiz = "", OnlineLink = e.Online ? e.OnlineLink : "" };
+            var karte = kb.Blockkarte(b, s, datum, stunde, unterricht, lehrer);
+            // „Findet online statt“ aus dem Paket (UntPlan Studio): Einzeleintrag = nur diese Stunde; Blockeintrag = Block (bei Abfrage einer
+            // Einzelstunde nur, wenn jede Stunde des Blocks online ist – „ganzer Block“)
+            Klassenbucheintrag MitOnline(Klassenbucheintrag e)
+            {
+                var block = e.Einzelstunde is null && karte != null;
+                var (on, link) = plan.OnlineAm(s, datum, unterricht, block ? karte!.Von : e.Stunde, block ? karte!.Bis : e.Stunde, alle: block && einzelstunde.HasValue);
+                return e with { Online = on, OnlineLink = on ? link : "" };
+            }
+            Klassenbucheintrag Sichtbar(Klassenbucheintrag e) => MitOnline(b.Kollegium ? e : e with { Notiz = "" });
             // die nächstliegende Stunde (Blockbeginn) zuerst – bei Kopplungen mit Einzel- und Doppelstunden nicht den Eintrag einer anderen Lehrkraft
             var blockEintrag = kb.Zeitraum(datum, datum).Where(e => e.Unterricht == unterricht && stunde >= e.Stunde && (lehrer is null || e.Lehrer.Equals(lehrer, StringComparison.OrdinalIgnoreCase)) &&
                                                                          (b.Kollegium || e.Klassen.Any(b.HatKlasse)))
                 .OrderByDescending(e => e.Stunde).FirstOrDefault() is { } be ? Sichtbar(be) : null;
-            var karte = kb.Blockkarte(b, s, datum, stunde, unterricht, lehrer);
             var istBlock = karte != null && karte.Von < karte.Bis;
             int? einzel = istBlock && einzelstunde is int n ? n : null;
             if (einzel is int en && (en < karte!.Von || en > karte.Bis)) throw new ArgumentException("Die Einzelstunde gehört nicht zu diesem Block.");
@@ -433,22 +442,25 @@ public static class AppApi
                 ? Enumerable.Range(karte!.Von, karte.Bis - karte.Von + 1).Select(nr => Klassenbuchdienst.Einzeln(s, karte, nr)).Select(k => new
                 {
                     stunde = k.Von, beginn = k.Beginn, ende = k.Ende,
-                    eintrag = einzelEintraege.Any(e => e.Stunde == k.Von && (e.Thema.Length > 0 || e.Notiz.Length > 0 || e.NotizSchueler.Length > 0 || e.Online || e.Anwesenheit != null)),
+                    eintrag = einzelEintraege.Any(e => e.Stunde == k.Von && (e.Thema.Length > 0 || e.Notiz.Length > 0 || e.NotizSchueler.Length > 0 || e.Anwesenheit != null)),
                 }).ToList()
                 : new();
+            var (online, onlineLink) = karte is null ? plan.OnlineAm(s, datum, unterricht, einzel ?? stunde, einzel ?? stunde)
+                : plan.OnlineAm(s, datum, unterricht, einzel ?? karte.Von, einzel ?? karte.Bis);
             return Results.Json(new
             {
                 eintrag, darf = b.Kollegium && kb.DarfSchreiben(b, s, datum, einzel ?? stunde, unterricht),
+                // „Findet online statt“ (nur Anzeige; festgelegt in UntPlan Studio) – Link nur, wenn die Stunde online stattfindet
+                online, onlineLink = online ? onlineLink : "", onlineBearbeitbar = false,
                 einzelstunde = einzel, blockEintrag, block = karte is null ? null : Klassenbuchdienst.Block(s, karte), einzelstunden, einzelEintraege,
             });
         });
         // Lehrstoff, Hausaufgabe, Notizen (Lehrkräfte / Schüler*innen), Lehrform, Anmerkung einer Stunde speichern – PUT und POST (Apps).
         // Nicht mitgeschickte Felder (null) bleiben unverändert, z. B. { datum, stunde, unterricht, notizSchueler } ändert nur die Schülernotiz.
-        IResult StundeSpeichern(KlassenbuchDaten d, HttpContext c, Paketdienst p, Klassenbuchdienst kb, Klassenbuchverwaltung kv)
+        IResult StundeSpeichern(KlassenbuchDaten d, HttpContext c, Paketdienst p, Klassenbuchdienst kb, Plandienst plan)
         {
             var b = Ich(c);
             if (!b.Kollegium) throw new UnauthorizedAccessException("Nur Lehrkräfte können das Klassenbuch bearbeiten.");
-            if (d.OnlineLink is not null) Klassenbuchverwaltung.OnlineLinkPruefen(d.OnlineLink);   // vor dem Speichern prüfen
             var eigener = b.LehrerKuerzel ?? d.Lehrer;
             // Einzelstunde nur bei Blöcken (sonst gilt der Eintrag ohnehin genau dieser Stunde)
             int? einzel = d.Einzelstunde is int en && kb.Blockkarte(b, Paket(p), d.Datum, d.Stunde, d.Unterricht, d.Lehrer) is { } bk && bk.Von < bk.Bis ? en : null;
@@ -456,16 +468,19 @@ public static class AppApi
                 ? kb.EinzelEintraege(d.Datum, d.Unterricht, x, x, eigener).FirstOrDefault()
                 : kb.Zeitraum(d.Datum, d.Datum).Where(e => e.Unterricht == d.Unterricht && d.Stunde >= e.Stunde && (eigener is null || e.Lehrer.Equals(eigener, StringComparison.OrdinalIgnoreCase)))
                     .OrderByDescending(e => e.Stunde).FirstOrDefault();
+            // nur „Findet online statt“ geschickt (ältere Apps): nichts speichern – kein leerer Klassenbucheintrag
+            if (d.Thema is null && d.Hausaufgabe is null && d.Faellig is null && d.Notiz is null && d.NotizSchueler is null && d.Lehrform is null && d.Anmerkung is null)
+            {
+                var (o, l) = plan.OnlineAm(Paket(p), d.Datum, d.Unterricht, einzel ?? d.Stunde, einzel ?? d.Stunde);
+                return alt is null ? Results.Json(new { ok = true, online = o, onlineLink = o ? l : "" }) : Results.Json(alt with { Online = o, OnlineLink = o ? l : "" });
+            }
             DateOnly? faellig = d.Hausaufgabe is null && d.Faellig is null ? (DateOnly.TryParse(alt?.Faellig, out var f) ? f : null) : d.Faellig;
             var e = kb.Speichern(b, Paket(p), d.Datum, d.Stunde, d.Unterricht, d.Thema ?? alt?.Thema ?? "", d.Hausaufgabe ?? alt?.Hausaufgabe ?? "", faellig,
                 d.Notiz ?? alt?.Notiz ?? "", d.NotizSchueler, d.Lehrform, d.Anmerkung, d.Lehrer, einzel);
-            // „Findet online statt“ und Link zum Online-Unterricht (nur wenn mitgeschickt; Link: http/https, "" entfernt ihn)
-            if (d.Online is not null || d.OnlineLink is not null)
-            {
-                kv.OnlineSetzen(b, Paket(p), d.Datum, d.Stunde, d.Unterricht, d.Online ?? alt?.Online ?? false, d.OnlineLink, einzel);
-                e = kb.Holen(DateOnly.Parse(e.Datum), e.SpeicherStunde, e.Unterricht, e.Lehrer) ?? e;
-            }
-            return Results.Json(e);
+            // d.Online/d.OnlineLink (ältere Apps) werden ignoriert: „Findet online statt“ legt UntPlan Studio fest. Die Antwort enthält den
+            // Stand aus dem Paket, damit ältere Oberflächen den tatsächlichen Wert anzeigen.
+            var (on, link) = plan.OnlineAm(Paket(p), d.Datum, d.Unterricht, e.Stunde, e.Stunde);
+            return Results.Json(e with { Online = on, OnlineLink = on ? link : "" });
         }
         api.MapPut("/klassenbuch/stunde", StundeSpeichern);
         api.MapPost("/klassenbuch/stunde", StundeSpeichern);

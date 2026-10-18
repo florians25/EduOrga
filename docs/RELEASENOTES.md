@@ -33,6 +33,19 @@ UntPlan – Stunden- und Vertretungsplanung für Schulen in NRW.
 - UntPlan Web, die Web-App UntPlan Mobile und die iOS-App sind nach dem neuen Designsystem gestaltet.
 - Mobile und iOS mit der Navigation *Heute · Plan · Postfach · Mehr*.
 
+### „Findet online statt“ in UntPlan Studio
+- Online-Unterricht wird jetzt in **UntPlan Studio** festgelegt: regelmäßig je Unterricht (Spalten *online* und *Online-Link*
+  bzw. Online-Einstellung des Unterrichts) und abweichend für einzelne Stunden an einem Datum in der Vertretungsplanung
+  (auch für die ganze Doppel-/Blockstunde; „findet heute nicht online statt“ ebenso möglich). Links nur mit `http://` bzw. `https://`.
+  Änderungen lassen sich wie alle anderen rückgängig machen und stehen in der Schuldatei (ältere Dateien: nicht online).
+- Der Export an UntPlan Web überträgt „online“ und den Link je Unterricht und je Stunde. UntPlan Web, UntPlan Mobile und
+  die iOS-App zeigen den Online-Unterricht nur noch an (Symbol auf der Karte, „Online-Unterricht“ mit Link zum Beitreten);
+  Schüler*innen sehen den Link nur, wenn die Stunde online stattfindet.
+- Der Schalter „Findet online statt“ im Klassenbuch von UntPlan Web, Mobile und iOS entfällt. Ältere Apps dürfen die
+  bisherigen Felder weiter senden; sie werden ignoriert. **Migration:** bisher im Klassenbuch gespeicherte Online-Angaben
+  (Spalten `online`/`online_link` der Tabelle `klassenbuch`) werden nicht übernommen und nicht mehr angezeigt – Online-Unterricht
+  bitte in UntPlan Studio neu festlegen und an UntPlan Web übertragen.
+
 ### Bezeichnungen
 - Neutrale, eigenständige Bezeichnungen in Oberfläche und Dokumentation; Dateiformate anderer Programme (z. B. GPU)
   werden nur als Import-/Exportformat genannt.

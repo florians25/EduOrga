@@ -141,6 +141,8 @@ public static class Stammdaten
         foreach (var p in d.Perioden) p.Plan.RemoveAll(x => x.UnterrichtId == unterrichtId);
         foreach (var s in d.Schueler) s.KurswahlIds.Remove(unterrichtId);
         d.Vertretungen.RemoveAll(v => v.UnterrichtId == unterrichtId && Vertretungsplanung.Vertretungen.IstAbgeleitet(v));
+        // „Findet online statt“ einzelner Stunden: nur, wenn der Unterricht in keiner Periode mehr vorkommt
+        if (!d.AlleUnterrichte.Any(u => u.Id == unterrichtId)) d.OnlineStunden.RemoveAll(o => o.UnterrichtId == unterrichtId);
     }
 
     /// <summary>Elemente in Anzeigereihenfolge (Lehrer und Fächer alphabetisch, sonst Eingabereihenfolge).</summary>

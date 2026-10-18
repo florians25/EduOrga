@@ -224,6 +224,8 @@ public sealed class Schuldatei
     /// <summary>Klassenbuch je Unterricht (Lehrstoff, Hausaufgaben) aus UntPlanWeb, Import „Kurse“ – nur lesend.</summary>
     public List<KlassenbuchEintrag> Klassenbuch { get; set; } = new();
     public List<Vertretung> Vertretungen { get; set; } = new();
+    /// <summary>„Findet online statt“ abweichend vom Unterricht für einzelne Stunden an einem Datum (ältere Dateien: leer).</summary>
+    public List<OnlineStunde> OnlineStunden { get; set; } = new();
     /// <summary>Nur ältere Dateien (Pausenaufsichten vor der Umstellung auf Perioden).</summary>
     [JsonPropertyName("Pausenaufsichten")] public List<Pausenaufsicht>? PausenaufsichtenAlt { get; set; }
     public List<Aufsichtsbedarf> Aufsichtsbedarf { get; set; } = new();

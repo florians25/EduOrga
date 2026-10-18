@@ -94,6 +94,45 @@ public sealed class Testserver : IAsyncDisposable
         return c.PutAsync($"/api/v1/schulen/{SchulId}/untplanweb", new StringContent(paket.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
     }
 
+    /// <summary>
+    /// „Findet online statt“ wie aus UntPlan Studio im Paket setzen: tagesaktuelle Stunden (WebStunde) eines Unterrichts am Datum,
+    /// Stunden von–bis (null = alle Stunden des Tages).
+    /// </summary>
+    public static JsonObject OnlineStunden(JsonObject paket, string datum, int unterricht, bool online, string link = "", int? von = null, int? bis = null)
+    {
+        var tag = paket["tage"]!.AsArray().First(t => t!["datum"]!.GetValue<string>() == datum)!;
+        foreach (var st in tag["stunden"]!.AsArray().Select(x => x!.AsObject()))
+        {
+            if (st["unterricht"]?.GetValue<int>() != unterricht) continue;
+            var h = st["stunde"]!.GetValue<int>();
+            if ((von is int v && h < v) || (bis is int b && h > b)) continue;
+            st["online"] = online;
+            st["onlineLink"] = link;
+        }
+        return paket;
+    }
+
+    /// <summary>„Findet online statt“ eines Unterrichts (regelmäßig, WebUnterricht) in allen Perioden des Pakets setzen.</summary>
+    public static JsonObject OnlineUnterricht(JsonObject paket, int unterricht, bool online, string link = "")
+    {
+        foreach (var u in paket["perioden"]!.AsArray().SelectMany(p => p!["unterricht"]!.AsArray()).Select(x => x!.AsObject()).Where(x => x["id"]!.GetValue<int>() == unterricht))
+        {
+            u["online"] = online;
+            u["onlineLink"] = link;
+        }
+        return paket;
+    }
+
+    private int _revision = 1;
+
+    /// <summary>Paket mit der nächsten Revision senden (z. B. nach <see cref="OnlineStunden"/>) und auf Erfolg prüfen.</summary>
+    public async Task NeuesPaketAsync(JsonObject paket)
+    {
+        paket["revision"] = ++_revision;
+        var r = await PaketSendenAsync(paket);
+        Assert.True(r.IsSuccessStatusCode, $"Paket: HTTP {(int)r.StatusCode} {await r.Content.ReadAsStringAsync()}");
+    }
+
     public HttpClient SyncClient()
     {
         var c = Client(false);

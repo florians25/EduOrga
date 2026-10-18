@@ -158,7 +158,16 @@ public sealed record WebPeriode
     public List<WebPlanstunde> Stundenplan { get; init; } = new();
 }
 
-public sealed record WebUnterricht(int Id, int Wochenstunden, List<WebZeile> Zeilen, string Wochen, string Kurs, string Text);
+public sealed record WebUnterricht(int Id, int Wochenstunden, List<WebZeile> Zeilen, string Wochen, string Kurs, string Text)
+{
+    /// <summary>
+    /// Findet regelmäßig online statt (in UntPlan Studio festgelegt). Gilt für den Regelplan; die tagesaktuellen Stunden
+    /// (<see cref="WebStunde.Online"/>) berücksichtigen zusätzlich Abweichungen einzelner Stunden. Ältere Pakete: false.
+    /// </summary>
+    public bool Online { get; init; }
+    /// <summary>Link zum Online-Unterricht (http/https), nur bei <see cref="Online"/>; sonst leer. Ältere Pakete: leer.</summary>
+    public string OnlineLink { get; init; } = "";
+}
 public sealed record WebZeile(string Fach, string Lehrer, List<string> Klassen, string Gruppe);
 public sealed record WebPlanstunde(int Unterricht, int Tag, int Stunde, List<string> Raeume);
 
@@ -209,6 +218,14 @@ public sealed record WebStunde
     /// Veranstaltung entfallene Unterricht. Ältere Pakete: null (und je teilnehmender Lehrkraft eine eigene Stunde).
     /// </summary>
     public int? Veranstaltung { get; init; }
+    /// <summary>
+    /// Die Stunde findet an diesem Datum online statt (Einstellung des Unterrichts bzw. Abweichung der einzelnen Stunde, beides in
+    /// UntPlan Studio festgelegt). Bei „nur Änderungen“ (<see cref="WebTag.NurAenderungen"/>) stehen Stunden, deren Online-Stand vom
+    /// Unterricht abweicht, als geänderte Stunden im Tag. Ältere Pakete: false.
+    /// </summary>
+    public bool Online { get; init; }
+    /// <summary>Link zum Online-Unterricht (http/https), nur bei <see cref="Online"/>; sonst leer. Ältere Pakete: leer.</summary>
+    public string OnlineLink { get; init; } = "";
 }
 
 public sealed record WebVertretung

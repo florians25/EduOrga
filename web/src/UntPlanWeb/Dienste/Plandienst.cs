@@ -39,7 +39,7 @@ public sealed record Karte(
     public string NotizLehrer { get; init; } = "";
     /// <summary>Zu dieser Stunde ist eine Hausaufgabe fällig (Hausaufgaben-Symbol auf der Karte).</summary>
     public bool HausaufgabeFaellig { get; init; }
-    /// <summary>Die Stunde findet online statt (Klassenbuch, Schalter „Findet online statt“).</summary>
+    /// <summary>Die Stunde findet online statt (in UntPlan Studio festgelegt, aus dem Paket: Unterricht bzw. Abweichung der Stunde).</summary>
     public bool Online { get; init; }
     /// <summary>Link zum Online-Unterricht (Videokonferenz, http/https), nur bei <see cref="Online"/>; sonst leer.</summary>
     public string OnlineLink { get; init; } = "";
@@ -189,7 +189,13 @@ public sealed record Tageszeile(string Kurz, string Name, List<Karte> Karten);
 
 /// <summary>Rohdaten einer Stunde (aus dem tagesaktuellen Plan, dem Regelplan oder einer Vormerkung).</summary>
 public sealed record Rohstunde(int Stunde, int? Unterricht, string Fach, IReadOnlyList<string> Klassen, IReadOnlyList<string> Lehrer, IReadOnlyList<string> Raeume,
-    string Status, int? Vertretung, string Text, string Art = "", IReadOnlyList<string>? LehrerAlt = null, bool Bereitschaft = false, int? Klausur = null);
+    string Status, int? Vertretung, string Text, string Art = "", IReadOnlyList<string>? LehrerAlt = null, bool Bereitschaft = false, int? Klausur = null)
+{
+    /// <summary>Findet online statt (Paket: <see cref="WebStunde.Online"/> bzw. <see cref="WebUnterricht.Online"/>).</summary>
+    public bool Online { get; init; }
+    /// <summary>Link zum Online-Unterricht (nur bei <see cref="Online"/>).</summary>
+    public string OnlineLink { get; init; } = "";
+}
 
 public static class Elementtyp
 {
@@ -275,7 +281,10 @@ public sealed class Plandienst
 
     public List<Rohstunde> Rohstunden(Stand s, DateOnly d)
     {
-        Rohstunde Aus(WebStunde x) => new(x.Stunde, x.Unterricht, x.Fach, KlassenOderKopplung(s, x.Unterricht, x.Klassen), x.Lehrer, x.Raeume, x.Status, x.Vertretung, x.Text, "", x.LehrerAlt, x.Bereitschaft, x.Klausur);
+        Rohstunde Aus(WebStunde x) => new(x.Stunde, x.Unterricht, x.Fach, KlassenOderKopplung(s, x.Unterricht, x.Klassen), x.Lehrer, x.Raeume, x.Status, x.Vertretung, x.Text, "", x.LehrerAlt, x.Bereitschaft, x.Klausur)
+        {
+            Online = x.Online, OnlineLink = x.Online ? x.OnlineLink ?? "" : "",
+        };
         if (s.Tage.TryGetValue(Iso(d), out var tag) && !tag.NurAenderungen)
             return tag.Unterrichtstag ? tag.Stunden.Select(Aus).ToList() : new List<Rohstunde>();
         if (tag is { NurAenderungen: true })
@@ -330,6 +339,20 @@ public sealed class Plandienst
         return treffer;
     }
 
+    /// <summary>
+    /// „Findet online statt“ eines Unterrichts in den Stunden von–bis am Datum (aus dem Paket: tagesaktuelle Stunde bzw. Unterricht;
+    /// in UntPlan Studio festgelegt). Standard: online, sobald eine Stunde online stattfindet; <paramref name="alle"/>: nur, wenn jede
+    /// stattfindende Stunde des Bereichs online ist (z. B. „ganzer Block“). Link der ersten Online-Stunde mit Link.
+    /// </summary>
+    public (bool Online, string Link) OnlineAm(Stand s, DateOnly d, int unterricht, int von, int bis, bool alle = false)
+    {
+        var stunden = Rohstunden(s, d).Where(r => r.Unterricht == unterricht && r.Stunde >= von && r.Stunde <= Math.Max(von, bis) && r.Status is not ("entfall" or "vorgemerkt"))
+            .GroupBy(r => r.Stunde).ToList();
+        var online = stunden.Where(g => g.Any(r => r.Online)).ToList();
+        var ja = alle ? stunden.Count > 0 && online.Count == stunden.Count : online.Count > 0;
+        return ja ? (true, online.SelectMany(g => g).Where(r => r.Online).Select(r => r.OnlineLink).FirstOrDefault(x => x.Length > 0) ?? "") : (false, "");
+    }
+
     /// <summary>Räume eines Unterrichts laut Stundenplan (vor Raumänderungen) – damit ein entfernter ursprünglicher Raum wieder gewählt werden kann.</summary>
     public List<string> UrspruenglicheRaeume(Stand s, DateOnly d, int unterricht, int von, int bis) =>
         RegelStunden(s, d).Where(r => r.Unterricht == unterricht && r.Stunde >= von && r.Stunde <= bis)
@@ -355,7 +378,10 @@ public sealed class Plandienst
             {
                 var z = u.Zeilen[i];
                 var raeume = ps.Raeume.Count == u.Zeilen.Count ? new List<string> { ps.Raeume[i] } : ps.Raeume;
-                res.Add(new Rohstunde(ps.Stunde, u.Id, z.Fach, KlassenOderKopplung(s, u.Id, z.Klassen), z.Lehrer.Length > 0 ? new List<string> { z.Lehrer } : new List<string>(), raeume, "regulaer", null, ""));
+                res.Add(new Rohstunde(ps.Stunde, u.Id, z.Fach, KlassenOderKopplung(s, u.Id, z.Klassen), z.Lehrer.Length > 0 ? new List<string> { z.Lehrer } : new List<string>(), raeume, "regulaer", null, "")
+                {
+                    Online = u.Online, OnlineLink = u.Online ? u.OnlineLink ?? "" : "",
+                });
             }
         }
         // Klausuren aus den Terminen (im tagesaktuellen Plan sind sie bereits enthalten)
@@ -797,6 +823,8 @@ public sealed class Plandienst
                 Vertretung = liste.Select(x => x.Vertretung).FirstOrDefault(x => x.HasValue),
                 VertretungOffen = liste.Any(x => x.VertretungOffen),
                 Mitklassen = Vereinigen(liste.SelectMany(x => x.Mitklassen)).Where(w => !liste.Any(x => x.Klassen.Any(kl => Ci.Equals(kl.K, w.K.Length > 0 ? w.K : w.Alt)))).ToList(),
+                Online = liste.Any(x => x.Online),
+                OnlineLink = liste.Where(x => x.Online).Select(x => x.OnlineLink).FirstOrDefault(x => x.Length > 0) ?? "",
             });
         }
         return res;
@@ -975,6 +1003,9 @@ public sealed class Plandienst
             LehrerAbwesend = status == "abwesend" && typ != Elementtyp.Raum && (typ == Elementtyp.Lehrer || bereitschaft),
             VertretungOffen = lehrerOffen,
             VerlegungsZeile = verlegungsZeile,
+            // „Findet online statt“ aus dem Paket (in UntPlan Studio festgelegt) – nicht bei Entfall
+            Online = r.Online && status != "entfall",
+            OnlineLink = r.Online && status != "entfall" ? r.OnlineLink : "",
         };
         // zusätzliche Unterrichtsstunde (nicht die Zielstunde einer Verlegung): alle beteiligten Lehrkräfte als „+“-Label
         if (zusatz && karte.Verlegung is null) karte = karte with { Lehrer = ZusatzLehrer(karte.Lehrer) };
@@ -1065,6 +1096,9 @@ public sealed class Plandienst
                     offen = offen with
                     {
                         Bis = k.Bis, Ende = k.Ende,
+                        // Block: online, sobald eine Stunde online stattfindet (Link der ersten Stunde mit Link)
+                        Online = offen.Online || k.Online,
+                        OnlineLink = offen.Online && offen.OnlineLink.Length > 0 ? offen.OnlineLink : k.Online ? k.OnlineLink : offen.OnlineLink,
                         VerlegungVon = offen.Verlegung == "von" && offen.VerlegungVon is { } ev ? ev with { BisStunde = k.Bis, Ende = k.Ende } : VerlegungVerbinden(offen.VerlegungVon, k.VerlegungVon),
                         VerlegungNach = offen.Verlegung == "nach" && offen.VerlegungNach is { } en ? en with { BisStunde = k.Bis, Ende = k.Ende } : VerlegungVerbinden(offen.VerlegungNach, k.VerlegungNach),
                     };

@@ -198,6 +198,7 @@ public static class VertretungPlan
                 });
             }
         }
+        var on = OnlineUnterricht.Am(d, tp, e);
         var block = 1;
         if (uid is int ub)
         {
@@ -215,6 +216,8 @@ public static class VertretungPlan
             gekoppelt = e.Unterricht is { Zeilen.Count: > 1 },
             aufhebbar,
             block,
+            // „Findet online statt“ (Unterricht bzw. Abweichung der Stunde am Datum)
+            online = on.Online, onlineLink = on.Link, onlineAbweichend = uid is int uo && OnlineUnterricht.Abweichung(d, tp.Datum, e.Stunde, uo) != null,
         };
     }
 

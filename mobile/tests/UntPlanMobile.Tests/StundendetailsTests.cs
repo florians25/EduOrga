@@ -117,9 +117,25 @@ public class StundendetailsTests
         var leer = await sne.PostAsync("/api/classbook", new FormUrlEncodedContent(Mit(schluessel, ("action", "remarkMany"), ("student_ids", ""), ("text", "x"))));
         Assert.Equal(HttpStatusCode.BadRequest, leer.StatusCode);
 
-        // Findet online statt
-        await Umgebung.SendenAsync(sne, "/api/classbook", Mit(schluessel, ("action", "online"), ("value", "1")));
-        Assert.True((await Umgebung.HolenAsync(sne, Abfrage("all")))["online"]!.GetValue<bool>());
+        // „Findet online statt“: in der App nicht mehr umschaltbar (UntPlan Studio legt es fest) …
+        var umschalten = await sne.PostAsync("/api/classbook", new FormUrlEncodedContent(Mit(schluessel, ("action", "online"), ("value", "1"))));
+        Assert.Equal(HttpStatusCode.Conflict, umschalten.StatusCode);
+        alles = await Umgebung.HolenAsync(sne, Abfrage("all"));
+        Assert.False(alles["online"]!.GetValue<bool>());
+        Assert.False(alles["onlineEditable"]!.GetValue<bool>());
+        // … sondern kommt mit dem Paket (Stunde am Datum online, mit Link) und wird angezeigt
+        await u.PaketAnpassenAsync(p =>
+        {
+            foreach (var st in p["tage"]!.AsArray().Single(t => t!["datum"]!.GetValue<string>() == "2026-10-14")!["stunden"]!.AsArray().Select(x => x!.AsObject())
+                         .Where(x => x["unterricht"]?.GetValue<int>() == 107 && x["stunde"]!.GetValue<int>() == 1))
+            {
+                st["online"] = true;
+                st["onlineLink"] = "https://video.example.org/5a";
+            }
+        });
+        alles = await Umgebung.HolenAsync(sne, Abfrage("all"));
+        Assert.True(alles["online"]!.GetValue<bool>());
+        Assert.Equal("https://video.example.org/5a", alles["onlineLink"]!.GetValue<string>());
 
         // Fremde Stunde: kein Klassenbuch zum Bearbeiten
         var fremd = await Umgebung.HolenAsync(sne, "/api/classbook?action=all&date=2026-10-14&lesson=2&class=5a&unterricht=106");

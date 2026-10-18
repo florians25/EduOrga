@@ -9,7 +9,7 @@ namespace UntPlanWeb.Tests;
 /// <summary>
 /// Planfenster je Rolle (Wochen zurück bzw. voraus, null = unbegrenzt): Speichern in den Rollen, Sitzung/Profil der App-API,
 /// gesperrte Wochen im Wochenplan (gesperrt, sperrhinweis, leere Karten) und in der Tagesübersicht; Klassenbucheinträge
-/// (Lehrstoff, Notizen, „Findet online statt“) ohne zeitliche Begrenzung.
+/// (Lehrstoff, Notizen; „Findet online statt“ aus dem Paket) ohne zeitliche Begrenzung.
 /// </summary>
 public class PlanfensterTests
 {
@@ -166,24 +166,14 @@ public class PlanfensterTests
         Assert.Equal("Ausblick", e["thema"]!.GetValue<string>());
         Assert.Equal("Taschenrechner mitbringen", e["notizSchueler"]!.GetValue<string>());
 
-        // „Findet online statt“ (App-API POST und Web PUT /klassenbuch/online) – ohne vorhandenen Eintrag an einem anderen Tag
-        await Testserver.JsonAsync(await c.PostAsJsonAsync("/api/app/klassenbuch/stunde",
-            new { datum = iso, stunde = k.Von, unterricht = k.Unterricht, online = true, onlineLink = "https://video.example.org/zukunft" }));
+        // „Findet online statt“ (regelmäßig, in UntPlan Studio festgelegt) gilt auch weit im Voraus – Karte und Stundendetails
+        await s.NeuesPaketAsync(Testserver.OnlineUnterricht(Testserver.Beispielpaket(), k.Unterricht!.Value, true, "https://video.example.org/zukunft"));
         var g = await Testserver.HolenAsync(c, $"/api/app/klassenbuch/stunde?datum={iso}&stunde={k.Von}&unterricht={k.Unterricht}");
         Assert.True(g["eintrag"]!["online"]!.GetValue<bool>());
         Assert.Equal("https://video.example.org/zukunft", g["eintrag"]!["onlineLink"]!.GetValue<string>());
         Assert.True(g["darf"]!.GetValue<bool>());
-
-        var spaeter = Enumerable.Range(1, 60).Select(i => tag.AddDays(i))
-            .FirstOrDefault(d => !plan.Frei(stand, d).Frei && plan.Karten(stand, d, Elementtyp.Lehrer, lehrer).Any(x => x.Unterricht == k.Unterricht && x.Status == "regulaer"));
-        if (spaeter != default)
-        {
-            var k2 = plan.Karten(stand, spaeter, Elementtyp.Lehrer, lehrer).First(x => x.Unterricht == k.Unterricht && x.Status == "regulaer");
-            await Testserver.JsonAsync(await c.PutAsJsonAsync("/api/app/klassenbuch/online",
-                new { datum = Plandienst.Iso(spaeter), stunde = k2.Von, unterricht = k2.Unterricht, online = true }));
-            var karte = (await Testserver.HolenAsync(c, $"/api/app/plan?typ=lehrer&element={lehrer}&datum={Plandienst.Iso(spaeter)}"))["karten"]!.AsArray()
-                .First(x => x!["datum"]!.GetValue<string>() == Plandienst.Iso(spaeter) && x["unterricht"]?.GetValue<int>() == k2.Unterricht)!;
-            Assert.True(karte["online"]!.GetValue<bool>());
-        }
+        var karte = (await Testserver.HolenAsync(c, $"/api/app/plan?typ=lehrer&element={lehrer}&datum={iso}"))["karten"]!.AsArray()
+            .First(x => x!["datum"]!.GetValue<string>() == iso && x["unterricht"]?.GetValue<int>() == k.Unterricht)!;
+        Assert.True(karte["online"]!.GetValue<bool>());
     }
 }

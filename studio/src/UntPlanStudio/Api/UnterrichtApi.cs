@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using UntPlan.Core;
 using UntPlan.Core.Model;
+using UntPlan.Core.Vertretungsplanung;
 using UntPlanStudio.Dienste;
 using UntPlanStudio.Grundlagen;
 
@@ -10,6 +11,8 @@ public sealed record SpaltenInfo(string Schluessel, string Titel, int Breite, bo
 public sealed record UnterrichtZeile(int Id, int Nvpl, int Wst, string[][] Zeilen);
 public sealed record UnterrichtAenderung(string Feld, string? Wert, int Zeile = 0);
 public sealed record NeuerUnterricht(string? Sicht, int? Element, Dictionary<string, string?>? Werte);
+/// <summary>„Findet online statt“ eines Unterrichts: OnlineLink null = unverändert, "" = entfernen (sonst http/https).</summary>
+public sealed record UnterrichtOnline(bool Online, string? OnlineLink = null);
 
 /// <summary>
 /// Unterricht der aktiven Periode: Tabelle je Klasse/Lehrkraft/Fach bzw. alle, Werte ändern, Anlegen, Kopplungszeilen,
@@ -65,6 +68,17 @@ public sealed class UnterrichtApi : IStudioModul
                 if (ae.Zeile < 0 || ae.Zeile >= u.Zeilen.Count) throw StudioFehler.Ungueltig("Ungültige Kopplungszeile.");
                 s.Set(d, u, u.Zeilen[ae.Zeile], ae.Wert ?? "");
             }, doc => Zeile(Suchen(doc.Daten, uid), Unterrichtsspalten.Fuer(doc), doc.Index)));
+
+        // „Findet online statt“ (regelmäßig) – Abweichungen einzelner Stunden: /vertretung/online
+        g.MapGet("/online", (Arbeitsdokument a) => a.LesenAsync(doc =>
+            doc.Daten.Unterrichte.Where(u => u.Online).OrderBy(u => u.Id).Select(u => OnlineDto(u, doc.Index)).ToList()));
+
+        g.MapGet("/{uid:int}/online", (Arbeitsdokument a, int uid) => a.LesenAsync(doc => OnlineDto(Suchen(doc.Daten, uid), doc.Index)));
+
+        g.MapPut("/{uid:int}/online", (Arbeitsdokument a, int uid, UnterrichtOnline o, ClaimsPrincipal p) =>
+            a.AendernAsync(p.Benutzername(), o.Online ? $"U-Nr. {uid}: findet online statt" : $"U-Nr. {uid}: findet nicht online statt", AenderungsArt.Unterricht,
+                d => OnlineUnterricht.Setzen(Suchen(d, uid), o.Online, o.OnlineLink),
+                doc => OnlineDto(Suchen(doc.Daten, uid), doc.Index)));
 
         g.MapPost("", (Arbeitsdokument a, NeuerUnterricht n, ClaimsPrincipal p) =>
         {
@@ -126,6 +140,13 @@ public sealed class UnterrichtApi : IStudioModul
             }, _ => new { geloescht = ids.Count });
         });
     }
+
+    /// <summary>„Findet online statt“ eines Unterrichts für die Oberfläche (onlineLink auch bei online = false, damit er erhalten bleibt).</summary>
+    public static object OnlineDto(Unterricht u, DatenIndex ix) => new
+    {
+        unterricht = u.Id, online = u.Online, onlineLink = u.OnlineLink ?? "",
+        fach = ix.KFach(u.HauptfachId), lehrer = string.Join(",", u.LehrerIds.Select(ix.KLehrer)), klassen = ix.KKlassen(u.KlassenIds.ToList()),
+    };
 
     /// <summary>Neuer Unterricht (1 Wochenstunde), vorbelegt mit dem Element der Sicht –.</summary>
     private static Unterricht Anlegen(Schuldatei d, ElementTyp? sicht, int? element)

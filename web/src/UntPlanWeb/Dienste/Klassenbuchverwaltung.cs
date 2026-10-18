@@ -357,26 +357,8 @@ public sealed class Klassenbuchverwaltung
 
     // ------------------------------------------------------------------------------------------ Findet online statt
 
-    /// <summary>
-    /// „Findet online statt“ setzen und optional den Link zum Online-Unterricht (Videokonferenz). link = null lässt den gespeicherten
-    /// Link unverändert, "" entfernt ihn. Nur Lehrkräfte der Stunde sowie Schulleitung/Administration (Klassenbuch aller Stunden).
-    /// </summary>
-    public void OnlineSetzen(Benutzer b, Stand s, DateOnly d, int stunde, int unterricht, bool online, string? link = null, int? einzelstunde = null)
-    {
-        if (!_kb.DarfSchreiben(b, s, d, stunde, unterricht)) throw new UnauthorizedAccessException("Diese Stunde gehört nicht zu Ihrem Unterricht.");
-        var url = link is null ? null : OnlineLinkPruefen(link);
-        // Einzelstunde eines Blocks: eigener Eintrag nur dieser Stunde
-        var block = einzelstunde.HasValue ? _kb.Blockkarte(b, s, d, stunde, unterricht) : null;
-        var einzeln = block != null && block.Von < block.Bis;
-        if (einzeln && (einzelstunde < block!.Von || einzelstunde > block.Bis)) throw new ArgumentException("Die Einzelstunde gehört nicht zu diesem Block.");
-        var e = einzeln
-            ? _kb.EinzelEintraege(d, unterricht, einzelstunde!.Value, einzelstunde.Value, b.LehrerKuerzel).FirstOrDefault()
-            : _kb.Zeitraum(d, d).Where(x => x.Unterricht == unterricht && stunde >= x.Stunde && (b.LehrerKuerzel is null || Ci.Equals(x.Lehrer, b.LehrerKuerzel)))
-                .OrderByDescending(x => x.Stunde).FirstOrDefault();
-        var id = e?.Id ?? _kb.Speichern(b, s, d, stunde, unterricht, "", "", null, "", einzelstunde: einzeln ? einzelstunde : null).Id;
-        if (url is null) _db.Ausfuehren("UPDATE klassenbuch SET online = @o WHERE id = @i", Db.P("@o", online), Db.P("@i", id));
-        else _db.Ausfuehren("UPDATE klassenbuch SET online = @o, online_link = @l WHERE id = @i", Db.P("@o", online), Db.P("@l", url), Db.P("@i", id));
-    }
+    // „Findet online statt“ wird seit UntPlan Studio dort festgelegt (Unterricht bzw. einzelne Stunde) und kommt mit dem Paket;
+    // UntPlanWeb zeigt es nur noch an (Plandienst.OnlineAm, Karte.Online). Die Prüfung des Links bleibt für ältere Aufrufer erhalten.
 
     /// <summary>Link zum Online-Unterricht prüfen: leer oder eine absolute http-/https-Adresse (höchstens 1000 Zeichen).</summary>
     public static string OnlineLinkPruefen(string link)

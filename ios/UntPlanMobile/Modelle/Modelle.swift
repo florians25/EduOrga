@@ -213,7 +213,7 @@ struct Karte: Decodable, Identifiable, Sendable {
     var zusaetzlich: Bool
     var abwesendeKlassen: [String]
     var abwesendText: String
-    /// Stunde findet online statt (Klassenbuch) – Kachel mit Videosymbol.
+    /// Stunde findet online statt (in UntPlan Studio festgelegt) – Kachel mit Videosymbol.
     var online: Bool
     /// Link zum Online-Unterricht (leer = keiner; tolerant aus onlineLink/onlineUrl gelesen).
     var onlineLink: String
@@ -1178,8 +1178,12 @@ struct KlassenbuchStunde: Decodable, Sendable {
     var einzelstunden: [Einzelstundeninfo]
     /// Alle Einzelstunden-Einträge des Blocks
     var einzelEintraege: [Klassenbucheintrag]
+    /// „Findet online statt“ des gewählten Bereichs (nur Anzeige, in UntPlan Studio festgelegt; nil = älterer Server)
+    var online: Bool?
+    /// Link zum Online-Unterricht (nur bei online)
+    var onlineLink: String?
 
-    enum CodingKeys: String, CodingKey { case eintrag, darf, einzelstunde, blockEintrag, block, einzelstunden, einzelEintraege }
+    enum CodingKeys: String, CodingKey { case eintrag, darf, einzelstunde, blockEintrag, block, einzelstunden, einzelEintraege, online, onlineLink }
 
     init(eintrag: Klassenbucheintrag?, darf: Bool) {
         self.eintrag = eintrag
@@ -1189,6 +1193,8 @@ struct KlassenbuchStunde: Decodable, Sendable {
         block = nil
         einzelstunden = []
         einzelEintraege = []
+        online = nil
+        onlineLink = nil
     }
 
     init(from decoder: Decoder) throws {
@@ -1200,6 +1206,8 @@ struct KlassenbuchStunde: Decodable, Sendable {
         block = c.optional(.block)
         einzelstunden = c.liste(.einzelstunden)
         einzelEintraege = c.liste(.einzelEintraege)
+        online = c.optional(.online)
+        onlineLink = c.textOderNil(.onlineLink)
     }
 }
 
@@ -1653,9 +1661,7 @@ struct KlassenbuchDaten: Encodable, Sendable {
     var lehrform: String?
     var anmerkung: String?
     var lehrer: String?
-    var online: Bool? = nil
-    /// Link zum Online-Unterricht (nil = unverändert, "" = entfernen)
-    var onlineLink: String? = nil
+    // „Findet online statt“ wird nicht mehr gesendet – es wird in UntPlan Studio festgelegt
     /// Nur diese Stunde eines Blocks (nil = ganzer Block)
     var einzelstunde: Int? = nil
 }

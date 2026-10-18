@@ -100,7 +100,8 @@ public class EinzelstundenTests
 
         await Testserver.JsonAsync(await lk.PutAsJsonAsync("/api/app/klassenbuch/stunde", new { datum = b.Datum, stunde = b.Von, unterricht = b.Unterricht, notizSchueler = "Zirkel mitbringen", einzelstunde = b.Bis }));
         await Testserver.JsonAsync(await lk.PutAsJsonAsync("/api/app/klassenbuch/stunde", new { datum = b.Datum, stunde = b.Von, unterricht = b.Unterricht, notizSchueler = "Heft abgeben" }));
-        Assert.Equal(HttpStatusCode.OK, (await lk.PutAsJsonAsync("/api/app/klassenbuch/online", new { datum = b.Datum, stunde = b.Von, unterricht = b.Unterricht, online = true, onlineLink = "https://video.example/raum", einzelstunde = b.Bis })).StatusCode);
+        // „Findet online statt“ nur für die letzte Stunde des Blocks (in UntPlan Studio festgelegt, Paket)
+        await s.NeuesPaketAsync(Testserver.OnlineStunden(Testserver.Beispielpaket(), b.Datum, b.Unterricht, true, "https://video.example/raum", b.Bis, b.Bis));
 
         var plan = await Testserver.HolenAsync(lk, $"/api/app/plan?typ=klasse&element={b.Klasse}&datum={b.Datum}");
         var karte = plan["karten"]!.AsArray().Select(k => k!).Single(k => k["datum"]!.GetValue<string>() == b.Datum && k["unterricht"]?.GetValue<int>() == b.Unterricht && k["von"]!.GetValue<int>() == b.Von);
@@ -109,10 +110,15 @@ public class EinzelstundenTests
         Assert.Contains($"{b.Bis}. Std.: Zirkel mitbringen", notiz);
         Assert.True(karte["online"]!.GetValue<bool>());
 
-        // der Blockeintrag bleibt offline; die Einzelstunde ist online
+        // ganzer Block: online, weil eine Stunde online stattfindet (wie die Karte)
         var block = await Testserver.HolenAsync(lk, $"/api/app/klassenbuch/stunde?{Q(b)}");
-        Assert.False(block["eintrag"]!["online"]!.GetValue<bool>());
+        Assert.True(block["eintrag"]!["online"]!.GetValue<bool>());
+        Assert.True(block["online"]!.GetValue<bool>());
+        // Einzelstunde: der Block ist nicht als Ganzes online („Ganzer Block“ nur, wenn jede Stunde online ist), die letzte Stunde schon
         var letzte = await Testserver.HolenAsync(lk, $"/api/app/klassenbuch/stunde?{Q(b, $"&einzelstunde={b.Bis}")}");
+        Assert.False(letzte["blockEintrag"]!["online"]!.GetValue<bool>());
+        Assert.True(letzte["online"]!.GetValue<bool>());
+        Assert.False((await Testserver.HolenAsync(lk, $"/api/app/klassenbuch/stunde?{Q(b, $"&einzelstunde={b.Von}")}"))["online"]!.GetValue<bool>());
         Assert.True(letzte["eintrag"]!["online"]!.GetValue<bool>());
         Assert.Equal("https://video.example/raum", letzte["eintrag"]!["onlineLink"]!.GetValue<string>());
         Assert.Equal("Zirkel mitbringen", letzte["eintrag"]!["notizSchueler"]!.GetValue<string>());

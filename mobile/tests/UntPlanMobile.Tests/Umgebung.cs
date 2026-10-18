@@ -107,6 +107,20 @@ public sealed class Umgebung : IAsyncDisposable
     }
 
     /// <summary>Client für UntPlanMobile mit eigenem Cookie-Speicher (wie ein Browser).</summary>
+    private int _revision = 1;
+
+    /// <summary>Beispielpaket verändert erneut an UntPlanWeb senden (nächste Revision), z. B. „Findet online statt“ aus UntPlan Studio.</summary>
+    public async Task PaketAnpassenAsync(Action<JsonObject> anpassen)
+    {
+        var paket = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(Wurzel(), "web", "demo", "beispiel-paket.json")))!.AsObject();
+        anpassen(paket);
+        paket["revision"] = ++_revision;
+        using var sync = new HttpClient { BaseAddress = WebAdresse };
+        sync.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ApiSchluessel);
+        var r = await sync.PutAsync($"/api/v1/schulen/{SchulId}/untplanweb", new StringContent(paket.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+    }
+
     public HttpClient Client()
     {
         var handler = new HttpClientHandler { UseCookies = true, CookieContainer = new CookieContainer(), AllowAutoRedirect = false };

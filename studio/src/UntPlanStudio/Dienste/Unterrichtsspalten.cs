@@ -112,6 +112,9 @@ public static class Unterrichtsspalten
             new("Bis", "bis", 76, false, false, (u, _) => u.BisDatum.HasValue ? Format.Datum(u.BisDatum.Value) : "",
                 (d, u, z, t) => u.BisDatum = t.Trim().Length == 0 ? null : DateOnly.Parse(t, CultureInfo.GetCultureInfo("de-DE")), "Mehrwochen"),
             new("Statistik", "Statistik", 60, false, false, (u, _) => u.Statistik, (d, u, z, t) => u.Statistik = t, "Diverses"),
+            // „Findet online statt“ (regelmäßig; Abweichungen einzelner Stunden in der Vertretungsplanung) – wird an UntPlanWeb übertragen
+            new("Online", "online", 46, false, false, (u, _) => B(u.Online), (d, u, z, t) => u.Online = Wahr(t), "Online", true),
+            new("OnlineLink", "Online-Link", 140, false, false, (u, _) => u.OnlineLink, (d, u, z, t) => u.OnlineLink = UntPlan.Core.Vertretungsplanung.OnlineUnterricht.LinkPruefen(t), "Online"),
         };
     }
 

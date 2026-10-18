@@ -137,7 +137,7 @@ Im Einzelnen:
       Symbolen „auf Tagesbeginn“/„bis Stundenende“, Hausaufgaben (Liste mit *Neue Hausaufgabe*, Fälligkeit – vorbelegt eine Woche
       später –, Bemerkung, erledigt, löschen; fällige Hausaufgaben der Stunde), Klassenbucheinträge mit „+“, Klassendienste, *Ticket erstellen* (Mitteilung an Schulleitung/Administration); unten die Statusleiste „Lehrstoffeintragung vorhanden“ und
       „Abwesenheiten wurden kontrolliert“ (sonst Knöpfe *Lehrstoff eingeben*, *Abwesenheiten kontrollieren*).
-    - *Details*: nur „Findet online statt“, Lehrstoff und Vertretungstext (wenn vorhanden), Hausaufgaben, *Notizen für Schüler*innen*
+    - *Details*: nur „Findet online statt“ (nur Anzeige, festgelegt in UntPlan Studio), Lehrstoff und Vertretungstext (wenn vorhanden), Hausaufgaben, *Notizen für Schüler*innen*
       und *Notizen für Lehrkräfte*; unten *Vorherige Stunde*, *Nächste Stunde*, *Prüfung erstellen* (Prüfungssperren werden beachtet)
       und *Raum buchen*. Gebuchter Raum und Prüfung stehen sofort als Änderung bzw. Prüfung (gelb) im Plan.
   - Bereitschaften, Raumbuchungen und Vormerkungen; Druck, Telefonansicht mit Tagesauswahl.
@@ -442,7 +442,9 @@ vor bzw. nach der aktuellen Woche der Stundenplan angezeigt wird (*Wochen zurüc
 0 = nur die aktuelle Woche, n = n Kalenderwochen (Wochenbeginn Montag). Die Administration ist nie beschränkt. Der Server setzt das
 Fenster für Web und Apps durch: `GET /api/app/plan` liefert außerhalb `gesperrt: true`, `sperrhinweis` und leere `karten`
 (ebenso `GET /api/app/tag`); `GET /api/app/sitzung` enthält `benutzer.planWochenZurueck` und `benutzer.planWochenVor` (Zahl oder `null`).
-Klassenbucheinträge (Lehrstoff, Notizen, „Findet online statt“) sind zeitlich nicht begrenzt.
+Klassenbucheinträge (Lehrstoff, Notizen) sind zeitlich nicht begrenzt. „Findet online statt“ kommt mit dem Paket aus UntPlan
+Studio (je Unterricht bzw. Stunde) und lässt sich in UntPlan Web nicht mehr einstellen; `PUT /api/app/klassenbuch/online` und die
+Felder `online`/`onlineLink` von `PUT /api/app/klassenbuch/stunde` werden für ältere Apps angenommen, aber ignoriert.
 
 ## Sicherheit
 

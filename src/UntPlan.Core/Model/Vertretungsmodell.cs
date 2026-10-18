@@ -231,6 +231,23 @@ public sealed class Vertretung
     }
 }
 
+/// <summary>
+/// Abweichung „Findet online statt“ für eine einzelne Stunde eines Unterrichts an einem Datum (in UntPlan Studio festgelegt):
+/// <see cref="Online"/> = true macht die Stunde zur Online-Stunde, false lässt sie trotz <see cref="Unterricht.Online"/> in Präsenz
+/// stattfinden. Je Datum, Stunde und Unterricht höchstens ein Eintrag; ohne Eintrag gilt die Einstellung des Unterrichts.
+/// </summary>
+public sealed class OnlineStunde
+{
+    public DateOnly Datum { get; set; }
+    public int Stunde { get; set; }
+    public int UnterrichtId { get; set; }
+    public bool Online { get; set; }
+    /// <summary>Link zum Online-Unterricht (http/https) für diese Stunde; leer = Link des Unterrichts.</summary>
+    public string Link { get; set; } = "";
+    public DateTime Geaendert { get; set; } = DateTime.Now;
+    public string Benutzer { get; set; } = "";
+}
+
 public sealed class Pausenaufsicht
 {
     public int GangId { get; set; }

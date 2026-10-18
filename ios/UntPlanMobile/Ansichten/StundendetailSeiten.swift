@@ -25,7 +25,7 @@ final class Stundendaten: ObservableObject {
     /// Klassendienste am Tag der Stunde je Schüler-ID (z. B. „Klassensprecher*in“)
     @Published var dienste: [Int: [String]] = [:]
     @Published var geladen = false
-    /// Gewählte Einzelstunde einer Doppel- bzw. Blockstunde (nil = ganzer Block): Lehrstoff, Notizen, Online,
+    /// Gewählte Einzelstunde einer Doppel- bzw. Blockstunde (nil = ganzer Block): Lehrstoff, Notizen,
     /// Hausaufgaben und Abwesenheiten gelten dann nur für diese Stunde.
     @Published var einzelstunde: Int? = nil
     /// Stunden des Blocks für die Auswahl (vom Server; bleibt beim Wechsel des Bereichs erhalten)
@@ -73,8 +73,6 @@ final class Stundendaten: ObservableObject {
         einzelstunde = stunde
         notizSchuelerGespeichert = nil
         notizLehrerGespeichert = nil
-        onlineLinkGespeichert = nil
-        online = nil
         hausaufgaben = nil
         anwesenheit = nil
         geladen = false
@@ -238,7 +236,7 @@ final class Stundendaten: ObservableObject {
 
     /// Lehrstoff bzw. Notizen speichern (nil = unverändert lassen).
     func speichern(thema: String? = nil, lehrform: String? = nil, anmerkung: String? = nil,
-                   notiz: String? = nil, notizSchueler: String? = nil, online: Bool? = nil, onlineLink: String? = nil) async throws {
+                   notiz: String? = nil, notizSchueler: String? = nil) async throws {
         guard let u = karte.unterricht else { return }
         let e = eintrag
         // Das alte Hausaufgabenfeld unverändert mitschicken, damit die Hausaufgabenliste nicht angeglichen wird
@@ -251,8 +249,6 @@ final class Stundendaten: ObservableObject {
                                      lehrform: lehrform,
                                      anmerkung: anmerkung,
                                      lehrer: lehrerHinweis,
-                                     online: online,
-                                     onlineLink: onlineLink,
                                      einzelstunde: einzelstunde)
         let neu = try await api.klassenbuchSpeichern(daten)
         var stand = klassenbuch ?? KlassenbuchStunde(eintrag: nil, darf: true)
@@ -260,46 +256,24 @@ final class Stundendaten: ObservableObject {
         klassenbuch = stand
         if let notizSchueler { notizSchuelerGespeichert = notizSchueler }
         if let notiz { notizLehrerGespeichert = notiz }
-        if let onlineLink { onlineLinkGespeichert = onlineLink }
     }
 
-    /// Zuletzt gespeicherter Link zum Online-Unterricht (gilt sofort, auch wenn der Server ihn – noch – nicht zurückgibt).
-    @Published var onlineLinkGespeichert: String? = nil
+    // MARK: „Findet online statt“ – nur Anzeige (wird in UntPlan Studio festgelegt)
 
-    /// Link zum Online-Unterricht (gespeichert, aus dem Klassenbuch bzw. von der Karte).
+    /// Link zum Online-Unterricht (Stand des Servers, sonst Klassenbuch bzw. Karte); leer, wenn die Stunde nicht online ist.
     var onlineLink: String {
-        if let l = onlineLinkGespeichert { return l }
+        guard istOnline else { return "" }
+        if let l = klassenbuch?.onlineLink, !l.isEmpty { return l }
         if let l = eintrag?.onlineLink, !l.isEmpty { return l }
         return karte.onlineLink
     }
 
-    /// Link zum Online-Unterricht speichern (die Stunde bleibt online).
-    func onlineLinkSetzen(_ link: String) async throws {
-        let wert = link.trimmingCharacters(in: .whitespacesAndNewlines)
-        try await speichern(online: true, onlineLink: wert)
-    }
-
-    /// „Findet online statt“ – optimistisch umschalten, bei Fehler zurück.
-    @Published var online: Bool? = nil
-
-    /// In der Einzelstunde gilt ohne eigenen Eintrag der Blockeintrag.
+    /// Findet online statt: Stand des Servers für den gewählten Bereich; ältere Server: Eintrag, Blockeintrag bzw. Karte.
     var istOnline: Bool {
-        if let online { return online }
+        if let o = klassenbuch?.online { return o }
         if let e = eintrag { return e.online }
         if einzelstunde != nil { return klassenbuch?.blockEintrag?.online ?? karte.online }
         return karte.online
-    }
-
-    func onlineSetzen(_ wert: Bool) async throws {
-        let vorher = istOnline
-        online = wert
-        do {
-            try await speichern(online: wert)
-            online = nil
-        } catch {
-            online = vorher
-            throw error
-        }
     }
 
     func hausaufgabeAnlegen(text: String, faellig: Date?, bemerkung: String) async throws {
@@ -676,104 +650,6 @@ struct GeerbterBlockText: View {
         .padding(.horizontal, 15)
         .padding(.top, 10)
         .accessibilityElement(children: .combine)
-    }
-}
-
-// MARK: - Link zum Online-Unterricht
-
-/// Zeile unter „Findet online statt“ (Lehrkräfte mit Schreibrecht): Link zum Online-Unterricht eingeben und sichern,
-/// rechts Öffnen bzw. Sichern. Schüler*innen sehen stattdessen „Online-Unterricht beitreten“.
-struct OnlineLinkZeile: View {
-    @EnvironmentObject var daten: Stundendaten
-    @EnvironmentObject var zustand: AppZustand
-    @Environment(\.openURL) private var oeffneURL
-    @State private var eingabe = ""
-    @State private var anfang = ""
-    @State private var speichert = false
-    @State private var fehler: String? = nil
-    @FocusState private var fokus: Bool
-
-    private var geaendert: Bool {
-        eingabe.trimmingCharacters(in: .whitespacesAndNewlines) != anfang.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            TextField("Link zum Online-Unterricht", text: $eingabe)
-                .font(.system(size: 17))
-                .foregroundStyle(Farben.text)
-                .keyboardType(.URL)
-                .textContentType(.URL)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.done)
-                .focused($fokus)
-                .onSubmit { Task { await sichern() } }
-            if speichert {
-                ProgressView()
-                    .frame(width: 31, height: 31)
-            } else if geaendert {
-                Button {
-                    Task { await sichern() }
-                } label: {
-                    Text("Sichern")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Farben.akzent)
-                        .frame(minHeight: 32)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Link sichern")
-            } else if let url = Karte.onlineURL(eingabe) {
-                Button {
-                    oeffneURL(url)
-                } label: {
-                    Image(systemName: "arrow.up.forward.app")
-                        .font(.system(size: 18, weight: .regular))
-                        .foregroundStyle(Farben.akzent)
-                        .frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Online-Unterricht öffnen")
-            }
-        }
-        .padding(.leading, Detailmass.rand)
-        .padding(.trailing, 22)
-        .padding(.vertical, 8)
-        .frame(minHeight: 52)
-        .onAppear {
-            eingabe = daten.onlineLink
-            anfang = daten.onlineLink
-        }
-        .onChange(of: fokus) { _, neu in
-            // Feld verlassen: geänderten Link sichern
-            if !neu && geaendert { Task { await sichern() } }
-        }
-        .alert("Speichern fehlgeschlagen", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(fehler ?? "")
-        }
-    }
-
-    private func sichern() async {
-        guard geaendert, !speichert else { return }
-        let wert = eingabe.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !wert.isEmpty && Karte.onlineURL(wert) == nil {
-            fehler = "Bitte einen gültigen Link eingeben (z. B. https://…)."
-            return
-        }
-        speichert = true
-        defer { speichert = false }
-        do {
-            try await daten.onlineLinkSetzen(wert)
-            eingabe = wert
-            anfang = wert
-            fokus = false
-            withAnimation { daten.hinweis = wert.isEmpty ? "Link entfernt" : "Link gespeichert" }
-            zustand.planGeaendert += 1
-        } catch {
-            fehler = zustand.fehlertext(error)
-        }
     }
 }
 

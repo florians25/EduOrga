@@ -13,7 +13,10 @@ public sealed record Klassenbucheintrag(int Id, string Datum, int Stunde, int Un
     public string Anmerkung { get; init; } = "";
     /// <summary>Wer zuletzt geändert hat (Lehrerkürzel bzw. Anmeldename).</summary>
     public string GeaendertVon { get; init; } = "";
-    /// <summary>Link zum Online-Unterricht (Videokonferenz, http/https) – gilt, solange „Findet online statt“ eingeschaltet ist.</summary>
+    /// <summary>
+    /// Link zum Online-Unterricht (Videokonferenz, http/https), nur bei <see cref="Online"/>. Online und Link stammen aus dem Paket
+    /// (in UntPlan Studio festgelegt) und werden nur für die Antworten eingesetzt – im Klassenbuch wird nichts mehr gespeichert.
+    /// </summary>
     public string OnlineLink { get; init; } = "";
     /// <summary>
     /// Einzelstunde eines Blocks, für die der Eintrag allein gilt (dann <see cref="Stunde"/> = diese Stunde); null = Eintrag des ganzen Blocks
@@ -74,15 +77,16 @@ public sealed partial class Klassenbuchdienst
 
     private static Klassenbucheintrag Lesen(System.Data.Common.DbDataReader r) => new(r.Zahl("id"), r.Text("datum"), Math.Abs(r.Zahl("stunde")), r.Zahl("unterricht"),
         JsonSerializer.Deserialize<List<string>>(r.Text("klassen")) ?? new(), r.Text("fach"), r.Text("lehrer"), r.Text("thema"), r.Text("hausaufgabe"),
-        r.TextOderNull("faellig"), r.Text("notiz"), r.Text("geaendert"), r.TextOderNull("anwesenheit"), r.Text("notiz_schueler"), r.Wahr("online"))
+        r.TextOderNull("faellig"), r.Text("notiz"), r.Text("geaendert"), r.TextOderNull("anwesenheit"), r.Text("notiz_schueler"))
     {
-        Lehrform = r.Text("lehrform"), Anmerkung = r.Text("anmerkung"), GeaendertVon = r.Text("lehrer"), OnlineLink = r.Text("online_link"),
+        // Spalten online/online_link (früher „Findet online statt“ im Klassenbuch) werden nicht mehr gelesen: online legt UntPlan Studio fest
+        Lehrform = r.Text("lehrform"), Anmerkung = r.Text("anmerkung"), GeaendertVon = r.Text("lehrer"),
         Einzelstunde = r.Zahl("stunde") < 0 ? -r.Zahl("stunde") : null,
     };
 
     // ------------------------------------------------------------------------------------------ Einzelstunden in Blöcken
     //
-    // Einträge (Lehrstoff, Notizen, Online, Hausaufgaben, Abwesenheitskontrolle) gehören standardmäßig zum ganzen Block (Doppel-/Blockstunde)
+    // Einträge (Lehrstoff, Notizen, Hausaufgaben, Abwesenheitskontrolle) gehören standardmäßig zum ganzen Block (Doppel-/Blockstunde)
     // und liegen unter der Nummer des Blockbeginns. Für eine Einzelstunde eines Blocks liegen sie unter der negativen Stundennummer
     // (−4 = nur 4. Stunde) – ohne Schemaänderung und ohne Konflikt mit dem Blockeintrag (UNIQUE datum, stunde, unterricht, lehrer).
     // Abfragen über Stundenbereiche (stunde BETWEEN von AND bis) sehen deshalb weiterhin nur Blockeinträge; Fehlzeiten liegen ohnehin je Stunde.
@@ -170,7 +174,7 @@ public sealed partial class Klassenbuchdienst
         string? lehrform = null, string? anmerkung = null, string? lehrerHinweis = null, int? einzelstunde = null)
     {
         if (!DarfSchreiben(b, s, d, stunde, unterricht)) throw new UnauthorizedAccessException("Diese Stunde gehört nicht zu Ihrem Unterricht.");
-        // keine zeitliche Begrenzung: Lehrstoff, Notizen und „Findet online statt“ auch weit im Voraus (Stunde laut Plan vorausgesetzt)
+        // keine zeitliche Begrenzung: Lehrstoff und Notizen auch weit im Voraus (Stunde laut Plan vorausgesetzt)
         if (faellig is DateOnly f && f < d) throw new ArgumentException("Die Hausaufgabe kann nicht vor der Stunde fällig sein.");
         var karte = KarteZu(b, s, d, stunde, unterricht, lehrerHinweis, einzelstunde);
         if (karte is null) throw new ArgumentException("Zu dieser Stunde gibt es keinen Unterricht.");

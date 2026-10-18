@@ -18,7 +18,9 @@ namespace UntPlanWeb.Api;
 /// </summary>
 public static class ErweiterungApi
 {
-    /// <summary>„Findet online statt“ einer Stunde; Link (optional) = Videokonferenz-Adresse (http/https), null = unverändert, "" = entfernen.</summary>
+    /// <summary>Hinweis für ältere Apps, die „Findet online statt“ noch setzen wollen.</summary>
+    public const string OnlineHinweis = "„Findet online statt“ wird in UntPlan Studio festgelegt.";
+    /// <summary>„Findet online statt“ einer Stunde (ältere Apps) – wird ignoriert, siehe PUT /klassenbuch/online.</summary>
     public sealed record OnlineDaten(DateOnly Datum, int Stunde, int Unterricht, bool Online, string? Link = null, string? OnlineLink = null, int? Einzelstunde = null);
     public sealed record AbwesenheitNeuDaten(int SchuelerId, DateOnly Von, DateOnly Bis, int? StundeVon, int? StundeBis, string? Grund, string? Status, string? Bemerkung,
         string? Nachweis = null, string? EntschuldigtAm = null, bool? ElternInformiert = null, string? NotizIntern = null);
@@ -124,7 +126,7 @@ public static class ErweiterungApi
                             klassen = k.Klassen, lehrer = k.Lehrer, raeume = k.Raeume, k.Unterricht, von = k.Von, bis = k.Bis, k.Farbe, k.Gruppe, k.Zusaetzlich,
                             k.NotizSchueler, notizLehrer = b.Kollegium ? k.NotizLehrer : "", k.HausaufgabeFaellig, k.LehrerAbwesend, k.VertretungOffen,
                             lehrstoff = e?.Thema ?? "", hausaufgabe = string.Join(" · ", hw.Select(h => h.Text).DefaultIfEmpty(e?.Hausaufgabe ?? "").Where(x => x.Length > 0)),
-                            geprueft = e?.Anwesenheit != null, online = e?.Online == true, onlineLink = e?.Online == true ? e.OnlineLink : "",
+                            geprueft = e?.Anwesenheit != null, online = k.Online, onlineLink = k.Online ? k.OnlineLink : "",
                         });
                     }
             }
@@ -163,10 +165,13 @@ public static class ErweiterungApi
             });
         });
 
-        api.MapPut("/klassenbuch/online", (OnlineDaten d, HttpContext c, Paketdienst p, Klassenbuchverwaltung kv) =>
+        // „Findet online statt“ wird in UntPlan Studio festgelegt (Unterricht bzw. einzelne Stunde) und kommt mit dem Paket. Ältere Apps
+        // dürfen den Endpunkt weiter aufrufen: die Angaben werden ignoriert, die Antwort nennt den tatsächlichen Stand aus dem Paket.
+        api.MapPut("/klassenbuch/online", (OnlineDaten d, HttpContext c, Paketdienst p, Plandienst plan) =>
         {
-            kv.OnlineSetzen(Kollegium(c), Paket(p), d.Datum, d.Stunde, d.Unterricht, d.Online, d.OnlineLink ?? d.Link, d.Einzelstunde);
-            return Results.Json(new { ok = true });
+            Kollegium(c);
+            var (online, link) = plan.OnlineAm(Paket(p), d.Datum, d.Unterricht, d.Einzelstunde ?? d.Stunde, d.Einzelstunde ?? d.Stunde);
+            return Results.Json(new { ok = true, online, onlineLink = online ? link : "", geaendert = false, hinweis = OnlineHinweis });
         });
 
         // ---------------------------------------------------------------- Abwesenheiten bearbeiten

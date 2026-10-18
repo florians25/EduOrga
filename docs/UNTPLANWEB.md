@@ -26,7 +26,8 @@ bindet sie unverändert ein – als Git-Submodul/Projektverweis oder als NuGet-P
 | Typ | Inhalt |
 |---|---|
 | `WebPaket` | Schema, Revision, Schule, Zeitraster, Perioden (Unterricht + Regelstundenplan), Elemente, tagesaktuelle Pläne (`Tage`), Vertretungen, Absenzen, Termine (Veranstaltungen, Klausuren), Tagestexte, Ferien, Pausenaufsichten |
-| `WebTag` / `WebStunde` | aufgelöster Plan je Datum: Fach, Klassen, Lehrer, Räume, Status `regulaer`, `vertreten`, `offen`, `entfall`, `zusaetzlich`, `frei` |
+| `WebUnterricht` | Unterricht einer Periode; `online`/`onlineLink`: findet regelmäßig online statt (in UntPlan Studio festgelegt; ältere Pakete: `false`/leer) |
+| `WebTag` / `WebStunde` | aufgelöster Plan je Datum: Fach, Klassen, Lehrer, Räume, Status `regulaer`, `vertreten`, `offen`, `entfall`, `zusaetzlich`, `frei`; `online`/`onlineLink` = „Findet online statt“ an diesem Datum (Unterricht bzw. Abweichung der Stunde; bei `nurAenderungen` stehen Stunden mit abweichendem Online-Stand als geänderte Stunden im Tag) |
 | `WebVertretung` | Vertretungsplanzeile wie im Aushang (Art, (Lehrer), Vertreter, Fach, Raum, Vertr. von, (Le.) nach, Text, `nurLehrer`) |
 | `WebRueckmeldung` | `absenz`, `nachricht`, `raumbuchung` |
 | `WebAntwort` | `ok`, `revision`, `meldung` |

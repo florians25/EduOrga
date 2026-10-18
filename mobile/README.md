@@ -62,7 +62,7 @@ Untere Leiste mit vier Bereichen; jede Seite hat einen großen Titel, der beim R
 - **Stundendetails** als Blatt von unten: Datum und Uhrzeit (bei Blöcken auf eine einzelne Stunde umschaltbar), Reiter
   für gleichzeitige Stunden, Kopf mit Klasse, Kurs, Fach, Raum und Lehrkraft (geänderte Werte: alt durchgestrichen, neu
   daneben), Plakette für Prüfung, Veranstaltung oder Zusatzstunde; Menü „…“ führt in die Pläne von Klasse, Lehrkraft und
-  Raum. Zeilen für „Findet online statt“, Raum (Ersetzen, Hinzufügen, Löschen über die freien buchbaren Räume),
+  Raum. Zeilen für „Online-Unterricht“ (nur Anzeige mit Link, festgelegt in UntPlan Studio), Raum (Ersetzen, Hinzufügen, Löschen über die freien buchbaren Räume),
   Vertretungstext bzw. Information, Lehrstoff, Schüler*innen, Hausaufgaben, Klassenbucheinträge und Notizen.
 - **Schüler*innen:** Filter Alle/Abwesend/Anwesend, Stand der Kontrolle, Gruppen nach Anfangsbuchstaben mit Leiste rechts,
   Zustand per Tippen oder Wischen (anwesend, abwesend, verspätet), „alle anwesend“, Abwesenheit minutengenau bearbeiten,
@@ -199,7 +199,7 @@ UntPlan Mobile spricht ausschließlich die JSON-API von UntPlan Web (`/api/app/*
 | `GET /api/mobile?action=meta` | eigener Plan, Klassen/Lehrkräfte/Räume, Stundenzeiten, Langnamen | `sitzung`, `elemente` |
 | `GET /api/mobile?action=week&date=…&type=mine\|class\|teacher\|room&id=…` | eine Woche als Kacheln | `plan`, `klassenbuch/klasse` |
 | `POST /api/login` (`action=login\|logout`) | An- und Abmelden | `anmelden`, `abmelden` |
-| `GET/POST /api/classbook` | Lehrstoff, Hausaufgaben, Notizen für Schüler*innen und Lehrkräfte, Klassenbucheinträge, Bemerkungen, Anwesenheit, Klassendienste, „Findet online statt“ (`action=online`), gemeinsamer Klassenbucheintrag (`action=remarkMany`); `canEdit` sagt, ob es die eigene Stunde ist | `klassenbuch/stunde`, `klassenbuch/hausaufgabenliste`, `klassenbuch/anwesenheit`, `klassenbuch/vermerke`, `klassenbuch/klasse`, `klassendienste`, `klassenbuch/online` |
+| `GET/POST /api/classbook` | Lehrstoff, Hausaufgaben, Notizen für Schüler*innen und Lehrkräfte, Klassenbucheinträge, Bemerkungen, Anwesenheit, Klassendienste, „Findet online statt“ nur lesend (`online`, `onlineLink`, `onlineEditable = false`; `action=online` → 409), gemeinsamer Klassenbucheintrag (`action=remarkMany`); `canEdit` sagt, ob es die eigene Stunde ist | `klassenbuch/stunde`, `klassenbuch/hausaufgabenliste`, `klassenbuch/anwesenheit`, `klassenbuch/vermerke`, `klassenbuch/klasse`, `klassendienste` |
 | `GET/POST /api/rooms` (`action=free\|book\|change`) | freie buchbare Räume einer Stunde, Raum buchen; `change` mit `op=replace\|add\|remove` (Raum-Chip) | `meldungen/freieraeume`, `meldungen/raumbuchung`, `mobil/raum` |
 | `GET/POST /api/home` | Startseite, Termine, Abwesenheiten, Fehlzeiten der Klasse, Entschuldigen | `heute`, `meldungen`, `klassenbuch/fehlzeiten` |
 | `GET/POST /api/messages` | Posteingang, Gesendet, Lesen, Schreiben, Löschen | `mitteilungen` |

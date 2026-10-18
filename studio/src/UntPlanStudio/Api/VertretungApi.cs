@@ -36,6 +36,11 @@ public sealed record VormerkungVerplanen(DateOnly Datum, int Stunde);
 public sealed record PlanPosition(DateOnly Datum, int Stunde, int Unterricht, int? Zeile, bool Block = false, string? Text = null, Dictionary<string, int>? Antworten = null);
 public sealed record PlanVerlegen(DateOnly Von, int VonStunde, int Unterricht, int? Zeile, int Laenge, DateOnly Ziel, int ZielStunde, Dictionary<string, int>? Antworten = null);
 public sealed record BereitschaftAnfrage(int Tag, int Stunde, int? Lehrer, int? Anzahl);
+/// <summary>
+/// „Findet online statt“ einer einzelnen Stunde am Datum: Online null = Abweichung entfernen (es gilt der Unterricht), OnlineLink leer/null =
+/// Link des Unterrichts; Block = auch die angrenzenden Stunden desselben Unterrichts (Doppel-/Blockstunde).
+/// </summary>
+public sealed record OnlineStundeAnfrage(DateOnly Datum, int Stunde, int Unterricht, bool? Online, string? OnlineLink = null, bool Block = false);
 
 /// <summary>
 /// Vertretungsplanung (Vertretungsmodus): Kalender und Tagestexte, Absenzen, Vertretungsliste mit allen
@@ -116,7 +121,73 @@ public sealed class VertretungApi : IStudioModul
         VorschlagRegistrieren(g);
         EreignisseRegistrieren(g);
         PlanRegistrieren(g);
+        OnlineRegistrieren(g);
         EinstellungenRegistrieren(g);
+    }
+
+    // =============================================================================================
+    // „Findet online statt“ einzelner Stunden (Abweichung vom Unterricht an einem Datum; regelmäßig: /unterricht/{uid}/online)
+
+    /// <summary>Stunden desselben Unterrichts, die an die Stunde angrenzen (Doppel-/Blockstunde), bzw. nur die Stunde selbst.</summary>
+    private static List<int> OnlineStunden(Tagesplan tp, int stunde, int unterricht, bool block)
+    {
+        bool Findet(int h) => tp.Stunde(h).Any(x => x.Findetstatt && (x.Unterricht?.Id ?? x.Vertretung?.UnterrichtId) == unterricht);
+        if (!Findet(stunde)) throw StudioFehler.NichtGefunden($"Die Stunde {stunde} des Unterrichts U-Nr. {unterricht} am {tp.Datum:dd.MM.yyyy}");
+        var res = new List<int> { stunde };
+        if (!block) return res;
+        for (var h = stunde - 1; h >= 1 && Findet(h); h--) res.Insert(0, h);
+        for (var h = stunde + 1; Findet(h); h++) res.Add(h);
+        return res;
+    }
+
+    private static Unterricht OnlineUnterrichtAm(Schuldatei d, DateOnly datum, int unterricht) =>
+        (d.PeriodeAm(datum).Unterrichte ?? d.Unterrichte).FirstOrDefault(u => u.Id == unterricht) ?? throw StudioFehler.NichtGefunden($"Der Unterricht U-Nr. {unterricht}");
+
+    private static object OnlineStundeDto(Schuldatei d, DatenIndex ix, Unterricht u, DateOnly datum, int stunde)
+    {
+        var st = OnlineUnterricht.Am(d, u, datum, stunde);
+        var regel = OnlineUnterricht.Regel(u);
+        var ab = OnlineUnterricht.Abweichung(d, datum, stunde, u.Id);
+        return new
+        {
+            datum, stunde, unterricht = u.Id, online = st.Online, onlineLink = st.Link, abweichend = ab != null,
+            regel = new { online = regel.Online, onlineLink = regel.Link },
+            fach = ix.KFach(u.HauptfachId), lehrer = string.Join(",", u.LehrerIds.Select(ix.KLehrer)), klassen = ix.KKlassen(u.KlassenIds.ToList()),
+            geaendert = ab?.Geaendert, benutzer = ab?.Benutzer ?? "",
+        };
+    }
+
+    private static void OnlineRegistrieren(RouteGroupBuilder g)
+    {
+        // Abweichungen im Zeitraum (ohne bis: nur der Tag)
+        g.MapGet("/online", (Arbeitsdokument a, DateOnly von, DateOnly? bis) => a.LesenAsync(doc =>
+        {
+            var d = doc.Daten;
+            var b = bis ?? von;
+            return d.OnlineStunden.Where(o => o.Datum >= von && o.Datum <= b).OrderBy(o => o.Datum).ThenBy(o => o.Stunde).ThenBy(o => o.UnterrichtId)
+                .Select(o => (o, u: (d.PeriodeAm(o.Datum).Unterrichte ?? d.Unterrichte).FirstOrDefault(u => u.Id == o.UnterrichtId)))
+                .Where(x => x.u != null).Select(x => OnlineStundeDto(d, doc.Index, x.u!, x.o.Datum, x.o.Stunde)).ToList();
+        }));
+
+        // Stand einer Stunde (für den Dialog in den Stundendetails)
+        g.MapGet("/online/stunde", (Arbeitsdokument a, DateOnly datum, int stunde, int unterricht) => a.LesenAsync(doc =>
+            OnlineStundeDto(doc.Daten, doc.Index, OnlineUnterrichtAm(doc.Daten, datum, unterricht), datum, stunde)));
+
+        g.MapPut("/online", (Arbeitsdokument a, OnlineStundeAnfrage o, ClaimsPrincipal p) =>
+        {
+            var stunden = new List<int>();
+            var text = o.Online switch { true => "Stunde findet online statt", false => "Stunde findet nicht online statt", null => "Online-Abweichung entfernt" };
+            return a.AendernAsync(B(p), $"U-Nr. {o.Unterricht}, {o.Datum:dd.MM.}: {text}", V, d =>
+            {
+                var u = OnlineUnterrichtAm(d, o.Datum, o.Unterricht);
+                stunden = OnlineStunden(Tagesplan.Berechnen(d, o.Datum), o.Stunde, o.Unterricht, o.Block);
+                foreach (var h in stunden) OnlineUnterricht.StundeSetzen(d, u, o.Datum, h, o.Online, o.OnlineLink, B(p));
+            }, doc =>
+            {
+                var u = OnlineUnterrichtAm(doc.Daten, o.Datum, o.Unterricht);
+                return new { stunden = stunden.Select(h => OnlineStundeDto(doc.Daten, doc.Index, u, o.Datum, h)).ToList() };
+            });
+        });
     }
 
     // =============================================================================================
