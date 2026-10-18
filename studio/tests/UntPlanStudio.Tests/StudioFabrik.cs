@@ -14,7 +14,10 @@ namespace UntPlanStudio.Tests;
 public sealed class StudioFabrik : WebApplicationFactory<Program>
 {
     public const string AdminPasswort = "admin-passwort";
-    public string Datenordner { get; } = Path.Combine(Path.GetTempPath(), "untplanstudio-test-" + Guid.NewGuid().ToString("N"));
+    /// <summary>Datenordner (Standard: neuer leerer Ordner, der beim Beenden gelöscht wird).</summary>
+    public string Datenordner { get; init; } = Path.Combine(Path.GetTempPath(), "untplanstudio-test-" + Guid.NewGuid().ToString("N"));
+    /// <summary>Datenordner beim Beenden löschen (aus für Tests mit Neustart im selben Ordner).</summary>
+    public bool OrdnerLoeschen { get; init; } = true;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -43,7 +46,9 @@ public sealed class StudioFabrik : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        try { Directory.Delete(Datenordner, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        if (OrdnerLoeschen)
+            try { Directory.Delete(Datenordner, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 }
 

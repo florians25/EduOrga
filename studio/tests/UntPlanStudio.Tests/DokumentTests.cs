@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using UntPlan.Core;
 using UntPlan.Core.Model;
+using Microsoft.Extensions.DependencyInjection;
+using UntPlanStudio.Dienste;
 
 namespace UntPlanStudio.Tests;
 
@@ -58,7 +60,13 @@ public sealed class DokumentTests : IClassFixture<StudioFabrik>
 
         var gespeichert = await c.PostJsonAsync($"/api/dokumente/{id}/speichern");
         Assert.False(gespeichert["geaendert"]!.GetValue<bool>());
-        Assert.True(File.Exists(Path.Combine(_f.Datenordner, "dokumente", id + ".up")));
+        // gespeichert in der Datenbank (kein dokumente/-Ordner mehr), Herunterladen liefert genau den gespeicherten Inhalt
+        var db = _f.Services.GetRequiredService<StudioDatenbank>();
+        Assert.False(Directory.Exists(Path.Combine(_f.Datenordner, "dokumente")));
+        var inhalt = db.DokumentInhalt(id);
+        Assert.NotNull(inhalt);
+        Assert.Equal(inhalt, await c.GetByteArrayAsync($"/api/dokumente/{id}/herunterladen"));
+        Assert.Equal("Testschule Nord", Dokument.Laden(inhalt!).Daten.Einstellungen.Schulname);
 
         await c.PostJsonAsync($"/api/dokumente/{id}/schliessen");
         var wieder = await c.GetJsonAsync($"/api/dokumente/{id}/stammdaten/klasse");

@@ -25,8 +25,40 @@ public partial class Program
     {
         // Gesundheitsprüfung für Docker (das Laufzeit-Image enthält weder curl noch wget)
         if (args.Contains("--gesundheitspruefung")) return Gesundheitspruefung();
+        // Sicherung der Datenbank über die Kommandozeile (z. B. vor einem Update), siehe README „Sicherung“
+        if (args.Contains(SichernBefehl)) return Sichern();
         Erstellen(args).Run();
         return 0;
+    }
+
+    public const string SichernBefehl = "--sichern";
+
+    /// <summary>
+    /// <c>dotnet UntPlanStudio.dll --sichern</c>: schreibt eine konsistente Kopie von <c>studio.db</c> nach
+    /// <c>&lt;Datenordner&gt;/sicherungen/</c> und beendet sich (Datenordner aus STUDIO_DATEN wie beim Serverstart). Legt keine
+    /// Datenbank an und migriert nichts; läuft auch, während der Server läuft.
+    /// </summary>
+    private static int Sichern()
+    {
+        var konfiguration = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true).AddEnvironmentVariables().Build();
+        var k = StudioKonfiguration.Laden(konfiguration, Directory.GetCurrentDirectory());
+        if (!File.Exists(k.Datenbankpfad))
+        {
+            Console.Error.WriteLine($"Keine Datenbank unter {k.Datenbankpfad} – nichts zu sichern (Studio noch nie gestartet oder STUDIO_DATEN falsch?).");
+            return 0;
+        }
+        try
+        {
+            var s = StudioDatenbank.Sichern(k.Datenbankpfad, k.Sicherungsordner, k.SicherungenBehalten);
+            Console.WriteLine($"Datenbank gesichert: {s.Pfad} ({s.Groesse:N0} Bytes)");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Sicherung fehlgeschlagen: " + ex.Message);
+            return 1;
+        }
     }
 
     private static int Gesundheitspruefung()
@@ -47,6 +79,8 @@ public partial class Program
         var dienste = builder.Services;
 
         dienste.AddSingleton(sp => StudioKonfiguration.Laden(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IWebHostEnvironment>().ContentRootPath));
+        dienste.AddSingleton<StudioDatenbank>();
+        dienste.AddHostedService<Sicherungsdienst>();
         dienste.AddSingleton<Benutzerdienst>();
         dienste.AddSingleton<Benutzereinstellungen>();
         dienste.AddSingleton<Dokumentdienst>();
@@ -102,7 +136,8 @@ public partial class Program
 
     private static void Konfigurieren(WebApplication app)
     {
-        // Konfiguration früh laden (legt den Datenordner an, Admin-Konto beim ersten Start)
+        // früh laden: Datenordner, Datenbank (Migrationen, Übernahme alter Dateien), Admin-Konto beim ersten Start
+        app.Services.GetRequiredService<StudioDatenbank>();
         app.Services.GetRequiredService<Benutzerdienst>();
 
         app.UseForwardedHeaders();
@@ -140,7 +175,9 @@ public partial class Program
             await weiter();
         });
 
-        app.MapGet("/gesundheit", () => Results.Ok(new { status = "ok", anwendung = Anwendungsname }));
+        app.MapGet("/gesundheit", (StudioDatenbank db) => db.Erreichbar()
+            ? Results.Ok(new { status = "ok", anwendung = Anwendungsname, datenbank = "ok" })
+            : Results.Json(new { status = "fehler", anwendung = Anwendungsname, datenbank = "nicht erreichbar" }, statusCode: StatusCodes.Status503ServiceUnavailable));
 
         var offen = app.MapGroup("/api");
         var api = app.MapGroup("/api").RequireAuthorization();
@@ -160,6 +197,10 @@ public partial class Program
         var routen = new StudioRouten(offen, api, dokument);
         foreach (var modul in Modulregister.Alle) modul.EndpunkteRegistrieren(routen);
         app.MapGet("/api/module", () => Modulregister.Alle.Select(m => m.Name)).RequireAuthorization();
+        // Datenbanksicherungen (nur Administratoren): Liste und sofort sichern
+        var sicherungen = api.MapGroup("/sicherungen").RequireAuthorization(p => p.RequireRole(Rollen.Admin));
+        sicherungen.MapGet("", (StudioDatenbank db) => db.Sicherungen().Select(s => new { s.Datei, s.Groesse, s.Zeit }));
+        sicherungen.MapPost("", (StudioDatenbank db) => { var s = db.Sichern(); return new { s.Datei, s.Groesse, s.Zeit }; });
         app.MapFallbackToFile("index.html");
     }
 

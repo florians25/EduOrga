@@ -15,20 +15,20 @@ namespace UntPlanStudio.Dienste;
 public sealed record DokumentEintrag(string Id, string Name, string Besitzer, DateTime Erstellt, DateTime Geaendert, string Herkunft, long Groesse, bool Offen, bool Ungespeichert);
 
 /// <summary>
-/// Verwaltet die Arbeitsdokumente des Servers: Ablage als <c>dokumente/&lt;id&gt;.up</c> (+ <c>.json</c> mit Name/Besitzer),
+/// Verwaltet die Arbeitsdokumente des Servers: Ablage in der Datenbank (Tabelle <c>dokumente</c>: Inhalt der Schuldatei wie eine
+/// *.up-Datei + Name/Besitzer, ältere Fassungen in <c>dokument_sicherungen</c>),
 /// geöffnete Dokumente im Speicher, Neu/Hochladen/BAL-Import/Löschen. Gespeichert wird automatisch
 /// (<see cref="Autospeicherung"/>) bzw. über <see cref="Arbeitsdokument.SpeichernAsync"/>.
 /// </summary>
 public sealed partial class Dokumentdienst
 {
-    private static readonly JsonSerializerOptions InfoOptionen = new() { WriteIndented = true };
-    private readonly StudioKonfiguration _k;
+    private readonly StudioDatenbank _db;
     private readonly ILogger<Dokumentdienst> _log;
     private readonly ConcurrentDictionary<string, Lazy<Arbeitsdokument>> _offen = new();
 
-    public Dokumentdienst(StudioKonfiguration k, ILogger<Dokumentdienst> log)
+    public Dokumentdienst(StudioDatenbank db, ILogger<Dokumentdienst> log)
     {
-        _k = k;
+        _db = db;
         _log = log;
     }
 
@@ -37,34 +37,27 @@ public sealed partial class Dokumentdienst
 
     public static bool IdGueltig(string? id) => id is not null && IdMuster().IsMatch(id);
 
-    private string UpPfad(string id) => Path.Combine(_k.Dokumentordner, id + Dokument.Dateiendung);
-    private string InfoPfad(string id) => Path.Combine(_k.Dokumentordner, id + ".json");
-
     public IEnumerable<Arbeitsdokument> Offene => _offen.Values.Where(l => l.IsValueCreated).Select(l => l.Value);
 
-    /// <summary>Alle Dokumente im Datenordner (neueste zuerst).</summary>
+    /// <summary>Alle Dokumente der Datenbank (neueste zuerst).</summary>
     public List<DokumentEintrag> Liste()
     {
         var res = new List<DokumentEintrag>();
-        foreach (var datei in Directory.EnumerateFiles(_k.Dokumentordner, "*.json"))
+        foreach (var (info, groesse, _) in _db.Dokumente())
         {
-            var id = Path.GetFileNameWithoutExtension(datei);
-            if (!IdGueltig(id) || !File.Exists(UpPfad(id))) continue;
-            var info = InfoLesen(id);
-            if (info is null) continue;
-            var offen = _offen.TryGetValue(id, out var l) && l.IsValueCreated ? l.Value : null;
-            res.Add(new DokumentEintrag(id, offen?.Info.Name ?? info.Name, info.Besitzer, info.Erstellt, offen?.Info.Geaendert ?? info.Geaendert, info.Herkunft,
-                new FileInfo(UpPfad(id)).Length, offen != null, offen?.IstGeaendert ?? false));
+            var offen = _offen.TryGetValue(info.Id, out var l) && l.IsValueCreated ? l.Value : null;
+            res.Add(new DokumentEintrag(info.Id, offen?.Info.Name ?? info.Name, info.Besitzer, info.Erstellt, offen?.Info.Geaendert ?? info.Geaendert, info.Herkunft,
+                groesse, offen != null, offen?.IstGeaendert ?? false));
         }
         return res.OrderByDescending(e => e.Geaendert).ToList();
     }
 
-    public bool Existiert(string id) => IdGueltig(id) && File.Exists(UpPfad(id));
+    public bool Existiert(string id) => IdGueltig(id) && _db.DokumentExistiert(id);
 
-    /// <summary>Geöffnetes Dokument holen bzw. von der Platte laden.</summary>
+    /// <summary>Geöffnetes Dokument holen bzw. aus der Datenbank laden.</summary>
     public Arbeitsdokument Holen(string? id)
     {
-        if (!IdGueltig(id) || !File.Exists(UpPfad(id!)) && !_offen.ContainsKey(id!)) throw StudioFehler.NichtGefunden("Das Dokument");
+        if (!IdGueltig(id) || !_offen.ContainsKey(id!) && !_db.DokumentExistiert(id!)) throw StudioFehler.NichtGefunden("Das Dokument");
         var lazy = _offen.GetOrAdd(id!, i => new Lazy<Arbeitsdokument>(() => Laden(i), LazyThreadSafetyMode.ExecutionAndPublication));
         try
         {
@@ -81,25 +74,18 @@ public sealed partial class Dokumentdienst
 
     private Arbeitsdokument Laden(string id)
     {
-        var info = InfoLesen(id) ?? new DokumentInfo { Id = id, Name = id };
-        var dok = Dokument.Laden(UpPfad(id));
+        var info = _db.Dokument(id)?.Info ?? throw StudioFehler.NichtGefunden("Das Dokument");
+        var inhalt = _db.DokumentInhalt(id) ?? throw StudioFehler.NichtGefunden("Das Dokument");
+        var dok = Dokument.Laden(inhalt);
         _log.LogInformation("Dokument {Id} ({Name}) geöffnet", id, info.Name);
-        return new Arbeitsdokument(info, UpPfad(id), dok, InfoSchreiben);
+        return new Arbeitsdokument(info, dok, Speichern);
     }
 
-    private DokumentInfo? InfoLesen(string id)
+    /// <summary>Beschreibung und Inhalt eines geöffneten Dokuments in die Datenbank schreiben.</summary>
+    private void Speichern(Arbeitsdokument a, byte[] inhalt)
     {
-        try { return JsonSerializer.Deserialize<DokumentInfo>(File.ReadAllText(InfoPfad(id))); }
-        catch (Exception ex) when (ex is IOException or JsonException) { return null; }
-    }
-
-    private void InfoSchreiben(Arbeitsdokument a) => InfoSchreiben(a.Info);
-
-    private void InfoSchreiben(DokumentInfo info)
-    {
-        var pfad = InfoPfad(info.Id);
-        File.WriteAllText(pfad + ".tmp", JsonSerializer.Serialize(info, InfoOptionen));
-        File.Move(pfad + ".tmp", pfad, true);
+        if (!_db.DokumentSpeichern(a.Info, inhalt))
+            _log.LogWarning("Dokument {Id} ({Name}) gibt es nicht mehr (gelöscht) – nicht gespeichert", a.Id, a.Info.Name);
     }
 
     private static string NeueId() => Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
@@ -109,10 +95,9 @@ public sealed partial class Dokumentdienst
     {
         var id = NeueId();
         var info = new DokumentInfo { Id = id, Name = string.IsNullOrWhiteSpace(name) ? "Neue Schuldatei" : name.Trim(), Besitzer = besitzer, Herkunft = herkunft };
-        var dok = new Dokument(daten, UpPfad(id));
-        dok.Speichern(UpPfad(id));
-        InfoSchreiben(info);
-        var a = new Arbeitsdokument(info, UpPfad(id), dok, InfoSchreiben);
+        var dok = new Dokument(daten);
+        dok.Speichern(inhalt => _db.DokumentAnlegen(info, inhalt));
+        var a = new Arbeitsdokument(info, dok, Speichern);
         _offen[id] = new Lazy<Arbeitsdokument>(a);
         _log.LogInformation("Dokument {Id} ({Name}) angelegt: {Herkunft}", id, info.Name, herkunft);
         return a;
@@ -169,7 +154,7 @@ public sealed partial class Dokumentdienst
         if (string.IsNullOrWhiteSpace(name)) throw StudioFehler.Ungueltig("Bitte einen Namen eingeben.");
         var dok = Holen(id);
         dok.Info.Name = name.Trim();
-        InfoSchreiben(dok.Info);
+        _db.DokumentSpeichern(dok.Info, null);
     }
 
     /// <summary>Speichert (falls geändert) und entfernt das Dokument aus dem Speicher.</summary>
@@ -186,8 +171,7 @@ public sealed partial class Dokumentdienst
         if (!Existiert(id)) throw StudioFehler.NichtGefunden("Das Dokument");
         if (_offen.TryRemove(id, out var l) && l.IsValueCreated)
             l.Value.Senden(new StudioEreignis("geschlossen", l.Value.Version, "", "Dokument gelöscht", "", DateTime.Now));
-        foreach (var pfad in new[] { UpPfad(id), UpPfad(id) + ".bak", InfoPfad(id) })
-            if (File.Exists(pfad)) File.Delete(pfad);
+        _db.DokumentLoeschen(id);
     }
 
     /// <summary>Speichert alle geänderten Dokumente (Autospeicherung, Herunterfahren).</summary>

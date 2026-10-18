@@ -6,7 +6,7 @@ using UntPlanStudio.Grundlagen;
 
 namespace UntPlanStudio.Dienste;
 
-/// <summary>Beschreibung eines Arbeitsdokuments auf dem Server (Datei <c>&lt;id&gt;.json</c> neben <c>&lt;id&gt;.up</c>).</summary>
+/// <summary>Beschreibung eines Arbeitsdokuments auf dem Server (Spalten bzw. <c>info</c> der Tabelle <c>dokumente</c>).</summary>
 public sealed class DokumentInfo
 {
     public string Id { get; set; } = "";
@@ -32,12 +32,10 @@ public sealed class Arbeitsdokument
     private readonly SemaphoreSlim _sperre = new(1, 1);
     private readonly object _aboSperre = new();
     private readonly List<Channel<StudioEreignis>> _abos = new();
-    private readonly Action<Arbeitsdokument> _infoSpeichern;
+    private readonly Action<Arbeitsdokument, byte[]> _speichern;
 
     public string Id => Info.Id;
     public DokumentInfo Info { get; }
-    /// <summary>Pfad der Arbeitsdatei (*.up) im Datenordner.</summary>
-    public string Pfad { get; }
     /// <summary>Das Core-Dokument. Nur innerhalb von <see cref="LesenAsync{T}"/>/<see cref="AendernAsync{T}"/> verwenden!</summary>
     internal Dokument Dokument { get; }
     /// <summary>Änderungszähler seit dem Öffnen (für Aktualisierungen in den Fenstern).</summary>
@@ -49,12 +47,12 @@ public sealed class Arbeitsdokument
     public string LetzterBereich { get; private set; } = "";
     public bool IstGeaendert => Dokument.IstGeaendert;
 
-    internal Arbeitsdokument(DokumentInfo info, string pfad, Dokument dokument, Action<Arbeitsdokument> infoSpeichern)
+    /// <param name="speichern">schreibt Beschreibung und Inhalt der Schuldatei (*.up) in die Datenbank</param>
+    internal Arbeitsdokument(DokumentInfo info, Dokument dokument, Action<Arbeitsdokument, byte[]> speichern)
     {
         Info = info;
-        Pfad = pfad;
         Dokument = dokument;
-        _infoSpeichern = infoSpeichern;
+        _speichern = speichern;
         // Dokument.PlanaenderungenAbgleichen bleibt eingeschaltet, damit Dateien austauschbar bleiben.
     }
 
@@ -128,16 +126,15 @@ public sealed class Arbeitsdokument
         Senden(new StudioEreignis("aenderung", Version, art.ToString(), beschreibung, benutzer, LetzteAenderung));
     }
 
-    /// <summary>Speichert die Arbeitsdatei (auch ohne Änderungen, wenn <paramref name="immer"/>).</summary>
+    /// <summary>Speichert das Dokument in die Datenbank (auch ohne Änderungen, wenn <paramref name="immer"/>).</summary>
     public async Task<bool> SpeichernAsync(string benutzer, bool immer = false, CancellationToken ct = default)
     {
         await _sperre.WaitAsync(ct);
         try
         {
             if (!immer && !Dokument.IstGeaendert) return false;
-            Dokument.Speichern(Pfad);
+            Dokument.Speichern(inhalt => _speichern(this, inhalt));
             Gespeichert = DateTime.Now;
-            _infoSpeichern(this);
             Senden(new StudioEreignis("gespeichert", Version, "", "Gespeichert", benutzer, Gespeichert.Value));
             return true;
         }

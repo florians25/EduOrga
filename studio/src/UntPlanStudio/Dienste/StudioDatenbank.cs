@@ -384,18 +384,20 @@ public sealed class StudioDatenbank
     {
         if (!File.Exists(datenbank)) throw new FileNotFoundException("Die Datenbank gibt es nicht.", datenbank);
         Directory.CreateDirectory(ordner);
-        var zeit = DateTime.Now;
-        var name = $"studio-{zeit:yyyyMMdd-HHmmss}.db";
-        for (var i = 2; File.Exists(Path.Combine(ordner, name)); i++) name = $"studio-{zeit:yyyyMMdd-HHmmss}-{i}.db";
+        var stempel = $"{DateTime.Now:yyyyMMdd-HHmmss}";
+        // mehrere Sicherungen in derselben Sekunde: fortlaufend nummeriert (auch wenn ältere schon aufgeräumt sind)
+        var nr = Sicherungen(ordner).Select(x => Sortierschluessel(x.Datei)).Where(x => x.Zeit == stempel).Select(x => x.Nr).DefaultIfEmpty(0).Max() + 1;
+        var name = nr == 1 ? $"studio-{stempel}.db" : $"studio-{stempel}-{nr}.db";
         var ziel = Path.Combine(ordner, name);
         var tmp = ziel + ".tmp";
         if (File.Exists(tmp)) File.Delete(tmp);
         using (var c = Oeffnen(Verbindungstext(datenbank, SqliteOpenMode.ReadWrite)))
             Ausfuehren(c, null, "VACUUM INTO @ziel", ("@ziel", tmp));
         File.Move(tmp, ziel);
-        Aufraeumen(ordner, behalten);
         var fi = new FileInfo(ziel);
-        return new DatenbankSicherung(name, ziel, fi.Length, fi.LastWriteTime);
+        var erg = new DatenbankSicherung(name, ziel, fi.Length, fi.LastWriteTime);
+        Aufraeumen(ordner, behalten);
+        return erg;
     }
 
     /// <summary>Vorhandene Sicherungen, neueste zuerst.</summary>
@@ -403,8 +405,17 @@ public sealed class StudioDatenbank
 
     private static List<DatenbankSicherung> Sicherungen(string ordner) =>
         !Directory.Exists(ordner) ? new() : new DirectoryInfo(ordner).EnumerateFiles("studio-*.db")
-            .OrderByDescending(f => f.LastWriteTimeUtc).ThenByDescending(f => f.Name, StringComparer.Ordinal)
+            .Select(f => (Datei: f, Schluessel: Sortierschluessel(f.Name))).OrderByDescending(x => x.Schluessel.Zeit, StringComparer.Ordinal)
+            .ThenByDescending(x => x.Schluessel.Nr).ThenByDescending(x => x.Datei.LastWriteTimeUtc).Select(x => x.Datei)
             .Select(f => new DatenbankSicherung(f.Name, f.FullName, f.Length, f.LastWriteTime)).ToList();
+
+    /// <summary>Reihenfolge aus dem Namen <c>studio-&lt;yyyyMMdd-HHmmss&gt;[-n].db</c> (genauer als die Änderungszeit der Datei).</summary>
+    private static (string Zeit, int Nr) Sortierschluessel(string name)
+    {
+        var kern = Path.GetFileNameWithoutExtension(name)["studio-".Length..];
+        var teile = kern.Split('-');
+        return teile.Length == 3 && int.TryParse(teile[2], out var nr) ? (teile[0] + "-" + teile[1], nr) : (kern, 1);
+    }
 
     private static void Aufraeumen(string ordner, int behalten)
     {
