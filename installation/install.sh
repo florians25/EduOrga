@@ -37,19 +37,28 @@ command -v docker >/dev/null 2>&1 || fehler "Docker ist nicht installiert. Anlei
 docker compose version >/dev/null 2>&1 || fehler "Docker Compose (Plugin „docker compose“) fehlt."
 docker info >/dev/null 2>&1 || fehler "Kein Zugriff auf Docker. Als root oder Mitglied der Gruppe „docker“ ausführen."
 
+# docker-compose.yml und update.sh immer in der aktuellen Fassung verwenden (ältere oder fremde Dateien, z. B. aus
+# früheren UntPlan-Installationen, werden als *.alt-<Datum> beiseitegelegt)
 for datei in docker-compose.yml update.sh; do
-  if [ ! -f "$datei" ]; then
-    echo "Lade $datei …"
-    command -v curl >/dev/null 2>&1 || fehler "$datei fehlt und curl ist nicht installiert."
-    curl -fsSL "$QUELLE/$datei" -o "$datei" || fehler "$datei konnte nicht geladen werden."
+  if command -v curl >/dev/null 2>&1 && curl -fsSL "$QUELLE/$datei" -o "$datei.neu" 2>/dev/null; then
+    if [ -f "$datei" ] && ! cmp -s "$datei" "$datei.neu"; then
+      mv "$datei" "$datei.alt-$(date +%Y%m%d-%H%M%S)"
+      echo "Ältere $datei beiseitegelegt, aktuelle Fassung geladen."
+    fi
+    mv "$datei.neu" "$datei"
+  else
+    rm -f "$datei.neu"
+    [ -f "$datei" ] || fehler "$datei fehlt und konnte nicht geladen werden ($QUELLE)."
   fi
 done
+grep -q "ghcr.io/florians25/untplan-studio" docker-compose.yml \
+  || fehler "docker-compose.yml ist keine UntPlan-Gesamtinstallation (alte Datei?). Bitte in einem leeren Ordner neu starten."
 chmod +x update.sh
 
 if [ -f .env ] && [ "$NEU" = 0 ]; then
   echo "Vorhandene Einstellungen (.env) gefunden – Container werden mit diesen Einstellungen gestartet."
   echo "Neu einrichten: ./install.sh --neu (Daten bleiben erhalten)."
-  docker compose pull
+  docker compose pull || fehler "Images konnten nicht geladen werden – Pakete auf ghcr.io öffentlich stellen oder „docker login ghcr.io“ (siehe README)."
   docker compose up -d --remove-orphans
   docker compose ps
   exit 0
@@ -94,6 +103,29 @@ fi
 
 ZEITZONE=$(frage "Zeitzone" "Europe/Berlin")
 
+port() { # port <Text> <Vorschlag> → geprüfte Portnummer
+  while :; do
+    p=$(frage "$1" "$2")
+    case "$p" in ''|*[!0-9]*) ;; *) if [ "$p" -ge 1 ] && [ "$p" -le 65535 ]; then echo "$p"; return; fi ;; esac
+    echo "Bitte eine Zahl zwischen 1 und 65535 eingeben." >&2
+  done
+}
+STUDIO_PORT=8090; WEB_PORT=8080; MOBILE_PORT=8081; HTTP_PORT=80; HTTPS_PORT=443
+if ja "Ports selbst festlegen (sonst Studio 8090, Web 8080, Mobile 8081$( [ "$HTTPS" = 1 ] && echo ", HTTP 80, HTTPS 443"))? j/n" n; then
+  [ "$STUDIO" = 1 ] && STUDIO_PORT=$(port "Port für UntPlan Studio" 8090)
+  [ "$WEB" = 1 ] && WEB_PORT=$(port "Port für UntPlan Web" 8080)
+  [ "$MOBILE" = 1 ] && MOBILE_PORT=$(port "Port für UntPlan Mobile" 8081)
+  if [ "$HTTPS" = 1 ]; then
+    echo "Hinweis: Für das automatische Zertifikat müssen die Ports 80 und 443 aus dem Internet erreichbar sein –"
+    echo "andere Ports nur, wenn der Router 80/443 auf diese Ports weiterleitet."
+    HTTP_PORT=$(port "HTTP-Port (Caddy)" 80)
+    HTTPS_PORT=$(port "HTTPS-Port (Caddy)" 443)
+  fi
+  belegt=$(printf '%s\n' $( [ "$STUDIO" = 1 ] && echo "$STUDIO_PORT") $( [ "$WEB" = 1 ] && echo "$WEB_PORT") \
+    $( [ "$MOBILE" = 1 ] && echo "$MOBILE_PORT") $( [ "$HTTPS" = 1 ] && echo "$HTTP_PORT $HTTPS_PORT") | sort | uniq -d)
+  [ -z "$belegt" ] || fehler "Port $belegt ist mehrfach vergeben."
+fi
+
 STUDIO_PW=""; WEB_PW=""
 [ "$STUDIO" = 1 ] && STUDIO_PW=$(passwort)
 [ "$WEB" = 1 ] && WEB_PW=$(passwort)
@@ -112,9 +144,11 @@ umask 077
   else
     echo "BIND_ADRESSE=0.0.0.0"
   fi
-  echo "STUDIO_PORT=8090"
-  echo "WEB_PORT=8080"
-  echo "MOBILE_PORT=8081"
+  echo "STUDIO_PORT=$STUDIO_PORT"
+  echo "WEB_PORT=$WEB_PORT"
+  echo "MOBILE_PORT=$MOBILE_PORT"
+  echo "HTTP_PORT=$HTTP_PORT"
+  echo "HTTPS_PORT=$HTTPS_PORT"
   if [ "$STUDIO" = 1 ]; then
     echo
     echo "# UntPlan Studio (eigene Datenbank im Volume untplanstudio-daten)"
@@ -163,17 +197,27 @@ umask 022
 # --- starten -----------------------------------------------------------------------------------------------------
 echo
 echo "Lade Images und starte Container …"
-docker compose pull
+if ! docker compose pull; then
+  echo >&2
+  echo "Die Images konnten nicht geladen werden. Häufigste Ursache: die Pakete auf ghcr.io sind nicht öffentlich." >&2
+  echo "  • Auf GitHub unter Profil → Packages → untplan-studio / untplan-web / untplan-mobile" >&2
+  echo "    → Package settings → Change visibility → Public stellen, oder" >&2
+  echo "  • auf dem Server anmelden: docker login ghcr.io -u <GitHub-Benutzer>  (Token mit Recht read:packages)" >&2
+  echo "Danach ./install.sh erneut aufrufen (die Einstellungen bleiben erhalten)." >&2
+  exit 1
+fi
 docker compose up -d --remove-orphans
 
 adresse() { # adresse <Domain> <Port>
-  if [ "$HTTPS" = 1 ]; then echo "https://$1"; else echo "http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo localhost):$2"; fi
+  if [ "$HTTPS" = 1 ]; then
+    if [ "$HTTPS_PORT" = 443 ]; then echo "https://$1"; else echo "https://$1:$HTTPS_PORT"; fi
+  else echo "http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo localhost):$2"; fi
 }
 echo
 echo "Fertig. Zugangsdaten stehen in $(pwd)/.env – bitte sicher aufbewahren und nach der ersten Anmeldung ändern."
-[ "$STUDIO" = 1 ] && echo "  UntPlan Studio  $(adresse "${STUDIO_DOMAIN:-}" 8090)   Benutzer admin, Passwort $STUDIO_PW"
-[ "$WEB" = 1 ]    && echo "  UntPlan Web     $(adresse "${WEB_DOMAIN:-}" 8080)   Benutzer admin, Passwort $WEB_PW"
-[ "$MOBILE" = 1 ] && echo "  UntPlan Mobile  $(adresse "${MOBILE_DOMAIN:-}" 8081)   Anmeldung mit dem Konto von UntPlan Web"
+[ "$STUDIO" = 1 ] && echo "  UntPlan Studio  $(adresse "${STUDIO_DOMAIN:-}" "$STUDIO_PORT")   Benutzer admin, Passwort $STUDIO_PW"
+[ "$WEB" = 1 ]    && echo "  UntPlan Web     $(adresse "${WEB_DOMAIN:-}" "$WEB_PORT")   Benutzer admin, Passwort $WEB_PW"
+[ "$MOBILE" = 1 ] && echo "  UntPlan Mobile  $(adresse "${MOBILE_DOMAIN:-}" "$MOBILE_PORT")   Anmeldung mit dem Konto von UntPlan Web"
 if [ "$STUDIO" = 1 ] && [ "$WEB" = 1 ]; then
   echo
   echo "Pläne von Studio nach Web übertragen: in Studio „UntPlan Web“ → „Einstellungen“ öffnen und eintragen:"

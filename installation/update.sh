@@ -69,10 +69,21 @@ fi
 
 [ "$AKTUALISIEREN" = 1 ] || { echo "Sicherung fertig."; exit 0; }
 
+# aktuelle docker-compose.yml laden (die eigene .env bleibt unverändert; die bisherige Datei wird beiseitegelegt)
+QUELLE=${UNTPLAN_QUELLE:-https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation}
+if command -v curl >/dev/null 2>&1 && curl -fsSL "$QUELLE/docker-compose.yml" -o docker-compose.yml.neu 2>/dev/null \
+   && grep -q "ghcr.io/florians25/untplan-studio" docker-compose.yml.neu; then
+  if ! cmp -s docker-compose.yml docker-compose.yml.neu; then
+    mv docker-compose.yml "docker-compose.yml.alt-$(date +%Y%m%d-%H%M%S)"; mv docker-compose.yml.neu docker-compose.yml
+    echo "docker-compose.yml aktualisiert."
+  fi
+fi
+rm -f docker-compose.yml.neu
+
 laeuft untplanweb && docker compose exec -T untplanweb rm -f /data/update/angefordert.json 2>/dev/null || true
 echo "Lade neue Images …"
 # shellcheck disable=SC2086
-docker compose pull $NUR
+docker compose pull $NUR || { echo "Images konnten nicht geladen werden – Pakete auf ghcr.io öffentlich stellen oder „docker login ghcr.io“ (siehe README)." >&2; exit 1; }
 # shellcheck disable=SC2086
 docker compose up -d --remove-orphans $NUR
 docker image prune -f >/dev/null 2>&1 || true

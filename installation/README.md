@@ -31,8 +31,22 @@ UntPlan Web nutzt (SQLite oder MariaDB) und ob HTTPS eingerichtet werden soll. E
 schreibt `.env` (nur für root lesbar) und `Caddyfile` und startet die Container. Am Ende stehen Adressen und
 Zugangsdaten auf dem Bildschirm.
 
+**Ports:** Auf Wunsch fragt das Skript eigene Ports ab (Studio, Web, Mobile und bei HTTPS die Ports von Caddy). Sie
+stehen danach in `.env` (`STUDIO_PORT`, `WEB_PORT`, `MOBILE_PORT`, `HTTP_PORT`, `HTTPS_PORT`) und lassen sich dort
+jederzeit ändern (`docker compose up -d`). Für das automatische Zertifikat müssen 80 und 443 aus dem Internet erreichbar
+sein – andere Ports nur mit Weiterleitung im Router.
+
 Ohne HTTPS sind die Programme unter `http://<server>:8090` (Studio), `:8080` (Web) und `:8081` (Mobile) erreichbar –
 gedacht für einen vorhandenen Reverse-Proxy. Für die Installation von UntPlan Mobile als App ist HTTPS nötig.
+
+### „pull access denied“ beim Laden der Images
+
+Die Images liegen auf `ghcr.io/florians25/untplan-studio`, `…/untplan-web` und `…/untplan-mobile`. Neue Pakete sind
+auf GitHub zunächst **privat**. Entweder einmalig auf GitHub *Profil → Packages → Paket → Package settings → Change
+visibility → Public* stellen (für alle drei Pakete), oder auf dem Server mit einem Token (Recht `read:packages`)
+anmelden: `docker login ghcr.io -u <GitHub-Benutzer>`. Erscheinen Namen ohne `ghcr.io/…` (z. B. `untplanmobile`), stammt
+die `docker-compose.yml` aus einer älteren Installation – `install.sh` und `update.sh` laden die aktuelle Fassung
+inzwischen automatisch und legen die alte als `docker-compose.yml.alt-<Datum>` beiseite.
 
 ### Studio mit Web verbinden
 
