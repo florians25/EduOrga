@@ -48,6 +48,9 @@ function useSystemDunkel() {
   return dunkel;
 }
 
+// Module sofort registrieren (Ansichten, Befehle), damit Router und Navigation sie beim ersten Zeichnen kennen
+moduleLaden(module);
+
 let gestartet = false;
 async function dokumentWiederOeffnen() {
   let id: string | null = null;
@@ -85,7 +88,6 @@ export function App() {
   useEffect(() => {
     if (phase !== 'bereit' || gestartet) return;
     gestartet = true;
-    moduleLaden(module);
     void dokumentWiederOeffnen();
   }, [phase]);
 

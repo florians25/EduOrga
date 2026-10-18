@@ -34,7 +34,7 @@ export interface PlanEinstellungen { zeiten: boolean; abwesenheiten: boolean; au
 
 export function planEinstellungen(zeitenVorgabe: boolean, mobil: boolean): PlanEinstellungen {
   const w = lesen<Partial<PlanEinstellungen> & { aufsichten?: string }>('untplan:planeinstellungen', {});
-  return { zeiten: w.zeiten ?? zeitenVorgabe, abwesenheiten: w.abwesenheiten ?? true, aufsichten: (w.aufsichten === 'halbiert' ? 'kompakt' : w.aufsichten as Aufsichtsmodus) ?? 'normal', ansicht: mobil ? 'tag' : w.ansicht ?? 'woche' };
+  return { zeiten: w.zeiten ?? zeitenVorgabe, abwesenheiten: w.abwesenheiten ?? true, aufsichten: ((w.aufsichten as string) === 'halbiert' ? 'kompakt' : w.aufsichten as Aufsichtsmodus) ?? 'normal', ansicht: mobil ? 'tag' : w.ansicht ?? 'woche' };
 }
 
 export function elementInfo(typ: PlanTyp, x: Element | undefined) {

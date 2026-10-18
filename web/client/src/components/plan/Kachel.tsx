@@ -2,7 +2,7 @@
 // Petrol-Rahmen (Änderung), Bernstein (Prüfung), Violett gestrichelt (Termin), grau gestrichelt (Lehrkraft vertreten). Plaketten und
 // Symbole (online, Hausaufgabe fällig, Notizen) unten. Überfahren zeigt eine Kurzinfo, Klick öffnet die Stundendetails.
 import { memo, type CSSProperties, type KeyboardEvent } from 'react';
-import { alpha, Box, Stack, Tooltip, Typography, useTheme } from '@mui/material';
+import { alpha, Box, Stack, Tooltip, Typography, useTheme, type Theme } from '@mui/material';
 import VideocamOutlined from '@mui/icons-material/VideocamOutlined';
 import EditNoteRounded from '@mui/icons-material/EditNoteRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
@@ -22,7 +22,7 @@ export function PlaketteChip({ p, klein = false }: { p: Plakette; klein?: boolea
 }
 
 /** Hintergrund, Rahmen und Textfarbe je Art. */
-export function kachelStil(k: Karte, typ: Typ, t: ReturnType<typeof useTheme>): CSSProperties & Record<string, unknown> {
+export function kachelStil(k: Karte, typ: Typ, t: Theme): CSSProperties & Record<string, unknown> {
   const art = artVon(k, typ);
   const fach = gueltigeFarbe(k.farbe);
   const papier = t.palette.background.paper;

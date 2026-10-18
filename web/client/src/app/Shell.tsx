@@ -44,7 +44,7 @@ export function Shell({ abmelden, neuStarten }: { abmelden: () => void; neuStart
   const s = useSitzung();
   const { ich, sitzung } = s;
   const m = useMemo(() => menue(ich), [ich]);
-  const [zu, setZu] = useState<boolean>(() => lesen('untplan:leiste', 'offen') === 'zu');
+  const [zu, setZu] = useState<boolean>(() => lesen<string>('untplan:leiste', 'offen') === 'zu');
   const [mobilOffen, setMobilOffen] = useState(false);
 
   // Seite aus der Adresse (mit Rechteprüfung wie im Server-Menü)

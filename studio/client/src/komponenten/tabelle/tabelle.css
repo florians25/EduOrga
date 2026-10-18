@@ -1,0 +1,67 @@
+/* Datentabelle (Stammdaten, Unterricht, Listen der Module). Farben über die Fluent-Variablen (Thema hell/dunkel). */
+.tb {
+  position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; outline: none;
+  font-size: 13px; color: var(--colorNeutralForeground1); background: var(--colorNeutralBackground1);
+}
+.tb-rollen { flex: 1; min-height: 0; overflow: auto; position: relative; }
+.tb-kopf {
+  position: sticky; top: 0; z-index: 3; display: flex; background: var(--colorNeutralBackground2);
+  border-bottom: 1px solid var(--colorNeutralStroke2); height: 32px; min-width: 100%;
+}
+.tb-kz {
+  position: relative; flex-shrink: 0; display: flex; align-items: center; gap: 4px; padding: 0 8px; height: 32px;
+  font-size: 12px; font-weight: 500; color: var(--colorNeutralForeground2); white-space: nowrap; overflow: hidden;
+  user-select: none; cursor: pointer; border-right: 1px solid var(--colorNeutralStroke3);
+}
+.tb-kz:hover { background: var(--colorNeutralBackground2Hover); }
+.tb-kz.rechts { justify-content: flex-end; }
+.tb-kz .tb-titel { overflow: hidden; text-overflow: ellipsis; }
+.tb-kz .tb-sort { color: var(--colorBrandForeground1); display: inline-flex; }
+.tb-kz.zieht { box-shadow: inset 2px 0 0 var(--colorBrandStroke1); }
+.tb-breite { position: absolute; right: -3px; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 2; }
+.tb-breite:hover, .tb-breite.aktiv { background: var(--colorBrandStroke2); }
+.tb-platz { position: relative; }
+.tb-zeile { position: absolute; left: 0; display: flex; border-bottom: 1px solid var(--colorNeutralStroke3); background: var(--colorNeutralBackground1); }
+.tb-zeile:hover { background: var(--colorNeutralBackground1Hover); }
+.tb-zeile.gewaehlt { background: var(--colorBrandBackground2); }
+.tb-zeile.tb-neu { color: var(--colorNeutralForeground3); font-style: normal; }
+.tb-zeile.gruppe-folge { border-top: none; }
+.tb-zeile.gruppe-folge .tb-zelle { color: var(--colorNeutralForeground2); }
+.tb-zelle {
+  flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow: hidden; white-space: nowrap;
+  border-right: 1px solid var(--colorNeutralStroke3); position: relative; font-variant-numeric: tabular-nums;
+}
+.tb-zelle > span.t { overflow: hidden; text-overflow: ellipsis; }
+.tb-zelle.rechts { justify-content: flex-end; }
+.tb-zelle.mitte { justify-content: center; }
+.tb-zelle.nurlesen { color: var(--colorNeutralForeground2); }
+.tb-zelle.aktiv { box-shadow: inset 0 0 0 2px var(--colorBrandStroke1); z-index: 1; }
+.tb:not(:focus-within) .tb-zelle.aktiv { box-shadow: inset 0 0 0 1px var(--colorNeutralStroke1Pressed); }
+.tb-haken {
+  width: 14px; height: 14px; border: 1px solid var(--colorNeutralStrokeAccessible); border-radius: 3px; display: inline-flex;
+  align-items: center; justify-content: center; background: var(--colorNeutralBackground1); cursor: pointer;
+}
+.tb-haken.an { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
+.tb-haken.an::after { content: ''; width: 7px; height: 4px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.tb-farbpunkt { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--colorNeutralStroke1); flex-shrink: 0; }
+.tb-leer { position: absolute; top: 56px; left: 0; right: 0; text-align: center; color: var(--colorNeutralForeground3); pointer-events: none; }
+.tb-editor {
+  position: absolute; z-index: 4; box-sizing: border-box; border: 2px solid var(--colorBrandStroke1); padding: 0 6px;
+  font: inherit; font-size: 13px; outline: none; background: var(--colorNeutralBackground1); color: var(--colorNeutralForeground1);
+}
+select.tb-editor { padding: 0 2px; }
+/* Statusfarben, die Module als Zellklasse nutzen */
+.tb-zelle.rot, .tb-zelle.vt-rot { color: var(--up-entfall); font-weight: 600; }
+.tb-zelle.vt-kollrand { box-shadow: inset 0 0 0 1px var(--up-entfall); }
+
+/* Vorschlagsliste für Element-Eingaben */
+.vs-liste {
+  position: fixed; z-index: 1000000; max-height: 280px; overflow-y: auto; background: var(--colorNeutralBackground1);
+  border: 1px solid var(--colorNeutralStroke1); border-radius: 6px; box-shadow: var(--shadow16); padding: 4px; font-size: 13px;
+  color: var(--colorNeutralForeground1);
+}
+.vs-eintrag { display: flex; gap: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.vs-eintrag:hover, .vs-eintrag.fokus { background: var(--colorNeutralBackground1Selected); }
+.vs-eintrag .k { font-weight: 600; min-width: 48px; }
+.vs-eintrag .l { color: var(--colorNeutralForeground3); }
+.vs-leer { padding: 6px 8px; color: var(--colorNeutralForeground3); }

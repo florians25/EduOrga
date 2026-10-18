@@ -3,8 +3,10 @@
 import type { StudioModul } from './typen';
 import datei from './datei';
 import start from './start';
+import stammdaten from './stammdaten';
 
 export const module: StudioModul[] = [
   datei,
   start,
+  stammdaten,
 ];

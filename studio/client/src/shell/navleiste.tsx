@@ -12,7 +12,7 @@ import { NAVIGATION, aufloesen, passt, sichtbar, type NavPunkt } from './navigat
 import { useSeitenort } from './seitenort';
 
 const useStile = makeStyles({
-  nav: { width: '252px', borderRight: `1px solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2 },
+  nav: { width: '252px', borderRight: `1px solid ${tokens.colorNeutralStroke2}` },
   koerper: { paddingTop: '8px' },
   unter: { fontSize: tokens.fontSizeBase300 },
 });

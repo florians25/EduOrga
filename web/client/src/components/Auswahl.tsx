@@ -19,7 +19,7 @@ export function ElementWahl({ liste, wert, onWahl, platzhalter, info, breite = 2
     <Stack direction="row" alignItems="center" gap={0.5}>
       {blaettern && <Tooltip title="Vorheriges Element (Alt+←)"><span><IconButton size="small" disabled={pos <= 0} onClick={() => onWahl(liste[pos - 1].kurz)} aria-label="Vorheriges Element"><ChevronLeftRounded /></IconButton></span></Tooltip>}
       <Autocomplete
-        options={liste} value={aktuell} onChange={(_, v) => v && onWahl(v.kurz)} disableClearable={!!aktuell as true}
+        options={liste} value={aktuell} onChange={(_, v) => v && onWahl(v.kurz)}
         getOptionLabel={o => o.kurz} isOptionEqualToValue={(a, b) => a.kurz === b.kurz}
         filterOptions={(o, s) => { const q = s.inputValue.toLowerCase(); return o.filter(x => x.kurz.toLowerCase().includes(q) || (x.name || '').toLowerCase().includes(q)); }}
         renderOption={(props, o) => {
@@ -28,7 +28,7 @@ export function ElementWahl({ liste, wert, onWahl, platzhalter, info, breite = 2
           return <Box component="li" key={key} {...rest} sx={{ gap: 1.5 }}><Typography sx={{ fontWeight: 600, minWidth: 56 }}>{o.kurz}</Typography><Typography variant="body2" color="text.secondary" noWrap>{zusatz}</Typography></Box>;
         }}
         renderInput={p => <TextField {...p} placeholder={platzhalter} aria-label={platzhalter}
-          slotProps={{ ...p.slotProps, input: { ...p.InputProps, sx: { borderRadius: 999, fontWeight: 600 }, endAdornment: <>{aktuell && info?.(aktuell) ? <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 140, mr: 0.5 }}>{info(aktuell)}</Typography> : null}{p.InputProps.endAdornment}</> } }} />}
+          InputProps={{ ...p.InputProps, sx: { borderRadius: 999, fontWeight: 600 } }} />}
         sx={{ width: breite }} slotProps={{ listbox: { sx: { maxHeight: 360 } } }} noOptionsText="Keine Treffer"
       />
       {blaettern && <Tooltip title="Nächstes Element (Alt+→)"><span><IconButton size="small" disabled={pos < 0 || pos >= liste.length - 1} onClick={() => onWahl(liste[pos + 1].kurz)} aria-label="Nächstes Element"><ChevronRightRounded /></IconButton></span></Tooltip>}
