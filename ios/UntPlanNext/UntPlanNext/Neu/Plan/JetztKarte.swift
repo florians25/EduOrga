@@ -166,8 +166,8 @@ struct JetztKarte: View {
                             .font(.caption.weight(.medium))
                             .monospacedDigit()
                             .foregroundStyle(Farben.text3)
-                        if let m = Statuslehre.merkmal(kachel) { Statusmarke(merkmal: m, klein: true) }
-                        if kachel.online { Statusmarke(merkmal: Statuslehre.online, klein: true) }
+                        if let m = Statuslehre.merkmal(kachel) { Statusabzeichen(merkmal: m, klein: true) }
+                        if kachel.online { Statusabzeichen(merkmal: Statuslehre.online, klein: true) }
                     }
                 }
                 Spacer(minLength: 0)
@@ -216,7 +216,7 @@ struct JetztKarte: View {
                             .lineLimit(1)
                     }
                     Spacer(minLength: 4)
-                    if let m = Statuslehre.merkmal(n) { Statusmarke(merkmal: m, klein: true) }
+                    if let m = Statuslehre.merkmal(n) { Statusabzeichen(merkmal: m, klein: true) }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)

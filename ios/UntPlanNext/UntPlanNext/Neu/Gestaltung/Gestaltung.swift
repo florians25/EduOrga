@@ -6,7 +6,7 @@ import UIKit
 
 // MARK: - Maße
 
-enum Stil {
+enum Stilmass {
     /// Radius von Karten und Flächen
     static let radius: CGFloat = 14
     /// Radius der Stundenkacheln auf der Zeitachse
@@ -239,7 +239,7 @@ struct Streifenmuster: Shape {
 
 extension View {
     /// Karte: Fläche, Radius 14, feiner Rand.
-    func kartenflaeche(_ flaeche: Color = Farben.flaeche, radius: CGFloat = Stil.radius) -> some View {
+    func kartenflaeche(_ flaeche: Color = Farben.flaeche, radius: CGFloat = Stilmass.radius) -> some View {
         background(flaeche, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -249,7 +249,7 @@ extension View {
 }
 
 /// Status-Plakette mit Symbol (Kachel, Kopf der Stundenansicht).
-struct Statusmarke: View {
+struct Statusabzeichen: View {
     let merkmal: Statusmerkmal
     var klein: Bool = false
     /// Auf farbigem Grund (Kopf der Stundenansicht): weiße Fläche

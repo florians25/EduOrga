@@ -116,7 +116,7 @@ struct ZeitKachel: View {
     }
 
     var body: some View {
-        let form = RoundedRectangle(cornerRadius: Stil.kachelRadius, style: .continuous)
+        let form = RoundedRectangle(cornerRadius: Stilmass.kachelRadius, style: .continuous)
         ViewThatFits(in: .vertical) {
             gross
             mittel
@@ -222,8 +222,8 @@ struct ZeitKachel: View {
 
     private var marken: some View {
         HStack(spacing: 4) {
-            if let merkmal { Statusmarke(merkmal: merkmal, klein: true) }
-            if kachel.online { Statusmarke(merkmal: Statuslehre.online, klein: true) }
+            if let merkmal { Statusabzeichen(merkmal: merkmal, klein: true) }
+            if kachel.online { Statusabzeichen(merkmal: Statuslehre.online, klein: true) }
             if kachel.hausaufgabe {
                 Image(systemName: "checklist")
                     .font(.caption2.weight(.semibold))
@@ -269,7 +269,7 @@ struct ZeitKachel: View {
             HStack(spacing: 6) {
                 if !kachel.personenzeilen.isEmpty { personenText }
                 Spacer(minLength: 0)
-                if let merkmal { Statusmarke(merkmal: merkmal, klein: true) }
+                if let merkmal { Statusabzeichen(merkmal: merkmal, klein: true) }
             }
         }
     }
@@ -317,7 +317,7 @@ struct AufsichtKapsel: View {
                 .strikethrough(kachel.aufsichtsstand == .entfall || kachel.aufsichtsstand == .abgegeben, color: Farben.text3)
                 .lineLimit(1)
             if let m, kachel.aufsichtsstand != .regulaer {
-                Statusmarke(merkmal: m, klein: true)
+                Statusabzeichen(merkmal: m, klein: true)
             }
         }
         .foregroundStyle(Farben.text)

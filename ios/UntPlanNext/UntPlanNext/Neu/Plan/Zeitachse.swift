@@ -28,13 +28,13 @@ struct Zeitachse: View {
             let zeigtJetzt = tag.istHeute && minute >= tag.start && minute <= tag.schluss
             HStack(alignment: .top, spacing: 0) {
                 zeitspalte(jetzt: zeigtJetzt ? minute : nil)
-                    .frame(width: Stil.zeitspalte, height: hoehe, alignment: .topLeading)
+                    .frame(width: Stilmass.zeitspalte, height: hoehe, alignment: .topLeading)
                 GeometryReader { geo in
                     inhalt(breite: geo.size.width, jetzt: jetzt, minute: zeigtJetzt ? minute : nil)
                 }
                 .frame(height: hoehe)
             }
-            .padding(.trailing, Stil.rand)
+            .padding(.trailing, Stilmass.rand)
         }
     }
 
@@ -64,14 +64,14 @@ struct Zeitachse: View {
                 Capsule()
                     .fill(Farben.rand)
                     .frame(width: 3, height: max(4, CGFloat(r.ende - r.beginn) * ppm - 2))
-                    .offset(x: Stil.zeitspalte - 9, y: y(r.beginn) + 1)
+                    .offset(x: Stilmass.zeitspalte - 9, y: y(r.beginn) + 1)
                 Text("\(r.nr)")
                     .font(.caption2.weight(.bold))
                     .monospacedDigit()
                     .foregroundStyle(Farben.text2)
                     .dynamicTypeSize(...DynamicTypeSize.large)
                     .frame(width: 14, alignment: .trailing)
-                    .offset(x: Stil.zeitspalte - 26, y: y(r.beginn) + 6)
+                    .offset(x: Stilmass.zeitspalte - 26, y: y(r.beginn) + 6)
             }
             if let jetzt {
                 Text(Uhr.uhrzeit(jetzt))
@@ -123,7 +123,7 @@ struct Zeitachse: View {
 
             // Eigene Abwesenheit
             ForEach(tag.balken) { b in
-                RoundedRectangle(cornerRadius: Stil.kachelRadius, style: .continuous)
+                RoundedRectangle(cornerRadius: Stilmass.kachelRadius, style: .continuous)
                     .fill(Farben.abwesendFlaeche.opacity(0.55))
                     .overlay(alignment: .topTrailing) {
                         Text(b.text)
@@ -189,7 +189,7 @@ struct Zeitachse: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Pause, \(Uhr.dauerGesprochen(l.dauer))")
         case .frei:
-            RoundedRectangle(cornerRadius: Stil.kachelRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: Stilmass.kachelRadius, style: .continuous)
                 .strokeBorder(Farben.randStark, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 .overlay(alignment: .topLeading) {
                     if h >= 26 {

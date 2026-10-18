@@ -100,7 +100,7 @@ struct StundenBuehneInhalt: View {
                     notizenKarte
                     planzieleKarte
                 }
-                .padding(.horizontal, Stil.rand)
+                .padding(.horizontal, Stilmass.rand)
                 .padding(.top, 16)
                 .padding(.bottom, 40)
                 .frame(maxWidth: 720)
@@ -200,11 +200,11 @@ struct StundenBuehneInhalt: View {
             }
             if merkmal != nil || karte.online || karte.statusPille != nil {
                 HStack(spacing: 6) {
-                    if let merkmal { Statusmarke(merkmal: merkmal, aufKopf: true) }
+                    if let merkmal { Statusabzeichen(merkmal: merkmal, aufKopf: true) }
                     if let p = karte.statusPille, p != merkmal?.text, p != "Prüfung" {
-                        Statusmarke(merkmal: Statusmerkmal(text: p, farbe: Farben.text, flaeche: Farben.flaeche, symbol: "tag"), aufKopf: true)
+                        Statusabzeichen(merkmal: Statusmerkmal(text: p, farbe: Farben.text, flaeche: Farben.flaeche, symbol: "tag"), aufKopf: true)
                     }
-                    if daten.istOnline { Statusmarke(merkmal: Statuslehre.online, aufKopf: true) }
+                    if daten.istOnline { Statusabzeichen(merkmal: Statuslehre.online, aufKopf: true) }
                 }
             }
             Text(zeitzeile)
@@ -358,7 +358,7 @@ struct StundenBuehneInhalt: View {
                     .accessibilityAddTraits(gewaehlt ? .isSelected : [])
                 }
             }
-            .padding(.horizontal, Stil.rand)
+            .padding(.horizontal, Stilmass.rand)
             .padding(.vertical, 10)
         }
         .scrollIndicators(.hidden)
@@ -442,17 +442,17 @@ struct StundenBuehneInhalt: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 ZStack {
-                    RoundedRectangle(cornerRadius: Stil.radius, style: .continuous)
+                    RoundedRectangle(cornerRadius: Stilmass.radius, style: .continuous)
                         .fill(karte.istEntfall ? Farben.entfallFlaeche : Farben.aenderungFlaeche)
                     if karte.istEntfall {
                         Streifenmuster(abstand: 9)
                             .stroke(Farben.entfall.opacity(0.08), lineWidth: 1)
-                            .clipShape(RoundedRectangle(cornerRadius: Stil.radius, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: Stilmass.radius, style: .continuous))
                     }
                 }
             }
             .overlay {
-                RoundedRectangle(cornerRadius: Stil.radius, style: .continuous)
+                RoundedRectangle(cornerRadius: Stilmass.radius, style: .continuous)
                     .strokeBorder(farbe.opacity(0.35), lineWidth: 1)
             }
             .accessibilityElement(children: .combine)
@@ -1015,7 +1015,7 @@ struct AufsichtBuehne: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .kartenflaeche()
-                .padding(.horizontal, Stil.rand)
+                .padding(.horizontal, Stilmass.rand)
             }
             .padding(.bottom, 40)
         }

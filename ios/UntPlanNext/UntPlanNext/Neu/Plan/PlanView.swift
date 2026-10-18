@@ -83,7 +83,7 @@ struct PlanView: View {
             .overlay(alignment: .bottom) {
                 if let fehler = modell.fehler {
                     Fehlerhinweis(text: fehler)
-                        .padding(.horizontal, Stil.rand)
+                        .padding(.horizontal, Stilmass.rand)
                         .padding(.bottom, 12)
                         .onTapGesture { modell.fehler = nil }
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -120,9 +120,8 @@ struct PlanView: View {
             guard let neu, Planmodell.montag(aktuellerTag) != neu else { return }
             let tage = modell.tage(montag: neu)
             let index = modell.tage(montag: Planmodell.montag(aktuellerTag)).firstIndex(of: aktuellerTag) ?? 0
-            if let ziel = tage.indices.contains(index) ? tage[index] : tage.first {
-                tag = ziel
-            }
+            let ziel: String? = tage.indices.contains(index) ? tage[index] : tage.first
+            if let ziel { tag = ziel }
         }
         .onChange(of: zustand.planAnfrage) { _, _ in anfragenAusfuehren() }
         .onChange(of: zustand.tagAnfrage) { _, _ in anfragenAusfuehren() }
@@ -221,7 +220,7 @@ struct PlanView: View {
                 .pickerStyle(.segmented)
                 .fixedSize()
             }
-            .padding(.horizontal, Stil.rand)
+            .padding(.horizontal, Stilmass.rand)
             Wochenleiste(modell: modell, montage: montage, woche: $woche, gewaehlt: modus == .tag ? aktuellerTag : "") { d in
                 if modus == .woche { modusRoh = Planmodus.tag.rawValue }
                 withAnimation(.easeInOut(duration: 0.25)) { tag = d }
@@ -357,7 +356,7 @@ struct TagSeite: View {
                     } else if modell.fehler != nil && !modell.laedt(montag: Planmodell.montag(datum)) {
                         Hinweisfeld(titel: "Plan nicht geladen", text: "Zum Aktualisieren nach unten ziehen.", symbol: "wifi.exclamationmark",
                                     flaeche: Farben.flaeche)
-                            .padding(.horizontal, Stil.rand)
+                            .padding(.horizontal, Stilmass.rand)
                     } else {
                         Platzhaltertag()
                     }
@@ -407,7 +406,7 @@ struct TagSeite: View {
                 }
             }
         }
-        .padding(.horizontal, Stil.rand)
+        .padding(.horizontal, Stilmass.rand)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
     }
@@ -430,10 +429,10 @@ struct TagSeite: View {
             let hinweis = (t.sperrhinweis ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             Hinweisfeld(titel: "Nicht freigegeben", text: hinweis.isEmpty ? "Dieser Zeitraum ist für Ihr Konto noch nicht einsehbar." : hinweis,
                         symbol: "lock", minHoehe: 160, flaeche: Farben.flaeche)
-                .padding(.horizontal, Stil.rand)
+                .padding(.horizontal, Stilmass.rand)
         } else if let f = t.freiText {
             FreiFlaeche(titel: f.titel, zeitraum: f.zeitraum)
-                .padding(.horizontal, Stil.rand)
+                .padding(.horizontal, Stilmass.rand)
         } else {
             ForEach(t.ganztags) { g in
                 Button {
@@ -461,7 +460,7 @@ struct TagSeite: View {
                     .zoomQuelle("ganz-\(g.id.uuidString)", in: raum)
                 }
                 .buttonStyle(KachelDruckStil())
-                .padding(.horizontal, Stil.rand)
+                .padding(.horizontal, Stilmass.rand)
             }
             ForEach(Array((t.kopf?.hinweise ?? []).enumerated()), id: \.offset) { _, h in
                 HStack(alignment: .top, spacing: 8) {
@@ -476,17 +475,17 @@ struct TagSeite: View {
                 }
                 .padding(10)
                 .background(Farben.freiFlaeche, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .padding(.horizontal, Stil.rand)
+                .padding(.horizontal, Stilmass.rand)
                 .accessibilityElement(children: .combine)
             }
             if t.istHeute && modell.istEigenerPlan && Jetztlage.berechnen(t.kacheln, minuten: Uhr.minuten()) != nil {
                 JetztKarte(kacheln: t.kacheln, raum: raum) { k, quelle in antippen(k, t, quelle) }
-                    .padding(.horizontal, Stil.rand)
+                    .padding(.horizontal, Stilmass.rand)
             }
             if t.stunden.isEmpty && t.kacheln.isEmpty {
                 Hinweisfeld(titel: "Kein Unterricht", text: t.istHeute ? "Heute ist kein Unterricht geplant." : "An diesem Tag ist kein Unterricht geplant.",
                             symbol: "sun.max", minHoehe: 140, flaeche: Farben.flaeche)
-                    .padding(.horizontal, Stil.rand)
+                    .padding(.horizontal, Stilmass.rand)
             } else {
                 Zeitachse(tag: t, raum: raum, ankerID: anker) { k, quelle in antippen(k, t, quelle) }
                     .padding(.top, 4)
@@ -520,7 +519,7 @@ struct FreiFlaeche: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, minHeight: 200, alignment: .bottomLeading)
-        .background(Farben.freiFlaeche, in: RoundedRectangle(cornerRadius: Stil.radius, style: .continuous))
+        .background(Farben.freiFlaeche, in: RoundedRectangle(cornerRadius: Stilmass.radius, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }
@@ -530,14 +529,14 @@ struct Platzhaltertag: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(0..<5, id: \.self) { i in
-                RoundedRectangle(cornerRadius: Stil.kachelRadius, style: .continuous)
+                RoundedRectangle(cornerRadius: Stilmass.kachelRadius, style: .continuous)
                     .fill(Farben.neutralFlaeche)
                     .frame(height: i == 2 ? 36 : 64)
                     .opacity(i == 2 ? 0.5 : 1)
             }
         }
-        .padding(.leading, Stil.zeitspalte)
-        .padding(.trailing, Stil.rand)
+        .padding(.leading, Stilmass.zeitspalte)
+        .padding(.trailing, Stilmass.rand)
         .redacted(reason: .placeholder)
         .accessibilityLabel("Wird geladen")
     }

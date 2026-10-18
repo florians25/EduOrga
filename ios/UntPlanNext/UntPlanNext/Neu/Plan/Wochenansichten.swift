@@ -149,7 +149,7 @@ struct Wochenmatrix: View {
                 matrix
             }
         }
-        .padding(.horizontal, Stil.rand)
+        .padding(.horizontal, Stilmass.rand)
         .padding(.vertical, 12)
     }
 
