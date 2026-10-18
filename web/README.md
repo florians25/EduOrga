@@ -17,11 +17,12 @@ Symbole sind Linien-Symbole aus **Lucide** (ISC-Lizenz, `wwwroot/lib/lucide/LICE
 Favicon und App-Symbole (`img/logo.svg`, `img/icon-*.png`, `img/maskable-*.png`, `img/apple-touch-icon.png`) aus dem Monogramm.
 
 - **Seitenleiste links** (`css/seitenleiste.css`): helle Leiste mit Zeichen, Wortmarke, Schulname und Schuljahr-Auswahl. Die
-  Bereiche (*Mitteilungen*, *Stundenplan*, *Unterricht*, *Klassenbuch*, *Melden*, *Buchen*, *Stammdaten*, *Administration*) sind
-  Textgruppen, die sich an Ort und Stelle aufklappen; es ist immer nur ein Bereich offen, der Bereich der aktuellen Seite klappt
-  von selbst auf. Der aktive Punkt ist hell marineblau hinterlegt. Unten Konto (Profil, Konto wechseln, weiteres Konto),
-  *Neuigkeiten*, *Abmelden* und *Navigation ausblenden* (dann bleibt links eine schmale Schiene mit dem Menüknopf). Auf Telefon
-  und Tablet öffnet der Knopf *Menü* in der Kopfleiste die Leiste als Schublade.
+  Bereiche (*Heute*, *Übersicht*, *Mitteilungen*, *Stundenplan*, *Unterricht*, *Klassenbuch*, *Melden*, *Buchen*, *Sprechtag*,
+  *Stammdaten*, *Administration*) stehen mit eigenen Linien-Symbolen in abgerundeten Zeilen; Bereiche klappen an Ort und Stelle auf,
+  die Unterpunkte stehen eingerückt an einer feinen Linie. Es ist immer nur ein Bereich offen, der Bereich der aktuellen Seite
+  klappt von selbst auf; der aktive Punkt ist hell marineblau hinterlegt. Unten Konto (Profil, Konto wechseln, weiteres Konto),
+  *Neuigkeiten*, *Abmelden* und *Navigation einklappen* – eingeklappt bleibt eine schmale Leiste mit den Symbolen der Bereiche.
+  Auf Telefon und Tablet öffnet der Knopf *Menü* in der Kopfleiste die Leiste als Schublade.
 - **Stundenplan** (`js/plangitter.js`, `js/ansichten/plan.js`, `css/karten.css`): Werkzeugleiste über dem Raster mit Elementwahl,
   Woche (KW und Datumsbereich, Kalender), *Heute*, Umschalter *Woche/Tag*, Statusfiltern (Entfall, Prüfung, Änderung – anklickbar
   zum Ausblenden), Menü *Ansicht* (Symbole, Uhrzeiten, Abwesenheiten, Pausenaufsichten, Drucken, öffentlicher Link) und Hilfe.

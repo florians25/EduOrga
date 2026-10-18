@@ -1,10 +1,10 @@
 /* UntPlan Web – Seitenleiste (js/app.js: huelle, leisteZeichnen). Wird als letzte Stildatei geladen.
-   Helle Leiste links mit 1px-Linie: oben Zeichen und Wortmarke mit dem Schulnamen, darunter das Schuljahr, dann die Bereiche als
-   aufklappbare Textgruppen (Pfeil rechts), unten Konto, Neuigkeiten, Abmelden und „Navigation ausblenden“. Keine Symbole vor den
-   Menüpunkten, kein Balken am aktiven Punkt – der aktive Punkt hat eine helle Marine-Fläche und Marine-Schrift.
-   Ausgeblendet bleibt links eine schmale Schiene mit dem Menüknopf. Telefon/Tablet (< 992 px): Kopfleiste mit „Menü“, Leiste als Schublade. */
+   Helle Leiste links: oben Zeichen und Wortmarke mit dem Schulnamen, darunter das Schuljahr, dann die Bereiche mit eigenen
+   Linien-Symbolen (Lucide). Bereiche klappen an Ort und Stelle auf (Unterpunkte eingerückt an einer feinen Linie, ohne Symbole).
+   Aktiver Punkt: abgerundete Marine-Fläche, Symbol in Marine. Unten Konto, Neuigkeiten, Abmelden und Einklappen.
+   Eingeklappt bleibt eine schmale Leiste mit den Symbolen der Bereiche. Telefon/Tablet (< 992 px): Leiste als Schublade. */
 
-:root { --u-leiste: 248px; --u-leiste-zu: 40px; }
+:root { --u-leiste: 256px; --u-leiste-zu: 68px; }
 
 .u-app .u-leiste {
   width: var(--u-leiste); background: var(--up-flaeche); box-shadow: none; border-right: 1px solid var(--up-rand);
@@ -39,9 +39,9 @@
 .u-app .u-jahrliste button { font-weight: 400; font-size: var(--up-gr-m); padding: 5px 14px; font-variant-numeric: tabular-nums; }
 
 /* Menü */
-.u-app .u-nav { padding: 8px 8px 16px; }
+.u-app .u-nav { padding: 10px 10px 16px; }
 .u-app .u-nav-punkt, .u-app .u-nav-punkt:hover, .u-app .u-nav-punkt.aktiv, .u-app .u-nav-punkt.aktiv:hover {
-  width: 100%; min-height: 32px; gap: 8px; padding: 0 8px 0 10px; margin: 0; border-radius: var(--up-radius);
+  width: 100%; min-height: 40px; gap: 12px; padding: 0 10px 0 12px; margin: 0; border-radius: 10px;
   font-size: var(--up-gr-n); font-weight: 500; color: var(--up-text); line-height: 1.25;
 }
 .u-app .u-nav-punkt::before { content: none; }
@@ -49,17 +49,24 @@
 .u-app .u-nav-punkt:hover { background: var(--up-flaeche-hover); color: var(--up-text); }
 .u-app .u-nav-punkt.aktiv, .u-app .u-nav-punkt.aktiv:hover { background: var(--up-primaer-flaeche); color: var(--up-marine-700); font-weight: 600; }
 .u-app .u-nav-punkt:focus-visible { outline: 2px solid var(--up-fokus, var(--up-marine-500)); outline-offset: -2px; }
-.u-app .u-nav-gruppe + .u-nav-gruppe, .u-app .u-nav-punkt + .u-nav-gruppe, .u-app .u-nav-gruppe + .u-nav-punkt { margin-top: 1px; }
+.u-nav-sym { width: 22px; height: 22px; flex: none; display: inline-flex; align-items: center; justify-content: center; color: var(--up-text-2); }
+.u-nav-sym .u-sym { width: 20px; height: 20px; vertical-align: 0; }
+.u-app .u-nav-punkt:hover .u-nav-sym { color: var(--up-text); }
+.u-app .u-nav-punkt.aktiv .u-nav-sym, .u-app .u-nav-gruppe.hat-aktiv > .u-nav-kopf .u-nav-sym { color: var(--up-marine-600); }
+.u-app .u-nav-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.u-app .u-nav-gruppe + .u-nav-gruppe, .u-app .u-nav-punkt + .u-nav-gruppe, .u-app .u-nav-gruppe + .u-nav-punkt { margin-top: 2px; }
 .u-app .u-nav-kopf.aktiv, .u-app .u-nav-kopf.aktiv:hover { background: none; color: var(--up-text); font-weight: 600; }
 .u-app .u-nav-kopf.aktiv:hover { background: var(--up-flaeche-hover); }
+.u-app .u-nav-gruppe.auf > .u-nav-kopf { font-weight: 600; }
 .u-nav-pfeil { width: 12px; height: 12px; flex: none; color: var(--up-text-3); transition: transform .15s ease; }
 .u-nav-gruppe.auf > .u-nav-kopf .u-nav-pfeil { transform: rotate(180deg); }
-.u-nav-liste { margin: 2px 0 6px 10px; padding-left: 6px; border-left: 1px solid var(--up-linie); }
+.u-nav-liste { margin: 2px 0 8px 22px; padding-left: 12px; border-left: 2px solid var(--up-linie); }
 .u-nav-liste[hidden] { display: none; }
-.u-app .u-nav-unterpunkt, .u-app .u-nav-unterpunkt:hover { min-height: 30px; font-weight: 400; font-size: var(--up-gr-m); color: var(--up-text-2); }
+.u-app .u-nav-unterpunkt, .u-app .u-nav-unterpunkt:hover, .u-app .u-nav-unterpunkt.aktiv, .u-app .u-nav-unterpunkt.aktiv:hover {
+  min-height: 34px; padding: 0 10px; border-radius: 8px; font-weight: 400; font-size: var(--up-gr-m); color: var(--up-text-2); }
 .u-app .u-nav-unterpunkt:hover { color: var(--up-text); }
-.u-app .u-nav-unterpunkt.aktiv, .u-app .u-nav-unterpunkt.aktiv:hover { font-weight: 500; color: var(--up-marine-700); }
-.u-app .u-nav .u-zahl { margin-left: auto; min-width: 20px; height: 18px; padding: 0 6px; border-radius: var(--up-radius-s); background: var(--up-primaer);
+.u-app .u-nav-unterpunkt.aktiv, .u-app .u-nav-unterpunkt.aktiv:hover { font-weight: 600; color: var(--up-marine-700); }
+.u-app .u-nav .u-zahl { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--up-primaer);
   color: #fff; font-size: var(--up-gr-xs); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; position: static; }
 .u-app .u-nav .u-zahl.d-none { display: none; }
 
@@ -81,8 +88,8 @@
   display: flex; align-items: center; justify-content: flex-start; gap: 6px; width: 100%; height: 28px; margin: 4px 0 0; padding: 0 10px; border: 0; border-radius: var(--up-radius);
   background: none; color: var(--up-text-3); font-size: var(--up-gr-s);
 }
-.u-app .u-griff span, .u-app .u-griff:hover span { position: static; width: auto; height: auto; transform: none; background: none; border-radius: 0; }
-.u-app .u-griff span::after { content: none; }
+.u-app .u-griff span:not(.u-sym), .u-app .u-griff:hover span:not(.u-sym) { position: static; width: auto; height: auto; transform: none; background: none; border-radius: 0; }
+.u-app .u-griff span:not(.u-sym)::after { content: none; }
 .u-app .u-griff:hover { background: var(--up-flaeche-hover); color: var(--up-text); }
 .u-app .u-griff .u-sym, .u-app .u-griff .bi { width: 14px; height: 14px; }
 .u-app .u-kontomenue { left: 8px; right: 8px; bottom: calc(100% - 4px); border-radius: var(--up-radius); border: 1px solid var(--up-rand); box-shadow: var(--up-schatten-2); padding: 4px 0; }
@@ -91,20 +98,21 @@
 .u-app .u-kontokopf { padding: 6px 12px 2px; font-size: var(--up-gr-xs); color: var(--up-text-3); text-transform: none; letter-spacing: 0; }
 .u-app .u-konto small { font-weight: 400; color: var(--up-text-2); }
 
-/* Ausgeblendete Leiste: schmale Schiene mit Menüknopf */
+/* Eingeklappte Leiste: schmale Leiste mit den Symbolen der Bereiche (Unterpunkte öffnen beim Aufklappen der Leiste) */
 .u-leiste-auf { display: none; }
 @media (min-width: 992px) {
-  .u-app.zu .u-leiste { width: var(--u-leiste); transform: translateX(-102%); }
+  .u-app.zu .u-leiste { width: var(--u-leiste-zu); transform: none; overflow: hidden; }
   .u-app.zu .u-haupt { margin-left: var(--u-leiste-zu); }
-  .u-app.zu .u-leiste-auf {
-    display: flex; justify-content: center; position: fixed; inset: 0 auto 0 0; z-index: 1039; width: var(--u-leiste-zu); padding: 12px 0 0;
-    border: 0; border-right: 1px solid var(--up-rand); background: var(--up-flaeche); color: var(--up-text-2);
-  }
-  .u-app.zu .u-leiste-auf:hover { color: var(--up-text); background: var(--up-flaeche-hover); }
-  .u-app.zu .u-leiste-auf .u-sym, .u-app.zu .u-leiste-auf .bi { width: 18px; height: 18px; }
-  /* eingeklappte Darstellung mit Symbolen gibt es nicht mehr – Text bleibt immer sichtbar */
-  .u-app.zu .u-marke span, .u-app.zu .u-nav-text, .u-app.zu .u-benutzer-text { display: revert; }
-  .u-app.zu .u-jahrzeile { display: block; }
+  .u-app.zu .u-marke small, .u-app.zu .u-marke .wortmarke, .u-app.zu .u-jahrzeile, .u-app.zu .u-nav-text, .u-app.zu .u-nav-pfeil,
+  .u-app.zu .u-nav-liste, .u-app.zu .u-benutzer-text, .u-app.zu .u-benutzer > .bi, .u-app.zu .u-fusslinks, .u-app.zu .u-griff > span:not(.u-sym),
+  .u-app.zu .u-nav .u-zahl { display: none !important; }
+  .u-app.zu .u-leistenkopf { padding: 16px 0 12px; display: flex; justify-content: center; }
+  .u-app.zu .u-nav { padding: 10px 8px; }
+  .u-app.zu .u-nav-punkt, .u-app.zu .u-nav-punkt:hover, .u-app.zu .u-nav-punkt.aktiv { justify-content: center; padding: 0; gap: 0; }
+  .u-app.zu .u-nav-gruppe.hat-aktiv > .u-nav-kopf { background: var(--up-primaer-flaeche); }
+  .u-app.zu .u-fuss { padding: 8px; }
+  .u-app.zu .u-benutzer { justify-content: center; padding: 6px 0; }
+  .u-app.zu .u-griff { justify-content: center; padding: 0; }
 }
 
 /* Telefon und Tablet: Kopfleiste mit „Menü“, Leiste als Schublade */
@@ -124,3 +132,9 @@
   .u-app .u-nav-unterpunkt, .u-app .u-nav-unterpunkt:hover { min-height: 38px; }
 }
 @media print { .u-leiste-auf { display: none !important; } }
+.u-app.zu .u-griff .u-sym { transform: rotate(180deg); }
+.u-benutzer-sym { display: none; }
+@media (min-width: 992px) { .u-app.zu .u-benutzer-sym { display: inline-flex; } .u-app.zu .u-benutzer-sym .u-sym { width: 20px; height: 20px; } }
+.u-app .u-griff .u-sym, .u-app .u-griff:hover .u-sym { position: static; transform: none; width: 14px; height: 14px; border-radius: 0; background-color: currentColor; top: auto; left: auto; }
+.u-app .u-griff .u-sym::after { content: none; }
+.u-app.zu .u-griff .u-sym { transform: rotate(180deg); }

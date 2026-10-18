@@ -1,8 +1,7 @@
 /* UntPlan Web – Klassenbuch-Seiten (Übersicht, Offene Stunden, Einträge, Hausaufgaben, Klassendienste, Berichte, Wochenübersicht,
    Abwesenheiten, Fehlzeiten, Befreiungen, Sitzplan, Einstellungen). app.js setzt dafür .kb-seiten an .u-app.
-   Gestaltung: nüchterne, dichte Arbeitsansicht. Weißer Seitenkopf mit Titel (20 px) und einer Filterzeile aus rechteckigen Feldern
-   (32 px hoch, 1px-Rahmen, Radius 4 px), darunter Tabellen mit grauer Kopfzeile, 1px-Linien und 36–40 px hohen Zeilen. Zähler als kleine
-   Ziffern-Schildchen, Status als rechteckige Schilder in den Statusfarben. Keine Pillen, keine Symbolkacheln, keine großen Leerbilder. */
+   Gestaltung: moderne Arbeitsansicht wie die übrigen Seiten – Pillen-Knöpfe und -Felder (Rand 1,5 px), weiche Karten mit Radius 12 px
+   und leichtem Schatten, Tabellen mit grauer Kopfzeile und 1px-Linien, Status als runde Schildchen in den Statusfarben. */
 
 .kb-seiten { --kb-feld-h: 32px; --kb-zeile-h: 38px; }
 
@@ -13,12 +12,12 @@
   background: var(--up-schiefer-100); color: var(--up-text-2); font-size: var(--up-gr-s); font-weight: 500; font-variant-numeric: tabular-nums; vertical-align: 3px; }
 .kb-seiten.u-kopf-weiss #seite .u-kopfteil { margin-bottom: 16px; padding-bottom: 12px; }
 .kb-seiten.u-kopf-weiss:not(.u-kopf-suche) #seitenkopf { margin-bottom: 16px; }
-.kb-seiten.u-kopf-weiss :is(#kopfplatz, .u-kopfskelett)::before { height: var(--kb-feld-h); border-radius: var(--up-radius); }
+.kb-seiten.u-kopf-weiss :is(#kopfplatz, .u-kopfskelett)::before { height: var(--kb-feld-h); border-radius: 999px; }
 
 /* ------------------------------------------------------------------ Bedienelemente der Filterzeile */
 .kb-seiten .u-sf-leiste { gap: 8px 8px; }
 .kb-seiten .u-suchfilter, .kb-seiten.u-kopf-weiss .u-kopfteil .u-suchfilter, .kb-seiten .u-inhalt .u-suchfilter {
-  height: var(--kb-feld-h); min-height: var(--kb-feld-h); padding: 0 4px 0 10px; gap: 6px; border: 1px solid var(--up-rand-stark); border-radius: var(--up-radius);
+  height: var(--kb-feld-h); min-height: var(--kb-feld-h); padding: 0 6px 0 14px; gap: 6px; border: 1.5px solid var(--up-rand-stark); border-radius: 999px;
   background: var(--up-flaeche); box-shadow: none;
 }
 .kb-seiten .u-suchfilter:hover { background: var(--up-flaeche); border-color: var(--up-schiefer-400); }
@@ -30,14 +29,14 @@
 .kb-seiten .u-suchfilter.au-mit-x > .au-x { width: 22px; height: 22px; border-radius: var(--up-radius-s); background: none; }
 .kb-seiten .u-suchfilter.au-mit-x > .au-x:hover { background: var(--up-flaeche-hover); }
 .kb-seiten .u-suchfilter .au-knopf { font-size: var(--up-gr-m); font-weight: 500; }
-.kb-seiten .u-sf-chip { height: 22px; padding: 0 2px 0 8px; border-radius: var(--up-radius-s); background: var(--up-primaer-flaeche); color: var(--up-marine-700);
+.kb-seiten .u-sf-chip { height: 24px; padding: 0 2px 0 10px; border-radius: 999px; background: var(--up-primaer-flaeche); color: var(--up-marine-700);
   border: 1px solid var(--up-primaer-rand); font-size: var(--up-gr-s); font-weight: 500; }
-.kb-seiten .u-sf-chip button, .kb-seiten .u-sf-weg { width: 18px; height: 18px; border-radius: var(--up-radius-s); color: inherit; }
+.kb-seiten .u-sf-chip button, .kb-seiten .u-sf-weg { width: 18px; height: 18px; border-radius: 50%; color: inherit; }
 .kb-seiten .u-sf-chip button:hover, .kb-seiten .u-sf-weg:hover { background: var(--up-marine-100); }
 .kb-seiten .u-sf-zeit { font-size: var(--up-gr-m); font-weight: 500; color: var(--up-text-2); }
 
 .kb-seiten :is(.nl-pille, .kbw-heute, .kbu-heute), .kb-seiten .btn:not(.btn-link):not(.btn-close) {
-  height: var(--kb-feld-h); min-height: var(--kb-feld-h); padding: 0 12px; border-radius: var(--up-radius); border-width: 1px; font-size: var(--up-gr-m); font-weight: 500;
+  height: var(--kb-feld-h); min-height: var(--kb-feld-h); padding: 0 16px; border-radius: 999px; border-width: 1.5px; font-size: var(--up-gr-m); font-weight: 600;
   box-shadow: none;
 }
 .kb-seiten .nl-pille { border: 1px solid var(--up-rand-stark); background: var(--up-flaeche); color: var(--up-text); }
@@ -50,21 +49,23 @@
 .kb-seiten .btn-primary { background: var(--up-primaer); border-color: var(--up-primaer); }
 .kb-seiten .btn-primary:hover { background: var(--up-primaer-hover); border-color: var(--up-primaer-hover); }
 .kb-seiten .btn .bi, .kb-seiten .btn .u-sym { width: 14px; height: 14px; }
-.kb-seiten .au-knopf { min-height: var(--kb-feld-h); border-radius: var(--up-radius); }
+.kb-seiten .au-knopf { min-height: var(--kb-feld-h); border-radius: 999px; }
 
-/* Kennzahlen als Schnellfilter: rechteckige Schalter mit Ziffer */
+/* Kennzahlen als Schnellfilter: runde Schalter mit Ziffer */
 .kb-seiten .nl-zahlen { gap: 6px; margin-bottom: 12px; }
-.kb-seiten .nl-zahl { height: 26px; padding: 0 8px; border: 1px solid var(--up-rand); border-radius: var(--up-radius); background: var(--up-flaeche);
+.kb-seiten .nl-zahl { height: 28px; padding: 0 12px; border: 1.5px solid var(--up-rand); border-radius: 999px; background: var(--up-flaeche);
   font-size: var(--up-gr-s); font-weight: 400; color: var(--up-text-2); }
 .kb-seiten .nl-zahl b { font-weight: 600; color: var(--up-text); font-variant-numeric: tabular-nums; }
-.kb-seiten .nl-zahl.rot { border-left: 3px solid var(--up-entfall); background: var(--up-flaeche); }
+.kb-seiten .nl-zahl.rot { border-color: #f0c4bf; background: var(--up-entfall-flaeche); }
 .kb-seiten .nl-zahl.gelb { border-left: 3px solid var(--up-pruefung); background: var(--up-flaeche); }
 .kb-seiten .nl-zahl.lila { border-left: 3px solid var(--up-termin); background: var(--up-flaeche); }
 .kb-seiten .nl-zahl.aktiv { outline: 0; border-color: var(--up-marine-500); background: var(--up-primaer-flaeche); color: var(--up-marine-700); }
 
 /* ------------------------------------------------------------------ Tabellen */
-.kb-seiten :is(.nl-tabelle, .os-tabelle, .u-tabelle-karte) { border: 1px solid var(--up-rand); border-radius: var(--up-radius); box-shadow: none; background: var(--up-flaeche); }
+.kb-seiten :is(.nl-tabelle, .os-tabelle, .u-tabelle-karte) { border: 1px solid var(--up-rand); border-radius: 12px; box-shadow: 0 1px 3px rgba(21, 26, 33, .06); background: var(--up-flaeche); }
 .kb-seiten :is(.nl-tabelle, .os-tabelle, .u-tabelle-karte) table { font-size: var(--up-gr-m); font-variant-numeric: tabular-nums; }
+/* Zellen nur in der Tabellendarstellung; auf schmalen Bildschirmen bleiben die Zeilen Karten */
+@media (min-width: 768px) {
 .kb-seiten :is(.nl-tabelle, .os-tabelle, .u-tabelle-karte) th, .kb-seiten .os-liste .os-tabelle th {
   height: 34px; padding: 0 10px; background: var(--up-flaeche-2); border-bottom: 1px solid var(--up-rand); font-size: var(--up-gr-s); font-weight: 500;
   color: var(--up-text-2); text-transform: none; letter-spacing: 0; white-space: nowrap;
@@ -74,25 +75,23 @@
 }
 .kb-seiten :is(.nl-tabelle, .os-tabelle) tbody tr:hover td { background: var(--up-flaeche-hover); }
 .kb-seiten .os-liste .os-tabelle td.os-wahl, .kb-seiten .os-liste .os-tabelle th.os-wahl { width: 36px; padding-left: 10px; }
-/* Auswahl in Listen: eckige Kästchen statt runder Knöpfe */
-.kb-seiten :is(.nl-rund, .os-wahl input, .nl-tabelle input[type=checkbox], .nl-tabelle input[type=radio]) { border-radius: 3px !important; }
-.kb-seiten .nl-rund { width: 16px; height: 16px; border: 1px solid var(--up-rand-stark); }
-/* Aktionen in Tabellenzeilen („Prüfen“, „Eingeben“): kleine Textknöpfe */
-.kb-seiten :is(.os-pille, .nl-knopf) { height: 24px; min-height: 0; padding: 0 8px; border: 1px solid var(--up-rand-stark); border-radius: var(--up-radius-s); background: var(--up-flaeche);
-  color: var(--up-text); font-size: var(--up-gr-s); font-weight: 500; box-shadow: none; }
+}
+/* Aktionen in Tabellenzeilen („Prüfen“, „Eingeben“): kleine Pillen */
+.kb-seiten :is(.os-pille, .nl-knopf) { height: 26px; min-height: 0; padding: 0 12px; border: 1.5px solid var(--up-rand-stark); border-radius: 999px; background: var(--up-flaeche);
+  color: var(--up-text); font-size: var(--up-gr-s); font-weight: 600; box-shadow: none; }
 .kb-seiten :is(.os-pille, .nl-knopf):hover { border-color: var(--up-marine-500); color: var(--up-marine-700); background: var(--up-primaer-flaeche); }
 
 /* Status- und Artschilder */
-.kb-seiten :is(.s-label, .u-chip, .kbu-label, .nl-chip) { height: 20px; padding: 0 6px; border-radius: var(--up-radius-s); font-size: var(--up-gr-xs); font-weight: 500;
+.kb-seiten :is(.s-label, .u-chip, .kbu-label, .nl-chip) { height: 22px; padding: 0 9px; border-radius: 999px; font-size: var(--up-gr-xs); font-weight: 500;
   display: inline-flex; align-items: center; line-height: 1; }
 
 /* ------------------------------------------------------------------ Leerzustand: Text in einer schlichten Fläche */
 .kb-seiten :is(.u-leer, .s-leer, .kbw-leer) { padding: 20px 16px; text-align: left; color: var(--up-text-2); font-size: var(--up-gr-m); }
 .kb-seiten .u-leer > .bi, .kb-seiten .u-leer > .u-sym, .kb-seiten .s-leer-symbol { display: none; }
-.kb-seiten .card:has(> .u-leer), .kb-seiten .card:has(> .card-body > .u-leer) { border: 1px solid var(--up-rand); border-radius: var(--up-radius); box-shadow: none; }
+.kb-seiten .card:has(> .u-leer), .kb-seiten .card:has(> .card-body > .u-leer) { border: 1px solid var(--up-rand); border-radius: 12px; box-shadow: 0 1px 3px rgba(21, 26, 33, .06); }
 
 /* ------------------------------------------------------------------ Übersicht / Wochenübersicht (Raster der Unterrichte) */
-.kb-seiten .kbw-rahmen { border: 1px solid var(--up-rand); border-radius: var(--up-radius); box-shadow: none; overflow: hidden; }
+.kb-seiten .kbw-rahmen { border: 1px solid var(--up-rand); border-radius: 12px; box-shadow: 0 1px 3px rgba(21, 26, 33, .06); overflow: hidden; }
 .kb-seiten .kbw-kopf, .kb-seiten .kbw-tag { background: var(--up-flaeche-2); font-size: var(--up-gr-s); font-weight: 500; color: var(--up-text-2); }
 .kb-seiten .kbw-block { border-radius: 0; box-shadow: none; }
 .kb-seiten .kbw-zahlen { font-size: var(--up-gr-s); font-variant-numeric: tabular-nums; }
@@ -101,23 +100,23 @@
 
 /* ------------------------------------------------------------------ Berichte: dichte Liste ohne Symbolkacheln */
 .kb-seiten .br-symbol { display: none; }
-.kb-seiten .br-liste { border: 1px solid var(--up-rand); border-radius: var(--up-radius); background: var(--up-flaeche); overflow: hidden; }
+.kb-seiten .br-liste { border: 1px solid var(--up-rand); border-radius: 12px; box-shadow: 0 1px 3px rgba(21, 26, 33, .06); background: var(--up-flaeche); overflow: hidden; }
 .kb-seiten .br-reihe { grid-template-columns: minmax(0, 1fr) auto auto; padding: 8px 12px; min-height: 48px; border-radius: 0; border: 0; border-bottom: 1px solid var(--up-linie);
   box-shadow: none; background: var(--up-flaeche); }
 .kb-seiten .br-reihe:last-child { border-bottom: 0; }
 .kb-seiten .br-reihe:hover { background: var(--up-flaeche-hover); }
 .kb-seiten .br-reihe-text b, .kb-seiten .br-reihe-text strong { font-size: var(--up-gr-n); font-weight: 600; }
 .kb-seiten .br-reihe-text small, .kb-seiten .br-reihe-text p { font-size: var(--up-gr-s); color: var(--up-text-2); }
-.kb-seiten .br-knopf { height: 26px; padding: 0 8px; border: 1px solid var(--up-rand-stark); border-radius: var(--up-radius-s); background: var(--up-flaeche);
-  font-size: var(--up-gr-s); font-weight: 500; color: var(--up-text); }
+.kb-seiten .br-knopf { height: 30px; padding: 0 14px; gap: 6px; border: 1.5px solid var(--up-rand-stark); border-radius: 999px; background: var(--up-flaeche);
+  font-size: var(--up-gr-s); font-weight: 600; color: var(--up-text); }
 .kb-seiten .br-knopf:hover { border-color: var(--up-marine-500); color: var(--up-marine-700); }
-.kb-seiten .br-knopf .bi { display: none; }
+.kb-seiten .br-knopf .bi { width: 14px; height: 14px; }
 .kb-seiten .br-abschnitt > h2, .kb-seiten .br-abschnitt > h3, .kb-seiten .br-abschnitt-titel { font-size: var(--up-gr-s); font-weight: 600; color: var(--up-text-2);
   text-transform: none; letter-spacing: 0; margin: 16px 0 6px; }
 
 /* ------------------------------------------------------------------ Klassendienste, Einstellungen, Sitzplan */
 .kb-seiten .kd-bericht .bi, .kb-seiten .kbe-symbol { display: none; }
-.kb-seiten .kbe-karte { border: 1px solid var(--up-rand); border-radius: var(--up-radius); box-shadow: none; }
+.kb-seiten .kbe-karte { border: 1px solid var(--up-rand); border-radius: 12px; box-shadow: 0 1px 3px rgba(21, 26, 33, .06); }
 .kb-seiten .kbe-reiter { border-bottom: 1px solid var(--up-rand); }
 .kb-seiten .kbe-reiter :is(a, button) .bi { display: none; }
 .kb-seiten .sp-knopf { border-radius: var(--up-radius); }

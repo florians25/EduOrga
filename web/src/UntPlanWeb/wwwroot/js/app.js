@@ -1,7 +1,7 @@
 // UntPlanWeb – Einstieg: Sitzung laden, Anmeldung/Einrichtung, Hülle (helle Seitenleiste links mit Marke, Schuljahr, Bereichen als
 // aufklappbaren Textgruppen, Konto unten) und Hash-Router.
 import { icon, e, holen, senden, api, fehler, alarm, lade, toast } from './ui.js';
-import { MARKE } from './symbole.js';
+import { MARKE, symbol } from './symbole.js';
 import { beobachten as auswahlBeobachten } from './auswahl.js';
 import { beobachten as kalenderBeobachten } from './kalender.js';
 
@@ -549,18 +549,18 @@ function leisteZeichnen() {
   zaehlerAktualisieren();
 }
 
-/** Einzelner Menüpunkt: reiner Text, rechts ggf. die Zahl ungelesener Mitteilungen. */
+/** Einzelner Menüpunkt: Hauptpunkte mit Symbol, Unterpunkte als Text; rechts ggf. die Zahl ungelesener Mitteilungen. */
 function punktHtml(p, unter = false) {
-  return `<a class="u-nav-punkt ${unter ? 'u-nav-unterpunkt' : ''}" href="${p.href}" data-nav="${p.nav}"><span class="u-nav-text">${e(p.text)}</span>`
+  return `<a class="u-nav-punkt ${unter ? 'u-nav-unterpunkt' : ''}" href="${p.href}" data-nav="${p.nav}" title="${e(p.text)}">${unter ? '' : `<span class="u-nav-sym">${symbol(p.icon) ?? ''}</span>`}<span class="u-nav-text">${e(p.text)}</span>`
     + `${p.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</a>`;
 }
 
-/** Bereich mit Unterpunkten: Kopfzeile zum Auf- und Zuklappen (Pfeil rechts), darunter eingerückt die Seiten. */
+/** Bereich mit Unterpunkten: Kopfzeile mit Symbol zum Auf- und Zuklappen (Pfeil rechts), darunter eingerückt die Seiten. */
 function gruppeHtml(g) {
   const auf = offeneGruppen.has(g.id);
   return `<div class="u-nav-gruppe ${auf ? 'auf' : ''}" data-gruppe-box="${g.id}">
       <button type="button" class="u-nav-punkt u-nav-kopf" data-gruppe="${g.id}" aria-expanded="${auf}" aria-controls="u-nav-${g.id}">
-        <span class="u-nav-text">${e(g.text)}</span>${g.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}<i class="bi bi-chevron-down u-nav-pfeil" aria-hidden="true"></i></button>
+        <span class="u-nav-sym">${symbol(g.icon) ?? ''}</span><span class="u-nav-text">${e(g.text)}</span>${g.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}<i class="bi bi-chevron-down u-nav-pfeil" aria-hidden="true"></i></button>
       <div class="u-nav-liste" id="u-nav-${g.id}" ${auf ? '' : 'hidden'}>${g.unter.filter(p => !p.verborgen).map(p => punktHtml(p, true)).join('')}</div>
     </div>`;
 }
@@ -606,6 +606,7 @@ function aktivMarkieren() {
     if (an) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   document.querySelectorAll('#seitenleiste [data-gruppe]').forEach(a => a.classList.toggle('aktiv', a.dataset.gruppe === gruppe?.id));
+  document.querySelectorAll('#seitenleiste [data-gruppe-box]').forEach(b => b.classList.toggle('hat-aktiv', b.dataset.gruppeBox === gruppe?.id));
   document.querySelector('.u-benutzer')?.classList.toggle('aktiv', aktiverPunkt === 'profil');
 }
 
@@ -626,13 +627,13 @@ function huelle() {
         <nav class="u-nav"></nav>
         <div class="u-fuss">
           <button type="button" class="u-benutzer" data-kontomenue title="Konto" aria-haspopup="menu" aria-expanded="false">
-            <span class="u-benutzer-text"><b>${e(b.login)}</b><small>${e(b.rollenname)}</small></span><i class="bi bi-chevron-up" aria-hidden="true"></i></button>
+            <span class="u-benutzer-sym">${symbol('profil')}</span><span class="u-benutzer-text"><b>${e(b.login)}</b><small>${e(b.rollenname)}</small></span><i class="bi bi-chevron-up" aria-hidden="true"></i></button>
           <div class="u-kontomenue d-none" role="menu" data-konten></div>
           <div class="u-fusslinks">
             <a class="u-abmelden u-neuigkeiten" href="#/neuigkeiten" data-neuigkeiten>Neuigkeiten</a>
             <button type="button" class="u-abmelden" data-abmelden>Abmelden</button>
           </div>
-          <button type="button" class="u-griff" data-einklappen title="Navigation ausblenden" aria-label="Navigation ein- oder ausblenden"><span>Navigation ausblenden</span></button>
+          <button type="button" class="u-griff" data-einklappen title="Navigation ein- oder ausklappen" aria-label="Navigation ein- oder ausklappen">${symbol('einklappen')}<span>Navigation einklappen</span></button>
         </div>
       </aside>
       <button type="button" class="u-leiste-auf" data-ausklappen title="Navigation einblenden" aria-label="Navigation einblenden">${icon('menue')}</button>
@@ -660,11 +661,13 @@ function huelle() {
     document.body.classList.toggle('leiste-zu', z);
     try { localStorage.setItem('untplan:leiste', z ? 'zu' : 'offen'); } catch { /* privat */ }
   };
-  app.querySelector('[data-einklappen]').onclick = () => einklappen(true);
+  app.querySelector('[data-einklappen]').onclick = () => einklappen(!huelleEl.classList.contains('zu'));
   app.querySelector('[data-ausklappen]').onclick = () => einklappen(false);
   app.querySelector('[data-kontomenue]').onclick = ev => { ev.stopPropagation(); kontomenue(); };
   leiste.addEventListener('click', ev => {
     const g = ev.target.closest('[data-gruppe]');
+    // eingeklappt: Bereich anklicken klappt die Leiste aus und öffnet ihn
+    if (g && huelleEl.classList.contains('zu')) { einklappen(false); gruppeUmschalten(g.dataset.gruppe, true); return; }
     if (g) { gruppeUmschalten(g.dataset.gruppe); return; }
     if (ev.target.closest('[data-nav], .u-marke, [data-profil], [data-neuigkeiten]')) mobilZu();
   });
