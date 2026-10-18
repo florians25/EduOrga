@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
-/// Kurzbefehle beim langen Drücken auf das App-Symbol: Heute, Mein Stundenplan, Postfach, Plan suchen.
+/// Kurzbefehle beim langen Drücken auf das App-Symbol: Heute, Mein Plan, Postfach, Plan suchen.
 enum Schnellaktion: String, CaseIterable {
     case heute
     case stundenplan
@@ -15,7 +15,7 @@ enum Schnellaktion: String, CaseIterable {
     var titel: String {
         switch self {
         case .heute: return "Heute"
-        case .stundenplan: return "Mein Stundenplan"
+        case .stundenplan: return "Mein Plan"
         case .mitteilungen: return "Postfach"
         case .suche: return "Plan suchen"
         }
@@ -23,7 +23,7 @@ enum Schnellaktion: String, CaseIterable {
 
     var untertitel: String? {
         switch self {
-        case .stundenplan: return "Heutige Woche"
+        case .stundenplan: return "Heute"
         case .suche: return "Klasse, Lehrkraft oder Raum"
         default: return nil
         }

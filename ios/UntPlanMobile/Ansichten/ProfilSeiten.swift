@@ -162,8 +162,10 @@ struct NeuigkeitenView: View {
     }
 
     private let punkte: [Punkt] = [
+        Punkt(titel: "Eine App für alle Schulen", text: "Beim ersten Start geben Sie die Adresse von UntPlan Ihrer Schule ein; die App prüft sie und zeigt den Namen der Schule. Weitere Schulen und Konten unter „Mehr“ → „Konten und Schulen“."),
+        Punkt(titel: "Tag als Liste", text: "Der Plan startet mit dem Tag als ruhiger Liste mit Uhrzeiten; Wochentage oben antippen oder wischen. Woche, 3 Tage und 2 Tage als Raster im Menü."),
         Punkt(titel: "Neue Gestaltung", text: "Ruhigeres Erscheinungsbild mit Systemschrift, klaren Kanten und einer Akzentfarbe; Status wie Entfall oder Prüfung auf einen Blick."),
-        Punkt(titel: "Stundenplan", text: "Kacheln in der Fachfarbe, Entfall schraffiert, Änderungen mit Rahmen; Woche, Tage und Tag per Menü."),
+        Punkt(titel: "Plan", text: "Kacheln in der Fachfarbe, Entfall schraffiert, Änderungen mit Rahmen; Tag, Tage und Woche per Menü."),
         Punkt(titel: "Stundendetails", text: "Lehrstoff, Hausaufgaben, Schüler*innen, Klassenbucheinträge und Notizen direkt aus der Stunde – als Blatt mit Ziehgriff."),
         Punkt(titel: "Reiter „Mehr“", text: "Profil, Konten, Abwesenheiten, Entschuldigungen, Sprechtage, Pläne und Einstellungen an einer Stelle."),
         Punkt(titel: "Für das iPad", text: "Inhalte mittig statt über die ganze Breite, Details als festes Blatt über dem Plan."),

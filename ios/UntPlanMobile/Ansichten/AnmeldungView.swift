@@ -8,6 +8,7 @@ import SwiftUI
 /// Als „Konto oder Schule hinzufügen“ (eingebettet in die Kontenauswahl) bleibt das bisherige Konto angemeldet. Ist
 /// bereits ein Server gespeichert (z. B. abgelaufene Sitzung), beginnt die Anmeldemaske direkt mit Schritt 2; in der
 /// Anmeldemaske stehen die übrigen gespeicherten Konten zum Wechsel bereit.
+@MainActor
 struct AnmeldungView: View {
     /// Weiteres Konto bzw. weitere Schule hinzufügen (ohne eigenen NavigationStack, Felder leer)
     var hinzufuegen: Bool = false
@@ -399,7 +400,7 @@ struct AnmeldungView: View {
         if hinzufuegen || !gleicherServer { login = "" }
         if hinzufuegen { merken = true }
         server = info
-        DispatchQueue.main.async { fokus = login.isEmpty ? .login : .passwort }
+        fokus = login.isEmpty ? .login : .passwort
     }
 
     private func anmelden() async {

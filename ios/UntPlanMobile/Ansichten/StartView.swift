@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Eintrag „Mitteilungen des Tages“ (Nachricht, Veranstaltung, Hinweis).
+/// Eintrag „Heute an der Schule“ (Nachricht, Veranstaltung, Hinweis).
 struct Tagesinfo: Identifiable {
     enum Art {
         case nachricht
@@ -30,7 +30,7 @@ enum Startziel: Hashable {
 }
 
 /// Seite „Heute“: großer Titel, darunter Datum und Schule, die (noch kommenden) Stunden des Tages, die Mitteilungen des
-/// Tages (Nachrichten, Veranstaltungen, Hinweise) und eine Übersicht (Termine, Abwesenheiten, Entschuldigungen,
+/// Tages unter „Heute an der Schule“ (Nachrichten, Veranstaltungen, Hinweise) und eine Übersicht (Termine, Abwesenheiten, Entschuldigungen,
 /// Hausaufgaben, Sprechtage, Änderungen). Gruppierte Liste des Systems; auf dem iPad mittig.
 struct StartView: View {
     @EnvironmentObject var zustand: AppZustand
@@ -135,8 +135,9 @@ struct StartView: View {
                 }
                 Spacer(minLength: 8)
                 if let woche = heute?.woche, !woche.isEmpty {
-                    Plakette(text: woche.count == 1 ? "\(woche)-Woche" : woche, farbe: Farben.akzent,
-                             flaeche: Farben.primaerFlaeche)
+                    Text(woche.count == 1 ? "\(woche)-Woche" : woche)
+                        .font(.footnote)
+                        .foregroundStyle(Farben.text3)
                 }
             }
             .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 4, trailing: 4))
@@ -190,7 +191,7 @@ struct StartView: View {
                     Button {
                         gewaehlteKarte = karte
                     } label: {
-                        Stundenzeile(karte: karte, typ: h.typ)
+                        Stundenzeile(karte: karte, typ: h.typ, laeuft: laeuftGerade(karte, h))
                     }
                     .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
@@ -205,13 +206,25 @@ struct StartView: View {
                     }
                 }
             }
+            if !h.karten.isEmpty {
+                // Ganzen Tag im Reiter „Plan“ (Tagesansicht des eigenen Plans) öffnen
+                Button {
+                    zustand.tagAnfrage = h.datum
+                    zustand.reiter = .plan
+                } label: {
+                    Mehrzeile(titel: "Tag im Plan öffnen", pfeil: true)
+                }
+                .buttonStyle(.plain)
+            }
         } header: {
             Text(stundenTitel(h))
-        } footer: {
-            if !stunden.isEmpty {
-                Text("Mein Stundenplan")
-            }
         }
+    }
+
+    /// Läuft die Stunde gerade (heute, Beginn erreicht, Ende noch nicht)?
+    private func laeuftGerade(_ karte: Karte, _ h: Heute) -> Bool {
+        guard Datumsformat.istHeute(h.datum), !h.jetzt.isEmpty, !karte.beginn.isEmpty, !karte.ende.isEmpty else { return false }
+        return karte.beginn <= h.jetzt && h.jetzt < karte.ende
     }
 
     /// Zeile „Abwesend“ mit Zeitraum und ggf. Grund.
@@ -285,7 +298,7 @@ struct StartView: View {
     private func infoAbschnitt(_ h: Heute) -> some View {
         let liste = infos(h)
         if !liste.isEmpty {
-            Section("Mitteilungen des Tages") {
+            Section("Heute an der Schule") {
                 ForEach(liste) { info in
                     Infozeile(info: info)
                 }
@@ -442,7 +455,7 @@ struct Uebersichtszeile: View {
     }
 }
 
-/// Zeile „Mitteilungen des Tages“: Art klein und grau, Titel und bis zu vier Zeilen Text.
+/// Zeile „Heute an der Schule“: Art klein und grau, Titel und bis zu vier Zeilen Text.
 struct Infozeile: View {
     let info: Tagesinfo
 
@@ -480,18 +493,20 @@ struct Infozeile: View {
 struct Stundenzeile: View {
     let karte: Karte
     let typ: String
+    /// Stunde läuft gerade: Uhrzeit in Marine
+    var laeuft: Bool = false
 
     var body: some View {
         let stil = Kartenstil(karte)
         let zeilen = kartenzeilen(karte, typ: typ).filter { !$0.isEmpty }
         HStack(spacing: 12) {
             VStack(alignment: .trailing, spacing: 1) {
-                Text(karte.beginn.isEmpty ? "\(karte.von)." : Detailmass.uhrzeit(karte.beginn))
+                Text(karte.beginn.isEmpty ? "\(karte.von). Std." : Detailmass.uhrzeit(karte.beginn))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(Farben.text)
-                Text(karte.ende.isEmpty ? "\(karte.bis)." : Detailmass.uhrzeit(karte.ende))
+                    .foregroundStyle(laeuft ? Farben.akzent : Farben.text)
+                Text(laeuft ? "jetzt" : (karte.ende.isEmpty ? "" : Detailmass.uhrzeit(karte.ende)))
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(Farben.text3)
+                    .foregroundStyle(laeuft ? Farben.akzent : Farben.text3)
             }
             .frame(width: 44, alignment: .trailing)
             Text(karte.fach.isEmpty ? String(karte.titel.prefix(4)) : karte.fach)

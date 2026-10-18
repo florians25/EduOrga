@@ -6,6 +6,17 @@
 	<array>
 		<string>de.untplan.mobile.planpruefung</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>de.untplan.mobile.einrichten</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>untplan</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Die Kamera wird verwendet, um Fotos als Anhang an eine Mitteilung zu hängen.</string>
 	<key>UIBackgroundModes</key>

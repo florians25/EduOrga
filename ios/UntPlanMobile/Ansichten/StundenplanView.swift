@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Ansicht des Stundenplans (Menü „Ansicht“): ein Tag, zwei bzw. drei Tage oder die ganze Woche.
+/// Ansicht des Plans (Menü „Ansicht“): der Tag als Liste (Standard), zwei bzw. drei Tage oder die ganze Woche als Raster.
 enum Planansicht: String, CaseIterable, Identifiable {
     case tag
     case zweiTage
@@ -11,7 +11,7 @@ enum Planansicht: String, CaseIterable, Identifiable {
 
     var titel: String {
         switch self {
-        case .tag: return "Tag"
+        case .tag: return "Tag (Liste)"
         case .zweiTage: return "2 Tage"
         case .dreiTage: return "3 Tage"
         case .woche: return "Woche"
@@ -65,8 +65,8 @@ struct StundenplanView: View {
     @GestureState private var zieht = false
     /// Sperrt das Öffnen von Stunden während und kurz nach einer Wisch- bzw. Scrollbewegung (nicht beobachtet)
     @State private var tippsperre = Tippsperre()
-    /// Gewählte Ansicht (bleibt gespeichert)
-    @AppStorage("planansicht") private var ansicht: Planansicht = .woche
+    /// Gewählte Ansicht (bleibt gespeichert); Standard ist der Tag als Liste, das Wochenraster ist wählbar
+    @AppStorage("planansicht2") private var ansicht: Planansicht = .tag
     /// Eigene Abwesenheiten im eigenen Plan als grauer Balken hinter den Stunden (⋮-Menü, bleibt gespeichert)
     @AppStorage("planAbwesenheiten") private var zeigeAbwesenheiten = true
     /// Eigene Abwesenheiten (Schüler*innen bzw. Kind der Eltern) aus „Meine Abwesenheiten“, je Kennung
@@ -275,7 +275,6 @@ struct StundenplanView: View {
         switch aktion {
         case .stundenplan:
             auswahl = nil
-            ansicht = .woche
             datum = Date()
         case .suche:
             zeigeAuswahl = true
@@ -311,7 +310,7 @@ struct StundenplanView: View {
         if let auswahl { return auswahl.anzeige }
         if !element.isEmpty { return element }
         if let name = aktuellerPlan?.name, !name.isEmpty { return name }
-        return "Mein Stundenplan"
+        return "Mein Plan"
     }
 
     // MARK: - Leiste: „Heute“ links, Planname in der Mitte, Menü rechts
@@ -355,7 +354,7 @@ struct StundenplanView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Stundenplan auswählen, aktuell \(titel)")
+        .accessibilityLabel("Plan auswählen, aktuell \(titel)")
     }
 
     /// Menü: „Gehe zu Datum“, Abschnitt „Ansicht“ (Tag, 2 Tage, 3 Tage, Woche mit Häkchen), Abwesenheiten, Favorit,
@@ -442,7 +441,7 @@ struct StundenplanView: View {
             } description: {
                 Text("Ihrem Konto ist kein Plan zugeordnet. Wählen Sie oben eine Klasse oder einen Raum.")
             } actions: {
-                Button("Stundenplan auswählen") { zeigeAuswahl = true }
+                Button("Plan auswählen") { zeigeAuswahl = true }
                     .buttonStyle(.borderedProminent)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -450,11 +449,29 @@ struct StundenplanView: View {
         } else {
             // Das Raster läuft bis zum unteren Rand hinter der Tab-Leiste weiter; damit auch die letzte Stunde über die
             // Leiste gescrollt werden kann, bekommt das Raster unten den verdeckten Bereich als Abstand.
-            GeometryReader { aussen in
-                blaetterflaeche(untenFrei: aussen.safeAreaInsets.bottom)
-                    .ignoresSafeArea(.container, edges: .bottom)
+            VStack(spacing: 0) {
+                // Tagesansicht: Leiste der Wochentage (Antippen springt zum Tag; Wischen blättert tageweise)
+                if ansicht == .tag {
+                    Tagesleiste(tage: wochentageDerLeiste, gewaehlt: tag) { d in
+                        springen(zu: d)
+                    }
+                }
+                GeometryReader { aussen in
+                    blaetterflaeche(untenFrei: aussen.safeAreaInsets.bottom)
+                        .ignoresSafeArea(.container, edges: .bottom)
+                }
             }
         }
+    }
+
+    /// Tage der Woche des angezeigten Tages für die Tagesleiste: aus dem geladenen Plan, sonst Montag bis Freitag.
+    private var wochentageDerLeiste: [Date] {
+        let m = Datumsformat.montag(tag)
+        if let p = plaene[schluessel(m)], !p.tage.isEmpty {
+            let liste = p.tage.compactMap { Datumsformat.datum($0.datum) }
+            if !liste.isEmpty { return liste }
+        }
+        return (0..<5).map { Datumsformat.tage($0, nach: m) }
     }
 
     /// Drei Wochen nebeneinander; sichtbar ist die mittlere. Die Ansicht folgt dem Finger.
@@ -489,7 +506,15 @@ struct StundenplanView: View {
 
     @ViewBuilder
     private func seite(_ m: Date, untenFrei: CGFloat) -> some View {
-        if tageModus {
+        if ansicht == .tag {
+            let d = ersterSchultag(Datumsformat.kalender.startOfDay(for: m), richtung: 1)
+            if let p = plaene[schluessel(Datumsformat.montag(d))] {
+                agenda(p, datum: Datumsformat.iso(d), stand: staende[schluessel(Datumsformat.montag(d))] ?? 0,
+                       untenFrei: untenFrei)
+            } else {
+                Platzhalterwoche(montag: Datumsformat.montag(d))
+            }
+        } else if tageModus {
             let tage = tageDerSeite(m)
             let wochen = ohneDoppelte(tage.map { Datumsformat.montag($0) })
             let geladen = wochen.compactMap { plaene[schluessel($0)] }
@@ -570,6 +595,22 @@ struct StundenplanView: View {
         .equatable()
     }
 
+    /// Tagesansicht als Liste.
+    private func agenda(_ p: Wochenplan, datum iso: String, stand: Int, untenFrei: CGFloat) -> some View {
+        TagesagendaView(plan: p, datum: iso, typ: p.typ.isEmpty ? typ : p.typ, element: element,
+                        tippsperre: tippsperre,
+                        senkrechtGesperrt: senkrechtGesperrt,
+                        stand: stand,
+                        abwesenheiten: abwesenheitsbalken(p)[iso] ?? [],
+                        untenFrei: untenFrei,
+                        aufsichtAntippen: { gewaehlteAufsicht = $0 },
+                        antippen: { karten, start in
+                            guard !karten.isEmpty else { return }
+                            detail = Detailauswahl(karten: karten, start: min(max(start, 0), karten.count - 1))
+                        })
+        .equatable()
+    }
+
     /// Wischen mit Richtungssperre: Die Richtung wird zu Beginn der Geste festgelegt und gilt bis zum Loslassen.
     /// Waagrecht → Wochen- bzw. Tageswechsel, das senkrechte Scrollen des Rasters ist so lange gesperrt (kein gleichzeitiges
     /// Rauf/Runter); senkrecht → nur Scrollen, kein Blättern.
@@ -647,11 +688,13 @@ struct StundenplanView: View {
         blaettern(anfang > mitte ? 1 : -1, ziel: tageModus ? anfang : ziel)
     }
 
-    /// Erneutes Antippen des Reiters „Stundenplan“: Details schließen, Wochenansicht der aktuellen Woche.
+    /// Erneutes Antippen des Reiters „Plan“: Details schließen; Tagesansicht: heute, Mehrtagesansicht: Woche von heute.
     private func zurHeutigenWoche() {
         detail = nil
         gewaehlteAufsicht = nil
-        if tageModus {
+        if ansicht == .tag {
+            heute()
+        } else if tageModus {
             withAnimation(.easeInOut(duration: 0.25)) {
                 ansicht = .woche
                 datum = Date()
@@ -787,13 +830,14 @@ struct PlanInfoView: View {
             List {
                 if hilfe {
                     Section("Bedienung") {
-                        hilfezeile("Waagrecht wischen: nächste bzw. vorherige Woche (in der Tagesansicht die nächsten Tage).")
+                        hilfezeile("Tagesansicht: Tag in der Leiste oben antippen oder waagrecht wischen (nächster bzw. vorheriger Schultag).")
+                        hilfezeile("Waagrecht wischen im Raster: nächste bzw. vorherige Woche bzw. Tage.")
                         hilfezeile("Stunde antippen: Details mit Lehrstoff, Schüler*innen, Hausaufgaben und Notizen.")
-                        hilfezeile("Tag im Spaltenkopf antippen: Tagesansicht; erneut antippen: zurück zur Woche.")
+                        hilfezeile("Tag im Spaltenkopf des Rasters antippen: Tagesansicht.")
                         hilfezeile("„Heute“ bzw. den Reiter „Plan“ erneut antippen: zurück zum heutigen Tag.")
-                        hilfezeile("Menü → Ansicht: Tag, 2 Tage, 3 Tage oder Woche.")
+                        hilfezeile("Menü → Ansicht: Tag als Liste, 2 Tage, 3 Tage oder Woche als Raster.")
                         hilfezeile("Menü → Gehe zu Datum: Tag im Kalender wählen und „Auswählen“ tippen.")
-                        hilfezeile("Planname oben antippen: anderen Stundenplan (Klasse, Lehrkraft, Raum) wählen.")
+                        hilfezeile("Planname oben antippen: anderen Plan (Klasse, Lehrkraft, Raum) wählen.")
                     }
                     Section("Schüler*innen (Lehrkräfte)") {
                         hilfezeile("Von links nach rechts wischen: anwesend.")
@@ -1642,7 +1686,7 @@ struct AufsichtDetailView: View {
             }, rechts: {
                 if !planziele.isEmpty {
                     Menu {
-                        Section("Im Stundenplan anzeigen") {
+                        Section("Im Plan anzeigen") {
                             ForEach(planziele) { plan in
                                 Button {
                                     zustand.planZeigen(plan)
@@ -1718,7 +1762,7 @@ struct AufsichtDetailView: View {
                                 zustand.planZeigen(plan)
                                 schliessen()
                             } label: {
-                                Detailzeile(titel: "Im Stundenplan anzeigen", untertitel: plan.anzeige)
+                                Detailzeile(titel: "Im Plan anzeigen", untertitel: plan.anzeige)
                             }
                             .buttonStyle(ZeilenKnopfStil())
                         }
@@ -1748,5 +1792,374 @@ struct Hoechstbreite: Layout {
         guard let kind = subviews.first else { return }
         kind.place(at: CGPoint(x: bounds.midX, y: bounds.midY), anchor: .center,
                    proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
+    }
+}
+
+// MARK: - Tagesansicht als Liste
+
+/// Tagesansicht (Standard des Reiters „Plan“): eine ruhige Liste des Tages statt eines Rasters. Links Beginn und Ende
+/// als Uhrzeit, rechts die Stundenkachel nach Designsystem (Fachfarbe als Tönung, Plaketten oben rechts, Status wie im
+/// Raster). Freistunden stehen als schmale Zeile „Frei“ dazwischen, eigene Abwesenheiten als graue Zeile, ganztägige
+/// Termine und Aufsichten vor der ersten Stunde oben. Die laufende Stunde hat die Uhrzeit in Marine.
+/// Waagrechtes Wischen (in der Blätterfläche) wechselt zum nächsten bzw. vorherigen Schultag.
+struct TagesagendaView: View {
+    let plan: Wochenplan
+    /// Angezeigter Tag (yyyy-MM-dd)
+    let datum: String
+    let typ: String
+    var element: String = ""
+    var tippsperre: Tippsperre = Tippsperre()
+    var senkrechtGesperrt: Bool = false
+    var stand: Int = 0
+    var abwesenheiten: [Abwesenheitsbalken] = []
+    var untenFrei: CGFloat = 0
+    var aufsichtAntippen: ((Aufsicht) -> Void)? = nil
+    let antippen: ([Karte], Int) -> Void
+
+    /// Zeile der Liste
+    private enum Zeile: Identifiable {
+        case kachel(Kachel)
+        case frei(beginn: Int, ende: Int)
+        case abwesend(Abwesenheitsbalken)
+
+        var id: String {
+            switch self {
+            case .kachel(let k): return k.id.uuidString
+            case .frei(let b, let e): return "frei-\(b)-\(e)"
+            case .abwesend(let a): return "abwesend-\(a.id)"
+            }
+        }
+
+        var beginn: Int {
+            switch self {
+            case .kachel(let k): return k.beginn
+            case .frei(let b, _): return b
+            case .abwesend(let a): return a.beginn
+            }
+        }
+
+        /// Reihenfolge bei gleichem Beginn: Abwesenheit vor Stunden, Freistunden zuletzt
+        var rang: Int {
+            switch self {
+            case .abwesend: return 0
+            case .kachel(let k): return k.rang
+            case .frei: return 9
+            }
+        }
+    }
+
+    private var tag: Tageskopf? { plan.tage.first { $0.datum == datum } }
+
+    private let zeitBreite: CGFloat = 50
+    private let rand: CGFloat = 16
+
+    var body: some View {
+        let zeiten = Rasterzeit.aus(plan)
+        let jetzt = Date()
+        let minute = Int(jetzt.timeIntervalSinceReferenceDate / 60)
+        let kacheln: [Kachel] = {
+            guard let tag else { return [] }
+            return Kachelspeicher.kacheln("agenda|\(typ)|\(element)|\(plan.montag)|\(stand)|\(datum)|\(minute)") {
+                Kachelbau.tag(tag, plan: plan, raster: zeiten, typ: typ, element: element, jetzt: jetzt)
+            }
+        }()
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 0) {
+                kopf
+                if plan.gesperrt {
+                    Sperrhinweis(hinweis: plan.sperrhinweis)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 24)
+                } else if let tag, tag.frei {
+                    ferienfeld(tag)
+                        .padding(.horizontal, rand)
+                        .padding(.top, 8)
+                } else {
+                    liste(kacheln, zeiten: zeiten, jetzt: jetzt)
+                }
+            }
+            .padding(.bottom, untenFrei + 28)
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollIndicators(.hidden)
+        // Richtungssperre: beim waagrechten Wischen scrollt die Liste nicht mit
+        .scrollDisabled(senkrechtGesperrt)
+        .modifier(Scrollsperre(sperre: tippsperre))
+        .background(Farben.flaeche.ignoresSafeArea(edges: .bottom))
+    }
+
+    // MARK: Kopf
+
+    /// „Montag, 19. Oktober“ mit Zusatz „Heute“ bzw. Woche (A/B) und den Hinweisen des Tages.
+    private var kopf: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(Datumsformat.anzeige(datum, "EEEE, d. MMMM"))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Datumsformat.istHeute(datum) ? Farben.akzent : Farben.text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if Datumsformat.istHeute(datum) {
+                    Text("Heute")
+                        .font(.subheadline)
+                        .foregroundStyle(Farben.text2)
+                }
+                Spacer(minLength: 4)
+                let woche = tag?.woche.isEmpty == false ? (tag?.woche ?? "") : plan.woche
+                if !woche.isEmpty {
+                    Text(woche.count == 1 ? "\(woche)-Woche" : woche)
+                        .font(.footnote)
+                        .foregroundStyle(Farben.text3)
+                }
+            }
+            ForEach(Array((tag?.hinweise ?? []).enumerated()), id: \.offset) { eintrag in
+                Text(eintrag.element)
+                    .font(.footnote)
+                    .foregroundStyle(Farben.text2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, rand)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    // MARK: Liste
+
+    @ViewBuilder
+    private func liste(_ kacheln: [Kachel], zeiten: [Rasterzeit], jetzt: Date) -> some View {
+        let zeilen = Self.zeilen(kacheln, zeiten: zeiten, abwesenheiten: abwesenheiten)
+        if zeilen.isEmpty {
+            Hinweisfeld(titel: "Kein Unterricht",
+                        text: Datumsformat.istHeute(datum) ? "Heute ist kein Unterricht geplant." : "An diesem Tag ist kein Unterricht geplant.",
+                        flaeche: Farben.flaeche)
+                .padding(.horizontal, rand)
+                .padding(.top, 8)
+        } else {
+            let heute = Datumsformat.istHeute(datum)
+            let minute = Datumsformat.kalender.component(.hour, from: jetzt) * 60 + Datumsformat.kalender.component(.minute, from: jetzt)
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(zeilen.enumerated()), id: \.element.id) { eintrag in
+                    let z = eintrag.element
+                    // Uhrzeit nur einmal je Beginn (gleichzeitige Stunden darunter ohne Zeit)
+                    let zeitZeigen = eintrag.offset == 0 || zeilen[eintrag.offset - 1].beginn != z.beginn
+                    zeile(z, alle: kacheln, zeitZeigen: zeitZeigen, heute: heute, minute: minute)
+                }
+            }
+            .padding(.horizontal, rand)
+        }
+    }
+
+    /// Zeilen des Tages in zeitlicher Reihenfolge, mit Freistunden aus dem Zeitraster zwischen der ersten und letzten Stunde.
+    private static func zeilen(_ kacheln: [Kachel], zeiten: [Rasterzeit], abwesenheiten: [Abwesenheitsbalken]) -> [Zeile] {
+        var liste: [Zeile] = kacheln.map { Zeile.kachel($0) }
+        liste += abwesenheiten.map { Zeile.abwesend($0) }
+        // Freistunden: Stunden des Zeitrasters ohne Kachel zwischen der ersten und letzten belegten Stunde
+        let stunden = kacheln.filter { !$0.inPause && !$0.vorErsterStunde && $0.art != .aufsicht && $0.art != .ganztagTermin }
+        if let erste = stunden.map(\.beginn).min(), let letzte = stunden.map(\.ende).max() {
+            var frei: (beginn: Int, ende: Int)? = nil
+            for z in zeiten where z.beginn >= erste && z.ende <= letzte {
+                let belegt = stunden.contains { $0.beginn < z.ende && $0.ende > z.beginn }
+                if belegt {
+                    if let f = frei { liste.append(.frei(beginn: f.beginn, ende: f.ende)) }
+                    frei = nil
+                } else {
+                    frei = (frei?.beginn ?? z.beginn, z.ende)
+                }
+            }
+            if let f = frei { liste.append(.frei(beginn: f.beginn, ende: f.ende)) }
+        }
+        return liste.enumerated().sorted { a, b in
+            let ka = Self.vorne(a.element), kb = Self.vorne(b.element)
+            if ka != kb { return ka }
+            if a.element.beginn != b.element.beginn { return a.element.beginn < b.element.beginn }
+            if a.element.rang != b.element.rang { return a.element.rang < b.element.rang }
+            return a.offset < b.offset
+        }.map { $0.element }
+    }
+
+    /// Ganztägige Termine und Aufsichten vor der ersten Stunde stehen oben.
+    private static func vorne(_ z: Zeile) -> Bool {
+        if case .kachel(let k) = z { return k.vorErsterStunde || k.art == .ganztagTermin }
+        return false
+    }
+
+    @ViewBuilder
+    private func zeile(_ z: Zeile, alle: [Kachel], zeitZeigen: Bool, heute: Bool, minute: Int) -> some View {
+        switch z {
+        case .kachel(let k):
+            let laeuft = heute && !k.inPause && !k.vorErsterStunde && k.beginn <= minute && minute < k.ende
+            HStack(alignment: .top, spacing: 10) {
+                zeitspalte(beginn: k.beginn, ende: k.ende, zeigen: zeitZeigen && k.art != .ganztagTermin,
+                           klein: k.inPause || k.art == .aufsicht, laeuft: laeuft)
+                kachelKnopf(k, alle: alle)
+            }
+        case .frei(let b, let e):
+            HStack(alignment: .center, spacing: 10) {
+                zeitspalte(beginn: b, ende: e, zeigen: true, klein: true, laeuft: false)
+                Text("Frei")
+                    .font(.subheadline)
+                    .foregroundStyle(Farben.text3)
+                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .strokeBorder(Farben.rand, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Frei von \(Rasterzeit.uhrzeit(b)) bis \(Rasterzeit.uhrzeit(e))")
+        case .abwesend(let a):
+            HStack(alignment: .center, spacing: 10) {
+                zeitspalte(beginn: a.beginn, ende: a.ende, zeigen: zeitZeigen, klein: true, laeuft: false)
+                Text(a.text)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Farben.text2)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .background(Farben.abwesendFlaeche.opacity(0.6), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(a.text) \(Rasterzeit.uhrzeit(a.beginn)) bis \(Rasterzeit.uhrzeit(a.ende))")
+        }
+    }
+
+    /// Beginn (halbfett) und Ende (Hinweistext) als Uhrzeit; die laufende Stunde in Marine.
+    private func zeitspalte(beginn: Int, ende: Int, zeigen: Bool, klein: Bool, laeuft: Bool) -> some View {
+        VStack(alignment: .trailing, spacing: 1) {
+            if zeigen {
+                Text(Rasterzeit.uhrzeit(beginn))
+                    .font(.system(size: klein ? 12 : 15, weight: klein ? .regular : .semibold).monospacedDigit())
+                    .foregroundStyle(laeuft ? Farben.akzent : (klein ? Farben.text3 : Farben.text))
+                if !klein {
+                    Text(Rasterzeit.uhrzeit(ende))
+                        .font(.system(size: 12).monospacedDigit())
+                        .foregroundStyle(laeuft ? Farben.akzent : Farben.text3)
+                }
+            }
+        }
+        .lineLimit(1)
+        .frame(width: zeitBreite, alignment: .trailing)
+        .padding(.top, klein ? 0 : 4)
+        .accessibilityHidden(true)
+    }
+
+    /// Höhe der Kachel nach ihrem Inhalt (Kopfzeile und weitere Zeilen); Doppelstunden etwas höher.
+    private func hoehe(_ k: Kachel) -> CGFloat {
+        if k.art == .aufsicht || k.art == .ganztagTermin { return 28 }
+        let weitere = max(1, k.zeilen.count - 1)
+        let inhalt: CGFloat = 6 + 17 + CGFloat(weitere) * 15 + 10
+        return max(52, inhalt) + (k.dauer > 1 ? 14 : 0)
+    }
+
+    @ViewBuilder
+    private func kachelKnopf(_ k: Kachel, alle: [Kachel]) -> some View {
+        let h = hoehe(k)
+        let ansicht = GeometryReader { geo in
+            KachelView(kachel: k, gross: true, breite: geo.size.width, hoehe: h)
+        }
+        .frame(height: h)
+        if k.antippbar {
+            Button {
+                // Nur ein echtes Antippen öffnet die Stunde – nicht das Ende einer Wisch- oder Scrollbewegung
+                guard !tippsperre.gesperrt else { return }
+                if let a = k.aufsicht {
+                    aufsichtAntippen?(a)
+                } else {
+                    let karten = Kachelbau.parallele(k, in: alle)
+                    let index = karten.firstIndex { $0.id == k.karte?.id } ?? 0
+                    antippen(karten, index)
+                }
+            } label: {
+                ansicht
+            }
+            .buttonStyle(KartenKnopfStil())
+        } else {
+            ansicht
+        }
+    }
+
+    // MARK: Freier Tag
+
+    private func ferienfeld(_ tag: Tageskopf) -> some View {
+        let titel: String
+        switch tag.freiArt {
+        case "ferien": titel = "Ferien"
+        case "feiertag": titel = "Feiertag"
+        case "wochenende": titel = "Wochenende"
+        default: titel = "Unterrichtsfrei"
+        }
+        var text = ""
+        if let grund = tag.freiGrund, !grund.isEmpty, grund.lowercased() != titel.lowercased() { text = grund }
+        if let von = tag.freiVon, let bis = tag.freiBis, !von.isEmpty, !bis.isEmpty {
+            let zeitraum = von == bis ? Datumsformat.anzeige(von, "dd.MM.") : "\(Datumsformat.anzeige(von, "dd.MM.")) – \(Datumsformat.anzeige(bis, "dd.MM."))"
+            text = text.isEmpty ? zeitraum : "\(text) · \(zeitraum)"
+        }
+        return Hinweisfeld(titel: titel, text: text, flaeche: Farben.freiFlaeche, tonfarbe: Farben.frei)
+    }
+}
+
+/// Liste nur neu aufbauen, wenn sich Tag, Plan, Stand oder Abwesenheiten ändern (nicht bei jeder Verschiebung).
+extension TagesagendaView: Equatable {
+    static func == (l: TagesagendaView, r: TagesagendaView) -> Bool {
+        l.plan.montag == r.plan.montag && l.datum == r.datum && l.typ == r.typ && l.element == r.element
+            && l.stand == r.stand && l.untenFrei == r.untenFrei && l.senkrechtGesperrt == r.senkrechtGesperrt
+            && l.abwesenheiten == r.abwesenheiten
+    }
+}
+
+/// Leiste der Wochentage über der Tagesansicht: Kalenderwoche links, je Tag Kürzel und Datum; der angezeigte Tag in
+/// Marine hinterlegt, heute mit Marine-Schrift. Antippen springt zum Tag.
+struct Tagesleiste: View {
+    let tage: [Date]
+    let gewaehlt: Date
+    let waehlen: (Date) -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if let erster = tage.first {
+                Text("KW \(Datumsformat.kalenderwoche(erster))")
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Farben.text3)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .frame(width: 44, alignment: .leading)
+                    .accessibilityLabel("Kalenderwoche \(Datumsformat.kalenderwoche(erster))")
+            }
+            ForEach(tage, id: \.self) { d in
+                let iso = Datumsformat.iso(d)
+                let aktiv = iso == Datumsformat.iso(gewaehlt)
+                let heute = Datumsformat.istHeute(iso)
+                Button {
+                    waehlen(d)
+                } label: {
+                    VStack(spacing: 1) {
+                        Text(Datumsformat.anzeige(d, "EE"))
+                            .font(.system(size: 11, weight: .medium))
+                        Text(Datumsformat.anzeige(d, "d"))
+                            .font(.system(size: 16, weight: aktiv || heute ? .semibold : .regular).monospacedDigit())
+                    }
+                    .foregroundStyle(aktiv ? Farben.aufAkzent : (heute ? Farben.akzent : Farben.text))
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background(aktiv ? Farben.akzent : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Datumsformat.anzeige(d, "EEEE, d. MMMM") + (heute ? ", heute" : ""))
+                .accessibilityAddTraits(aktiv ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Farben.flaeche)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Farben.rand)
+                .frame(height: 1)
+        }
     }
 }

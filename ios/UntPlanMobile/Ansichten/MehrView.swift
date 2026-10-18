@@ -102,6 +102,11 @@ struct MehrView: View {
             }
             .refreshable { await laden() }
             .task { await laden() }
+            // Einrichtungslink „untplan://einrichten?server=…“ im angemeldeten Zustand: Konten mit „Konto hinzufügen“
+            .onAppear { if zustand.einrichtungsAdresse != nil { konten = true } }
+            .onChange(of: zustand.einrichtungsAdresse) { _, neu in
+                if neu != nil { konten = true }
+            }
             .confirmationDialog("Wirklich abmelden?", isPresented: $bestaetigen, titleVisibility: .visible) {
                 Button("Abmelden", role: .destructive) {
                     Task { await zustand.abmelden() }
@@ -131,10 +136,11 @@ struct MehrView: View {
                             .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                             .lineLimit(1)
-                        Text(zustand.schulname)
+                        Text([zustand.schulname, zustand.aktivesKonto?.serverKurz ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
                             .font(.footnote)
                             .foregroundStyle(Farben.text3)
                             .lineLimit(1)
+                            .truncationMode(.middle)
                     }
                 }
                 .padding(.vertical, 4)
@@ -142,7 +148,7 @@ struct MehrView: View {
             Button {
                 konten = true
             } label: {
-                Mehrzeile(titel: "Konten",
+                Mehrzeile(titel: "Konten und Schulen",
                           wert: zustand.konten.count > 1 ? "\(zustand.konten.count)" : nil, pfeil: true)
             }
             .buttonStyle(.plain)

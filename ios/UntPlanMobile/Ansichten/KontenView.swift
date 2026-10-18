@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Kontenauswahl („Mehr“ → „Konten“ bzw. Konto-Knopf auf „Heute“): alle angemeldeten Konten – auch verschiedener Server – mit Haken am aktiven.
 /// Antippen wechselt ohne Abmelden (Sitzung und Passwort liegen je Konto im Schlüsselbund); „Konto hinzufügen“ meldet
-/// ein weiteres Konto an, Wischen bzw. „Entfernen“ meldet ein Konto ab und löscht es vom Gerät.
+/// ein weiteres Konto an (Einrichtung mit Schuladresse, wie beim ersten Start), Wischen bzw. „Entfernen“ meldet ein Konto ab und löscht es vom Gerät.
 struct KontenauswahlView: View {
     @EnvironmentObject var zustand: AppZustand
     @Environment(\.dismiss) private var systemSchliessen
@@ -13,6 +13,8 @@ struct KontenauswahlView: View {
         if let blattSchliessen { blattSchliessen() } else { systemSchliessen() }
     }
     @State private var entfernenKonto: Konto? = nil
+    /// „Konto oder Schule hinzufügen“ geöffnet
+    @State private var hinzufuegen = false
 
     private var aktivId: String? { Kontenspeicher.aktivId }
 
@@ -59,16 +61,26 @@ struct KontenauswahlView: View {
                 }
 
                 Section {
-                    NavigationLink {
-                        AnmeldungView(hinzufuegen: true) { schliessen() }
-                            .environmentObject(zustand)
+                    Button {
+                        hinzufuegen = true
                     } label: {
-                        Text("Konto hinzufügen")
-                            .foregroundStyle(Farben.akzent)
+                        Mehrzeile(titel: "Konto oder Schule hinzufügen", pfeil: true)
                     }
+                    .buttonStyle(.plain)
+                } footer: {
+                    Text("Für eine weitere Schule geben Sie deren UntPlan-Adresse ein; für ein weiteres Konto an derselben Schule wählen Sie sie aus.")
                 }
             }
             .listStyle(.insetGrouped)
+            .navigationDestination(isPresented: $hinzufuegen) {
+                AnmeldungView(hinzufuegen: true) { schliessen() }
+                    .environmentObject(zustand)
+            }
+            }
+            // Einrichtungslink, während die App angemeldet ist: gleich „Konto hinzufügen“ mit der Adresse öffnen
+            .onAppear { if zustand.einrichtungsAdresse != nil { hinzufuegen = true } }
+            .onChange(of: zustand.einrichtungsAdresse) { _, neu in
+                if neu != nil { hinzufuegen = true }
             }
             .confirmationDialog(entfernenKonto.map { "\($0.login) entfernen?" } ?? "",
                                 isPresented: Binding(get: { entfernenKonto != nil }, set: { if !$0 { entfernenKonto = nil } }),

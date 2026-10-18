@@ -32,6 +32,8 @@ final class AppZustand: ObservableObject {
     @Published var konten: [Konto] = []
     /// Zählt bei jedem Kontowechsel hoch – die Oberfläche wird für das neue Konto frisch aufgebaut
     @Published var kontoStand = 0
+    /// Server-Adresse aus einem Einrichtungslink („untplan://einrichten?server=…“), die die Einrichtung übernehmen soll
+    @Published var einrichtungsAdresse: String? = nil
 
     /// Rechte für Entschuldigungen (Fachlehrkraft bzw. Klassenleitung); nil = noch nicht geladen.
     @Published var entschuldigungsrechte: Entschuldigungsrechte? = nil
@@ -199,6 +201,22 @@ final class AppZustand: ObservableObject {
     func pushTokenMelden() {
         guard phase == .angemeldet else { return }
         Push.tokenMelden()
+    }
+
+    /// Einrichtungslink „untplan://einrichten?server=plan.meine-schule.de“ auswerten: Die Adresse wird in die
+    /// Einrichtung übernommen (abgemeldet: Anmeldemaske; angemeldet: „Mehr“ → „Konten“ → „Konto hinzufügen“).
+    /// Andere Links werden übergangen.
+    @discardableResult
+    func einrichtungslinkOeffnen(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "untplan",
+              let teile = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              (teile.host ?? "").lowercased() == "einrichten" || teile.path.lowercased().contains("einrichten"),
+              let server = teile.queryItems?.first(where: { $0.name.lowercased() == "server" })?.value?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+              !server.isEmpty else { return false }
+        einrichtungsAdresse = server
+        if phase == .angemeldet { reiter = .mehr }
+        return true
     }
 
     /// Plan im Reiter „Plan“ öffnen.

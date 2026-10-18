@@ -123,7 +123,7 @@ enum Planmitteilungen {
         if liste.count <= 3 {
             for a in liste {
                 let inhalt = UNMutableNotificationContent()
-                inhalt.title = "Stundenplan geändert"
+                inhalt.title = "Plan geändert"
                 inhalt.body = a.text
                 inhalt.sound = .default
                 inhalt.threadIdentifier = "planaenderungen"
@@ -134,7 +134,7 @@ enum Planmitteilungen {
             }
         } else {
             let inhalt = UNMutableNotificationContent()
-            inhalt.title = "\(liste.count) Änderungen im Stundenplan"
+            inhalt.title = "\(liste.count) Änderungen im Plan"
             var zeilen = liste.prefix(4).map(\.text)
             if liste.count > 4 { zeilen.append("+ \(liste.count - 4) weitere") }
             inhalt.body = zeilen.joined(separator: "\n")

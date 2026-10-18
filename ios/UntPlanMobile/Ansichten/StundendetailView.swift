@@ -220,7 +220,7 @@ struct StundendetailInhalt: View {
     private var weitereAktionen: some View {
         if !planziele.isEmpty {
             Menu {
-                Section("Im Stundenplan anzeigen") {
+                Section("Im Plan anzeigen") {
                     ForEach(planziele) { plan in
                         Button {
                             zustand.planZeigen(plan)

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Wurzelansicht: Anmeldung oder die App mit der Tab-Leiste.
+/// Wurzelansicht: Einrichtung bzw. Anmeldung (Schuladresse, dann Konto) oder die App mit der Tab-Leiste.
 @MainActor
 struct HauptView: View {
     @EnvironmentObject var zustand: AppZustand
@@ -65,6 +65,8 @@ struct HauptView: View {
             // Nach der Anmeldung bzw. beim Start einmal den eigenen Plan prüfen (Lehrkräfte) und das Gerät für
             // Push-Mitteilungen beim Server hinterlegen
             if neu == .angemeldet {
+                // Einrichtungslink beim Start erhalten: „Mehr“ öffnet die Konten mit „Konto hinzufügen“
+                if zustand.einrichtungsAdresse != nil { zustand.reiter = .mehr }
                 zustand.pushTokenMelden()
                 Task { await zustand.planPruefen() }
             }
@@ -72,6 +74,10 @@ struct HauptView: View {
         .onAppear {
             schnellaktionAusfuehren()
             tagOeffnen()
+        }
+        // Einrichtungslink „untplan://einrichten?server=…“ (z. B. aus einem Elternbrief bzw. QR-Code der Schule)
+        .onOpenURL { url in
+            _ = zustand.einrichtungslinkOeffnen(url)
         }
     }
 

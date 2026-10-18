@@ -82,7 +82,7 @@ struct PlanAuswahlView: View {
             }
             .listStyle(.insetGrouped)
             .environment(\.editMode, $bearbeiten)
-            .searchable(text: $suche, placement: .navigationBarDrawer(displayMode: .always), prompt: "Stundenplan suchen")
+            .searchable(text: $suche, placement: .navigationBarDrawer(displayMode: .always), prompt: "Klasse, Lehrkraft oder Raum")
             .overlay(alignment: .top) {
                 Ladebalken(aktiv: elemente == nil && fehler == nil)
             }
@@ -120,7 +120,7 @@ struct PlanAuswahlView: View {
                 waehlen(nil)
             } label: {
                 HStack(spacing: 12) {
-                    Text("Mein Stundenplan")
+                    Text("Mein Plan")
                         .foregroundStyle(Farben.text)
                     Spacer(minLength: 4)
                     if auswahl == nil {
