@@ -32,9 +32,12 @@ curl -fsSL -H "Accept: application/vnd.github.raw" -o install.sh "https://api.gi
 sh install.sh
 ```
 
-Das Skript lädt `docker-compose.yml` und `update.sh`, fragt ab, welche Programme installiert werden, welche Datenbank
+Das Skript lädt `docker-compose.yml`, `update.sh` und `passwort.sh`, fragt ab, welche Programme installiert werden, welche Datenbank
 UntPlan Web nutzt (SQLite oder MariaDB) und ob HTTPS eingerichtet werden soll. Es erzeugt zufällige Passwörter,
-schreibt `.env` (nur für root lesbar) und `Caddyfile` und startet die Container. Am Ende stehen Adressen und
+schreibt `.env` (nur für root lesbar) und `Caddyfile` und startet die Container. Sobald die Container bereit sind,
+setzt es die gewählten Administrator-Passwörter ausdrücklich (`--passwort-setzen … --anlegen`, siehe unten) – so gelten
+die angezeigten Zugangsdaten auch dann, wenn die Volumes schon Daten enthalten (erneute Einrichtung mit `--neu`, frühere
+Installation). Gelingt das nicht, erscheint eine Warnung mit dem Befehl zum Nachholen. Am Ende stehen Adressen und
 Zugangsdaten auf dem Bildschirm.
 
 **Ports:** Auf Wunsch fragt das Skript eigene Ports ab (Studio, Web, Mobile und bei HTTPS die Ports von Caddy). Sie
@@ -97,6 +100,30 @@ den Versionshinweisen (Studio unter der Kopfleiste, Web auf *Heute*/*Übersicht*
 
 `.env` bearbeiten (z. B. ein Programm in `COMPOSE_PROFILES` ergänzen oder entfernen), dann `docker compose up -d
 --remove-orphans`. Komplett neu fragen lassen: `./install.sh --neu` – vorhandene Daten bleiben erhalten.
+
+## Passwort vergessen / neu setzen
+
+Die Passwörter in `.env` (`STUDIO_ADMIN_PASSWORT`, `UNTPLANWEB_ADMIN_PASSWORT`) gelten nur beim allerersten Start, solange es
+noch keine Benutzer gibt – sie dort zu ändern, wirkt später nicht mehr. Ein Passwort lässt sich jederzeit auf dem Server neu
+setzen (die Container laufen weiter, die Änderung gilt sofort):
+
+```sh
+cd /opt/untplannext
+./passwort.sh studio              # Administrator von Studio (STUDIO_ADMIN_BENUTZER aus .env, sonst admin)
+./passwort.sh studio planer1      # beliebiger Studio-Benutzer
+./passwort.sh web                 # Konto admin von UntPlan Web
+./passwort.sh web mueller --aenderungspflicht   # bei der nächsten Anmeldung muss ein neues Passwort gewählt werden
+./passwort.sh web chefin --anlegen              # fehlendes Konto als Administrator anlegen
+```
+
+Das Skript fragt das Passwort verdeckt zweimal ab und gibt es über die Standardeingabe an
+`docker compose exec -T untplannext-studio dotnet UntPlanStudio.dll --passwort-setzen <benutzer>` bzw.
+`… untplannext-web dotnet UntPlanWeb.dll --passwort-setzen <login>` weiter (ohne Terminal liest es eine Zeile von der
+Standardeingabe, z. B. `printf '%s\n' "$PW" | ./passwort.sh web`). Es gelten dieselben Regeln wie in der Oberfläche
+(Studio mindestens 6 Zeichen, Web die Passwortrichtlinie, mindestens 8 Zeichen). Bei UntPlan Web wird außerdem die Sperre nach
+Fehlversuchen aufgehoben und ein gesperrtes Konto entsperrt. Gibt es den Benutzer nicht, nennt die Meldung die vorhandenen
+Administratoren; mit `--anlegen` wird er als Administrator angelegt. Ältere Installationen ohne `passwort.sh`: `./install.sh`
+erneut aufrufen (lädt das Skript, die Einstellungen bleiben erhalten).
 
 ## Sicherungen wiederherstellen
 

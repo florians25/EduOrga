@@ -124,6 +124,22 @@ docker compose exec -T untplanstudio dotnet UntPlanStudio.dll --sichern
 STUDIO_DATEN=/pfad/zum/datenordner dotnet UntPlanStudio.dll --sichern
 ```
 
+**Passwort vergessen / neu setzen:** Das Admin-Passwort aus `STUDIO_ADMIN_PASSWORT` gilt nur beim ersten Start (solange es keine
+Benutzer gibt). Danach setzt die Kommandozeile das Passwort eines Benutzers – ohne den Webserver zu starten und auch während er läuft
+(der Server liest die Benutzer bei jeder Anmeldung neu):
+
+```bash
+# Passwort als eine Zeile über die Standardeingabe; am Terminal (ohne -T bzw. ohne Container) zweimal verdeckt abgefragt
+printf '%s\n' "$NEUES_PASSWORT" | docker compose exec -T untplanstudio dotnet UntPlanStudio.dll --passwort-setzen admin
+STUDIO_DATEN=/pfad/zum/datenordner dotnet UntPlanStudio.dll --passwort-setzen admin
+# fehlenden Benutzer als Administrator anlegen
+STUDIO_DATEN=/pfad/zum/datenordner dotnet UntPlanStudio.dll --passwort-setzen chefin --anlegen
+```
+
+Mindestens 6 Zeichen (wie in der Oberfläche); Ergebnis 0 = gesetzt, 1 = Fehler (Meldung auf stderr, bei unbekanntem Benutzer mit
+der Liste der Administratoren). In der Gesamtinstallation erledigt das `./passwort.sh studio [benutzer]` (siehe
+`installation/README.md`).
+
 Update mit Sicherung: `docker compose exec -T untplanstudio dotnet UntPlanStudio.dll --sichern && docker compose pull && docker compose up -d`.
 Die Sicherungen liegen im Volume; außerhalb sichern z. B. mit
 `docker compose cp untplanstudio:/data/sicherungen ./studio-sicherungen`.

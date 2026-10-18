@@ -44,9 +44,9 @@ laden() { # laden <Datei> <Ziel>
     || curl -fsSL "$QUELLE/$1" -o "$2" 2>/dev/null
 }
 
-# docker-compose.yml und update.sh immer in der aktuellen Fassung verwenden (ältere oder fremde Dateien, z. B. aus
+# docker-compose.yml, update.sh und passwort.sh immer in der aktuellen Fassung verwenden (ältere oder fremde Dateien, z. B. aus
 # früheren UntPlan-Installationen, werden als *.alt-<Datum> beiseitegelegt)
-for datei in docker-compose.yml update.sh; do
+for datei in docker-compose.yml update.sh passwort.sh; do
   if command -v curl >/dev/null 2>&1 && laden "$datei" "$datei.neu"; then
     if [ -f "$datei" ] && ! cmp -s "$datei" "$datei.neu"; then
       mv "$datei" "$datei.alt-$(date +%Y%m%d-%H%M%S)"
@@ -55,13 +55,14 @@ for datei in docker-compose.yml update.sh; do
     mv "$datei.neu" "$datei"
   else
     rm -f "$datei.neu"
-    [ -f "$datei" ] || fehler "$datei fehlt und konnte nicht geladen werden ($QUELLE)."
+    [ -f "$datei" ] || [ "$datei" = passwort.sh ] || fehler "$datei fehlt und konnte nicht geladen werden ($QUELLE)."
   fi
 done
 grep -q "ghcr.io/florians25/untplannext-studio" docker-compose.yml \
   || fehler "docker-compose.yml ist nicht die aktuelle Fassung von UntPlan Next (GitHub lieferte evtl. noch eine zwischengespeicherte Datei).
 Bitte „rm docker-compose.yml“ und install.sh in ein paar Minuten erneut aufrufen."
 chmod +x update.sh
+[ ! -f passwort.sh ] || chmod +x passwort.sh
 
 if [ -f .env ] && [ "$NEU" = 0 ]; then
   echo "Vorhandene Einstellungen (.env) gefunden – Container werden mit diesen Einstellungen gestartet."
@@ -264,6 +265,31 @@ if ! docker compose pull; then
 fi
 docker compose up -d --remove-orphans
 
+# Die Passwörter aus .env gelten nur beim allerersten Start (solange es keine Benutzer gibt). Enthalten die Volumes schon
+# Daten (erneute Einrichtung mit --neu, frühere Installation), werden die gewählten Passwörter hier ausdrücklich gesetzt.
+bereit() { # bereit <Dienst> <dll> → 0, sobald das Programm antwortet (höchstens etwa 90 Sekunden)
+  i=0
+  while [ "$i" -lt 45 ]; do
+    docker compose exec -T "$1" dotnet "$2" --gesundheitspruefung >/dev/null 2>&1 && return 0
+    sleep 2; i=$((i + 1))
+  done
+  return 1
+}
+admin_passwort() { # admin_passwort <Dienst> <dll> <Benutzer> <Passwort> <Programm> <Kürzel für passwort.sh>
+  echo "Setze das Administrator-Passwort von $5 …"
+  if bereit "$1" "$2" \
+    && printf '%s\n' "$4" | docker compose exec -T "$1" dotnet "$2" --passwort-setzen "$3" --anlegen >/dev/null; then
+    return 0
+  fi
+  echo >&2
+  echo "WARNUNG: Das Passwort für „$3“ in $5 konnte nicht gesetzt werden – die unten angezeigten Zugangsdaten gelten" >&2
+  echo "         womöglich nicht (z. B. wenn schon Daten einer früheren Einrichtung vorhanden sind)." >&2
+  echo "         Später nachholen mit: ./passwort.sh $6 $3   (Protokoll: docker compose logs $1)" >&2
+  echo >&2
+}
+[ "$STUDIO" = 1 ] && admin_passwort untplannext-studio UntPlanStudio.dll "$STUDIO_BENUTZER" "$STUDIO_PW" "UntPlan Studio" studio
+[ "$WEB" = 1 ] && admin_passwort untplannext-web UntPlanWeb.dll admin "$WEB_PW" "UntPlan Web" web
+
 adresse() { # adresse <Domain> <Port>
   if [ "$HTTPS" = 1 ]; then
     if [ "$HTTPS_PORT" = 443 ]; then echo "https://$1"; else echo "https://$1:$HTTPS_PORT"; fi
@@ -282,3 +308,4 @@ if [ "$STUDIO" = 1 ] && [ "$WEB" = 1 ]; then
 fi
 echo
 echo "Update: ./update.sh   (sichert vorher die Datenbanken von Studio und Web)"
+echo "Passwort vergessen: ./passwort.sh studio|web [benutzer]"

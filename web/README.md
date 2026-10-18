@@ -380,6 +380,23 @@ Vorher wird SQLite automatisch nach `/data/sicherungen` gesichert (die letzten f
 
 Ohne Updater zeigt die Karte den Befehl `docker compose pull && docker compose up -d`.
 
+### Passwort vergessen / neu setzen
+
+`UNTPLANWEB_ADMIN_PASSWORT` legt das Konto `admin` nur beim ersten Start an (solange es keinen Administrator gibt). Danach setzt die
+Kommandozeile das Passwort eines Kontos direkt in der Datenbank (SQLite oder MySQL/MariaDB, dieselbe Konfiguration wie der Server) –
+ohne den Webserver zu starten und auch während er läuft:
+
+```bash
+# Passwort als eine Zeile über die Standardeingabe; am Terminal (ohne -T) zweimal verdeckt abgefragt
+printf '%s\n' "$NEUES_PASSWORT" | docker compose exec -T untplanweb dotnet UntPlanWeb.dll --passwort-setzen admin
+# Optionen: --anlegen (fehlendes Konto als Administrator anlegen), --aenderungspflicht (bei der nächsten Anmeldung ändern)
+```
+
+Das Passwort muss der Passwortrichtlinie genügen (*Administration → Rechte und Rollen*, mindestens 8 Zeichen). Die Sperre nach
+Fehlversuchen wird aufgehoben und ein gesperrtes Konto entsperrt; ohne `--aenderungspflicht` muss das Passwort danach nicht geändert
+werden. Ergebnis 0 = gesetzt, 1 = Fehler (Meldung auf stderr, bei unbekanntem Konto mit der Liste der Administratoren). In der
+Gesamtinstallation: `./passwort.sh web [login]` (siehe `installation/README.md`).
+
 ### Datenmigration
 
 Bestehende SQLite-Daten lassen sich nach MySQL/MariaDB übernehmen. Der Befehl migriert beide Datenbanken auf den aktuellen
