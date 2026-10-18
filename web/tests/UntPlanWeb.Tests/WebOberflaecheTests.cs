@@ -84,6 +84,28 @@ public class WebOberflaecheTests
     }
 
     [Fact]
+    public void Stundenplan_sachlich_ohne_Pastellflaechen_und_ohne_Pillen()
+    {
+        // Kachel: neutrale Fläche, Fachfarbe nur als kleines Quadrat; Status über Linie/Schraffur/Kürzel-Plaketten statt Wörtern
+        var kachel = Lesen("src", "components", "plan", "Kachel.tsx");
+        Assert.Contains("FachQuadrat", kachel);
+        Assert.Contains("kachel.flaeche", kachel);
+        Assert.Contains("KACHEL_PLAKETTEN", kachel);
+        Assert.DoesNotContain("alpha(fach", kachel);
+        var logik = Lesen("src", "components", "plan", "logik.ts");
+        var erlaubt = Regex.Match(logik, @"KACHEL_PLAKETTEN = new Set\(\[([^\]]*)\]").Groups[1].Value;
+        Assert.NotEmpty(erlaubt);
+        foreach (var wort in new[] { "Entfall", "Offen", "Vertreten", "Zusatz" }) Assert.DoesNotContain($"'{wort}'", erlaubt);
+        Assert.Contains("art=\"offen\"", Lesen("src", "components", "plan", "Werte.tsx"));
+        // Thema: keine Pillenform, Karten höchstens 8 px
+        var thema = Lesen("src", "theme.ts");
+        Assert.DoesNotContain("999", thema);
+        Assert.Contains("shape: { borderRadius: 4 }", thema);
+        foreach (var datei in new[] { "Wochenraster.tsx", "Legende.tsx", "Kachel.tsx" })
+            Assert.DoesNotContain("borderRadius: 999", Lesen("src", "components", "plan", datei));
+    }
+
+    [Fact]
     public void Ohne_Fremdnamen_ohne_Orange_und_ohne_fette_Schrift()
     {
         var fremd = new string(new[] { 'u', 'n', 't', 'i', 's' });
