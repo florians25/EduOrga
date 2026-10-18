@@ -22,7 +22,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/@fluentui/react-icons')) return 'symbole';
           if (id.includes('node_modules/@fluentui') || id.includes('node_modules/@griffel') || id.includes('node_modules/tabster')) return 'fluent';
           if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) return 'react';
           if (id.includes('node_modules/@tanstack') || id.includes('node_modules/@dnd-kit')) return 'werkzeuge';
