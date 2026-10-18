@@ -538,7 +538,7 @@ export function tagAuswahl(plan, gewaehlt) {
 }
 
 /**
- * Hover wie im Original (nur auf Labels und Symbolen unten rechts, nicht auf der ganzen Karte): grünes Label
+ * Hover (nur auf Labels und Symbolen unten rechts, nicht auf der ganzen Karte): grünes Label
  * „B070 → C197“ über dem geänderten Wert bzw. dunkler Hinweis über dem Info-Symbol. Ein schwebendes Element, damit es
  * nicht von der Karte abgeschnitten wird.
  */
@@ -634,7 +634,7 @@ export function kartenBinden(wurzel, karten, kontext, typ = null) {
   });
 }
 
-/** Detailansicht einer Stunde (Aufbau wie im Original) – siehe stundendetails.js. */
+/** Detailansicht einer Stunde (Aufbau) – siehe stundendetails.js. */
 export { karteDialog } from './stundendetails.js';
 import { karteDialog } from './stundendetails.js';
 

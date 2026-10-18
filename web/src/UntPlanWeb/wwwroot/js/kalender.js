@@ -1,4 +1,4 @@
-// UntPlanWeb – Kalender: eigener Datumswähler im Portal-Design für alle Datumsangaben der Oberfläche.
+// UntPlanWeb – Kalender: eigener Datumswähler für alle Datumsangaben der Oberfläche.
 // Monatsansicht mit Spalte „KW“, heute markiert, Ferien und Feiertage dezent hinterlegt, Monats- und Jahresübersicht,
 // vollständige Tastaturbedienung, Wochenauswahl (Stundenplan) und Bereichsauswahl (Von/Bis-Paare).
 //

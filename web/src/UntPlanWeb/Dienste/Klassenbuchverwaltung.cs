@@ -26,7 +26,7 @@ public sealed record Stundenzeile(string Lehrer, List<string> Klassen, string Fa
 /// Schüler*in), <c>summe</c> (Summe je Klasse) – für gegliederte Berichte in der Web-Ansicht und im PDF.</param>
 public sealed record Bericht(string Id, string Titel, List<string> Spalten, List<List<object?>> Zeilen, string? Hinweis = null, List<string>? Arten = null);
 
-/// <summary>Verfügbarer Bericht (Gruppe wie im Original: Abwesenheiten, Klassenbucheinträge, Arbeitsbericht, Prüfungen, Weitere).</summary>
+/// <summary>Verfügbarer Bericht (Gruppen: Abwesenheiten, Klassenbucheinträge, Arbeitsbericht, Prüfungen, Weitere).</summary>
 public sealed record Berichtsart(string Id, string Gruppe, string Titel, bool KlasseNoetig = false, string? Parameter = null);
 
 /// <summary>

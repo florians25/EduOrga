@@ -1,4 +1,4 @@
-// Seiten für Schüler*innen und Erziehungsberechtigte im neuen Design, aufgebaut wie im Original (die Übersicht steht für alle
+// Seiten für Schüler*innen und Erziehungsberechtigte im neuen Design (die Übersicht steht für alle
 // Rollen in uebersicht.js und nutzt die Kinderwahl von hier): Abwesenheiten mit den Reitern
 // „Meine Abwesenheiten“ (Zeiträume) und „Fehlzeiten“ (je Unterrichtsstunde), Hausaufgaben (Datum + Woche/Monat).
 // Erziehungsberechtigte mit mehreren Kindern wählen das Kind in der Filterleiste. Alle Daten kommen aus /api/app/familie/…,
@@ -12,11 +12,11 @@ const wt = iso => WT[new Date(iso + 'T12:00').getDay()];
 const tagMonat = iso => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.`;
 const monatPlus = (iso, n) => { const d = new Date(iso + 'T12:00'); d.setMonth(d.getMonth() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-/** Status-Label wie im Original (klein, gefüllt) – ändert beim Überfahren nie die Farbe. */
+/** Status-Label (klein, gefüllt) – ändert beim Überfahren nie die Farbe. */
 export const statusLabel = st => { const [farbe, text] = STATUS[st] ?? ['grau', st || '']; return `<span class="fz-label ${farbe}">${e(text)}</span>`; };
 /** „zählt“ als farbiges Kästchen. */
 export const zaehltKaestchen = z => `<span class="fz-kaestchen ${z ? 'an' : ''}" title="${z ? 'zählt als Fehlstunde' : 'zählt nicht als Fehlstunde'}" role="img" aria-label="${z ? 'zählt' : 'zählt nicht'}"></span>`;
-/** Datum wie im Original: grauer Wochentag, dunkles Datum, graue Uhrzeit. */
+/** Datum: grauer Wochentag, dunkles Datum, graue Uhrzeit. */
 const datumZelle = (iso, zeit, vor = '') => `<span class="fz-grau">${vor}${wt(iso)}</span> <span class="fz-datum">${tagMonat(iso)}</span>${zeit ? ` <span class="fz-grau">${e(zeit)}</span>` : ''}`;
 
 

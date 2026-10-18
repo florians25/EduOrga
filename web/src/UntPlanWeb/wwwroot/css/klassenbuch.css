@@ -391,7 +391,7 @@ button.kbu-kachel:hover { background: var(--up-flaeche-2); }
 .kbl-heute { margin-left: 8px; padding: 1px 8px; border-radius: var(--up-radius); background: var(--s-akzent-hell); color: var(--up-primaer); font-size: .72rem; }
 .kbl-tagblock.ist-heute .kbl-datum { border-color: var(--s-akzent); }
 
-/* Tabelle wie im Original: h | Fach | (Lehrkräfte) | Klassen | Lehrstoff | Abwesenheiten | Hausaufgaben */
+/* Tabelle: h | Fach | (Lehrkräfte) | Klassen | Lehrstoff | Abwesenheiten | Hausaufgaben */
 .kbl-tabelle { --kbl-spalten: minmax(34px, .55fr) minmax(60px, 1.5fr) minmax(110px, 1.5fr) minmax(70px, 1.5fr) minmax(120px, 1.5fr) minmax(180px, 1.9fr) minmax(110px, 1.4fr);
   overflow: visible; border-radius: 4px; background: var(--up-flaeche); box-shadow: 0 1px 5px rgba(20, 30, 40, .09); }
 .kbl-tabelle.ohne-lehrer { --kbl-spalten: minmax(34px, .6fr) minmax(60px, 1.8fr) minmax(70px, 1.8fr) minmax(120px, 1.8fr) minmax(180px, 2.2fr) minmax(110px, 1.6fr); }
@@ -542,22 +542,22 @@ button.kbu-kachel:hover { background: var(--up-flaeche-2); }
 }
 @media (max-width: 575.98px) { .br-reihe-aktionen .br-knopf span { display: none; } .br-reihe-aktionen .br-knopf { width: 38px; padding: 0; } }
 
-/* ------------------------------------------------------------------ Offene Stunden im Original-Look: schlichte Tabelle, „Prüfen“/„Eingeben“,
+/* ------------------------------------------------------------------ Offene Stunden: schlichte Tabelle, „Prüfen“/„Eingeben“,
    Auswahl „Alle“ in der Suche, Kalender mit zwei Monaten, Seitenleiste „Lehrstoff“ */
 
 .os-trenn { width: 1px; height: 20px; background: var(--up-rand-stark); margin: 0 4px; flex: none; }
 .os-artwahl { margin: 0; flex: none; }
 .os-artwahl select { height: 32px; border: 0; background-color: transparent; font: inherit; font-size: .88rem; font-weight: 600; color: var(--up-text); }
 .os-artwahl .wahl-knopf, .os-artwahl .auswahl-knopf { border: 0 !important; background: transparent !important; box-shadow: none !important; min-height: 32px; height: 32px; font-weight: 600; }
-.os-original .os-tabelle th { text-transform: none; letter-spacing: 0; font-size: .78rem; color: var(--up-text-3); font-weight: 600; padding: 12px 10px; }
-.os-original .os-tabelle td { height: 52px; padding: 0 10px; font-size: .875rem; color: var(--up-text); }
-.os-original .os-tabelle td.os-wahl, .os-original .os-tabelle th.os-wahl { width: 52px; padding-left: 18px; }
-.os-original .os-datum { font-variant-numeric: tabular-nums; }
-.os-original .os-artspalte { color: var(--up-text-2); font-size: .82rem; }
+.os-liste .os-tabelle th { text-transform: none; letter-spacing: 0; font-size: .78rem; color: var(--up-text-3); font-weight: 600; padding: 12px 10px; }
+.os-liste .os-tabelle td { height: 52px; padding: 0 10px; font-size: .875rem; color: var(--up-text); }
+.os-liste .os-tabelle td.os-wahl, .os-liste .os-tabelle th.os-wahl { width: 52px; padding-left: 18px; }
+.os-liste .os-datum { font-variant-numeric: tabular-nums; }
+.os-liste .os-artspalte { color: var(--up-text-2); font-size: .82rem; }
 .os-pille { display: inline-flex; align-items: center; height: 28px; padding: 0 14px; border: 1px solid var(--up-rand-stark); border-radius: var(--up-radius); background: var(--up-flaeche); color: var(--up-text); font-size: .8rem; font-weight: 600; white-space: nowrap; }
 .os-pille:hover { border-color: var(--up-text); }
 .os-pille:focus-visible { outline: 2px solid rgba(35, 79, 150, .55); outline-offset: 2px; }
-.os-original .os-hinweis { margin: 12px 0 0; }
+.os-liste .os-hinweis { margin: 12px 0 0; }
 .os-zeitraum { font-variant-numeric: tabular-nums; }
 
 .os-leiste-huelle { position: fixed; inset: 0; z-index: 1060; }

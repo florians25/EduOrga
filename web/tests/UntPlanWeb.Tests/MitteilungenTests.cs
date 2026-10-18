@@ -8,7 +8,7 @@ using UntPlanWeb.Dienste;
 namespace UntPlanWeb.Tests;
 
 /// <summary>
-/// Mitteilungen wie im Original: Empfängergruppen (Erziehungsberechtigte bzw. Schüler*innen einer Klasse, Klassenlehrkräfte, Lehrkräfte der Klasse),
+/// Mitteilungen: Empfängergruppen (Erziehungsberechtigte bzw. Schüler*innen einer Klasse, Klassenlehrkräfte, Lehrkräfte der Klasse),
 /// Lesebestätigung (anfordern, senden, Liste), Antworten/Allen antworten/Weiterleiten mit Anhängen, Suche, Rechte und Sperren laut Einstellungen
 /// der Administration, Grenzen für Anhänge und automatisches Löschen nach der Aufbewahrungsfrist.
 /// </summary>

@@ -6,7 +6,7 @@ namespace UntPlanWeb.Tests;
 
 /// <summary>
 /// Sprint 27: Raumwahl als eine Komponente (Portal-Liste am Feld mit Kollisionserkennung, eingebettete Liste mit Filtern Gebäude,
-/// Abteilung, Kapazität, nur freie), Prüfung editieren mit Löschen, Melden im Portal-Design (Kacheln, einheitliche Formulare,
+/// Abteilung, Kapazität, nur freie), Prüfung editieren mit Löschen, Melden (Kacheln, einheitliche Formulare,
 /// Meine Meldungen mit Status-Pills und Filtern) und das überarbeitete Buchungsmodul (drei Schritte, Schnellbuchung, Storno-Dialog).
 /// </summary>
 public class BuchenMeldenOberflaecheTests

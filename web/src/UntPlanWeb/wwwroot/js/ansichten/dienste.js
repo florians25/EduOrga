@@ -1,4 +1,4 @@
-// Klassenbuch → Klassendienste wie im Original: Klasse, Dienst und Zeitraum wählen; Zeitansicht (Schüler*innen × Wochen zum
+// Klassenbuch → Klassendienste: Klasse, Dienst und Zeitraum wählen; Zeitansicht (Schüler*innen × Wochen zum
 // Ankreuzen) oder Listenansicht; automatische Schülereinteilung reihum; Bericht.
 import { e, icon, holen, senden, api, toast, heuteIso, plusTage, montag, leer, suchfeldMitFilter, suchfeldMitFilterBinden, zeitraumPillen, zeilenFiltern } from '../ui.js';
 import { kbDialog as dialog, kbBestaetigen as bestaetigen } from '../kbdialog.js';

@@ -745,7 +745,7 @@ public sealed class Plandienst
     }
 
     /// <summary>
-    /// Fachwechsel wie im Original: Zur geänderten Stunde mit neuem Fach erscheint die ursprüngliche Stunde als Entfall daneben
+    /// Fachwechsel: Zur geänderten Stunde mit neuem Fach erscheint die ursprüngliche Stunde als Entfall daneben
     /// (altes Fach, ursprüngliche Lehrkräfte und Räume). Im Lehrerplan nur, wenn die Lehrkraft die ursprüngliche Stunde gehalten hätte.
     /// </summary>
     private static Karte? Fachwechsel(Karte k, string typ, string kurz)

@@ -1,4 +1,4 @@
-// Mitteilungen wie im Original:
+// Mitteilungen:
 // - Ordner Posteingang, Gesendet, Entwürfe, Listen (Kollegium) und Einstellungen (Administration) im Untermenü der Seitenleiste;
 //   Liste mit einer Zeile je Mitteilung, Lesen und Schreiben im großen Fenster.
 // - Posteingang: „Lesebestätigung erforderlich“ oben, Lesebestätigung senden, Antworten, Allen antworten, Weiterleiten (mit Anhängen),
@@ -116,7 +116,7 @@ export async function zeigen(seite, kontext, [ordnerParam, idParam]) {
   const blase = m => ordner === 'gesendet' && m.lesebestaetigung
     ? `<span class="mt-blase" role="button" tabindex="0" data-blase="${m.id}" title="Lesebestätigungen anzeigen" aria-label="${m.bestaetigtAnzahl} von ${m.anzahl} Lesebestätigungen">${m.bestaetigtAnzahl} <i></i> ${m.anzahl}</span>` : '';
   const vorschau = m => m.text.replace(/[#*_~>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 240);
-  // Wie im Original eine Zeile je Mitteilung: Avatar (Initiale) | Absender | fetter Betreff | Vorschautext; rechts dezent Anhang, Zeit
+  // Eine Zeile je Mitteilung: Avatar (Initiale) | Absender | fetter Betreff | Vorschautext; rechts dezent Anhang, Zeit
   const eintrag = (m, i) => `
     <button type="button" class="mt-zeile ${eingang && !m.gelesen ? 'neu' : ''}" data-i="${i}" data-merkmale="${[eingang && !m.gelesen ? 'ungelesen' : '', m.wichtig ? 'wichtig' : '', m.anhaenge?.length ? 'anhang' : '', offenBestaetigen(m) ? 'bestaetigen' : ''].join(' ')}"
       data-text="${e((m.betreff + ' ' + m.absender + ' ' + m.text + ' ' + m.empfaenger.join(' ') + ' ' + (m.empfaengerText || '') + ' ' + (m.anhaenge || []).map(a => a.name).join(' ')).toLowerCase())}">
@@ -163,7 +163,7 @@ export async function zeigen(seite, kontext, [ordnerParam, idParam]) {
     lesenDialog(m, i);
   };
 
-  /** Mitteilung lesen im großen Fenster wie im Original: Titel, „Von:“ | Datum, Text, Anhänge; unten Drucken und die Aktionen. */
+  /** Mitteilung lesen im großen Fenster: Titel, „Von:“ | Datum, Text, Anhänge; unten Drucken und die Aktionen. */
   function lesenDialog(m, i) {
     const kannAntworten = eingang && optionen.darfSenden;
     const viele = eingang && m.empfaenger.length > 1;
@@ -321,7 +321,7 @@ function auswahl(bereich, empfaenger, gewaehlt, fertig, abbrechen) {
   zeichnen();
 }
 
-// ------------------------------------------------------------------ Empfänger*innen (Personensuche wie im Original)
+// ------------------------------------------------------------------ Empfänger*innen (Personensuche)
 
 /** Rollen-Pills, die dunkel dargestellt werden (Grundrolle); weitere Pills (Klassenlehrkraft | Klasse) heller. */
 const PILL_DUNKEL = new Set(['lehrkraft', 'schulleitung', 'administration', 'schueler', 'eltern']);
@@ -380,7 +380,7 @@ async function empfaengerDialog(kollegium, gewaehlt, fertig) {
   const pillsZeichnen = () => {
     filterLeiste.innerHTML = `<button type="button" class="mt-ew-fpill erste ${filter.ausgewaehlt ? 'an' : ''}" data-ew-aus aria-pressed="${filter.ausgewaehlt}">Ausgewählt${neu.size ? ` (${neu.size})` : ''}</button>`
       + EW_FILTER.map(([k, titel, optionen]) => {
-        // Kollegium: alle Filter wie im Original sichtbar (leere mit Hinweis im Menü); Familie nur Filter mit Einträgen
+        // Kollegium: alle Filter sichtbar (leere mit Hinweis im Menü); Familie nur Filter mit Einträgen
         if (!optionen(d).length && (!kollegium || (k === 'liste' && !d.filter.listen))) return '';
         const wert = filter[k] ? optionen(d).find(o => o.id === filter[k])?.name ?? filter[k] : '';
         return `<button type="button" class="mt-ew-fpill ${wert ? 'an' : ''}" data-ew-menue="${k}" aria-haspopup="listbox" aria-expanded="false">${e(wert ? `${titel.replace(/ \(.*\)/, '')}: ${wert}` : titel)}<i class="bi bi-chevron-down" aria-hidden="true"></i></button>`;
@@ -553,7 +553,7 @@ async function schreiben(kontext, { an, vorgabe, entwurf, titel } = {}) {
       chips();
       const wahl = b.querySelector('[data-wahl]');
       const plus = b.querySelector('[data-plus]');
-      // Fußleiste wie im Original: Speichern | Lesebestätigung, Wichtig, Anhang, Vorschau … Abbrechen, Senden
+      // Fußleiste: Speichern | Lesebestätigung, Wichtig, Anhang, Vorschau … Abbrechen, Senden
       const werkzeuge = b.querySelector('[data-werkzeuge]');
       b.querySelector('.modal-footer [data-knopf="0"]')?.after(werkzeuge);
       werkzeuge.classList.remove('d-none');

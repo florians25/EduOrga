@@ -51,7 +51,7 @@ export async function zeigen(seite, kontext, [reiterParam, vonParam, bisParam, k
     : leer('Keine Hausaufgaben im Zeitraum.', 'hausaufgaben');
 }
 
-// ------------------------------------------------------------------ Liste wie im Original (UW-08): Klassenbuch → Hausaufgaben
+// ------------------------------------------------------------------ Liste (UW-08): Klassenbuch → Hausaufgaben
 
 const datumDe = iso => iso ? iso.split('-').reverse().join('.') : '';
 const BEREICHE = {

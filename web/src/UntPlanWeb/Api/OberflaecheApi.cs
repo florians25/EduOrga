@@ -73,7 +73,7 @@ public static partial class OberflaecheApi
 
         // ---------------------------------------------------------------- Klassenbuch: Übersicht und Vorstunden
 
-        // Übersicht wie im Original: je Tag die Stunden (eigene, einer Lehrkraft bzw. Klasse) mit Lehrstoff, Abwesenheiten und Hausaufgaben.
+        // Übersicht: je Tag die Stunden (eigene, einer Lehrkraft bzw. Klasse) mit Lehrstoff, Abwesenheiten und Hausaufgaben.
         // Zeitraum von–bis (höchstens 31 Tage; ohne von: bis und tage), mehrere Kriterien kombinierbar: klasse und lehrer als Komma-Liste,
         // fach und unterricht schränken weiter ein. Grenzen des Schuljahres (Endlos-Scroll der Klassenbuch-Übersicht) liefert die Antwort mit.
         api.MapGet("/klassenbuch/uebersicht", (string? von, string? bis, int? tage, string? klasse, string? lehrer, string? fach, int? unterricht,

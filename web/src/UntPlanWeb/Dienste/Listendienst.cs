@@ -63,7 +63,7 @@ public sealed record Fehlzeitensumme(string Klasse, int SchuelerId, string Name,
 }
 
 /// <summary>
-/// Listen wie im Vorbild: Meine Unterrichte, Prüfungen, Hausaufgaben, Klassenbucheinträge, Abwesenheiten und Berichte
+/// Listen: Meine Unterrichte, Prüfungen, Hausaufgaben, Klassenbucheinträge, Abwesenheiten und Berichte
 /// (Fehlzeiten- und Lehrstoffbericht, auch als CSV).
 /// </summary>
 public sealed class Listendienst

@@ -1,4 +1,4 @@
-// Klassenbuch → Sitzplan (wie das Original-Modul „Sitzplan“, im nl-design):
+// Klassenbuch → Sitzplan:
 // - Klassenbuch-Einstellungen als Seitenpanel (Zahnrad in den Stundendetails): Ansicht Liste/Sitzplan, Sortierung (Nachname/Vorname, nach Klasse),
 //   Reihenfolge (von links nach rechts / von oben nach unten), Darstellung der Namen (Vorname zuerst, Kurzform), Klasse anzeigen (Mischgruppen).
 // - Sitzplan-Editor als großes Fenster: Spalten/Reihen + „Anwenden“, Lehrerpult oben/unten, Tische entfernen (Gänge), Drag & Drop

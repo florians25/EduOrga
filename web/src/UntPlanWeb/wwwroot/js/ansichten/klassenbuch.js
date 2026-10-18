@@ -75,7 +75,7 @@ export async function zeigen(seite, kontext, [klasseParam, reiterParam, datumPar
     }).filter(x => (f.zeilen ?? []).some(z => z.schuelerId === x.id)).sort((a, b) => b.stunden - a.stunden || a.name.localeCompare(b.name, 'de'));
     // Fehlzeiten je Unterrichtsstunde (Datum, Zeit, Fach, Lehrkraft, Fehltage, Fehlstd., Fehlmin., zählt, Grund, Status, Text) wie in der Fehlzeitenliste
     const grundName = g => f.gruende?.[g] ?? g;
-    // Untertabelle wie die Fehlzeitenliste im Original: leicht eingerückt auf hellgrauer Fläche, feine Linien, Wochentag grau vor dem Datum;
+    // Untertabelle wie die Fehlzeitenliste: leicht eingerückt auf hellgrauer Fläche, feine Linien, Wochentag grau vor dem Datum;
     // Abwesenheitsgrund und Text nur, wenn mindestens eine Stunde sie enthält
     const WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
     const wtKurz = iso => WT[new Date(`${iso}T12:00:00`).getDay()] ?? '';
@@ -309,7 +309,7 @@ export function abwesenheitTags(s, kommend) {
 }
 
 /**
- * Klassenbuch → Übersicht wie im Original: alle Unterrichte des aktuellen Schuljahres als Liste, je Tag eine Tabelle
+ * Klassenbuch → Übersicht: alle Unterrichte des aktuellen Schuljahres als Liste, je Tag eine Tabelle
  * h | Fach | Lehrkräfte | Klassen | Lehrstoff | Abwesenheiten (Tags) | Hausaufgaben. Navigation durch Scrollen (rauf lädt vergangene, runter
  * zukünftige Unterrichte bis zum Schuljahresende), Datumspille je Tag mit Heute/Schuljahresbeginn/Schuljahresende/Kalender, Filter
  * „Lehrstoff fehlt“ und „Abwesenheiten nicht kontrolliert“. Lehrkräfte wählen oben ihre Unterrichte, Klassenleitungen zusätzlich eine
@@ -435,7 +435,7 @@ async function uebersicht(seite, kontext, kritParam, datumParam, unterrichtParam
     return (!filter.has('lehrstoff') || !s.lehrstoff) && (!filter.has('kontrolle') || !s.geprueft);
   };
   const karten = [];
-  // eigene Unterrichte ohne Spalte „Lehrkräfte“ (wie im Original); bei fremder Lehrkraft bzw. Suche mit
+  // eigene Unterrichte ohne Spalte „Lehrkräfte“; bei fremder Lehrkraft bzw. Suche mit
   const mitLehrer = suchModus || fremd;
   seite.innerHTML = `<div class="kbl">
     <div class="kbl-rand" data-oben></div>

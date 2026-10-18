@@ -79,7 +79,7 @@ public class EmpfaengerRaumwahlTests
     }
 
     [Fact]
-    public void Empfaengerdialog_wie_im_Original()
+    public void Empfaengerdialog_Aufbau()
     {
         var js = Datei("js", "ansichten", "mitteilungen.js");
         var css = Datei("css", "mitteilungen.css");
@@ -89,7 +89,7 @@ public class EmpfaengerRaumwahlTests
         foreach (var pill in new[] { "Ausgewählt", "'Liste (indiv.)'", "'Klasse'", "'Abteilung'", "'Rolle'", "'Gruppe'", "Alle auswählen", "'Abbrechen'", "'Übernehmen'" })
             Assert.Contains(pill, js);
         Assert.Contains("/personen?typ=", js);
-        // Reihenfolge der Filter-Pills wie im Original
+        // Reihenfolge der Filter
         Assert.True(js.IndexOf("['liste', 'Liste (indiv.)'", StringComparison.Ordinal) < js.IndexOf("['klasse', 'Klasse'", StringComparison.Ordinal));
         Assert.True(js.IndexOf("['abteilung', 'Abteilung'", StringComparison.Ordinal) < js.IndexOf("['rolle', 'Rolle'", StringComparison.Ordinal));
         Assert.True(js.IndexOf("['rolle', 'Rolle'", StringComparison.Ordinal) < js.IndexOf("['gruppe', 'Gruppe'", StringComparison.Ordinal));

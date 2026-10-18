@@ -13,7 +13,7 @@ public sealed record Hausaufgabe(int Id, string Datum, int Stunde, int Unterrich
 }
 
 /// <summary>
-/// Klassenbuch einer Stunde wie im Original:
+/// Klassenbuch einer Stunde:
 /// <list type="bullet">
 /// <item>Hausaufgaben als Liste (Neue Hausaufgabe, Fälligkeit standardmäßig eine Woche später, Bemerkung, erledigt, löschen);
 ///   eine Hausaufgabe ist „fällig“ in der Stunde desselben Fachs und derselben Klasse am Fälligkeitstag.</item>

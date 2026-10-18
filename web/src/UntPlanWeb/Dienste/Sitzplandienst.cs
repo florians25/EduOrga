@@ -21,7 +21,7 @@ public sealed record SitzplanEingabe(int Zeilen, int Spalten, string? Pult, Dict
 public sealed record SitzplanKontext(int? Unterricht, List<string> Raeume, List<string> Klassen, string? Lehrer = null);
 
 /// <summary>
-/// Sitzpläne im Klassenbuch wie im Original-Modul „Sitzplan“:
+/// Sitzpläne im Klassenbuch:
 /// <list type="bullet">
 /// <item><b>Klasse</b>: gilt in jedem Unterricht der Klasse; nur die Klassenleitung (bzw. Schulleitung/Administration) legt ihn an.</item>
 /// <item><b>Unterricht</b>: gilt nur in diesem Unterricht (der Klassen-Sitzplan wird dort nicht mehr angezeigt); Lehrkraft des Unterrichts.</item>

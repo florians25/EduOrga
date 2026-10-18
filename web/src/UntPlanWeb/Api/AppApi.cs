@@ -469,7 +469,7 @@ public static class AppApi
         }
         api.MapPut("/klassenbuch/stunde", StundeSpeichern);
         api.MapPost("/klassenbuch/stunde", StundeSpeichern);
-        // Hausaufgaben einer Stunde (Liste wie im Original) und die in dieser Stunde fälligen Hausaufgaben
+        // Hausaufgaben einer Stunde und die in dieser Stunde fälligen Hausaufgaben
         // Hausaufgaben des Blocks und seiner Einzelstunden (mit einzelstunde: nur die dieser Stunde); jede mit „einzelstunde“ (null = ganzer Block)
         api.MapGet("/klassenbuch/hausaufgabenliste", (DateOnly datum, int stunde, int unterricht, int? bis, string? fach, string? klassen, int? einzelstunde, HttpContext c, Paketdienst p, Klassenbuchdienst kb) =>
         {
@@ -585,7 +585,7 @@ public static class AppApi
             return Results.Json(DateOnly.TryParse(datum, out var d) ? Klassenzugehoerigkeit.Am(Paket(p), new[] { klasse }, d) : Klassenbuchdienst.Schueler(Paket(p), new[] { klasse }));
         });
 
-        // ---------------------------------------------------------------- Listen wie im Vorbild (Unterricht, Prüfungen, Hausaufgaben, Einträge, Abwesenheiten, Berichte)
+        // ---------------------------------------------------------------- Listen (Unterricht, Prüfungen, Hausaufgaben, Einträge, Abwesenheiten, Berichte)
 
         DateOnly Von(string? s, DateOnly vorgabe) => DateOnly.TryParse(s, out var d) ? d : vorgabe;
         static string? Leer(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();

@@ -1,4 +1,4 @@
-// Mein Profil wie im Original: Reiter „Allgemein“ (E-Mail, Sprache, Benachrichtigungen, Passwort ändern) und „Freigaben“
+// Mein Profil: Reiter „Allgemein“ (E-Mail, Sprache, Benachrichtigungen, Passwort ändern) und „Freigaben“
 // (Kalenderabo, gemerkte Konten auf diesem Gerät).
 import { e, icon, holen, senden, api, toast, bestaetigen, dialog } from '../ui.js';
 

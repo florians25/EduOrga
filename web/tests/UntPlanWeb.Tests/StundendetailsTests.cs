@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace UntPlanWeb.Tests;
 
-/// <summary>Stundendetails wie im Original: Notizen auf den Karten, Hausaufgabenliste, Abwesenheiten verlängern, Lehrkraft abwesend.</summary>
+/// <summary>Stundendetails: Notizen auf den Karten, Hausaufgabenliste, Abwesenheiten verlängern, Lehrkraft abwesend.</summary>
 public class StundendetailsTests
 {
     private static IEnumerable<JsonNode> Karten(JsonNode plan, string datum, int stunde) =>
@@ -55,7 +55,7 @@ public class StundendetailsTests
     {
         await using var s = await Testserver.StartenAsync();
         var sne = await s.AlsAsync("sne", "lehrer", "SNE");
-        // ohne Fälligkeit: eine Woche später (wie im Original)
+        // ohne Fälligkeit: eine Woche später
         var a = await Testserver.JsonAsync(await sne.PostAsJsonAsync("/api/app/klassenbuch/hausaufgabenliste", new { datum = "2026-10-14", stunde = 1, unterricht = 107, text = "Workbook S. 18", faellig = (string?)null, bemerkung = "" }));
         Assert.Equal("2026-10-21", a["faellig"]!.GetValue<string>());
         var b = await Testserver.JsonAsync(await sne.PostAsJsonAsync("/api/app/klassenbuch/hausaufgabenliste", new { datum = "2026-10-14", stunde = 1, unterricht = 107, text = "Vokabeln Unit 3", faellig = "2026-10-16", bemerkung = "schriftlich" }));

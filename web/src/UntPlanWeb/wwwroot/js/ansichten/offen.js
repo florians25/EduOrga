@@ -91,7 +91,7 @@ export async function zeigen(seite, kontext, [bereichParam, artParam, lehrerPara
     kontext.titel('Unbearbeitete Stunden', `${nachricht ? `<button type="button" class="btn btn-outline-secondary" data-nachricht ${liste.length ? '' : 'disabled'}>Nachricht senden</button>` : ''}
       <button type="button" class="btn btn-outline-secondary" data-bericht ${liste.length ? '' : 'disabled'}>Bericht</button>`, `${liste.length}`);
     const alleGewaehlt = liste.length > 0 && liste.every(z => auswahl.has(z.i));
-    inhalt.innerHTML = `<div class="os-seite os-original">
+    inhalt.innerHTML = `<div class="os-seite os-liste">
       ${liste.length ? `<div class="os-tabelle"><table>
         <thead><tr>
           <th class="os-wahl"><input type="checkbox" class="nl-rund" data-alle ${alleGewaehlt ? 'checked' : ''} aria-label="Alle auswählen"></th>

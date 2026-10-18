@@ -1,4 +1,4 @@
-// Unterricht → Prüfungskalender (UW-08) wie im Original: links Prüfungsart, Zeitbereich, Planung („Alle Ihre Prüfungen anzeigen“)
+// Unterricht → Prüfungskalender (UW-08): links Prüfungsart, Zeitbereich, Planung („Alle Ihre Prüfungen anzeigen“)
 // und „Mein Unterricht“ als Auswahl; rechts das Jahresraster (Monate August–Juli × Tage 1–31, Wochentag in jeder Zelle,
 // Wochenenden und Ferien grau) mit farbigen Prüfungstagen und Legende darunter.
 import { e, holen, heuteIso, dialog } from '../ui.js';

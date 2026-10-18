@@ -1,4 +1,4 @@
-// Melden im Portal-Design: Übersicht der Meldearten als Kacheln (Abwesenheit melden, Prüfung eintragen, Raum buchen, Meine Meldungen)
+// Melden: Übersicht der Meldearten als Kacheln (Abwesenheit melden, Prüfung eintragen, Raum buchen, Meine Meldungen)
 // mit den letzten Meldungen, einheitliche Formulare (Karte mit Kopf, Feldraster, Fuß mit Abbrechen/Absenden, Auswahlen über die
 // gemeinsame Auswahl-Komponente, Raumwahl mit Belegung) und „Meine Meldungen“ mit Suche, Status- und Art-Filter, Status-Pills und
 // leeren Zuständen. Raum buchen führt in das Buchungsmodul.

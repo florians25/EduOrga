@@ -63,7 +63,7 @@ public sealed record MitteilungsEinstellungen(bool ElternSenden = true, bool Sch
     int AufbewahrungTage = 365, List<int>? Gesperrt = null);
 
 /// <summary>
-/// Mitteilungen (Posteingang, Gesendet, Entwürfe, Listen) wie im Original:
+/// Mitteilungen (Posteingang, Gesendet, Entwürfe, Listen):
 /// <list type="bullet">
 /// <item>Empfänger nach Gruppen: Lehrkräfte, Schulleitung, Klassenlehrkräfte, Klassen (Klassenkonto und Klassenleitung, Lehrkräfte der Klasse),
 ///   Schüler*innen bzw. Erziehungsberechtigte einer Klasse, einzelne Personen, eigene Listen. Gruppen werden beim Senden aufgelöst.</item>
