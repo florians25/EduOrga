@@ -35,8 +35,8 @@ cd studio/src/UntPlanStudio
 STUDIO_ADMIN_PASSWORT=geheim123 ASPNETCORE_URLS=http://127.0.0.1:5501 dotnet run
 ```
 
-Dann <http://127.0.0.1:5501> öffnen und mit `admin` / `geheim123` anmelden. Die Daten liegen im Ordner `daten/` neben
-dem Projekt (oder unter `STUDIO_DATEN`). Ohne `STUDIO_ADMIN_PASSWORT` wird beim ersten Start ein zufälliges Passwort
+Dann <http://127.0.0.1:5501> öffnen und mit `admin` / `geheim123` anmelden. Die Daten liegen in der Datenbank
+`daten/studio.db` neben dem Projekt (oder unter `STUDIO_DATEN`, siehe „Daten und Sicherung“). Ohne `STUDIO_ADMIN_PASSWORT` wird beim ersten Start ein zufälliges Passwort
 erzeugt und im Protokoll ausgegeben.
 
 Tests:
@@ -75,19 +75,67 @@ UNTPLANWEB_DOMAIN=plan.meine-schule.de STUDIO_DOMAIN=studio.meine-schule.de STUD
 ```
 
 Der Container läuft ohne Root-Rechte (Benutzer `app`), alle Daten liegen im Volume `/data`
-(Schuldateien, Benutzer, Schlüssel für das Anmeldecookie). Sicherung = dieses Volume sichern.
+(Datenbank `studio.db`, Sicherungen, Schlüssel für das Anmeldecookie) – siehe „Daten und Sicherung“.
+
+## Daten und Sicherung
+
+Das Studio hat eine **eigene Datenbank** (SQLite), unabhängig von UntPlan Web. Im Datenordner (`STUDIO_DATEN`,
+im Container `/data`) liegen:
+
+| Pfad | Inhalt |
+|---|---|
+| `studio.db` (+ `studio.db-wal`, `studio.db-shm`) | Schuldateien (Inhalt wie `.up`-Datei, je Dokument die letzten 10 Fassungen), Benutzer, Benutzereinstellungen, MultiUser-Gruppen, UntPlan-Web-Abgleich |
+| `sicherungen/studio-<zeit>.db` | Sicherungen der Datenbank (vollständige SQLite-Datei) |
+| `schluessel/` | Schlüssel für das Anmeldecookie |
+| `alt-dateien-<datum>/` | nur nach einem Update von einer älteren Version: die übernommenen Dateien (siehe unten) |
+
+Schuldateien lassen sich weiterhin jederzeit als `.up` herunterladen (Datei → Herunterladen) und wieder hochladen.
+
+**Sicherung.** Das Studio sichert die Datenbank automatisch einmal täglich und beim Start nach jedem Update (vor
+Datenbank-Migrationen) als konsistente Kopie (`VACUUM INTO`) nach `sicherungen/studio-<zeit>.db`; die letzten 14 bleiben
+(`STUDIO_SICHERUNGEN_BEHALTEN`). Administratoren können über `POST /api/sicherungen` sofort sichern (`GET /api/sicherungen`
+listet die vorhandenen). Eine Sicherung über die Kommandozeile – z. B. in einem Update-Skript vor `docker compose pull` –
+schreibt nur die Sicherung und beendet sich (auch während der Server läuft):
+
+```bash
+# Container (im Ordner mit der docker-compose.yml; Dienstname untplanstudio)
+docker compose exec -T untplanstudio dotnet UntPlanStudio.dll --sichern
+# ohne Container
+STUDIO_DATEN=/pfad/zum/datenordner dotnet UntPlanStudio.dll --sichern
+```
+
+Update mit Sicherung: `docker compose exec -T untplanstudio dotnet UntPlanStudio.dll --sichern && docker compose pull && docker compose up -d`.
+Die Sicherungen liegen im Volume; außerhalb sichern z. B. mit
+`docker compose cp untplanstudio:/data/sicherungen ./studio-sicherungen`.
+
+**Wiederherstellen:** Server bzw. Container stoppen, `studio.db-wal` und `studio.db-shm` im Datenordner löschen (sonst
+würden sie auf die zurückgespielte Datenbank angewendet), die gewünschte Sicherung als `studio.db` kopieren, starten:
+
+```bash
+docker compose exec untplanstudio ls /data/sicherungen
+docker compose stop untplanstudio
+docker compose run --rm --entrypoint sh untplanstudio -c 'rm -f /data/studio.db-wal /data/studio.db-shm && cp /data/sicherungen/<datei> /data/studio.db'
+docker compose start untplanstudio
+```
+
+**Übernahme älterer Installationen.** Bis zu dieser Version lagen die Daten als einzelne Dateien im Datenordner
+(`benutzer.json`, `benutzer/*.json`, `multiuser.json`, `untplanweb/*.json`, `dokumente/*.up` + `*.json` + `*.bak`). Beim
+ersten Start mit der neuen Version (leere Datenbank) werden diese automatisch in die Datenbank übernommen und danach nach
+`alt-dateien-<datum>/` verschoben (nicht gelöscht; das Protokoll nennt die Anzahl der übernommenen Dokumente und Benutzer).
+Anmeldungen bleiben gültig. Den Ordner `alt-dateien-…` kann man löschen, sobald alles geprüft ist.
 
 ## Umgebungsvariablen
 
 | Variable | Standard | Bedeutung |
 |---|---|---|
-| `STUDIO_DATEN` | `./daten` (Container: `/data`) | Datenordner |
+| `STUDIO_DATEN` | `./daten` (Container: `/data`) | Datenordner (Datenbank `studio.db`, Sicherungen, Cookie-Schlüssel) |
 | `STUDIO_ADMIN_BENUTZER` | `admin` | Name des Admin-Kontos beim ersten Start |
 | `STUDIO_ADMIN_PASSWORT` | – (zufällig, im Protokoll) | Passwort des Admin-Kontos beim ersten Start |
 | `STUDIO_AUTOSPEICHERN_SEKUNDEN` | `30` | Takt der Autospeicherung geänderter Dokumente |
 | `STUDIO_LEERLAUF_MINUTEN` | `120` | unbenutzte Dokumente werden danach gespeichert und entladen |
 | `STUDIO_MAX_UPLOAD_MB` | `64` | Höchstgröße beim Hochladen |
 | `STUDIO_SICHERE_COOKIES` | automatisch | `1` = Anmeldecookie nur über HTTPS (hinter Caddy empfohlen) |
+| `STUDIO_SICHERUNGEN_BEHALTEN` | `14` | so viele Datenbanksicherungen (`sicherungen/studio-*.db`) bleiben erhalten |
 | `STUDIO_DOMAIN` | – | nur Compose/Caddy: Domain des Studios |
 | `ASPNETCORE_HTTP_PORTS` / `ASPNETCORE_URLS` | `8080` im Container | Port bzw. Adresse |
 

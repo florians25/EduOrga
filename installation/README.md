@@ -79,7 +79,8 @@ Update installieren* in UntPlan Web das Update von Web und Mobile; alternativ oh
 # Studio: Sicherung auswählen und zurückspielen (Container wird dafür kurz angehalten)
 docker compose exec untplanstudio ls /data/sicherungen
 docker compose stop untplanstudio
-docker compose run --rm --entrypoint sh untplanstudio -c 'cp /data/sicherungen/<datei> /data/studio.db'
+# (alte WAL-/SHM-Dateien mit entfernen, sonst würden sie auf die zurückgespielte Datenbank angewendet)
+docker compose run --rm --entrypoint sh untplanstudio -c 'rm -f /data/studio.db-wal /data/studio.db-shm && cp /data/sicherungen/<datei> /data/studio.db'
 docker compose start untplanstudio
 
 # Web mit MariaDB

@@ -11,7 +11,8 @@ Browser (wwwroot)                                  Server (UntPlanStudio)       
 │ Seiten und Arbeitsplätze      │                │   └─ Arbeitsdokument (Sperre, Undo)    │      │ Stammdaten,      │
 │ Module: js/module/<modul>.js  │ ◀───────────── │ Dokumentdienst (Ablage, Autosave)      │      │ Planung, …       │
 │ Komponenten: Tabelle, Raster  │  SSE-Ereignisse│ Benutzerdienst, Benutzereinstellungen  │      └──────────────────┘
-└───────────────────────────────┘                └───────────────────────────────────────┘
+└───────────────────────────────┘                │ StudioDatenbank (SQLite, studio.db)    │
+                                                 └───────────────────────────────────────┘
 ```
 
 ## Ordnerstruktur
@@ -28,7 +29,8 @@ studio/
     Program.cs                 Aufbau: Dienste, Anmeldung (Cookie), Middleware, Routengruppen, Module
     Grundlagen/                StudioKonfiguration (Umgebungsvariablen), IStudioModul/StudioRouten, StudioFehler,
                                Fehlerbehandlung, Typnamen (Elementtyp ↔ Route)
-    Dienste/                   Arbeitsdokument, Dokumentdienst, Autospeicherung, Benutzerdienst, Benutzereinstellungen,
+    Dienste/                   StudioDatenbank (SQLite studio.db, Sicherungsdienst), AltdatenUebernahme,
+                               Arbeitsdokument, Dokumentdienst, Autospeicherung, Benutzerdienst, Benutzereinstellungen,
                                Felder (Stammdaten-Spalten), Unterrichtsspalten (dto.)
     Api/
       Modulregister.cs         ◀ EINZIGE Registrierungsstelle der Server-Module
@@ -49,10 +51,38 @@ studio/
 
 ## Server
 
+### Ablage: eigene Datenbank `studio.db`
+
+Das Studio hat eine eigene SQLite-Datenbank `<STUDIO_DATEN>/studio.db` (`Dienste/StudioDatenbank.cs`,
+`Microsoft.Data.Sqlite`), unabhängig von der Datenbank von UntPlan Web. WAL-Modus, `busy_timeout=5000`, eine Verbindung je
+Vorgang (Verbindungspool), Schreibvorgänge in Transaktionen (`BEGIN IMMEDIATE`) und zusätzlich prozessweit nacheinander.
+
+| Tabelle | Inhalt |
+|---|---|
+| `dokumente` | `id` (16 Hex-Zeichen), `name`, `besitzer`, `erstellt`, `geaendert`, `gespeichert`, `herkunft`, `info` (`DokumentInfo` als JSON), `inhalt` (BLOB = Schuldatei-JSON, Byte für Byte wie eine `.up`-Datei), `groesse` |
+| `dokument_sicherungen` | ältere Fassungen je Dokument (`nr`, `id`, `zeit`, `inhalt`, `groesse`) – ersetzt die frühere `.bak`-Datei; bei jedem Speichern mit geändertem Inhalt wandert der bisherige Inhalt hierher, die letzten 10 je Dokument bleiben |
+| `ablage` | JSON-Werte unter `bereich` + `schluessel` (`Ablagebereiche`): `benutzer` (je Benutzer ein `StudioBenutzer`), `einstellungen` (je Benutzer ein JSON-Objekt), `multiuser` (`konfiguration` = `MuKonfiguration`), `untplanweb` (je Dokument-Id ein `UpwAbgleich`) |
+| `meta` | `anwendungsversion` (erkennt Updates) |
+
+* **Schema-Version** in `PRAGMA user_version`; Migrationen stehen in `StudioDatenbank.Migrationen` (Eintrag *i* hebt
+  Version *i* auf *i + 1*) und laufen beim Start. Neue Migration = neuen Eintrag anhängen, bestehende nie ändern.
+* **Sicherung** (`VACUUM INTO`, konsistent auch im laufenden Betrieb) nach `<STUDIO_DATEN>/sicherungen/studio-<zeit>.db`:
+  beim Start vor jedem Update (andere Programmversion oder Schema-Migration), täglich (`Sicherungsdienst`), über
+  `POST /api/sicherungen` (Admin) und `dotnet UntPlanStudio.dll --sichern` (legt nichts an, migriert nichts). Die letzten
+  `STUDIO_SICHERUNGEN_BEHALTEN` (14) bleiben.
+* **Übernahme älterer Installationen** (`AltdatenUebernahme`): beim ersten Start mit leerer Datenbank werden
+  `benutzer.json`, `benutzer/*.json`, `multiuser.json`, `untplanweb/*.json` und `dokumente/*.up` (+ `*.json`, `*.up.bak`)
+  in einer Transaktion importiert und danach nach `<STUDIO_DATEN>/alt-dateien-<datum>/` verschoben (nicht gelöscht).
+* Dateien im Datenordner sind nur noch `studio.db` (+ `-wal`/`-shm`), `sicherungen/` und `schluessel/` (Schlüssel für das
+  Anmeldecookie, ASP.NET Core DataProtection).
+* Die Schuldatei wird mit der Serialisierung des Core gelesen/geschrieben: `Dokument.Laden(byte[])`,
+  `Dokument.Speichern(Action<byte[]>)`, `Dokument.Inhalt()` – derselbe Inhalt wie `Dokument.Speichern(pfad)`.
+* `GET /gesundheit` prüft zusätzlich, dass die Datenbank erreichbar ist (sonst 503).
+
 ### Arbeitsdokumente
 
-* Ablage im Datenordner (`STUDIO_DATEN`): `dokumente/<id>.up` (Schuldatei) + `<id>.json` (Name, Besitzer,
-  Herkunft). Die Id besteht aus 16 Hex-Zeichen (wird geprüft – keine Pfade aus Anfragen).
+* Ablage in der Datenbank (Tabelle `dokumente`, siehe oben). Die Id besteht aus 16 Hex-Zeichen (wird geprüft).
+  `GET …/herunterladen` liefert die Schuldatei (`.up`) mit dem aktuellen Stand.
 * Geöffnete Dokumente hält `Dokumentdienst` im Speicher (`Arbeitsdokument` mit dem Core-`Dokument`). Ein Dokument ist für
   alle angemeldeten Benutzer dasselbe Objekt → Änderungen sehen alle sofort (Grundlage für MultiUser).
 * **Alle Zugriffe auf Core-Daten nur über `Arbeitsdokument`** – UntPlan.Core ist nicht threadsicher:
@@ -78,7 +108,7 @@ und `X-Dokument-Bereich`. `bereich` = `AenderungsArt` des Core: `Stammdaten`, `U
 
 ### Anmeldung und Rechte
 
-Cookie-Anmeldung (`POST /api/anmeldung`), Benutzer in `benutzer.json` (Passwort-Hash PBKDF2 / ASP.NET Core Identity).
+Cookie-Anmeldung (`POST /api/anmeldung`), Benutzer in der Datenbank (`ablage`, Bereich `benutzer`; Passwort-Hash PBKDF2 / ASP.NET Core Identity).
 Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT`. Rollen: `Admin`, `Planer`, `Leser`
 (Leser: keine ändernden Anfragen, serverseitig erzwungen). Jede ändernde Anfrage braucht die Kopfzeile
 `X-UntPlan-Studio: 1` (Schutz gegen Cross-Site-Anfragen; die Oberfläche setzt sie automatisch).
@@ -102,7 +132,7 @@ Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT
 | Modul | Endpunkte |
 |---|---|
 | anmeldung | `GET /api/system`, `GET /api/sitzung`, `POST /api/anmeldung`, `POST /api/abmeldung`, `GET /api/ich`, `POST /api/ich/passwort` |
-| benutzer (Admin) | `GET/POST /api/benutzer`, `DELETE /api/benutzer/{name}`, `POST /api/benutzer/{name}/passwort`, `GET /api/benutzer/rollen` |
+| benutzer (Admin) | `GET/POST /api/benutzer`, `DELETE /api/benutzer/{name}`, `POST /api/benutzer/{name}/passwort`, `GET /api/benutzer/rollen`; Datenbanksicherungen: `GET /api/sicherungen` (Liste), `POST /api/sicherungen` (jetzt sichern) |
 | einstellungen | `GET/PUT/DELETE /api/einstellungen/{schluessel}` (JSON je Benutzer; Schlüssel mit Modulpräfix, z. B. `vertretung.ansicht`) |
 | dokumente | `GET /api/dokumente` (Liste + zuletzt), `POST /api/dokumente/neu`, `POST /api/dokumente/beispiel`, `POST /api/dokumente/hochladen` (multipart `datei`: .up oder BAL); je Dokument: `GET ""` (Stand), `GET /grunddaten` (Zeitraster, Perioden), `POST /speichern`, `GET /herunterladen`, `POST /schliessen`, `DELETE ""`, `PUT /name`, `POST /rueckgaengig`, `POST /wiederholen`, `POST /bal-import` (multipart + Optionen), `GET /ereignisse` |
 | stammdaten | `GET /stammdaten/{typ}`, `GET /stammdaten/{typ}/felder`, `POST /stammdaten/{typ}` (`{kurzname, werte}`), `PATCH /stammdaten/{typ}/{id}` (`{feld, wert}`), `POST /stammdaten/{typ}/aendern` (`{aenderungen:[{id,feld,wert}]}`), `POST /stammdaten/{typ}/loeschen` (`{ids}`), `DELETE /stammdaten/{typ}/{id}`, `GET /stammdaten/{typ}/verwendung?ids=`, `GET /elemente?typen=` (Auswahllisten `{k,l}`) |
@@ -114,7 +144,7 @@ Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT
 | planung | `GET /planung/zielstatus?unterricht=&tag=&stunde=&einzeln=&laenge=` (`{status, gruende}` je Feld), `POST /planung/verschieben` (Block bzw. `einzeln`; `aktion` auto/entplanen/kollision – ohne Aktion bei Behinderung `{ok:false, frage}`), `POST /planung/verplanen` (`{unterricht, tag, stunde, laenge, aktion}`), `POST /planung/entplanen` / `POST /planung/fixieren` (`{stunden:[{unterricht,tag,stunde}]}`, Mehrfachauswahl), `POST /planung/alle-entplanen`, `POST /planung/alle-fixieren`, `GET/POST /planung/raum` (Raumliste bzw. zuordnen/löschen mit `umfang`, `loesung`), `GET /planung/tausch` (Tauschvorschläge), `POST /planung/tauschen` |
 | zeitwuensche | `GET /zeitwuensche/{typ}` (Elemente mit Anzahl), `GET/PUT /zeitwuensche/{typ}/{id}` (`{aenderungen:[{tag,stunde,wert}]}` bzw. `{alleLoeschen}`), `PUT /zeitwuensche/{typ}/{id}/unbestimmte` – typ: klasse, lehrer, raum, fach, unterricht |
 | austausch | `GET /austausch` (Übersicht), `POST /austausch/csv/{lehrer|klassen|schueler}` (multipart), `POST /austausch/gpu` (mehrere Dateien oder ZIP), `GET /austausch/gpu` (ZIP), `GET /austausch/unterricht.csv`, `GET /austausch/infostundenplan.zip`, `GET /austausch/ical/{lehrer}?von=&bis=`, `GET /austausch/untplanweb.json`, `GET/POST /austausch/abteilung/{id}` (Abteilungsdatei exportieren/zusammenführen) |
-| untplanweb | `GET /untplanweb` (Zeilen, Status, Anfangsdatum), `GET/PUT /untplanweb/einstellungen` (leerer API-Schlüssel = unverändert), `POST /untplanweb/pruefen`, `GET /untplanweb/schulname`, `PUT /untplanweb/anfangsdatum`, `POST /untplanweb/export/{stammdaten|unterricht|vertretungen|alles}` bzw. `POST /untplanweb/import/{absenzen|studenten|kurse}` (Hintergrundauftrag) + `GET /untplanweb/auftrag/{id}` (Fortschritt), `GET /untplanweb/stpl?von=&bis=&erledigte=&neu=`, `POST /untplanweb/stpl/uebernehmen|ignorieren` (`{ids}`), `PUT /untplanweb/stpl/einstellungen`, `GET/POST /untplanweb/klausuren`, `PUT/DELETE /untplanweb/klausuren/{id}`, `GET /untplanweb/schuelerabwesenheiten`, `GET /untplanweb/klassenbuch`, `GET/PUT /untplanweb/abgleich`, `POST /untplanweb/abgleich/jetzt` (automatischer Abgleich: Hintergrunddienst `UpwAbgleichDienst`, Einstellungen in `<daten>/untplanweb/<dok>.json`) |
+| untplanweb | `GET /untplanweb` (Zeilen, Status, Anfangsdatum), `GET/PUT /untplanweb/einstellungen` (leerer API-Schlüssel = unverändert), `POST /untplanweb/pruefen`, `GET /untplanweb/schulname`, `PUT /untplanweb/anfangsdatum`, `POST /untplanweb/export/{stammdaten|unterricht|vertretungen|alles}` bzw. `POST /untplanweb/import/{absenzen|studenten|kurse}` (Hintergrundauftrag) + `GET /untplanweb/auftrag/{id}` (Fortschritt), `GET /untplanweb/stpl?von=&bis=&erledigte=&neu=`, `POST /untplanweb/stpl/uebernehmen|ignorieren` (`{ids}`), `PUT /untplanweb/stpl/einstellungen`, `GET/POST /untplanweb/klausuren`, `PUT/DELETE /untplanweb/klausuren/{id}`, `GET /untplanweb/schuelerabwesenheiten`, `GET /untplanweb/klassenbuch`, `GET/PUT /untplanweb/abgleich`, `POST /untplanweb/abgleich/jetzt` (automatischer Abgleich: Hintergrunddienst `UpwAbgleichDienst`, Einstellungen in der Datenbank, `ablage` Bereich `untplanweb`) |
 | abrechnung | `GET /abrechnung/werte`, `PATCH /abrechnung/werte/{lehrer}` (`{feld: Wochensoll|Wertkorrektur, wert}`), `GET /abrechnung/matrix?art=0|1|2`, `GET/PUT /abrechnung/stundentafel`, `POST /abrechnung/stundentafel/jahrgang|nrw`, `GET /abrechnung/berichte`, `GET /abrechnung/statistik?bericht=0..6&von=&bis=&lehrer=` (+ `.html` mit `alle=true`, `.csv`), `GET /abrechnung/zaehler/{lehrer}?datum=` |
 | pausenaufsicht | `GET /pausenaufsicht`, `GET /pausenaufsicht/gang/{id}`, `GET /pausenaufsicht/lehrer/{id}`, `PUT /pausenaufsicht/zelle` (`{gang,tag,nach,lehrer:"AB, CD"}`), `GET /pausenaufsicht/vorschlag?gang=&tag=&nach=`, `POST /pausenaufsicht/zuordnen|teile|loeschen|optimieren`, `GET/PUT /pausenaufsicht/gewichtung`, `GET/POST /pausenaufsicht/vertretung/{datum}` (Aufsichtsvertretungen mit Kandidaten) |
 | kursplanung | `GET /kursplanung` (Klassen), `GET /kursplanung/{klasse}`, `PATCH /kursplanung/{klasse}/kurs/{uid}` (`{feld: band|kursname}`), `PUT /kursplanung/{klasse}/wahl`, `POST /kursplanung/{klasse}/zufall|bandbildung|baender` |
