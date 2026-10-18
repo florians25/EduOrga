@@ -28,6 +28,11 @@ sh install.sh      # Einrichtung mit Rückfragen (Programme, Datenbank, HTTPS)
 
 Einzelheiten: [`installation/README.md`](installation/README.md).
 
+**Neue Version veröffentlichen:** Versionsnummer in `VERSION` setzen, committen und `git tag v1.2.0 && git push origin
+v1.2.0`. Die Abläufe bauen die Images `ghcr.io/florians25/untplannext-*` mit den Tags `1.2.0`, `stable` und `latest`
+und legen das GitHub-Release an; Administratoren von Studio und Web sehen daraufhin den Hinweis auf die neue Version.
+Builds vom Branch `master` tragen `<VERSION>-dev.<Lauf>` und erzeugen keinen Hinweis.
+
 ## Funktionen
 
 - **Schuldaten:** Schuljahr, NRW-Schulformen, Zeitraster mit Vormittag, Nachmittag, fixer oder flexibler Mittagspause und Pausen, NRW-Ferien und -Feiertage (inkl. beweglicher Feiertage), A/B-Wochen, Perioden.

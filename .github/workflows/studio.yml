@@ -5,6 +5,7 @@ name: UntPlan Studio
 on:
   push:
     branches: [ main, master, 'claude/**' ]
+    tags: [ 'v*' ]
     paths:
       - 'studio/**'
       - 'src/UntPlan.Core/**'
@@ -97,13 +98,19 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Version bestimmen (Tag v1.2.3 → 1.2.3, sonst <VERSION>-dev.<Lauf>)
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then v="${GITHUB_REF_NAME#v}"; else v="$(cat VERSION)-dev.${GITHUB_RUN_NUMBER}"; fi
+          echo "wert=$v" >> "$GITHUB_OUTPUT"
       - id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'claude/') }}
-            type=raw,value=1.0.${{ github.run_number }}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' || github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'claude/') }}
+            type=raw,value=stable,enable=${{ github.ref_type == 'tag' }}
+            type=raw,value=${{ steps.version.outputs.wert }}
             type=sha,format=short
       - name: Image bauen (amd64 + arm64) und veröffentlichen
         uses: docker/build-push-action@v6
@@ -111,7 +118,7 @@ jobs:
           context: .
           file: studio/Dockerfile
           platforms: linux/amd64,linux/arm64
-          build-args: VERSION=1.0.${{ github.run_number }}
+          build-args: VERSION=${{ steps.version.outputs.wert }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

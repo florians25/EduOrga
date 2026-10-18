@@ -1,0 +1,25 @@
+name: Release
+
+# Neue Version veröffentlichen: VERSION anpassen, committen, dann
+#   git tag v1.2.0 && git push origin v1.2.0
+# Die Abläufe studio.yml, web.yml und mobile.yml bauen daraufhin die Images mit den Tags 1.2.0, stable und latest;
+# dieser Ablauf legt das GitHub-Release mit automatisch erzeugten Versionshinweisen an. Die Administratoren von
+# UntPlan Studio und UntPlan Web sehen danach den Hinweis „Neue Version verfügbar“.
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: GitHub-Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "UntPlan Next ${GITHUB_REF_NAME#v}" \
+            --generate-notes --verify-tag
