@@ -21,18 +21,18 @@ public static class Kachelbau
 
     /// <summary>Planart von UntPlanWeb (klasse, lehrer, raum) → Planart der Oberfläche (class, teacher, room).</summary>
     /// <summary>Vertretungstext einer Vertretung ohne Lehrkraft, wenn kein anderer Text vorhanden ist (wie in UntPlanWeb).</summary>
-    public const string OhneLehrkraftText = "Vertr. o. Lehrkr.";
+    public const string OhneLehrkraftText = "Ohne Lehrkraft";
 
     /// <summary>Lehrkraft einer Zusatzstunde, für die (noch) keine Lehrkraft eingeteilt ist – nur bei Zusatzstunden (Kachel und Details).</summary>
     public const string KeineLehrkraft = "---";
 
     /// <summary>
     /// Automatisch erzeugte Standardtexte einer Zusatzstunde („wegen Sondereinsatz“, „Vertretung durch Verlegung“, „Vorziehung“,
-    /// „Vertr. o. Lehrkr.“, „aus Vertretung …“, „Zusatzunterricht“, „Sondereinsatz“, „Zusätzliche Unterrichtsstunde“). Sie entfallen –
+    /// „Ohne Lehrkraft“ bzw. älter „Vertr. o. Lehrkr.“, „aus Vertretung …“, „Zusatzunterricht“, „Sondereinsatz“, „Zusätzliche Unterrichtsstunde“). Sie entfallen –
     /// die Plakette „Zusatzstunde“ sagt dasselbe; manuell eingegebene Vertretungstexte bleiben stehen.
     /// </summary>
     private static readonly System.Text.RegularExpressions.Regex ZusatzStandardtext =
-        new(@"^\s*(\(?\s*wegen\s+sondereins(a|ä)tz(e)?\s*\)?|sondereins(a|ä)tz(e)?|vertretung\s+durch\s+verlegung|vorziehung|vertr\.\s*o\.\s*lehrkr\.?|aus\s+vertretung\b.*|zusatzunterricht|zus(ä|ae)tzl(\.|iche)\s*unterrichtsstunde)\s*\.?\s*$",
+        new(@"^\s*(\(?\s*wegen\s+sondereins(a|ä)tz(e)?\s*\)?|sondereins(a|ä)tz(e)?|vertretung\s+durch\s+verlegung|vorziehung|vertr\.\s*o\.\s*lehrkr\.?|ohne\s+lehrkraft|aus\s+vertretung\b.*|zusatzunterricht|zus(ä|ae)tzl(\.|iche)\s*unterrichtsstunde)\s*\.?\s*$",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     /// <summary>Standardtext einer Zusatzstunde (leer, einer der festen Texte oder gleich der Vertretungsart)?</summary>
@@ -432,7 +432,7 @@ public static class Kachelbau
             kachel.LehrkraftAlt = "???";
             if (!kachel.Geaendert.Contains("teacher")) kachel.Geaendert.Add("teacher");
         }
-        // Vertretung ohne Lehrkraft („+++“): bisherige Lehrkraft durchgestrichen in der Plakette; ohne eigenen Text der Hinweis „Vertr. o. Lehrkr.“
+        // Vertretung ohne Lehrkraft („+++“): bisherige Lehrkraft durchgestrichen in der Plakette; ohne eigenen Text der Hinweis „Ohne Lehrkraft“
         // (UntPlanWeb liefert ihn bereits, ältere Server nicht)
         if (k.Status == "geaendert" && k.Lehrer.Count > 0 && k.Lehrer.All(w => w.Neu && w.K.Length == 0 && !string.IsNullOrEmpty(w.Alt)) && string.IsNullOrWhiteSpace(kachel.Info))
             kachel.Info = OhneLehrkraftText;

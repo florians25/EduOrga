@@ -203,14 +203,14 @@ public static class Elementtyp
 public sealed class Plandienst
 {
     /// <summary>Vertretungstext einer Vertretung ohne Lehrkraft („+++“), wenn kein anderer Text vorhanden ist.</summary>
-    public const string OhneLehrkraftText = "Vertr. o. Lehrkr.";
+    public const string OhneLehrkraftText = "Ohne Lehrkraft";
 
     /// <summary>
     /// Älterer Hinweistext aus früheren UntPlan-Versionen → aktuelle Bezeichnung. Der automatische Hinweis „(Benutzer) Raumänderung“
     /// älterer Desktop-Versionen (Raumänderung aus einer Buchung) ist kein Vertretungstext und entfällt.
     /// </summary>
     public static string TextNormal(string text) =>
-        string.Join(" · ", text.Replace("Vertr. o. Lehrkraft", OhneLehrkraftText, StringComparison.Ordinal)
+        string.Join(" · ", text.Replace("Vertr. o. Lehrkraft", OhneLehrkraftText, StringComparison.Ordinal).Replace("Vertr. o. Lehrkr.", OhneLehrkraftText, StringComparison.Ordinal)
             .Split(" · ").Where(t => !RaumaenderungsHinweis.IsMatch(t.Trim())));
 
     private static readonly System.Text.RegularExpressions.Regex RaumaenderungsHinweis = new(@"^\([^()]*\)\s*Raumänderung$", System.Text.RegularExpressions.RegexOptions.Compiled);

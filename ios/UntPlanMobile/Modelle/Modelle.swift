@@ -426,7 +426,7 @@ struct Karte: Decodable, Identifiable, Sendable {
         t = t.trimmingCharacters(in: .whitespaces)
         if t.isEmpty { return true }
         if t == art.trimmingCharacters(in: .whitespaces).lowercased() { return true }
-        let feste = ["wegen sondereinsatz", "vertretung durch verlegung", "vorziehung", "vertr. o. lehrkr", "vertr. o. lehrkr.",
+        let feste = ["wegen sondereinsatz", "vertretung durch verlegung", "vorziehung", "vertr. o. lehrkr", "vertr. o. lehrkr.", "ohne lehrkraft",
                      "zusatzunterricht", "sondereinsatz", "zusätzl. unterrichtsstunde", "zusaetzl. unterrichtsstunde"]
         return feste.contains(t) || t.hasPrefix("aus vertretung")
     }

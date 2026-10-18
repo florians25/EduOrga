@@ -78,7 +78,7 @@
 }
 .u-app .u-abmelden:hover { background: var(--up-flaeche-hover); color: var(--up-text); }
 .u-app .u-griff {
-  display: flex; align-items: center; gap: 6px; width: 100%; height: 28px; margin: 4px 0 0; padding: 0 10px; border: 0; border-radius: var(--up-radius);
+  display: flex; align-items: center; justify-content: flex-start; gap: 6px; width: 100%; height: 28px; margin: 4px 0 0; padding: 0 10px; border: 0; border-radius: var(--up-radius);
   background: none; color: var(--up-text-3); font-size: var(--up-gr-s);
 }
 .u-app .u-griff span, .u-app .u-griff:hover span { position: static; width: auto; height: auto; transform: none; background: none; border-radius: 0; }

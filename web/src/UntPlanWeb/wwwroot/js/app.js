@@ -632,7 +632,7 @@ function huelle() {
             <a class="u-abmelden u-neuigkeiten" href="#/neuigkeiten" data-neuigkeiten>Neuigkeiten</a>
             <button type="button" class="u-abmelden" data-abmelden>Abmelden</button>
           </div>
-          <button type="button" class="u-griff" data-einklappen title="Navigation ausblenden" aria-label="Navigation ein- oder ausblenden">${icon('einklappen')}<span>Navigation ausblenden</span></button>
+          <button type="button" class="u-griff" data-einklappen title="Navigation ausblenden" aria-label="Navigation ein- oder ausblenden"><span>Navigation ausblenden</span></button>
         </div>
       </aside>
       <button type="button" class="u-leiste-auf" data-ausklappen title="Navigation einblenden" aria-label="Navigation einblenden">${icon('menue')}</button>
