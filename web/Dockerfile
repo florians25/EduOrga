@@ -17,7 +17,7 @@ RUN dotnet publish web/src/UntPlanWeb/UntPlanWeb.csproj -c Release -o /app --no-
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 LABEL org.opencontainers.image.title="UntPlanWeb" \
       org.opencontainers.image.description="Stundenplan, Vertretungsplan und Rückmeldungen online – Webbegleiter zu UntPlan" \
-      org.opencontainers.image.source="https://github.com/florians25/UntPlan"
+      org.opencontainers.image.source="https://github.com/florians25/UntPlanNext"
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     UNTPLANWEB_DATEN=/data \
     TZ=Europe/Berlin \

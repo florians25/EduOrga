@@ -262,7 +262,7 @@ Für größere bzw. produktive Installationen kann stattdessen MariaDB oder MySQ
 
 ```bash
 mkdir untplanweb && cd untplanweb
-curl -O https://raw.githubusercontent.com/florians25/UntPlan/main/web/docker-compose.yml
+curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/docker-compose.yml
 docker compose up -d
 ```
 
@@ -272,15 +272,15 @@ Dann im Browser `http://<server>:8080` öffnen. Der Einrichtungsassistent legt d
 **Mit HTTPS** (empfohlen, automatisches Let's-Encrypt-Zertifikat über Caddy). Voraussetzung: ein DNS-Name, der auf den Server zeigt, und die Ports 80 und 443:
 
 ```bash
-curl -O https://raw.githubusercontent.com/florians25/UntPlan/main/web/docker-compose.https.yml
-curl -O https://raw.githubusercontent.com/florians25/UntPlan/main/web/Caddyfile
+curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/docker-compose.https.yml
+curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/Caddyfile
 UNTPLANWEB_DOMAIN=plan.meine-schule.de docker compose -f docker-compose.https.yml up -d
 ```
 
 **Ausprobieren mit Beispieldaten:**
 
 ```bash
-docker run --rm -p 8080:8080 -e UNTPLANWEB_DEMO=1 -e UNTPLANWEB_ADMIN_PASSWORT=admin12345 ghcr.io/florians25/untplanweb
+docker run --rm -p 8080:8080 -e UNTPLANWEB_DEMO=1 -e UNTPLANWEB_ADMIN_PASSWORT=admin12345 ghcr.io/florians25/untplan-web
 ```
 
 Anmeldung als `admin` / `admin12345`. Die Beispielwoche wird automatisch auf die aktuelle Woche verschoben.
@@ -302,7 +302,7 @@ Anmeldung als `admin` / `admin12345`. Die Beispielwoche wird automatisch auf die
 | `UNTPLANWEB_DB_CONNECTION` | Verbindung zu MySQL/MariaDB: `Server=…;Port=3306;Database=…;User ID=…;Password=…` oder `mysql://benutzer:passwort@host:3306/datenbank` | – |
 | `UNTPLANWEB_DB_WARTEN` | Sekunden, die beim Start auf den Datenbankserver gewartet wird | `60` |
 | `UNTPLANWEB_UPDATE_PRUEFEN` | `0` = nicht nach neuen Versionen suchen | an |
-| `UNTPLANWEB_UPDATE_URL` | Quelle der neuesten Version (`ghcr://besitzer/image`, GitHub-API `…/releases/latest`, `…/releases`, `…/tags` oder eigene Adresse mit `{"version":"…"}` bzw. Text) | `ghcr://florians25/untplanweb` |
+| `UNTPLANWEB_UPDATE_URL` | Quelle der neuesten Version (`ghcr://besitzer/image`, GitHub-API `…/releases/latest`, `…/releases`, `…/tags` oder eigene Adresse mit `{"version":"…"}` bzw. Text) | `ghcr://florians25/untplan-web` |
 | `UNTPLANWEB_UPDATE_TAG_PRAEFIX` | nur Tags mit diesem Präfix berücksichtigen (z. B. `web-v`) | – |
 | `UNTPLANWEB_UPDATE_MODUS` | „Update installieren“: `aus`, `watchtower` oder `datei` | `watchtower`, wenn eine Watchtower-Adresse gesetzt ist, sonst `aus` |
 | `UNTPLANWEB_UPDATE_WATCHTOWER_URL`, `…_TOKEN` | HTTP-API von Watchtower, z. B. `http://watchtower:8080/v1/update`, und deren Token | – |
@@ -317,8 +317,8 @@ startet erst, wenn die Datenbank bereit ist):
 
 ```bash
 mkdir untplanweb && cd untplanweb
-curl -O https://raw.githubusercontent.com/florians25/UntPlan/main/web/docker-compose.mariadb.yml
-curl -O https://raw.githubusercontent.com/florians25/UntPlan/main/web/update.sh && chmod +x update.sh
+curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/docker-compose.mariadb.yml
+curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/update.sh && chmod +x update.sh
 cat > .env <<'EOF'
 MARIADB_PASSWORT=ein-langes-passwort
 MARIADB_ROOT_PASSWORT=ein-anderes-langes-passwort
@@ -361,7 +361,7 @@ Danach lädt es die neuen Images und startet neu; die letzten 14 Sicherungen ble
 Für UntPlanMobile gibt es dasselbe als `mobile/update.sh` (aktualisiert UntPlanWeb und UntPlanMobile gemeinsam).
 
 **Updateanzeige:** Unter *Administration → Übersicht* zeigt die Karte *Version & Updates* die laufende Version, die Datenbank
-mit Schemastand und die neueste veröffentlichte Version (Standard: Tags des öffentlichen Images `ghcr://florians25/untplanweb` –
+mit Schemastand und die neueste veröffentlichte Version (Standard: Tags des öffentlichen Images `ghcr://florians25/untplan-web` –
 gleiche Nummerierung wie die laufende Version –, alle 6 Stunden geprüft; abschaltbar mit `UNTPLANWEB_UPDATE_PRUEFEN=0`, andere
 Quelle mit `UNTPLANWEB_UPDATE_URL`). Ist ein Update verfügbar, erscheint einmal je Benutzer und Version ein schließbarer Hinweis
 unten rechts. Die GitHub-Releases gehören zum Desktop-Programm (eigene Zählung) und taugen daher nicht als Quelle für UntPlanWeb.
@@ -390,7 +390,7 @@ Umstieg einer Docker-Installation (im selben Ordner, damit das Volume `untplanwe
 
 ```bash
 docker compose down                                                   # SQLite-Installation stoppen (Volume bleibt)
-curl -O https://raw.githubusercontent.com/florians25/UntPlan/main/web/docker-compose.mariadb.yml
+curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/docker-compose.mariadb.yml
 # .env mit MARIADB_PASSWORT, MARIADB_ROOT_PASSWORT, WATCHTOWER_TOKEN anlegen (siehe oben)
 docker compose -f docker-compose.mariadb.yml run --rm untplanweb --migrieren-nach-mysql
 docker compose -f docker-compose.mariadb.yml up -d
@@ -474,7 +474,7 @@ Aufbau:
 - `demo/beispiel-paket.json`: Beispielpaket, mit UntPlan.Core aus der Beispielschule erzeugt.
 
 UntPlanWeb gehört nicht zur Desktop-Solution `UntPlan.sln` und hat einen eigenen CI-Ablauf (`.github/workflows/web.yml`).
-Dieser testet und veröffentlicht das Image `ghcr.io/florians25/untplanweb`. Der Desktop-Build bleibt davon unberührt.
+Dieser testet und veröffentlicht das Image `ghcr.io/florians25/untplan-web`. Der Desktop-Build bleibt davon unberührt.
 
 > Hinweis: Ein neues GHCR-Paket ist zunächst privat. Damit `docker pull` ohne Anmeldung funktioniert, stellen Sie es einmalig auf öffentlich:
 > GitHub → Packages → untplanweb → Package settings → Change visibility.

@@ -8,7 +8,7 @@ HIER=$(cd "$(dirname "$0")" && pwd)
 if docker compose config --services 2>/dev/null | grep -qx "${UNTPLANWEB_DIENST:-untplanweb}"; then
   # gemeinsames Update-Skript von UntPlanWeb (liegt im Repository unter web/update.sh, sonst aus dem Netz)
   if [ -f "$HIER/../web/update.sh" ]; then exec sh "$HIER/../web/update.sh" "$@"; fi
-  curl -fsSL https://raw.githubusercontent.com/florians25/UntPlan/main/web/update.sh | sh -s -- "$@"
+  curl -fsSL https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/update.sh | sh -s -- "$@"
   exit $?
 fi
 DIENST=${UNTPLANMOBILE_DIENST:-untplanmobile}

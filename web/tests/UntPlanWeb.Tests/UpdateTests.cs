@@ -57,7 +57,7 @@ public class UpdateTests
         // Registry-Seiten (Link-Kopf) und Standardquelle des Web-Images (nicht die Desktop-Releases)
         Assert.Equal("https://ghcr.io/v2/a/b/tags/list?last=1.0.99&n=1000", Updatepruefung.NaechsteSeite("</v2/a/b/tags/list?last=1.0.99&n=1000>; rel=\"next\""));
         Assert.Null(Updatepruefung.NaechsteSeite(null));
-        Assert.Equal("ghcr://florians25/untplanweb", Updateeinstellungen.Laden(new ConfigurationBuilder().Build()).Url);
+        Assert.Equal("ghcr://florians25/untplan-web", Updateeinstellungen.Laden(new ConfigurationBuilder().Build()).Url);
     }
 
     [Fact]

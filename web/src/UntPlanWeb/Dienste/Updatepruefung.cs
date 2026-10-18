@@ -28,15 +28,15 @@ public sealed record Updatestand(
 /// <summary>
 /// Fragt die neueste veröffentlichte Version ab und vergleicht sie mit der laufenden. Quellen (<c>…_UPDATE_URL</c>):
 /// <list type="bullet">
-/// <item>GitHub-API: <c>https://api.github.com/repos/florians25/UntPlan/releases/latest</c> (Standard), <c>…/releases</c> oder <c>…/tags</c>.</item>
-/// <item>Container-Registry: <c>ghcr://florians25/untplanweb</c> – Tags des (öffentlichen) Images, passt genau zu <c>docker compose pull</c>.</item>
+/// <item>GitHub-API: <c>https://api.github.com/repos/florians25/UntPlanNext/releases/latest</c> (Standard), <c>…/releases</c> oder <c>…/tags</c>.</item>
+/// <item>Container-Registry: <c>ghcr://florians25/untplan-web</c> – Tags des (öffentlichen) Images, passt genau zu <c>docker compose pull</c>.</item>
 /// <item>Eigene Adresse mit JSON <c>{"version":"1.2.3","url":"…"}</c> oder reinem Text <c>1.2.3</c>.</item>
 /// </list>
 /// Ergebnisse werden zwischengespeichert (Standard 6 Stunden, Fehler 15 Minuten).
 /// </summary>
 public sealed class Updatepruefung
 {
-    public const string StandardUrl = "https://api.github.com/repos/florians25/UntPlan/releases/latest";
+    public const string StandardUrl = "https://api.github.com/repos/florians25/UntPlanNext/releases/latest";
 
     private readonly HttpClient _http;
     private readonly SemaphoreSlim _sperre = new(1, 1);

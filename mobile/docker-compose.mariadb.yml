@@ -31,7 +31,7 @@ services:
       retries: 10
 
   untplanweb:
-    image: ghcr.io/florians25/untplanweb:latest
+    image: ghcr.io/florians25/untplan-web:latest
     # build: { context: .., dockerfile: web/Dockerfile }
     container_name: untplanweb
     restart: unless-stopped
@@ -55,7 +55,7 @@ services:
       com.centurylinklabs.watchtower.enable: "true"
 
   untplanmobile:
-    image: ghcr.io/florians25/untplanmobile:latest
+    image: ghcr.io/florians25/untplan-mobile:latest
     # build: { context: .., dockerfile: mobile/Dockerfile }
     container_name: untplanmobile
     restart: unless-stopped

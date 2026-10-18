@@ -9,7 +9,7 @@
 
 services:
   untplanweb:
-    image: ghcr.io/florians25/untplanweb:latest
+    image: ghcr.io/florians25/untplan-web:latest
     # Selbst bauen statt das fertige Image zu laden:
     # build: { context: .., dockerfile: web/Dockerfile }
     container_name: untplanweb

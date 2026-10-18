@@ -34,7 +34,7 @@ services:
       retries: 10
 
   untplanweb:
-    image: ghcr.io/florians25/untplanweb:latest
+    image: ghcr.io/florians25/untplan-web:latest
     # Selbst bauen statt das fertige Image zu laden:
     # build: { context: .., dockerfile: web/Dockerfile }
     container_name: untplanweb
@@ -54,7 +54,7 @@ services:
       UNTPLANWEB_UPDATE_WATCHTOWER_TOKEN: ${WATCHTOWER_TOKEN:-bitte-aendern}
       # Updateprüfung abschalten bzw. andere Quelle:
       # UNTPLANWEB_UPDATE_PRUEFEN: "0"
-      # UNTPLANWEB_UPDATE_URL: ghcr://florians25/untplanweb
+      # UNTPLANWEB_UPDATE_URL: ghcr://florians25/untplan-web
       # Optional – sonst über den Einrichtungsassistenten im Browser:
       # UNTPLANWEB_ADMIN_PASSWORT: "bitte-aendern"
     volumes:

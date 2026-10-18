@@ -22,7 +22,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/untplanstudio
+  IMAGE: ghcr.io/${{ github.repository_owner }}/untplan-studio
 
 jobs:
   test:

@@ -5,7 +5,7 @@
 
 services:
   untplanstudio:
-    image: ghcr.io/florians25/untplanstudio:latest
+    image: ghcr.io/florians25/untplan-studio:latest
     # Selbst bauen statt das fertige Image zu laden:
     # build: { context: .., dockerfile: studio/Dockerfile }
     container_name: untplanstudio

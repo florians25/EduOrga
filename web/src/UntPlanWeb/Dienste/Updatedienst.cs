@@ -9,7 +9,7 @@ namespace UntPlanWeb.Dienste;
 /// Einstellungen der Updateanzeige und des optionalen Updaters (Umgebungsvariablen):
 /// <list type="bullet">
 /// <item><c>UNTPLANWEB_UPDATE_PRUEFEN</c> = 0 schaltet die Prüfung auf neue Versionen ab (Standard: an).</item>
-/// <item><c>UNTPLANWEB_UPDATE_URL</c> = Quelle der neuesten Version (Standard: Tags des Images <c>ghcr://florians25/untplanweb</c> – dieselbe
+/// <item><c>UNTPLANWEB_UPDATE_URL</c> = Quelle der neuesten Version (Standard: Tags des Images <c>ghcr://florians25/untplan-web</c> – dieselbe
 /// Nummerierung wie die laufende Version; die GitHub-Releases gehören zum Desktop-Programm und haben eine eigene Zählung).</item>
 /// <item><c>UNTPLANWEB_UPDATE_TAG_PRAEFIX</c> = nur Tags mit diesem Präfix berücksichtigen (z. B. <c>web-v</c>).</item>
 /// <item><c>UNTPLANWEB_UPDATE_MODUS</c> = <c>aus</c> | <c>watchtower</c> | <c>datei</c> – wie „Update installieren“ ausgelöst wird.</item>
@@ -20,7 +20,7 @@ namespace UntPlanWeb.Dienste;
 public sealed class Updateeinstellungen
 {
     /// <summary>Standardquelle: Tags des Web-Images (Version 1.0.N aus dem Web-Build, passt genau zu <c>docker compose pull</c>).</summary>
-    public const string Standardquelle = "ghcr://florians25/untplanweb";
+    public const string Standardquelle = "ghcr://florians25/untplan-web";
 
     public bool Pruefen { get; init; } = true;
     public string? Url { get; init; }

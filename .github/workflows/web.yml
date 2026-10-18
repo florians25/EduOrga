@@ -21,7 +21,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/untplanweb
+  IMAGE: ghcr.io/${{ github.repository_owner }}/untplan-web
 
 jobs:
   test:

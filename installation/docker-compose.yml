@@ -1,0 +1,136 @@
+# UntPlan – Gesamtinstallation mit Docker
+#
+# Jedes Programm läuft in einem eigenen Container und hat seine eigenen Daten:
+#   untplanstudio   Planung im Browser          eigene Datenbank (SQLite) im Volume untplanstudio-daten
+#   untplanweb      Portal für die Schule       eigene Datenbank (SQLite im Volume untplanweb-daten oder MariaDB)
+#   untplanmobile   App fürs Telefon (PWA)      Geräteprofile im Volume untplanmobile-daten, Plandaten von UntPlan Web
+#   mariadb         optional, nur für UntPlan Web
+#   caddy           optional, HTTPS mit automatischem Zertifikat
+#   watchtower      optional, Update aus der Administration von UntPlan Web
+#
+# Welche Container laufen, steht in .env unter COMPOSE_PROFILES (studio, web, mobile, mariadb, https, updater).
+# Einrichtung:   ./install.sh          (fragt alles ab, schreibt .env und Caddyfile, startet die Container)
+# Update:        ./update.sh           (sichert beide Datenbanken, lädt neue Images, startet neu)
+#                ./update.sh studio    (nur ein Programm aktualisieren)
+# Von Hand:      docker compose pull && docker compose up -d
+
+name: untplan
+
+# Watchtower (Update aus der Administration von UntPlan Web) aktualisiert nur Web und Mobile;
+# Studio wird unabhängig davon mit ./update.sh studio aktualisiert.
+x-standard: &standard
+  restart: unless-stopped
+  labels:
+    com.centurylinklabs.watchtower.enable: "true"
+
+services:
+  untplanstudio:
+    restart: unless-stopped
+    image: ghcr.io/florians25/untplan-studio:${UNTPLAN_VERSION:-latest}
+    container_name: untplanstudio
+    profiles: ["studio"]
+    ports:
+      - "${BIND_ADRESSE:-0.0.0.0}:${STUDIO_PORT:-8090}:8080"
+    environment:
+      TZ: ${ZEITZONE:-Europe/Berlin}
+      STUDIO_ADMIN_BENUTZER: ${STUDIO_ADMIN_BENUTZER:-admin}
+      STUDIO_ADMIN_PASSWORT: ${STUDIO_ADMIN_PASSWORT:-}
+      STUDIO_SICHERE_COOKIES: ${STUDIO_SICHERE_COOKIES:-0}
+      STUDIO_SICHERUNGEN_BEHALTEN: ${SICHERUNGEN_BEHALTEN:-14}
+    volumes:
+      - untplanstudio-daten:/data
+
+  untplanweb:
+    <<: *standard
+    image: ghcr.io/florians25/untplan-web:${UNTPLAN_VERSION:-latest}
+    container_name: untplanweb
+    profiles: ["web"]
+    ports:
+      - "${BIND_ADRESSE:-0.0.0.0}:${WEB_PORT:-8080}:8080"
+    environment:
+      TZ: ${ZEITZONE:-Europe/Berlin}
+      UNTPLANWEB_ZEITZONE: ${ZEITZONE:-Europe/Berlin}
+      UNTPLANWEB_ADMIN_PASSWORT: ${UNTPLANWEB_ADMIN_PASSWORT:-}
+      # sqlite (Standard) oder mysql – bei mysql läuft der Container „mariadb“ (Profil mariadb)
+      UNTPLANWEB_DB: ${UNTPLANWEB_DB:-sqlite}
+      UNTPLANWEB_DB_CONNECTION: ${UNTPLANWEB_DB_CONNECTION:-}
+      UNTPLANWEB_MOBILE_INTERN_URL: ${UNTPLANWEB_MOBILE_INTERN_URL:-}
+      UNTPLANWEB_UPDATE_WATCHTOWER_URL: ${UNTPLANWEB_UPDATE_WATCHTOWER_URL:-}
+      UNTPLANWEB_UPDATE_WATCHTOWER_TOKEN: ${WATCHTOWER_TOKEN:-}
+    volumes:
+      - untplanweb-daten:/data
+
+  untplanmobile:
+    <<: *standard
+    image: ghcr.io/florians25/untplan-mobile:${UNTPLAN_VERSION:-latest}
+    container_name: untplanmobile
+    profiles: ["mobile"]
+    ports:
+      - "${BIND_ADRESSE:-0.0.0.0}:${MOBILE_PORT:-8081}:8081"
+    environment:
+      TZ: ${ZEITZONE:-Europe/Berlin}
+      UNTPLANMOBILE_ZEITZONE: ${ZEITZONE:-Europe/Berlin}
+      # UntPlan Web aus Sicht des Containers (Dienstname im Compose-Netz)
+      UNTPLANWEB_URL: http://untplanweb:8080
+      UNTPLANMOBILE_VAPID_KONTAKT: ${UNTPLANMOBILE_VAPID_KONTAKT:-}
+    volumes:
+      - untplanmobile-daten:/data
+
+  mariadb:
+    image: mariadb:11.4
+    container_name: untplan-mariadb
+    profiles: ["mariadb"]
+    restart: unless-stopped
+    environment:
+      TZ: ${ZEITZONE:-Europe/Berlin}
+      MARIADB_DATABASE: untplanweb
+      MARIADB_USER: untplanweb
+      MARIADB_PASSWORD: ${MARIADB_PASSWORT:-}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORT:-}
+      MARIADB_AUTO_UPGRADE: "1"
+    command: ["--max-allowed-packet=256M", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mariadb-daten:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+    # MariaDB wird bewusst nicht von Watchtower aktualisiert (kein Label)
+
+  caddy:
+    image: caddy:2
+    container_name: untplan-caddy
+    profiles: ["https"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-daten:/data
+      - caddy-config:/config
+
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    container_name: untplan-watchtower
+    profiles: ["updater"]
+    restart: unless-stopped
+    environment:
+      TZ: ${ZEITZONE:-Europe/Berlin}
+      WATCHTOWER_HTTP_API_UPDATE: "true"
+      WATCHTOWER_HTTP_API_TOKEN: ${WATCHTOWER_TOKEN:-}
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  untplanstudio-daten:
+  untplanweb-daten:
+  untplanmobile-daten:
+  mariadb-daten:
+  caddy-daten:
+  caddy-config:

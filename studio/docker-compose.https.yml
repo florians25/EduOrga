@@ -5,7 +5,7 @@
 
 services:
   untplanstudio:
-    image: ghcr.io/florians25/untplanstudio:latest
+    image: ghcr.io/florians25/untplan-studio:latest
     restart: unless-stopped
     environment:
       TZ: Europe/Berlin

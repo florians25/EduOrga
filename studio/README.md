@@ -50,7 +50,7 @@ NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/druck
 
 ## Container
 
-Das Image wird vom GitHub-Workflow `.github/workflows/studio.yml` als `ghcr.io/florians25/untplanstudio` gebaut
+Das Image wird vom GitHub-Workflow `.github/workflows/studio.yml` als `ghcr.io/florians25/untplan-studio` gebaut
 (amd64 und arm64). Selbst bauen (Build-Kontext = Repository-Wurzel):
 
 ```bash

@@ -15,6 +15,19 @@ gemeinsamen Fachlogik:
 Alle Oberflächen folgen einem gemeinsamen Designsystem ([`design/DESIGN.md`](design/DESIGN.md)): Marine als
 Markenfarbe, IBM Plex Sans, Linien-Symbole, einheitliche Statusfarben für Entfall, Vertretung, Prüfung, Termin und Ferien.
 
+## Installation
+
+Jedes Programm läuft als eigener Docker-Container; Studio und Web haben jeweils eine eigene Datenbank.
+
+```sh
+mkdir -p /opt/untplan && cd /opt/untplan
+curl -fsSLO https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation/install.sh
+sh install.sh      # Einrichtung mit Rückfragen (Programme, Datenbank, HTTPS)
+./update.sh        # Update mit vorheriger Sicherung beider Datenbanken
+```
+
+Einzelheiten: [`installation/README.md`](installation/README.md).
+
 ## Funktionen
 
 - **Schuldaten:** Schuljahr, NRW-Schulformen, Zeitraster mit Vormittag, Nachmittag, fixer oder flexibler Mittagspause und Pausen, NRW-Ferien und -Feiertage (inkl. beweglicher Feiertage), A/B-Wochen, Perioden.
@@ -45,6 +58,7 @@ web/                        UntPlan Web
 mobile/                     UntPlan Mobile (PWA)
 ios/                        UntPlan für iOS (SwiftUI)
 design/                     Designsystem: Grundwerte, Schrift, Signet
+installation/               Gesamtinstallation mit Docker (install.sh, update.sh, docker-compose.yml)
 tests/                      xUnit-Tests der Fachlogik
 ```
 
