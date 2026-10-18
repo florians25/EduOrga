@@ -60,7 +60,7 @@ export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
             <Stack gap={1.25}>
               <Stack direction="row" gap={1.5} alignItems="center"><Muster art="regulaer" gross /><Typography variant="body2"><b>Unterricht</b> – weiße Kachel, die Fachfarbe steht als kleines Quadrat vor dem Fachkürzel</Typography></Stack>
               {ARTEN.map(a => <Stack key={a.art} direction="row" gap={1.5} alignItems="center"><Muster art={a.art} gross /><Typography variant="body2"><b>{a.text}</b> – {a.hinweis}</Typography></Stack>)}
-              <Typography variant="body2" color="text.secondary">Petrolfarben unterstrichen ist der neue Wert, davor durchgestrichen der bisherige (z. B. <s>HOF</s> <b>BEC</b>); die Plakette nennt die Art („Vertretung“, „Raum“, „Fach“). „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext.</Typography>
+              <Typography variant="body2" color="text.secondary">Geänderte Kürzel stehen als petrolfarbene Plakette, das bisherige grau durchgestrichen davor (z. B. <s>HOF</s> <b>BEC</b>); eine offene Vertretung zeigt „?“. Die Kurzinfo beim Überfahren nennt die Art der Änderung. „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext.</Typography>
             </Stack>
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>

@@ -52,9 +52,9 @@ export default function TagSeite({ teile }: SeitenProps) {
               : (
                 <Paper variant="outlined" sx={{ borderRadius: '4px', overflow: 'auto' }}>
                   <Box sx={{ display: 'grid', gridTemplateColumns: `140px repeat(${spalten.length}, minmax(108px, 1fr))`, minWidth: 140 + spalten.length * 108 }}>
-                    <Box sx={{ position: 'sticky', left: 0, zIndex: 2, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }} />
+                    <Box sx={{ position: 'sticky', left: 0, zIndex: 2, bgcolor: 'kachel.kopf', borderBottom: 1, borderColor: 'divider' }} />
                     {spalten.map((z, i) => (
-                      <Box key={z.nr} sx={{ px: 1, py: 0.875, borderBottom: 1, borderLeft: 1, borderColor: 'divider', bgcolor: i === jetztSpalte ? alpha(t.palette.primary.main, 0.028) : 'background.paper',
+                      <Box key={z.nr} sx={{ px: 1, py: 0.875, borderBottom: 1, borderLeft: 1, borderColor: 'divider', bgcolor: i === jetztSpalte ? alpha(t.palette.primary.main, 0.06) : 'kachel.kopf',
                         boxShadow: i === jetztSpalte ? `inset 0 2px 0 ${t.palette.primary.main}` : undefined, fontVariantNumeric: 'tabular-nums' }}>
                         <Typography sx={{ fontWeight: 600, fontSize: 13, lineHeight: '18px', color: i === jetztSpalte ? 'primary.main' : 'text.primary' }}>{z.bezeichnung || z.nr}.</Typography>
                         <Typography sx={{ fontSize: 11, lineHeight: '14px', color: 'text.secondary' }}>{z.beginn}–{z.ende}</Typography>
@@ -77,7 +77,7 @@ export default function TagSeite({ teile }: SeitenProps) {
                         );
                       }
                       return [
-                        <Box key={`k-${z.kurz}`} sx={{ position: 'sticky', left: 0, zIndex: 1, bgcolor: 'background.paper', px: 1.5, py: 1, borderBottom: 1, borderColor: 'divider', minWidth: 0 }}>
+                        <Box key={`k-${z.kurz}`} sx={{ position: 'sticky', left: 0, zIndex: 1, bgcolor: 'kachel.kopf', borderRight: 1, px: 1.5, py: 1, borderBottom: 1, borderColor: 'divider', minWidth: 0 }}>
                           <Typography sx={{ fontWeight: 600, fontSize: 13.5 }}>{z.kurz}</Typography>
                           {z.name !== z.kurz && <Typography variant="caption" color="text.secondary" noWrap component="div">{z.name}</Typography>}
                         </Box>,
