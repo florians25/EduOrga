@@ -1,4 +1,5 @@
-/* UntPlan Designsystem – Grundwerte (Design Tokens).
+/* EduOrga Designsystem – Grundwerte (Design Tokens). Marke: siehe design/MARKE.md.
+   (Die Variablennamen --up-marine-* sind historisch; sie tragen jetzt die EduOrga-Petrolreihe.)
    Diese Datei ist die einzige Quelle für Farben, Schrift, Abstände und Radien. UntPlan Studio bindet sie direkt ein
    (studio/client/src/main.tsx, Schriften unter studio/client/public/fonts); die übrigen Oberflächen binden eine Kopie ein,
    Änderungen hier und in den Kopien gleich halten:
@@ -11,22 +12,26 @@
 @font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 600; font-display: swap; src: url("../fonts/plex-sans-600.woff2") format("woff2"); }
 
 :root {
-  /* Marke: Marine */
-  --up-marine-50: #eef3fb;
-  --up-marine-100: #dce6f6;
-  --up-marine-200: #b6cbec;
-  --up-marine-300: #86a7dc;
-  --up-marine-400: #5582c8;
-  --up-marine-500: #3364b0;
-  --up-marine-600: #234f96;
-  --up-marine-700: #1c3f7a;
-  --up-marine-800: #173261;
-  --up-marine-900: #11264a;
+  /* Marke: EduOrga-Petrol (700 = Primärfarbe #164C55, 500 = Akzentfarbe #28747A) */
+  --up-marine-50: #eef5f6;
+  --up-marine-100: #d6e8ea;
+  --up-marine-200: #aed1d4;
+  --up-marine-300: #7fb3b8;
+  --up-marine-400: #4f9298;
+  --up-marine-500: #28747a;
+  --up-marine-600: #1d5f66;
+  --up-marine-700: #164c55;
+  --up-marine-800: #113c43;
+  --up-marine-900: #0c2c31;
+  --edo-primaer: #164c55;   /* Logo, Navigation, Knöpfe */
+  --edo-akzent: #28747a;    /* aktive Bereiche, Links */
+  --edo-hintergrund: #f5f7f8; /* Dashboard-Flächen */
+  --edo-text: #24363b;      /* Überschriften und Inhalte */
 
   /* Neutral: Schiefer */
   --up-schiefer-0: #ffffff;
   --up-schiefer-25: #fafbfc;
-  --up-schiefer-50: #f4f6f8;
+  --up-schiefer-50: #f5f7f8;
   --up-schiefer-100: #ebeef2;
   --up-schiefer-200: #dce1e7;
   --up-schiefer-300: #c3cad3;
@@ -34,18 +39,18 @@
   --up-schiefer-500: #6b7684;
   --up-schiefer-600: #4d5866;
   --up-schiefer-700: #37404c;
-  --up-schiefer-800: #232a33;
+  --up-schiefer-800: #24363b;
   --up-schiefer-900: #151a21;
 
   /* Fachliche Statusfarben (in allen Oberflächen gleich) */
   --up-entfall: #b42318;          /* Entfall, Fehler */
   --up-entfall-flaeche: #fdf0ef;
-  --up-aenderung: #0b7a75;        /* Vertretung, Raum-/Lehrerwechsel, Verlegung */
-  --up-aenderung-flaeche: #e7f5f4;
+  --up-aenderung: #6d4fc2;        /* Vertretung, Raum-/Lehrerwechsel, Verlegung (Violett – deutlich anders als das Marken-Petrol) */
+  --up-aenderung-flaeche: #f1edfb;
   --up-pruefung: #a15c07;         /* Klausur, Prüfung */
   --up-pruefung-flaeche: #fdf4e3;
-  --up-termin: #5a4fb3;           /* Veranstaltung, Termin */
-  --up-termin-flaeche: #f1effb;
+  --up-termin: #a3347c;           /* Veranstaltung, Termin */
+  --up-termin-flaeche: #faeef5;
   --up-frei: #2f6f9f;             /* Ferien, unterrichtsfrei */
   --up-frei-flaeche: #edf4fa;
   --up-ok: #1d7a46;
@@ -54,11 +59,12 @@
   --up-warnung-flaeche: #fdf4e3;
 
   /* Rollen */
-  --up-primaer: var(--up-marine-600);
-  --up-primaer-hover: var(--up-marine-700);
+  --up-primaer: var(--up-marine-700);
+  --up-primaer-hover: var(--up-marine-800);
+  --up-akzent: var(--up-marine-500);
   --up-primaer-flaeche: var(--up-marine-50);
   --up-primaer-rand: var(--up-marine-200);
-  --up-fokus: #3364b0;
+  --up-fokus: #28747a;
 
   --up-text: var(--up-schiefer-800);
   --up-text-2: var(--up-schiefer-600);

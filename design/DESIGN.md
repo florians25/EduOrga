@@ -1,4 +1,7 @@
-# UntPlan Designsystem
+# EduOrga Designsystem
+
+> **Marke, Farben, Logo und Namen: siehe [`MARKE.md`](MARKE.md)** – sie gehen bei Widersprüchen diesem Dokument vor
+> (u. a. Primärfarbe jetzt Petrol #164C55 statt Marine, klassisches Schulportal-Grunddesign als Vorbild, nicht 1:1).
 
 Verbindliche Gestaltungsgrundlage für **UntPlan Studio** (Planung im Browser), **UntPlan Web** (Portal für Lehrkräfte,
 Schüler und Eltern), **UntPlan Mobile** (PWA) und **UntPlan Next** (iOS). Ziel: ein eigenständiges, sachliches und
