@@ -140,44 +140,56 @@ html.nav-eingeklappt .navigation { visibility: hidden; }
   background: var(--up-hintergrund); animation: einblenden .12s ease-out;
 }
 @keyframes einblenden { from { opacity: 0; } to { opacity: 1; } }
-.backstage nav { background: var(--up-schiefer-25); color: var(--text-2); border-right: 1px solid var(--rand); display: flex; flex-direction: column; gap: 1px; padding: 12px 8px; overflow-y: auto; }
+.backstage nav { background: var(--up-schiefer-25); color: var(--text-2); border-right: 1px solid var(--rand); display: flex; flex-direction: column; padding: 12px 12px 20px; overflow-y: auto; }
 .backstage nav button {
-  height: 34px; border: 0; border-radius: 6px; background: transparent; color: inherit; text-align: left; padding: 0 10px; cursor: pointer; font-size: 13px;
-  display: flex; align-items: center; gap: 10px;
+  position: relative; height: 30px; flex: none; border: 0; border-radius: 4px; background: transparent; color: inherit; text-align: left; padding: 0 8px; cursor: pointer; font-size: 13.5px;
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
 }
-.backstage nav button svg { width: 17px; height: 17px; }
 .backstage nav button:hover:not(:disabled) { background: var(--up-schiefer-100); color: var(--text); }
+.backstage nav button:focus-visible { outline: 2px solid var(--up-fokus); outline-offset: -2px; }
 .backstage nav button.aktiv { background: var(--akzent-sehrhell); color: var(--akzent-titel); font-weight: var(--mittel); }
-.backstage nav button:disabled { opacity: .38; cursor: default; }
-.backstage nav .zurueck { height: 40px; margin-bottom: 8px; font-size: 13px; color: var(--akzent-titel); font-weight: var(--mittel); }
-.backstage nav hr { border: 0; border-top: 1px solid var(--rand); margin: 8px 4px; }
+.backstage nav button.aktiv::before { content: ""; position: absolute; left: -12px; top: 5px; bottom: 5px; width: 3px; background: var(--akzent); }
+.backstage nav button:disabled { opacity: .4; cursor: default; }
 .backstage nav button svg { display: none; }
+.backstage nav .zurueck { height: 32px; margin-bottom: 6px; color: var(--akzent-titel); font-weight: var(--mittel); }
 .backstage nav .zurueck svg { display: inline; width: 15px; height: 15px; }
-.backstage .kachel svg { display: none; }
-.backstage .seite { padding: 36px 48px; overflow-y: auto; }
-.backstage .seite > * { max-width: 980px; }
-.backstage .seite h1 { font-size: 24px; margin-bottom: 20px; }
-.backstage .seite h3 { margin-top: 28px; font-size: 13px; color: var(--text-2); }
-.backstage .kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 26px; }
-.backstage .kachel {
-  min-height: 112px; border: 1px solid var(--rand); border-radius: 8px; padding: 16px; background: #fff;
-  cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 6px; transition: border-color var(--up-dauer);
-}
-.backstage .kachel:hover { border-color: var(--up-marine-300); }
-.backstage .kachel svg { width: 22px; height: 22px; color: var(--akzent); margin-bottom: 6px; }
-.backstage .kachel b { font-weight: var(--fett); }
+.backstage .ds-navtitel { margin: 18px 8px 4px; font-size: 12px; font-weight: var(--fett); color: var(--text-leise); }
+.backstage .seite { padding: 32px 40px 40px; overflow-y: auto; }
+.backstage .seite > * { max-width: 900px; }
+.backstage .seite h1 { font-size: 22px; margin: 0 0 20px; }
+.backstage .seite h3 { margin: 28px 0 10px; font-size: 13px; font-weight: var(--fett); color: var(--text); }
+.backstage .ds-kopf { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.backstage .ds-kopf h1 { margin: 0; }
+.backstage .ds-einleitung { color: var(--text-2); margin: 0 0 8px; max-width: 680px; }
+.backstage .ds-optionen { display: flex; flex-direction: column; gap: 10px; margin: 0 0 20px; }
+.backstage .ds-knoepfe { display: flex; gap: 8px; margin-top: 16px; }
+.backstage .kacheln { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--rand); border-radius: 6px; overflow: hidden; }
+.backstage .kachel { display: flex; align-items: center; gap: 24px; min-height: 64px; padding: 12px 16px; border-bottom: 1px solid var(--rand-leise); }
+.backstage .kachel:last-child { border-bottom: 0; }
+.backstage .kachel .ds-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.backstage .kachel b { font-weight: var(--mittel); }
 .backstage .kachel .klein { font-size: 12.5px; color: var(--text-leise); }
-.dokumentliste { width: 100%; max-width: 980px; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid var(--rand); border-radius: 8px; overflow: hidden; }
-.dokumentliste th { text-align: left; font-size: 12px; font-weight: var(--mittel); color: var(--text-2); padding: 9px 14px; background: var(--up-schiefer-25); border-bottom: 1px solid var(--rand); }
-.dokumentliste td { padding: 10px 14px; border-bottom: 1px solid var(--rand-leise); vertical-align: middle; }
-.dokumentliste tr:last-child td { border-bottom: 0; }
+.backstage .kachel .knopf { min-width: 128px; }
+.dokumentliste { width: 100%; max-width: 900px; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid var(--rand); border-radius: 6px; overflow: hidden; }
+.dokumentliste th { text-align: left; font-size: 12px; font-weight: var(--mittel); color: var(--text-2); height: 34px; padding: 0 14px; background: var(--up-schiefer-25); border-bottom: 1px solid var(--rand); }
+.dokumentliste td { padding: 8px 14px; height: 44px; border-bottom: 1px solid var(--rand-leise); vertical-align: middle; }
+.dokumentliste tr:last-child td, .dokumentliste tr:last-child th { border-bottom: 0; }
+.dokumentliste .zahl { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dokumentliste .ds-datum { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dokumentliste .ds-leer { text-align: center; color: var(--text-leise); padding: 24px 14px; }
 .dokumentliste tr.zeile { cursor: pointer; }
 .dokumentliste tr.zeile:hover td { background: var(--up-schiefer-25); }
-.dokumentliste .name { font-weight: var(--mittel); }
+.dokumentliste tr.zeile:focus-visible { outline: 2px solid var(--up-fokus); outline-offset: -2px; }
+.dokumentliste .name { font-weight: var(--mittel); display: flex; align-items: center; gap: 8px; }
+.dokumentliste .ds-zuletzt { font-weight: var(--mittel); }
 .dokumentliste .aktionen { text-align: right; white-space: nowrap; }
 .dokumentliste .aktionen .knopf { margin-left: 4px; }
+.dokumentliste a.knopf { text-decoration: none; }
+.dokumentliste.ds-eigenschaften { max-width: 680px; }
+.dokumentliste.ds-eigenschaften th { width: 180px; height: auto; padding: 10px 14px; background: transparent; color: var(--text-leise); font-size: 13px; font-weight: var(--normal); border-bottom: 1px solid var(--rand-leise); vertical-align: top; }
+.dokumentliste.ds-eigenschaften td { height: auto; padding: 10px 14px; }
 .ablage {
-  border: 1px dashed var(--rand-stark); border-radius: 8px; padding: 26px; text-align: center; color: var(--text-leise); max-width: 980px; margin: 8px 0 24px; background: #fff;
+  border: 1px dashed var(--rand-stark); border-radius: 6px; padding: 22px; text-align: center; color: var(--text-leise); max-width: 900px; margin: 0 0 8px; background: #fff;
 }
 .ablage .knopf { margin-left: 6px; }
 .ablage.ueber { border-color: var(--akzent); background: var(--akzent-sehrhell); color: var(--akzent); }
