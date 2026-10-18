@@ -156,9 +156,35 @@ if [ "$HTTPS" = 1 ]; then
   pruefen HTTPS_PORT "HTTPS-Port (Caddy)"
 fi
 
-STUDIO_PW=""; WEB_PW=""
-[ "$STUDIO" = 1 ] && STUDIO_PW=$(passwort)
-[ "$WEB" = 1 ] && WEB_PW=$(passwort)
+# Zugangsdaten: eigenes Passwort eingeben (verdeckt, zweimal) oder leer lassen → zufälliges Passwort
+geheim() { # geheim <Text> → Eingabe ohne Anzeige
+  printf '%s: ' "$1" >&2
+  stty -echo 2>/dev/null || true
+  read -r g || g=""
+  stty echo 2>/dev/null || true
+  printf '\n' >&2
+  echo "$g"
+}
+passwort_festlegen() { # passwort_festlegen <Programm> → Passwort auf stdout
+  while :; do
+    p1=$(geheim "Passwort für den Administrator von $1 (mind. 8 Zeichen, leer = zufällig)")
+    if [ -z "$p1" ]; then passwort; return; fi
+    case "$p1" in
+      *[[:space:]]*|*\"*|*\'*|*\$*|*\\*|*\`*) echo "Bitte ohne Leerzeichen und ohne die Zeichen \" ' \$ \\ \`." >&2; continue ;;
+    esac
+    if [ "${#p1}" -lt 8 ]; then echo "Das Passwort muss mindestens 8 Zeichen lang sein." >&2; continue; fi
+    p2=$(geheim "Passwort wiederholen")
+    [ "$p1" = "$p2" ] && { echo "$p1"; return; }
+    echo "Die Eingaben stimmen nicht überein." >&2
+  done
+}
+STUDIO_PW=""; WEB_PW=""; STUDIO_BENUTZER=admin
+if [ "$STUDIO" = 1 ]; then
+  STUDIO_BENUTZER=$(frage "Benutzername des Administrators von UntPlan Studio" admin)
+  case "$STUDIO_BENUTZER" in ''|*[!A-Za-z0-9._-]*) fehler "Benutzername bitte nur aus Buchstaben, Ziffern, Punkt, Binde- und Unterstrich." ;; esac
+  STUDIO_PW=$(passwort_festlegen "UntPlan Studio")
+fi
+[ "$WEB" = 1 ] && WEB_PW=$(passwort_festlegen "UntPlan Web (Benutzer admin)")
 
 # --- .env schreiben ----------------------------------------------------------------------------------------------
 umask 077
@@ -182,7 +208,7 @@ umask 077
   if [ "$STUDIO" = 1 ]; then
     echo
     echo "# UntPlan Studio (eigene Datenbank im Volume untplannext-studio-daten)"
-    echo "STUDIO_ADMIN_BENUTZER=admin"
+    echo "STUDIO_ADMIN_BENUTZER=$STUDIO_BENUTZER"
     echo "STUDIO_ADMIN_PASSWORT=$STUDIO_PW"
     echo "STUDIO_SICHERE_COOKIES=$HTTPS"
   fi
@@ -245,7 +271,7 @@ adresse() { # adresse <Domain> <Port>
 }
 echo
 echo "Fertig. Zugangsdaten stehen in $(pwd)/.env – bitte sicher aufbewahren und nach der ersten Anmeldung ändern."
-[ "$STUDIO" = 1 ] && echo "  UntPlan Studio  $(adresse "${STUDIO_DOMAIN:-}" "$STUDIO_PORT")   Benutzer admin, Passwort $STUDIO_PW"
+[ "$STUDIO" = 1 ] && echo "  UntPlan Studio  $(adresse "${STUDIO_DOMAIN:-}" "$STUDIO_PORT")   Benutzer $STUDIO_BENUTZER, Passwort $STUDIO_PW"
 [ "$WEB" = 1 ]    && echo "  UntPlan Web     $(adresse "${WEB_DOMAIN:-}" "$WEB_PORT")   Benutzer admin, Passwort $WEB_PW"
 [ "$MOBILE" = 1 ] && echo "  UntPlan Mobile  $(adresse "${MOBILE_DOMAIN:-}" "$MOBILE_PORT")   Anmeldung mit dem Konto von UntPlan Web"
 if [ "$STUDIO" = 1 ] && [ "$WEB" = 1 ]; then
