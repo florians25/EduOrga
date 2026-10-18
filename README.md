@@ -20,7 +20,7 @@ Markenfarbe, IBM Plex Sans, Linien-Symbole, einheitliche Statusfarben für Entfa
 Jedes Programm läuft als eigener Docker-Container; Studio und Web haben jeweils eine eigene Datenbank.
 
 ```sh
-mkdir -p /opt/untplan && cd /opt/untplan
+mkdir -p /opt/untplannext && cd /opt/untplannext
 curl -fsSLO https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation/install.sh
 sh install.sh      # Einrichtung mit Rückfragen (Programme, Datenbank, HTTPS)
 ./update.sh        # Update mit vorheriger Sicherung beider Datenbanken

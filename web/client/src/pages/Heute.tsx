@@ -23,6 +23,7 @@ import { datumDe, datumText, heuteIso, jetztMinuten, minuten, wochentag, zeitste
 import { htmlBereinigt } from '../lib/html';
 import { useLaden } from '../lib/useLaden';
 import { SprechtagKarte } from './sprechtag/SprechtagKarte';
+import { UpdateHinweis } from '../app/Update';
 
 interface Nachricht { betreff?: string; text: string; textHtml?: string; aufgefaechert?: boolean }
 interface Stunde {
@@ -69,6 +70,7 @@ export default function Heute() {
   const [details, setDetails] = useState<{ k: Karte; liste: Karte[] } | null>(null);
   return (
     <Seite dokumentTitel="Heute">
+      <UpdateHinweis />
       <Geladen g={g}>{d => {
         const stunden = (d.stunden ?? []).slice().sort((a, b) => a.stunde - b.stunde || (a.status === 'entfall' ? 0 : 1) - (b.status === 'entfall' ? 0 : 1));
         const mitStunden = !familie && !d.keinPlan && (stunden.length > 0 || ich.kollegium);

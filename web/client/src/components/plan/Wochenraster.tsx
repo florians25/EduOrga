@@ -1,11 +1,10 @@
-// Wochenraster mit echtem Zeitmaßstab: Höhe proportional zur Uhrzeit, Pausen als schmale Bänder (mit Pausenaufsichten), Spalte des
-// heutigen Tages hervorgehoben, Jetzt-Linie mit Uhrzeit an der Zeitachse. Ferien und freie Tage als Fläche, ganztägige Termine und
+// Wochenraster mit echtem Zeitmaßstab: Höhe proportional zur Uhrzeit, gerade 1-px-Linien, Pausen als schmale graue Bänder (mit
+// Pausenaufsichten), Spaltenköpfe linksbündig „Mo 02.11.“, heutiger Tag mit Marine-Linie oben und sehr leichter Tönung, Jetzt-Linie 1 px
+// mit Uhrzeit an der Zeitachse. Ferien und freie Tage als Fläche, ganztägige Termine und
 // Hinweise im Tageskopf, eigene Abwesenheiten als graue Fläche hinter den Stunden.
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { alpha, Box, Stack, Tooltip, Typography, useTheme } from '@mui/material';
-import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
-import CelebrationOutlined from '@mui/icons-material/CelebrationOutlined';
 import type { Aufsicht, Karte, Tageskopf, Wochenplan, Zeit } from '../../api/types';
 import { heuteIso, hhmm, jetztMinuten, minuten, wochentagKurz, datumKurz } from '../../lib/datum';
 import { Kachel } from './Kachel';
@@ -105,23 +104,24 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
   const achse = 64;
   const spalten = `${achse}px repeat(${tage.length}, minmax(0, 1fr))`;
   const linie = t.palette.divider;
-  const dunkelLinie = alpha(t.palette.text.primary, 0.06);
+  const feineLinie = alpha(t.palette.text.primary, 0.075);
+  const heuteTon = alpha(t.palette.primary.main, 0.028);
 
   return (
     <Box sx={{ position: 'relative' }}>
       {/* Tageskopf (bleibt beim Scrollen stehen) */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: spalten, position: 'sticky', top: oben, zIndex: 6, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
-        <Box />
+      <Box sx={{ display: 'grid', gridTemplateColumns: spalten, position: 'sticky', top: oben, zIndex: 6, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', borderTopLeftRadius: 4, borderTopRightRadius: 4 }}>
+        <Box sx={{ borderRight: `1px solid ${linie}` }} />
         {tage.map(({ tag, i }) => {
           const heute = tag.datum === jetzt.tag;
           const ganz = tag.ereignisse.filter(x => x.ganztaegig && !plan.karten.some(k => k.datum === tag.datum && k.text === x.titel));
           const hinweise = tagHinweise(tag.hinweise);
           return (
-            <Box key={tag.datum} sx={{ px: 1, pt: 1.25, pb: 1, borderLeft: 1, borderColor: dunkelLinie, minWidth: 0, bgcolor: heute ? alpha(t.palette.primary.main, 0.045) : undefined }}>
-              <Stack direction="row" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontWeight: 600, fontSize: 13, color: heute ? 'primary.main' : 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{wochentagKurz(tag.datum)}</Typography>
-                <Box sx={{ px: heute ? 1 : 0, py: 0.15, borderRadius: 999, bgcolor: heute ? 'primary.main' : 'transparent', color: heute ? 'primary.contrastText' : 'text.primary', fontWeight: 600, fontSize: 14 }}>{datumKurz(tag.datum)}</Box>
-                {heute && <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600, display: { xs: 'none', md: 'inline' } }}>Heute</Typography>}
+            <Box key={tag.datum} aria-current={heute ? 'date' : undefined} sx={{ px: 1, pt: 1, pb: 0.875, borderLeft: i === tage[0]?.i ? 0 : `1px solid ${linie}`, minWidth: 0,
+              bgcolor: heute ? heuteTon : undefined, boxShadow: heute ? `inset 0 2px 0 ${t.palette.primary.main}` : undefined }}>
+              <Stack direction="row" alignItems="baseline" gap={0.5} sx={{ minWidth: 0, fontSize: 13, lineHeight: '20px', color: heute ? 'primary.main' : 'text.primary' }}>
+                <Box component="span" sx={{ fontWeight: 600 }}>{wochentagKurz(tag.datum)}</Box>
+                <Box component="span" sx={{ fontWeight: 400, color: heute ? 'primary.main' : 'text.secondary' }}>{datumKurz(tag.datum)}</Box>
                 {kopfZusatz?.(tag, i)}
               </Stack>
               {(ganz.length > 0 || hinweise.length > 0) && (
@@ -129,14 +129,15 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
                   {ganz.map((x, j) => (
                     <Tooltip key={j} title={[x.titel, x.klassen.length ? `Klassen: ${x.klassen.join(', ')}` : '', x.lehrer.length ? `Lehrkräfte: ${x.lehrer.join(', ')}` : '', x.raeume.length ? `Räume: ${x.raeume.join(', ')}` : ''].filter(Boolean).join('\n')}
                       slotProps={{ tooltip: { sx: { whiteSpace: 'pre-line' } } }}>
-                      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, maxWidth: '100%', px: 0.75, py: 0.2, borderRadius: 1, bgcolor: 'status.termin.flaeche', color: 'status.termin.main', fontSize: 11.5, fontWeight: 600, border: `1px dashed ${alpha(t.palette.status.termin.main, 0.5)}` }}>
-                        <CelebrationOutlined sx={{ fontSize: 13 }} /><Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.titel}</Box>
+                      <Box sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.75, maxWidth: '100%', px: 0.75, py: '1px', borderRadius: '2px', color: 'text.primary', fontSize: 12, border: `1px dashed ${alpha(t.palette.text.secondary, 0.6)}` }}>
+                        <Box component="span" sx={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'status.termin.main', flex: 'none' }}>Termin</Box>
+                        <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.titel}</Box>
                       </Box>
                     </Tooltip>
                   ))}
                   {hinweise.map((h, j) => (
                     <Tooltip key={`h${j}`} title={h}>
-                      <Box sx={{ maxWidth: '100%', px: 0.75, py: 0.2, borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 11.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h}</Box>
+                      <Box sx={{ maxWidth: '100%', px: 0.75, py: '1px', borderRadius: '2px', border: `1px solid ${linie}`, color: 'text.secondary', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h}</Box>
                     </Tooltip>
                   ))}
                 </Stack>
@@ -149,15 +150,17 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
       {/* Raster */}
       <Box sx={{ display: 'grid', gridTemplateColumns: spalten, position: 'relative' }}>
         {/* Zeitachse */}
-        <Box sx={{ position: 'relative', height: mass.hoehe + 8 }}>
-          {mass.abschnitte.filter(a => a.art === 'stunde').map(a => (
-            <Box key={a.nr} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, px: 1, pt: 0.6, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              <Typography sx={{ fontWeight: 600, fontSize: 13, lineHeight: 1.1 }}>{a.z!.bezeichnung || a.nr}</Typography>
-              {!kartenZeiten && a.h >= 40 && <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.25 }}>{a.z!.beginn}<br />{a.z!.ende}</Typography>}
-            </Box>
-          ))}
+        <Box sx={{ position: 'relative', height: mass.hoehe + 8, borderRight: `1px solid ${linie}` }}>
+          {mass.abschnitte.map((a, j) => a.art === 'pause'
+            ? <Box key={`p${j}`} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, bgcolor: 'background.default' }} />
+            : (
+              <Box key={a.nr} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, px: 1, pt: 0.75, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', borderBottom: `1px solid ${feineLinie}`, fontVariantNumeric: 'tabular-nums' }}>
+                <Typography sx={{ fontWeight: 600, fontSize: 13, lineHeight: '16px' }}>{a.z!.bezeichnung || a.nr}</Typography>
+                {!kartenZeiten && a.h >= 40 && <Typography sx={{ fontSize: 11, color: 'text.secondary', lineHeight: '14px', mt: '1px' }}>{a.z!.beginn}<br />{a.z!.ende}</Typography>}
+              </Box>
+            ))}
           {jetztY !== null && (
-            <Box sx={{ position: 'absolute', top: jetztY - 9, right: 2, height: 18, px: 0.75, borderRadius: 999, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', zIndex: 5 }}>
+            <Box sx={{ position: 'absolute', top: jetztY - 8, right: 4, height: 16, px: 0.5, borderRadius: '2px', bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: 10.5, fontWeight: 600, display: 'flex', alignItems: 'center', zIndex: 5, fontVariantNumeric: 'tabular-nums' }}>
               {hhmm(jetzt.min)}
             </Box>
           )}
@@ -173,11 +176,11 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
           aufs.forEach(a => proPause.set(a.nachStunde, [...(proPause.get(a.nachStunde) ?? []), a]));
           const abw = abwesenheiten ? (plan.abwesenheiten || []).filter(a => a.datum === tag.datum) : [];
           return (
-            <Box key={tag.datum} sx={{ position: 'relative', height: mass.hoehe + 8, borderLeft: 1, borderColor: dunkelLinie, bgcolor: heute ? alpha(t.palette.primary.main, 0.035) : undefined }}>
+            <Box key={tag.datum} sx={{ position: 'relative', height: mass.hoehe + 8, borderLeft: tag.datum === tage[0]?.tag.datum ? 0 : `1px solid ${linie}`, bgcolor: heute ? heuteTon : undefined }}>
               {/* Linien und Pausenbänder */}
               {mass.abschnitte.map((a, j) => a.art === 'pause'
-                ? <Box key={j} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, bgcolor: alpha(t.palette.text.primary, 0.035) }} />
-                : <Box key={j} sx={{ position: 'absolute', top: a.y + a.h, left: 0, right: 0, borderTop: `1px solid ${dunkelLinie}` }} />)}
+                ? <Box key={j} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, bgcolor: 'background.default' }} />
+                : <Box key={j} sx={{ position: 'absolute', top: a.y + a.h - 1, left: 0, right: 0, borderTop: `1px solid ${feineLinie}` }} />)}
               {/* eigene Abwesenheit */}
               {abw.map((a, j) => {
                 const y0 = mass.yVon(minuten(a.von)), y1 = mass.yVon(minuten(a.bis));
@@ -187,17 +190,16 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
                   <Tooltip key={`a${j}`} title={`${text} (${a.von}–${a.bis})`}>
                     <Box role="note" aria-label={`${text} (${a.von}–${a.bis})`} sx={{ position: 'absolute', top: y0, height: y1 - y0, left: 0, right: 0, zIndex: 0,
                       background: `repeating-linear-gradient(135deg, ${alpha(t.palette.text.secondary, 0.1)} 0 2px, transparent 2px 9px)`, borderTop: `2px solid ${alpha(t.palette.text.secondary, 0.4)}` }}>
-                      <Typography sx={{ position: 'absolute', left: 6, top: 2, fontSize: 10.5, fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{text}</Typography>
+                      <Typography sx={{ position: 'absolute', left: 6, top: 2, fontSize: 10, fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{text}</Typography>
                     </Box>
                   </Tooltip>
                 );
               })}
               {/* freie Tage */}
               {frei && ft && (
-                <Box sx={{ position: 'absolute', inset: 4, zIndex: 1, borderRadius: 2, bgcolor: 'status.frei.flaeche', border: `1px solid ${alpha(t.palette.status.frei.main, 0.25)}`,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'status.frei.main', p: 1, gap: 0.5 }}>
-                  <EventBusyOutlined />
-                  <Typography sx={{ fontWeight: 600 }}>{ft.titel}</Typography>
+                <Box sx={{ position: 'absolute', inset: 0, zIndex: 1, bgcolor: 'status.frei.flaeche',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'status.frei.main', p: 1, gap: 0.25 }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{ft.titel}</Typography>
                   {ft.name && <Typography variant="body2">{ft.name}</Typography>}
                   {ft.zeitraum && <Typography variant="caption">{ft.zeitraum}</Typography>}
                 </Box>
@@ -229,9 +231,9 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
                   const ton = a.status === 'entfall' ? t.palette.status.entfall.main : a.status === 'vertretung' ? t.palette.status.aenderung.main : t.palette.text.secondary;
                   return (
                     <Tooltip key={`${nach}-${j}`} title={aufsichtTitel(a)}>
-                      <Box sx={{ position: 'absolute', top: p.y + 3, height: Math.max(14, p.h - 6), left: `calc(${j * b}% + 3px)`, width: `calc(${b}% - 6px)`, zIndex: 2, borderRadius: 999,
-                        display: 'flex', alignItems: 'center', gap: 0.5, px: 1, fontSize: 11, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap', opacity: vorbei ? 0.55 : 1,
-                        color: ton, bgcolor: alpha(ton, 0.1), border: `1px ${a.status === 'vertreten' || a.status === 'entfall' ? 'dashed' : 'solid'} ${alpha(ton, 0.45)}`,
+                      <Box sx={{ position: 'absolute', top: p.y + 3, height: Math.max(14, p.h - 6), left: `calc(${j * b}% + 3px)`, width: `calc(${b}% - 6px)`, zIndex: 2, borderRadius: '2px',
+                        display: 'flex', alignItems: 'center', gap: 0.5, px: 0.75, fontSize: 11, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', opacity: vorbei ? 0.55 : 1,
+                        color: ton, bgcolor: 'background.paper', border: `1px ${a.status === 'vertreten' || a.status === 'entfall' ? 'dashed' : 'solid'} ${a.status === 'regulaer' || !a.status ? linie : alpha(ton, 0.55)}`,
                         textDecoration: a.status === 'entfall' ? 'line-through' : 'none' }}>
                         <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Aufsicht {aufsichtOrt(a)}</Box>
                         {v && <Box component="span" sx={{ color: 'status.aenderung.main' }}>{v.neu}</Box>}
@@ -243,8 +245,8 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
               {/* Jetzt-Linie */}
               {jetztY !== null && (
                 <Fragment>
-                  <Box sx={{ position: 'absolute', top: jetztY, left: 0, right: 0, borderTop: heute ? `2px solid ${t.palette.primary.main}` : `1px dashed ${alpha(t.palette.primary.main, 0.35)}`, zIndex: 4, pointerEvents: 'none' }} />
-                  {heute && <Box sx={{ position: 'absolute', top: jetztY - 4, left: -5, width: 10, height: 10, borderRadius: 5, bgcolor: 'primary.main', zIndex: 4, pointerEvents: 'none', boxShadow: `0 0 0 3px ${alpha(t.palette.primary.main, 0.2)}` }} />}
+                  <Box sx={{ position: 'absolute', top: jetztY, left: 0, right: 0, borderTop: heute ? `1px solid ${t.palette.primary.main}` : `1px dashed ${alpha(t.palette.primary.main, 0.3)}`, zIndex: 4, pointerEvents: 'none' }} />
+                  {heute && <Box sx={{ position: 'absolute', top: jetztY - 3, left: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: 'primary.main', zIndex: 4, pointerEvents: 'none' }} />}
                 </Fragment>
               )}
             </Box>

@@ -19,6 +19,7 @@ import { api, holen, senden } from '../api/client';
 import { useSitzung } from './sitzung';
 import { allePunkte, menue, navAus, type Bereich } from './menue';
 import { InfocenterAnbieter, InfocenterKnopf, useInfocenter } from './Infocenter';
+import { useUpdatestand } from './Update';
 import { Marke, Zeichen } from '../components/Marke';
 import { Fehler, Laden } from '../components/Seite';
 import { useHash, navigieren } from '../lib/router';
@@ -126,6 +127,9 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
   const { ich, sitzung } = s;
   const [popover, setPopover] = useState<{ el: HTMLElement; g: Bereich } | null>(null);
   const ungelesen = sitzung.ungelesen ?? 0;
+  // neue Version verfügbar: Punkt an „Administration“ (bzw. „Übersicht & Synchronisation“ mit der Karte „Version & Updates“)
+  const update = useUpdatestand().stand?.updateVerfuegbar ?? false;
+  const updatePunkt = (g: Bereich) => update && g.id === 'admin';
   const zahl = (an?: boolean) => (an && ungelesen ? <Badge badgeContent={ungelesen > 99 ? '99+' : ungelesen} color="primary" sx={{ mr: 1.5, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} /> : null);
 
   const aktiv = (g: Bereich) => g.nav === nav || !!g.unter?.some(p => p.nav === nav);
@@ -171,10 +175,12 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
                 color: an ? 'primary.main' : 'text.primary', '&.Mui-selected': { bgcolor: 'action.selected', color: 'primary.main' },
                 '& .MuiListItemIcon-root': { color: an ? 'primary.main' : 'text.secondary' } }}>
               <ListItemIcon sx={{ minWidth: schmal ? 0 : 38, justifyContent: 'center' }}>
-                {g.zaehler && schmal ? <Badge variant="dot" color="primary" invisible={!ungelesen}>{g.icon}</Badge> : g.icon}
+                {g.zaehler && schmal ? <Badge variant="dot" color="primary" invisible={!ungelesen}>{g.icon}</Badge>
+                  : updatePunkt(g) ? <Badge variant="dot" color="warning" title="Neue Version verfügbar">{g.icon}</Badge> : g.icon}
               </ListItemIcon>
               {!schmal && <ListItemText primary={g.text} slotProps={{ primary: { sx: { fontWeight: an ? 600 : 500, fontSize: 14 } } }} />}
               {!schmal && zahl(g.zaehler && offen !== g.id)}
+              {!schmal && updatePunkt(g) && offen !== g.id && <Badge badgeContent="neu" color="warning" title="Neue Version verfügbar" sx={{ mr: 2, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} />}
               {!schmal && g.unter && <ExpandMoreRounded fontSize="small" sx={{ color: 'text.secondary', transform: offen === g.id ? 'rotate(180deg)' : 'none', transition: 'transform .16s' }} />}
             </ListItemButton>
           );
@@ -189,6 +195,7 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
                         sx={{ minHeight: 34, py: 0.25, px: 1.25, mb: 0.25, '&.Mui-selected': { bgcolor: 'action.selected', color: 'primary.main', fontWeight: 600 } }}>
                         <ListItemText primary={p.text} slotProps={{ primary: { sx: { fontSize: 13.5, fontWeight: 'inherit' } } }} />
                         {zahl(p.zaehler)}
+                        {update && p.nav === 'admin-sync' && <Badge badgeContent="Update" color="warning" sx={{ mr: 2.5, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} />}
                       </ListItemButton>
                     ))}
                   </List>

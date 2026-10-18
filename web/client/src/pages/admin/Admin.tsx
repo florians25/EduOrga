@@ -3,7 +3,7 @@
 // Zuordnungsgruppen, Rückmeldungen, Prüfungssperren, Verspätungen & Fehlzeiten, Ansichtseinstellungen, Monitoransichten, Protokoll.
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import {
-  Alert, Box, Button, Checkbox, FormControlLabel, IconButton, InputAdornment, MenuItem, Paper, Stack, Switch, TextField, Tooltip, Typography,
+  Alert, Box, Button, Checkbox, FormControlLabel, IconButton, InputAdornment, Link, MenuItem, Paper, Stack, Switch, TextField, Tooltip, Typography,
 } from '@mui/material';
 import AddRounded from '@mui/icons-material/AddRounded';
 import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded';
@@ -15,6 +15,7 @@ import RefreshRounded from '@mui/icons-material/RefreshRounded';
 import UploadFileRounded from '@mui/icons-material/UploadFileRounded';
 import { api, holen, loeschen, senden, speichern } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
+import { UpdateDialog, updateInstallieren, updatestandSetzen, type Updatestand } from '../../app/Update';
 import { Geladen, Laden, Seite } from '../../components/Seite';
 import { FormDialog, Plakette, Wahl } from '../../components/Bausteine';
 import { DatumFeld } from '../../components/Auswahl';
@@ -210,11 +211,10 @@ function Sync() {
   );
 }
 
-interface Update { version: string; neueste?: string; pruefungAktiv: boolean; fehler?: string; updateVerfuegbar: boolean; hinweisurl?: string; geprueft?: string; installierbar: boolean; befehl: string; datenbank: string; schemastand: string | number; angefordert?: string; mobil?: { version: string; updateVerfuegbar: boolean } }
-
 function UpdateKarte() {
   const [neu, setNeu] = useState(0);
-  const g = useLaden(sig => holen<Update>(`/api/app/admin/update${neu ? '?neu=1' : ''}`, sig), [neu]);
+  const [hinweise, setHinweise] = useState(false);
+  const g = useLaden(async sig => { const u = await holen<Updatestand>(`/api/app/admin/update${neu ? '?neu=1' : ''}`, sig); updatestandSetzen(u); return u; }, [neu]);
   return (
     <Karte titel="Version & Updates" aktion={<Tooltip title="Erneut prüfen"><IconButton onClick={() => setNeu(n => n + 1)} disabled={g.laedt}><RefreshRounded /></IconButton></Tooltip>}>
       <Geladen g={g}>{u => (
@@ -222,21 +222,19 @@ function UpdateKarte() {
           <Typography variant="body2">UntPlanWeb <b>{u.version}</b></Typography>
           <Typography variant="body2" component="div">Neueste: {!u.pruefungAktiv ? <Typography component="span" variant="body2" color="text.secondary">Prüfung abgeschaltet</Typography>
             : u.fehler ? <Typography component="span" variant="body2" color="error">{u.fehler}</Typography>
-            : u.updateVerfuegbar ? <><Plakette ton="pruefung">Update verfügbar</Plakette> {u.neueste}{u.hinweisurl && <> · <a href={u.hinweisurl} target="_blank" rel="noopener noreferrer">Änderungen</a></>}</>
+            : u.updateVerfuegbar ? <><Plakette ton="pruefung">Update verfügbar</Plakette> {u.neueste} · <Link component="button" variant="body2" onClick={() => setHinweise(true)} sx={{ verticalAlign: 'baseline' }}>Versionshinweise</Link></>
             : <><Plakette ton="ok">aktuell</Plakette> <Typography component="span" variant="body2" color="text.secondary">neueste: {u.neueste ?? '–'}</Typography></>}</Typography>
           {u.geprueft && <Typography variant="caption" color="text.secondary">geprüft {new Date(u.geprueft).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</Typography>}
           {u.mobil && <Typography variant="body2">UntPlanMobile {u.mobil.version}{u.mobil.updateVerfuegbar && <Plakette ton="pruefung" sx={{ ml: 1 }}>Update verfügbar</Plakette>}</Typography>}
           <Typography variant="body2">Datenbank {u.datenbank} <Typography component="span" variant="body2" color="text.secondary">· Schemastand {u.schemastand}</Typography></Typography>
           {u.angefordert && <Typography variant="body2">Angefordert: {u.angefordert} – wartet auf das Update-Skript</Typography>}
           <Box sx={{ mt: 1.5 }}>{u.installierbar ? (
-            <Button variant={u.updateVerfuegbar ? 'contained' : 'outlined'} startIcon={<DownloadRounded />} onClick={async () => {
-              if (!(await bestaetigen('Update installieren', 'Die Datenbank wird gesichert (SQLite) und das neueste Image geladen. UntPlanWeb startet danach neu und ist kurz nicht erreichbar.', 'Installieren'))) return;
-              try { const r = await senden<{ meldung: string }>('/api/app/admin/update/installieren', {}); toast(r.meldung); void g.neu(); } catch (err) { fehler(err); }
-            }}>Update installieren</Button>
+            <Button variant={u.updateVerfuegbar ? 'contained' : 'outlined'} startIcon={<DownloadRounded />} onClick={async () => { if (await updateInstallieren()) void g.neu(); }}>Update installieren</Button>
           ) : <>
             <Typography variant="caption" color="text.secondary">Update auf dem Server (Sicherung vorher, Migrationen laufen beim Start automatisch):</Typography>
             <Box component="code" sx={{ display: 'block', p: 1.25, mt: 0.5, bgcolor: 'action.hover', borderRadius: 2, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
           </>}</Box>
+          <UpdateDialog stand={u} offen={hinweise} schliessen={() => setHinweise(false)} />
         </Stack>
       )}</Geladen>
     </Karte>

@@ -239,9 +239,15 @@ export default function Tagesplan({ p }: AnsichtProps) {
         ]} />
       </>}
       fuss={<><span>{offen} offen</span><span>{entfall} {entfall === 1 ? 'Entfall' : 'Entfälle'}</span></>}>
-      {plan ? (
+      {plan && nurTag && (plan.vormerkungen || !verknuepft) ? (
         <div className={s.info}>
-          <span>{nurTag && sichtbar.length === 1 ? `${plan.tage[sichtbar[0]!]!.kurz} ${plan.tage[sichtbar[0]!]!.text}` : `Woche ${plan.woche}`}</span>
+          {plan.vormerkungen ? <span className={s.vm}>{`${plan.vormerkungen} offene Vormerkung${plan.vormerkungen === 1 ? '' : 'en'}`}</span> : null}
+          {verknuepft ? null : <span className={s.vm} title="Der Plan folgt nicht der gewählten Vertretung">nicht verknüpft</span>}
+        </div>
+      ) : null}
+      {plan && !nurTag ? (
+        <div className={s.info}>
+          <span>Woche {plan.woche}</span>
           <span className={s.lg}><i className={s.lgPunkt} style={{ border: '1.5px solid var(--up-aenderung)', background: 'var(--up-aenderung-flaeche)' }} />Vertretung</span>
           <span className={s.lg}><i className={s.lgPunkt} style={{ background: 'var(--up-entfall-flaeche)', border: '1px solid var(--up-entfall)' }} />Entfall</span>
           <span className={s.lg}><i className={s.lgPunkt} style={{ border: '1.5px dashed var(--up-entfall)' }} />Offen</span>

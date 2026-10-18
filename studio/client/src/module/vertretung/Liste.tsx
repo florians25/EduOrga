@@ -41,10 +41,10 @@ const SCHLANK_SPALTEN = new Set(SCHLANK.map((x) => x[0]));
 /** Farbe der Plakette in der Spalte „Art“ (Statusfarben aus design/DESIGN.md). */
 function artPlakette(m: Record<string, any>): string {
   const a = String(m.art || '');
+  if (['Freisetzung', 'VertretungOhneLehrer', 'EigenverantwortlichesArbeiten', 'Vormerkung'].includes(a)) return 'vt-chip-frei';
   if (m.entfall || a === 'Entfall' || a === 'BereitschaftEntfaellt') return 'vt-chip-entfall';
   if (['Veranstaltung', 'Sondereinsatz', 'SondereinsatzVormerkung', 'Raumbuchung'].includes(a)) return 'vt-chip-termin';
   if (a === 'Klausur') return 'vt-chip-pruefung';
-  if (['Freisetzung', 'VertretungOhneLehrer', 'EigenverantwortlichesArbeiten', 'Vormerkung'].includes(a)) return 'vt-chip-frei';
   if (a === 'Unterricht' || m.unterricht) return '';
   return 'vt-chip-vertretung';
 }
@@ -402,6 +402,13 @@ export default function Liste({ p }: AnsichtProps) {
       <OptionenTitel>Zeitraum</OptionenTitel><ZeitraumAuswahl z={zr} />
     </OptionenKnopf>
   );
+  // schlanke Liste: nach Datum, Stunde und Klasse geordnet (die Kopfzeile sortiert weiterhin nach jeder Spalte)
+  const zeilen = useMemo(() => {
+    const l = daten?.zeilen || [];
+    if (!schlank) return l;
+    const std = (z: VZeile) => Number(z.m.stunde ?? String(z.Std ?? '').split('-')[0]) || 0;
+    return [...l].sort((x, y) => String(x.m.datum ?? '').localeCompare(String(y.m.datum ?? '')) || std(x) - std(y) || String(x.Klassen ?? '').replace(/[()]/g, '').localeCompare(String(y.Klassen ?? '').replace(/[()]/g, ''), 'de', { numeric: true }));
+  }, [daten, schlank]);
   const titel = schlank ? `Vertretungen${ansicht !== ANSICHTEN[0] ? ` – ${ansichtText(ansicht)}` : ''}` : `Vertretungen – ${ansichtText(ansicht)}`;
 
   return (
@@ -441,7 +448,7 @@ export default function Liste({ p }: AnsichtProps) {
         <span style={status.art === 'fehler' ? { color: 'var(--up-entfall)' } : status.art === 'warnung' ? { color: 'var(--up-warnung)' } : undefined}>{status.text}</span>
         <FussText rechts>{daten ? `${daten.zeilen.length} ${daten.zeilen.length === 1 ? 'Zeile' : 'Zeilen'} · ${daten.offen} offen` : ''}</FussText>
       </>}>
-      <Tabelle<VZeile> ref={tabelle} name="vertretungen" spalten={spalten} zeilen={daten?.zeilen || []} zeilenHoehe={schlank ? 34 : 30}
+      <Tabelle<VZeile> ref={tabelle} name="vertretungen" spalten={spalten} zeilen={zeilen} zeilenHoehe={schlank ? 34 : 30}
         leerText="Im gewählten Zeitraum gibt es keine Vertretungen."
         zeilenKlasse={(z) => [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.current.has(z.m.v) ? 'vt-behalten' : ''].filter(Boolean).join(' ')}
         aendern={schreiben ? async (z, s, wert) => { await aktion('/aendern', { spalte: s.schluessel, wert }, zielIds(z)); } : undefined}

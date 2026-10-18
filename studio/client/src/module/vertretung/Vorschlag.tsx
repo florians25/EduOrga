@@ -1,8 +1,8 @@
 // Vertretungsvorschlag: folgt der markierten Vertretung. Kopf „30.8. Mo-1 Se/Mu/05D“ mit Status (Details aufklappbar),
 // Optionen in einer aufklappbaren Fläche (Stundenblock, Wegzeiten ignorieren, Dauervertretung, danach nächste offene …),
-// Reiter Lehrkräfte / Betreuungen / Räume mit Anzahlen – zuerst die besten Vorschläge, der Rest aufklappbar –, unten
-// aufklappbar die Vorziehungen. Übernehmen per Doppelklick, Enter oder Knopf; danach wahlweise zur nächsten offenen.
-import { Button, Switch, Tab, TabList, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+// Reiter Lehrkräfte / Betreuungen / Räume / Vorziehungen mit Anzahlen – zuerst die besten Vorschläge, der Rest aufklappbar.
+// Übernehmen (bzw. Vorziehen) per Doppelklick, Enter oder Knopf; danach wahlweise zur nächsten offenen.
+import { Button, Switch, Tab, TabList, makeStyles, tokens } from '@fluentui/react-components';
 import { ChevronDown16Regular, ChevronRight16Regular } from '@fluentui/react-icons';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { api } from '@/api/client';
@@ -25,11 +25,10 @@ const useStile = makeStyles({
   klapp: { justifyContent: 'flex-start', fontWeight: tokens.fontWeightSemibold, padding: '2px 4px', minWidth: 0 },
   detailKnopf: { marginLeft: 'auto', minWidth: 0, flexShrink: 0 },
   details: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground2, padding: '2px 0 2px 0' },
-  reiter: { padding: '0 8px' },
-  liste: { display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', minHeight: '32px', fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3, borderTop: `1px solid ${tokens.colorNeutralStroke3}` },
+  reiterZeile: { display: 'flex', alignItems: 'center', gap: '8px', padding: '0 8px', borderBottom: `1px solid ${tokens.colorNeutralStroke3}` },
+  reiter: { flex: 1, minWidth: 0, overflowX: 'auto' },
+  alle: { flexShrink: 0, minWidth: 0 },
   flaeche: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
-  fuss: { borderTop: `1px solid ${tokens.colorNeutralStroke2}`, display: 'flex', flexDirection: 'column' },
-  vorz: { height: '180px', display: 'flex', flexDirection: 'column' },
 });
 
 interface Mini { text: string; farbe?: string | null; entfallen?: boolean; ziel?: boolean }
@@ -47,8 +46,9 @@ function belastung(m: string) {
   return null;
 }
 
+const MINI: [string, string][] = [['davor', 'Unterricht der Lehrkraft in der Stunde davor'], ['Std.', 'Unterricht der Lehrkraft in dieser Stunde'], ['danach', 'Unterricht der Lehrkraft in der Stunde danach']];
 const mini = (i: number): Spalte<K> => ({
-  schluessel: `s${i}`, titel: i === 0 ? 'Stundenplan' : '', breite: 54, art: 'NurLesen',
+  schluessel: `s${i}`, titel: MINI[i]![0], hinweis: MINI[i]![1], breite: 58, art: 'NurLesen', ausrichtung: 'mitte',
   wert: (k) => k.s?.[i]?.text ?? '',
   farbe: (k) => { const z = k.s?.[i]; return z?.farbe && !z.entfallen ? `color-mix(in srgb, ${z.farbe} 20%, var(--colorNeutralBackground1))` : null; },
   klasse: (k) => { const z = k.s?.[i]; return z ? `vt-mini${z.entfallen ? ' entfallen' : ''}${z.ziel ? ' ziel' : ''}` : null; },
@@ -93,12 +93,10 @@ export default function Vorschlag() {
   const [reiter, setReiter] = useState(0);
   const [kopfOffen, setKopfOffen] = useState(false);
   const [alleZeigen, setAlleZeigen] = useState(false);
-  const [vorzOffen, setVorzOffen] = useState(false);
   const [weiter, setWeiter] = useState(true);
   const [alle, setAlle] = useState(false);
   const [opt, setOpt] = useState({ block: false, disloz: false, dauer: false, nahe: false, besetzt: false, zusatz: false });
-  const tabellen = [useRef<TabelleApi<K>>(null), useRef<TabelleApi<K>>(null), useRef<TabelleApi<K>>(null)];
-  const vorzTabelle = useRef<TabelleApi<K>>(null);
+  const tabellen = [useRef<TabelleApi<K>>(null), useRef<TabelleApi<K>>(null), useRef<TabelleApi<K>>(null), useRef<TabelleApi<K>>(null)];
 
   const ladeNr = useRef(0);
   async function laden(aw = auswahl): Promise<VorschlagDaten | null> {
@@ -146,18 +144,19 @@ export default function Vorschlag() {
     if (erg) await nachAktion(warOffen);
   }
   async function vorziehen() {
-    const v = vorzTabelle.current?.aktiveZeile();
+    const v = tabellen[3]!.current?.aktiveZeile();
     if (!v || !auswahl || !schreiben) return;
     await api.post(vpfad(`/vorschlag/${auswahl.id}/vorziehen`), { datum: v.datum, stunde: v.stunde, unterricht: v.u }, { quelle: a.id });
     hinweis('Vorziehung: Unterricht in die offene Stunde verlegt.', 'ok', 2500);
     await nachAktion(true);
   }
-  const aktionen = [uebernehmen, betreuung, raum];
+  const aktionen = [uebernehmen, betreuung, raum, vorziehen];
   const enter = (i: number) => (e: KeyboardEvent<HTMLDivElement>) => { if (e.key === 'Enter') { void aktionen[i]!().catch(fehlerMelden); return true; } return false; };
   const listen: [string, K[], Spalte<K>[], string][] = [
     ['Lehrkräfte', daten?.kandidaten || [], KANDIDATEN, 'Für diese Stunde gibt es keinen Vorschlag.'],
     ['Betreuungen', daten?.betreuungen || [], BETREUUNGEN, 'Für diese Stunde ist keine Betreuung möglich.'],
     ['Räume', daten?.raeume || [], RAEUME, 'Kein passender Raum frei.'],
+    ['Vorziehungen', daten?.vorziehungen || [], VORZIEHUNGEN, 'Keine Vorziehung möglich.'],
   ];
   const mehr = auswahl?.ids && auswahl.ids.length > 1 ? `${auswahl.ids.length - 1} weitere markiert` : '';
   const optSchalter = (k: keyof typeof opt, text: string, titel?: string, deaktiviert = false) => (
@@ -174,7 +173,7 @@ export default function Vorschlag() {
     <AnsichtRahmen titel="Vertretungsvorschlag"
       werkzeuge={<>
         {schreiben ? <>
-          <Werkzeug text="Übernehmen" titel="Gewählte Lehrkraft bzw. gewählten Raum übernehmen (Doppelklick, Enter)" aktion={() => aktionen[reiter]!()} deaktiviert={!daten} />
+          <Werkzeug text="Übernehmen" titel="Gewählte Lehrkraft, Betreuung, Raum bzw. Vorziehung übernehmen (Doppelklick, Enter)" aktion={() => aktionen[reiter]!()} deaktiviert={!daten} />
           <Werkzeug text="Entfall" titel="Unterricht entfällt" aktion={entfall} deaktiviert={!daten} />
           <Werkzeug text="Ohne Lehrkraft" titel="Stunde findet ohne Lehrkraft statt" aktion={ohneLehrkraft} deaktiviert={!daten} />
           <Trenner />
@@ -203,32 +202,23 @@ export default function Vorschlag() {
           </div>
           {kopfOffen && daten ? <div className={s.details}>{daten.details.split('\n').map((z, i) => <div key={i}>{z}</div>)}</div> : null}
         </div>
-        <TabList className={s.reiter} size="small" selectedValue={String(reiter)} onTabSelect={(_, d) => { setReiter(Number(d.value)); setAlleZeigen(false); }}>
-          {listen.map(([t, x], i) => <Tab key={t} value={String(i)}>{`${t} (${x.length})`}</Tab>)}
-        </TabList>
+        <div className={s.reiterZeile}>
+          <TabList className={s.reiter} size="small" selectedValue={String(reiter)} onTabSelect={(_, d) => { setReiter(Number(d.value)); setAlleZeigen(false); }}>
+            {listen.map(([t, x], i) => <Tab key={t} value={String(i)}>{`${t} (${x.length})`}</Tab>)}
+          </TabList>
+          {l.length > BESTE + 2 ? (
+            <Button size="small" appearance="transparent" className={s.alle} onClick={() => setAlleZeigen(!alleZeigen)} data-testid="vorschlag-alle"
+              title={gekuerzt ? `Die ${BESTE} besten von ${l.length} werden gezeigt` : undefined}>
+              {gekuerzt ? `Alle ${l.length} anzeigen` : `Nur die ${BESTE} besten`}
+            </Button>
+          ) : null}
+        </div>
         <div className={s.flaeche}>
           <Tabelle<K> key={titelListe} ref={tabellen[reiter]} name={`vorschlag-${reiter}`} spalten={spaltenAktiv} zeilen={gekuerzt ? l.slice(0, BESTE) : l}
             zustandSchluessel={`vertretung.vorschlag.spalten.${reiter}`}
-            id={(k) => String(k.lehrer ?? k.raum ?? k.name)} sortierbar={false} leerText={daten ? leer : ''}
-            zeilenKlasse={(r, i) => [i < 3 && reiter !== 2 ? 'vt-top' : '', reiter === 2 ? (r.besetzt ? 'vt-besetzt' : r.ar || r.sr ? 'vt-ausweich' : '') : ''].filter(Boolean).join(' ') || null}
+            id={reiter === 3 ? (v) => `${v.datum}|${v.stunde}|${v.u}` : (k) => String(k.lehrer ?? k.raum ?? k.name)} sortierbar={false} leerText={daten ? leer : ''}
+            zeilenKlasse={(r, i) => [i < 3 && reiter < 2 ? 'vt-top' : '', reiter === 2 ? (r.besetzt ? 'vt-besetzt' : r.ar || r.sr ? 'vt-ausweich' : '') : ''].filter(Boolean).join(' ') || null}
             beiDoppelklick={() => void aktionen[reiter]!().catch(fehlerMelden)} tasten={enter(reiter)} />
-        </div>
-        {l.length > BESTE + 2 ? (
-          <div className={s.liste}>
-            <span>{gekuerzt ? `Die ${BESTE} besten von ${l.length}` : `Alle ${l.length}`}</span>
-            <Button size="small" appearance="transparent" onClick={() => setAlleZeigen(!alleZeigen)} data-testid="vorschlag-alle">{gekuerzt ? 'Alle anzeigen' : 'Nur die besten anzeigen'}</Button>
-          </div>
-        ) : null}
-        <div className={s.fuss}>
-          <Button appearance="subtle" className={s.klapp} icon={vorzOffen ? <ChevronDown16Regular /> : <ChevronRight16Regular />} aria-expanded={vorzOffen} onClick={() => setVorzOffen(!vorzOffen)}>
-            {`Vorziehungen (${daten?.vorziehungen.length ?? 0})`}
-          </Button>
-          {vorzOffen ? (
-            <div className={mergeClasses(s.vorz)}>
-              <Tabelle<K> ref={vorzTabelle} name="vorziehungen" spalten={VORZIEHUNGEN} zeilen={daten?.vorziehungen || []} id={(v) => `${v.datum}|${v.stunde}|${v.u}`} sortierbar={false}
-                leerText="Keine Vorziehung möglich." beiDoppelklick={() => void vorziehen().catch(fehlerMelden)} />
-            </div>
-          ) : null}
         </div>
       </>}
     </AnsichtRahmen>

@@ -22,6 +22,7 @@ import { gueltigeFarbe, statusText } from '../components/plan/logik';
 import { ausIso, datumKurz, heuteIso, jetztMinuten, minuten, montag, MONATE, plusTage, WOCHENTAGE, wochentagKurz } from '../lib/datum';
 import { useLaden } from '../lib/useLaden';
 import { KindWahl, kinderLaden, OHNE_ZUORDNUNG, type Kind } from './familie/kinder';
+import { UpdateHinweis } from '../app/Update';
 
 const MAX = 5;
 const OHNE_AENDERUNG = ['regulaer', 'bereitschaft'];
@@ -147,6 +148,7 @@ export default function Uebersicht() {
 
   return (
     <Seite titel="" dokumentTitel="Übersicht">
+      <UpdateHinweis />
       <Geladen g={g}>{d => {
         if (!d) return <Typography color="text.secondary">{OHNE_ZUORDNUNG}</Typography>;
         const { typ, element, kind } = d;

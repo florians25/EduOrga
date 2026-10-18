@@ -46,17 +46,18 @@ export default function TagSeite({ teile }: SeitenProps) {
               {!tag.gesperrt && <Plakette ton={tag.kopf.tagesaktuell ? 'ok' : 'neutral'}>{tag.kopf.tagesaktuell ? 'tagesaktuell' : 'Regelplan'}</Plakette>}
               {tag.kopf.hinweise.map((h, i) => <Plakette key={i} ton="warnung">{h}</Plakette>)}
             </Stack>
-            {tag.gesperrt ? <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}><LockOutlined color="action" /><Typography sx={{ fontWeight: 600, mt: 1 }}>Es werden hier keine Termine angezeigt.</Typography><Typography variant="body2" color="text.secondary">{tag.sperrhinweis}</Typography></Paper>
+            {tag.gesperrt ? <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: '4px' }}><LockOutlined color="action" /><Typography sx={{ fontWeight: 600, mt: 1 }}>Es werden hier keine Termine angezeigt.</Typography><Typography variant="body2" color="text.secondary">{tag.sperrhinweis}</Typography></Paper>
               : tag.kopf.frei ? <Leer text={tag.kopf.freiGrund || 'Unterrichtsfrei'} />
               : !zeilen.length ? <Leer text="Keine Einträge." />
               : (
-                <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'auto' }}>
+                <Paper variant="outlined" sx={{ borderRadius: '4px', overflow: 'auto' }}>
                   <Box sx={{ display: 'grid', gridTemplateColumns: `140px repeat(${spalten.length}, minmax(108px, 1fr))`, minWidth: 140 + spalten.length * 108 }}>
                     <Box sx={{ position: 'sticky', left: 0, zIndex: 2, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }} />
                     {spalten.map((z, i) => (
-                      <Box key={z.nr} sx={{ px: 1, py: 1, borderBottom: 1, borderLeft: 1, borderColor: 'divider', bgcolor: i === jetztSpalte ? alpha(t.palette.primary.main, 0.07) : 'background.default' }}>
-                        <Typography sx={{ fontWeight: 600, fontSize: 13, color: i === jetztSpalte ? 'primary.main' : 'text.primary' }}>{z.bezeichnung || z.nr}.</Typography>
-                        <Typography variant="caption" color="text.secondary">{z.beginn}–{z.ende}</Typography>
+                      <Box key={z.nr} sx={{ px: 1, py: 0.875, borderBottom: 1, borderLeft: 1, borderColor: 'divider', bgcolor: i === jetztSpalte ? alpha(t.palette.primary.main, 0.028) : 'background.paper',
+                        boxShadow: i === jetztSpalte ? `inset 0 2px 0 ${t.palette.primary.main}` : undefined, fontVariantNumeric: 'tabular-nums' }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: 13, lineHeight: '18px', color: i === jetztSpalte ? 'primary.main' : 'text.primary' }}>{z.bezeichnung || z.nr}.</Typography>
+                        <Typography sx={{ fontSize: 11, lineHeight: '14px', color: 'text.secondary' }}>{z.beginn}–{z.ende}</Typography>
                       </Box>
                     ))}
                     {zeilen.map(z => {
@@ -70,14 +71,14 @@ export default function TagSeite({ teile }: SeitenProps) {
                         const bis = Math.min(max, Math.max(...hier.map(k => k.bis)));
                         for (let n = s.nr + 1; n <= bis; n++) belegt.add(n);
                         zellen.push(
-                          <Box key={s.nr} sx={{ gridColumn: `span ${bis - s.nr + 1}`, borderLeft: 1, borderBottom: 1, borderColor: 'divider', p: 0.4, display: 'flex', gap: 0.4, minHeight: 64 }}>
+                          <Box key={s.nr} sx={{ gridColumn: `span ${bis - s.nr + 1}`, borderLeft: 1, borderBottom: 1, borderColor: 'divider', p: '3px', display: 'flex', gap: '3px', minHeight: 64 }}>
                             {hier.map((k, i) => <Kachel key={i} k={k} typ={typ} hoehe={60} vorbei={k.status === 'regulaer' && vergangen(k, heute, jetzt)} onOpen={x => setDetails({ k: x, liste: alle })} style={{ flex: 1, minWidth: 0 }} />)}
                           </Box>,
                         );
                       }
                       return [
                         <Box key={`k-${z.kurz}`} sx={{ position: 'sticky', left: 0, zIndex: 1, bgcolor: 'background.paper', px: 1.5, py: 1, borderBottom: 1, borderColor: 'divider', minWidth: 0 }}>
-                          <Typography sx={{ fontWeight: 600 }}>{z.kurz}</Typography>
+                          <Typography sx={{ fontWeight: 600, fontSize: 13.5 }}>{z.kurz}</Typography>
                           {z.name !== z.kurz && <Typography variant="caption" color="text.secondary" noWrap component="div">{z.name}</Typography>}
                         </Box>,
                         ...zellen,

@@ -5,7 +5,7 @@
 #   ./update.sh                        sofort aktualisieren (im Ordner mit der docker-compose-Datei aufrufen)
 #   ./update.sh --wenn-angefordert     nur, wenn in der Administration „Update installieren“ geklickt wurde
 #                                      (UNTPLANWEB_UPDATE_MODUS=datei), z. B. per cron jede Minute:
-#                                      * * * * * cd /opt/untplan && ./update.sh --wenn-angefordert >> update.log 2>&1
+#                                      * * * * * cd /opt/untplannext && ./update.sh --wenn-angefordert >> update.log 2>&1
 #   ./update.sh --ohne-sicherung       ohne vorherige Sicherung (nicht empfohlen)
 #
 # Datenbank:

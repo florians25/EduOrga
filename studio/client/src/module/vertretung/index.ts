@@ -56,7 +56,7 @@ const modul: StudioModul = {
     'vertretung.vorheriger': () => blaettern(-1),
   },
   eintraege: [
-    { id: 'vertretung.tagesplanung', text: 'Tagesplanung', arbeitsplatz: 'tagesplanung', braucht: D, gruppe: 'Vertretungsplanung', hinweis: 'Kalender, Abwesenheiten, Vertretungen, Vorschlag und Tagespläne zusammen' },
+    { id: 'vertretung.tagesplanung', text: 'Tagesplanung', arbeitsplatz: 'tagesplanung', braucht: D, gruppe: 'Vertretungsplanung', hinweis: 'Vertretungen des Tages, Vorschlag und Tagespläne von Klasse und Lehrkraft zusammen' },
     { id: 'vertretung.kalender', text: 'Kalender', ansicht: ansicht('vertretung.kalender'), braucht: D, gruppe: 'Vertretungsplanung', menue: [
       { text: 'Kalender', ansicht: ansicht('vertretung.kalender') },
       { text: 'Heute', befehl: 'vertretung.heute' },

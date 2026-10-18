@@ -10,7 +10,7 @@ namespace UntPlanWeb.Dienste;
 /// <list type="bullet">
 /// <item><c>UNTPLANWEB_UPDATE_PRUEFEN</c> = 0 schaltet die Prüfung auf neue Versionen ab (Standard: an).</item>
 /// <item><c>UNTPLANWEB_UPDATE_URL</c> = Quelle der neuesten Version (Standard: GitHub-Releases von florians25/UntPlanNext,
-/// <c>…/releases/latest</c> – mit Versionshinweisen; alternativ die Tags des Images <c>ghcr://florians25/untplan-web</c>).</item>
+/// <c>…/releases/latest</c> – mit Versionshinweisen; alternativ die Tags des Images <c>ghcr://florians25/untplannext-web</c>).</item>
 /// <item><c>UNTPLANWEB_UPDATE_TAG_PRAEFIX</c> = nur Tags mit diesem Präfix berücksichtigen (z. B. <c>web-v</c>).</item>
 /// <item><c>UNTPLANWEB_UPDATE_MODUS</c> = <c>aus</c> | <c>watchtower</c> | <c>datei</c> – wie „Update installieren“ ausgelöst wird.</item>
 /// <item><c>UNTPLANWEB_UPDATE_WATCHTOWER_URL</c>, <c>UNTPLANWEB_UPDATE_WATCHTOWER_TOKEN</c> = HTTP-API von Watchtower (<c>http://watchtower:8080/v1/update</c>).</item>
@@ -22,7 +22,7 @@ public sealed class Updateeinstellungen
     /// <summary>Standardquelle: GitHub-Releases von florians25/UntPlanNext (neueste veröffentlichte Version mit Versionshinweisen).</summary>
     public const string Standardquelle = Updatepruefung.StandardUrl;
     /// <summary>Alternative Quelle: Tags des Web-Images (passt genau zu <c>docker compose pull</c>).</summary>
-    public const string Imagequelle = "ghcr://florians25/untplan-web";
+    public const string Imagequelle = "ghcr://florians25/untplannext-web";
 
     public bool Pruefen { get; init; } = true;
     public string? Url { get; init; }

@@ -1,5 +1,5 @@
-// Stundenpläne (Klasse, Lehrkraft, Raum, „Mein Stundenplan“): Werkzeugleiste mit Elementwahl (Alt+←/→), Woche bzw. Tag mit Kalender,
-// Umschalter Woche/Tag, Legende mit Hervorhebung, Menü „Ansicht“ und Hilfe; darunter das Wochenraster. Klick auf eine Stunde öffnet
+// Stundenpläne (Klasse, Lehrkraft, Raum, „Mein Stundenplan“): flache Werkzeugleiste mit Elementwahl (Alt+←/→), Woche bzw. Tag mit
+// Kalender, Segmentschalter Woche/Tag, Legende als Text mit kleinen Mustern (Hervorhebung), Menü „Ansicht“ und Hilfe; darunter das Wochenraster. Klick auf eine Stunde öffnet
 // die Stundendetails (mit Klassenbuch für Lehrkräfte).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -58,9 +58,9 @@ export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h4" sx={{ mb: 1.5 }}>Darstellung</Typography>
             <Stack gap={1.25}>
-              <Stack direction="row" gap={1.5} alignItems="center"><Muster art="regulaer" gross /><Typography variant="body2"><b>Unterricht</b> – getönt in der Fachfarbe</Typography></Stack>
+              <Stack direction="row" gap={1.5} alignItems="center"><Muster art="regulaer" gross /><Typography variant="body2"><b>Unterricht</b> – weiße Kachel, die Fachfarbe steht als kleines Quadrat vor dem Fachkürzel</Typography></Stack>
               {ARTEN.map(a => <Stack key={a.art} direction="row" gap={1.5} alignItems="center"><Muster art={a.art} gross /><Typography variant="body2"><b>{a.text}</b> – {a.hinweis}</Typography></Stack>)}
-              <Typography variant="body2" color="text.secondary">Petrolfarben unterstrichen ist der neue Wert, davor durchgestrichen der bisherige (z. B. <s>HOF</s> <b>BEC</b>). „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext.</Typography>
+              <Typography variant="body2" color="text.secondary">Petrolfarben unterstrichen ist der neue Wert, davor durchgestrichen der bisherige (z. B. <s>HOF</s> <b>BEC</b>); die Plakette nennt die Art („Vertretung“, „Raum“, „Fach“). „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext.</Typography>
             </Stack>
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
@@ -198,8 +198,8 @@ export default function PlanSeite({ teile }: SeitenProps) {
 
   return (
     <Seite dokumentTitel={titel}>
-      <Box ref={leiste} className="nicht-drucken" sx={{ position: 'sticky', top: oben, zIndex: 8, bgcolor: 'background.default', pt: { xs: 0.5, lg: 0 }, pb: 1.5, mt: { lg: -1 } }}>
-        <Paper variant="outlined" sx={{ p: 1.25, borderRadius: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.25, rowGap: 1.25 }}>
+      <Box ref={leiste} className="nicht-drucken" sx={{ position: 'sticky', top: oben, zIndex: 8, bgcolor: 'background.default', pt: { xs: 0.5, lg: 0 }, pb: 1.25, mt: { lg: -1 } }}>
+        <Box role="toolbar" aria-label="Stundenplan" sx={{ py: 1, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, rowGap: 1, borderBottom: 1, borderColor: 'divider' }}>
           {istMein ? (
             <Box sx={{ px: 1, minWidth: 0 }}>
               <Typography sx={{ fontWeight: 600 }}>{TYPEN[typ]} {element}{kind?.name ? ` · ${kind.name}` : ''}</Typography>
@@ -216,37 +216,37 @@ export default function PlanSeite({ teile }: SeitenProps) {
           )}
           <Box sx={{ flex: 1 }} />
           <AnsichtMenue einst={einst} setEinst={setEinst} mitAbwesenheiten={istMein} />
-          <Tooltip title="Hilfe zum Stundenplan"><IconButton onClick={() => setHilfe(true)} aria-label="Hilfe zum Stundenplan"><HelpOutlineRounded /></IconButton></Tooltip>
-        </Paper>
+          <Tooltip title="Hilfe zum Stundenplan"><IconButton size="small" onClick={() => setHilfe(true)} aria-label="Hilfe zum Stundenplan"><HelpOutlineRounded fontSize="small" /></IconButton></Tooltip>
+        </Box>
         {p && (
-          <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap" sx={{ mt: 1.25, px: 0.5 }}>
+          <Stack direction="row" alignItems="flex-end" gap={1.5} flexWrap="wrap" sx={{ mt: 1.5 }}>
             <Box sx={{ minWidth: 0, mr: 1 }}>
-              <Typography component="h1" sx={{ fontSize: 18, fontWeight: 600, lineHeight: 1.2 }} noWrap>{TYPEN[typ]} {p.element}{langname(p) ? <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}> · {langname(p)}</Box> : null}</Typography>
-              <Typography variant="caption" color="text.secondary">KW {kalenderwoche(mo)} · {wochenText(mo, p.tage.length)}{p.woche ? ` · ${p.woche}-Woche` : ''}</Typography>
+              <Typography component="h1" sx={{ fontSize: 20, fontWeight: 600, lineHeight: 1.25 }} noWrap>{TYPEN[typ]} {p.element}{langname(p) ? <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}> · {langname(p)}</Box> : null}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>KW {kalenderwoche(mo)} · {wochenText(mo, p.tage.length)}{p.woche ? ` · ${p.woche}-Woche` : ''}</Typography>
             </Box>
             <Box sx={{ ml: { md: 'auto' } }}><Legende karten={p.karten} typ={typ} fokus={fokus} setFokus={setFokus} /></Box>
           </Stack>
         )}
         {p && einst.ansicht === 'tag' && (
-          <Stack direction="row" gap={0.75} sx={{ mt: 1.25, overflowX: 'auto', pb: 0.25 }} role="group" aria-label="Tag wählen">
+          <ToggleButtonGroup exclusive size="small" value={tagIndex} onChange={(_, v) => v !== null && setTagWahl(v)} aria-label="Tag wählen"
+            sx={{ mt: 1.25, display: 'flex', width: { xs: '100%', md: 'fit-content' }, overflowX: 'auto' }}>
             {p.tage.map((x, i) => {
               const n = p.karten.filter(k => k.datum === x.datum && k.status !== 'regulaer').length;
-              const an = i === tagIndex;
               return (
-                <Button key={x.datum} onClick={() => setTagWahl(i)} variant={an ? 'contained' : 'outlined'} aria-pressed={an}
-                  sx={{ flexDirection: 'column', minWidth: 64, py: 0.5, lineHeight: 1.15, borderRadius: 2, position: 'relative' }}>
-                  <Box component="span" sx={{ fontSize: 12, opacity: 0.85 }}>{wochentagKurz(x.datum)}</Box>
-                  <Box component="span" sx={{ fontWeight: 600 }}>{datumKurz(x.datum)}</Box>
-                  {n > 0 && <Box component="span" sx={{ position: 'absolute', top: 4, right: 6, width: 6, height: 6, borderRadius: 2, bgcolor: an ? '#fff' : 'status.aenderung.main' }} />}
-                </Button>
+                <ToggleButton key={x.datum} value={i} title={n ? `${n} Änderung${n === 1 ? '' : 'en'}` : undefined}
+                  sx={{ flex: { xs: 1, md: 'none' }, minWidth: 0, px: { xs: 0.5, md: 1.5 }, gap: 0.5, position: 'relative', fontVariantNumeric: 'tabular-nums', flexDirection: { xs: 'column', sm: 'row' }, lineHeight: 1.2 }}>
+                  <Box component="span" sx={{ fontWeight: 600 }}>{wochentagKurz(x.datum)}</Box>
+                  <Box component="span" sx={{ fontWeight: 400 }}>{datumKurz(x.datum)}</Box>
+                  {n > 0 && <Box component="span" aria-hidden sx={{ position: 'absolute', top: 4, right: 4, width: 5, height: 5, bgcolor: 'status.aenderung.main' }} />}
+                </ToggleButton>
               );
             })}
-          </Stack>
+          </ToggleButtonGroup>
         )}
       </Box>
       <Fehler fehler={plan.fehler} neu={plan.neu} />
       {!p ? <Laden hoehe={400} /> : (
-        <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'visible', opacity: plan.laedt ? 0.7 : 1, transition: 'opacity .12s' }}>
+        <Paper variant="outlined" sx={{ borderRadius: '4px', overflow: 'visible', opacity: plan.laedt ? 0.7 : 1, transition: 'opacity .12s' }}>
           <Wochenraster plan={p} onOpen={(k, l) => setDetails({ k, liste: l })}
             optionen={{ nurTag: einst.ansicht === 'tag' ? tagIndex : null, kartenZeiten: einst.zeiten, aufsichten: einst.aufsichten, abwesenheiten: einst.abwesenheiten, fokus, oben: oben + leistenHoehe }} />
         </Paper>

@@ -56,7 +56,8 @@
 .ra-eintrag .fusszeile .plakette { position: static; flex-shrink: 0; margin-left: auto; }
 .ra-eintrag .fusszeile .online { flex-shrink: 0; }
 .ra-eintrag .vt-leer { color: var(--colorNeutralForeground3); }
-.ra.ra-tag .ra-gitter { min-width: 220px; grid-template-columns: 64px repeat(var(--tage), minmax(0, 1fr)); }
+.ra.ra-tag .ra-gitter { min-width: 220px; grid-template-columns: 76px repeat(var(--tage), minmax(0, 1fr)); }
+.ra.ra-tag .ra-stunde .zeit { white-space: nowrap; }
 .ra.ra-tag .ra-eintrag { padding: 4px 6px; }
 .ra-eintrag .online { font-size: 10px; font-weight: 500; color: var(--up-frei); text-transform: uppercase; letter-spacing: .04em; }
 .ra.kompakt .ra-eintrag { padding: 1px 3px; }

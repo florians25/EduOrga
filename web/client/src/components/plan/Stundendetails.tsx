@@ -1,5 +1,5 @@
-// Stundendetails als Seitenleiste rechts: Kopf in der Fachfarbe (Klassen | Gruppe | Fach, Tag | Datum | Zeit | Raum | Lehrkraft mit Links
-// auf die Pläne, Änderungen „alt → neu“), Plaketten, Wahl Block/Einzelstunde. Reiter „Klassenbuch“ (Kollegium: Schülerkacheln mit
+// Stundendetails als Seitenleiste rechts: sachlicher weißer Kopf (Fachquadrat und Fach, Plaketten, darunter Angaben als Schlüssel/Wert:
+// Datum, Zeit, Klasse, Lehrkraft, Raum mit Links auf die Pläne, Änderungen „alt → neu“), Wahl Block/Einzelstunde. Reiter „Klassenbuch“ (Kollegium: Schülerkacheln mit
 // Anwesenheit, Lehrstoff, Abwesende Schüler*innen, Hausaufgaben, Klassenbucheinträge, Klassendienste, Ticket) und „Details“ (online –
 // nur Anzeige, festgelegt in UntPlan Studio –, Vertretungstext, Lehrstoff, Hausaufgaben, Notizen, Räume). Fuß: Stand bzw. Blättern,
 // Prüfung erstellen/editieren/löschen.
@@ -43,7 +43,9 @@ import {
   EinstellungenPanel, SitzplanAnordnung, SitzplanEditor, darfIrgendwas, kbEinstellungen, kbEinstellungenSpeichern, kontextVon, nameZeilen, schulVorgabeSetzen, sortieren, stundeLaden,
   avatarFarbe, initialenVon, type SitzDaten, type Schueler,
 } from '../klassenbuch/sitzplan';
-import { gueltigeFarbe, istEntfall as entfallVon, KEIN_ELEMENT, kuerzel, sichererLink, statusText, verlegungsText, verlegungsRichtung, istVerlegung, type Typ } from './logik';
+import { FachQuadrat, PlaketteChip } from './Kachel';
+import LinkRounded from '@mui/icons-material/LinkRounded';
+import { istEntfall as entfallVon, KEIN_ELEMENT, kuerzel, sichererLink, statusText, verlegungsText, verlegungsRichtung, istVerlegung, type Typ } from './logik';
 
 interface Einzelstunde { stunde: number; beginn: string; ende: string; eintrag: boolean }
 interface StundenAntwort { eintrag: Eintrag | null; darf: boolean; blockEintrag?: Eintrag | null; einzelstunden?: Einzelstunde[]; einzelEintraege?: (Eintrag & { einzelstunde?: number; stunde?: number })[]; online?: boolean; onlineLink?: string }
@@ -83,7 +85,7 @@ function Abschnitt({ titel, zahl, rechts, children }: { titel: string; zahl?: nu
     <Box component="section" sx={{ py: 2, borderBottom: 1, borderColor: 'divider', '&:last-of-type': { borderBottom: 0 } }}>
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.25 }}>
         <Typography variant="h5" component="h3">{titel}</Typography>
-        {!!zahl && <Box sx={{ px: 0.9, minWidth: 22, height: 20, borderRadius: 999, bgcolor: 'action.hover', fontSize: 12, fontWeight: 600, display: 'grid', placeItems: 'center' }}>{zahl}</Box>}
+        {!!zahl && <Box sx={{ px: 0.75, minWidth: 20, height: 18, borderRadius: '3px', bgcolor: 'action.hover', fontVariantNumeric: 'tabular-nums', fontSize: 12, fontWeight: 600, display: 'grid', placeItems: 'center' }}>{zahl}</Box>}
         <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>{rechts}</Box>
       </Stack>
       {children}
@@ -251,7 +253,6 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
   }, [reiter, k]);
 
   // ---------------------------------------------------------------- Kopf
-  const farbe = gueltigeFarbe(k.farbe) ?? t.palette.primary.main;
   const entfall = istEntfall();
   const alleKlassen = [...k.klassen, ...(k.mitklassen || [])];
   const linkTyp = (x: PlanTyp) => (kollegium || (x !== 'lehrer' && (x !== 'klasse' || !!ich.element)) ? x : null);
@@ -269,35 +270,44 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
   const online = einzel && d?.st?.blockEintrag?.online ? true : (d?.st?.eintrag?.online ?? d?.st?.online ?? (!einzel && k.online)) && !entfall;
   const onlineLink = (d?.st?.eintrag?.onlineLink || d?.st?.onlineLink || (!einzel ? k.onlineLink : '') || (einzel ? d?.st?.blockEintrag?.onlineLink : '')) ?? '';
 
+  const kv = (titel: string, inhalt: ReactNode) => (
+    <>
+      <Typography component="dt" sx={{ fontSize: 12, color: 'text.secondary', lineHeight: '20px' }}>{titel}</Typography>
+      <Typography component="dd" sx={{ m: 0, fontSize: 13.5, lineHeight: '20px', minWidth: 0, fontVariantNumeric: 'tabular-nums' }}>{inhalt}</Typography>
+    </>
+  );
   const kopf = (
-    <Box sx={{ position: 'relative', px: 2.5, pt: 2.25, pb: 1.5, background: `linear-gradient(180deg, ${alpha(farbe, 0.16)}, ${alpha(farbe, 0.04)})`, borderTop: `4px solid ${entfall ? t.palette.status.entfall.main : farbe}` }}>
+    <Box sx={{ position: 'relative', px: 2.5, pt: 2, pb: 1.75, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
       <Stack direction="row" alignItems="flex-start" gap={1}>
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="h2" component="h2" sx={{ fontSize: 21, lineHeight: 1.25, textDecoration: entfall ? 'line-through' : 'none', textDecorationThickness: 1.5 }}>
-            {alleKlassen.length > 0 && <KopfWerte werte={alleKlassen} typ={linkTyp('klasse')} datum={k.datum} />}
-            {k.gruppe && <><Box component="span" sx={{ mx: 1, color: 'text.disabled' }}>|</Box>{k.gruppe}</>}
-            {alleKlassen.length > 0 && <Box component="span" sx={{ mx: 1, color: 'text.disabled' }}>|</Box>}
-            {fachTeil}
-          </Typography>
-          {k.fachName && k.fachName !== k.fach && <Typography variant="body2" color="text.secondary">{k.fachName}</Typography>}
-          <Typography sx={{ mt: 0.75, fontSize: 14, color: 'text.secondary', display: 'flex', flexWrap: 'wrap', columnGap: 1.25, rowGap: 0.25 }}>
-            <span>{wochentag(k.datum)}, {datumDe(k.datum)}</span><span>{zeitText}</span>
-            {k.raeume.length > 0 && !online && <span>Raum <Box component="span" sx={{ color: 'text.primary' }}><KopfWerte werte={k.raeume} typ="raum" datum={k.datum} /></Box></span>}
-            {k.lehrer.length > 0 && <span><Box component="span" sx={{ color: 'text.primary' }}><KopfWerte werte={k.lehrer} typ={linkTyp('lehrer')} datum={k.datum} /></Box></span>}
-          </Typography>
+          <Stack direction="row" alignItems="center" gap={1.25} sx={{ minWidth: 0 }}>
+            {k.fach && <FachQuadrat farbe={k.farbe} groesse={10} />}
+            <Typography variant="h2" component="h2" sx={{ fontSize: 20, lineHeight: 1.3, fontWeight: 600, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: entfall ? 'line-through' : 'none', textDecorationThickness: 1, minWidth: 0 }}>
+              {fachTeil}
+              {k.gruppe && <Box component="span" sx={{ ml: 1, fontWeight: 400, color: 'text.secondary' }}>{k.gruppe}</Box>}
+            </Typography>
+          </Stack>
+          {k.fachName && k.fachName !== k.fach && <Typography variant="body2" color="text.secondary" sx={{ pl: k.fach ? '22px' : 0 }}>{k.fachName}</Typography>}
           {(plaketten.length > 0 || online || einzel) && (
-            <Stack direction="row" gap={0.75} flexWrap="wrap" sx={{ mt: 1 }}>
-              {plaketten.map((p, i) => <Tooltip key={i} title={p.hinweis ?? ''}><span><Plakette ton={p.ton} fest={p.ton !== 'neutral'}>{p.text}</Plakette></span></Tooltip>)}
-              {online && <Plakette ton="primaer" fest><VideocamOutlined sx={{ fontSize: 14 }} />Online</Plakette>}
-              {einzel && <Plakette ton="primaer">{einzel}. Stunde</Plakette>}
+            <Stack direction="row" columnGap={1.5} rowGap={0.5} flexWrap="wrap" alignItems="center" sx={{ mt: 0.75, pl: k.fach ? '22px' : 0 }}>
+              {plaketten.map((p, i) => <PlaketteChip key={i} p={{ text: p.text, ton: p.ton, hinweis: p.hinweis }} />)}
+              {online && <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: 'primary.main', fontSize: 10.5, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}><LinkRounded sx={{ fontSize: 13 }} />Online</Box>}
+              {einzel && <PlaketteChip p={{ text: `${einzel}. Stunde`, ton: 'neutral' }} />}
             </Stack>
           )}
+          <Box component="dl" sx={{ m: 0, mt: 1.5, display: 'grid', gridTemplateColumns: '84px minmax(0, 1fr)', columnGap: 1.5, rowGap: 0.25 }}>
+            {kv('Datum', `${wochentag(k.datum)}, ${datumDe(k.datum)}`)}
+            {kv('Zeit', zeitText)}
+            {alleKlassen.length > 0 && kv(alleKlassen.length > 1 ? 'Klassen' : 'Klasse', <KopfWerte werte={alleKlassen} typ={linkTyp('klasse')} datum={k.datum} />)}
+            {k.lehrer.length > 0 && kv(k.lehrer.length > 1 ? 'Lehrkräfte' : 'Lehrkraft', <KopfWerte werte={k.lehrer} typ={linkTyp('lehrer')} datum={k.datum} />)}
+            {online ? kv('Raum', 'Online-Unterricht') : k.raeume.length > 0 && kv(k.raeume.length > 1 ? 'Räume' : 'Raum', <KopfWerte werte={k.raeume} typ="raum" datum={k.datum} />)}
+          </Box>
         </Box>
-        <Stack direction="row" className="nicht-drucken">
+        <Stack direction="row" className="nicht-drucken" sx={{ mt: -0.5, mr: -1 }}>
           {istBlock && reiter !== 'raum' && (
-            <Tooltip title="Ganzer Block oder Einzelstunde"><IconButton onClick={e => setBlockMenue(e.currentTarget)} aria-label="Ganzer Block oder Einzelstunde" aria-haspopup="menu"><ExpandMoreRounded /></IconButton></Tooltip>
+            <Tooltip title="Ganzer Block oder Einzelstunde"><IconButton size="small" onClick={e => setBlockMenue(e.currentTarget)} aria-label="Ganzer Block oder Einzelstunde" aria-haspopup="menu"><ExpandMoreRounded fontSize="small" /></IconButton></Tooltip>
           )}
-          <Tooltip title="Schließen (Esc)"><IconButton onClick={schliessen} aria-label="Schließen"><CloseRounded /></IconButton></Tooltip>
+          <Tooltip title="Schließen (Esc)"><IconButton size="small" onClick={schliessen} aria-label="Schließen"><CloseRounded fontSize="small" /></IconButton></Tooltip>
         </Stack>
       </Stack>
       <Menu anchorEl={blockMenue} open={!!blockMenue} onClose={() => setBlockMenue(null)}>
