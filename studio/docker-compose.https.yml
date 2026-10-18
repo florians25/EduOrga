@@ -1,4 +1,4 @@
-# UntPlan Studio (Beta) mit HTTPS (Let's Encrypt über Caddy) unter eigener Domain.
+# UntPlan Studio mit HTTPS (Let's Encrypt über Caddy) unter eigener Domain.
 # Voraussetzung: ein DNS-Name (z. B. studio.meine-schule.de), der auf diesen Server zeigt, Ports 80 und 443 offen.
 #   STUDIO_DOMAIN=studio.meine-schule.de STUDIO_ADMIN_PASSWORT=bitte-aendern docker compose -f docker-compose.https.yml up -d
 # Läuft auf demselben Server bereits UntPlanWeb mit Caddy, stattdessen docker-compose.gemeinsam.yml verwenden.

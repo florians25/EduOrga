@@ -5,7 +5,7 @@
 	header Strict-Transport-Security "max-age=31536000"
 }
 
-# UntPlan Studio (Beta)
+# UntPlan Studio
 {$STUDIO_DOMAIN} {
 	encode zstd gzip
 	reverse_proxy untplanstudio:8080 {

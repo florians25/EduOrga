@@ -1,4 +1,4 @@
-# UntPlanWeb UND UntPlan Studio (Beta) auf einem Server, jeweils mit eigener Domain und HTTPS über EINEN Caddy.
+# UntPlanWeb UND UntPlan Studio auf einem Server, jeweils mit eigener Domain und HTTPS über EINEN Caddy.
 # Ersetzt web/docker-compose.https.yml (gleiche Volumes für UntPlanWeb: vorhandene Daten bleiben erhalten, wenn das
 # Compose-Projekt denselben Namen trägt, z. B. „-p web“).
 #   UNTPLANWEB_DOMAIN=plan.meine-schule.de STUDIO_DOMAIN=studio.meine-schule.de STUDIO_ADMIN_PASSWORT=bitte-aendern \

@@ -1,4 +1,4 @@
-# UntPlan Studio (Beta) – Container-Image. Build-Kontext ist das Wurzelverzeichnis des UntPlan-Repositorys,
+# UntPlan Studio – Container-Image. Build-Kontext ist das Wurzelverzeichnis des UntPlan-Repositorys,
 # weil das Studio die gemeinsame Fachlogik src/UntPlan.Core (und src/UntPlan.Web.Contracts) verwendet:
 #   docker build -f studio/Dockerfile -t untplanstudio .
 
@@ -17,8 +17,8 @@ ARG VERSION=1.0.0
 RUN dotnet publish studio/src/UntPlanStudio/UntPlanStudio.csproj -c Release -o /app --no-restore -p:UseAppHost=false -p:Version=$VERSION
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
-LABEL org.opencontainers.image.title="UntPlan Studio (Beta)" \
-      org.opencontainers.image.description="Die Desktop-Anwendung UntPlan als Browser-Anwendung (Beta)" \
+LABEL org.opencontainers.image.title="UntPlan Studio" \
+      org.opencontainers.image.description="Stunden- und Vertretungsplanung für Schulen im Browser" \
       org.opencontainers.image.source="https://github.com/florians25/UntPlan"
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     STUDIO_DATEN=/data \

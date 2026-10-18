@@ -1,22 +1,29 @@
-# UntPlan Studio (Beta)
+# UntPlan Studio
 
-> **Beta / experimentell.** UntPlan Studio bringt die Desktop-Anwendung UntPlan in den Browser. Es ist ein zusätzliches
-> Werkzeug – Desktop-Anwendung, UntPlanWeb (`web/`), PWA (`mobile/`) und iOS-App laufen unverändert weiter.
-> Bitte wichtige Schuldateien zusätzlich sichern (Datei → Herunterladen bzw. mit der Desktop-Anwendung).
+**Stunden-, Kurs- und Vertretungsplanung für Schulen – als Web-Anwendung.** UntPlan Studio ist das Planungswerkzeug
+von UntPlan: Stammdaten, Unterricht, Zeitwünsche, automatische und manuelle Stundenplanung, Vertretungsplanung,
+Pausenaufsichten, Auswertungen, Druck und Datenaustausch – im Browser, mit mehreren Benutzern gleichzeitig. Alle
+Berechnungen laufen auf dem Server mit der Fachlogik aus `src/UntPlan.Core`.
 
-Die Oberfläche ist an die Windows-Anwendung angelehnt (Titelleiste mit Schnellzugriff, Menüband mit den Reitern Start,
-Dateneingabe, Planung, Stundenpläne, Vertretungsplanung …, Fenster-Arbeitsbereich mit verschiebbaren und andockbaren
-Unterfenstern, Tabellen mit den Spalten des Desktops, Stundenplan-Raster, Statuszeile). Alle Berechnungen laufen auf dem
-Server mit derselben Fachlogik (`src/UntPlan.Core`); Schuldateien (`.up`) sind zwischen Desktop und Studio austauschbar.
+![Übersicht](docs/bilder/uebersicht.png)
 
-**Stand dieser Ausbaustufe:** Anmeldung und Benutzer, Schuldateien (neu, Beispielschule, hochladen `.up`/BAL, speichern,
-herunterladen, BAL-Import, Rückgängig/Wiederholen, Autospeicherung), Stammdaten (Klassen, Lehrkräfte, Räume, Fächer,
-Raumgruppen, Gänge, Abteilungen, Abwesenheitsgründe, Schüler), Unterricht (inkl. Kopplungen), Stundenpläne je Klasse,
-Lehrkraft, Raum, Fach mit manuellem Planen per Drag & Drop, Fensteranordnungen, Stundenplan-/Vertretungsmodus.
-Einstellungen der Schuldatei (Schuldaten, Zeitraster mit Pausen, Kalender/Ferien mit NRW-Vorschlag, Perioden,
-Unterrichtsgruppen), Druck als PDF direkt vom Server (Stundenpläne im Schwarz-Weiß-Layout des Desktop-Drucks, Vertretungsplan
-nach Seitenlayout, Übersichtspläne, Berichte; dazu HTML, Info-Stundenplan, iCalendar), Übersichtspläne quer, eigene Stundenplanformate.
-Ausgegraute Knöpfe im Menüband folgen in weiteren Ausbaustufen (siehe `ARCHITEKTUR.md`).
+| Manuell planen | Vertretungsplanung | Befehlssuche |
+|---|---|---|
+| ![Planen](docs/bilder/planen.png) | ![Vertretung](docs/bilder/vertretung.png) | ![Suche](docs/bilder/suche.png) |
+
+## Oberfläche
+
+* **Seitenleiste** mit den Arbeitsbereichen *Stammdaten, Unterricht, Planung, Stundenpläne, Oberstufe, Auswertung,
+  Ausgabe, Datenaustausch, Schule* – im Vertretungsmodus zusätzlich *Vertretungsplanung, Ereignisse, Tagespläne,
+  Auswertung und Ausgabe*. Selten gebrauchte Punkte stehen unter „weitere“. Strg+B klappt die Leiste ein.
+* **Kopfleiste**: Schuldatei wählen (zuletzt verwendet, alle Dateien, neu, hochladen), Rückgängig/Wiederholen,
+  Speichern mit Speicherstand und Live-Verbindung, aktive Benutzer, **Befehlssuche** (Strg+K – findet jede Funktion),
+  Modus *Stundenplanung / Vertretungsplanung*, im Vertretungsmodus das Planungsdatum, Arbeitsbereich und Konto.
+* **Arbeitsbereich**: Ansichten öffnen als Reiter. Reiter lassen sich an den Rand eines Bereichs ziehen (teilt ihn),
+  über „Rechts teilen“/„Unten teilen“ nebeneinander stellen, Trenner verschieben, ein Bereich lässt sich vergrößern.
+  Die Anordnung wird je Schuldatei gemerkt; eigene Anordnungen lassen sich speichern.
+* **Übersicht**: Kennzahlen der Schuldatei, Planqualität (Kollisionen, Hohlstunden, Zeitwunschverletzungen …) und
+  Schnellzugriff.
 
 ## Lokal starten
 
@@ -53,7 +60,7 @@ docker build -f studio/Dockerfile -t untplanstudio .
 |---|---|
 | `docker-compose.yml` | HTTP auf Port 8090 (z. B. hinter einem vorhandenen Reverse-Proxy) |
 | `docker-compose.https.yml` + `Caddyfile` | eigene Domain mit HTTPS (Let's Encrypt über Caddy) |
-| `docker-compose.gemeinsam.yml` + `Caddyfile.gemeinsam` | UntPlanWeb **und** Studio auf einem Server, je eigene Domain, ein Caddy |
+| `docker-compose.gemeinsam.yml` + `Caddyfile.gemeinsam` | UntPlan Web **und** Studio auf einem Server, je eigene Domain, ein Caddy |
 
 ```bash
 cd studio
@@ -61,7 +68,7 @@ cd studio
 STUDIO_ADMIN_PASSWORT=bitte-aendern docker compose up -d
 # eigene Domain
 STUDIO_DOMAIN=studio.meine-schule.de STUDIO_ADMIN_PASSWORT=bitte-aendern docker compose -f docker-compose.https.yml up -d
-# zusammen mit UntPlanWeb (statt web/docker-compose.https.yml)
+# zusammen mit UntPlan Web (statt web/docker-compose.https.yml)
 UNTPLANWEB_DOMAIN=plan.meine-schule.de STUDIO_DOMAIN=studio.meine-schule.de STUDIO_ADMIN_PASSWORT=bitte-aendern \
   docker compose -f docker-compose.gemeinsam.yml up -d
 ```
@@ -85,16 +92,13 @@ Der Container läuft ohne Root-Rechte (Benutzer `app`), alle Daten liegen im Vol
 
 ## Bedienung (Kurzüberblick)
 
-* **Datei** (links im Menüband): Neu, Öffnen (Liste der Schuldateien auf dem Server, Datei hochladen per Auswahl oder
-  Ziehen), Speichern, Herunterladen (.up), BAL-Import, Schließen, Konto, Benutzer (Admin).
-* **Fenster**: Titelleiste ziehen, an den linken/rechten Rand oder in eine Ecke ziehen zum Andocken, an den oberen Rand
-  zum Maximieren; Start → Fenster: überlappend, nebeneinander, untereinander, Fensteranordnungen speichern/laden.
-  Die Anordnung wird je Schuldatei gemerkt.
 * **Tabellen**: Enter/F2 oder Tippen bearbeitet, Tab/Pfeile wechseln die Zelle, Entf leert, Leertaste setzt Haken,
   Strg+C/Strg+V kopiert/fügt ein (auch aus Tabellenkalkulationen), Umschalt/Strg+Klick markiert mehrere Zeilen,
   Rechtsklick auf die Kopfzeile blendet Spalten ein/aus, Kopfzeile ziehen verschiebt Spalten.
 * **Stundenplan**: Stunden per Drag & Drop verschieben oder tauschen; nicht verplante Stunden unten in den Plan ziehen.
-  Grün = frei, rot = Vorgabe verletzt, violett = kein Raum frei, Rahmen = Tausch möglich. Rechtsklick: fixieren, entplanen.
-* **Tastatur**: Strg+S Speichern, Strg+Z/Strg+Y Rückgängig/Wiederholen, Strg+Umschalt+V Vertretungsmodus.
+  Ziel grün = frei, rot = Vorgabe verletzt, violett = kein Raum frei, Rahmen = Tausch möglich. Rechtsklick: fixieren,
+  entplanen, Raum zuordnen, Tauschvorschläge.
+* **Tastatur**: Strg+K Befehlssuche, Strg+S Speichern, Strg+Z/Strg+Y Rückgängig/Wiederholen, Strg+Umschalt+V Modus
+  wechseln, Strg+B Seitenleiste, Strg+Bild↑/↓ Planungsdatum (Vertretungsmodus).
 
 Für Entwickler: Aufbau, API-Konventionen und „Neues Modul anlegen“ stehen in [`ARCHITEKTUR.md`](ARCHITEKTUR.md).

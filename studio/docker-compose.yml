@@ -1,4 +1,4 @@
-# UntPlan Studio (Beta) – einfache Installation (HTTP auf Port 8090, z. B. hinter einem vorhandenen Reverse-Proxy).
+# UntPlan Studio – einfache Installation (HTTP auf Port 8090, z. B. hinter einem vorhandenen Reverse-Proxy).
 #   STUDIO_ADMIN_PASSWORT=bitte-aendern docker compose up -d
 # Danach im Browser http://<server>:8090 öffnen und mit „admin“ anmelden.
 # Mit HTTPS und eigener Domain: docker-compose.https.yml; zusammen mit UntPlanWeb: docker-compose.gemeinsam.yml (siehe README).

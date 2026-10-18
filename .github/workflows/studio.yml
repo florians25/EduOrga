@@ -1,6 +1,6 @@
 name: UntPlan Studio
 
-# Eigener Ablauf für UntPlan Studio (Beta, Ordner studio/). Desktop (build.yml), UntPlanWeb (web.yml) und PWA (mobile.yml)
+# Eigener Ablauf für UntPlan Studio (Ordner studio/). Fachlogik (build.yml), UntPlan Web (web.yml) und UntPlan Mobile (mobile.yml)
 # bleiben davon unberührt.
 on:
   push:

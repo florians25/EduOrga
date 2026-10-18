@@ -1,77 +1,67 @@
 # UntPlan
 
-**Stunden- und Vertretungsplanung für Schulen in Nordrhein-Westfalen.** UntPlan ist eine klassische Windows-Desktopanwendung (C#, Windows Forms).
-Die Bedienung folgt dem Aufbau, den Schulen von gängigen Stundenplanprogrammen kennen: Menüband, Arbeitsfenster für Stammdaten,
-Zeitwünsche, Unterricht und Stundenpläne, Drag & Drop beim manuellen Planen. Das macht den Umstieg leicht.
+**Stunden- und Vertretungsplanung für Schulen in Nordrhein-Westfalen.** UntPlan besteht aus vier Oberflächen auf einer
+gemeinsamen Fachlogik:
 
-![Arbeitsbereich](docs/bilder/01_Arbeitsbereich.png)
+| Produkt | Für wen | Ordner |
+|---|---|---|
+| **UntPlan Studio** | Stundenplanung, Vertretungsplanung und Verwaltung – Web-Anwendung für Schulleitung und Planungsteam | [`studio/`](studio/README.md) |
+| **UntPlan Web** | Stundenplan, Vertretungen, Klassenbuch und Kommunikation für Lehrkräfte, Schülerinnen, Schüler und Eltern | [`web/`](web/README.md) |
+| **UntPlan Mobile** | installierbare App (PWA) zu UntPlan Web | [`mobile/`](mobile/README.md) |
+| **UntPlan für iOS** | native iPhone- und iPad-App zu UntPlan Web | [`ios/`](ios/README.md) |
+
+![UntPlan Studio](studio/docs/bilder/uebersicht.png)
+
+Alle Oberflächen folgen einem gemeinsamen Designsystem ([`design/DESIGN.md`](design/DESIGN.md)): Marine als
+Markenfarbe, IBM Plex Sans, Linien-Symbole, einheitliche Statusfarben für Entfall, Vertretung, Prüfung, Termin und Ferien.
 
 ## Funktionen
 
-- **Schuldaten:** Schuljahr, NRW-Schulformen, Zeitraster mit Vormittag, Nachmittag, fixer oder flexibler Mittagspause und Pausen, NRW-Ferien und -Feiertage (inkl. beweglicher Feiertage), A/B-Wochen.
-- **Stammdaten:** Klassen, Lehrer, Räume, Fächer, Raumgruppen, Gänge, Abteilungen, Abwesenheitsgründe und Schüler.
-  - Raster- und Formularansicht, gespeicherte Ansichten, Sortierung, Serienänderung, Kommentare, Umbenennen mit Verweisanpassung.
-  - Räume: Ausweichraum-Ringe, Wanderklassen, Raumgewicht 0–4.
-- **Zeitwünsche:** bestimmte Zeitwünsche (−3 … +3, Kernzeit) und unbestimmte Zeitwünsche, z. B. „ein freier Vormittag“.
-- **Unterricht:** einfacher und gekoppelter Unterricht, Doppelstunden, Blöcke, Kursbänder, A/B-Wochen, befristeter Unterricht, Lehrervorschlag, Spalte „nicht verplant“ mit Drag & Drop.
-- **Automatische Planung:**
-  - Gewichtung (26 Kriterien, 0–5) mit Verteilungsgrafik und Analyse.
-  - Optimierungsstrategien A, B, D und E mit mehreren Plänen, Bewertungszahl, Tausch- und Raumoptimierung.
-  - Diagnose der Eingabedaten und des Stundenplans.
-- **Manuelles Planen:**
-  - Verplanen, Verschieben und Tauschen per Drag & Drop mit Farbkennzeichnung (grün, rot, violett).
-  - Fixieren, Entplanen, Tauschvorschläge mit Gewinn.
-  - Raumzuordnung (Verdrängen, Kollision zulassen, Tauschen), Übersichtspläne.
-- **Stundenpläne:** Klassen-, Lehrer-, Raum- und Fachpläne, frei gestaltbare Formate (Grafik-Editor für Stundenfelder), Stundenlupe, Synchronisation, Druck, HTML, iCal.
-- **Vertretungsplanung:**
-  - Abwesenheiten von Lehrern, Klassen (mit Begleitlehrern) und Räumen.
-  - Automatisch erzeugte offene Vertretungen und ein Vertretungsvorschlag mit einstellbarer Gewichtung.
-  - **Bereitschaft:** Vertretungen aus einer Bereitschaftsstunde zählen nicht als Mehrarbeit.
-  - Entfall-Vorschlag für Randstunden ab Jahrgang EF, außerdem Raumvertretung, Verlegung, Betreuung, Sondereinsatz, Klausur und statt-Vertretung.
-  - Automatische Vertretung des ganzen Tages, Tagestexte.
-- **Pausenaufsichten:** Gänge × Pausen × Tage, automatische Einteilung, Aufsichtsvertretungen.
-- **Statistik:** Lehrer-Abrechnung mit der **NRW-Mehrarbeitsregel**: Vergütung erst ab mehr als 3 Stunden im Kalendermonat, abzüglich Minderstunden. Ausfallstatistik und CSV-Export.
-- **Ausgabe des Vertretungsplans:** Druck, HTML in Schüler- und Lehrerversion, Monitoransicht für Info-Bildschirme.
-- **Module:** Unterrichtsplanung und Wertrechnung (Soll/Ist, Werte-Faktoren, Unterrichts-Matrix, Stundentafel), Kursplanung für die Oberstufe (Kurswahlen, Kollisionsmatrix, automatische Bandbildung), Perioden, Abteilungsplanung.
-- **Import und Export:** SchILD-NRW-CSV für Lehrer, Klassen und Schüler. GPU-Format für den Umstieg aus anderen Programmen. HTML, iCal und CSV.
-- **WebPortal-Synchronisation:** Pläne und Vertretungen hochladen, Krankmeldungen von Lehrkräften abholen. Die Schnittstelle steht in [docs/SYNC_API.md](docs/SYNC_API.md), ein Referenzserver liegt unter `src/UntPlan.Portal`.
-- **UntPlanWeb:** Stundenplan, Vertretungsplan, Monitore, Klassenbuch und Rückmeldungen (Abwesenheiten, Raumbuchungen, Klausuren) im Browser. Läuft als Docker-Container, siehe [web/README.md](web/README.md).
-- **Hilfe (F1)** zu jedem Fenster, Eingabeassistent, Rückgängig und Wiederholen (50 Schritte).
+- **Schuldaten:** Schuljahr, NRW-Schulformen, Zeitraster mit Vormittag, Nachmittag, fixer oder flexibler Mittagspause und Pausen, NRW-Ferien und -Feiertage (inkl. beweglicher Feiertage), A/B-Wochen, Perioden.
+- **Stammdaten:** Klassen, Lehrkräfte, Räume, Fächer, Raumgruppen, Aufsichtsbereiche, Abteilungen, Abwesenheitsgründe, Schülerinnen und Schüler – mit Tabellenbearbeitung, Mehrfachänderung, Kommentaren und Umbenennen mit Verweisanpassung.
+- **Zeitwünsche:** bestimmte (−3 … +3, Kernzeit) und unbestimmte Zeitwünsche, z. B. „ein freier Vormittag“.
+- **Unterricht:** einfacher und gekoppelter Unterricht, Doppelstunden, Blöcke, Kursbänder, A/B-Wochen, befristeter Unterricht.
+- **Automatische Planung:** Gewichtung (26 Kriterien), mehrere Verfahren mit Ergebnisvergleich und Bewertungszahl, Tausch- und Raumoptimierung, Diagnose der Eingabedaten und des Plans.
+- **Manuelles Planen:** Verplanen, Verschieben und Tauschen per Drag & Drop mit Zielanzeige, Fixieren, Entplanen, Tauschvorschläge, Raumzuordnung, Gesamtübersichten.
+- **Stundenpläne:** Klassen-, Lehrkraft-, Raum- und Fachpläne, eigene Formate, Druck als PDF, HTML-Aushang, iCal.
+- **Vertretungsplanung:** Abwesenheiten von Lehrkräften, Klassen und Räumen, automatisch erzeugte offene Vertretungen, Vertretungsvorschlag mit Gewichtung, Bereitschaften, Entfall-Vorschlag ab EF, Verlegung, Betreuung, Sondereinsätze, Klausuren, Tagestexte, automatische Vertretung ganzer Tage.
+- **Pausenaufsichten:** Aufsichtsbereiche × Pausen × Tage, automatische Einteilung, Aufsichtsvertretungen.
+- **Auswertung:** Soll/Ist, Unterrichtsmatrix, Stundentafel, Vertretungsstatistik mit der **NRW-Mehrarbeitsregel** (Vergütung ab mehr als 3 Stunden im Kalendermonat, abzüglich Minderstunden), Ausfallstatistik, CSV.
+- **Oberstufe:** Kurswahlen, Kollisionsmatrix, automatische Bandbildung.
+- **Mehrbenutzerbetrieb:** mehrere Planende gleichzeitig, Bereichssperren, Exklusivbetrieb, Gruppen und Rechte.
+- **Import und Export:** SchILD-NRW-CSV (Lehrkräfte, Klassen, Schüler), BAL, GPU-Textdateien (Datenübernahme beim Umstieg), HTML, iCal, CSV.
+- **UntPlan Web:** Pläne und Vertretungen veröffentlichen, Abwesenheitsmeldungen, Raumbuchungen und Klausuren zurückholen. Die Schnittstelle steht in [docs/SYNC_API.md](docs/SYNC_API.md).
 
-Die Bedienung ist im **[Benutzerhandbuch](docs/HANDBUCH.md)** beschrieben.
+Die Bedienung von Studio beschreibt das **[Benutzerhandbuch](docs/HANDBUCH.md)**.
 
-## Installation
-
-Die GitHub-Actions-Pipeline erzeugt bei jedem Push drei Artefakte:
-
-- `UntPlan-Setup-x.y.z.exe`: Installer mit Startmenü-Eintrag und Dateiverknüpfung `.up`.
-- `UntPlan-portabel`: eine einzelne `UntPlan.exe`, die ohne installiertes .NET läuft.
-- `UntPlan-Portal`: der Portal-Referenzserver.
-
-Systemvoraussetzung: Windows 10 oder 11 (x64).
-
-## Entwicklung
+## Aufbau
 
 ```text
-src/UntPlan.Core     Fachlogik (Modell, Optimierung, Vertretungsplanung, Module, Import/Export, Portal-Client) – net8.0
-src/UntPlan.App      Windows-Oberfläche (WinForms, MDI, Menüband) – net8.0-windows
-src/UntPlan.Portal   WebPortal-Referenzserver (ASP.NET Core)
-tests/               xUnit-Tests (Optimierung, Vertretung, Planung, Austausch, Module, Portal Ende-zu-Ende)
-installer/           Inno-Setup-Skript
+src/UntPlan.Core            Fachlogik (Modell, Optimierung, Vertretungsplanung, Module, Import/Export) – net8.0
+src/UntPlan.Web.Contracts   gemeinsame Datenverträge Studio ↔ Web
+src/UntPlan.Portal          Referenzserver der Synchronisationsschnittstelle
+studio/                     UntPlan Studio (ASP.NET Core + Oberfläche ohne Build-Schritt)
+web/                        UntPlan Web
+mobile/                     UntPlan Mobile (PWA)
+ios/                        UntPlan für iOS (SwiftUI)
+design/                     Designsystem: Grundwerte, Schrift, Signet
+tests/                      xUnit-Tests der Fachlogik
 ```
 
 ```bash
 dotnet test tests/UntPlan.Core.Tests
-dotnet build src/UntPlan.App                       # baut auch unter Linux/macOS
-dotnet publish src/UntPlan.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
-dotnet run --project src/UntPlan.Portal            # Portal unter http://localhost:5000
+cd studio/src/UntPlanStudio && STUDIO_ADMIN_PASSWORT=geheim123 ASPNETCORE_URLS=http://127.0.0.1:5501 dotnet run
 ```
 
-`UntPlan.exe --selbsttest=<Ordner>` öffnet mit der Beispielschule nacheinander alle Fenster. Dabei entstehen Bildschirmfotos und ein Protokoll. Die CI nutzt diesen Modus als Oberflächentest.
+Jede Oberfläche wird als Container-Image gebaut (GitHub Actions: `studio.yml`, `web.yml`, `mobile.yml`); Installation und
+Betrieb stehen in der README des jeweiligen Ordners. Schuldateien (`*.up`) sind JSON-Dateien.
 
-Schuldateien (`*.up`) sind JSON-Dateien. Beim Speichern wird eine Sicherung `*.bak` angelegt.
+## Lizenzen von Drittbestandteilen
+
+- IBM Plex Sans – SIL Open Font License 1.1 (`design/fonts/OFL.txt`)
+- Lucide-Symbole – ISC-Lizenz (`design/LUCIDE-LICENSE.txt`)
 
 ## Hinweis
 
 UntPlan ist ein eigenständiges Programm und steht in keiner Verbindung zu Herstellern anderer Stundenplanprogramme.
-Der GPU-Import dient ausschließlich der Datenübernahme beim Umstieg.
+Import-Formate anderer Programme dienen ausschließlich der Datenübernahme beim Umstieg.
