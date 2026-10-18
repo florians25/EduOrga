@@ -9,10 +9,10 @@
 
 services:
   untplanweb:
-    image: ghcr.io/florians25/untplan-web:latest
+    image: ghcr.io/florians25/untplannext-web:latest
     # Selbst bauen statt das fertige Image zu laden:
     # build: { context: .., dockerfile: web/Dockerfile }
-    container_name: untplanweb
+    container_name: untplannext-web
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -34,10 +34,10 @@ services:
       com.centurylinklabs.watchtower.enable: "true"
 
   untplanmobile:
-    image: ghcr.io/florians25/untplan-mobile:latest
+    image: ghcr.io/florians25/untplannext-mobile:latest
     # Selbst bauen statt das fertige Image zu laden:
     # build: { context: .., dockerfile: mobile/Dockerfile }
-    container_name: untplanmobile
+    container_name: untplannext-mobile
     restart: unless-stopped
     depends_on:
       - untplanweb
@@ -61,7 +61,7 @@ services:
   # Optionaler Updater (nur mit --profile updater): aktualisiert UntPlanWeb und UntPlanMobile auf Anforderung
   watchtower:
     image: containrrr/watchtower:1.7.1
-    container_name: untplan-watchtower
+    container_name: untplannext-watchtower
     profiles: ["updater"]
     restart: unless-stopped
     environment:

@@ -11,7 +11,7 @@
 services:
   mariadb:
     image: mariadb:11.4
-    container_name: untplanweb-mariadb
+    container_name: untplannext-mariadb
     restart: unless-stopped
     environment:
       TZ: Europe/Berlin
@@ -31,9 +31,9 @@ services:
       retries: 10
 
   untplanweb:
-    image: ghcr.io/florians25/untplan-web:latest
+    image: ghcr.io/florians25/untplannext-web:latest
     # build: { context: .., dockerfile: web/Dockerfile }
-    container_name: untplanweb
+    container_name: untplannext-web
     restart: unless-stopped
     depends_on:
       mariadb:
@@ -55,9 +55,9 @@ services:
       com.centurylinklabs.watchtower.enable: "true"
 
   untplanmobile:
-    image: ghcr.io/florians25/untplan-mobile:latest
+    image: ghcr.io/florians25/untplannext-mobile:latest
     # build: { context: .., dockerfile: mobile/Dockerfile }
-    container_name: untplanmobile
+    container_name: untplannext-mobile
     restart: unless-stopped
     depends_on:
       - untplanweb
@@ -78,7 +78,7 @@ services:
 
   watchtower:
     image: containrrr/watchtower:1.7.1
-    container_name: untplan-watchtower
+    container_name: untplannext-watchtower
     profiles: ["updater"]
     restart: unless-stopped
     environment:

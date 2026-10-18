@@ -13,7 +13,7 @@
 services:
   mariadb:
     image: mariadb:11.4
-    container_name: untplanweb-mariadb
+    container_name: untplannext-mariadb
     restart: unless-stopped
     environment:
       TZ: Europe/Berlin
@@ -34,10 +34,10 @@ services:
       retries: 10
 
   untplanweb:
-    image: ghcr.io/florians25/untplan-web:latest
+    image: ghcr.io/florians25/untplannext-web:latest
     # Selbst bauen statt das fertige Image zu laden:
     # build: { context: .., dockerfile: web/Dockerfile }
-    container_name: untplanweb
+    container_name: untplannext-web
     restart: unless-stopped
     depends_on:
       mariadb:
@@ -54,7 +54,7 @@ services:
       UNTPLANWEB_UPDATE_WATCHTOWER_TOKEN: ${WATCHTOWER_TOKEN:-bitte-aendern}
       # Updateprüfung abschalten bzw. andere Quelle:
       # UNTPLANWEB_UPDATE_PRUEFEN: "0"
-      # UNTPLANWEB_UPDATE_URL: ghcr://florians25/untplan-web
+      # UNTPLANWEB_UPDATE_URL: ghcr://florians25/untplannext-web
       # Optional – sonst über den Einrichtungsassistenten im Browser:
       # UNTPLANWEB_ADMIN_PASSWORT: "bitte-aendern"
     volumes:
@@ -67,7 +67,7 @@ services:
   # MariaDB wird bewusst nicht automatisch aktualisiert (kein Label).
   watchtower:
     image: containrrr/watchtower:1.7.1
-    container_name: untplanweb-watchtower
+    container_name: untplannext-watchtower
     profiles: ["updater"]
     restart: unless-stopped
     environment:

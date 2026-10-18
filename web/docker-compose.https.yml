@@ -4,7 +4,7 @@
 
 services:
   untplanweb:
-    image: ghcr.io/florians25/untplan-web:latest
+    image: ghcr.io/florians25/untplannext-web:latest
     restart: unless-stopped
     environment:
       TZ: Europe/Berlin

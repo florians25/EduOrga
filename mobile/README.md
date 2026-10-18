@@ -98,7 +98,7 @@ docker compose up -d
 **Läuft UntPlan Web schon** (z. B. mit der Compose-Datei aus `web/`), genügt UntPlan Mobile allein:
 
 ```bash
-docker run -d --name untplanmobile -p 8081:8081 -e UNTPLANWEB_URL=http://<server>:8080 ghcr.io/florians25/untplan-mobile
+docker run -d --name untplanmobile -p 8081:8081 -e UNTPLANWEB_URL=http://<server>:8080 ghcr.io/florians25/untplannext-mobile
 ```
 
 **Selbst bauen** (Wurzel des UntPlan-Repositorys): `docker build -f mobile/Dockerfile -t untplanmobile .`
@@ -128,7 +128,7 @@ UntPlan Mobile wertet `X-Forwarded-Proto` und `X-Forwarded-Host` aus und setzt d
 | `UNTPLANMOBILE_ZEITZONE` | Zeitzone der Schule (heutiger Tag, aktuelle Woche) | `Europe/Berlin` |
 | `ASPNETCORE_HTTP_PORTS` | Port im Container | `8081` |
 | `UNTPLANMOBILE_UPDATE_PRUEFEN` | `0` = nicht nach neuen Versionen suchen | an |
-| `UNTPLANMOBILE_UPDATE_URL` | Quelle der neuesten Version (wie `UNTPLANWEB_UPDATE_URL`, z. B. `ghcr://florians25/untplan-mobile`) | GitHub-Releases von florians25/UntPlanNext |
+| `UNTPLANMOBILE_UPDATE_URL` | Quelle der neuesten Version (wie `UNTPLANWEB_UPDATE_URL`, z. B. `ghcr://florians25/untplannext-mobile`) | GitHub-Releases von florians25/UntPlanNext |
 | `UNTPLANMOBILE_UPDATE_TAG_PRAEFIX` | nur Tags mit diesem Präfix berücksichtigen | – |
 
 ### Installation mit MariaDB/MySQL
@@ -271,7 +271,7 @@ Build-Schritt und keine Abhängigkeiten aus dem Netz.
 
 UntPlan Mobile gehört weder zur Desktop-Solution `UntPlan.sln` noch zu `web/UntPlanWeb.sln`, sondern hat die eigene
 Solution `UntPlanMobile.sln` und einen eigenen CI-Ablauf (`.github/workflows/mobile.yml`). Dieser testet und
-veröffentlicht das Image `ghcr.io/florians25/untplan-mobile`.
+veröffentlicht das Image `ghcr.io/florians25/untplannext-mobile`.
 
 > Hinweis: Ein neues GHCR-Paket ist zunächst privat. Damit `docker pull` ohne Anmeldung funktioniert, stellen Sie es einmalig auf öffentlich:
 > GitHub → Packages → untplanmobile → Package settings → Change visibility.

@@ -5,7 +5,7 @@
 #   ./install.sh --neu           vorhandene .env ignorieren und neu fragen
 #
 # Ohne Repository auf einem frischen Server:
-#   mkdir -p /opt/untplan && cd /opt/untplan
+#   mkdir -p /opt/untplannext && cd /opt/untplannext
 #   curl -fsSLO https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation/install.sh
 #   sh install.sh
 set -eu
@@ -51,7 +51,7 @@ for datei in docker-compose.yml update.sh; do
     [ -f "$datei" ] || fehler "$datei fehlt und konnte nicht geladen werden ($QUELLE)."
   fi
 done
-grep -q "ghcr.io/florians25/untplan-studio" docker-compose.yml \
+grep -q "ghcr.io/florians25/untplannext-studio" docker-compose.yml \
   || fehler "docker-compose.yml ist keine UntPlan-Gesamtinstallation (alte Datei?). Bitte in einem leeren Ordner neu starten."
 chmod +x update.sh
 
@@ -110,11 +110,11 @@ port() { # port <Text> <Vorschlag> → geprüfte Portnummer
     echo "Bitte eine Zahl zwischen 1 und 65535 eingeben." >&2
   done
 }
-STUDIO_PORT=8090; WEB_PORT=8080; MOBILE_PORT=8081; HTTP_PORT=80; HTTPS_PORT=443
-if ja "Ports selbst festlegen (sonst Studio 8090, Web 8080, Mobile 8081$( [ "$HTTPS" = 1 ] && echo ", HTTP 80, HTTPS 443"))? j/n" n; then
-  [ "$STUDIO" = 1 ] && STUDIO_PORT=$(port "Port für UntPlan Studio" 8090)
-  [ "$WEB" = 1 ] && WEB_PORT=$(port "Port für UntPlan Web" 8080)
-  [ "$MOBILE" = 1 ] && MOBILE_PORT=$(port "Port für UntPlan Mobile" 8081)
+STUDIO_PORT=8190; WEB_PORT=8180; MOBILE_PORT=8181; HTTP_PORT=80; HTTPS_PORT=443
+if ja "Ports selbst festlegen (sonst Studio 8190, Web 8180, Mobile 8181$( [ "$HTTPS" = 1 ] && echo ", HTTP 80, HTTPS 443"))? j/n" n; then
+  [ "$STUDIO" = 1 ] && STUDIO_PORT=$(port "Port für UntPlan Studio" 8190)
+  [ "$WEB" = 1 ] && WEB_PORT=$(port "Port für UntPlan Web" 8180)
+  [ "$MOBILE" = 1 ] && MOBILE_PORT=$(port "Port für UntPlan Mobile" 8181)
   if [ "$HTTPS" = 1 ]; then
     echo "Hinweis: Für das automatische Zertifikat müssen die Ports 80 und 443 aus dem Internet erreichbar sein –"
     echo "andere Ports nur, wenn der Router 80/443 auf diese Ports weiterleitet."
@@ -124,6 +124,28 @@ if ja "Ports selbst festlegen (sonst Studio 8090, Web 8080, Mobile 8081$( [ "$HT
   belegt=$(printf '%s\n' $( [ "$STUDIO" = 1 ] && echo "$STUDIO_PORT") $( [ "$WEB" = 1 ] && echo "$WEB_PORT") \
     $( [ "$MOBILE" = 1 ] && echo "$MOBILE_PORT") $( [ "$HTTPS" = 1 ] && echo "$HTTP_PORT $HTTPS_PORT") | sort | uniq -d)
   [ -z "$belegt" ] || fehler "Port $belegt ist mehrfach vergeben."
+fi
+
+# Ports, die schon belegt sind (z. B. vom bisherigen UntPlan), neu abfragen
+besetzt() { # besetzt <Port> → 0, wenn auf dem Server schon etwas lauscht
+  if command -v ss >/dev/null 2>&1; then ss -ltnH 2>/dev/null | awk '{print $4}' | grep -qE "[:.]$1\$"
+  elif command -v netstat >/dev/null 2>&1; then netstat -ltn 2>/dev/null | awk '{print $4}' | grep -qE "[:.]$1\$"
+  else return 1; fi
+}
+pruefen() { # pruefen <Variable> <Text>
+  eval "wert=\$$1"
+  while besetzt "$wert"; do
+    echo "Port $wert ist auf diesem Server bereits belegt (z. B. durch die bisherige UntPlan-Installation)." >&2
+    wert=$(port "$2" "$((wert + 1000))")
+  done
+  eval "$1=\$wert"
+}
+[ "$STUDIO" = 1 ] && pruefen STUDIO_PORT "Port für UntPlan Studio"
+[ "$WEB" = 1 ] && pruefen WEB_PORT "Port für UntPlan Web"
+[ "$MOBILE" = 1 ] && pruefen MOBILE_PORT "Port für UntPlan Mobile"
+if [ "$HTTPS" = 1 ]; then
+  pruefen HTTP_PORT "HTTP-Port (Caddy)"
+  pruefen HTTPS_PORT "HTTPS-Port (Caddy)"
 fi
 
 STUDIO_PW=""; WEB_PW=""
@@ -151,7 +173,7 @@ umask 077
   echo "HTTPS_PORT=$HTTPS_PORT"
   if [ "$STUDIO" = 1 ]; then
     echo
-    echo "# UntPlan Studio (eigene Datenbank im Volume untplanstudio-daten)"
+    echo "# UntPlan Studio (eigene Datenbank im Volume untplannext-studio-daten)"
     echo "STUDIO_ADMIN_BENUTZER=admin"
     echo "STUDIO_ADMIN_PASSWORT=$STUDIO_PW"
     echo "STUDIO_SICHERE_COOKIES=$HTTPS"
@@ -165,11 +187,11 @@ umask 077
       MARIADB_PW=$(passwort)
       echo "MARIADB_PASSWORT=$MARIADB_PW"
       echo "MARIADB_ROOT_PASSWORT=$(passwort)"
-      echo "UNTPLANWEB_DB_CONNECTION=\"Server=mariadb;Port=3306;Database=untplanweb;User ID=untplanweb;Password=$MARIADB_PW\""
+      echo "UNTPLANWEB_DB_CONNECTION=\"Server=untplannext-mariadb;Port=3306;Database=untplanweb;User ID=untplanweb;Password=$MARIADB_PW\""
     fi
-    [ "$MOBILE" = 1 ] && echo "UNTPLANWEB_MOBILE_INTERN_URL=http://untplanmobile:8081"
+    [ "$MOBILE" = 1 ] && echo "UNTPLANWEB_MOBILE_INTERN_URL=http://untplannext-mobile:8081"
     if [ "$UPDATER" = 1 ]; then
-      echo "UNTPLANWEB_UPDATE_WATCHTOWER_URL=http://watchtower:8080/v1/update"
+      echo "UNTPLANWEB_UPDATE_WATCHTOWER_URL=http://untplannext-watchtower:8080/v1/update"
       echo "WATCHTOWER_TOKEN=$(passwort)"
     fi
   fi
@@ -184,13 +206,13 @@ umask 022
   echo "# UntPlan – HTTPS über Caddy (von install.sh erzeugt). Nach Änderungen: docker compose restart caddy"
   if [ -n "${ACME_MAIL:-}" ]; then printf '{\n\temail %s\n}\n' "$ACME_MAIL"; fi
   if [ "$HTTPS" = 1 ] && [ "$STUDIO" = 1 ]; then
-    printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy untplanstudio:8080 {\n\t\tflush_interval -1\n\t}\n\trequest_body {\n\t\tmax_size 64MB\n\t}\n\theader Strict-Transport-Security "max-age=31536000"\n}\n' "$STUDIO_DOMAIN"
+    printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy untplannext-studio:8080 {\n\t\tflush_interval -1\n\t}\n\trequest_body {\n\t\tmax_size 64MB\n\t}\n\theader Strict-Transport-Security "max-age=31536000"\n}\n' "$STUDIO_DOMAIN"
   fi
   if [ "$HTTPS" = 1 ] && [ "$WEB" = 1 ]; then
-    printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy untplanweb:8080\n\theader Strict-Transport-Security "max-age=31536000"\n}\n' "$WEB_DOMAIN"
+    printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy untplannext-web:8080\n\theader Strict-Transport-Security "max-age=31536000"\n}\n' "$WEB_DOMAIN"
   fi
   if [ "$HTTPS" = 1 ] && [ "$MOBILE" = 1 ]; then
-    printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy untplanmobile:8081\n\theader Strict-Transport-Security "max-age=31536000"\n}\n' "$MOBILE_DOMAIN"
+    printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy untplannext-mobile:8081\n\theader Strict-Transport-Security "max-age=31536000"\n}\n' "$MOBILE_DOMAIN"
   fi
 } > Caddyfile
 
@@ -200,7 +222,7 @@ echo "Lade Images und starte Container …"
 if ! docker compose pull; then
   echo >&2
   echo "Die Images konnten nicht geladen werden. Häufigste Ursache: die Pakete auf ghcr.io sind nicht öffentlich." >&2
-  echo "  • Auf GitHub unter Profil → Packages → untplan-studio / untplan-web / untplan-mobile" >&2
+  echo "  • Auf GitHub unter Profil → Packages → untplannext-studio / untplannext-web / untplannext-mobile" >&2
   echo "    → Package settings → Change visibility → Public stellen, oder" >&2
   echo "  • auf dem Server anmelden: docker login ghcr.io -u <GitHub-Benutzer>  (Token mit Recht read:packages)" >&2
   echo "Danach ./install.sh erneut aufrufen (die Einstellungen bleiben erhalten)." >&2
@@ -221,7 +243,7 @@ echo "Fertig. Zugangsdaten stehen in $(pwd)/.env – bitte sicher aufbewahren un
 if [ "$STUDIO" = 1 ] && [ "$WEB" = 1 ]; then
   echo
   echo "Pläne von Studio nach Web übertragen: in Studio „UntPlan Web“ → „Einstellungen“ öffnen und eintragen:"
-  echo "  Server untplanweb, Port 8080, ohne HTTPS (internes Netz der Container),"
+  echo "  Server untplannext-web, Port 8080, ohne HTTPS (internes Netz der Container),"
   echo "  Schul-ID und API-Schlüssel aus UntPlan Web (Administration → Verbindung mit UntPlan)."
 fi
 echo

@@ -275,7 +275,7 @@ UNTPLANWEB_DOMAIN=plan.meine-schule.de docker compose -f docker-compose.https.ym
 **Ausprobieren mit Beispieldaten:**
 
 ```bash
-docker run --rm -p 8080:8080 -e UNTPLANWEB_DEMO=1 -e UNTPLANWEB_ADMIN_PASSWORT=admin12345 ghcr.io/florians25/untplan-web
+docker run --rm -p 8080:8080 -e UNTPLANWEB_DEMO=1 -e UNTPLANWEB_ADMIN_PASSWORT=admin12345 ghcr.io/florians25/untplannext-web
 ```
 
 Anmeldung als `admin` / `admin12345`. Die Beispielwoche wird automatisch auf die aktuelle Woche verschoben.
@@ -297,7 +297,7 @@ Anmeldung als `admin` / `admin12345`. Die Beispielwoche wird automatisch auf die
 | `UNTPLANWEB_DB_CONNECTION` | Verbindung zu MySQL/MariaDB: `Server=…;Port=3306;Database=…;User ID=…;Password=…` oder `mysql://benutzer:passwort@host:3306/datenbank` | – |
 | `UNTPLANWEB_DB_WARTEN` | Sekunden, die beim Start auf den Datenbankserver gewartet wird | `60` |
 | `UNTPLANWEB_UPDATE_PRUEFEN` | `0` = nicht nach neuen Versionen suchen | an |
-| `UNTPLANWEB_UPDATE_URL` | Quelle der neuesten Version (`ghcr://besitzer/image`, GitHub-API `…/releases/latest`, `…/releases`, `…/tags` oder eigene Adresse mit `{"version":"…"}` bzw. Text) | `ghcr://florians25/untplan-web` |
+| `UNTPLANWEB_UPDATE_URL` | Quelle der neuesten Version (GitHub-API `…/releases/latest`, `…/releases`, `…/tags`, `ghcr://besitzer/image` oder eigene Adresse mit `{"version":"…"}` bzw. Text) | GitHub-Releases von florians25/UntPlanNext (`https://api.github.com/repos/florians25/UntPlanNext/releases/latest`) |
 | `UNTPLANWEB_UPDATE_TAG_PRAEFIX` | nur Tags mit diesem Präfix berücksichtigen (z. B. `web-v`) | – |
 | `UNTPLANWEB_UPDATE_MODUS` | „Update installieren“: `aus`, `watchtower` oder `datei` | `watchtower`, wenn eine Watchtower-Adresse gesetzt ist, sonst `aus` |
 | `UNTPLANWEB_UPDATE_WATCHTOWER_URL`, `…_TOKEN` | HTTP-API von Watchtower, z. B. `http://watchtower:8080/v1/update`, und deren Token | – |
@@ -356,10 +356,15 @@ Danach lädt es die neuen Images und startet neu; die letzten 14 Sicherungen ble
 Für UntPlanMobile gibt es dasselbe als `mobile/update.sh` (aktualisiert UntPlanWeb und UntPlanMobile gemeinsam).
 
 **Updateanzeige:** Unter *Administration → Übersicht* zeigt die Karte *Version & Updates* die laufende Version, die Datenbank
-mit Schemastand und die neueste veröffentlichte Version (Standard: Tags des öffentlichen Images `ghcr://florians25/untplan-web` –
-gleiche Nummerierung wie die laufende Version –, alle 6 Stunden geprüft; abschaltbar mit `UNTPLANWEB_UPDATE_PRUEFEN=0`, andere
-Quelle mit `UNTPLANWEB_UPDATE_URL`). Ist ein Update verfügbar, erscheint einmal je Benutzer und Version ein schließbarer Hinweis
-unten rechts. Die GitHub-Releases gehören zum Desktop-Programm (eigene Zählung) und taugen daher nicht als Quelle für UntPlanWeb.
+mit Schemastand und die neueste veröffentlichte Version (Standard: GitHub-Releases von florians25/UntPlanNext – Entwürfe und
+Vorabversionen zählen nicht, aus dem Tag zählt die Versionsnummer, z. B. `v1.5.0` oder `web-v1.5.0` –, alle 6 Stunden geprüft;
+abschaltbar mit `UNTPLANWEB_UPDATE_PRUEFEN=0`, andere Quelle mit `UNTPLANWEB_UPDATE_URL`, z. B. die Image-Tags
+`ghcr://florians25/untplannext-web`). Netzwerk- oder Proxyfehler führen nur dazu, dass kein Hinweis erscheint. Ist ein Update
+verfügbar, sehen Administratoren auf *Heute* und *Übersicht* den Hinweis „Neue Version … verfügbar“ (je Version schließbar, im
+Gerätespeicher gemerkt) mit Versionshinweisen, Link zum Release und – wenn ein Updater eingerichtet ist – „Update installieren“;
+in der Navigation trägt *Administration* einen Punkt. `GET /api/app/admin/update[?neu=1]` liefert dazu `releaseUrl`,
+`releaseName`, `veroeffentlicht` und `hinweise` (Markdown, gekürzt). Die Prüflogik teilen sich Web, Mobile und Studio
+(`web/src/UntPlanWeb/Dienste/Updatepruefung.cs`).
 
 **Update aus der Oberfläche** (nur Administration; Aufruf `POST /api/app/admin/update/installieren` mit Kopf `X-UntPlanWeb: 1`).
 Vorher wird SQLite automatisch nach `/data/sicherungen` gesichert (die letzten fünf bleiben). Zwei Wege:
@@ -483,7 +488,7 @@ Aufbau:
 - `demo/beispiel-paket.json`: Beispielpaket, mit UntPlan.Core aus der Beispielschule erzeugt.
 
 UntPlanWeb gehört nicht zur Desktop-Solution `UntPlan.sln` und hat einen eigenen CI-Ablauf (`.github/workflows/web.yml`).
-Dieser testet und veröffentlicht das Image `ghcr.io/florians25/untplan-web`. Der Desktop-Build bleibt davon unberührt.
+Dieser testet und veröffentlicht das Image `ghcr.io/florians25/untplannext-web`. Der Desktop-Build bleibt davon unberührt.
 
 > Hinweis: Ein neues GHCR-Paket ist zunächst privat. Damit `docker pull` ohne Anmeldung funktioniert, stellen Sie es einmalig auf öffentlich:
 > GitHub → Packages → untplanweb → Package settings → Change visibility.

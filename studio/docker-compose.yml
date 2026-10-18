@@ -5,10 +5,10 @@
 
 services:
   untplanstudio:
-    image: ghcr.io/florians25/untplan-studio:latest
+    image: ghcr.io/florians25/untplannext-studio:latest
     # Selbst bauen statt das fertige Image zu laden:
     # build: { context: .., dockerfile: studio/Dockerfile }
-    container_name: untplanstudio
+    container_name: untplannext-studio
     restart: unless-stopped
     ports:
       - "8090:8080"

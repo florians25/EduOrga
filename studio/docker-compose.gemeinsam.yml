@@ -6,7 +6,7 @@
 
 services:
   untplanweb:
-    image: ghcr.io/florians25/untplan-web:latest
+    image: ghcr.io/florians25/untplannext-web:latest
     restart: unless-stopped
     environment:
       TZ: Europe/Berlin
@@ -15,7 +15,7 @@ services:
       - untplanweb-daten:/data
 
   untplanstudio:
-    image: ghcr.io/florians25/untplan-studio:latest
+    image: ghcr.io/florians25/untplannext-studio:latest
     restart: unless-stopped
     environment:
       TZ: Europe/Berlin

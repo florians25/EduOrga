@@ -69,7 +69,7 @@ NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke
 
 ## Container
 
-Das Image wird vom GitHub-Workflow `.github/workflows/studio.yml` als `ghcr.io/florians25/untplan-studio` gebaut
+Das Image wird vom GitHub-Workflow `.github/workflows/studio.yml` als `ghcr.io/florians25/untplannext-studio` gebaut
 (amd64 und arm64). Selbst bauen (Build-Kontext = Repository-Wurzel):
 
 ```bash
@@ -143,6 +143,18 @@ ersten Start mit der neuen Version (leere Datenbank) werden diese automatisch in
 `alt-dateien-<datum>/` verschoben (nicht gelöscht; das Protokoll nennt die Anzahl der übernommenen Dokumente und Benutzer).
 Anmeldungen bleiben gültig. Den Ordner `alt-dateien-…` kann man löschen, sobald alles geprüft ist.
 
+**Hinweis auf neue Versionen.** Das Studio prüft für Administratoren die GitHub-Releases von florians25/UntPlanNext
+(`https://api.github.com/repos/florians25/UntPlanNext/releases/latest`; Entwürfe und Vorabversionen zählen nicht, aus dem Tag
+zählt die Versionsnummer, z. B. `v1.5.0` oder `studio-v1.5.0`) und vergleicht sie mit der laufenden Version. Das Ergebnis wird
+6 Stunden zwischengespeichert; ohne Internet, hinter einem blockierenden Proxy (`HTTPS_PROXY` wird beachtet) oder bei
+Fehlern erscheint einfach kein Hinweis. Ist eine neuere Version veröffentlicht, zeigt das Studio unter der Kopfleiste
+„Neue Version 1.5.0 verfügbar – Versionshinweise ansehen“ (je Version schließbar; danach bleibt ein Punkt am Konto-Symbol und
+ein Eintrag im Kontomenü). Der Dialog zeigt die Versionshinweise und den Update-Befehl `./update.sh studio` (siehe
+[installation/README.md](../installation/README.md)); *Konto → Über UntPlan Studio* zeigt den Stand mit „Erneut prüfen“.
+Schnittstelle: `GET /api/version[?neu=1]` (nur Administratoren) →
+`{version, neueste, updateVerfuegbar, releaseUrl, releaseName, veroeffentlicht, hinweise, geprueft, fehler, befehl}`.
+Die Prüflogik teilt sich das Studio mit UntPlan Web und Mobile (`web/src/UntPlanWeb/Dienste/Updatepruefung.cs`).
+
 ## Umgebungsvariablen
 
 | Variable | Standard | Bedeutung |
@@ -156,6 +168,9 @@ Anmeldungen bleiben gültig. Den Ordner `alt-dateien-…` kann man löschen, sob
 | `STUDIO_SICHERE_COOKIES` | automatisch | `1` = Anmeldecookie nur über HTTPS (hinter Caddy empfohlen) |
 | `STUDIO_SICHERUNGEN_BEHALTEN` | `14` | so viele Datenbanksicherungen (`sicherungen/studio-*.db`) bleiben erhalten |
 | `STUDIO_DOMAIN` | – | nur Compose/Caddy: Domain des Studios |
+| `STUDIO_UPDATE_PRUEFEN` | an | `0` = nicht nach neuen Versionen suchen (kein Updatehinweis) |
+| `STUDIO_UPDATE_URL` | GitHub-Releases von florians25/UntPlanNext (`…/releases/latest`) | Quelle der neuesten Version: GitHub-API `…/releases/latest`, `…/releases`, `…/tags`, `ghcr://besitzer/image` oder eigene Adresse mit `{"version":"…"}` bzw. Text |
+| `STUDIO_UPDATE_TAG_PRAEFIX` | – | nur Tags mit diesem Präfix berücksichtigen (z. B. `studio-v`, sinnvoll mit `…/releases`) |
 | `ASPNETCORE_HTTP_PORTS` / `ASPNETCORE_URLS` | `8080` im Container | Port bzw. Adresse |
 
 ## Bedienung (Kurzüberblick)
