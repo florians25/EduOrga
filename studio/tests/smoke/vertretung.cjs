@@ -3,9 +3,10 @@
 //   NODE_PATH=$(npm root -g) STUDIO_URL=http://127.0.0.1:5501 STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs
 //
 // Ablauf: Beispielschule → Vertretungsmodus mit Planungsdatum → Abwesenheit direkt in der Liste erfassen (Entwurf, Strg+Enter)
-// → Vertretungen mit offenen Stunden (???) → Vorschlag (Enter) und ersten Kandidaten übernehmen → Entfall mit „-“ →
+// → Vertretungen mit offenen Stunden (Plakette „Offen“) → Vorschlag (Enter) und ersten Kandidaten übernehmen → Entfall mit „-“ →
 // Kontextmenü → Kalender → Arbeitsplatz „Verlegen und Tauschen“ → Veranstaltung „Alle Lehrkräfte“ → Arbeitsplatz
-// Tagesplanung → Tag blättern (Strg+Bild↓) → Einstellungen. Umgebungsvariablen: hilfe.cjs.
+// Tagesplanung (Tageskopf, schlanke Liste, Filter, Vorschlag zur gewählten Zeile, Tagespläne als Tagesansicht) → Tag blättern
+// (Strg+Bild↓) → Einstellungen. Umgebungsvariablen: hilfe.cjs.
 const h = require('./hilfe.cjs');
 
 (async () => {
@@ -56,12 +57,13 @@ const h = require('./hilfe.cjs');
     // Vertretungen mit offenen Stunden
     await h.eintrag(page, 'vertretung.vertretungen');
     const liste = '[data-ansicht="vertretung.liste"]';
-    await page.waitForFunction((s) => [...document.querySelectorAll(`${s} .tb-zelle.vt-rot`)].some((z) => z.textContent === '???'), liste, { timeout: 15000 });
+    await page.waitForSelector(`${liste} .tb-zelle.vt-z-offen`, { timeout: 15000 });
+    if (await page.locator(`${liste} .tb-zelle`, { hasText: '???' }).count()) throw new Error('„???“ statt Plakette „Offen“');
     await foto('03-vertretungen-offen');
-    schritt('Vertretungen mit ??? angezeigt');
+    schritt('Vertretungen mit Plakette „Offen“ angezeigt');
 
     const offeneZeile = () => page.evaluate((s) => {
-      const z = [...document.querySelectorAll(`${s} .tb-zeile`)].find((x) => [...x.querySelectorAll('.tb-zelle.vt-rot')].some((c) => c.textContent === '???'));
+      const z = [...document.querySelectorAll(`${s} .tb-zeile`)].find((x) => x.querySelector('.tb-zelle.vt-z-offen'));
       return z ? { r: z.dataset.r, nr: z.children[0].textContent.trim() } : null;
     }, liste);
     // erste offene Zeile: Vorschlag (Enter) und ersten Kandidaten übernehmen (Doppelklick)
@@ -111,11 +113,25 @@ const h = require('./hilfe.cjs');
     await foto('08-veranstaltung-alle');
     schritt('Veranstaltung „Alle Lehrkräfte“ angelegt');
 
-    // Arbeitsplatz Tagesplanung
+    // Arbeitsplatz Tagesplanung: Tageskopf, schlanke Liste, Vorschlag und Tagespläne (Kalender und Abwesenheiten auf eigenen Seiten)
     await page.click('[data-nav="nav:Tagesplanung"]');
-    await page.waitForSelector('[data-arbeitsplatz=tagesplanung] [data-ansicht="vertretung.liste"] .tb-zeile', { timeout: 15000 });
-    await page.waitForSelector('[data-arbeitsplatz=tagesplanung] [data-ansicht="vertretung.plan"] .ra-eintrag', { timeout: 15000 });
+    const tp = '[data-arbeitsplatz=tagesplanung]';
+    await page.waitForSelector(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile`, { timeout: 15000 });
+    await page.waitForSelector(`${tp} [data-ansicht="vertretung.plan"] .ra-eintrag`, { timeout: 15000 });
+    await page.waitForFunction((s) => /offen/.test(document.querySelector(`${s} [data-testid=tagessumme]`)?.textContent || ''), tp, { timeout: 15000 });
+    if (await page.locator(`${tp} [data-ansicht="vertretung.kalender"], ${tp} [data-ansicht="vertretung.absenzen"]`).count()) throw new Error('Kalender/Abwesenheiten gehören nicht mehr in die Tagesplanung');
+    const tagSpalten = await page.locator(`${tp} [data-ansicht="vertretung.plan"]`).first().locator('.ra-kopf').count();
+    if (tagSpalten !== 1) throw new Error(`Tagesplan zeigt ${tagSpalten} Tage statt nur des Planungstags`);
+    await page.locator(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile`).first().locator('.tb-zelle').first().click();
+    await page.waitForSelector(`${tp} [data-testid=vorschlag-kopf]`, { timeout: 15000 });
     await foto('09-tagesplanung');
+    await page.click(`${tp} [data-testid=liste-filter]`);
+    await page.waitForSelector('[role=switch], input[role=switch]', { timeout: 5000 }).catch(() => {});
+    await page.getByLabel('Nur offene').check();
+    await page.waitForFunction((s) => [...document.querySelectorAll(`${s} [data-ansicht="vertretung.liste"] .tb-zeile`)].every((z) => z.querySelector('.vt-z-offen')), tp, { timeout: 15000 });
+    await foto('09b-tagesplanung-filter');
+    await page.keyboard.press('Escape');
+    schritt('Tagesplanung: Tageskopf, Liste mit Filter, Vorschlag, Tagespläne');
 
     // Tag blättern mit Strg+Bild↓
     await page.locator('[data-arbeitsplatz=tagesplanung] [data-ansicht="vertretung.liste"] .tb-zeile').first().click().catch(() => {});

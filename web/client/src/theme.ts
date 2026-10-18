@@ -102,8 +102,9 @@ export const theme = createTheme({
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {
-        root: { borderRadius: 6, paddingInline: 14, minHeight: 32 },
-        sizeSmall: { minHeight: 28, paddingInline: 12, fontSize: 13 },
+        root: { borderRadius: 6, paddingInline: 14, paddingBlock: 5, lineHeight: '20px', minHeight: 32 },
+        sizeSmall: { minHeight: 28, paddingInline: 10, paddingBlock: 3, fontSize: 13 },
+        sizeLarge: { paddingBlock: 9 },
         outlined: ({ theme }) => ({ borderColor: theme.vars.palette.divider, color: theme.vars.palette.text.primary, background: theme.vars.palette.background.paper,
           '&:hover': { borderColor: theme.vars.palette.text.disabled, background: theme.vars.palette.action.hover } }),
       },

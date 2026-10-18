@@ -30,7 +30,7 @@ export function ElementWahl({ liste, wert, onWahl, platzhalter, info, breite = 2
           return <Box component="li" key={key} {...rest} sx={{ gap: 1.5 }}><Typography sx={{ fontWeight: 600, minWidth: 56 }}>{o.kurz}</Typography><Typography variant="body2" color="text.secondary" noWrap>{zusatz}</Typography></Box>;
         }}
         renderInput={p => <TextField {...p} placeholder={platzhalter} aria-label={platzhalter}
-          InputProps={{ ...p.InputProps, sx: { fontWeight: 600 } }} />}
+          InputProps={{ ...p.InputProps, sx: { fontWeight: 600, '&.MuiInputBase-sizeSmall': { pt: '3px', pb: '3px' } } }} />}
         sx={{ width: breite }} slotProps={{ listbox: { sx: { maxHeight: 360 } } }} noOptionsText="Keine Treffer"
       />
       {blaettern && <Tooltip title="Nächstes Element (Alt+→)"><span><IconButton size="small" disabled={pos < 0 || pos >= liste.length - 1} onClick={() => onWahl(liste[pos + 1].kurz)} aria-label="Nächstes Element"><ChevronRightRounded /></IconButton></span></Tooltip>}
