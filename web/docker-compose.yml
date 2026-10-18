@@ -1,0 +1,52 @@
+# UntPlanWeb – einfache Installation (HTTP auf Port 8080, z. B. hinter einem vorhandenen Reverse-Proxy).
+#   docker compose up -d
+# Danach im Browser http://<server>:8080 öffnen und die Schule einrichten.
+# Für HTTPS mit automatischem Zertifikat: docker-compose.https.yml verwenden (siehe README).
+# Mit MariaDB statt SQLite: docker-compose.mariadb.yml (siehe README, „Installation mit MariaDB/MySQL“).
+# Update (Sicherung vorher, Migrationen laufen beim Start automatisch):
+#   ./update.sh   bzw.   docker compose pull && docker compose up -d
+# Update aus der Oberfläche (Administration → Übersicht): docker compose --profile updater up -d
+
+services:
+  untplanweb:
+    image: ghcr.io/florians25/untplanweb:latest
+    # Selbst bauen statt das fertige Image zu laden:
+    # build: { context: .., dockerfile: web/Dockerfile }
+    container_name: untplanweb
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: Europe/Berlin
+      UNTPLANWEB_ZEITZONE: Europe/Berlin
+      # Optional – sonst über den Einrichtungsassistenten im Browser:
+      # UNTPLANWEB_ADMIN_PASSWORT: "bitte-aendern"
+      # Zum Ausprobieren mit Beispieldaten:
+      # UNTPLANWEB_DEMO: "1"
+      # Update aus der Oberfläche über Watchtower (Profil „updater“, Token in .env: WATCHTOWER_TOKEN=…):
+      # UNTPLANWEB_UPDATE_WATCHTOWER_URL: http://watchtower:8080/v1/update
+      # UNTPLANWEB_UPDATE_WATCHTOWER_TOKEN: ${WATCHTOWER_TOKEN:-bitte-aendern}
+      # Updateprüfung abschalten:
+      # UNTPLANWEB_UPDATE_PRUEFEN: "0"
+    volumes:
+      - untplanweb-daten:/data
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+
+  # Optionaler Updater (nur mit --profile updater): lädt neue Images auf Anforderung aus der Administration
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    container_name: untplanweb-watchtower
+    profiles: ["updater"]
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Berlin
+      WATCHTOWER_HTTP_API_UPDATE: "true"
+      WATCHTOWER_HTTP_API_TOKEN: ${WATCHTOWER_TOKEN:-bitte-aendern}
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  untplanweb-daten:

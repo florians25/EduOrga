@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 28 28" fill="none" stroke="#8A96A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <title>UntPlan</title>
+  <rect x="3.25" y="5.25" width="21.5" height="19.5" rx="3"/>
+  <path d="M9 3v4.5M19 3v4.5M3.25 10.5h21.5"/>
+  <rect x="6.75" y="13.5" width="3.5" height="3" rx=".75"/>
+  <rect x="6.75" y="18.5" width="3.5" height="2.75" rx=".75"/>
+  <rect x="12.25" y="13.5" width="3.5" height="7.75" rx=".75"/>
+  <rect x="17.75" y="13.5" width="3.5" height="4.5" rx=".75"/>
+</svg>

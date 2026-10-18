@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Klassische Windows-Desktopanwendung (Windows Forms). Die FrameworkReference erlaubt
+       zusätzlich das Kompilieren auf Linux/macOS (CI, Tests); ausgeführt wird unter Windows. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <RootNamespace>UntPlan.App</RootNamespace>
+    <AssemblyName>UntPlan</AssemblyName>
+    <ApplicationIcon>..\..\build\untplan.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyTitle>UntPlan – Stunden- und Vertretungsplanung</AssemblyTitle>
+    <DefineConstants>$(DefineConstants);UNTPLANDESKTOP</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+    <ProjectReference Include="..\UntPlan.Core\UntPlan.Core.csproj" />
+    <Using Include="System.Drawing" />
+    <Using Include="System.Windows.Forms" />
+    <!-- dieselbe Update-Prüfung wie UntPlanWeb/UntPlanMobile (GitHub-Releases) -->
+    <Compile Include="..\..\web\src\UntPlanWeb\Dienste\Updatepruefung.cs" Link="Update\Updatepruefung.cs" />
+    <!-- Programmsymbole: FatCow „Farm-Fresh Web Icons“ (CC BY 3.0, siehe Bilder/FatCow/LIZENZ.txt) -->
+    <EmbeddedResource Include="Bilder\FatCow\16\*.png" LogicalName="FatCow.16.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Bilder\FatCow\32\*.png" LogicalName="FatCow.32.%(Filename)%(Extension)" />
+    <None Include="Bilder\FatCow\LIZENZ.txt" CopyToOutputDirectory="PreserveNewest" Link="Lizenzen\FatCow-Symbole.txt" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,656 @@
+/* UntPlanWeb – Klassenbuch im nl-design: Offene Stunden (os-), Wochenraster einer Klasse (kbw-) und Klassenbuchübersicht (kbu-).
+   Wird nach seiten.css geladen. Ruhige Flächen: weiße Karten, feine Linien, Farbe nur für Status. */
+
+/* ------------------------------------------------------------------ Offene Stunden: Werkzeugleiste */
+
+.os-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; width: 100%; padding: 12px 0; }
+.os-suche { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1 1 340px; max-width: 620px; min-height: 42px; padding: 4px 8px 4px 14px;
+  border-radius: 21px; background: #f3f5f7; cursor: text; }
+.os-suche:focus-within { background: #fff; box-shadow: inset 0 0 0 1.5px var(--u-akzent); }
+.os-suche > .u-sym, .os-suche > .bi { width: 20px; height: 20px; color: #8a96a1; flex: none; }
+.os-suche input { flex: 1 1 140px; min-width: 120px; height: 32px; border: 0; outline: 0; background: transparent; font: inherit; color: #24323d; }
+.os-suche input::-webkit-search-cancel-button { display: none; }
+.os-chip { display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 4px 0 12px; border-radius: 999px; background: #414d55; color: #fff; font-size: .85rem; font-weight: 600; white-space: nowrap; }
+.os-chip button { display: inline-grid; place-content: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: #fff; padding: 0; }
+.os-chip button:hover { background: rgba(255, 255, 255, .18); }
+.os-leeren { border: 0; background: none; color: #8a96a1; font-size: 18px; padding: 0 4px; line-height: 1; }
+.os-leeren:hover { color: #414d55; }
+.os-vorschlaege { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 40; max-height: 360px; overflow: auto; padding: 6px 0; background: #fff;
+  border: 1px solid #dfe3e7; border-radius: 10px; box-shadow: 0 10px 28px rgba(0, 5, 10, .14); }
+.os-v-titel { padding: 8px 16px 4px; font-size: .72rem; font-weight: 600; color: #8a96a1; text-transform: uppercase; letter-spacing: .04em; }
+.os-vorschlaege button { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 7px 16px; border: 0; background: none; text-align: left; font: inherit; font-size: .92rem; color: #24323d; }
+.os-vorschlaege button small { color: #8a96a1; font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.os-vorschlaege button:hover, .os-vorschlaege button.aktiv { background: #f3f5f7; }
+.os-zeit { position: relative; display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.os-zeitraum { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: #57626b; font-weight: 600; white-space: nowrap; }
+.os-zeitraum:hover, .os-zeitraum[aria-expanded="true"] { background: #f3f5f7; color: #24323d; }
+.os-zeitraum .u-sym, .os-zeitraum .bi { width: 18px; height: 18px; color: #8a96a1; }
+.os-zeitwahl { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 340px; padding: 16px;
+  background: #fff; border: 1px solid #dfe3e7; border-radius: 12px; box-shadow: 0 10px 28px rgba(0, 5, 10, .14); }
+.os-zeitwahl[hidden] { display: none; }
+.os-zeitwahl label { display: flex; flex-direction: column; gap: 4px; margin: 0; font-size: .78rem; font-weight: 600; color: #67747e; }
+.os-zeitwahl input { height: 38px; padding: 0 10px; border: 1.5px solid #c9d0d6; border-radius: 8px; font: inherit; font-size: .9rem; color: #24323d; }
+.os-zeitwahl input:focus { outline: 0; border-color: var(--u-akzent); }
+.os-zeitwahl-fuss { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+.os-zeitwahl-fuss .nl-hinzu { height: 34px; padding: 0 16px; font-size: .9rem; }
+/* ------------------------------------------------------------------ Offene Stunden: Kennzahlen, Hinweis, Tabelle */
+
+.os-zahlen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 16px; background: #fff; border: 1px solid var(--s-karte-rand, #dfe3e7); border-radius: 10px; overflow: hidden; }
+.os-zahl { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 14px 20px; border: 0; border-left: 1px solid #edf0f2; background: #fff; text-align: left; font: inherit; color: #57626b; min-width: 0; position: relative; }
+.os-zahl:first-child { border-left: 0; }
+.os-zahl:hover { background: #fafbfc; }
+.os-zahl b { font-size: 1.35rem; line-height: 1.2; font-weight: 600; color: #24323d; font-variant-numeric: tabular-nums; }
+.os-zahl span { font-size: .85rem; font-weight: 600; }
+.os-zahl small { font-size: .76rem; color: #8a96a1; }
+.os-zahl.an::after { content: ""; position: absolute; left: 20px; right: 20px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--u-akzent); }
+.os-zahl.an span { color: #24323d; }
+.os-zahl:focus-visible { outline: 2px solid rgba(245, 107, 42, .55); outline-offset: -2px; }
+.os-hinweis { display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; font-size: .85rem; color: #67747e; }
+.os-hinweis .u-sym, .os-hinweis .bi { width: 16px; height: 16px; color: #8a96a1; flex: none; }
+
+.os-tabelle { background: #fff; border: 1px solid var(--s-karte-rand, #dfe3e7); border-radius: 10px; overflow: hidden; }
+.os-tabelle table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.os-tabelle th { padding: 12px; font-size: .75rem; font-weight: 600; color: #8a96a1; text-transform: uppercase; letter-spacing: .04em; text-align: left; white-space: nowrap; border-bottom: 1px solid #e3e7eb; }
+.os-tabelle td { padding: 0 12px; height: 54px; border-bottom: 1px solid #f0f2f4; color: #24323d; vertical-align: middle; }
+.os-tabelle tbody tr:last-child td { border-bottom: 0; }
+.os-tabelle tbody tr { cursor: pointer; }
+.os-tabelle tbody tr:hover td { background: #fafbfc; }
+.os-tabelle tbody tr:focus-visible { outline: 0; }
+.os-tabelle tbody tr:focus-visible td { background: #f6f8f9; }
+.os-tabelle tbody tr:focus-visible td:first-child { box-shadow: inset 3px 0 0 var(--u-akzent); }
+.os-tabelle tbody tr.gewaehlt td { background: #fff7f2; }
+.os-wahl { width: 52px; padding-left: 18px !important; cursor: default; }
+.os-std { width: 64px; font-variant-numeric: tabular-nums; }
+.os-mitte { text-align: center !important; width: 150px; }
+.os-wt { display: inline-block; width: 22px; color: #8a96a1; }
+.os-zeitklein { display: block; margin-left: 26px; font-size: .76rem; color: #8a96a1; line-height: 1.1; }
+.os-fach { position: relative; padding-left: 12px; font-weight: 600; }
+.os-fach::before { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 4px; border-radius: 2px; background: var(--fach, #bfc8cf); }
+.os-art { margin-left: 4px; padding: 1px 7px; border-radius: 5px; background: #eef1f4; color: #57626b; font-size: .72rem; font-weight: 600; }
+.os-status { display: inline-grid; place-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 14px; }
+.os-status.ok { color: #13784a; background: #e8f5ee; }
+.os-status.fehlt { color: #c2470f; background: #fff1ea; }
+.os-pfeil-spalte { width: 40px; color: #c3cbd2; }
+.os-tabelle tr:hover .os-pfeil-spalte { color: var(--u-akzent); }
+.os-fuss { display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-top: 1px solid #e3e7eb; background: #fbfcfd; font-size: .875rem; color: #57626b; }
+
+@media (max-width: 991.98px) {
+  .os-zeit { margin-left: 0; }
+  .os-zahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .os-zahl:nth-child(3) { border-left: 0; }
+  .os-zahl:nth-child(n+3) { border-top: 1px solid #edf0f2; }
+  .os-tabelle { overflow-x: auto; }
+  .os-tabelle table { min-width: 760px; }
+}
+@media (max-width: 767.98px) {
+  /* Telefon: jede Stunde als zweizeilige Karte – Datum oben, Std./Klasse/Fach/Lehrkraft darunter, Status rechts */
+  .os-tabelle { overflow-x: visible; }
+  .os-tabelle table { min-width: 0; }
+  .os-tabelle thead { display: none; }
+  .os-tabelle tbody tr { display: grid; grid-template-columns: 40px auto auto auto minmax(0, 1fr) 34px 34px; align-items: center; column-gap: 10px; padding: 10px 12px 10px 4px; border-bottom: 1px solid #f0f2f4; }
+  .os-tabelle tbody tr:last-child { border-bottom: 0; }
+  .os-tabelle td { height: auto; padding: 0; border: 0; background: none !important; }
+  .os-tabelle td:nth-child(1) { grid-row: 1 / span 2; grid-column: 1; padding-left: 10px !important; width: auto; }
+  .os-tabelle td:nth-child(2) { grid-row: 1; grid-column: 2 / span 4; }
+  .os-tabelle td:nth-child(2) .os-zeitklein { display: inline; margin-left: 6px; }
+  .os-tabelle td:nth-child(3) { grid-row: 2; grid-column: 2; width: auto; color: #67747e; font-size: .85rem; }
+  .os-tabelle td:nth-child(3)::after { content: "."; }
+  .os-tabelle td:nth-child(4) { grid-row: 2; grid-column: 3; font-size: .85rem; }
+  .os-tabelle td:nth-child(5) { grid-row: 2; grid-column: 4; font-size: .85rem; white-space: nowrap; }
+  .os-tabelle td:nth-child(6) { grid-row: 2; grid-column: 5; font-size: .85rem; color: #67747e; }
+  .os-tabelle td:nth-child(7) { grid-row: 1 / span 2; grid-column: 6; width: auto; }
+  .os-tabelle td:nth-child(8) { grid-row: 1 / span 2; grid-column: 7; width: auto; }
+  .os-tabelle td:nth-child(9) { display: none; }
+  .os-tabelle tbody tr.gewaehlt { background: #fff7f2; }
+  .os-zeitraum { padding: 0 8px; font-size: .875rem; }
+  .os-zeitraum .u-sym, .os-zeitraum .bi { display: none; }
+  .kbw-woche { flex-wrap: wrap; }
+}
+@media (max-width: 575.98px) {
+  .os-suche { flex-basis: 100%; max-width: none; }
+  .os-zeit { width: 100%; justify-content: space-between; }
+  .os-zeitwahl { width: calc(100vw - 32px); right: auto; left: 0; }
+  .os-zahl { padding: 12px 14px; }
+  .os-zahl b { font-size: 1.15rem; }
+  .os-zahl.an::after { left: 14px; right: 14px; }
+}
+
+/* ------------------------------------------------------------------ Wochenansicht einer Klasse: Raster Tage × Stunden */
+
+.kbw-leiste { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-bottom: 14px; }
+.kbw-woche { display: flex; align-items: center; gap: 4px; }
+.kbw-zeitraum { padding: 0 8px; font-weight: 600; color: #24323d; white-space: nowrap; }
+.kbw-zeitraum b { margin-right: 6px; color: #8a96a1; font-weight: 600; }
+.kbw-heute { display: inline-flex; align-items: center; height: 34px; padding: 0 16px; margin-left: 8px; border: 1.5px solid #c9d0d6; border-radius: 999px; color: #414d55; font-weight: 600; font-size: .875rem; text-decoration: none !important; }
+.kbw-heute:hover { border-color: #8a96a1; color: #24323d; }
+.kbw-heute.aktiv { border-color: transparent; background: #eef1f4; }
+.kbw-zahlen { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: .85rem; color: #67747e; }
+.kbw-zahlen b { color: #24323d; font-weight: 600; font-variant-numeric: tabular-nums; margin-right: 2px; }
+.kbw-zahlen .warn b { color: #c2470f; }
+.kbw-schueler { color: #8a96a1; }
+
+.kbw-rahmen { background: #fff; border: 1px solid var(--s-karte-rand, #dfe3e7); border-radius: 10px; overflow-x: auto; }
+.kbw-raster { display: grid; min-width: 760px; }
+.kbw-ecke { grid-row: 1; grid-column: 1; border-bottom: 1px solid #e3e7eb; }
+.kbw-tag { grid-row: 1; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 8px 0 12px; border-bottom: 1px solid #e3e7eb; border-left: 1px solid #f0f2f4;
+  font-size: .875rem; color: #57626b; white-space: nowrap; }
+.kbw-tag b { color: #24323d; font-weight: 600; margin-right: 2px; }
+.kbw-tag.ist-heute { color: #c2470f; box-shadow: inset 0 -2px 0 var(--u-akzent); }
+.kbw-tag.ist-heute b { color: #c2470f; }
+.kbw-plus { display: inline-grid; place-content: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: #a3adb6; opacity: 0; transition: opacity .12s; }
+.kbw-tag:hover .kbw-plus, .kbw-plus:focus-visible { opacity: 1; }
+.kbw-plus:hover { background: #f1f4f6; color: #24323d; }
+.kbw-nr { grid-column: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; border-bottom: 1px solid #f0f2f4; }
+.kbw-nr b { font-size: 1rem; font-weight: 600; color: #414d55; }
+.kbw-nr small { font-size: .72rem; color: #a3adb6; }
+.kbw-leer, .kbw-block { border-left: 1px solid #f0f2f4; border-bottom: 1px solid #f0f2f4; }
+.kbw-leer.ist-heute, .kbw-block.ist-heute { background: #fffaf7; }
+.kbw-block { display: grid; gap: 4px; padding: 4px; min-width: 0; }
+.kbw-frei { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border-left: 1px solid #f0f2f4; background: repeating-linear-gradient(135deg, #f7f9fa 0 10px, #f2f4f6 10px 20px);
+  color: #8a96a1; font-size: .85rem; font-weight: 600; text-align: center; padding: 12px; }
+
+.kbw-stunde { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; padding: 7px 9px 7px 12px; border: 0; border-radius: 6px;
+  background: #f7f8fa; text-align: left; font: inherit; color: #24323d; cursor: pointer; overflow: hidden; transition: background .12s, box-shadow .12s; }
+.kbw-stunde::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--fach, #bfc8cf); }
+.kbw-stunde:hover { background: #eef1f4; }
+.kbw-stunde:focus-visible { outline: 2px solid rgba(245, 107, 42, .6); outline-offset: 1px; }
+.kbw-kopf { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.kbw-kopf b { font-weight: 600; font-size: .92rem; }
+.kbw-kopf > span { font-size: .78rem; color: #67747e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kbw-punkt { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #e7a17e; flex: none; margin-left: auto; align-self: center; }
+.kbw-stoff { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .8rem; line-height: 1.3; color: #57626b; }
+.kbw-fehlt { font-size: .78rem; font-weight: 600; color: #c2470f; }
+.kbw-entfall { font-size: .78rem; color: #8a96a1; }
+.kbw-zusatz { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: auto; padding-top: 2px; }
+.kbw-info { display: inline-flex; align-items: center; gap: 3px; font-size: .76rem; font-weight: 600; color: #67747e; }
+.kbw-info .bi { color: #8a96a1; }
+.kbw-info.ok .bi { color: #3a9a6a; }
+.kbw-stunde.entfall { background: #fafbfc; }
+.kbw-stunde.entfall::before { background: #d6dce1; }
+.kbw-stunde.entfall .kbw-kopf b { text-decoration: line-through; color: #8a96a1; font-weight: 600; }
+.kbw-stunde.kommend { background: #fff; box-shadow: inset 0 0 0 1px #eceff2; }
+.kbw-stunde.kommend:hover { background: #fafbfc; }
+.kbw-stunde.luecke { background: #fdf7f3; }
+.kbw-stunde.luecke:hover { background: #fbefe7; }
+
+.kbw-legende { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 2px 0; font-size: .78rem; color: #8a96a1; }
+.kbw-legende > span { display: inline-flex; align-items: center; gap: 5px; }
+.kbw-legende .bi { color: #8a96a1; }
+
+.kbw-vermerke { margin-top: 24px; }
+.kbw-vermerke h2 { font-size: 1rem; font-weight: 600; color: #24323d; margin: 0 0 10px; }
+.kbw-vermerke ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--s-karte-rand, #dfe3e7); border-radius: 10px; }
+.kbw-vermerke li { display: grid; grid-template-columns: 140px 150px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 12px 18px; border-bottom: 1px solid #f0f2f4; font-size: .875rem; }
+.kbw-vermerke li:last-child { border-bottom: 0; }
+.kbw-v-datum { color: #8a96a1; white-space: nowrap; }
+.kbw-v-art { font-weight: 600; color: #414d55; }
+.kbw-v-text { color: #24323d; }
+.kbw-v-lehrer { color: #8a96a1; }
+.kbw-v-leer { margin: 0; font-size: .875rem; color: #8a96a1; }
+
+@media (max-width: 767.98px) {
+  .kbw-raster { grid-template-columns: 48px repeat(var(--tage, 5), minmax(140px, 1fr)) !important; }
+  .kbw-nr { position: sticky; left: 0; z-index: 1; background: #fff; }
+  .kbw-ecke { position: sticky; left: 0; z-index: 1; background: #fff; }
+  .kbw-plus { opacity: 1; }
+  .kbw-vermerke li { grid-template-columns: 1fr auto; }
+  .kbw-v-text { grid-column: 1 / -1; }
+}
+
+/* ------------------------------------------------------------------ Klassenbuchübersicht (Woche/Tag): ruhig – eine Kennzahlenleiste,
+   Textreiter als Filter, gleich hohe Zeilen, Farbe nur für „Lehrstoff fehlt“ und den Status-Punkt */
+
+.kbu-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; width: 100%; padding: 12px 0; }
+.kbu-wahl { display: flex; align-items: center; gap: 10px; }
+.kbu-wahl-titel { font-size: .8rem; font-weight: 600; color: #8a96a1; text-transform: uppercase; letter-spacing: .04em; }
+.kbu-wahl .wahl-knopf { height: 40px; min-width: 120px; border-radius: 999px !important; justify-content: space-between; font-weight: 600; }
+.kbu-zeit { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.kbu-pfeil { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: #414d55; text-decoration: none !important; }
+.kbu-pfeil:hover { background: #f1f4f6; color: #24323d; }
+.kbu-zeitraum { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 1.5px solid #c9d0d6; border-radius: 999px;
+  font-weight: 600; color: #24323d; cursor: pointer; white-space: nowrap; margin: 0; }
+.kbu-zeitraum:hover { border-color: #8a96a1; }
+.kbu-zeitraum .u-sym, .kbu-zeitraum .bi { color: #8a96a1; width: 18px; height: 18px; }
+.kbu-zeitraum input { position: absolute; inset: 0; opacity: 0; pointer-events: none; width: 100%; }
+.kbu-heute { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; margin-left: 6px; border-radius: 999px; background: #67747e; color: #fff; font-weight: 600; text-decoration: none !important; }
+.kbu-heute:hover { background: #545f68; color: #fff; }
+.kbu-heute.aktiv { background: #414d55; }
+.kbu-segment { display: inline-flex; padding: 3px; border-radius: 999px; background: #eef1f4; }
+.kbu-segment a { display: inline-flex; align-items: center; height: 34px; padding: 0 18px; border-radius: 999px; font-weight: 600; font-size: .9rem; color: #57626b; text-decoration: none !important; }
+.kbu-segment a.an { background: #fff; color: #24323d; box-shadow: 0 1px 3px rgba(0, 5, 10, .14); }
+
+.kbu-kennzahlen { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(220px, 1.6fr); gap: 0; margin-bottom: 20px; background: #fff; border: 1px solid var(--s-karte-rand); border-radius: var(--s-karte-radius); overflow: hidden; }
+.kbu-kachel { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 14px 18px; border: 0; border-left: 1px solid #edf0f2; border-radius: 0;
+  background: #fff; text-align: left; color: #57626b; font: inherit; min-width: 0; }
+.kbu-kachel:first-child { border-left: 0; }
+button.kbu-kachel { cursor: pointer; transition: background .12s; }
+button.kbu-kachel:hover { background: #fafbfc; }
+.kbu-kachel.aktiv::after { content: ""; position: absolute; left: 18px; right: 18px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: #414d55; }
+.kbu-kachel:focus-visible { outline: 2px solid rgba(245, 107, 42, .55); outline-offset: -2px; }
+.kbu-kachel b { font-size: 1.3rem; line-height: 1.2; font-weight: 600; color: #24323d; font-variant-numeric: tabular-nums; }
+.kbu-kachel span { font-weight: 600; font-size: .875rem; }
+.kbu-kachel small { color: #8a96a1; font-size: .78rem; }
+.kbu-kachel.orange b { color: #c2470f; }
+.kbu-kachel.orange.aktiv::after { background: var(--s-orange); }
+.kbu-fortschritt { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 14px 20px; border-left: 1px solid #edf0f2; background: #fff; }
+.kbu-fortschritt-kopf { display: flex; justify-content: space-between; font-weight: 600; font-size: .875rem; color: #414d55; }
+.kbu-fortschritt-kopf b { color: #24323d; }
+.kbu-fortschritt small { color: #8a96a1; font-size: .78rem; }
+.kbu-fehlt-text { color: #c2470f; font-weight: 600; }
+.kbu-balken { height: 6px; border-radius: 999px; background: #eef1f4; overflow: hidden; }
+.kbu-balken span { display: block; height: 100%; border-radius: 999px; background: #67747e; }
+
+.kbu-pillen { display: flex; flex-wrap: wrap; gap: 0 22px; margin: 0 0 20px; border-bottom: 1px solid #dfe3e7; }
+.kbu-pille { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 2px; border: 0; background: none; color: #67747e; font-weight: 600; font-size: .875rem; }
+.kbu-pille:hover { color: #24323d; }
+.kbu-pille.an { color: #24323d; }
+.kbu-pille.an::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px; background: #24323d; }
+.kbu-pille:focus-visible { outline: 2px solid rgba(245, 107, 42, .55); outline-offset: 2px; border-radius: 4px; }
+.kbu-pille-zahl { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 6px; border-radius: 999px; background: #eef1f4; color: #57626b; font-size: .7rem; }
+
+.kbu-tag { background: #fff; border: 1px solid var(--s-karte-rand); border-radius: var(--s-karte-radius); margin-bottom: 20px; overflow: hidden; }
+.kbu-tagkopf { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid #edf0f2; }
+.kbu-datum { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #e3e7eb; flex: none; line-height: 1; }
+.kbu-datum b { font-size: 1.1rem; font-weight: 600; color: #24323d; }
+.kbu-datum small { font-size: .64rem; font-weight: 600; color: #8a96a1; text-transform: uppercase; margin-top: 2px; }
+.kbu-tag.heute .kbu-datum { border-color: #f3b796; }
+.kbu-tag.heute .kbu-datum b { color: #c2470f; }
+.kbu-tagtitel h2 { font-size: 1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+.kbu-tagtitel span { font-size: .8rem; color: #8a96a1; }
+.kbu-heute-text { font-size: .75rem; font-weight: 600; color: #c2470f; }
+.kbu-tagchips { margin-left: auto; display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: flex-end; }
+.kbu-tagzahl { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; color: #8a96a1; }
+.kbu-tagzahl.warn { color: #c2470f; }
+.kbu-label { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: .75rem; font-weight: 600; white-space: nowrap; background: #eef1f4; color: #414d55; }
+.kbu-label.orange { background: var(--s-orange-hell); color: #c2470f; }
+.kbu-label.gruen { background: #e5f6ec; color: #0f7b47; }
+.kbu-label.rot { background: #fdecec; color: #c62828; }
+.kbu-label.gelb { background: #fff4d6; color: #8a5a00; }
+.kbu-label.grau { background: #eef1f4; color: #57626b; }
+
+.kbu-tabelle { --kbu-spalten: 64px minmax(120px, 1.1fr) minmax(160px, 2.2fr) minmax(130px, 1.1fr) 76px minmax(140px, 1.6fr) 170px; }
+.kbu-kopfzeile, .kbu-zeile { display: grid; grid-template-columns: var(--kbu-spalten); align-items: center; gap: 0 16px; padding: 0 20px; }
+.kbu-kopfzeile { height: 38px; font-size: .72rem; font-weight: 600; color: #8a96a1; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #edf0f2; }
+.kbu-zeile { height: 60px; border-bottom: 1px solid #f1f3f5; cursor: pointer; position: relative; font-size: .875rem; color: #24323d; }
+.kbu-zeile:last-child { border-bottom: 0; }
+.kbu-zeile:hover, .kbu-zeile:focus-visible { background: #fafbfc; outline: 0; }
+.kbu-zeile:focus-visible { box-shadow: inset 3px 0 0 var(--s-orange); }
+.kbu-zeile.entfall .kbu-fach b, .kbu-zeile.entfall .kbu-std b { text-decoration: line-through; color: #8a96a1; }
+.kbu-std { display: flex; flex-direction: column; line-height: 1.15; }
+.kbu-std b { font-size: 1rem; font-weight: 600; }
+.kbu-std small { color: #8a96a1; font-size: .75rem; }
+.kbu-fach { position: relative; padding-left: 12px; display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.kbu-fach::before { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 4px; border-radius: 2px; background: var(--fach, #bfc8cf); }
+.kbu-fach b { font-weight: 600; }
+.kbu-fach small { color: #67747e; font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kbu-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.35; color: #414d55; }
+.kbu-stoff, .kbu-hw, .kbu-abwz { min-width: 0; }
+.kbu-fehlt { font-weight: 600; font-size: .82rem; color: #c2470f; }
+.kbu-still { color: #a3adb6; font-size: .82rem; }
+.kbu-abwz { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.kbu-abw { display: inline-flex; align-items: center; gap: 4px; font-size: .85rem; font-weight: 600; color: #414d55; }
+.kbu-abw .bi { color: #8a96a1; }
+.kbu-abw small { font-weight: 400; color: #8a96a1; font-size: .78rem; }
+.kbu-zahl { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: #414d55; }
+.kbu-zahl .bi { color: #8a96a1; }
+.kbu-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kbu-st { display: inline-flex; align-items: center; gap: 7px; font-size: .82rem; color: #57626b; white-space: nowrap; }
+.kbu-st::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #c3cbd2; flex: none; }
+.kbu-st.gruen::before { background: #3a9a6a; }
+.kbu-st.orange::before { background: var(--s-orange); }
+.kbu-st.orange { color: #24323d; }
+.kbu-st.gelb::before { background: #e3b341; }
+.kbu-st.rot::before { background: #d9534f; }
+.kbu-pfeilchen { color: #c3cbd2; transition: transform .12s, color .12s; }
+.kbu-zeile:hover .kbu-pfeilchen { color: #67747e; transform: translateX(2px); }
+.kbu-leer { background: #fff; border: 1px dashed #cfd6dc; border-radius: var(--s-karte-radius); }
+
+@media (max-width: 1399.98px) {
+  .kbu-kennzahlen { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .kbu-fortschritt { grid-column: 1 / -1; border-left: 0; border-top: 1px solid #edf0f2; }
+}
+@media (max-width: 1199.98px) {
+  .kbu-tabelle { --kbu-spalten: 56px minmax(110px, 1fr) minmax(150px, 2fr) minmax(120px, 1fr) 60px minmax(120px, 1.3fr) 150px; }
+  .kbu-kopfzeile, .kbu-zeile { gap: 0 12px; padding-left: 14px; padding-right: 14px; }
+}
+@media (max-width: 991.98px) {
+  .kbu-leiste { gap: 10px; }
+  .kbu-zeit { margin-left: 0; }
+  .kbu-kennzahlen { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kbu-kachel:nth-child(4) { border-left: 0; }
+  .kbu-kachel:nth-child(n+4), .kbu-fortschritt { border-top: 1px solid #edf0f2; }
+  .kbu-text { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  /* Stunden als Karten: Kopfzeile ausgeblendet, Felder untereinander */
+  .kbu-kopfzeile { display: none; }
+  .kbu-zeile { height: auto; grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "std fach status" "std stoff stoff" "std abw abw" "std hw hw"; gap: 6px 12px; padding: 12px 14px; }
+  .kbu-std { grid-area: std; } .kbu-fach { grid-area: fach; } .kbu-status { grid-area: status; } .kbu-stoff { grid-area: stoff; }
+  .kbu-abwz { grid-area: abw; } .kbu-hw { grid-area: hw; } .kbu-eintr { display: none; }
+  .kbu-abwz:has(> .kbu-still), .kbu-hw:has(> .kbu-still) { display: none; }
+  .kbu-hw::before { content: "Hausaufgabe: "; color: #8a96a1; font-size: .78rem; }
+  .kbu-hw .kbu-text { display: inline; }
+}
+@media (max-width: 575.98px) {
+  .kbu-zeit { width: 100%; justify-content: space-between; }
+  .kbu-zeitraum { flex: 1; justify-content: center; padding: 0 10px; font-size: .875rem; }
+  .kbu-heute { margin-left: 0; padding: 0 14px; }
+  .kbu-segment { width: 100%; } .kbu-segment a { flex: 1; justify-content: center; }
+  .kbu-wahl { width: 100%; } .kbu-wahl .elementwahl { flex: 1; } .kbu-wahl .wahl-knopf { width: 100%; }
+  .kbu-kennzahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kbu-kachel:nth-child(n) { border-left: 1px solid #edf0f2; border-top: 1px solid #edf0f2; }
+  .kbu-kachel:first-child { border-top: 0; border-left: 0; }
+  .kbu-kachel:nth-child(2n) { border-left: 0; }
+  .kbu-kachel { padding: 10px 12px; } .kbu-kachel b { font-size: 1.3rem; }
+  .kbu-kachel:first-child { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: 8px; }
+  .kbu-pillen { flex-wrap: nowrap; overflow-x: auto; margin-left: calc(-1 * var(--s-rand)); margin-right: calc(-1 * var(--s-rand)); padding: 0 var(--s-rand) 2px; scrollbar-width: none; }
+  .kbu-pille { flex: none; }
+  .kbu-tagkopf { padding: 12px 14px; flex-wrap: wrap; }
+  .kbu-tagchips { width: 100%; justify-content: flex-start; margin-left: 62px; margin-top: -6px; }
+  .kbu-tagchips:empty { display: none; }
+  .kbu-status .kbu-st { font-size: .75rem; }
+}
+
+
+/* ------------------------------------------------------------------ Klassenbuch-Übersicht als Liste (Endlos-Scroll durchs Schuljahr):
+   Kopf mit Unterrichtsauswahl bzw. Suche und Filterknöpfen, je Tag Trennlinie mit KW und Datumspille, darunter eine ruhige Tabelle */
+
+.kbl-kopf { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; padding: 12px 0; }
+.kbl-wahl, .kbl-zeile2 { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.kbl-titelwahl { display: inline-flex; align-items: center; gap: 10px; padding: 2px 6px 2px 0; border: 0; background: none; font: inherit; font-size: 1.3rem; font-weight: 600; color: #24323d; border-radius: 6px; }
+.kbl-titelwahl .bi, .kbl-lehrkraft .bi { font-size: .8rem; color: #8a96a1; transition: transform .12s; }
+.kbl-titelwahl[aria-expanded="true"] .bi, .kbl-lehrkraft[aria-expanded="true"] .bi { transform: rotate(180deg); }
+.kbl-titelwahl:focus-visible, .kbl-lehrkraft:focus-visible, .kbl-fknopf:focus-visible, .kbl-datum:focus-visible { outline: 2px solid rgba(245, 107, 42, .55); outline-offset: 2px; }
+.kbl-trennstrich { margin: 0 8px; color: #b6bfc6; font-weight: 400; }
+.kbl-lehrkraft { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px 0 14px; border: 0; border-radius: 999px; background: #414d55; color: #fff; font-size: .85rem; font-weight: 600; }
+.kbl-lehrkraft .bi { color: rgba(255, 255, 255, .75); }
+.kbl-filter { display: flex; flex-wrap: wrap; gap: 8px; }
+.kbl-fknopf { height: 30px; padding: 0 14px; border: 1.5px solid #c9d0d6; border-radius: 999px; background: #fff; color: #414d55; font-size: .82rem; font-weight: 600; white-space: nowrap; }
+.kbl-fknopf:hover { border-color: #8a96a1; }
+.kbl-fknopf.an { border-color: #414d55; background: #414d55; color: #fff; }
+.kbl-suche { width: 100%; max-width: none; flex: none; }
+.kbl-menue { position: absolute; left: 0; top: calc(100% + 6px); z-index: 60; min-width: 220px; max-height: 360px; overflow: auto; padding: 6px 0; background: #fff;
+  border: 1px solid #e3e7eb; border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 5, 10, .12); }
+.kbl-menue button { display: flex; align-items: baseline; gap: 8px; width: 100%; padding: 8px 16px; border: 0; background: none; text-align: left; font: inherit; font-size: .92rem; font-weight: 600; color: #24323d; white-space: nowrap; }
+.kbl-menue button small { font-weight: 400; color: #8a96a1; font-size: .78rem; }
+.kbl-menue button:hover, .kbl-menue button:focus-visible { background: #f3f5f7; outline: 0; }
+.kbl-menue button.an { color: var(--s-orange); }
+.kbl-trenner .kbl-menue { left: 50%; transform: translateX(-50%); }
+
+.kbl { overflow-anchor: none; padding-bottom: 24px; }
+.kbl-rand { height: 1px; }
+.kbl-tagblock { margin-bottom: 30px; }
+/* Trennzeile: KW links, Linie über die volle Breite, Datumspille genau in der Mitte */
+.kbl-trenner { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 22px; }
+.kbl-links { display: flex; align-items: center; gap: 22px; min-width: 0; }
+.kbl-kw { flex: none; font-size: .8rem; font-weight: 400; color: #67747e; }
+.kbl-kw:empty { display: none; }
+.kbl-linie { flex: 1; height: 1px; background: #d4dadf; }
+.kbl-datum { display: inline-flex; align-items: center; height: 32px; padding: 0 12px 0 15px; border: 1px solid #ccd3d9; border-radius: 999px; background: #fff; color: #414d55; font-size: .8rem; font-weight: 400; white-space: nowrap; }
+.kbl-datum:hover { border-color: #8a96a1; }
+.kbl-datum .bi { margin-left: 8px; font-size: .72rem; color: #67747e; }
+.kbl-datum .kbl-trennstrich { margin: 0 7px; color: #ccd3d9; }
+.kbl-heute { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--s-orange-hell); color: #c2470f; font-size: .72rem; }
+.kbl-tagblock.ist-heute .kbl-datum { border-color: var(--s-orange); }
+
+/* Tabelle wie im Original: h | Fach | (Lehrkräfte) | Klassen | Lehrstoff | Abwesenheiten | Hausaufgaben */
+.kbl-tabelle { --kbl-spalten: minmax(34px, .55fr) minmax(60px, 1.5fr) minmax(110px, 1.5fr) minmax(70px, 1.5fr) minmax(120px, 1.5fr) minmax(180px, 1.9fr) minmax(110px, 1.4fr);
+  overflow: visible; border-radius: 4px; background: #fff; box-shadow: 0 1px 5px rgba(20, 30, 40, .09); }
+.kbl-tabelle.ohne-lehrer { --kbl-spalten: minmax(34px, .6fr) minmax(60px, 1.8fr) minmax(70px, 1.8fr) minmax(120px, 1.8fr) minmax(180px, 2.2fr) minmax(110px, 1.6fr); }
+.kbl-kopfzeile, .kbl-zeile { display: grid; grid-template-columns: var(--kbl-spalten); gap: 0; align-items: center; padding: 0 12px 0 0; }
+.kbl-kopfzeile > span, .kbl-zeile > span { min-width: 0; padding: 0 12px 0 20px; }
+.kbl-kopfzeile > span:first-child, .kbl-zeile > span:first-child { padding-left: 20px; padding-right: 4px; }
+.kbl-kopfzeile { height: 40px; border-bottom: 1px solid #eceff2; font-size: .72rem; font-weight: 400; color: #67747e; }
+.kbl-kopfzeile > span { position: relative; }
+.kbl-kopfzeile > span + span::before { content: ""; position: absolute; left: 0; top: 50%; width: 1px; height: 18px; margin-top: -9px; background: #e3e7ea; }
+.kbl-zeile { min-height: 52px; padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #eceff2; cursor: pointer; font-size: .875rem; color: #24323d; }
+.kbl-zeile:last-child { border-bottom: 0; border-radius: 0 0 4px 4px; }
+.kbl-zeile:hover { background: #f4f5f7; }
+.kbl-zeile:focus-visible { outline: 0; background: #f4f5f7; box-shadow: inset 3px 0 0 var(--u-akzent); }
+.kbl-h { color: #8a96a1; font-variant-numeric: tabular-nums; }
+.kbl-fach { color: #8a96a1; }
+.kbl-lehrer, .kbl-klassen { font-weight: 700; color: #24323d; overflow-wrap: anywhere; }
+.kbl-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kbl-stoff .kbl-text { color: #a3acb4; }
+.kbl-hw .kbl-text { color: #414d55; }
+.kbl-abw { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.kbl-tag { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 14px; border: 1px solid #ccd3d9; border-radius: 999px; background: #fff; color: #414d55; font-size: .78rem; font-weight: 400; white-space: nowrap; }
+.kbl-tag b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.kbl-trenn { width: 1px; height: 12px; margin: 0 -2px; background: #ccd3d9; }
+.kbl-tag.zahl { gap: 6px; }
+.kbl-tag.zahl b.kbl-offen { font-weight: 400; }
+.kbl-tag.zahl b + .kbl-trenn + b { margin-right: 3px; }
+.kbl-tag.zahl.gruen .kbl-offen { color: #17a35c; }
+.kbl-tag.zahl.gelb .kbl-offen { color: #d98a00; }
+.kbl-tag.zahl.rot .kbl-offen { color: #d33a3a; }
+.kbl-tag.gruen:not(.zahl) { border-color: transparent; background: #e3f5eb; color: #198a52; }
+.kbl-tag.rot:not(.zahl) { border-color: #f3b8b8; background: #fdecec; color: #b42323; }
+.kbl-tag.pruefen { color: #414d55; }
+.kbl-tag .bi { font-size: .9rem; }
+.kbl-zeile.entfall { color: #8a96a1; }
+.kbl-zeile.entfall .kbl-fach, .kbl-zeile.entfall .kbl-lehrer, .kbl-zeile.entfall .kbl-klassen { text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, .3); color: #8a96a1; }
+.kbl-grenze { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0 18px; font-size: .8rem; color: #8a96a1; }
+.kbl-kalender { position: fixed; left: 50%; top: 40%; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; }
+.kbl-leerseite { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 52vh; text-align: center; color: #67747e; font-size: .9rem; }
+.kbl-leerseite.klein { min-height: 160px; }
+.kbl-leerseite p { max-width: 520px; margin: 0; }
+.kbl-leer-symbol { display: inline-grid; place-content: center; width: 44px; height: 44px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0, 5, 10, .1); color: #57626b; font-size: 1.05rem; }
+
+@media (max-width: 1199.98px) {
+  .kbl-kopfzeile > span, .kbl-zeile > span { padding-left: 12px; padding-right: 8px; }
+  .kbl-kopfzeile > span:first-child, .kbl-zeile > span:first-child { padding-left: 14px; }
+}
+@media (max-width: 991.98px) {
+  /* Stunden als Karten: Kopfzeile ausgeblendet, Felder untereinander */
+  .kbl-kopfzeile { display: none; }
+  .kbl-zeile { grid-template-columns: 32px minmax(0, 1fr); grid-template-areas: "h kopf" "h stoff" "h abw" "h hw"; gap: 4px 10px; padding: 10px 14px; }
+  .kbl-h { grid-area: h; align-self: start; font-weight: 600; }
+  .kbl-zeile { grid-template-areas: "h fach" "h lehrer" "h stoff" "h abw" "h hw"; }
+  .kbl-fach { grid-area: fach; display: inline; font-weight: 600; color: #24323d; }
+  .kbl-klassen { display: none; }
+  .kbl-lehrer { grid-area: lehrer; font-weight: 400; font-size: .8rem; color: #67747e; }
+  .kbl-stoff { grid-area: stoff; } .kbl-abw { grid-area: abw; } .kbl-hw { grid-area: hw; }
+  .kbl-stoff:empty, .kbl-abw:empty, .kbl-hw:empty { display: none; }
+  .kbl-text { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .kbl-hw .kbl-text::before { content: "Hausaufgabe: "; color: #8a96a1; }
+  .kbl-titelwahl { font-size: 1.1rem; }
+  .kbl-zeile > span, .kbl-zeile > span:first-child { padding: 0; }
+  .ohne-lehrer .kbl-klassen { display: block; grid-area: lehrer; font-weight: 400; font-size: .8rem; color: #67747e; }
+  .kbl-tagblock { margin-bottom: 22px; }
+  .kbl-trenner { margin-bottom: 14px; }
+}
+@media (max-width: 575.98px) {
+  .kbl-kw { display: none; }
+  .kbl-datum { font-size: .78rem; padding: 0 10px; }
+  .kbl-filter { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+  .kbl-fknopf { flex: none; }
+}
+
+/* ------------------------------------------------------------------ Stundendetails: abgerundete Schülerkacheln, Hausaufgaben als Zeilen
+   mit Detailfenster, Klassendienste in der Optik der Seite Klassendienste */
+
+.sd-kacheln { gap: 6px; }
+.sd-kachel { border-radius: 10px; }
+.sd-kachel.gewaehlt { outline-offset: -2px; }
+.kb-hw.klickbar { width: 100%; margin: 0 0 6px; padding: 8px 12px; border: 1px solid #e6eaee; border-radius: 10px; background: #fff; text-align: left; font: inherit; font-size: .9rem; align-items: center; cursor: pointer; }
+.kb-hw.klickbar:hover { border-color: #c9d0d6; background: #fafbfc; }
+.kb-hw.klickbar:focus-visible { outline: 2px solid rgba(245, 107, 42, .55); outline-offset: 1px; }
+.kb-hw.klickbar .text { flex: 1 1 auto; min-width: 0; }
+.kb-hw.klickbar small { order: 5; }
+.kb-hw-ok { color: #13784a; }
+.kb-hw-pfeil { margin-left: auto; color: #c3cbd2; font-size: .8rem; }
+.kb-hw.klickbar:hover .kb-hw-pfeil { color: #67747e; }
+.kb-kd { display: flex; flex-direction: column; border: 1px solid #e6eaee; border-radius: 10px; background: #fff; overflow: hidden; }
+.kb-kd-zeile { display: grid; grid-template-columns: minmax(170px, 1fr) minmax(0, 2fr); align-items: center; gap: 8px 16px; padding: 10px 14px; border-bottom: 1px solid #f1f3f5; font-size: .9rem; }
+.kb-kd-zeile:last-child { border-bottom: 0; }
+.sd-link-klein { font-size: .82rem; font-weight: 600; color: #57626b; text-decoration: none; }
+.sd-link-klein:hover { color: var(--s-orange); text-decoration: none; }
+@media (max-width: 575.98px) { .kb-kd-zeile { grid-template-columns: 1fr; } }
+
+/* Hausaufgaben: Liste (Zeile anklickbar) und Fenster (Details, Formular) */
+.ha-liste tbody tr { cursor: pointer; }
+.ha-liste tbody tr:hover td { background: #fafbfc; }
+.ha-liste tbody tr:focus-visible { outline: 2px solid rgba(245, 107, 42, .55); outline-offset: -2px; }
+.ha-liste .ha-text { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ha-liste tr.erledigt .ha-text { color: #8a96a1; text-decoration: line-through; }
+.ha-liste .ha-ueber { color: #c2470f; font-weight: 600; }
+.ha-liste .ha-st { width: 36px; text-align: center; color: #13784a; }
+.hw-fenster .modal-content { border-radius: 14px; }
+.hw-details { display: flex; flex-direction: column; gap: 14px; }
+.hw-d-kopf { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hw-d-fach { font-size: 1.15rem; font-weight: 600; color: #24323d; }
+.hw-d-klassen { color: #67747e; font-weight: 600; }
+.hw-d-status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; border-radius: 999px; background: #fff8e2; color: #7a5300; font-size: .8rem; font-weight: 600; }
+.hw-d-status.erledigt { background: #e5f6ec; color: #0f7b47; }
+.hw-d-status.ueberfaellig { background: #fdecec; color: #b42323; }
+.hw-d-text { margin: 0; padding: 12px 14px; border-radius: 10px; background: #f6f8f9; white-space: pre-wrap; color: #24323d; }
+.hw-d-liste { display: grid; grid-template-columns: 140px 1fr; margin: 0; border-top: 1px solid #edf0f2; }
+.hw-d-zeile { display: contents; }
+.hw-d-zeile dt, .hw-d-zeile dd { margin: 0; padding: 9px 0; border-bottom: 1px solid #edf0f2; font-size: .9rem; }
+.hw-d-zeile dt { color: #67747e; font-weight: 600; font-size: .82rem; }
+.hw-d-zeile dd { color: #24323d; }
+.hw-d-grau { color: #8a96a1; }
+.hw-d-erledigt { display: inline-flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; }
+.hw-d-hinweis { display: flex; gap: 8px; margin: 0; font-size: .82rem; color: #67747e; }
+.hw-formular { display: flex; flex-direction: column; gap: 14px; }
+.hw-f-reihe { display: grid; grid-template-columns: 180px 1fr; gap: 12px; }
+.hw-f-stunde { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; background: #f6f8f9; font-weight: 600; color: #24323d; }
+.hw-f-stunde .bi { color: #8a96a1; }
+.hw-f-datum { max-width: 200px; }
+.hw-f-anhang { display: flex; align-items: center; gap: 8px; padding: 6px 14px; color: #8a96a1; font-size: .85rem; }
+@media (max-width: 575.98px) { .hw-f-reihe { grid-template-columns: 1fr; } .hw-d-liste { grid-template-columns: 110px 1fr; } }
+
+/* ------------------------------------------------------------------ Berichte als ruhige Liste: Symbol, Titel und Beschreibung, Hinweise, Aktionen rechts */
+
+.br-liste { background: #fff; border: 1px solid var(--s-karte-rand); border-radius: 10px; overflow: hidden; }
+.br-reihe { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; align-items: center; gap: 0 16px; padding: 12px 16px; border-bottom: 1px solid #f0f2f4; }
+.br-reihe:last-child { border-bottom: 0; }
+.br-reihe:hover { background: #fafbfc; }
+.br-reihe.aktiv { background: var(--s-orange-hell); box-shadow: inset 3px 0 0 var(--s-orange); }
+.br-reihe .br-symbol { width: 36px; height: 36px; border-radius: 10px; font-size: 1rem; }
+.br-reihe-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 2px 0; border: 0; background: none; text-align: left; font: inherit; color: inherit; }
+.br-reihe-text b { font-size: .92rem; font-weight: 600; color: #24323d; }
+.br-reihe-text span { font-size: .8rem; color: #67747e; line-height: 1.4; }
+.br-reihe-text:hover b { color: var(--s-orange); }
+.br-reihe-text:focus-visible { outline: 2px solid rgba(245, 107, 42, .55); outline-offset: 2px; border-radius: 4px; }
+.br-reihe-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.br-reihe-tags:empty { display: none; }
+.br-reihe-aktionen { display: flex; gap: 6px; }
+.br-reihe-aktionen .br-knopf { height: 32px; padding: 0 12px; font-size: .8rem; }
+@media (max-width: 991.98px) {
+  .br-reihe { grid-template-columns: 36px minmax(0, 1fr); grid-template-areas: "s t" "s g" "s a"; gap: 6px 12px; }
+  .br-reihe .br-symbol { grid-area: s; align-self: start; }
+  .br-reihe-text { grid-area: t; } .br-reihe-tags { grid-area: g; justify-content: flex-start; } .br-reihe-aktionen { grid-area: a; }
+}
+@media (max-width: 575.98px) { .br-reihe-aktionen .br-knopf span { display: none; } .br-reihe-aktionen .br-knopf { width: 38px; padding: 0; } }
+
+/* ------------------------------------------------------------------ Offene Stunden im Original-Look: schlichte Tabelle, „Prüfen“/„Eingeben“,
+   Auswahl „Alle“ in der Suche, Kalender mit zwei Monaten, Seitenleiste „Lehrstoff“ */
+
+.os-trenn { width: 1px; height: 20px; background: #c9d0d6; margin: 0 4px; flex: none; }
+.os-artwahl { margin: 0; flex: none; }
+.os-artwahl select { height: 32px; border: 0; background-color: transparent; font: inherit; font-size: .88rem; font-weight: 600; color: #414d55; }
+.os-artwahl .wahl-knopf, .os-artwahl .auswahl-knopf { border: 0 !important; background: transparent !important; box-shadow: none !important; min-height: 32px; height: 32px; font-weight: 600; }
+.os-original .os-tabelle th { text-transform: none; letter-spacing: 0; font-size: .78rem; color: #8a96a1; font-weight: 600; padding: 12px 10px; }
+.os-original .os-tabelle td { height: 52px; padding: 0 10px; font-size: .875rem; color: #414d55; }
+.os-original .os-tabelle td.os-wahl, .os-original .os-tabelle th.os-wahl { width: 52px; padding-left: 18px; }
+.os-original .os-datum { font-variant-numeric: tabular-nums; }
+.os-original .os-artspalte { color: #67747e; font-size: .82rem; }
+.os-pille { display: inline-flex; align-items: center; height: 28px; padding: 0 14px; border: 1px solid #c9d0d6; border-radius: 999px; background: #fff; color: #24323d; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.os-pille:hover { border-color: #414d55; }
+.os-pille:focus-visible { outline: 2px solid rgba(245, 107, 42, .55); outline-offset: 2px; }
+.os-original .os-hinweis { margin: 12px 0 0; }
+.os-zeitraum { font-variant-numeric: tabular-nums; }
+
+.os-leiste-huelle { position: fixed; inset: 0; z-index: 1060; }
+.os-l-schleier { position: absolute; inset: 0; background: rgba(0, 5, 10, .18); opacity: 0; transition: opacity .2s; }
+.os-l-panel { position: absolute; top: 0; right: 0; bottom: 0; width: min(420px, 100%); display: flex; flex-direction: column; background: #fff; box-shadow: -10px 0 30px rgba(0, 5, 10, .12);
+  transform: translateX(100%); transition: transform .2s ease; }
+.os-leiste-huelle.offen .os-l-schleier { opacity: 1; }
+.os-leiste-huelle.offen .os-l-panel { transform: none; }
+.os-l-panel header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 12px; }
+.os-l-panel header h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.os-l-rumpf { flex: 1; overflow: auto; padding: 4px 20px 20px; display: flex; flex-direction: column; gap: 12px; }
+.os-l-panel footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid #edf0f2; }
+.os-l-stunde { border-radius: 10px; background: #eef1f4; padding: 10px; }
+.os-l-zeit { display: flex; align-items: center; gap: 12px; padding: 0 4px 8px; font-size: .82rem; font-weight: 600; color: #414d55; }
+.os-l-pfeile { margin-left: auto; display: inline-flex; gap: 2px; }
+.os-l-pfeile button { width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: #414d55; }
+.os-l-pfeile button:hover:not(:disabled) { background: rgba(255, 255, 255, .8); }
+.os-l-pfeile button:disabled { color: #b6bfc6; }
+.os-l-karte { display: flex; flex-direction: column; gap: 1px; padding: 8px 12px; border-radius: 8px; background: #fff; border-left: 4px solid var(--fach); font-size: .82rem; color: #414d55; box-shadow: 0 1px 3px rgba(0, 5, 10, .08); }
+.os-l-karte b { font-size: .95rem; color: #24323d; }
+.os-l-feldkopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .85rem; font-weight: 600; color: #414d55; }
+.os-l-feldkopf select { height: 30px; border: 1px solid #c9d0d6; border-radius: 999px; padding: 0 10px; font-size: .8rem; background: #fff; }
+.os-l-vor ul { list-style: none; margin: 6px 0 0; padding: 0; }
+.os-l-vor li { display: grid; grid-template-columns: 54px 30px minmax(0, 1fr) 32px; align-items: center; gap: 6px; min-height: 36px; border-bottom: 1px solid #f0f2f4; font-size: .82rem; }
+.os-l-vdatum, .os-l-vwt { color: #8a96a1; }
+.os-l-vtext { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #414d55; }
+.os-l-vor li button { width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: #67747e; }
+.os-l-vor li button:hover { background: #f3f5f7; color: var(--s-orange); }
+.os-l-hinweis { margin: 0; font-size: .82rem; color: #8a96a1; }
+
+/* ------------------------------------------------------------------ Gemeinsame Modal-Komponente des Klassenbuchs (js/kbdialog.js)
+   Breiten-Stufen s/m/l/xl, Kopf mit Titel und X, Inhalt mit einheitlichen Abständen, Fuß rechts (Löschen links), gleiche Animation. */
+body.kbd-offen { overflow: hidden; }
+.kbd-overlay { position: fixed; inset: 0; z-index: 1080; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 24px;
+  background: rgba(36, 50, 61, .45); overflow-y: auto; opacity: 0; transition: opacity .16s ease; }
+.kbd-overlay.an { opacity: 1; }
+.kbd-fenster { display: flex; flex-direction: column; width: 100%; max-height: calc(100dvh - 6vh - 24px); background: #fff; border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 5, 10, .25); color: var(--u-text); font-size: .9rem; overflow: hidden; transform: translateY(10px) scale(.985); transition: transform .16s ease; }
+.kbd-overlay.an .kbd-fenster { transform: none; }
+.kbd-s { max-width: 420px; } .kbd-m { max-width: 560px; } .kbd-l { max-width: 800px; } .kbd-xl { max-width: 1100px; }
+.kbd-kopf { display: flex; align-items: center; gap: 12px; padding: 16px 20px 14px 24px; border-bottom: 1px solid #e3e7eb; flex: none; }
+.kbd-kopf h2 { flex: 1; min-width: 0; margin: 0; font-size: 1.1rem; font-weight: 500; color: var(--u-titel); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kbd-zu { flex: none; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: none; color: #67747e; font-size: 1.05rem; }
+.kbd-zu:hover, .kbd-zu:focus-visible { background: #f1f3f5; color: var(--u-titel); }
+.kbd-rumpf { padding: 20px 24px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.kbd-rumpf > :last-child { margin-bottom: 0; }
+.kbd-fuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 24px 16px; border-top: 1px solid #e3e7eb; flex: none; }
+.kbd-fuss .kbd-links { margin-right: auto; }
+.kbd-fuss .nl-knopf { font-weight: 500; }
+.kbd-fuss .nl-knopf:disabled { opacity: .5; cursor: default; }
+.kbd-fuss .kbd-gefahr { background: #c62f35; border-color: #c62f35; color: #fff; }
+.kbd-fuss .kbd-gefahr:hover { background: #a1262b; border-color: #a1262b; color: #fff; }
+.kbd-text { line-height: 1.5; white-space: pre-line; }
+@media (max-width: 575.98px) {
+  .kbd-overlay { padding: 16px; align-items: flex-end; }
+  .kbd-fenster { max-height: calc(100dvh - 32px); }
+  .kbd-rumpf { padding: 16px; } .kbd-kopf { padding: 12px 12px 12px 16px; } .kbd-fuss { padding: 12px 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .kbd-overlay, .kbd-fenster { transition: none; } }
+
+/* Fachlehrer-Entschuldigungen: Seitenleiste „Fehlzeiten“ und Entschuldigungsdialog */
+.fe-texte { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; background: #f6f7f9; }
+.fe-texte h3 { margin: 0 0 8px; font-size: .85rem; font-weight: 500; color: var(--u-titel); }
+.fe-texte .fe-text + .fe-text { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e3e7eb; }
+.fe-text .fe-wer { font-size: .8rem; color: #67747e; }
+.fe-text .fe-inhalt { font-style: italic; white-space: pre-line; }
+.fe-gesperrt { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 14px; padding: 10px 12px; border-radius: 10px; background: var(--u-gelb-hell, #fff9da); font-size: .85rem; }
+.fe-warnung { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--u-rot-hell, #ffe5e5); color: #8a1f24; font-size: .85rem; }
+.fe-link { padding: 0; border: 0; background: none; color: var(--u-akzent); text-decoration: underline; font-size: .82rem; white-space: nowrap; }
+.fe-mehrdeutig { font-size: .78rem; color: #8a5a00; }
+.fe-seite { position: fixed; top: 0; right: 0; bottom: 0; z-index: 1080; width: min(420px, 100%); background: #fff; box-shadow: -8px 0 32px rgba(0, 5, 10, .18);
+  display: flex; flex-direction: column; transform: translateX(100%); transition: transform .18s ease; }
+.fe-seite.an { transform: none; }
+.fe-seite-kopf { display: flex; align-items: center; gap: 12px; padding: 16px 16px 14px 20px; border-bottom: 1px solid #e3e7eb; }
+.fe-seite-kopf h2 { flex: 1; margin: 0; font-size: 1.1rem; font-weight: 500; color: var(--u-titel); }
+.fe-seite-rumpf { flex: 1; overflow-y: auto; padding: 16px 20px 24px; }
+.fe-seite-rumpf dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 14px; font-size: .85rem; }
+.fe-seite-rumpf dt { font-weight: 500; color: var(--u-titel); }
+.fe-tag { margin: 16px 0 8px; font-size: .9rem; font-weight: 500; color: var(--u-titel); }
+.fe-stunde { padding: 10px 12px; border: 1px solid #e3e7eb; border-radius: 10px; margin-bottom: 8px; }
+.fe-stunde-kopf { display: flex; justify-content: space-between; gap: 8px; font-weight: 500; }
+.fe-stunde-unter { font-size: .8rem; color: #8a96a1; }
+.fe-stunde-text { margin-top: 4px; font-size: .85rem; white-space: pre-line; }
+@media (prefers-reduced-motion: reduce) { .fe-seite { transition: none; } }
+/* Berichte im Klassenbuch-Dialog */
+.br-dialog .br-panel-rumpf { padding: 0; overflow: visible; }
+.br-dialog-gruppe { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.br-dialog-gruppe small { font-size: .72rem; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: #8a96a1; }
+/* Sitzplan-Editor und Seitenpanels: gleiche Grunddarstellung wie die Klassenbuch-Dialoge (Titel Medium, X, Einblenden) */
+@keyframes kbd-ein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes kbd-hoch { from { transform: translateY(10px) scale(.985); } to { transform: none; } }
+body .sp-overlay { animation: kbd-ein .16s ease; background: rgba(36, 50, 61, .45); }
+.sp-overlay .sp-fenster { animation: kbd-hoch .16s ease; }
+.sp-overlay .sp-kopf h2, .sp-panel header h2 { font-size: 1.1rem; font-weight: 500; }
+.sp-overlay .sp-kopf .sp-x { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+@media (prefers-reduced-motion: reduce) { .sp-overlay, .sp-overlay .sp-fenster { animation: none; } }
