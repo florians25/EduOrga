@@ -269,7 +269,7 @@ public sealed class AustauschModulTests : IClassFixture<StudioFabrik>
         var abrechnung = await c.GetJsonAsync($"{basis}/statistik?bericht=0&von={sv:yyyy-MM-dd}&bis={sb:yyyy-MM-dd}");
         Assert.Equal("Vertretungen", abrechnung["kopf"]![2]!.GetValue<string>());
         Assert.Contains("<table>", await c.GetStringAsync($"{basis}/statistik.html?bericht=0&von={sv:yyyy-MM-dd}&bis={sb:yyyy-MM-dd}"));
-        Assert.Contains("Lehrer", await c.GetStringAsync($"{basis}/statistik.csv?bericht=0"));
+        Assert.Contains("Kürzel", await c.GetStringAsync($"{basis}/statistik.csv?bericht=0"));
         Assert.True((await c.GetJsonAsync($"{basis}/zaehler/{lid}"))["von"] != null);
     }
 

@@ -160,7 +160,7 @@ function attrappe(rueckmeldungen) {
     await reiter('Start');
     await eintrag(page, 'start.pausenaufsichten');
     await page.waitForSelector('.fenster[data-typ=pausenaufsicht] .pa-zelle');
-    await page.click('.fenster[data-typ=pausenaufsicht] .fenster-werkzeuge button:has-text("Optimierung")');
+    await page.click('.fenster[data-typ=pausenaufsicht] .fenster-werkzeuge button:has-text("Automatisch einteilen")');
     await page.click('.dialog .knopf.primaer');
     await page.waitForTimeout(800);
     await page.click('.fenster[data-typ=pausenaufsicht] .pa-zelle >> nth=0');

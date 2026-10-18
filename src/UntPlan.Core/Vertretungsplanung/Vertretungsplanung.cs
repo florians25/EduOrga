@@ -558,12 +558,12 @@ public static class Vertretungen
     // ----------------------------------------------------------------------------------------------
 
     /// <summary>Vertretungstext, der bei „+++“ (Vertretung ohne Lehrkraft) eingesetzt wird, wenn noch kein anderer Text da ist.</summary>
-    public const string OhneLehrerText = "Vertr. o. Lehrkr.";
+    public const string OhneLehrerText = "Ohne Lehrkraft";
 
     /// <summary>Der automatisch eingesetzte Text gehört nur zu „+++“: wird daraus etwas anderes, verschwindet er wieder.</summary>
     private static void OhneLehrerTextEntfernen(Vertretung v)
     {
-        if (v.Art == VertretungsArt.VertretungOhneLehrer && v.Text is OhneLehrerText or "Vertr. o. Lehrkraft") v.Text = "";
+        if (v.Art == VertretungsArt.VertretungOhneLehrer && v.Text is OhneLehrerText or "Vertr. o. Lehrkr." or "Vertr. o. Lehrkraft") v.Text = ""; // auch ältere Standardtexte
     }
 
     private static void Markieren(Vertretung v, string benutzer)
@@ -1606,7 +1606,7 @@ public static class Vertretungsplan
     {
         VertretungsArt.Vertretung => "Vertretung",
         VertretungsArt.Entfall => "Entfall",
-        VertretungsArt.Raumvertretung => "Raum-Vtr.",
+        VertretungsArt.Raumvertretung => "Raumänderung",
         VertretungsArt.Verlegung => "Verlegung",
         VertretungsArt.StattVertretung => "Statt-Vertretung",
         VertretungsArt.Betreuung => "Betreuung",
@@ -1615,16 +1615,16 @@ public static class Vertretungsplan
         VertretungsArt.Tausch => "Tausch",
         VertretungsArt.Pausenaufsicht => "Pausenaufsicht",
         VertretungsArt.Klausur => "Klausur",
-        VertretungsArt.VertretungOhneLehrer => "Vertr. o. Lehrkr.",
+        VertretungsArt.VertretungOhneLehrer => "Ohne Lehrkraft",
         VertretungsArt.Bereitschaftsvertretung => "Bereitschaftsvertretung",
         VertretungsArt.BereitschaftEntfaellt => "Bereitschaft entfällt",
         VertretungsArt.EigenverantwortlichesArbeiten => "eigenverantwortliches Arbeiten",
         VertretungsArt.Lehrertausch => "Lehrertausch",
-        VertretungsArt.Teilvertretung => "Teil-Vtr.",
-        VertretungsArt.TrotzAbsenz => "Trotz Absenz",
+        VertretungsArt.Teilvertretung => "Teilvertretung",
+        VertretungsArt.TrotzAbsenz => "Trotz Abwesenheit",
         VertretungsArt.UnterrichtGeaendert => "Unterricht geändert",
-        VertretungsArt.Veranstaltung => "Veranst.",
-        VertretungsArt.SondereinsatzVormerkung => "Sondereins. zu Vormerkung",
+        VertretungsArt.Veranstaltung => "Veranstaltung",
+        VertretungsArt.SondereinsatzVormerkung => "Sondereinsatz zu Vormerkung",
         VertretungsArt.Vormerkung => "Vormerkung",
         VertretungsArt.Raumbuchung => "Raumbuchung",
         VertretungsArt.Verlegt => "verlegt",

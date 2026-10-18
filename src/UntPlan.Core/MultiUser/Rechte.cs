@@ -112,12 +112,13 @@ public sealed class Rechte
         Recht.Vertretungsstatistik => "Vertretungsstatistik",
         Recht.WebExport => "Web-Export",
         Recht.DatenImportExport => "Datenimport/-export",
-        _ => "Info-Stundenplan",
+        _ => "Aushang",
     };
 
     public static string Text(Rechtebereich b) => b switch
     {
         Rechtebereich.BesondereDaten => "Besondere Daten",
+        Rechtebereich.Absenzen => "Abwesenheiten",
         _ => b.ToString(),
     };
 

@@ -144,13 +144,13 @@ function hauptFenster(f) {
   function fortschrittZeigen(wert, text) {
     statusZeile.hidden = false;
     statusZeile.className = 'upw-status';
-    statusZeile.replaceChildren(h('div', { class: 'upw-balken' }, h('div', { style: { width: `${Math.max(0, Math.min(100, wert))}%` } })), h('div', { class: 'upw-statustext' }, text));
+    statusZeile.replaceChildren(h('div', { class: 'upw-balken' }, h('div', { style: { width: `${Math.max(0, Math.min(100, wert))}%` } })), h('div', { class: 'upw-statustext' }, sachlich(text)));
   }
   function fehlerZeigen(titel, text = '') {
     if (!titel) { if (statusZeile.classList.contains('fehler')) statusZeile.hidden = true; return; }
     statusZeile.hidden = false;
     statusZeile.className = 'upw-status fehler';
-    statusZeile.replaceChildren(h('div', { class: 'upw-fehlertitel' }, titel), h('div', { class: 'upw-statustext' }, text),
+    statusZeile.replaceChildren(h('div', { class: 'upw-fehlertitel' }, sachlich(titel)), h('div', { class: 'upw-statustext' }, sachlich(text)),
       schreiben ? h('button', { class: 'knopf klein', type: 'button', onclick: () => einstellungen.click() }, 'Verbindung prüfen') : null);
   }
 
@@ -161,7 +161,7 @@ function hauptFenster(f) {
       popup = h('div', { class: 'upw-popup', role: 'status' }, h('div', { class: 'upw-popup-text' }), h('div', { class: 'upw-balken' }, h('div')));
       f.inhalt.append(popup);
     }
-    popup.firstChild.textContent = text;
+    popup.firstChild.textContent = sachlich(text);
     popup.lastChild.firstChild.style.width = `${Math.max(0, Math.min(100, wert))}%`;
   }
   function popupWeg() { popup?.remove(); popup = null; }
@@ -194,7 +194,7 @@ function hauptFenster(f) {
       sperren(false);
       await neu();
     }
-    if (ergebnis?.ergebnis) await meldung(ergebnis.ergebnis, 'UntPlan Web');
+    if (ergebnis?.ergebnis) await meldung(sachlich(ergebnis.ergebnis), 'UntPlan Web');
     if (ergebnis?.danach) fensterverwaltung.oeffnen('untplanweb.liste', { art: ergebnis.danach });
   }
 

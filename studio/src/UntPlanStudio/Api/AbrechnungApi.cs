@@ -30,7 +30,7 @@ public sealed class AbrechnungApi : IStudioModul
 
     public static readonly string[] Berichte =
     {
-        "Vertretungsabrechnung (alle Lehrer)", "Vertretungszähler – Einzelnachweis", "Mehrarbeit NRW (Monate)", "Monatsabrechnung (Tagesbilanz)",
+        "Vertretungsabrechnung (alle Lehrkräfte)", "Vertretungszähler – Einzelnachweis", "Mehrarbeit NRW (Monate)", "Monatsabrechnung (Tagesbilanz)",
         "Entfalltage", "Vertretungs-Übersicht", "Wochenwerte",
     };
 
@@ -144,7 +144,7 @@ public sealed class AbrechnungApi : IStudioModul
                     zeilen.Add(new(new[] { z.Lehrer.Kurzname, z.Lehrer.VollerName, z.Vertretungen.ToString(), z.Betreuungen.ToString(), z.Sondereinsaetze.ToString(), z.Aufsichten.ToString(),
                         z.Mehrarbeit.ToString(), z.Entfaelle.ToString(), z.Freisetzungen.ToString(), S(z.Saldo), z.Verguetungsfaehig.ToString() }, z.Lehrer.Id, z.Verguetungsfaehig != 0 ? "verguetung" : null));
                 var s = Statistik.Zusammenfassung(d, von, bis);
-                return Fertig(new[] { "Lehrer", "Name", "Vertretungen", "Betreuungen", "Sondereins.", "Pausenaufs.", "Mehrarbeit", "Entfall", "Freisetzung", "Zähler", "vergütungsfähig (NRW)" },
+                return Fertig(new[] { "Kürzel", "Name", "Vertretungen", "Betreuungen", "Sondereinsätze", "Pausenaufsichten", "Mehrarbeit", "Entfall", "Freisetzung", "Zähler", "Vergütungsfähig (NRW)" },
                     new[] { 60, 150, 80, 75, 75, 75, 70, 55, 70, 55, 130 },
                     $"Gesamt: {liste.Sum(z => z.Vertretungen)} Vertretungen, {liste.Sum(z => z.Mehrarbeit)} Mehrarbeitsstunden, davon {liste.Sum(z => z.Verguetungsfaehig)} vergütungsfähig. " +
                     $"Ausfall: {s.Gesamt} Einträge – vertreten {s.Vertreten}, Entfall {s.Entfall}, Freisetzung {s.Freisetzung}, Raum {s.Raum}, Verlegung {s.Verlegung}, offen {s.Offen}.\nDoppelklick auf einen Lehrer zeigt den Einzelnachweis.");

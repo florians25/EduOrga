@@ -180,12 +180,10 @@ html.nav-eingeklappt .navigation { visibility: hidden; }
 .dokumentliste tr.zeile { cursor: pointer; }
 .dokumentliste tr.zeile:hover td { background: var(--up-schiefer-25); }
 .dokumentliste tr.zeile:focus-visible { outline: 2px solid var(--up-fokus); outline-offset: -2px; }
-.dokumentliste .name { font-weight: var(--mittel); display: flex; align-items: center; gap: 8px; }
-.dokumentliste .ds-zuletzt { font-weight: var(--mittel); }
+.dokumentliste .name { font-weight: var(--mittel); }
 .dokumentliste .aktionen { text-align: right; white-space: nowrap; }
 .dokumentliste .aktionen .knopf { margin-left: 4px; }
 .dokumentliste a.knopf { text-decoration: none; }
-.dokumentliste.ds-eigenschaften { max-width: 680px; }
 .dokumentliste.ds-eigenschaften th { width: 180px; height: auto; padding: 10px 14px; background: transparent; color: var(--text-leise); font-size: 13px; font-weight: var(--normal); border-bottom: 1px solid var(--rand-leise); vertical-align: top; }
 .dokumentliste.ds-eigenschaften td { height: auto; padding: 10px 14px; }
 .ablage {

@@ -557,7 +557,7 @@ public sealed class VertretungApi : IStudioModul
 
     private static Task<object> OhneLehrer(Arbeitsdokument a, ClaimsPrincipal p, List<int> ids) =>
         a.LesenAsync(doc => Bearbeitbare(doc.Daten, ids).Where(v => v.Art != VertretungsArt.Pausenaufsicht).Select(v => v.Id).ToList())
-            .ContinueWith(t => Ausfuehren(a, p, "Vertr. o. Lehrkr.", t.Result, (_, v) => Vertretungen.OhneLehrer(v, B(p)))).Unwrap();
+            .ContinueWith(t => Ausfuehren(a, p, "Ohne Lehrkraft", t.Result, (_, v) => Vertretungen.OhneLehrer(v, B(p)))).Unwrap();
 
     /// <summary>Vertreter eintragen mit den Rückfragen: abwesend („Trotzdem verplanen?“), nicht frei („Trotzdem als Vertreter eintragen?“).</summary>
     private static async Task<IResult> VertreterSetzen(Arbeitsdokument a, ClaimsPrincipal p, List<int> ids, int lehrer, bool mitbetreuung, Dictionary<string, int>? antworten)

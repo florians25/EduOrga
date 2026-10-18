@@ -132,7 +132,7 @@ async function seiteOeffnen(el) {
     h('tbody', null, sortiert.length ? sortiert.map((d) => h('tr', { class: 'zeile', tabindex: 0, dataset: { id: d.id },
       onclick: (e) => { if (!e.target.closest('button, a')) oeffnenZeile(d); },
       onkeydown: (e) => { if (e.key === 'Enter' && e.target === e.currentTarget) oeffnenZeile(d); } },
-      h('td', null, h('div', { class: 'name' }, d.name, zuletzt.includes(d.id) ? h('span', { class: 'plakette ds-zuletzt' }, 'Zuletzt verwendet') : null), h('div', { class: 'leise' }, d.besitzer)),
+      h('td', null, h('div', { class: 'name' }, d.name), h('div', { class: 'leise' }, zuletzt.includes(d.id) ? `${d.besitzer} · zuletzt verwendet` : d.besitzer)),
       h('td', { class: 'ds-datum' }, datumDe(d.geaendert), d.ungespeichert ? h('div', { class: 'leise' }, 'Geöffnet, nicht gespeichert') : null),
       h('td', { class: 'zahl' }, groesse(d.groesse)),
       h('td', { class: 'leise' }, d.herkunft),
