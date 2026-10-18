@@ -144,6 +144,53 @@ public sealed class FachmodulTests : IClassFixture<StudioFabrik>
     }
 
     [Fact]
+    public async Task UnterrichtSpaltenartenUndMehrfachaenderung()
+    {
+        var c = await _f.AngemeldetAsync();
+        var id = await c.BeispielHochladenAsync();
+        var basis = $"/api/dokumente/{id}/unterricht";
+        var alle = await c.GetJsonAsync(basis);
+        var spalten = alle["spalten"]!.AsArray();
+        string Art(string k) => spalten.First(s => s!["schluessel"]!.GetValue<string>() == k)!["art"]!.GetValue<string>();
+        Assert.Equal("Element", Art("Fach"));
+        Assert.Equal("ElementListe", Art("Klassen"));
+        Assert.Equal("Ganzzahl", Art("Wst"));
+        Assert.Equal("Bool", Art("Fix"));
+        Assert.Equal("NurLesen", Art("UNr"));
+        Assert.Equal("Auswahl", Art("Periode"));
+        Assert.Equal(new[] { "A", "B" }, spalten.First(s => s!["schluessel"]!.GetValue<string>() == "Periode")!["auswahl"]!.AsArray().Select(x => x!.GetValue<string>()));
+        var namen = spalten.Select(s => s!["schluessel"]!.GetValue<string>()).ToList();
+
+        var u = alle["unterrichte"]!.AsArray().Take(2).Select(x => x!["id"]!.GetValue<int>()).ToArray();
+        var geaendert = (await c.PostJsonAsync($"{basis}/aendern", new
+        {
+            aenderungen = new object[]
+            {
+                new { uid = u[0], feld = "Text", wert = "Sammel" }, new { uid = u[1], feld = "Text", wert = "Sammel" },
+                new { uid = u[1], feld = "Periode", wert = "B" },
+            },
+        })).AsArray();
+        Assert.Equal(2, geaendert.Count);
+        Assert.All(geaendert, x => Assert.Equal("Sammel", x!["zeilen"]![0]![namen.IndexOf("Text")]!.GetValue<string>()));
+        Assert.Equal("B", geaendert[1]!["zeilen"]![0]![namen.IndexOf("Periode")]!.GetValue<string>());
+
+        // ungültiger Wert: nichts wird geändert (alles oder nichts), Meldung nennt den Unterricht
+        var fehler = await c.PostJsonAsync($"{basis}/aendern", new
+        {
+            aenderungen = new object[] { new { uid = u[0], feld = "Text", wert = "Neu" }, new { uid = u[1], feld = "Fach", wert = "GIBTESNICHT" } },
+        }, HttpStatusCode.BadRequest);
+        Assert.Contains($"U-Nr. {u[1]}", fehler["fehler"]!.GetValue<string>());
+        var danach = await c.GetJsonAsync(basis);
+        Assert.Equal("Sammel", danach["unterrichte"]!.AsArray().First(x => x!["id"]!.GetValue<int>() == u[0])!["zeilen"]![0]![namen.IndexOf("Text")]!.GetValue<string>());
+
+        // eine Rückgängig-Stufe für die ganze Sammeländerung
+        await c.PostJsonAsync($"/api/dokumente/{id}/rueckgaengig");
+        var zurueck = await c.GetJsonAsync(basis);
+        Assert.All(u, x => Assert.NotEqual("Sammel", zurueck["unterrichte"]!.AsArray().First(y => y!["id"]!.GetValue<int>() == x)!["zeilen"]![0]![namen.IndexOf("Text")]!.GetValue<string>()));
+        await c.PostJsonAsync($"{basis}/aendern", new { aenderungen = Array.Empty<object>() }, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task StundenplanAbrufenUndManuellPlanen()
     {
         var c = await _f.AngemeldetAsync();

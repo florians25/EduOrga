@@ -1,7 +1,7 @@
 // Steuerelemente der Vertretungsplanung: Zeitraum (Tag / Woche / frei), Datumsauswahl in der Kopfleiste und ein Knopf mit
 // aufklappbarer Fläche für Optionen bzw. Filter (Schalter und Auswahlfelder, die nicht ständig sichtbar sein müssen).
 import {
-  Button, Input, Popover, PopoverSurface, PopoverTrigger, Select, ToolbarButton, Tooltip, makeStyles, tokens,
+  Button, Input, Popover, PopoverSurface, PopoverTrigger, Select, ToolbarButton, Tooltip, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import {
   ArrowPrevious20Regular, ArrowNext20Regular, ChevronDown16Regular, ChevronLeft20Regular, ChevronRight20Regular,
@@ -20,7 +20,38 @@ const useStile = makeStyles({
   flaeche: { display: 'flex', flexDirection: 'column', gap: '6px', padding: '12px 16px', minWidth: '260px', maxWidth: '420px' },
   flaecheTitel: { fontSize: tokens.fontSizeBase200, fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground2, margin: '4px 0 0 0' },
   anzahl: { marginLeft: '4px', color: tokens.colorBrandForeground1, fontVariantNumeric: 'tabular-nums' },
+  umschalter: {
+    display: 'inline-flex', alignItems: 'stretch', flexShrink: 0, padding: '2px', gap: '2px', borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground3, border: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  umschalterWahl: {
+    border: 'none', margin: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: tokens.fontSizeBase200, fontWeight: tokens.fontWeightSemibold,
+    lineHeight: '20px', padding: '0 10px', borderRadius: tokens.borderRadiusSmall, backgroundColor: 'transparent', color: tokens.colorNeutralForeground2,
+    ':hover': { color: tokens.colorNeutralForeground1, backgroundColor: tokens.colorNeutralBackground1Hover },
+    ':focus-visible': { outline: `2px solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
+  },
+  umschalterAn: {
+    backgroundColor: tokens.colorBrandBackground, color: tokens.colorNeutralForegroundOnBrand,
+    ':hover': { backgroundColor: tokens.colorBrandBackgroundHover, color: tokens.colorNeutralForegroundOnBrand },
+  },
 });
+
+/** Umschalter mit zwei oder mehr Möglichkeiten („Tag | Woche“): eine ist gewählt (Marine). */
+export function Umschalter<T extends string>({ wert, optionen, beiWahl, titel, testid }: {
+  wert: T; optionen: { wert: T; text: string; titel?: string }[]; beiWahl: (w: T) => void; titel: string; testid?: string;
+}) {
+  const s = useStile();
+  return (
+    <span className={s.umschalter} role="radiogroup" aria-label={titel} title={titel} data-testid={testid}>
+      {optionen.map((o) => (
+        <button key={o.wert} type="button" role="radio" aria-checked={o.wert === wert} title={o.titel} data-wert={o.wert}
+          className={mergeClasses(s.umschalterWahl, o.wert === wert && s.umschalterAn)} onClick={() => { if (o.wert !== wert) beiWahl(o.wert); }}>
+          {o.text}
+        </button>
+      ))}
+    </span>
+  );
+}
 
 /** Werkzeugknopf „Optionen ▾“ bzw. „Filter ▾“ mit einer Fläche für Schalter und Felder; aktiv = Anzahl gesetzter Optionen. */
 export function OptionenKnopf({ text, aktiv = 0, titel, children, testid }: { text: string; aktiv?: number; titel?: string; children: ReactNode; testid?: string }) {
@@ -99,13 +130,13 @@ export function DatumsAuswahl() {
   const d = usePlanungsdatum();
   const los = (f: () => Promise<void>) => () => { f().catch(fehlerMelden); };
   return (
-    <span className={s.kopf} title="Planungsdatum – Tag blättern mit Strg+Bild↑ / Strg+Bild↓" data-testid="planungsdatum">
-      <Tooltip content="Eine Woche zurück" relationship="label"><Button size="small" appearance="subtle" icon={<ArrowPrevious20Regular />} onClick={los(() => blaettern(-1, true))} /></Tooltip>
+    <span className={s.kopf} title="Planungsdatum – Tag blättern mit Strg+Bild↑ / Strg+Bild↓, Woche mit Strg+Umschalt+Bild↑ / Strg+Umschalt+Bild↓" data-testid="planungsdatum">
+      <Tooltip content="Eine Woche zurück (Strg+Umschalt+Bild↑)" relationship="label"><Button size="small" appearance="subtle" icon={<ArrowPrevious20Regular />} onClick={los(() => blaettern(-1, true))} /></Tooltip>
       <Tooltip content="Vorheriger Unterrichtstag (Strg+Bild↑)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={los(() => blaettern(-1))} /></Tooltip>
       <Input size="small" type="date" className={s.kopfDatum} value={d || ''} contentBefore={d ? <span style={{ fontSize: 12 }}>{tagKurz(d)}</span> : undefined}
         aria-label="Planungsdatum" onChange={(_, x) => { if (x.value) void datumSetzen(x.value); }} />
       <Tooltip content="Nächster Unterrichtstag (Strg+Bild↓)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={los(() => blaettern(1))} /></Tooltip>
-      <Tooltip content="Eine Woche weiter" relationship="label"><Button size="small" appearance="subtle" icon={<ArrowNext20Regular />} onClick={los(() => blaettern(1, true))} /></Tooltip>
+      <Tooltip content="Eine Woche weiter (Strg+Umschalt+Bild↓)" relationship="label"><Button size="small" appearance="subtle" icon={<ArrowNext20Regular />} onClick={los(() => blaettern(1, true))} /></Tooltip>
     </span>
   );
 }

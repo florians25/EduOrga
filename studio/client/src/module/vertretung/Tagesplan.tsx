@@ -1,11 +1,14 @@
 // Tagespläne im Vertretungsmodus: Woche des Planungsdatums für Klasse, Lehrkraft, Raum oder Fach mit allen Vertretungen –
 // Änderungen hervorgehoben, Entfälle durchgestrichen, offene Stunden mit Plakette „Offen“, Online-Stunden gekennzeichnet.
-// Wahlweise nur der Planungstag (Parameter tag, Tagesplanung) statt der ganzen Woche. Drag & Drop
+// Umschalter Tag | Woche im Kopf: nur der Planungstag oder die ganze Woche (Planungstag mit Marine-Linie und heller Fläche
+// hervorgehoben; Klick auf eine Stunde bzw. den Kopf eines anderen Tages macht ihn zum Planungstag). In der Tagesplanung
+// (Parameter tagesplanung) gilt die je Benutzer gemerkte Ansicht, sonst der Parameter tag. Drag & Drop
 // (dnd-kit): Verlegen, Tauschen (mit Rückfrage), Verdrängen; Vormerkungen in den Plan ziehen. Kontextmenü: Stunde entfallen
 // lassen, Entfall aufheben (auch Block), findet online statt, als Vormerkung beiseitelegen, Text, Änderungen zurücknehmen,
 // Vertretungsvorschlag, Sondereinsatz, Lehrkraft abwesend melden.
 import { useDndMonitor, useDraggable } from '@dnd-kit/core';
-import { makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
+import { ArrowMaximize16Regular, ArrowMinimize16Regular } from '@fluentui/react-icons';
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { api } from '@/api/client';
 import type { Stunde } from '@/api/typen';
@@ -20,8 +23,10 @@ import { MenueKnopf, menue, type MenueListe } from '@/komponenten/menue';
 import { Raster, type RasterBlock } from '@/komponenten/raster/Raster';
 import type { AblageDaten, ZiehDaten } from '@/komponenten/ziehen';
 import { ersterOder, useElemente } from '../gemeinsam';
-import { auswahlMelden, mitRueckfragen, usePlanungsdatum, vpfad } from './kern';
+import { auswahlMelden, datumSetzen, mitRueckfragen, planansichtSetzen, planVergroessern, useTagesplanung, usePlanungsdatum, vpfad, type Zeitansicht } from './kern';
 import { onlineStundeDialog } from './online';
+import { Umschalter } from './steuer';
+import './vertretung.css';
 
 const TYPEN: Record<string, string> = { klasse: 'Klasse', lehrer: 'Lehrkraft', raum: 'Raum', fach: 'Fach' };
 const STATUSTEXT: Record<string, string> = { Entfall: 'Entfall', Offen: 'Offen', Zusaetzlich: 'Zusatz', Vertreten: 'Vertretung', Frei: 'Frei' };
@@ -90,7 +95,13 @@ export default function Tagesplan({ p }: AnsichtProps) {
   const element = ersterOder(liste, p.element);
   const verknuepft = p.verknuepft !== false;
   const kompakt = !!p.kompakt;
-  const nurTag = !!p.tag;
+  const tagesplanung = !!p.tagesplanung;
+  const gemerkt = useTagesplanung((x) => x.plaene[typ]);
+  const gross = useTagesplanung((x) => x.gross === typ);
+  const nurTag = tagesplanung ? gemerkt !== 'woche' : !!p.tag;
+  const ansichtSetzen = (w: Zeitansicht) => { if (tagesplanung) planansichtSetzen(typ, w); else a.parameterSetzen({ tag: w === 'tag' }); };
+  /** Tag eines anderen Datums gewählt: wird zum Planungstag (Tageskopf, Liste und Vorschlag folgen). */
+  const zumTag = (d: string) => { if (d !== datum) datumSetzen(d).catch(fehlerMelden); };
   const planId = `tp-${a.id}`;
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [ziele, setZiele] = useState<(string | null)[][] | null>(null);
@@ -210,42 +221,67 @@ export default function Tagesplan({ p }: AnsichtProps) {
           return (
             <Eintrag key={k} e={e} t={t} stunde={z.stunde} typ={typ} kompakt={kompakt} planId={planId} gewaehlt={gewaehlt === k}
               ziehbar={schreiben && !e.durch && !!e.u && e.status !== 'Entfall'}
-              waehlen={() => { setGewaehlt(k); if (e.vtr) auswahlMelden({ id: e.vtr, ids: [e.vtr], zeile: { v: e.vtr, datum: t.datum, stunde: z.stunde, u: e.u }, quelle: a.id }); }}
+              waehlen={() => { setGewaehlt(k); zumTag(t.datum); if (e.vtr) auswahlMelden({ id: e.vtr, ids: [e.vtr], zeile: { v: e.vtr, datum: t.datum, stunde: z.stunde, u: e.u }, quelle: a.id }); }}
               doppel={() => { if (e.vtr) a.oeffnen('vertretung.vorschlag', {}); }}
               kontext={(ev) => kontext(e, z.tag, z.stunde, ev)} />
           );
         }),
       };
     }).filter((b): b is RasterBlock => !!b);
-  }, [plan, typ, kompakt, gewaehlt, schreiben, sichtbar]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [plan, typ, kompakt, gewaehlt, schreiben, sichtbar, datum]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const zellenSichtbar = plan ? plan.zellen.filter((z) => sichtbar.includes(z.tag)) : [];
-  const offen = zellenSichtbar.reduce((x, z) => x + z.eintraege.filter((e) => e.offen && !e.durch).length, 0);
-  const entfall = zellenSichtbar.reduce((x, z) => x + z.eintraege.filter((e) => e.status === 'Entfall').length, 0);
+  const zaehlen = (zellen: TPlan['zellen']) => ({
+    offen: zellen.reduce((x, z) => x + z.eintraege.filter((e) => e.offen && !e.durch).length, 0),
+    entfall: zellen.reduce((x, z) => x + z.eintraege.filter((e) => e.status === 'Entfall').length, 0),
+  });
+  const { offen, entfall } = zaehlen(zellenSichtbar);
+  const planTag = plan ? plan.tage.findIndex((t) => t.datum === datum) : -1;
+  const amTag = !nurTag && plan && planTag >= 0 ? zaehlen(plan.zellen.filter((z) => z.tag === planTag)) : null;
   const lang = plan?.element.lang && !plan.element.lang.includes(plan.element.kurz) ? ` – ${plan.element.lang}` : '';
+  // Wochenplan in der Tagesplanung: Auswahl und Optionen im Kopf, flachere Stunden, offene Stunden je Tag im Spaltenkopf
+  const flach = tagesplanung && !nurTag;
+  const offenJeTag = useMemo(() => {
+    const n = new Map<number, number>();
+    for (const z of plan?.zellen || []) n.set(z.tag, (n.get(z.tag) || 0) + z.eintraege.filter((e) => e.offen && !e.durch).length);
+    return n;
+  }, [plan]);
+  const elementWahl = <ElementAuswahl typ={typ} liste={liste} wert={element} beiWahl={(id) => { a.parameterSetzen({ element: id }); melden('element', { typ, id, quelle: a.id }); }} />;
+  const optionen = <MenueKnopf text="Optionen" art={flach ? 'knopf' : 'toolbar'} appearance={flach ? 'subtle' : undefined} titel="Verknüpfung mit der Auswahl, kompakte Darstellung, Vormerkungen" eintraege={() => [
+    { text: 'Folgt der gewählten Vertretung', haken: verknuepft, aktion: () => a.parameterSetzen({ verknuepft: !verknuepft }) },
+    ...(kompakt ? [{ text: 'Nur Planungstag', haken: nurTag, aktion: () => ansichtSetzen(nurTag ? 'woche' : 'tag') }] : []),
+    { text: 'Kompakt', haken: kompakt, aktion: () => a.parameterSetzen({ kompakt: !kompakt }) },
+    null,
+    { text: 'Vormerkungen …', aktion: () => a.oeffnen('vertretung.vormerkungen', {}) },
+    { text: 'Online-Stunden …', aktion: () => a.oeffnen('vertretung.online', {}) },
+  ]} />;
+  const titel = !plan ? 'Tagesplan' : flach ? `Woche ${plan.woche}` : `${nurTag ? 'Tagesplan' : 'Wochenplan'} ${TYPEN[typ]} ${plan.element.kurz}${lang}`;
 
   return (
-    <AnsichtRahmen titel={plan ? `Tagesplan ${TYPEN[typ]} ${plan.element.kurz}${lang}` : 'Tagesplan'} laden={laedt && !plan}
-      werkzeuge={<>
-        <ElementAuswahl typ={typ} liste={liste} wert={element} beiWahl={(id) => { a.parameterSetzen({ element: id }); melden('element', { typ, id, quelle: a.id }); }} />
-        <Trenner />
-        <MenueKnopf text="Optionen" titel="Verknüpfung mit der Auswahl, kompakte Darstellung, Vormerkungen" eintraege={() => [
-          { text: 'Folgt der gewählten Vertretung', haken: verknuepft, aktion: () => a.parameterSetzen({ verknuepft: !verknuepft }) },
-          { text: 'Nur Planungstag', haken: nurTag, aktion: () => a.parameterSetzen({ tag: !nurTag }) },
-          { text: 'Kompakt', haken: kompakt, aktion: () => a.parameterSetzen({ kompakt: !kompakt }) },
-          null,
-          { text: 'Vormerkungen …', aktion: () => a.oeffnen('vertretung.vormerkungen', {}) },
-          { text: 'Online-Stunden …', aktion: () => a.oeffnen('vertretung.online', {}) },
-        ]} />
+    <AnsichtRahmen titel={titel} laden={laedt && !plan}
+      className={nurTag ? undefined : 'vt-plan-woche'}
+      aktionen={kompakt ? undefined : <>
+        {flach ? <>{elementWahl}{optionen}</> : null}
+        <Umschalter<Zeitansicht> wert={nurTag ? 'tag' : 'woche'} titel="Nur den Planungstag oder die ganze Woche zeigen" testid={`plan-ansicht-${typ}`} beiWahl={ansichtSetzen}
+          optionen={[{ wert: 'tag', text: 'Tag', titel: 'Nur der Planungstag' }, { wert: 'woche', text: 'Woche', titel: 'Woche des Planungstags – Klick auf einen anderen Tag wechselt dorthin' }]} />
+        {tagesplanung ? (
+          <Tooltip content={gross ? 'Wieder neben Liste und Vorschlag zeigen (Esc)' : 'Plan vergrößern'} relationship="label">
+            <Button size="small" appearance="subtle" data-testid={`plan-gross-${typ}`} icon={gross ? <ArrowMinimize16Regular /> : <ArrowMaximize16Regular />} onClick={() => planVergroessern(gross ? null : typ)} />
+          </Tooltip>
+        ) : null}
       </>}
-      fuss={<><span>{offen} offen</span><span>{entfall} {entfall === 1 ? 'Entfall' : 'Entfälle'}</span></>}>
-      {plan && nurTag && (plan.vormerkungen || !verknuepft) ? (
+      werkzeuge={flach ? undefined : <>{elementWahl}<Trenner />{optionen}</>}
+      fuss={flach ? undefined : amTag ? <>
+        <span title="Offene Stunden und Entfälle am Planungstag">{`${plan!.tage[planTag]!.kurz}: ${amTag.offen} offen · ${amTag.entfall} ${amTag.entfall === 1 ? 'Entfall' : 'Entfälle'}`}</span>
+        <span title="in der ganzen Woche">{`Woche: ${offen} offen · ${entfall} ${entfall === 1 ? 'Entfall' : 'Entfälle'}`}</span>
+      </> : <><span>{offen} offen</span><span>{entfall} {entfall === 1 ? 'Entfall' : 'Entfälle'}</span></>}>
+      {plan && (nurTag || tagesplanung) && (plan.vormerkungen || !verknuepft) ? (
         <div className={s.info}>
           {plan.vormerkungen ? <span className={s.vm}>{`${plan.vormerkungen} offene Vormerkung${plan.vormerkungen === 1 ? '' : 'en'}`}</span> : null}
           {verknuepft ? null : <span className={s.vm} title="Der Plan folgt nicht der gewählten Vertretung">nicht verknüpft</span>}
         </div>
       ) : null}
-      {plan && !nurTag ? (
+      {plan && !nurTag && !tagesplanung ? (
         <div className={s.info}>
           <span>Woche {plan.woche}</span>
           <span className={s.lg}><i className={s.lgPunkt} style={{ border: '1.5px solid var(--up-aenderung)', background: 'var(--up-aenderung-flaeche)' }} />Vertretung</span>
@@ -257,9 +293,22 @@ export default function Tagesplan({ p }: AnsichtProps) {
         </div>
       ) : null}
       {plan ? (
-        <Raster id={planId} kompakt={kompakt} stunden={plan.zeitraster.stunden} bloecke={bloecke} zeitAnzeigen={!kompakt} className={nurTag ? 'ra-tag' : undefined}
+        <Raster id={planId} kompakt={kompakt || flach} stunden={plan.zeitraster.stunden} bloecke={bloecke} zeitAnzeigen={!kompakt} className={nurTag ? 'ra-tag' : flach ? 'vt-flach' : undefined}
           ziele={ziele ? sichtbar.map((i) => ziele[i] || []) : null} ablage={(i, st) => ablage(sichtbar[i]!, st)}
-          tage={sichtbar.map((i) => plan.tage[i]!).map((t) => ({ kopf: <span>{`${t.kurz} ${t.text}${nurTag && t.frei ? ` · ${t.frei}` : ''}`}</span>, titel: t.frei || '', klasse: `${t.heute ? 'heute' : ''}${t.unterrichtstag ? '' : ' frei'}`, gesperrt: !t.unterrichtstag }))}
+          tage={sichtbar.map((i) => {
+            const t = plan.tage[i]!;
+            const planungstag = !nurTag && t.datum === datum;
+            const kopf = `${t.kurz} ${t.text}${nurTag && t.frei ? ` · ${t.frei}` : ''}`;
+            const n = nurTag ? 0 : offenJeTag.get(i) || 0;
+            const zahl = n ? <span className="vt-tag-offen" title={`${n} offen`}>{n}</span> : null;
+            return {
+              kopf: nurTag || planungstag ? <span>{kopf}{zahl}</span>
+                : <button type="button" className="vt-tagwahl" title={`${t.frei ? `${t.frei} – ` : ''}Zum ${t.kurz} ${t.text} wechseln${n ? ` (${n} offen)` : ''}`} onClick={() => zumTag(t.datum)}>{kopf}{zahl}</button>,
+              titel: t.frei || (planungstag ? `Planungstag${n ? ` – ${n} offen` : ''}` : ''),
+              klasse: `${t.heute ? 'heute' : ''}${t.unterrichtstag ? '' : ' frei'}${planungstag ? ' vt-planungstag' : ''}`, gesperrt: !t.unterrichtstag,
+            };
+          })}
+          feldKlasse={nurTag || planTag < 0 ? undefined : (i) => (sichtbar[i] === planTag ? 'vt-planungstag' : null)}
           feldKontextmenue={(i, st, ev) => kontext(null, sichtbar[i]!, st, ev)} />
       ) : null}
     </AnsichtRahmen>

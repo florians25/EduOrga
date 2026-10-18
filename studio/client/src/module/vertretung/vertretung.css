@@ -34,3 +34,50 @@
 .tb-zeile.vt-unterricht .tb-zelle { color: var(--colorNeutralForeground3); }
 .tb-zeile.vt-sammel .tb-zelle { font-style: italic; }
 .tb-zeile.vt-behalten .tb-zelle:first-child { box-shadow: inset 3px 0 0 var(--colorNeutralStroke1); }
+
+/* Tagesplanung, Wochenmodus: Tageszeilen der Liste („Mo 02.11.“ und Plakette mit den offenen Vertretungen) */
+.tb-zeile.vt-tageskopf { background: var(--colorNeutralBackground3); cursor: pointer; }
+.tb-zeile.vt-tageskopf:hover { background: var(--colorNeutralBackground3Hover); }
+.tb-zeile.vt-tageskopf.gewaehlt { background: var(--colorBrandBackground2); }
+.tb-zeile.vt-tageskopf .tb-zelle { border-right-color: transparent; }
+.tb-zeile.vt-tageskopf .tb-zelle.vt-tageskopf-text { justify-content: flex-start; overflow: visible; z-index: 1; font-weight: 600; color: var(--colorNeutralForeground1); }
+.tb-zeile.vt-tageskopf .tb-zelle.vt-tageskopf-text > span.t { overflow: visible; }
+.tb-zeile.vt-tageskopf.vt-planungstag { box-shadow: inset 3px 0 0 var(--colorBrandStroke1); }
+.tb-zeile.vt-tageskopf.vt-planungstag .tb-zelle.vt-tageskopf-text { color: var(--colorBrandForeground1); }
+
+/* Wochenpläne: Planungstag mit Marine-Linie oben und heller Fläche; Köpfe anderer Tage wechseln den Planungstag */
+.ra-kopf.vt-planungstag { color: var(--colorBrandForeground1); font-weight: 600; background: var(--colorBrandBackground2); box-shadow: inset 0 3px 0 var(--colorBrandStroke1); }
+.ra-feld.vt-planungstag { background: color-mix(in srgb, var(--colorBrandBackground2) 70%, transparent); }
+.ra-kopf .vt-tagwahl {
+  all: unset; cursor: pointer; padding: 2px 6px; border-radius: 4px; font: inherit; color: inherit;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.ra-kopf .vt-tagwahl:hover { background: var(--colorNeutralBackground1Hover); color: var(--colorBrandForeground1); text-decoration: underline; text-underline-offset: 2px; }
+.ra-kopf .vt-tagwahl:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+.vt-plan-woche .ra-eintrag { cursor: pointer; }
+
+/* Wochenstreifen im Tageskopf */
+.vt-wtag {
+  all: unset; box-sizing: border-box; display: inline-flex; align-items: baseline; justify-content: center; gap: 5px; min-width: 50px; padding: 2px 8px;
+  border-radius: 4px; cursor: pointer; font-size: 12px; line-height: 20px; color: var(--colorNeutralForeground2); border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
+}
+.vt-wtag:hover { background: var(--colorNeutralBackground1Hover); border-color: var(--colorNeutralStroke2); }
+.vt-wtag:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+.vt-wtag .vt-wtag-name { font-weight: 600; }
+.vt-wtag .vt-wtag-zahl { color: var(--colorNeutralForeground3); }
+.vt-wtag.offen .vt-wtag-zahl { color: var(--up-entfall); font-weight: 600; }
+.vt-wtag.frei { color: var(--colorNeutralForeground4); }
+.vt-wtag.frei .vt-wtag-zahl { color: var(--up-frei); font-size: 11px; }
+.vt-wtag.aktiv { background: var(--colorBrandBackground2); border-color: var(--colorBrandStroke2); box-shadow: inset 0 2px 0 var(--colorBrandStroke1); color: var(--colorBrandForeground1); cursor: default; }
+.ra-kopf .vt-tag-offen {
+  display: inline-block; margin-left: 6px; min-width: 16px; padding: 0 4px; border-radius: 8px; line-height: 16px; font-size: 11px; font-weight: 600;
+  text-align: center; background: var(--up-entfall-flaeche); color: var(--up-entfall); font-variant-numeric: tabular-nums;
+}
+/* flacher Wochenplan der Tagesplanung: kompakte Zeilen, aber mit Raum und Plakette; Kopf mit Auswahl */
+.ra.vt-flach .ra-eintrag { padding: 2px 4px; gap: 0; }
+.ra.vt-flach .ra-eintrag .zeile2 { font-size: 11px; }
+.ra.vt-flach .ra-stunde .nr { font-size: 12px; }
+.ra.vt-flach .ra-eintrag .fusszeile .plakette { font-size: 9px; line-height: 13px; padding: 0 3px; }
+.tb-zeile.vt-tageskopf .tb-zelle.vt-tageskopf-zahl { overflow: visible; padding-left: 34px; }
+.tb-zeile.vt-tageskopf .tb-zelle.vt-tageskopf-zahl > span.t { max-width: none; overflow: visible; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }

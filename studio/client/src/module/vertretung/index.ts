@@ -1,4 +1,4 @@
-// Modul „Vertretungsplanung“ (Vertretungsmodus): Planungsdatum in der Kopfleiste (Strg+Bild↑/↓), Arbeitsplätze
+// Modul „Vertretungsplanung“ (Vertretungsmodus): Planungsdatum in der Kopfleiste (Strg+Bild↑/↓, Woche mit Umschalt), Arbeitsplätze
 // „Tagesplanung“, „Verlegen und Tauschen“ und „Kompaktpläne“, Abwesenheiten, Vertretungen, Vorschlag, automatische
 // Vertretung, Sondereinsätze, Bereitschaften, Vormerkungen, Tagespläne, Online-Stunden, Listenansichten und Einstellungen.
 import { lazy } from 'react';
@@ -54,6 +54,8 @@ const modul: StudioModul = {
     'vertretung.heute': () => datumSetzen(isoAus(new Date())),
     'vertretung.naechster': () => blaettern(1),
     'vertretung.vorheriger': () => blaettern(-1),
+    'vertretung.naechsteWoche': () => blaettern(1, true),
+    'vertretung.vorherigeWoche': () => blaettern(-1, true),
   },
   eintraege: [
     { id: 'vertretung.tagesplanung', text: 'Tagesplanung', arbeitsplatz: 'tagesplanung', braucht: D, gruppe: 'Vertretungsplanung', hinweis: 'Vertretungen des Tages, Vorschlag und Tagespläne von Klasse und Lehrkraft zusammen' },
@@ -62,6 +64,8 @@ const modul: StudioModul = {
       { text: 'Heute', befehl: 'vertretung.heute' },
       { text: 'Nächster Unterrichtstag', befehl: 'vertretung.naechster', taste: 'Strg+Bild↓' },
       { text: 'Vorheriger Unterrichtstag', befehl: 'vertretung.vorheriger', taste: 'Strg+Bild↑' },
+      { text: 'Eine Woche weiter', befehl: 'vertretung.naechsteWoche', taste: 'Strg+Umschalt+Bild↓' },
+      { text: 'Eine Woche zurück', befehl: 'vertretung.vorherigeWoche', taste: 'Strg+Umschalt+Bild↑' },
     ] },
     { id: 'vertretung.absenzen', text: 'Abwesenheiten', ansicht: ansicht('vertretung.absenzen'), braucht: D, taste: 'Strg+M', gruppe: 'Vertretungsplanung', menue: [
       { text: 'Abwesenheiten', ansicht: ansicht('vertretung.absenzen') },
@@ -110,6 +114,8 @@ const modul: StudioModul = {
     const imModus = (f: () => unknown) => () => { const z = zustand(); if (z.dokument && z.modus === 'vertretung') return f(); return undefined; };
     tasteRegistrieren('Strg+PageUp', imModus(() => blaettern(-1)));
     tasteRegistrieren('Strg+PageDown', imModus(() => blaettern(1)));
+    tasteRegistrieren('Strg+Umschalt+PageUp', imModus(() => blaettern(-1, true)));
+    tasteRegistrieren('Strg+Umschalt+PageDown', imModus(() => blaettern(1, true)));
     // Wechsel in den Vertretungsmodus: Vertretungen des Planungsdatums abgleichen (wie beim Tageswechsel)
     useStudio.subscribe((s, alt) => {
       const d = planungsdatum();

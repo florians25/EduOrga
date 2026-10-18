@@ -7,9 +7,15 @@ using UntPlanStudio.Grundlagen;
 
 namespace UntPlanStudio.Api;
 
-public sealed record SpaltenInfo(string Schluessel, string Titel, int Breite, bool Zeile, bool Standard, bool Bool, bool Editierbar, string Karte, string? RefTyp, bool Liste);
+/// <summary>Spalte der Unterrichtstabelle; <c>Art</c> (Text, Ganzzahl, Dezimal, Bool, Bereich, Element, ElementListe, Auswahl, Datum, NurLesen)
+/// und <c>Auswahl</c> (zulässige Werte bei Art Auswahl) steuern Editor und Prüfung der Oberfläche.</summary>
+public sealed record SpaltenInfo(string Schluessel, string Titel, int Breite, bool Zeile, bool Standard, bool Bool, bool Editierbar, string Karte, string? RefTyp, bool Liste,
+    string Art = "Text", string[]? Auswahl = null);
 public sealed record UnterrichtZeile(int Id, int Nvpl, int Wst, string[][] Zeilen);
 public sealed record UnterrichtAenderung(string Feld, string? Wert, int Zeile = 0);
+/// <summary>Eine Änderung der Sammeländerung: Unterricht, Spalte, Wert, Kopplungszeile.</summary>
+public sealed record UnterrichtFeldaenderung(int Uid, string Feld, string? Wert, int Zeile = 0);
+public sealed record UnterrichtAenderungen(List<UnterrichtFeldaenderung>? Aenderungen);
 public sealed record NeuerUnterricht(string? Sicht, int? Element, Dictionary<string, string?>? Werte);
 /// <summary>„Findet online statt“ eines Unterrichts: OnlineLink null = unverändert, "" = entfernen (sonst http/https).</summary>
 public sealed record UnterrichtOnline(bool Online, string? OnlineLink = null);
@@ -23,7 +29,7 @@ public sealed class UnterrichtApi : IStudioModul
     public string Name => "unterricht";
 
     public static SpaltenInfo Info(Spalte s) => new(s.Key, s.Titel, s.Breite, s.Zeile, s.Standard, s.Bool, s.Set != null, s.Karte,
-        s.RefTyp is { } t ? Typnamen.Schluessel(t) : null, s.Liste);
+        s.RefTyp is { } t ? Typnamen.Schluessel(t) : null, s.Liste, s.Art, s.Auswahl);
 
     public static UnterrichtZeile Zeile(Unterricht u, List<Spalte> spalten, DatenIndex ix) =>
         new(u.Id, ix.NichtVerplant(u), u.Wochenstunden, u.Zeilen.Select(z => spalten.Select(s => s.Get(u, z)).ToArray()).ToArray());
@@ -68,6 +74,30 @@ public sealed class UnterrichtApi : IStudioModul
                 if (ae.Zeile < 0 || ae.Zeile >= u.Zeilen.Count) throw StudioFehler.Ungueltig("Ungültige Kopplungszeile.");
                 s.Set(d, u, u.Zeilen[ae.Zeile], ae.Wert ?? "");
             }, doc => Zeile(Suchen(doc.Daten, uid), Unterrichtsspalten.Fuer(doc), doc.Index)));
+
+        // mehrere Werte in einer Rückgängig-Stufe (Mehrfachänderung, Einfügen aus der Zwischenablage); liefert die geänderten Unterrichte
+        g.MapPost("/aendern", (Arbeitsdokument a, UnterrichtAenderungen ae, ClaimsPrincipal p) =>
+        {
+            if (ae.Aenderungen is not { Count: > 0 }) throw StudioFehler.Ungueltig("Keine Änderungen übergeben.");
+            var ids = ae.Aenderungen.Select(x => x.Uid).Distinct().ToList();
+            return a.AendernAsync(p.Benutzername(), $"Unterricht: {ae.Aenderungen.Count} Werte geändert", AenderungsArt.Unterricht, d =>
+            {
+                var spalten = Unterrichtsspalten.Fuer(a.Dokument);
+                foreach (var x in ae.Aenderungen)
+                {
+                    var u = Suchen(d, x.Uid);
+                    var s = spalten.FirstOrDefault(y => y.Key == x.Feld) ?? throw StudioFehler.Ungueltig($"Unbekannte Spalte \"{x.Feld}\".");
+                    if (s.Set is null) throw StudioFehler.Ungueltig($"Die Spalte \"{s.Titel}\" kann nicht geändert werden.");
+                    if (x.Zeile < 0 || x.Zeile >= u.Zeilen.Count) throw StudioFehler.Ungueltig($"U-Nr. {x.Uid}: ungültige Kopplungszeile.");
+                    try { s.Set(d, u, u.Zeilen[x.Zeile], x.Wert ?? ""); }
+                    catch (FormatException f) { throw new FormatException($"U-Nr. {x.Uid}, {s.Titel}: {f.Message}"); }
+                }
+            }, doc =>
+            {
+                var spalten = Unterrichtsspalten.Fuer(doc);
+                return ids.Select(id => doc.Daten.Unterrichte.FirstOrDefault(u => u.Id == id)).Where(u => u != null).Select(u => Zeile(u!, spalten, doc.Index)).ToList();
+            });
+        });
 
         // „Findet online statt“ (regelmäßig) – Abweichungen einzelner Stunden: /vertretung/online
         g.MapGet("/online", (Arbeitsdokument a) => a.LesenAsync(doc =>

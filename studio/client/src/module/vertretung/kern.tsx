@@ -6,7 +6,7 @@ import { api, type AnfrageOptionen } from '@/api/client';
 import type { ServerFrage } from '@/api/typen';
 import { beiDokumentwechsel } from '@/kern/dokument';
 import { melden, type VertretungsAuswahl } from '@/kern/ereignisse';
-import { zustand } from '@/kern/zustand';
+import { useStudio, zustand } from '@/kern/zustand';
 import { StandardDialog, dialogZeigen } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 
@@ -94,6 +94,49 @@ export async function blaettern(richtung: number, woche = false): Promise<void> 
   const r = await api.get<{ datum: string }>(vpfad(`/blaettern?datum=${d}&richtung=${richtung}&woche=${woche}`));
   await datumSetzen(r.datum);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Tag- bzw. Wochenansicht der Tagesplanung (je Benutzer im Browser gemerkt)
+
+export type Zeitansicht = 'tag' | 'woche';
+interface TagesplanungZustand {
+  /** Ansicht der Seite: Liste nur des Planungstags oder der ganzen Woche */
+  seite: Zeitansicht;
+  /** Ansicht je Tagesplan (klasse, lehrer) */
+  plaene: Record<string, Zeitansicht>;
+  /** vergrößerter Tagesplan (klasse, lehrer) oder null */
+  gross: string | null;
+}
+const TP_STANDARD: TagesplanungZustand = { seite: 'tag', plaene: { klasse: 'tag', lehrer: 'tag' }, gross: null };
+const tpSchluessel = () => `vertretung.tagesplanung.${useStudio.getState().benutzer?.name || ''}`;
+function tpLesen(): TagesplanungZustand {
+  try {
+    const w = JSON.parse(localStorage.getItem(tpSchluessel()) || 'null') as Partial<TagesplanungZustand> | null;
+    if (w) return { seite: w.seite === 'woche' ? 'woche' : 'tag', plaene: { ...TP_STANDARD.plaene, ...(w.plaene || {}) }, gross: null };
+  } catch { /* privat */ }
+  return TP_STANDARD;
+}
+export const useTagesplanung = create<TagesplanungZustand>(() => tpLesen());
+function tpSetzen(n: Partial<TagesplanungZustand>) {
+  useTagesplanung.setState(n);
+  const { seite, plaene } = useTagesplanung.getState();
+  try { localStorage.setItem(tpSchluessel(), JSON.stringify({ seite, plaene })); } catch { /* privat */ }
+}
+useStudio.subscribe((s, alt) => { if (s.benutzer?.name !== alt.benutzer?.name) useTagesplanung.setState(tpLesen()); });
+
+/** Ansicht der ganzen Tagesplanung: Liste und beide Tagespläne folgen. */
+export function seitenansichtSetzen(art: Zeitansicht) {
+  const { seite, plaene } = useTagesplanung.getState();
+  if (seite === art && Object.values(plaene).every((x) => x === art)) return;
+  tpSetzen({ seite: art, plaene: Object.fromEntries(Object.keys(plaene).map((k) => [k, art])) });
+}
+/** Ansicht eines Tagesplans (klasse, lehrer) der Tagesplanung. */
+export function planansichtSetzen(typ: string, art: Zeitansicht) {
+  const { plaene } = useTagesplanung.getState();
+  if (plaene[typ] !== art) tpSetzen({ plaene: { ...plaene, [typ]: art } });
+}
+/** Einen Tagesplan der Tagesplanung vergrößern (klasse, lehrer) bzw. mit null zurück zur Aufteilung. */
+export const planVergroessern = (id: string | null) => useTagesplanung.setState({ gross: id });
 
 // ---------------------------------------------------------------------------------------------
 // Auswahl der aktiven Vertretung

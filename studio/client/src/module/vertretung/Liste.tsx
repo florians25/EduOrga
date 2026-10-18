@@ -3,7 +3,10 @@
 // direkte Eingabe (Vertretung, Fach, Raum, Text …) für die bearbeitete bzw. alle markierten Zeilen. Tasten: + ohne Lehrkraft,
 // - Entfall, Entf zurücksetzen, Enter Vorschlag, F3 nächste offene. Offene Vertretungen und Räume tragen die Plakette „Offen“.
 // Schlanke Form (Parameter schlank, Tagesplanung): nur die wichtigsten Spalten (Std., Klasse, Fach, Lehrkraft, Vertretung, Raum,
-// Art als Plakette), Filter in einer aufklappbaren Fläche, seltene Aktionen im Menü „…“.
+// Art als Plakette), Filter in einer aufklappbaren Fläche, seltene Aktionen im Menü „…“. Zeigt die schlanke Liste mehrere
+// Tage (Zeitraum Woche), gliedern Tageszeilen („Mo 02.11.“ mit Zahl der offenen Vertretungen) die Liste; ein Klick darauf bzw.
+// auf eine Vertretung eines anderen Tages macht diesen zum Planungstag. In der Tagesplanung (Parameter tagesplanung) folgt
+// der Zeitraum dem Umschalter Tag | Woche des Tageskopfs.
 import { Input, Select, Switch } from '@fluentui/react-components';
 import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
@@ -20,7 +23,7 @@ import { MenueKnopf, type MenueListe } from '@/komponenten/menue';
 import { Tabelle, type Spalte, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
 import { useElemente } from '../gemeinsam';
 import { ANSICHTEN, ARTEN_AUS, ansichtText, artenDialog, feldEinstellungen, felderDialog, raumDialog, spaltenFeld, spaltenTitel, type ListenSpalte } from './dialoge';
-import { auswahlMelden, mitRueckfragen, tageswechsel, vpfad } from './kern';
+import { auswahlMelden, datumSetzen, kurzText, mitRueckfragen, planungsdatum, seitenansichtSetzen, tageswechsel, tagKurz, useTagesplanung, vpfad } from './kern';
 import { OptionenKnopf, OptionenTitel, useZeitraum, ZeitraumAuswahl } from './steuer';
 import { automatikDialog, einstellungenDialog, sondereinsatzDialog } from './weitere';
 import './vertretung.css';
@@ -52,6 +55,8 @@ function artPlakette(m: Record<string, any>): string {
 export default function Liste({ p }: AnsichtProps) {
   const a = useAnsicht();
   const schlank = !!p.schlank;
+  const tagesplanung = !!p.tagesplanung;
+  const seitenansicht = useTagesplanung((x) => x.seite);
   const alleSpalten = !!p.alleSpalten;
   const schreiben = useDarfSchreiben();
   const tageProWoche = useStudio((x) => x.grunddaten?.zeitraster?.tage?.length || 5);
@@ -73,12 +78,16 @@ export default function Liste({ p }: AnsichtProps) {
   const letzteAktiv = useRef<string | null>(null);
   const zustandRef = useRef({ ansicht, element, filter }); zustandRef.current = { ansicht, element, filter };
 
-  const zr = useZeitraum((p.zeitraum as 'tag') || 'tag', tageProWoche, (z) => {
+  const zr = useZeitraum(tagesplanung ? seitenansicht : (p.zeitraum as 'tag') || 'tag', tageProWoche, (z) => {
     a.parameterSetzen({ zeitraum: z.art });
+    if (tagesplanung && z.art !== 'vonbis') seitenansichtSetzen(z.art);
     if (z.bis !== z.von && schreiben && z.von && z.bis) void tageswechsel(z.von, z.bis).then(() => laden());
     else void laden(z);
   });
   const zrRef = useRef(zr); zrRef.current = zr;
+  useEffect(() => { if (tagesplanung && zr.art !== 'vonbis' && zr.art !== seitenansicht) zr.setzen(planungsdatum() || zr.von, null, seitenansicht); }, [seitenansicht]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** gewählte Vertretung, die (noch) nicht in der Liste steht – nach dem nächsten Laden wählen (z. B. Klick im Wochenplan) */
+  const ausstehend = useRef<number | null>(null);
   const FA = () => behalten.current.size > 0 || filter.offen || filter.kollisionen || element != null || ansicht.startsWith('Druck');
 
   // ---- Laden ----
@@ -103,6 +112,10 @@ export default function Liste({ p }: AnsichtProps) {
         if (!alt) void feldEinstellungen(an, d.spalten).then(setFelder);
         return d;
       });
+      if (ausstehend.current) {
+        const id = ausstehend.current;
+        setTimeout(() => { if (ausstehend.current === id && d.zeilen.some((z) => z.m.v === id)) { ausstehend.current = null; tabelle.current?.waehle(`V${id}`); } });
+      }
       if (schlank) melden('vertretung.liste', { von: z.von, bis: z.bis, offen: d.offen, entfall: d.zeilen.filter((x) => x.m.entfall && !x.m.freisetzung && !x.m.unterricht).length, zeilen: d.zeilen.length });
     } catch (e) { fehlerMelden(e); }
   }
@@ -113,7 +126,12 @@ export default function Liste({ p }: AnsichtProps) {
   useEffect(() => { if (element != null && !elListe.some((e) => e.id === element)) setElement(null); }, [elListe]); // eslint-disable-line react-hooks/exhaustive-deps
   useEreignis('daten', (e) => { if (betrifft(e, 'Vertretung', 'Stundenplan', 'Unterricht', 'Stammdaten', 'Einstellungen')) entprelltLaden(); });
   useEreignis('vertretung.ansicht', (x) => { if (ANSICHTEN.includes(x)) ansichtSetzen(x); });
-  useEreignis('vertretung.auswahl', (x) => { if (x?.quelle !== a.id && x?.id && daten?.zeilen.some((z) => z.m.v === x.id)) tabelle.current?.waehle(`V${x.id}`); });
+  useEreignis('vertretung.auswahl', (x) => {
+    if (x?.quelle === a.id) return;
+    ausstehend.current = null;
+    if (!x?.id) return;
+    if (daten?.zeilen.some((z) => z.m.v === x.id)) tabelle.current?.waehle(`V${x.id}`); else ausstehend.current = x.id;
+  });
   useEreignis('vertretung.naechsteOffene', () => { if (!naechsteOffene()) hinweis('Keine weitere offene Vertretung.', 'info', 2000); });
   useEffect(() => { if (p.ansicht && ANSICHTEN.includes(String(p.ansicht)) && p.ansicht !== ansicht) ansichtSetzen(String(p.ansicht)); }, [p.ansicht]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -146,6 +164,7 @@ export default function Liste({ p }: AnsichtProps) {
   };
   const zellKlasse = (z: VZeile, s: string) => {
     const m = z.m;
+    if (m.tageskopf) return s === 'Klassen' ? `vt-chipzelle vt-tageskopf-zahl${m.anzahlOffen ? ' vt-chip-offen' : ''}` : s === 'Std' ? 'vt-tageskopf-text' : null;
     if ((s === 'Vertreter' || s === 'NRaum') && z[s] === '???') return 'vt-z-offen';
     if (schlank && ['Vertreter', 'NRaum', 'NFach'].includes(s) && (z[s] === '---' || z[s] === '+++')) return 'vt-z-strich';
     if (schlank && s === 'Art' && z.Art) return `vt-chipzelle ${artPlakette(m)}`;
@@ -178,7 +197,7 @@ export default function Liste({ p }: AnsichtProps) {
     if (!daten) return;
     const v: Record<string, boolean> = {};
     for (const s of daten.spalten) {
-      v[s.schluessel] = schlankeForm ? SCHLANK_SPALTEN.has(s.schluessel) && (s.schluessel !== 'Datum' || zr.art !== 'tag')
+      v[s.schluessel] = schlankeForm ? SCHLANK_SPALTEN.has(s.schluessel) && s.schluessel !== 'Datum'
         : vorInhalt ? (s.schluessel === 'Nr' || daten.zeilen.some((z) => String(z[s.schluessel] ?? '') !== '')) : (felder[s.schluessel]?.includes('a') ?? s.standard);
     }
     setTimeout(() => tabelle.current?.sichtbarSetzen(v));
@@ -274,6 +293,10 @@ export default function Liste({ p }: AnsichtProps) {
   }, 300), []);
   function gewaehlt(zeilen: VZeile[], aktiv: VZeile | null) {
     const z = aktiv || zeilen[0] || null;
+    // mehrere Tage: der Tag der gewählten Zeile bzw. Tageszeile wird zum Planungstag (Tageskopf und Pläne folgen)
+    const tag = z?.m.tageskopf ? z.m.datum : z?.m.datum;
+    if (schlank && zr.art !== 'tag' && typeof tag === 'string' && tag !== planungsdatum()) void datumSetzen(tag, { aktualisieren: false });
+    if (z?.m.tageskopf) { setNr(''); setStatus({ text: '' }); return; }
     setNr(z?.m.v ? String(z.m.v) : '');
     setStatus(z?.m.koll ? { text: `Kollision: ${z.m.koll}`, art: 'fehler' } : { text: '' });
     // bearbeitete Zeilen verschwinden erst beim Wechsel in eine andere Zeile, wenn sie nicht mehr zum Filter passen
@@ -403,12 +426,22 @@ export default function Liste({ p }: AnsichtProps) {
     </OptionenKnopf>
   );
   // schlanke Liste: nach Datum, Stunde und Klasse geordnet (die Kopfzeile sortiert weiterhin nach jeder Spalte)
+  const nachTagen = schlankeForm && zr.art !== 'tag';
   const zeilen = useMemo(() => {
     const l = daten?.zeilen || [];
     if (!schlank) return l;
     const std = (z: VZeile) => Number(z.m.stunde ?? String(z.Std ?? '').split('-')[0]) || 0;
-    return [...l].sort((x, y) => String(x.m.datum ?? '').localeCompare(String(y.m.datum ?? '')) || std(x) - std(y) || String(x.Klassen ?? '').replace(/[()]/g, '').localeCompare(String(y.Klassen ?? '').replace(/[()]/g, ''), 'de', { numeric: true }));
-  }, [daten, schlank]);
+    const sortiert = [...l].sort((x, y) => String(x.m.datum ?? '').localeCompare(String(y.m.datum ?? '')) || std(x) - std(y) || String(x.Klassen ?? '').replace(/[()]/g, '').localeCompare(String(y.Klassen ?? '').replace(/[()]/g, ''), 'de', { numeric: true }));
+    if (!nachTagen) return sortiert;
+    // Tageszeilen: „Mo 02.11.“ und die Zahl der offenen Vertretungen des Tages
+    const tage = new Map<string, VZeile[]>();
+    for (const z of sortiert) { const d = String(z.m.datum ?? ''); if (!tage.has(d)) tage.set(d, []); tage.get(d)!.push(z); }
+    return [...tage].flatMap(([d, liste]) => {
+      const offen = liste.filter((z) => (z.m.offen || z.m.raumOffen) && !z.m.unterricht).length;
+      const kopf: VZeile = { id: `T${d}`, m: { tageskopf: true, datum: d, anzahlOffen: offen }, Std: d ? `${tagKurz(d)} ${kurzText(d)}` : '', Klassen: offen ? `${offen} offen` : 'keine offen' };
+      return [kopf, ...liste];
+    });
+  }, [daten, schlank, nachTagen]);
   const titel = schlank ? `Vertretungen${ansicht !== ANSICHTEN[0] ? ` – ${ansichtText(ansicht)}` : ''}` : `Vertretungen – ${ansichtText(ansicht)}`;
 
   return (
@@ -450,7 +483,8 @@ export default function Liste({ p }: AnsichtProps) {
       </>}>
       <Tabelle<VZeile> ref={tabelle} name="vertretungen" spalten={spalten} zeilen={zeilen} zeilenHoehe={schlank ? 34 : 30}
         leerText="Im gewählten Zeitraum gibt es keine Vertretungen."
-        zeilenKlasse={(z) => [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.current.has(z.m.v) ? 'vt-behalten' : ''].filter(Boolean).join(' ')}
+        sortierbar={!nachTagen}
+        zeilenKlasse={(z) => z.m.tageskopf ? `vt-tageskopf${z.m.datum === planungsdatum() ? ' vt-planungstag' : ''}` : [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.current.has(z.m.v) ? 'vt-behalten' : ''].filter(Boolean).join(' ')}
         aendern={schreiben ? async (z, s, wert) => { await aktion('/aendern', { spalte: s.schluessel, wert }, zielIds(z)); } : undefined}
         optionen={(s) => {
           const z = tabelle.current?.aktiveZeile();
@@ -460,7 +494,7 @@ export default function Liste({ p }: AnsichtProps) {
           return optionenCache.current.get(k)!;
         }}
         beiAuswahl={gewaehlt}
-        beiDoppelklick={(z) => { if (z.m.sammel) { a.parameterSetzen({ sammeln: false }); setFilter((f) => ({ ...f, sammeln: false })); return; } vorschlagOeffnen(); }}
+        beiDoppelklick={(z) => { if (z.m.tageskopf) return; if (z.m.sammel) { a.parameterSetzen({ sammeln: false }); setFilter((f) => ({ ...f, sammeln: false })); return; } vorschlagOeffnen(); }}
         kontextmenue={kontextmenue}
         tasten={tasten} />
     </AnsichtRahmen>

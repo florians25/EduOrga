@@ -1,7 +1,7 @@
 // Arbeitsplätze der Vertretungsplanung.
 import { Button, Input, Link, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import { ChevronLeft20Regular, ChevronRight20Regular } from '@fluentui/react-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
 import { seiteOeffnen } from '@/kern/befehle';
 import { useEreignis } from '@/kern/ereignisse';
@@ -10,7 +10,10 @@ import { useDarfSchreiben, useStudio } from '@/kern/zustand';
 import { fehlerMelden } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import { Bereich, Teilung } from '@/shell/arbeitsplatz';
-import { aktuelleAuswahl, blaettern, datumSetzen, isoAus, tagKurz, usePlanungsdatum, vpfad } from './kern';
+import {
+  aktuelleAuswahl, blaettern, datumSetzen, isoAus, planVergroessern, seitenansichtSetzen, tagKurz, useTagesplanung, usePlanungsdatum, vpfad, type Zeitansicht,
+} from './kern';
+import { Umschalter } from './steuer';
 
 const useStile = makeStyles({
   seite: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, gap: '8px' },
@@ -20,14 +23,38 @@ const useStile = makeStyles({
   },
   datum: { display: 'inline-flex', alignItems: 'center', gap: '2px' },
   datumFeld: { width: '150px', fontVariantNumeric: 'tabular-nums' },
-  tag: { fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', marginLeft: '6px', '@media (max-width: 1500px)': { display: 'none' } },
+  tag: { fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', marginLeft: '6px', '@media (max-width: 1799px)': { display: 'none' } },
+  breit: { '@media (max-width: 1599px)': { display: 'none' } },
   woche: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap' },
   frei: { color: 'var(--up-frei)', fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap' },
   summe: { display: 'inline-flex', alignItems: 'center', gap: '6px', color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
   punkt: { color: tokens.colorNeutralForeground4 },
   offen: { color: 'var(--up-entfall)', fontWeight: tokens.fontWeightSemibold },
   rechts: { marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' },
+  ansicht: { display: 'inline-flex', alignItems: 'center', gap: '8px' },
+  streifen: { display: 'inline-flex', alignItems: 'stretch', gap: '2px' },
 });
+
+/** Wochenstreifen im Tageskopf: Tage der Woche mit der Zahl offener Vertretungen; Klick wechselt den Planungstag. */
+function Wochenstreifen({ woche, datum }: { woche: Wochentag[]; datum: string }) {
+  const s = useStile();
+  return (
+    <span className={s.streifen} role="group" aria-label="Woche – offene Vertretungen je Tag" data-testid="wochenstreifen">
+      {woche.map((w) => {
+        const aktiv = w.datum === datum;
+        const titel = `${tagLang(w.datum)}${w.unterrichtstag ? `: ${w.offen ? mehrzahl(w.offen, 'offene Vertretung', 'offene Vertretungen') : 'keine offenen Vertretungen'}` : ` – ${w.frei || 'kein Unterrichtstag'}`}`;
+        return (
+          <button key={w.datum} type="button" title={titel} aria-pressed={aktiv} data-datum={w.datum}
+            className={`vt-wtag${aktiv ? ' aktiv' : ''}${w.unterrichtstag ? '' : ' frei'}${w.offen ? ' offen' : ''}`}
+            onClick={() => { if (!aktiv) datumSetzen(w.datum).catch(fehlerMelden); }}>
+            <span className="vt-wtag-name">{tagKurz(w.datum)}</span>
+            <span className="vt-wtag-zahl">{w.unterrichtstag ? (w.offen || '–') : 'frei'}</span>
+          </button>
+        );
+      })}
+    </span>
+  );
+}
 
 const TAGE_LANG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 /** „Montag, 2.11.2026“ */
@@ -37,23 +64,27 @@ function tagLang(iso: string) {
 }
 
 interface Wochentag { datum: string; offen: number; abwKl: number; freis: number; blRaeume: number; tagestexte: number; kollL: number; kollR: number; frei: string; unterrichtstag: boolean }
-interface TagesStand { wochentyp: string; unterrichtstag: boolean; tag?: Wochentag; abwesend: Record<string, number> }
+interface TagesStand { wochentyp: string; unterrichtstag: boolean; tag?: Wochentag; woche: Wochentag[]; abwesend: Record<string, number> }
 const mehrzahl = (n: number, eins: string, viele: string) => `${n} ${n === 1 ? eins : viele}`;
 
-/** Kopf der Tagesplanung: Datum blättern, A/B-Woche, Kennzahlen des Tages, Verweise auf Abwesenheiten und Kalender. */
+/** Kopf der Tagesplanung: Datum blättern, A/B-Woche, Umschalter Tag | Woche, Wochenstreifen, Kennzahlen des Tages, Verweise. */
 function Tageskopf() {
   const s = useStile();
   const datum = usePlanungsdatum();
   const schreiben = useDarfSchreiben();
   const letzte = useStudio((x) => x.grunddaten?.zeitraster?.stunden?.length || 8);
+  const tageProWoche = useStudio((x) => x.grunddaten?.zeitraster?.tage?.length || 5);
+  const seite = useTagesplanung((x) => x.seite);
   const [liste, setListe] = useState<{ entfall: number } | null>(null);
   const { daten } = useDaten(async (): Promise<TagesStand> => {
     const [k, abw] = await Promise.all([
       api.get<{ wochentyp: string; unterrichtstag: boolean; woche: Wochentag[] }>(vpfad(`/kalender?datum=${datum}`)),
       api.get<{ anzahl: Record<string, number> }>(vpfad(`/absenzen?art=lehrer&von=${datum}&bis=${datum}&veranstaltungen=false`)),
     ]);
-    return { wochentyp: k.wochentyp, unterrichtstag: k.unterrichtstag, tag: k.woche.find((w) => w.datum === datum), abwesend: abw.anzahl || {} };
-  }, [datum], { bereiche: ['Vertretung', 'Stammdaten', 'Einstellungen'], aktiv: !!datum });
+    // Wochenstreifen: die Tage des Zeitrasters und weitere Unterrichtstage (z. B. ein Samstag)
+    const woche = k.woche.filter((w, i) => i < tageProWoche || w.unterrichtstag);
+    return { wochentyp: k.wochentyp, unterrichtstag: k.unterrichtstag, tag: k.woche.find((w) => w.datum === datum), woche, abwesend: abw.anzahl || {} };
+  }, [datum, tageProWoche], { bereiche: ['Vertretung', 'Stammdaten', 'Einstellungen'], aktiv: !!datum });
   useEreignis('vertretung.liste', (x) => { if (x.von === datum && x.bis === datum) setListe({ entfall: x.entfall }); else setListe(null); });
   useEreignis('vertretung.datum', () => setListe(null));
 
@@ -77,13 +108,18 @@ function Tageskopf() {
   return (
     <div className={s.kopf} data-testid="tageskopf">
       <span className={s.datum}>
-        <Tooltip content="Vorheriger Unterrichtstag (Strg+Bild↑)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={los(() => blaettern(-1))} /></Tooltip>
+        <Tooltip content="Vorheriger Unterrichtstag (Strg+Bild↑, Woche: Strg+Umschalt+Bild↑)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={los(() => blaettern(-1))} /></Tooltip>
         <Button size="small" appearance="subtle" onClick={los(() => datumSetzen(isoAus(new Date())))}>Heute</Button>
-        <Tooltip content="Nächster Unterrichtstag (Strg+Bild↓)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={los(() => blaettern(1))} /></Tooltip>
+        <Tooltip content="Nächster Unterrichtstag (Strg+Bild↓, Woche: Strg+Umschalt+Bild↓)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={los(() => blaettern(1))} /></Tooltip>
         <Input size="small" type="date" className={s.datumFeld} value={datum || ''} aria-label="Datum der Tagesplanung" contentBefore={datum ? <span style={{ fontSize: 12 }}>{tagKurz(datum)}</span> : undefined} onChange={(_, x) => { if (x.value) void datumSetzen(x.value); }} />
         {datum ? <span className={s.tag}>{tagLang(datum)}</span> : null}
       </span>
       {daten?.wochentyp ? <span className={s.woche}>{`${daten.wochentyp}-Woche`}</span> : null}
+      <span className={s.ansicht}>
+        <Umschalter<Zeitansicht> wert={seite} titel="Tagesplanung für den Planungstag oder die ganze Woche (Liste und Pläne)" testid="seiten-ansicht" beiWahl={seitenansichtSetzen}
+          optionen={[{ wert: 'tag', text: 'Tag', titel: 'Vertretungen und Pläne des Planungstags' }, { wert: 'woche', text: 'Woche', titel: 'Vertretungen der ganzen Woche nach Tagen, Pläne als Wochenpläne' }]} />
+        {daten && datum ? <Wochenstreifen woche={daten.woche} datum={datum} /> : null}
+      </span>
       {daten && !daten.unterrichtstag ? <span className={s.frei}>{t?.frei || 'kein Unterrichtstag'}</span> : null}
       <span className={s.summe} data-testid="tagessumme">
         {teile.map((x, i) => (
@@ -93,13 +129,19 @@ function Tageskopf() {
         ))}
       </span>
       <span className={s.rechts}>
-        <Link onClick={() => seiteOeffnen('vertretung.absenzen')} title="Abwesenheiten von Lehrkräften, Klassen und Räumen bearbeiten (Strg+M)">Abwesenheiten</Link>
-        <Link onClick={() => seiteOeffnen('vertretung.kalender')} title="Woche mit offenen Vertretungen, Tagestexte und Kalendertag">Kalender</Link>
+        <span className={schreiben ? s.breit : undefined} style={{ display: 'inline-flex', gap: 12 }}>
+          <Link onClick={() => seiteOeffnen('vertretung.absenzen')} title="Abwesenheiten von Lehrkräften, Klassen und Räumen bearbeiten (Strg+M)">Abwesenheiten</Link>
+          <Link onClick={() => seiteOeffnen('vertretung.kalender')} title="Wochenübersicht mit Kennzahlen, Tagestexte und Kalendertag">Kalender</Link>
+        </span>
         {schreiben ? (
-          <MenueKnopf art="knopf" appearance="secondary" text="Abwesenheit erfassen" titel="Neue Abwesenheit für diesen Tag erfassen" eintraege={[
+          <MenueKnopf art="knopf" appearance="secondary" text="Abwesenheit" titel="Neue Abwesenheit für diesen Tag erfassen, alle Abwesenheiten, Kalender" eintraege={[
+            { titel: 'Abwesenheit erfassen' },
             { text: 'Lehrkraft …', aktion: erfassen('lehrer') },
             { text: 'Klasse …', aktion: erfassen('klasse') },
             { text: 'Raum …', aktion: erfassen('raum') },
+            null,
+            { text: 'Alle Abwesenheiten', taste: 'Strg+M', aktion: () => seiteOeffnen('vertretung.absenzen') },
+            { text: 'Kalender', aktion: () => seiteOeffnen('vertretung.kalender') },
           ]} />
         ) : null}
       </span>
@@ -108,22 +150,34 @@ function Tageskopf() {
 }
 
 /**
- * Tagesplanung: oben der Tageskopf; links die Vertretungen des Tages (schlanke Liste) und darunter der Vorschlag zur gewählten
- * Vertretung; rechts die Tagespläne von Klasse und Lehrkraft (folgen der Auswahl). Kalender und Abwesenheiten haben eigene Seiten.
+ * Tagesplanung: oben der Tageskopf (mit Umschalter Tag | Woche und Wochenstreifen); links die Vertretungen (schlanke Liste,
+ * im Wochenmodus nach Tagen gegliedert) und darunter der Vorschlag zur gewählten Vertretung; rechts die Pläne von Klasse und
+ * Lehrkraft (folgen der Auswahl). Zeigt ein Plan die Woche, stehen die Pläne untereinander in einer breiteren rechten Spalte;
+ * ein Plan lässt sich vergrößern (Esc stellt die Aufteilung wieder her). Alle Bereiche bleiben dabei eingehängt.
  */
 export function Tagesplanung() {
   const s = useStile();
+  const woche = useTagesplanung((x) => Object.values(x.plaene).some((v) => v === 'woche'));
+  const gross = useTagesplanung((x) => x.gross);
+  useEffect(() => {
+    if (!gross) return undefined;
+    const taste = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented && !document.querySelector('[role=dialog], [role=menu]')) planVergroessern(null); };
+    document.addEventListener('keydown', taste);
+    return () => document.removeEventListener('keydown', taste);
+  }, [gross]);
+  useEffect(() => () => planVergroessern(null), []);
+  const k = woche ? 'tagesplanung.woche' : 'tagesplanung.v2';
   return (
-    <div className={s.seite}>
+    <div className={s.seite} data-ansicht-art={woche ? 'woche' : 'tag'}>
       <Tageskopf />
-      <Teilung schluessel="tagesplanung.v2" anteile={[58, 42]}>
-        <Teilung richtung="zeilen" schluessel="tagesplanung.v2.links" anteile={[56, 44]}>
-          <Bereich id="liste" typ="vertretung.liste" p={{ schlank: true }} />
+      <Teilung schluessel={k} anteile={woche ? [45, 55] : [58, 42]} nur={gross ? 1 : null}>
+        <Teilung richtung="zeilen" schluessel={`${k}.links`} anteile={[56, 44]}>
+          <Bereich id="liste" typ="vertretung.liste" p={{ schlank: true, tagesplanung: true }} />
           <Bereich id="vorschlag" typ="vertretung.vorschlag" />
         </Teilung>
-        <Teilung schluessel="tagesplanung.v2.plaene" anteile={[50, 50]}>
-          <Bereich id="plan-klasse" typ="vertretung.plan" p={{ typ: 'klasse', tag: true }} />
-          <Bereich id="plan-lehrer" typ="vertretung.plan" p={{ typ: 'lehrer', tag: true }} />
+        <Teilung richtung={woche ? 'zeilen' : 'spalten'} schluessel={`${k}.plaene`} anteile={[50, 50]} nur={gross === 'klasse' ? 0 : gross === 'lehrer' ? 1 : null}>
+          <Bereich id="plan-klasse" typ="vertretung.plan" p={{ typ: 'klasse', tagesplanung: true }} />
+          <Bereich id="plan-lehrer" typ="vertretung.plan" p={{ typ: 'lehrer', tagesplanung: true }} />
         </Teilung>
       </Teilung>
     </div>

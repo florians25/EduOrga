@@ -9,7 +9,7 @@ namespace UntPlanStudio.Dienste;
 /// sonst Wert des Unterrichts (nur in der ersten Zeile angezeigt).
 /// </summary>
 public sealed record Spalte(string Key, string Titel, int Breite, bool Zeile, bool Standard, Func<Unterricht, Kopplungszeile, string> Get,
-    Action<Schuldatei, Unterricht, Kopplungszeile, string>? Set, string Karte = "Unterricht", bool Bool = false)
+    Action<Schuldatei, Unterricht, Kopplungszeile, string>? Set, string Karte = "Unterricht", bool Bool = false, string[]? Auswahl = null)
 {
     /// <summary>Elementtyp für Auswahllisten (Kurz-/Langname) oder null.</summary>
     public ElementTyp? RefTyp => Key switch
@@ -22,6 +22,16 @@ public sealed record Spalte(string Key, string Titel, int Breite, bool Zeile, bo
     };
 
     public bool Liste => Key == "Klassen";
+
+    /// <summary>Eingabeart für die Oberfläche (Editor, Prüfung): wie <see cref="FeldArt"/> der Stammdaten.</summary>
+    public string Art => Set is null ? "NurLesen" : Bool ? "Bool" : RefTyp is not null ? (Liste ? "ElementListe" : "Element") : Auswahl is not null ? "Auswahl" : Key switch
+    {
+        "Wst" => "Ganzzahl",
+        "Dopp" => "Bereich",
+        "Wert" or "Faktor" => "Dezimal",
+        "Von" or "Bis" => "Datum",
+        _ => "Text",
+    };
 }
 
 /// <summary>Spaltendefinitionen der Unterrichtsfenster, übernommen aus der Desktop-Anwendung (Fenster/UnterrichtFenster.cs).</summary>
@@ -49,6 +59,7 @@ public static class Unterrichtsspalten
     {
         var ix = () => doc.Index;
         var wochen = new Lazy<int>(() => Kalender.Unterrichtswochen(doc.Daten)); // einmal je Abruf statt je Zeile
+        var ugruppen = doc.Daten.UGruppen.Select(g => g.Kurzname).Where(k => k.Length > 0).ToArray();
         static string B(bool b) => b ? "X" : "";
         static bool Wahr(string s) => s.Equals("X", StringComparison.OrdinalIgnoreCase) || s == "True" || s == "1";
         return new List<Spalte>
@@ -102,11 +113,11 @@ public static class Unterrichtsspalten
             new("Faktor", "Werte-Faktor", 70, false, false, (u, _) => u.WerteFaktor.HasValue ? Format.Zahl(u.WerteFaktor.Value) : "",
                 (d, u, z, t) => u.WerteFaktor = t.Trim().Length == 0 ? null : decimal.Parse(t.Replace('.', ','), CultureInfo.GetCultureInfo("de-DE")), "Werte"),
             new("Periode", "Woche (A/B)", 70, false, false, (u, _) => u.Periodizitaet switch { Periodizitaet.AWoche => "A", Periodizitaet.BWoche => "B", _ => "" },
-                (d, u, z, t) => u.Periodizitaet = t.Trim().ToUpperInvariant() switch { "A" => Periodizitaet.AWoche, "B" => Periodizitaet.BWoche, _ => Periodizitaet.JedeWoche }, "Mehrwochen"),
+                (d, u, z, t) => u.Periodizitaet = t.Trim().ToUpperInvariant() switch { "A" => Periodizitaet.AWoche, "B" => Periodizitaet.BWoche, _ => Periodizitaet.JedeWoche }, "Mehrwochen", Auswahl: new[] { "A", "B" }),
             new("UGruppe", "U-Gruppe", 66, false, false, (u, _) => doc.Daten.UGruppen.FirstOrDefault(g => g.Id == u.UGruppeId)?.Kurzname ?? "",
-                (d, u, z, t) => u.UGruppeId = t.Trim().Length == 0 ? null : d.UGruppen.FirstOrDefault(g => g.Kurzname.Equals(t.Trim(), StringComparison.OrdinalIgnoreCase))?.Id ?? throw new FormatException($"Unterrichtsgruppe \"{t}\" unbekannt"), "Mehrwochen"),
+                (d, u, z, t) => u.UGruppeId = t.Trim().Length == 0 ? null : d.UGruppen.FirstOrDefault(g => g.Kurzname.Equals(t.Trim(), StringComparison.OrdinalIgnoreCase))?.Id ?? throw new FormatException($"Unterrichtsgruppe \"{t}\" unbekannt"), "Mehrwochen", Auswahl: ugruppen),
             new("ZUGruppe", "Zeilen-U-Gr.", 74, true, false, (_, z) => doc.Daten.UGruppen.FirstOrDefault(g => g.Id == z.UGruppeId)?.Kurzname ?? "",
-                (d, u, z, t) => z.UGruppeId = t.Trim().Length == 0 ? null : d.UGruppen.FirstOrDefault(g => g.Kurzname.Equals(t.Trim(), StringComparison.OrdinalIgnoreCase))?.Id ?? throw new FormatException($"Unterrichtsgruppe \"{t}\" unbekannt"), "Mehrwochen"),
+                (d, u, z, t) => z.UGruppeId = t.Trim().Length == 0 ? null : d.UGruppen.FirstOrDefault(g => g.Kurzname.Equals(t.Trim(), StringComparison.OrdinalIgnoreCase))?.Id ?? throw new FormatException($"Unterrichtsgruppe \"{t}\" unbekannt"), "Mehrwochen", Auswahl: ugruppen),
             new("Von", "von", 76, false, false, (u, _) => u.VonDatum.HasValue ? Format.Datum(u.VonDatum.Value) : "",
                 (d, u, z, t) => u.VonDatum = t.Trim().Length == 0 ? null : DateOnly.Parse(t, CultureInfo.GetCultureInfo("de-DE")), "Mehrwochen"),
             new("Bis", "bis", 76, false, false, (u, _) => u.BisDatum.HasValue ? Format.Datum(u.BisDatum.Value) : "",

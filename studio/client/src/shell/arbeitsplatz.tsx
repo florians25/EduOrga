@@ -124,15 +124,22 @@ export function Bereich({ id, typ, p: start = {} }: { id: string; typ: string; p
   );
 }
 
-/** Aufteilung in Spalten (waagerecht) oder Zeilen (senkrecht) mit verschiebbaren Trennern. anteile in Prozent. */
-export function Teilung({ richtung = 'spalten', anteile, schluessel, children }: { richtung?: 'spalten' | 'zeilen'; anteile: number[]; schluessel: string; children: ReactNode }) {
+/**
+ * Aufteilung in Spalten (waagerecht) oder Zeilen (senkrecht) mit verschiebbaren Trennern. anteile in Prozent; gemerkt je
+ * schluessel (wechselt der Schlüssel, gelten dessen Anteile – Richtung und Inhalt bleiben dabei eingehängt). nur: Index des
+ * einzigen sichtbaren Teils (die übrigen bleiben eingehängt, aber verborgen – z. B. ein vergrößerter Bereich).
+ */
+export function Teilung({ richtung = 'spalten', anteile, schluessel, nur, children }: { richtung?: 'spalten' | 'zeilen'; anteile: number[]; schluessel: string; nur?: number | null; children: ReactNode }) {
   const s = useStile();
   const teile = Children.toArray(children);
   const speicher = `teilung.${schluessel}`;
-  const [werte, setWerte] = useState<number[]>(() => {
+  const lesen = () => {
     try { const w = JSON.parse(localStorage.getItem(speicher) || 'null') as number[] | null; if (w && w.length === teile.length) return w; } catch { /* */ }
     return anteile;
-  });
+  };
+  const [werte, setWerte] = useState<number[]>(lesen);
+  const geladen = useRef(speicher);
+  useEffect(() => { if (geladen.current !== speicher) { geladen.current = speicher; setWerte(lesen()); } }); // eslint-disable-line react-hooks/exhaustive-deps
   const ref = useRef<HTMLDivElement>(null);
   const spalten = richtung === 'spalten';
   const ziehen = (i: number) => (e: RPointerEvent<HTMLDivElement>) => {
@@ -160,8 +167,8 @@ export function Teilung({ richtung = 'spalten', anteile, schluessel, children }:
   return (
     <div ref={ref} className={mergeClasses(s.teilung, !spalten && s.zeilen)}>
       {teile.map((t, i) => (
-        <FragmentMitTrenner key={i} erster={i === 0} trennerKlasse={spalten ? s.trennerS : s.trennerW} beiZiehen={i > 0 ? ziehen(i - 1) : undefined}>
-          <div className={s.teil} style={{ flex: `${werte[i] ?? 1} 1 0` }}>{t}</div>
+        <FragmentMitTrenner key={i} erster={i === 0 || nur != null} trennerKlasse={spalten ? s.trennerS : s.trennerW} beiZiehen={i > 0 ? ziehen(i - 1) : undefined}>
+          <div className={s.teil} style={nur != null ? (nur === i ? { flex: '1 1 0' } : { display: 'none' }) : { flex: `${werte[i] ?? 1} 1 0` }}>{t}</div>
         </FragmentMitTrenner>
       ))}
     </div>
