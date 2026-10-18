@@ -418,7 +418,7 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
         <Tooltip key={x.id} title={titel + (f?.fehlstunden && st !== 'weg' ? ' – als Fehlstunde gewertet' : '')}>
           <Box role="button" tabIndex={0} aria-pressed={an} onClick={() => darf && setAuswahl(s2 => { const n = new Set(s2); if (n.has(x.id)) n.delete(x.id); else n.add(x.id); return n; })}
             onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && darf) { e.preventDefault(); setAuswahl(s2 => { const n = new Set(s2); if (n.has(x.id)) n.delete(x.id); else n.add(x.id); return n; }); } }}
-            sx={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 1, p: 1, pr: 4, borderRadius: 2.5, cursor: darf ? 'pointer' : 'default', userSelect: 'none', minWidth: 0,
+            sx={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 1, p: 1, pr: 4, borderRadius: 2, cursor: darf ? 'pointer' : 'default', userSelect: 'none', minWidth: 0,
               border: 1.5, borderColor: an ? 'primary.main' : st === 'da' ? 'divider' : alpha(ton, 0.5),
               bgcolor: an ? alpha(t.palette.primary.main, 0.07) : st === 'weg' ? t.palette.status.entfall.flaeche : st !== 'da' ? t.palette.status.pruefung.flaeche : 'background.paper',
               opacity: befreit && st === 'da' ? 0.6 : 1 }}>

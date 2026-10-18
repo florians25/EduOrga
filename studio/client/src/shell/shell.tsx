@@ -17,6 +17,7 @@ import { ZiehKontext } from '@/komponenten/ziehen';
 import { Befehlssuche, befehlssucheIstOffen, befehlssucheOeffnen } from './befehlssuche';
 import { Kopfleiste } from './kopfleiste';
 import { NavLeiste } from './navleiste';
+import { UpdateLeiste } from './updatehinweis';
 
 const useStile = makeStyles({
   app: { display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', backgroundColor: tokens.colorNeutralBackground2 },
@@ -76,6 +77,7 @@ export function Shell() {
   return (
     <div className={s.app}>
       <Kopfleiste />
+      <UpdateLeiste />
       <div className={s.unten}>
         <NavLeiste />
         <main className={s.inhalt}>

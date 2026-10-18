@@ -30,7 +30,7 @@ export function ElementWahl({ liste, wert, onWahl, platzhalter, info, breite = 2
           return <Box component="li" key={key} {...rest} sx={{ gap: 1.5 }}><Typography sx={{ fontWeight: 600, minWidth: 56 }}>{o.kurz}</Typography><Typography variant="body2" color="text.secondary" noWrap>{zusatz}</Typography></Box>;
         }}
         renderInput={p => <TextField {...p} placeholder={platzhalter} aria-label={platzhalter}
-          InputProps={{ ...p.InputProps, sx: { borderRadius: 999, fontWeight: 600 } }} />}
+          InputProps={{ ...p.InputProps, sx: { fontWeight: 600 } }} />}
         sx={{ width: breite }} slotProps={{ listbox: { sx: { maxHeight: 360 } } }} noOptionsText="Keine Treffer"
       />
       {blaettern && <Tooltip title="Nächstes Element (Alt+→)"><span><IconButton size="small" disabled={pos < 0 || pos >= liste.length - 1} onClick={() => onWahl(liste[pos + 1].kurz)} aria-label="Nächstes Element"><ChevronRightRounded /></IconButton></span></Tooltip>}
@@ -60,7 +60,7 @@ export function ZeitNavi({ datum, onDatum, art = 'woche', tage = 5 }: { datum: s
       </Button>
       <Tooltip title={art === 'woche' ? 'Nächste Woche' : 'Nächster Tag'}><IconButton size="small" onClick={() => onDatum(art === 'woche' ? plusTage(basis, schritt) : tagWeiter(1))} aria-label={art === 'woche' ? 'Nächste Woche' : 'Nächster Tag'}><ChevronRightRounded /></IconButton></Tooltip>
       <Button variant="outlined" size="small" onClick={() => onDatum(heuteIso())} sx={{ ml: 0.5 }}>Heute</Button>
-      <Popover open={!!anker} anchorEl={anker} onClose={() => setAnker(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} slotProps={{ paper: { sx: { borderRadius: 3, mt: 1 } } }}>
+      <Popover open={!!anker} anchorEl={anker} onClose={() => setAnker(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} slotProps={{ paper: { sx: { borderRadius: 2, mt: 1 } } }}>
         <DateCalendar value={dayjs(datum)} onChange={(v: Dayjs | null) => { if (v) { onDatum(v.format('YYYY-MM-DD')); setAnker(null); } }} showDaysOutsideCurrentMonth displayWeekNumber />
       </Popover>
     </Stack>

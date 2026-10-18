@@ -35,7 +35,7 @@ export function VertretungsTag({ t, kollegium, filter = '' }: { t: VTag; kollegi
   const zeilen = f ? t.zeilen.filter(z => z.klassen.toLowerCase().split(/,\s*/).some(k => k.startsWith(f)) || (kollegium && `${z.lehrer} ${z.lehrerAlt ?? ''}`.toLowerCase().includes(f))) : t.zeilen;
   const infos: [string, string[]][] = [['Abwesende Klassen', t.abwesendeKlassen], ...(kollegium ? [['Abwesende Lehrkräfte', t.abwesendeLehrer] as [string, string[]]] : []), ['Nicht verfügbare Räume', t.blockierteRaeume]];
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'hidden', mb: 2.5, breakInside: 'avoid' }}>
+    <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', mb: 2.5, breakInside: 'avoid' }}>
       <Stack direction="row" alignItems="center" gap={1.5} sx={{ px: 2.5, py: 1.75, borderBottom: 1, borderColor: 'divider', bgcolor: t.datum === heuteIso() ? alpha(th.palette.primary.main, 0.05) : undefined }}>
         <Typography variant="h3" component="h2">{datumLang(t.datum)}</Typography>
         {t.woche && <Typography color="text.secondary">{t.woche}-Woche</Typography>}

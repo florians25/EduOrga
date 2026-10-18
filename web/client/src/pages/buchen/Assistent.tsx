@@ -225,7 +225,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
 
   const n = suche?.termine.length ?? vorschau?.termine.length ?? 0;
   const zeitLeiste = (
-    <ButtonBase onClick={() => setSchritt(0)} sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.5, px: 2, py: 1.25, mb: 2, borderRadius: 3, border: 1, borderColor: 'divider', bgcolor: 'background.paper', textAlign: 'left' }}>
+    <ButtonBase onClick={() => setSchritt(0)} sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.5, px: 2, py: 1.25, mb: 2, borderRadius: 2, border: 1, borderColor: 'divider', bgcolor: 'background.paper', textAlign: 'left' }}>
       <CalendarMonthOutlined color="primary" /><Typography sx={{ fontWeight: 500 }}>{zeitText(z)}</Typography><Typography variant="body2" color="text.secondary">{n} {n === 1 ? 'Termin' : 'Termine'}</Typography>
       <Box sx={{ flex: 1 }} /><Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>Ändern</Typography>
     </ButtonBase>
@@ -262,7 +262,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
               {tage.map((t, i) => <Chip key={t} label={t} color={z.wochentage.includes(i) ? 'primary' : 'default'} variant={z.wochentage.includes(i) ? 'filled' : 'outlined'}
                 onClick={() => zSet({ wochentage: z.wochentage.includes(i) ? z.wochentage.filter(x => x !== i) : [...z.wochentage, i] })} aria-pressed={z.wochentage.includes(i)} />)}</Stack>
           )}
-          <Box sx={{ bgcolor: 'action.hover', borderRadius: 3, p: 2 }}>
+          <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2 }}>
             {vorschauFehler ? <Typography color="error.main">{vorschauFehler}</Typography> : vorschau ? (
               <>
                 <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap" sx={{ mb: vorschau.termine.length ? 1.25 : 0 }}>
@@ -329,7 +329,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
             const aus = r.belegt.length >= n;
             const maxMenge = Math.max(1, ...r.verfuegbar);
             return (
-              <Stack key={r.id} direction="row" gap={1.5} alignItems="center" sx={{ p: 1.25, borderRadius: 2.5, border: 1, borderColor: an ? 'primary.main' : 'divider', bgcolor: an ? 'action.selected' : 'transparent', opacity: aus ? 0.5 : 1, cursor: aus ? 'default' : 'pointer' }}
+              <Stack key={r.id} direction="row" gap={1.5} alignItems="center" sx={{ p: 1.25, borderRadius: 2, border: 1, borderColor: an ? 'primary.main' : 'divider', bgcolor: an ? 'action.selected' : 'transparent', opacity: aus ? 0.5 : 1, cursor: aus ? 'default' : 'pointer' }}
                 onClick={() => !aus && setResWahl(m => { const x = new Map(m); if (x.has(r.id)) x.delete(r.id); else x.set(r.id, 1); return x; })}>
                 <Checkbox checked={an} disabled={aus} sx={{ p: 0.5 }} />
                 <Box sx={{ width: 36, height: 36, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.hover', color: 'primary.main' }}><ResSymbol r={r} /></Box>

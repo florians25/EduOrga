@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using UntPlan.Core;
 using UntPlan.Core.Model;
 
@@ -18,6 +19,10 @@ public sealed class StudioFabrik : WebApplicationFactory<Program>
     public string Datenordner { get; init; } = Path.Combine(Path.GetTempPath(), "untplanstudio-test-" + Guid.NewGuid().ToString("N"));
     /// <summary>Datenordner beim Beenden löschen (aus für Tests mit Neustart im selben Ordner).</summary>
     public bool OrdnerLoeschen { get; init; } = true;
+    /// <summary>Zusätzliche Einstellungen (z. B. STUDIO_UPDATE_URL).</summary>
+    public Dictionary<string, string?> Einstellungen { get; init; } = new();
+    /// <summary>Ersatz für das Netz bei der Updateprüfung (benannter HttpClient „update“); ohne Angabe ist die Prüfung abgeschaltet.</summary>
+    public HttpMessageHandler? Updatequelle { get; init; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -25,6 +30,17 @@ public sealed class StudioFabrik : WebApplicationFactory<Program>
         builder.UseSetting("STUDIO_ADMIN_PASSWORT", AdminPasswort);
         builder.UseSetting("STUDIO_AUTOSPEICHERN_SEKUNDEN", "3600");
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
+        // Tests greifen nie auf GitHub zu: ohne Ersatzquelle bleibt die Updateprüfung aus
+        if (Updatequelle is null) builder.UseSetting("STUDIO_UPDATE_PRUEFEN", "0");
+        foreach (var (k, v) in Einstellungen) builder.UseSetting(k, v);
+        if (Updatequelle is { } quelle)
+            builder.ConfigureServices(s => s.AddHttpClient("update").ConfigurePrimaryHttpMessageHandler(() => new Durchreichen(quelle)));
+    }
+
+    /// <summary>Gibt den Ersatz-Handler weiter, ohne ihn beim Freigeben durch die HttpClientFactory mit freizugeben.</summary>
+    private sealed class Durchreichen(HttpMessageHandler innen) : DelegatingHandler(innen)
+    {
+        protected override void Dispose(bool disposing) { }
     }
 
     /// <summary>Client mit Cookies und Schutzkopfzeile (wie die Oberfläche).</summary>

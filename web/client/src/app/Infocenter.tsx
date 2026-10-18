@@ -69,7 +69,7 @@ export function InfoKarte({ x, onClick, werkzeuge }: { x: InfoEintrag; onClick?:
   const d = new Date(String(x.datum).slice(0, 10) + 'T12:00');
   const lang = (x.text?.length ?? 0) > 220 || (x.punkte?.length ?? 0) > 3;
   return (
-    <Box onClick={onClick} sx={{ display: 'flex', gap: 2, p: 2, borderRadius: 3, border: 1, borderColor: x.gelesen ? 'divider' : 'primary.light', bgcolor: x.gelesen ? 'background.paper' : 'action.selected',
+    <Box onClick={onClick} sx={{ display: 'flex', gap: 2, p: 2, borderRadius: 2, border: 1, borderColor: x.gelesen ? 'divider' : 'primary.light', bgcolor: x.gelesen ? 'background.paper' : 'action.selected',
       cursor: onClick && !x.gelesen ? 'pointer' : 'default', position: 'relative' }}>
       <Box sx={{ textAlign: 'center', minWidth: 40 }}>
         <Typography sx={{ fontSize: 20, fontWeight: 600, lineHeight: 1 }}>{Number.isNaN(d.getTime()) ? '' : d.getDate()}</Typography>

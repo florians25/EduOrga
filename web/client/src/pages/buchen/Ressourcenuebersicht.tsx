@@ -125,7 +125,7 @@ export function Ressourcenuebersicht({ rest }: { rest: string[] }) {
     return zz.v > 0 ? <Button size="small" variant="contained" startIcon={<AddRounded />} onClick={() => setBuchen({ r, datum, von: v, bis: b })}>Buchen</Button>
       : <Button size="small" variant="outlined" onClick={() => setBuchen({ r, datum, von: v, bis: b })}>Andere Zeit</Button>;
   };
-  const symbol = (r: Res) => <Box sx={{ width: 40, height: 40, borderRadius: 2.5, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main', flexShrink: 0 }}><ResSymbol r={r} /></Box>;
+  const symbol = (r: Res) => <Box sx={{ width: 40, height: 40, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main', flexShrink: 0 }}><ResSymbol r={r} /></Box>;
 
   return (
     <Seite titel="Ressourcenübersicht" aktionen={opt && <>

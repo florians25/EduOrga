@@ -44,6 +44,15 @@ export function statusText(k: Karte) {
   return STATUSTEXT[k.status] ?? '';
 }
 
+/** Kurzbezeichnung einer Änderung: was hat sich geändert (Lehrkraft → „Vertretung“, nur Raum → „Raum“, Fach → „Fach“). */
+export function aenderungsText(k: Karte) {
+  const g = (l: Wert[] | null | undefined) => (l || []).some(w => w.alt || w.neu);
+  if (g(k.lehrer)) return 'Vertretung';
+  if (k.fachAlt) return 'Fach';
+  if (g(k.raeume)) return 'Raum';
+  return 'Änderung';
+}
+
 /** Plaketten der Kachel: kurze Bezeichnung und Ton. */
 export interface Plakette { text: string; ton: 'entfall' | 'aenderung' | 'pruefung' | 'termin' | 'frei' | 'neutral'; hinweis?: string }
 export function plaketten(k: Karte, typ: Typ): Plakette[] {
@@ -60,6 +69,7 @@ export function plaketten(k: Karte, typ: Typ): Plakette[] {
   else if (k.status === 'buchung') p.push({ text: 'Buchung', ton: 'frei' });
   else if (k.status === 'vorgemerkt') p.push({ text: 'Vorgemerkt', ton: 'neutral', hinweis: 'In UntPlanWeb beantragt, von UntPlan noch nicht übernommen' });
   else if (lehrerAbwesend(k, typ)) p.push({ text: 'Vertreten', ton: 'neutral' });
+  else if (!verlegt && k.status === 'geaendert') p.push({ text: aenderungsText(k), ton: 'aenderung' });
   if ((k.abwesendeKlassen || []).length && !istEntfall(k, typ)) p.push({ text: k.abwesendText || 'abwesend', ton: 'neutral', hinweis: `${k.abwesendeKlassen.join(', ')} ${k.abwesendText || 'abwesend'}` });
   return p;
 }

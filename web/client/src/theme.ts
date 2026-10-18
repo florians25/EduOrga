@@ -1,5 +1,6 @@
 // MUI-Thema nach dem UntPlan-Designsystem (design/tokens.css): Marine als einzige Akzentfarbe, Schiefer für Flächen und Linien,
-// fachliche Statusfarben (Entfall, Änderung, Prüfung, Termin, frei). Web-Stil: Pillen-Knöpfe, weiche Karten (Radius 12), runde Felder.
+// fachliche Statusfarben (Entfall, Änderung, Prüfung, Termin, frei). Sachlicher Stil: Knöpfe und Felder Radius 6, Karten 8, Plaketten 3,
+// Segmentschalter mit 1-px-Rahmen; sx-Radien rechnen mit 4 px je Einheit.
 import { createTheme, alpha } from '@mui/material/styles';
 
 export const farben = {
@@ -72,7 +73,7 @@ export const theme = createTheme({
       },
     },
   },
-  shape: { borderRadius: 8 },
+  shape: { borderRadius: 4 },
   typography: {
     fontFamily: SCHRIFT,
     fontSize: 14,
@@ -101,7 +102,7 @@ export const theme = createTheme({
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {
-        root: { borderRadius: 999, paddingInline: 16, minHeight: 34 },
+        root: { borderRadius: 6, paddingInline: 14, minHeight: 32 },
         sizeSmall: { minHeight: 28, paddingInline: 12, fontSize: 13 },
         outlined: ({ theme }) => ({ borderColor: theme.vars.palette.divider, color: theme.vars.palette.text.primary, background: theme.vars.palette.background.paper,
           '&:hover': { borderColor: theme.vars.palette.text.disabled, background: theme.vars.palette.action.hover } }),
@@ -109,34 +110,37 @@ export const theme = createTheme({
     },
     MuiToggleButton: {
       styleOverrides: {
-        root: ({ theme }) => ({ textTransform: 'none', fontWeight: 500, paddingBlock: 4, paddingInline: 14, borderColor: theme.vars.palette.divider,
-          '&.Mui-selected': { background: theme.vars.palette.background.paper, color: theme.vars.palette.primary.main, boxShadow: '0 1px 2px rgba(21,26,33,.12)' } }),
+        root: ({ theme }) => ({ textTransform: 'none', fontWeight: 500, paddingBlock: 4, paddingInline: 12, borderColor: theme.vars.palette.divider, color: theme.vars.palette.text.secondary,
+          '&:hover': { background: theme.vars.palette.action.hover },
+          '&.Mui-selected, &.Mui-selected:hover': { background: theme.vars.palette.action.selected, color: theme.vars.palette.primary.main } }),
       },
     },
     MuiToggleButtonGroup: {
       styleOverrides: {
-        root: ({ theme }) => ({ background: theme.vars.palette.action.hover, borderRadius: 999, padding: 3, gap: 2,
-          '& .MuiToggleButton-root': { border: 0, borderRadius: '999px !important' } }),
+        root: ({ theme }) => ({ background: theme.vars.palette.background.paper, borderRadius: 6,
+          '& .MuiToggleButton-root': { borderColor: theme.vars.palette.divider } }),
+        firstButton: { borderTopLeftRadius: 6, borderBottomLeftRadius: 6 },
+        lastButton: { borderTopRightRadius: 6, borderBottomRightRadius: 6 },
       },
     },
-    MuiIconButton: { styleOverrides: { root: { borderRadius: 999 } } },
+    MuiIconButton: { styleOverrides: { root: { borderRadius: 6 } } },
     MuiPaper: {
       defaultProps: { elevation: 0 },
-      styleOverrides: { rounded: { borderRadius: 12 }, outlined: ({ theme }) => ({ borderColor: theme.vars.palette.divider }) },
+      styleOverrides: { rounded: { borderRadius: 8 }, outlined: ({ theme }) => ({ borderColor: theme.vars.palette.divider }) },
     },
     MuiCard: {
       defaultProps: { variant: 'outlined' },
-      styleOverrides: { root: { borderRadius: 14 } },
+      styleOverrides: { root: { borderRadius: 8 } },
     },
     MuiCardHeader: {
       styleOverrides: { root: { paddingBottom: 8 }, title: { fontSize: 15, fontWeight: 600 }, subheader: { fontSize: 13 } },
     },
     MuiOutlinedInput: {
       styleOverrides: {
-        root: ({ theme }) => ({ borderRadius: 10, background: theme.vars.palette.background.paper,
+        root: ({ theme }) => ({ borderRadius: 6, background: theme.vars.palette.background.paper,
           '& .MuiOutlinedInput-notchedOutline': { borderColor: theme.vars.palette.divider },
           '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: theme.vars.palette.text.disabled } }),
-        input: { paddingBlock: 9 },
+        input: { paddingBlock: 8 },
         inputSizeSmall: { paddingBlock: 6.5 },
       },
     },
@@ -146,14 +150,14 @@ export const theme = createTheme({
     MuiFormControl: { defaultProps: { size: 'small' } },
     MuiAutocomplete: { defaultProps: { size: 'small' } },
     MuiChip: {
-      styleOverrides: { root: { fontWeight: 500, borderRadius: 999 }, sizeSmall: { height: 22, fontSize: 12 } },
+      styleOverrides: { root: { fontWeight: 500, borderRadius: 4 }, sizeSmall: { height: 22, fontSize: 12 } },
     },
     MuiTooltip: {
       defaultProps: { arrow: true, enterDelay: 250 },
-      styleOverrides: { tooltip: { fontSize: 12, background: farben.schiefer[800], borderRadius: 8, padding: '6px 10px' }, arrow: { color: farben.schiefer[800] } },
+      styleOverrides: { tooltip: { fontSize: 12, background: farben.schiefer[800], borderRadius: 4, padding: '6px 10px' }, arrow: { color: farben.schiefer[800] } },
     },
     MuiDialog: {
-      styleOverrides: { paper: { borderRadius: 16 } },
+      styleOverrides: { paper: { borderRadius: 8 } },
     },
     MuiDialogTitle: { styleOverrides: { root: { fontSize: 18, fontWeight: 600 } } },
     MuiDrawer: { styleOverrides: { paper: { backgroundImage: 'none' } } },
@@ -166,9 +170,9 @@ export const theme = createTheme({
     MuiTableRow: { styleOverrides: { root: ({ theme }) => ({ '&.MuiTableRow-hover:hover': { background: theme.vars.palette.action.hover } }) } },
     MuiTab: { styleOverrides: { root: { textTransform: 'none', fontWeight: 500, minHeight: 44 } } },
     MuiTabs: { styleOverrides: { root: { minHeight: 44 } } },
-    MuiListItemButton: { styleOverrides: { root: { borderRadius: 10 } } },
-    MuiMenu: { styleOverrides: { paper: { borderRadius: 12 } } },
-    MuiAlert: { styleOverrides: { root: { borderRadius: 12 } } },
+    MuiListItemButton: { styleOverrides: { root: { borderRadius: 6 } } },
+    MuiMenu: { styleOverrides: { paper: { borderRadius: 6 } } },
+    MuiAlert: { styleOverrides: { root: { borderRadius: 6 } } },
     MuiBadge: { styleOverrides: { badge: { fontWeight: 600 } } },
     MuiLink: { defaultProps: { underline: 'hover' } },
   },

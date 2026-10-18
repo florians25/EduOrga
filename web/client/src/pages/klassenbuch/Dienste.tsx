@@ -147,7 +147,7 @@ export default function Dienste({ teile }: SeitenProps) {
             {!d.arten.length ? <Leer symbol={<BadgeOutlined />} text="Noch keine Dienste angelegt" unter="Die Administration legt Dienste wie Tafeldienst oder Klassenordner unter Stammdaten → Dienste an." />
               : !sicht.length ? <Leer symbol={<BadgeOutlined />} text="Niemand eingeteilt" unter={`Im Zeitraum ${datumDe(von)} – ${datumDe(bis)} ist ${alleDienste ? 'für keinen Dienst' : `für „${dienst?.name ?? ''}“`} jemand eingeteilt.`} />
               : (
-                <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
                   <Box sx={{ overflowX: 'auto' }}><Table>
                     <TableHead><TableRow>{darf && <TableCell padding="checkbox"><Checkbox size="small" checked={auswahl.size === sicht.length} onChange={e => setAuswahl(e.target.checked ? new Set(sicht.map(s => s.i)) : new Set())} inputProps={{ 'aria-label': 'Alle auswählen' }} /></TableCell>}
                       <TableCell>Dienst</TableCell><TableCell>Schüler*innen</TableCell><TableCell>Zeitraum</TableCell><TableCell>Text</TableCell>{darf && <TableCell />}</TableRow></TableHead>
@@ -186,7 +186,7 @@ export default function Dienste({ teile }: SeitenProps) {
       return (
         <Seite titel={klasse && dienst ? `Klassendienste: ${klasse} | ${dienst.name}` : 'Klassendienste'} aktionen={aktionen} filter={filter}>
           {!klasse ? <Leer text="Keine Klassen vorhanden." /> : !dienst ? <Leer text="Es sind noch keine Dienste angelegt (Stammdaten → Dienste)." /> : !d.schueler.length ? <Leer text="Für diese Klasse wurde keine Schülerliste aus UntPlan übertragen." /> : (
-            <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'auto' }}>
+            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'auto' }}>
               <Table size="small" stickyHeader>
                 <TableHead><TableRow><TableCell sx={{ position: 'sticky', left: 0, zIndex: 3 }}>Schüler*in</TableCell>{wochen.map(w => <TableCell key={w} align="center" title={`Woche ab ${datumDe(w)}`}>{datumKurz(w)}</TableCell>)}<TableCell align="center">Σ</TableCell></TableRow></TableHead>
                 <TableBody>{d.schueler.map(s => (

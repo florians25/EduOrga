@@ -46,11 +46,11 @@ export default function TagSeite({ teile }: SeitenProps) {
               {!tag.gesperrt && <Plakette ton={tag.kopf.tagesaktuell ? 'ok' : 'neutral'}>{tag.kopf.tagesaktuell ? 'tagesaktuell' : 'Regelplan'}</Plakette>}
               {tag.kopf.hinweise.map((h, i) => <Plakette key={i} ton="warnung">{h}</Plakette>)}
             </Stack>
-            {tag.gesperrt ? <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3.5 }}><LockOutlined color="action" /><Typography sx={{ fontWeight: 600, mt: 1 }}>Es werden hier keine Termine angezeigt.</Typography><Typography variant="body2" color="text.secondary">{tag.sperrhinweis}</Typography></Paper>
+            {tag.gesperrt ? <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}><LockOutlined color="action" /><Typography sx={{ fontWeight: 600, mt: 1 }}>Es werden hier keine Termine angezeigt.</Typography><Typography variant="body2" color="text.secondary">{tag.sperrhinweis}</Typography></Paper>
               : tag.kopf.frei ? <Leer text={tag.kopf.freiGrund || 'Unterrichtsfrei'} />
               : !zeilen.length ? <Leer text="Keine Einträge." />
               : (
-                <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'auto' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'auto' }}>
                   <Box sx={{ display: 'grid', gridTemplateColumns: `140px repeat(${spalten.length}, minmax(108px, 1fr))`, minWidth: 140 + spalten.length * 108 }}>
                     <Box sx={{ position: 'sticky', left: 0, zIndex: 2, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }} />
                     {spalten.map((z, i) => (

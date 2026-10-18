@@ -131,7 +131,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
   let letzteKw = -1;
   return (
     <Seite dokumentTitel="Klassenbuch – Übersicht">
-      <Paper variant="outlined" sx={{ p: 1.5, mb: 2.5, borderRadius: 3.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', position: 'sticky', top: { xs: 60, lg: 8 }, zIndex: 5 }} className="nicht-drucken">
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 2.5, borderRadius: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', position: 'sticky', top: { xs: 60, lg: 8 }, zIndex: 5 }} className="nicht-drucken">
         {suchModus ? (
           <Autocomplete multiple options={optionen} value={optionen.filter(o => kriterien.some(k => k.typ === o.typ && k.kurz === o.kurz))} groupBy={o => GRUPPE[o.typ]}
             getOptionLabel={o => o.kurz} isOptionEqualToValue={(a, b) => a.typ === b.typ && a.kurz === b.kurz}
@@ -180,7 +180,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
                     {tag.datum === heute && <Plakette ton="primaer" fest>Heute</Plakette>}
                     <Box sx={{ flex: 1, borderTop: 1, borderColor: 'divider' }} />
                   </Stack>
-                  <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', borderColor: tag.datum === heute ? alpha(t.palette.primary.main, 0.4) : 'divider' }}>
+                  <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', borderColor: tag.datum === heute ? alpha(t.palette.primary.main, 0.4) : 'divider' }}>
                     <Box sx={{ overflowX: 'auto' }}><Table size="small">
                       <TableHead><TableRow><TableCell sx={{ width: 44 }}>h</TableCell><TableCell>Fach</TableCell>{mitLehrer && <TableCell>Lehrkräfte</TableCell>}<TableCell>Klassen</TableCell><TableCell>Lehrstoff</TableCell><TableCell>Abwesenheiten</TableCell><TableCell>Hausaufgaben</TableCell></TableRow></TableHead>
                       <TableBody>{sicht.map(x => {
@@ -276,7 +276,7 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
             </Stack>
           </Stack>
           {!raster.length || !tage.length ? <Leer text={`In dieser Woche gibt es für ${klasse} keinen Unterricht.`} /> : (
-            <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'auto', mb: 3 }}>
+            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'auto', mb: 3 }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: `56px repeat(${tage.length}, minmax(150px, 1fr))`, minWidth: 56 + tage.length * 150 }}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }} />
                 {tage.map(x => (
@@ -419,7 +419,7 @@ function Fehlzeiten({ klasse, bis, vonParam, ziel }: { klasse: string; bis: stri
       const zahl = (n: number, ton?: 'entfall' | 'pruefung' | 'ok') => (n ? <Box component="b" sx={{ color: ton ? `status.${ton}.main` : 'text.primary' }}>{n}</Box> : <Box component="span" sx={{ color: 'text.disabled' }}>–</Box>);
       return (
         <>
-          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 3.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             <DatumFeld label="Von" wert={von} onWert={v => v && neu(v)} pflicht />
             <DatumFeld label="Bis" wert={bis} onWert={b => b && neu(von, b)} pflicht />
             <SuchFeld wert={suche} onWert={setSuche} platzhalter="Schüler*in suchen" breite={200} />
@@ -432,7 +432,7 @@ function Fehlzeiten({ klasse, bis, vonParam, ziel }: { klasse: string; bis: stri
           </Paper>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Fehlstunden entstehen aus einer Abwesenheit und dem Stundenplan. Den Zeitraum selbst erfassen Sie unter <a href={`#/abwesenheiten/schueler/${von}/${bis}/${encodeURIComponent(klasse)}`}>Abwesenheiten</a>.</Typography>
           {!f.schueler.length ? <Leer text="Für diese Klasse wurde keine Schülerliste aus UntPlan übertragen." /> : !zeilen.length ? <Leer text="Im Zeitraum hat niemand gefehlt." /> : (
-            <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'hidden' }}>
+            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
               <Box sx={{ overflowX: 'auto' }}><Table size="small">
                 <TableHead><TableRow>{f.verwalten && <TableCell padding="checkbox" />}<TableCell>Name</TableCell><TableCell align="right">Fehlstunden</TableCell><TableCell align="right">Fehltage</TableCell><TableCell align="right">offen</TableCell><TableCell align="right">entschuldigt</TableCell><TableCell align="right">nicht entsch.</TableCell><TableCell /></TableRow></TableHead>
                 <TableBody>{zeilen.map(x => {

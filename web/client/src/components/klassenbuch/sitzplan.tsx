@@ -361,7 +361,7 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
     zellen.push(
       <Box key={k} data-platz={k} onClick={() => (!s || tische) && platzKlick(k)} role={!s ? 'button' : undefined} tabIndex={!s ? 0 : undefined}
         aria-label={`Reihe ${z}, Platz ${sp}${ohne ? ': kein Tisch' : s ? '' : ': frei'}`}
-        sx={{ position: 'relative', minHeight: 64, borderRadius: 2.5, p: 0.5, display: 'flex', alignItems: 'stretch',
+        sx={{ position: 'relative', minHeight: 64, borderRadius: 2, p: 0.5, display: 'flex', alignItems: 'stretch',
           border: ohne ? '1px dashed transparent' : `1px ${s ? 'solid' : 'dashed'} ${ziel === k ? t.palette.primary.main : t.palette.divider}`,
           bgcolor: ohne ? (tische ? alpha(t.palette.text.primary, 0.04) : 'transparent') : ziel === k ? alpha(t.palette.primary.main, 0.08) : s ? alpha(t.palette.primary.main, 0.03) : 'background.paper',
           cursor: tische || (!s && gewaehlt !== null) ? 'pointer' : 'default' }}>
@@ -414,7 +414,7 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
           {hinten && pult}
         </Box>
         <Box data-ablage onClick={() => { if (gewaehlt !== null && platzVon(gewaehlt)) setzen(gewaehlt, null); }}
-          sx={{ border: 1, borderColor: ziel === 'ablage' ? 'primary.main' : 'divider', borderRadius: 3, p: 1.5, bgcolor: 'background.paper', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+          sx={{ border: 1, borderColor: ziel === 'ablage' ? 'primary.main' : 'divider', borderRadius: 2, p: 1.5, bgcolor: 'background.paper', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Typography variant="subtitle2">Nicht zugeordnet ({frei.length})</Typography>
           <SuchFeld wert={suche} onWert={setSuche} platzhalter="Name suchen …" breite="100%" />
           {!schueler.length ? <Typography variant="body2" color="text.secondary">Für diese Stunde ist keine Schülerliste vorhanden.</Typography>

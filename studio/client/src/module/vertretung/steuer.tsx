@@ -1,9 +1,12 @@
-// Steuerelemente der Vertretungsplanung: Zeitraum (Tag / Woche / frei) und Datumsauswahl in der Kopfleiste.
-import { Button, Input, Select, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
+// Steuerelemente der Vertretungsplanung: Zeitraum (Tag / Woche / frei), Datumsauswahl in der Kopfleiste und ein Knopf mit
+// aufklappbarer Fläche für Optionen bzw. Filter (Schalter und Auswahlfelder, die nicht ständig sichtbar sein müssen).
 import {
-  ArrowPrevious20Regular, ArrowNext20Regular, ChevronLeft20Regular, ChevronRight20Regular,
+  Button, Input, Popover, PopoverSurface, PopoverTrigger, Select, ToolbarButton, Tooltip, makeStyles, tokens,
+} from '@fluentui/react-components';
+import {
+  ArrowPrevious20Regular, ArrowNext20Regular, ChevronDown16Regular, ChevronLeft20Regular, ChevronRight20Regular,
 } from '@fluentui/react-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useEreignis } from '@/kern/ereignisse';
 import { fehlerMelden } from '@/komponenten/hinweise';
 import { blaettern, datumSetzen, montag, planungsdatum, plusTage, tagKurz, usePlanungsdatum } from './kern';
@@ -14,7 +17,31 @@ const useStile = makeStyles({
   bis: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, padding: '0 2px' },
   kopf: { display: 'inline-flex', alignItems: 'center', gap: '2px', padding: '0 4px', flexShrink: 0 },
   kopfDatum: { width: '150px', fontVariantNumeric: 'tabular-nums' },
+  flaeche: { display: 'flex', flexDirection: 'column', gap: '6px', padding: '12px 16px', minWidth: '260px', maxWidth: '420px' },
+  flaecheTitel: { fontSize: tokens.fontSizeBase200, fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground2, margin: '4px 0 0 0' },
+  anzahl: { marginLeft: '4px', color: tokens.colorBrandForeground1, fontVariantNumeric: 'tabular-nums' },
 });
+
+/** Werkzeugknopf „Optionen ▾“ bzw. „Filter ▾“ mit einer Fläche für Schalter und Felder; aktiv = Anzahl gesetzter Optionen. */
+export function OptionenKnopf({ text, aktiv = 0, titel, children, testid }: { text: string; aktiv?: number; titel?: string; children: ReactNode; testid?: string }) {
+  const s = useStile();
+  return (
+    <Popover positioning="below-start" trapFocus>
+      <PopoverTrigger disableButtonEnhancement>
+        <ToolbarButton title={titel || text} data-testid={testid} style={{ minWidth: 0 }}>
+          {text}{aktiv ? <span className={s.anzahl}>{`(${aktiv})`}</span> : null}<ChevronDown16Regular style={{ marginLeft: 4 }} />
+        </ToolbarButton>
+      </PopoverTrigger>
+      <PopoverSurface className={s.flaeche}>{children}</PopoverSurface>
+    </Popover>
+  );
+}
+
+/** Zwischenüberschrift in einer Optionen-Fläche. */
+export function OptionenTitel({ children }: { children: ReactNode }) {
+  const s = useStile();
+  return <p className={s.flaecheTitel}>{children}</p>;
+}
 
 export type ZeitraumArt = 'tag' | 'woche' | 'vonbis';
 export interface Zeitraum { von: string | null; bis: string | null; art: ZeitraumArt }

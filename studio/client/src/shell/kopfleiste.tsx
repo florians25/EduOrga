@@ -19,6 +19,7 @@ import { modusSetzen, setzen, themaSetzen, useStudio, zustand, type Thema } from
 import { fehlerMelden } from '@/komponenten/hinweise';
 import { useKopfleistenElemente } from './kopfleiste-elemente';
 import { befehlssucheOeffnen } from './befehlssuche';
+import { UpdatePunkt, updateDialogZeigen, useVersionsstand } from './updatehinweis';
 
 const useStile = makeStyles({
   leiste: {
@@ -127,6 +128,7 @@ function KontoMenue() {
   const b = useStudio((x) => x.benutzer);
   const thema = useStudio((x) => x.thema);
   const navEin = useStudio((x) => x.navEingeklappt);
+  const update = useVersionsstand().stand;
   if (!b) return null;
   const los = (f: () => unknown) => () => { Promise.resolve().then(f).catch(fehlerMelden); };
   const rolle = b.rolle === 'Admin' ? 'Administration' : b.rolle === 'Leser' ? 'Nur lesen' : 'Planung';
@@ -134,12 +136,18 @@ function KontoMenue() {
     <Menu>
       <MenuTrigger disableButtonEnhancement>
         <Button appearance="subtle" className={s.konto} aria-label={`Konto ${b.anzeigename || b.name}`} data-testid="konto">
-          <Avatar size={28} name={b.anzeigename || b.name} initials={initialen(b.anzeigename || b.name)} color="brand" />
+          <UpdatePunkt><Avatar size={28} name={b.anzeigename || b.name} initials={initialen(b.anzeigename || b.name)} color="brand" /></UpdatePunkt>
         </Button>
       </MenuTrigger>
       <MenuPopover>
         <MenuList>
           <MenuGroupHeader>{`${b.anzeigename || b.name} · ${rolle}`}</MenuGroupHeader>
+          {update?.updateVerfuegbar ? (
+            <>
+              <MenuItem onClick={() => { void updateDialogZeigen(update); }} data-testid="update-menue">{`Neue Version ${update.neueste} verfügbar …`}</MenuItem>
+              <MenuDivider />
+            </>
+          ) : null}
           <MenuItem onClick={los(() => befehl('datei.backstage', { seite: 'konto' }))}>Konto und Passwort</MenuItem>
           {b.rolle === 'Admin' ? <MenuItem onClick={los(() => befehl('datei.backstage', { seite: 'benutzer' }))}>Benutzerverwaltung</MenuItem> : null}
           <MenuItem secondaryContent="Strg+B" onClick={() => setzen({ navEingeklappt: !navEin })}>Navigation ein-/ausblenden</MenuItem>

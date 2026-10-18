@@ -11,6 +11,8 @@ docs
 ios
 mobile
 web
+# gemeinsame Update-Prüfung (wird ins Studio eingebunden)
+!web/src/UntPlanWeb/Dienste/Updatepruefung.cs
 tests
 studio/tests
 src/UntPlan.App

@@ -13,7 +13,7 @@ export function SprechtagKarte() {
   return (
     <>
       {g.daten.map(k => (
-        <Paper key={k.id} variant="outlined" sx={{ p: 2, borderRadius: 3.5, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+        <Paper key={k.id} variant="outlined" sx={{ p: 2, borderRadius: 2, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
           <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: 'action.selected', color: 'primary.main', display: 'grid', placeItems: 'center', flex: 'none' }}><ForumOutlined fontSize="small" /></Box>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap"><Typography sx={{ fontWeight: 600 }}>{k.name}</Typography>{k.status === 'angekuendigt' && <Plakette ton="termin">angekündigt</Plakette>}</Stack>

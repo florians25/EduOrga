@@ -34,6 +34,8 @@ export interface Ereignisse {
   'vertretung.auswahl': VertretungsAuswahl | null;
   'vertretung.naechsteOffene': undefined;
   'vertretung.ansicht': string;
+  /** Stand der (schlanken) Vertretungsliste der Tagesplanung: Zeitraum, offene Vertretungen, Entfälle, Zeilen. */
+  'vertretung.liste': { von: string; bis: string; offen: number; entfall: number; zeilen: number };
   /** Ansicht im Arbeitsplatz aktiviert (Id). */
   'ansicht.aktiv': string;
 }

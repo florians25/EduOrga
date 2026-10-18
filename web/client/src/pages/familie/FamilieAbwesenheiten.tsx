@@ -62,7 +62,7 @@ export default function FamilieAbwesenheiten({ teile }: { teile: string[] }) {
       <Tabs value={reiter} onChange={(_, v) => navigieren(ziel(v))} sx={{ mb: 2 }}><Tab value="meine" label="Meine Abwesenheiten" /><Tab value="fehlzeiten" label="Fehlzeiten" /></Tabs>
       <Geladen g={g}>{d => !d.kind ? <Leer text={OHNE_ZUORDNUNG} /> : (
         <>
-          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 3.5, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
+          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
             <IconButton onClick={() => navigieren(ziel(reiter, monatPlus(von, -1)))} aria-label="Einen Monat früher"><ArrowBackRounded /></IconButton>
             <DatumFeld label="Ab" wert={von} onWert={v => v && navigieren(ziel(reiter, v))} pflicht />
             <IconButton onClick={() => navigieren(ziel(reiter, monatPlus(von, 1)))} aria-label="Einen Monat später"><ArrowForwardRounded /></IconButton>
@@ -75,7 +75,7 @@ export default function FamilieAbwesenheiten({ teile }: { teile: string[] }) {
             <Tooltip title="Als PDF exportieren"><IconButton href={`/api/app/familie/export?liste=${reiter === 'meine' ? 'abwesenheiten' : 'fehlzeiten'}&format=pdf&${d.q}`} aria-label="Als PDF exportieren"><PictureAsPdfOutlined /></IconButton></Tooltip>
             <Tooltip title="Als CSV exportieren (Excel)"><IconButton href={`/api/app/familie/export?liste=${reiter === 'meine' ? 'abwesenheiten' : 'fehlzeiten'}&format=csv&${d.q}`} aria-label="Als CSV exportieren"><TableViewOutlined /></IconButton></Tooltip>
           </Paper>
-          <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'hidden' }}>
+          <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
             {reiter === 'fehlzeiten' ? <FehlzeitenTabelle zeilen={d.zeilen as FehlzeitZeile[]} grundName={x => d.gruende[x] ?? x} /> : !d.zeilen.length ? <Leer text="Keine Abwesenheiten im Zeitraum." /> : (
               <Box sx={{ overflowX: 'auto' }}><Table size="small">
                 <TableHead><TableRow><TableCell padding="checkbox"><Checkbox size="small" checked={auswahl.size === d.zeilen.length} onChange={e => setAuswahl(e.target.checked ? new Set(d.zeilen.map((_, i) => i)) : new Set())} inputProps={{ 'aria-label': 'Alle auswählen' }} /></TableCell>

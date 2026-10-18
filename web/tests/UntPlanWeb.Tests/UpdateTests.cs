@@ -27,7 +27,7 @@ public class UpdateTests
             b.Logging.ClearProviders();
             b.WebHost.UseUrls("http://127.0.0.1:0");
             _app = b.Build();
-            _app.MapGet("/release", () => Results.Text("""{"tag_name":"v99.1.0","html_url":"https://example.org/release","draft":false,"prerelease":false}""", "application/json"));
+            _app.MapGet("/release", () => Results.Text("""{"tag_name":"v99.1.0","name":"UntPlan 99.1","html_url":"https://example.org/release","draft":false,"prerelease":false,"published_at":"2026-10-01T08:00:00Z","body":"## Neu\n- Updatehinweis"}""", "application/json"));
             _app.MapPost("/v1/update", (HttpContext c) =>
             {
                 if (c.Request.Headers.Authorization != "Bearer geheim") return Results.Unauthorized();
@@ -54,10 +54,19 @@ public class UpdateTests
         Assert.Equal(0, Updatepruefung.Vergleichen("v1.0", "1.0.0"));
         Assert.False(Updatepruefung.Schalter("0", true));
         Assert.True(Updatepruefung.Schalter(null, true));
-        // Registry-Seiten (Link-Kopf) und Standardquelle des Web-Images (nicht die Desktop-Releases)
+        // GitHub-Release mit Versionshinweisen; Produktpräfix im Tag; Entwürfe werden ignoriert; lange Hinweise gekürzt
+        var rel = Updatepruefung.ReleaseAuswerten("""{"tag_name":"web-v1.5.0","name":"UntPlan 1.5","html_url":"https://x/r","published_at":"2026-10-01T08:00:00Z","body":"## Neu\r\n- A"}""")!;
+        Assert.Equal(("1.5.0", "UntPlan 1.5", "## Neu\n- A"), (rel.Version, rel.Name, rel.Hinweise));
+        Assert.Equal(new DateTime(2026, 10, 1, 8, 0, 0, DateTimeKind.Utc), rel.Veroeffentlicht);
+        Assert.Null(Updatepruefung.ReleaseAuswerten("""{"tag_name":"v9.0.0","draft":true}"""));
+        Assert.True(Updatepruefung.Kuerzen(new string('x', 10000))!.Length <= Updatepruefung.HinweiseMaxLaenge + 3);
+        Assert.True(Updatepruefung.Vergleichen("1.10.0", "1.9.9") > 0);
+        Assert.True(Updatepruefung.Vergleichen("v1.5.0", "1.5.0-beta+abc") == 0);
+        // Registry-Seiten (Link-Kopf); Standardquelle sind die GitHub-Releases (ghcr bleibt als Option)
         Assert.Equal("https://ghcr.io/v2/a/b/tags/list?last=1.0.99&n=1000", Updatepruefung.NaechsteSeite("</v2/a/b/tags/list?last=1.0.99&n=1000>; rel=\"next\""));
         Assert.Null(Updatepruefung.NaechsteSeite(null));
-        Assert.Equal("ghcr://florians25/untplan-web", Updateeinstellungen.Laden(new ConfigurationBuilder().Build()).Url);
+        Assert.Equal(Updatepruefung.StandardUrl, Updateeinstellungen.Laden(new ConfigurationBuilder().Build()).Url);
+        Assert.Equal("ghcr://florians25/untplan-web", Updateeinstellungen.Imagequelle);
     }
 
     [Fact]
@@ -75,6 +84,12 @@ public class UpdateTests
         var u = await Testserver.HolenAsync(admin, "/api/app/admin/update");
         Assert.Equal("99.1.0", (string?)u["neueste"]);
         Assert.True((bool)u["updateVerfuegbar"]!);
+        Assert.Equal("https://example.org/release", (string?)u["releaseUrl"]);
+        Assert.Equal("UntPlan 99.1", (string?)u["releaseName"]);
+        Assert.Contains("Updatehinweis", (string?)u["hinweise"]);
+        Assert.NotNull(u["veroeffentlicht"]);
+        // „Erneut prüfen“ der Oberfläche (?neu=1)
+        Assert.Equal("99.1.0", (string?)(await Testserver.HolenAsync(admin, "/api/app/admin/update?neu=1"))["neueste"]);
         Assert.Equal(s.Dienst<UntPlanWeb.Daten.Db>().Art == UntPlanWeb.Daten.Datenbankart.MySql ? "MySQL/MariaDB" : "SQLite", (string?)u["datenbank"]);
         Assert.False(string.IsNullOrEmpty((string?)u["version"]));
         Assert.Equal("aus", (string?)u["modus"]);
@@ -83,6 +98,18 @@ public class UpdateTests
         var r = await admin.PostAsync("/api/app/admin/update/installieren", null);
         Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
         Assert.Contains("docker compose pull", await r.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Nicht_erreichbare_Quelle_ergibt_keinen_Hinweis()
+    {
+        Testzusatz.Mit(new() { ["UNTPLANWEB_UPDATE_URL"] = "http://127.0.0.1:9/releases/latest" });
+        await using var s = await Testserver.StartenAsync(false);
+        var u = await Testserver.HolenAsync(await s.AlsAsync("admin"), "/api/app/admin/update");
+        Assert.True((bool)u["pruefungAktiv"]!);
+        Assert.False((bool)u["updateVerfuegbar"]!);
+        Assert.Null((string?)u["neueste"]);
+        Assert.Contains("fehlgeschlagen", (string?)u["fehler"]);
     }
 
     [Fact]

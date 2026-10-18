@@ -60,7 +60,7 @@ function GruppenSymbol({ g }: { g: string }) {
   const t = useTheme();
   const x = GRUPPEN[g] ?? GRUPPEN.Weitere;
   const f = t.palette.status[x.ton].main;
-  return <Box sx={{ width: 38, height: 38, borderRadius: 2.5, display: 'grid', placeItems: 'center', bgcolor: alpha(f, 0.1), color: f, flex: 'none' }}>{x.icon}</Box>;
+  return <Box sx={{ width: 38, height: 38, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: alpha(f, 0.1), color: f, flex: 'none' }}>{x.icon}</Box>;
 }
 
 export default function Berichte({ teile }: SeitenProps) {
@@ -143,8 +143,8 @@ export default function Berichte({ teile }: SeitenProps) {
           {!sicht.length ? <Leer text="Kein Bericht gefunden" unter={`Für „${suche}“ gibt es keinen passenden Bericht.`} />
             : gruppe === 'alle' && !q ? gruppen.map(x => (
               <Box key={x} sx={{ mb: 2.5 }} className="nicht-drucken"><Typography variant="overline" color="text.secondary">{x}</Typography>
-                <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'hidden' }}>{arten.filter(a => a.gruppe === x).map(reihe)}</Paper></Box>))
-            : <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'hidden' }} className="nicht-drucken">{sicht.map(reihe)}</Paper>}
+                <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>{arten.filter(a => a.gruppe === x).map(reihe)}</Paper></Box>))
+            : <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }} className="nicht-drucken">{sicht.map(reihe)}</Paper>}
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }} className="nicht-drucken"><InfoOutlined sx={{ fontSize: 16, verticalAlign: -3, mr: 0.5 }} />Notfallliste, BAföG- und Fahrkostenbescheinigungen benötigen Adress- bzw. Kontaktdaten, die UntPlan nicht überträgt.</Typography>
           {panel && <ParameterDialog a={panel} p={standard(panel)} el={d.el} onClose={() => setPanel(null)} anzeigen={p => anzeigen(panel, p)} exportieren={(p, f) => void exportieren(panel, p, f)} />}
         </>
@@ -202,7 +202,7 @@ function Vorschau({ a, p, schule, zuHref, exportieren }: { a: Art; p: Param; sch
   if (brief) r.zeilen.forEach(z => proSchueler.set(String(z[0]), [...(proSchueler.get(String(z[0])) ?? []), z]));
   const kopf = <Typography variant="body2" sx={{ display: 'none', '@media print': { display: 'block', mb: 1 } }}><b>{schule}</b> · {r.titel}{p.klasse ? ` · Klasse ${p.klasse}` : ''} · {datumDe(r.von)} – {datumDe(r.bis)}</Typography>;
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 3.5, mb: 3, overflow: 'hidden' }}>
+    <Paper variant="outlined" sx={{ borderRadius: 2, mb: 3, overflow: 'hidden' }}>
       <Stack direction="row" alignItems="center" gap={1.5} sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }} className="nicht-drucken">
         <GruppenSymbol g={a.gruppe} />
         <Box sx={{ flex: 1, minWidth: 0 }}><Typography variant="h4">{r.titel}</Typography><Typography variant="body2" color="text.secondary">{p.klasse ? `Klasse ${p.klasse} · ` : ''}{datumDe(r.von)} – {datumDe(r.bis)} · {brief ? `${proSchueler.size} Schüler*innen` : `${datenzeilen} ${datenzeilen === 1 ? 'Zeile' : 'Zeilen'}`}</Typography></Box>

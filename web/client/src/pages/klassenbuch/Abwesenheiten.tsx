@@ -172,7 +172,7 @@ function AbwesenheitenKollegium({ teile }: SeitenProps) {
         {verwalten && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'neu' })}>Hinzufügen</Button>}</>}>
       {ich.element && <Tabs value={reiter} onChange={(_, v) => navigieren(ziel(v))} sx={{ mb: 2 }}><Tab value="schueler" label="Schüler*innen" /><Tab value="meine" label="Meine Abwesenheiten" /></Tabs>}
       <Geladen g={g}>{dd => reiter === 'meine' ? (
-        <Paper variant="outlined" sx={{ borderRadius: 3.5 }}>
+        <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           {dd.meine?.length ? dd.meine.map(m => (
             <Stack key={m.id} direction="row" gap={2} alignItems="center" sx={{ p: 2, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 } }}>
               <DatumKachel datum={m.von ?? heuteIso()} />
@@ -183,7 +183,7 @@ function AbwesenheitenKollegium({ teile }: SeitenProps) {
         </Paper>
       ) : (
         <>
-          <Paper variant="outlined" className="nicht-drucken" sx={{ p: 1.5, mb: 1.5, borderRadius: 3.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Paper variant="outlined" className="nicht-drucken" sx={{ p: 1.5, mb: 1.5, borderRadius: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             <SuchFeld wert={suche} onWert={setSuche} platzhalter="Schüler*in suchen" breite={220} />
             <Wahl label="Klasse" wert={klasse} onWert={k => navigieren(ziel(reiter, von, bis, k))} optionen={dd.el.klassen.map(k => [k.kurz, k.kurz])} alle="Alle Klassen" breite={140} />
             <Wahl label="Status" wert={status} onWert={x => navigieren(ziel(reiter, von, bis, klasse, x))} optionen={Object.entries(STATUS_TEXT).map(([k, [t]]) => [k, t])} alle="Jeder Status" breite={170} />

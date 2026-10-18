@@ -37,6 +37,7 @@ public static class Modulregister
         new MultiUserApi(),
         new PausenaufsichtApi(),
         new UntPlanWebApi(),
+        new VersionApi(),
         // ── ERWEITERUNGSSTELLE: weitere Module hier eintragen, je Modul eine Zeile (alphabetisch), z. B.
         // new AbrechnungApi(),
         // new DruckApi(),

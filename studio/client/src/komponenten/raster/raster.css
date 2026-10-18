@@ -50,6 +50,14 @@
   position: absolute; top: 2px; right: 3px; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em;
   padding: 0 4px; border-radius: 3px; line-height: 15px;
 }
+/* Tagespläne der Vertretungsplanung: Plakette in der zweiten Zeile (überdeckt weder Fach noch Raum) */
+.ra-eintrag .fusszeile { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.ra-eintrag .fusszeile .zeile2 { flex: 1 1 auto; min-width: 0; }
+.ra-eintrag .fusszeile .plakette { position: static; flex-shrink: 0; margin-left: auto; }
+.ra-eintrag .fusszeile .online { flex-shrink: 0; }
+.ra-eintrag .vt-leer { color: var(--colorNeutralForeground3); }
+.ra.ra-tag .ra-gitter { min-width: 220px; grid-template-columns: 64px repeat(var(--tage), minmax(0, 1fr)); }
+.ra.ra-tag .ra-eintrag { padding: 4px 6px; }
 .ra-eintrag .online { font-size: 10px; font-weight: 500; color: var(--up-frei); text-transform: uppercase; letter-spacing: .04em; }
 .ra.kompakt .ra-eintrag { padding: 1px 3px; }
 .ra.kompakt .ra-eintrag .zeile2 { font-size: 11px; }

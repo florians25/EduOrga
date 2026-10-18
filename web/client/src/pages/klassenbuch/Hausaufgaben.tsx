@@ -98,7 +98,7 @@ function Gefiltert({ teile }: { teile: string[] }) {
       {!ich.kollegium && <Tabs value={reiter} onChange={(_, v) => navigieren(ziel(v, von, bis))} sx={{ mb: 2 }}><Tab value="offen" label="Hausaufgaben" /><Tab value="lehrstoff" label="Lehrstoff" /></Tabs>}
       <Geladen g={g}>{d => {
         if (reiter === 'lehrstoff') return d.ls.length ? (
-          <Paper variant="outlined" sx={{ borderRadius: 3.5 }}>{d.ls.map((x, i) => (
+          <Paper variant="outlined" sx={{ borderRadius: 2 }}>{d.ls.map((x, i) => (
             <Stack key={i} direction="row" gap={2} sx={{ p: 2, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 } }}>
               <DatumKachel datum={x.datum} />
               <Box><Typography sx={{ fontWeight: 600 }}>{x.fach} <Typography component="span" color="text.secondary">· {x.stunde}. Std. · {x.lehrer}</Typography></Typography><Typography>{x.thema}</Typography>
@@ -108,7 +108,7 @@ function Gefiltert({ teile }: { teile: string[] }) {
         const gruppen = new Map<string, HaZeile[]>();
         for (const h of d.ha) { const s = h.faellig ?? h.datum; gruppen.set(s, [...(gruppen.get(s) ?? []), h]); }
         return d.ha.length ? (
-          <Paper variant="outlined" sx={{ borderRadius: 3.5 }}>
+          <Paper variant="outlined" sx={{ borderRadius: 2 }}>
             {[...gruppen.entries()].map(([datum, hs]) => (
               <Stack key={datum} direction="row" gap={2} sx={{ p: 2, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 }, opacity: datum < heute ? 0.7 : 1 }}>
                 <DatumKachel datum={datum} />

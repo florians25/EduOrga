@@ -15,8 +15,8 @@ export function WertAnzeige({ w, entfall = false, mitAlt = true, weg = false, li
   if (!w.k && w.neu) return <Box component="span" sx={{ color: 'status.aenderung.main', fontWeight: 600 }}>???</Box>;
   if (w.alt) return (
     <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
-      {mitAlt && <Box component="s" sx={{ color: 'text.secondary', fontWeight: 400, mr: 0.4, opacity: 0.85 }}>{a(w.alt, w.alt)}</Box>}
-      <Box component="span" sx={{ color: 'status.aenderung.main', fontWeight: 600, textDecoration: 'underline', textDecorationThickness: 1.5, textUnderlineOffset: 2 }}>{a(w.k, w.k)}</Box>
+      {mitAlt && <Box component="s" sx={{ color: 'text.disabled', fontWeight: 400, mr: 0.5 }}>{a(w.alt, w.alt)}</Box>}
+      <Box component="span" sx={{ color: 'status.aenderung.main', fontWeight: 600, textDecoration: 'underline', textDecorationThickness: '1px', textUnderlineOffset: '3px' }}>{a(w.k, w.k)}</Box>
     </Box>
   );
   if (w.neu) return <Box component="span" sx={{ color: 'status.aenderung.main', fontWeight: 600 }}>+{a(w.k, w.k)}</Box>;

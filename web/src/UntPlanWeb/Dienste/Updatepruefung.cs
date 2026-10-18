@@ -3,18 +3,23 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-// Gemeinsame Update-Prüfung von UntPlanWeb, UntPlanMobile und UntPlan Desktop: UntPlanMobile und der Desktop binden diese Datei ein
-// (siehe UntPlanMobile.csproj bzw. UntPlan.App.csproj, Konstanten UNTPLANMOBILE / UNTPLANDESKTOP), damit alle dieselbe Logik
-// verwenden, die Typen aber getrennt bleiben.
+// Gemeinsame Update-Prüfung von UntPlanWeb, UntPlanMobile, UntPlan Studio und UntPlan Desktop: die anderen Programme binden diese
+// Datei ein (siehe UntPlanMobile.csproj, UntPlanStudio.csproj bzw. UntPlan.App.csproj, Konstanten UNTPLANMOBILE / UNTPLANSTUDIO /
+// UNTPLANDESKTOP), damit alle dieselbe Logik verwenden, die Typen aber getrennt bleiben.
 #if UNTPLANMOBILE
 namespace UntPlanMobile.Dienste;
+#elif UNTPLANSTUDIO
+namespace UntPlanStudio.Dienste;
 #elif UNTPLANDESKTOP
 namespace UntPlan.App.Update;
 #else
 namespace UntPlanWeb.Dienste;
 #endif
 
-/// <summary>Ergebnis der Prüfung: laufende Version, neueste Version der Quelle und ob ein Update verfügbar ist.</summary>
+/// <summary>
+/// Ergebnis der Prüfung: laufende Version, neueste Version der Quelle und ob ein Update verfügbar ist; bei GitHub-Releases
+/// zusätzlich Name, Veröffentlichungszeit und Versionshinweise (Markdown, gekürzt).
+/// </summary>
 public sealed record Updatestand(
     string Version,
     bool PruefungAktiv,
@@ -23,7 +28,13 @@ public sealed record Updatestand(
     string? Hinweisurl,
     string Quelle,
     DateTime? Geprueft,
-    string? Fehler);
+    string? Fehler,
+    string? ReleaseName = null,
+    DateTime? Veroeffentlicht = null,
+    string? Hinweise = null);
+
+/// <summary>Eine gefundene Version der Quelle (bei GitHub-Releases mit Name, Zeitpunkt und Versionshinweisen).</summary>
+public sealed record Releaseinfo(string Version, string? Url, string? Name = null, DateTime? Veroeffentlicht = null, string? Hinweise = null);
 
 /// <summary>
 /// Fragt die neueste veröffentlichte Version ab und vergleicht sie mit der laufenden. Quellen (<c>…_UPDATE_URL</c>):
@@ -32,11 +43,15 @@ public sealed record Updatestand(
 /// <item>Container-Registry: <c>ghcr://florians25/untplan-web</c> – Tags des (öffentlichen) Images, passt genau zu <c>docker compose pull</c>.</item>
 /// <item>Eigene Adresse mit JSON <c>{"version":"1.2.3","url":"…"}</c> oder reinem Text <c>1.2.3</c>.</item>
 /// </list>
-/// Ergebnisse werden zwischengespeichert (Standard 6 Stunden, Fehler 15 Minuten).
+/// Entwürfe und Vorabversionen (<c>draft</c>/<c>prerelease</c>) werden ignoriert; aus dem Tag zählt die erste Versionsnummer
+/// (<c>v1.5.0</c>, <c>studio-v1.5.0</c> → 1.5.0). Ergebnisse werden zwischengespeichert (Standard 6 Stunden, Fehler 15 Minuten).
+/// Netzwerk- und Formatfehler führen nie zu einer Ausnahme, sondern zu einem Stand ohne Updatehinweis (mit <c>Fehler</c>).
 /// </summary>
 public sealed class Updatepruefung
 {
     public const string StandardUrl = "https://api.github.com/repos/florians25/UntPlanNext/releases/latest";
+    /// <summary>Versionshinweise werden auf so viele Zeichen gekürzt.</summary>
+    public const int HinweiseMaxLaenge = 4000;
 
     private readonly HttpClient _http;
     private readonly SemaphoreSlim _sperre = new(1, 1);
@@ -57,6 +72,7 @@ public sealed class Updatepruefung
         Aktiv = aktiv;
         TagPraefix = tagPraefix?.Trim() ?? "";
         Intervall = intervall ?? TimeSpan.FromHours(6);
+        // GitHub verlangt einen User-Agent; Proxy-Einstellungen (HTTPS_PROXY) übernimmt der Standard-Handler der HttpClientFactory
         if (!_http.DefaultRequestHeaders.UserAgent.Any())
             _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(programm.GetName().Name ?? "UntPlan", Version));
     }
@@ -86,12 +102,14 @@ public sealed class Updatepruefung
             if (!erzwingen && _letzter != null && DateTime.UtcNow < _gueltigBis) return _letzter;
             try
             {
-                var (neueste, hinweis) = await AbfragenAsync(ct);
-                var verfuegbar = neueste != null && Vergleichen(neueste, Version) > 0;
-                _letzter = new Updatestand(Version, true, neueste, verfuegbar, hinweis, Url, DateTime.UtcNow, neueste == null ? "Keine Versionsangabe gefunden." : null);
+                var r = await AbfragenAsync(ct);
+                var verfuegbar = r != null && Vergleichen(r.Version, Version) > 0;
+                _letzter = new Updatestand(Version, true, r?.Version, verfuegbar, r?.Url, Url, DateTime.UtcNow, r == null ? "Keine Versionsangabe gefunden." : null,
+                    r?.Name, r?.Veroeffentlicht, r?.Hinweise);
                 _gueltigBis = DateTime.UtcNow + Intervall;
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException or UriFormatException)
+            // jede Störung (Netz, Zeitüberschreitung, Proxy, unerwartete Antwort) nur melden – kein Hinweis, kein Absturz
+            catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
             {
                 _letzter = new Updatestand(Version, true, null, false, null, Url, DateTime.UtcNow, "Prüfung fehlgeschlagen: " + ex.Message);
                 _gueltigBis = DateTime.UtcNow + TimeSpan.FromMinutes(15);
@@ -101,7 +119,7 @@ public sealed class Updatepruefung
         finally { _sperre.Release(); }
     }
 
-    private async Task<(string?, string?)> AbfragenAsync(CancellationToken ct)
+    private async Task<Releaseinfo?> AbfragenAsync(CancellationToken ct)
     {
         using var zeit = CancellationTokenSource.CreateLinkedTokenSource(ct);
         zeit.CancelAfter(TimeSpan.FromSeconds(10));
@@ -127,12 +145,15 @@ public sealed class Updatepruefung
                     alle.AddRange(liste.EnumerateArray().Where(t => t.ValueKind == JsonValueKind.String).Select(t => t.GetString()!));
                 adresse = NaechsteSeite(tags.Headers.TryGetValues("Link", out var link) ? link.FirstOrDefault() : null);
             }
-            var (v, _) = Auswerten(JsonSerializer.Serialize(new { tags = alle }), TagPraefix);
-            return (v, $"https://ghcr.io/{repo}");
+            var r = ReleaseAuswerten(JsonSerializer.Serialize(new { tags = alle }), TagPraefix);
+            return r is null ? null : r with { Url = $"https://ghcr.io/{repo}" };
         }
-        using var antwort = await _http.GetAsync(Url, zeit.Token);
+        using var abfrage = new HttpRequestMessage(HttpMethod.Get, Url);
+        if (abfrage.RequestUri!.Host.Equals("api.github.com", StringComparison.OrdinalIgnoreCase))
+            abfrage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        using var antwort = await _http.SendAsync(abfrage, zeit.Token);
         antwort.EnsureSuccessStatusCode();
-        return Auswerten(await antwort.Content.ReadAsStringAsync(zeit.Token), TagPraefix);
+        return ReleaseAuswerten(await antwort.Content.ReadAsStringAsync(zeit.Token), TagPraefix);
     }
 
     /// <summary>Nächste Seite aus dem Link-Kopf der Registry (<c>&lt;/v2/…/tags/list?last=…&amp;n=…&gt;; rel="next"</c>), sonst null.</summary>
@@ -155,38 +176,57 @@ public sealed class Updatepruefung
     {
         static Version V(string s)
         {
-            var t = (VersionAus(s) ?? "0.0").Split('.').Select(int.Parse).Concat(new[] { 0, 0, 0 }).Take(4).ToArray();
+            var t = (VersionAus(s) ?? "0.0").Split('.').Select(z => int.TryParse(z, out var n) ? n : int.MaxValue).Concat(new[] { 0, 0, 0 }).Take(4).ToArray();
             return new Version(t[0], t[1], t[2], t[3]);
         }
         return V(a).CompareTo(V(b));
     }
 
     /// <summary>Antwort der Quelle auswerten: GitHub-Release(s), Tags, Registry-Tags, eigenes JSON oder reiner Text.</summary>
-    public static (string? Version, string? Url) Auswerten(string text, string praefix = "")
+    public static (string? Version, string? Url) Auswerten(string text, string praefix = "") =>
+        ReleaseAuswerten(text, praefix) is { } r ? (r.Version, r.Url) : (null, null);
+
+    /// <summary>Wie <see cref="Auswerten"/>, aber mit Name, Veröffentlichung und Versionshinweisen (<c>body</c>) eines GitHub-Releases.</summary>
+    public static Releaseinfo? ReleaseAuswerten(string text, string praefix = "")
     {
         text = text.Trim();
+        praefix ??= "";
         bool Passt(string? tag) => tag != null && (praefix.Length == 0 || tag.StartsWith(praefix, StringComparison.OrdinalIgnoreCase)) && VersionAus(tag[praefix.Length..]) != null;
         string? Ver(string tag) => VersionAus(tag[praefix.Length..]);
-        if (!text.StartsWith('{') && !text.StartsWith('[')) return (Passt(text) ? Ver(text) : null, null);
+        if (!text.StartsWith('{') && !text.StartsWith('[')) return Passt(text) ? new Releaseinfo(Ver(text)!, null) : null;
 
         using var doc = JsonDocument.Parse(text);
         var r = doc.RootElement;
-        var kandidaten = new List<(string Version, string? Url)>();
+        var kandidaten = new List<Releaseinfo>();
         void Element(JsonElement e)
         {
-            if (e.ValueKind == JsonValueKind.String) { if (Passt(e.GetString())) kandidaten.Add((Ver(e.GetString()!)!, null)); return; }
+            if (e.ValueKind == JsonValueKind.String) { if (Passt(e.GetString())) kandidaten.Add(new Releaseinfo(Ver(e.GetString()!)!, null)); return; }
             if (e.ValueKind != JsonValueKind.Object) return;
             if (e.TryGetProperty("draft", out var d) && d.ValueKind == JsonValueKind.True) return;
             if (e.TryGetProperty("prerelease", out var p) && p.ValueKind == JsonValueKind.True) return;
             var tag = Str(e, "tag_name") ?? Str(e, "version") ?? Str(e, "name");
-            if (Passt(tag)) kandidaten.Add((Ver(tag!)!, Str(e, "html_url") ?? Str(e, "url")));
+            if (!Passt(tag)) return;
+            DateTime? zeit = Str(e, "published_at") is { } z && DateTime.TryParse(z, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal, out var t) ? t : null;
+            var name = Str(e, "tag_name") != null ? Str(e, "name") : null;
+            kandidaten.Add(new Releaseinfo(Ver(tag!)!, Str(e, "html_url") ?? Str(e, "url"), string.IsNullOrWhiteSpace(name) ? null : name.Trim(), zeit,
+                Kuerzen(Str(e, "body") ?? Str(e, "hinweise"))));
         }
         if (r.ValueKind == JsonValueKind.Array) foreach (var e in r.EnumerateArray()) Element(e);
         else if (r.TryGetProperty("tags", out var tags) && tags.ValueKind == JsonValueKind.Array) foreach (var e in tags.EnumerateArray()) Element(e);
         else Element(r);
-        if (kandidaten.Count == 0) return (null, null);
-        var best = kandidaten.Aggregate((x, y) => Vergleichen(y.Version, x.Version) > 0 ? y : x);
-        return best;
+        return kandidaten.Count == 0 ? null : kandidaten.Aggregate((x, y) => Vergleichen(y.Version, x.Version) > 0 ? y : x);
+    }
+
+    /// <summary>Versionshinweise auf <see cref="HinweiseMaxLaenge"/> Zeichen kürzen (an einem Zeilenende, mit Auslassungszeichen).</summary>
+    public static string? Kuerzen(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        text = text.Replace("\r\n", "\n").Trim();
+        if (text.Length <= HinweiseMaxLaenge) return text;
+        var schnitt = text.LastIndexOf('\n', HinweiseMaxLaenge);
+        if (schnitt < HinweiseMaxLaenge / 2) schnitt = HinweiseMaxLaenge;
+        return text[..schnitt].TrimEnd() + "\n\n…";
     }
 
     private static string? Str(JsonElement e, string name) => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;

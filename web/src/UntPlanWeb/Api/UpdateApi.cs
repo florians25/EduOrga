@@ -22,10 +22,10 @@ public static class UpdateApi
     {
         var api = app.MapGroup("/api/app/admin/update");
 
-        api.MapGet("", async (HttpContext c, Updatedienst u, Db db, bool? neu, CancellationToken ct) =>
+        api.MapGet("", async (HttpContext c, Updatedienst u, Db db, string? neu, CancellationToken ct) =>
         {
             Admin(c);
-            var stand = await u.StandAsync(neu == true, ct);
+            var stand = await u.StandAsync(neu is "1" or "true", ct); // ?neu=1 aus der Oberfläche (bool? würde „1“ ablehnen)
             return Results.Json(new
             {
                 version = stand.Version,
@@ -35,6 +35,10 @@ public static class UpdateApi
                 neueste = stand.Neueste,
                 updateVerfuegbar = stand.UpdateVerfuegbar,
                 hinweisurl = stand.Hinweisurl,
+                releaseUrl = stand.Hinweisurl,
+                releaseName = stand.ReleaseName,
+                veroeffentlicht = stand.Veroeffentlicht,
+                hinweise = stand.Hinweise,
                 quelle = stand.Quelle,
                 geprueft = stand.Geprueft,
                 fehler = stand.Fehler,

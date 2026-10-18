@@ -63,7 +63,7 @@ export function Geladen<T>({ g, children, hoehe }: { g: { daten: T | undefined; 
 /** Karte (Paper) mit Kopfzeile. */
 export function Abschnitt({ titel, aktion, children, sx, kein_rand }: { titel?: ReactNode; aktion?: ReactNode; children: ReactNode; sx?: object; kein_rand?: boolean }) {
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'hidden', ...sx }}>
+    <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', ...sx }}>
       {(titel || aktion) && (
         <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ px: 2, pt: 1.75, pb: kein_rand ? 1.75 : 1, ...(kein_rand ? { borderBottom: 1, borderColor: 'divider' } : {}) }}>
           {typeof titel === 'string' ? <Typography variant="h4" component="h2">{titel}</Typography> : titel}

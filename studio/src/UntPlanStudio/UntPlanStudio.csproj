@@ -6,7 +6,12 @@
     <AssemblyName>UntPlanStudio</AssemblyName>
     <Product>UntPlan Studio</Product>
     <InvariantGlobalization>false</InvariantGlobalization>
+    <DefineConstants>$(DefineConstants);UNTPLANSTUDIO</DefineConstants>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- gemeinsame Update-Prüfung mit UntPlan Web und Mobile (gleiche Logik, eigener Namensraum UntPlanStudio.Dienste) -->
+    <Compile Include="..\..\..\web\src\UntPlanWeb\Dienste\Updatepruefung.cs" Link="Dienste\Updatepruefung.cs" />
+  </ItemGroup>
   <ItemGroup>
     <!-- eigene Datenbank des Studios (studio.db im Datenordner), unabhängig von UntPlan Web -->
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />

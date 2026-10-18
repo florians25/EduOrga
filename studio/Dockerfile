@@ -24,6 +24,8 @@ RUN dotnet restore studio/src/UntPlanStudio/UntPlanStudio.csproj
 COPY src/UntPlan.Web.Contracts/ src/UntPlan.Web.Contracts/
 COPY src/UntPlan.Core/ src/UntPlan.Core/
 COPY studio/src/UntPlanStudio/ studio/src/UntPlanStudio/
+# gemeinsame Update-Prüfung mit UntPlan Web und Mobile (in UntPlanStudio.csproj eingebunden)
+COPY web/src/UntPlanWeb/Dienste/Updatepruefung.cs web/src/UntPlanWeb/Dienste/
 COPY --from=oberflaeche /quelle/studio/src/UntPlanStudio/wwwroot/ studio/src/UntPlanStudio/wwwroot/
 ARG VERSION=1.0.0
 RUN dotnet publish studio/src/UntPlanStudio/UntPlanStudio.csproj -c Release -o /app --no-restore -p:UseAppHost=false -p:Version=$VERSION -p:StudioOberflaecheBauen=false

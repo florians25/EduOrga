@@ -1,13 +1,16 @@
 // Vertretungen: Listenansichten (Klassen, Lehrkräfte, Druckansichten, Pausenaufsichten), Filter (Ansicht, Klasse bzw.
 // Lehrkraft, Zeitraum, „Nur offene“, „Nur Kollisionen“, „Veranstaltungen zusammenfassen“), wählbare Spalten, Sprung zur Nummer,
 // direkte Eingabe (Vertretung, Fach, Raum, Text …) für die bearbeitete bzw. alle markierten Zeilen. Tasten: + ohne Lehrkraft,
-// - Entfall, Entf zurücksetzen, Enter Vorschlag, F3 nächste offene.
-import { Input, Select } from '@fluentui/react-components';
+// - Entfall, Entf zurücksetzen, Enter Vorschlag, F3 nächste offene. Offene Vertretungen und Räume tragen die Plakette „Offen“.
+// Schlanke Form (Parameter schlank, Tagesplanung): nur die wichtigsten Spalten (Std., Klasse, Fach, Lehrkraft, Vertretung, Raum,
+// Art als Plakette), Filter in einer aufklappbaren Fläche, seltene Aktionen im Menü „…“.
+import { Input, Select, Switch } from '@fluentui/react-components';
+import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { api, einstellungLesen } from '@/api/client';
 import type { ElementOption } from '@/api/typen';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
-import { betrifft, useEreignis } from '@/kern/ereignisse';
+import { betrifft, melden, useEreignis } from '@/kern/ereignisse';
 import { entprellen } from '@/kern/hilfen';
 import { elemente, useDarfSchreiben, useStudio } from '@/kern/zustand';
 import { AnsichtRahmen, Feld, FussText, Rechts, Schalter, Trenner, Werkzeug } from '@/komponenten/ansicht';
@@ -18,8 +21,9 @@ import { Tabelle, type Spalte, type TabelleApi } from '@/komponenten/tabelle/Tab
 import { useElemente } from '../gemeinsam';
 import { ANSICHTEN, ARTEN_AUS, ansichtText, artenDialog, feldEinstellungen, felderDialog, raumDialog, spaltenFeld, spaltenTitel, type ListenSpalte } from './dialoge';
 import { auswahlMelden, mitRueckfragen, tageswechsel, vpfad } from './kern';
-import { useZeitraum, ZeitraumAuswahl } from './steuer';
+import { OptionenKnopf, OptionenTitel, useZeitraum, ZeitraumAuswahl } from './steuer';
 import { automatikDialog, einstellungenDialog, sondereinsatzDialog } from './weitere';
+import './vertretung.css';
 
 const BREITE: Record<string, number> = { Nr: 56, Art: 100, Datum: 62, Std: 46, Fach: 84, NFach: 60, Lehrer: 76, Vertreter: 86, AKlassen: 100, Klassen: 76, Raum: 86, NRaum: 64, Von: 92, Nach: 92, Fix: 60, ND: 96 };
 const EDITIERBAR = new Set(['NFach', 'Vertreter', 'NRaum', 'Text', 'Kz', 'SG', 'Beschr', 'Kopp', 'Text2', 'Wert']);
@@ -30,8 +34,25 @@ interface ListeDaten { spalten: ListenSpalte[]; zeilen: VZeile[]; offen: number 
 
 const istVerlegungsArt = (a: string) => a === 'Tausch' || a === 'Verlegung' || a === 'Verlegt';
 
+/** Spalten der schlanken Liste (Reihenfolge, Titel, Breite). */
+const SCHLANK: [string, string, number][] = [['Datum', 'Datum', 64], ['Std', 'Std.', 52], ['Klassen', 'Klasse', 92], ['Fach', 'Fach', 72], ['Lehrer', 'Lehrkraft', 92], ['Vertreter', 'Vertretung', 112], ['NRaum', 'Raum', 84], ['Art', 'Art', 150]];
+const SCHLANK_SPALTEN = new Set(SCHLANK.map((x) => x[0]));
+
+/** Farbe der Plakette in der Spalte „Art“ (Statusfarben aus design/DESIGN.md). */
+function artPlakette(m: Record<string, any>): string {
+  const a = String(m.art || '');
+  if (m.entfall || a === 'Entfall' || a === 'BereitschaftEntfaellt') return 'vt-chip-entfall';
+  if (['Veranstaltung', 'Sondereinsatz', 'SondereinsatzVormerkung', 'Raumbuchung'].includes(a)) return 'vt-chip-termin';
+  if (a === 'Klausur') return 'vt-chip-pruefung';
+  if (['Freisetzung', 'VertretungOhneLehrer', 'EigenverantwortlichesArbeiten', 'Vormerkung'].includes(a)) return 'vt-chip-frei';
+  if (a === 'Unterricht' || m.unterricht) return '';
+  return 'vt-chip-vertretung';
+}
+
 export default function Liste({ p }: AnsichtProps) {
   const a = useAnsicht();
+  const schlank = !!p.schlank;
+  const alleSpalten = !!p.alleSpalten;
   const schreiben = useDarfSchreiben();
   const tageProWoche = useStudio((x) => x.grunddaten?.zeitraster?.tage?.length || 5);
   const [ansicht, setAnsicht] = useState(ANSICHTEN.includes(String(p.ansicht)) ? String(p.ansicht) : ANSICHTEN[0]!);
@@ -82,6 +103,7 @@ export default function Liste({ p }: AnsichtProps) {
         if (!alt) void feldEinstellungen(an, d.spalten).then(setFelder);
         return d;
       });
+      if (schlank) melden('vertretung.liste', { von: z.von, bis: z.bis, offen: d.offen, entfall: d.zeilen.filter((x) => x.m.entfall && !x.m.unterricht).length, zeilen: d.zeilen.length });
     } catch (e) { fehlerMelden(e); }
   }
   const entprelltLaden = useMemo(() => entprellen(() => { void laden(); }, 150), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -124,26 +146,43 @@ export default function Liste({ p }: AnsichtProps) {
   };
   const zellKlasse = (z: VZeile, s: string) => {
     const m = z.m;
+    if ((s === 'Vertreter' || s === 'NRaum') && z[s] === '???') return 'vt-z-offen';
+    if (schlank && ['Vertreter', 'NRaum', 'NFach'].includes(s) && (z[s] === '---' || z[s] === '+++')) return 'vt-z-strich';
+    if (schlank && s === 'Art' && z.Art) return `vt-chipzelle ${artPlakette(m)}`;
     if ((s === 'Vertreter' && m.offen) || (s === 'NRaum' && m.raumOffen)) return 'vt-rot';
     if (s === 'Nr' && m.koll) return 'vt-rot';
     if (m.koll && ((s === 'Vertreter' && m.kollL) || (s === 'NRaum' && m.kollR))) return 'vt-kollrand';
     return null;
   };
-  const spalten = useMemo<Spalte<VZeile>[]>(() => (daten?.spalten || []).map((s) => ({
-    schluessel: s.schluessel, titel: spaltenTitel(s), hinweis: spaltenFeld(s), breite: Math.max(s.breite, BREITE[s.schluessel] || 0),
-    art: s.schluessel in ELEMENT ? 'Element' : s.nurLesen ? 'NurLesen' : 'Text', refTyp: ELEMENT[s.schluessel],
-    editierbar: EDITIERBAR.has(s.schluessel) && schreiben, editierbarFuer: (z) => editierbar(z, s.schluessel),
-    ausrichtung: ['Nr', 'Std', 'Entf', 'Fix', 'ND', 'Mitb', 'Neu', 'Ben', 'Zaehler'].includes(s.schluessel) ? 'rechts' : undefined,
-    standard: s.standard, farbe: (z) => farbe(z, s.schluessel), klasse: (z) => zellKlasse(z, s.schluessel),
-  })), [daten?.spalten, schreiben]); // eslint-disable-line react-hooks/exhaustive-deps
+  const schlankeForm = schlank && !alleSpalten;
+  const spalten = useMemo<Spalte<VZeile>[]>(() => {
+    const liste = (daten?.spalten || []).map((s): Spalte<VZeile> => {
+      const sl = schlankeForm ? SCHLANK.find((x) => x[0] === s.schluessel) : undefined;
+      const leerBei = s.schluessel === 'Vertreter' || s.schluessel === 'NRaum' ? ['???', ...(schlank ? ['---', '+++'] : [])] : schlank && s.schluessel === 'NFach' ? ['---'] : null;
+      return {
+        schluessel: s.schluessel, titel: sl ? sl[1] : spaltenTitel(s), hinweis: spaltenFeld(s), breite: sl ? sl[2] : Math.max(s.breite, BREITE[s.schluessel] || 0),
+        art: s.schluessel in ELEMENT ? 'Element' : s.nurLesen ? 'NurLesen' : 'Text', refTyp: ELEMENT[s.schluessel],
+        editierbar: EDITIERBAR.has(s.schluessel) && schreiben, editierbarFuer: (z) => editierbar(z, s.schluessel),
+        ausrichtung: ['Nr', 'Std', 'Entf', 'Fix', 'ND', 'Mitb', 'Neu', 'Ben', 'Zaehler'].includes(s.schluessel) ? 'rechts' : undefined,
+        standard: s.standard, farbe: schlank && s.schluessel === 'Art' ? undefined : (z) => farbe(z, s.schluessel), klasse: (z) => zellKlasse(z, s.schluessel),
+        wert: leerBei ? (z) => (leerBei.includes(String(z[s.schluessel] ?? '')) ? '' : z[s.schluessel]) : undefined,
+      };
+    });
+    if (!schlankeForm) return liste;
+    const rang = (k: string) => { const i = SCHLANK.findIndex((x) => x[0] === k); return i < 0 ? 999 : i; };
+    return liste.sort((x, y) => rang(x.schluessel) - rang(y.schluessel));
+  }, [daten?.spalten, schreiben, schlankeForm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Spaltenauswahl anwenden (Einstellung bzw. „nur Spalten mit Inhalt“)
   useEffect(() => {
     if (!daten) return;
     const v: Record<string, boolean> = {};
-    for (const s of daten.spalten) v[s.schluessel] = vorInhalt ? (s.schluessel === 'Nr' || daten.zeilen.some((z) => String(z[s.schluessel] ?? '') !== '')) : (felder[s.schluessel]?.includes('a') ?? s.standard);
+    for (const s of daten.spalten) {
+      v[s.schluessel] = schlankeForm ? SCHLANK_SPALTEN.has(s.schluessel) && (s.schluessel !== 'Datum' || zr.art !== 'tag')
+        : vorInhalt ? (s.schluessel === 'Nr' || daten.zeilen.some((z) => String(z[s.schluessel] ?? '') !== '')) : (felder[s.schluessel]?.includes('a') ?? s.standard);
+    }
     setTimeout(() => tabelle.current?.sichtbarSetzen(v));
-  }, [felder, daten?.spalten, vorInhalt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [felder, daten?.spalten, vorInhalt, schlankeForm, zr.art]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- Aktionen ----
   const markierteIds = () => [...new Set((tabelle.current?.ausgewaehlte() || []).flatMap((x) => (x.m.gruppe?.length ? x.m.gruppe : [x.m.v])).filter((x: number) => x > 0))] as number[];
@@ -313,8 +352,60 @@ export default function Liste({ p }: AnsichtProps) {
     setTimeout(() => { if (!tabelle.current?.waehle(`V${n}`)) hinweis(`Die Vertretung Nr. ${n} ist im gewählten Zeitraum nicht vorhanden.`, 'warnung'); }, 300);
   };
 
+  const weitereAktionen = (): MenueListe => {
+    const liste = (tabelle.current?.ausgewaehlte() || []).filter((z) => z.m.v);
+    const keine = !liste.length;
+    return [
+      ...(schlank ? [{ text: 'Zurücksetzen (wieder offen)', taste: 'Entf', deaktiviert: !schreiben || keine, aktion: zuruecksetzen }, null] : []),
+      { text: 'Raum zuordnen …', deaktiviert: !schreiben || keine, aktion: raumZuordnen },
+      { text: 'Vertretung teilen …', deaktiviert: !schreiben || keine, aktion: teilen },
+      { text: 'Lehrkraft zur Veranstaltung hinzufügen …', deaktiviert: !schreiben || !liste.some((x) => x.m.veranstaltung), aktion: lehrkraftHinzufuegen },
+      { text: 'Als Vormerkung beiseitelegen', deaktiviert: !schreiben || keine, aktion: vormerken },
+      { text: 'Sondereinsatz …', deaktiviert: !schreiben, aktion: () => sondereinsatzDialog({ stunde: tabelle.current?.aktiveZeile()?.m.stunde }) },
+      null,
+      { text: 'Fixiert', haken: !keine && liste.every((x) => x.m.fix), deaktiviert: !schreiben || keine, aktion: () => kennzeichen('fix') },
+      { text: 'Nicht drucken', haken: !keine && liste.every((x) => x.m.nd), deaktiviert: !schreiben || keine, aktion: () => kennzeichen('nd') },
+      null,
+      { text: 'Automatische Vertretung …', deaktiviert: !schreiben, aktion: () => automatikDialog(zr.von, zr.bis) },
+      { text: 'Neu berechnen', deaktiviert: !schreiben, aktion: neuBerechnen },
+      { text: 'Online-Stunden im Zeitraum …', aktion: () => a.oeffnen('vertretung.online', {}) },
+      { text: 'Tagestexte …', aktion: () => a.oeffnen('vertretung.kalender', { reiter: 0 }) },
+      null,
+      { text: 'Löschen …', deaktiviert: !schreiben || keine, aktion: loeschen },
+    ];
+  };
+  const darstellung = (): MenueListe => [
+    ...(schlank ? [{ text: 'Alle Spalten der Listenansicht', haken: alleSpalten, aktion: () => a.parameterSetzen({ alleSpalten: !alleSpalten }) }, null] : []),
+    { text: 'Spalten …', deaktiviert: schlankeForm, aktion: spaltenWaehlen },
+    { text: 'Nur Spalten mit Inhalt', haken: !!vorInhalt, deaktiviert: schlankeForm, aktion: () => setVorInhalt(vorInhalt ? null : {}) },
+    { text: 'Angezeigte Vertretungsarten …', aktion: async () => { if (await artenDialog(ansicht)) await laden(); } },
+    null,
+    { text: 'Einstellungen der Vertretungsplanung …', aktion: () => einstellungenDialog(0) },
+  ];
+  const offenSetzen = (x: boolean) => { behalten.current.clear(); setFilter((f) => ({ ...f, offen: x })); };
+  const kollSetzen = (x: boolean) => { behalten.current.clear(); setFilter((f) => ({ ...f, kollisionen: x })); };
+  const sammelnSetzen = (x: boolean) => { a.parameterSetzen({ sammeln: x }); setFilter((f) => ({ ...f, sammeln: x })); };
+  const ansichtFeld = <Select size="small" value={ansicht} onChange={(_, d) => ansichtSetzen(d.value)} aria-label="Ansicht">{ANSICHTEN.map((x) => <option key={x} value={x}>{ansichtText(x)}</option>)}</Select>;
+  const elementFeld = (
+    <Select size="small" value={element != null ? String(element) : ''} aria-label={lehrerSicht ? 'Lehrkraft' : 'Klasse'} onChange={(_, d) => { behalten.current.clear(); setElement(d.value ? Number(d.value) : null); }}>
+      <option value="">(alle)</option>{elListe.map((x) => <option key={x.id} value={x.id}>{x.k}</option>)}
+    </Select>
+  );
+  const filterAktiv = [filter.offen, filter.kollisionen, element != null, zr.art !== 'tag', ansicht !== ANSICHTEN[0], !filter.sammeln].filter(Boolean).length;
+  const filterFlaeche = (
+    <OptionenKnopf text="Filter" aktiv={filterAktiv} titel="Ansicht, Klasse bzw. Lehrkraft, Zeitraum und Filter der Liste" testid="liste-filter">
+      <Switch label="Nur offene" title="Nur Vertretungen ohne Lehrkraft oder ohne Raum zeigen" checked={filter.offen} onChange={(_, d) => offenSetzen(d.checked)} />
+      <Switch label="Nur Kollisionen" title="Nur Vertretungen mit Doppelbelegung von Lehrkraft oder Raum zeigen" checked={filter.kollisionen} onChange={(_, d) => kollSetzen(d.checked)} />
+      <Switch label="Veranstaltungen zusammenfassen" title="Entfälle und Freistellungen einer Veranstaltung je Tag in einer Zeile zeigen" checked={filter.sammeln} onChange={(_, d) => sammelnSetzen(d.checked)} />
+      <OptionenTitel>Ansicht</OptionenTitel>{ansichtFeld}
+      <OptionenTitel>{lehrerSicht ? 'Lehrkraft' : 'Klasse'}</OptionenTitel>{elementFeld}
+      <OptionenTitel>Zeitraum</OptionenTitel><ZeitraumAuswahl z={zr} />
+    </OptionenKnopf>
+  );
+  const titel = schlank ? `Vertretungen${ansicht !== ANSICHTEN[0] ? ` – ${ansichtText(ansicht)}` : ''}` : `Vertretungen – ${ansichtText(ansicht)}`;
+
   return (
-    <AnsichtRahmen titel={`Vertretungen – ${ansichtText(ansicht)}`}
+    <AnsichtRahmen titel={titel}
       werkzeuge={<>
         <Werkzeug text="Vorschlag" titel="Vertretungsvorschlag für die markierte Stunde (Enter, Doppelklick)" aktion={vorschlagOeffnen} />
         <Werkzeug text="Nächste offene" titel="Zur nächsten offenen Vertretung springen (F3, Umschalt+F3 rückwärts)" aktion={() => { if (!naechsteOffene()) hinweis('Keine offene Vertretung.', 'info', 2000); }} />
@@ -322,57 +413,35 @@ export default function Liste({ p }: AnsichtProps) {
           <Trenner />
           <Werkzeug text="Entfall" titel="Unterricht entfällt (Taste -); erneut ausgeführt wird daraus wieder eine offene Vertretung" aktion={entfall} />
           <Werkzeug text="Ohne Lehrkraft" titel="Stunde findet ohne Lehrkraft statt (Taste +)" aktion={ohneLehrer} />
-          <Werkzeug text="Zurücksetzen" titel="Wieder zur offenen Vertretung machen (Entf)" aktion={zuruecksetzen} />
+          {schlank ? null : <Werkzeug text="Zurücksetzen" titel="Wieder zur offenen Vertretung machen (Entf)" aktion={zuruecksetzen} />}
         </> : null}
-        <MenueKnopf text="Weitere Aktionen" titel="Weitere Aktionen für die markierten Vertretungen" eintraege={() => {
-          const liste = (tabelle.current?.ausgewaehlte() || []).filter((z) => z.m.v);
-          const keine = !liste.length;
-          return [
-            { text: 'Raum zuordnen …', deaktiviert: !schreiben || keine, aktion: raumZuordnen },
-            { text: 'Vertretung teilen …', deaktiviert: !schreiben || keine, aktion: teilen },
-            { text: 'Lehrkraft zur Veranstaltung hinzufügen …', deaktiviert: !schreiben || !liste.some((x) => x.m.veranstaltung), aktion: lehrkraftHinzufuegen },
-            { text: 'Als Vormerkung beiseitelegen', deaktiviert: !schreiben || keine, aktion: vormerken },
-            { text: 'Sondereinsatz …', deaktiviert: !schreiben, aktion: () => sondereinsatzDialog({ stunde: tabelle.current?.aktiveZeile()?.m.stunde }) },
-            null,
-            { text: 'Fixiert', haken: !keine && liste.every((x) => x.m.fix), deaktiviert: !schreiben || keine, aktion: () => kennzeichen('fix') },
-            { text: 'Nicht drucken', haken: !keine && liste.every((x) => x.m.nd), deaktiviert: !schreiben || keine, aktion: () => kennzeichen('nd') },
-            null,
-            { text: 'Automatische Vertretung …', deaktiviert: !schreiben, aktion: () => automatikDialog(zr.von, zr.bis) },
-            { text: 'Neu berechnen', deaktiviert: !schreiben, aktion: neuBerechnen },
-            { text: 'Online-Stunden im Zeitraum …', aktion: () => a.oeffnen('vertretung.online', {}) },
-            { text: 'Tagestexte …', aktion: () => a.oeffnen('vertretung.kalender', { reiter: 0 }) },
-            null,
-            { text: 'Löschen …', deaktiviert: !schreiben || keine, aktion: loeschen },
-          ];
-        }} />
-        <Rechts>
-          <MenueKnopf text="Darstellung" titel="Spalten, angezeigte Vertretungsarten und Einstellungen" eintraege={() => [
-            { text: 'Spalten …', aktion: spaltenWaehlen },
-            { text: 'Nur Spalten mit Inhalt', haken: !!vorInhalt, aktion: () => setVorInhalt(vorInhalt ? null : {}) },
-            { text: 'Angezeigte Vertretungsarten …', aktion: async () => { if (await artenDialog(ansicht)) await laden(); } },
-            null,
-            { text: 'Einstellungen der Vertretungsplanung …', aktion: () => einstellungenDialog(0) },
-          ]} />
-        </Rechts>
+        {schlank ? <>
+          <Trenner />
+          {filterFlaeche}
+          <Rechts>
+            <MenueKnopf text="" icon={<MoreHorizontal20Regular />} titel="Weitere Aktionen und Darstellung" eintraege={() => [...weitereAktionen(), null, { text: 'Darstellung', menue: darstellung }]} />
+          </Rechts>
+        </> : <>
+          <MenueKnopf text="Weitere Aktionen" titel="Weitere Aktionen für die markierten Vertretungen" eintraege={weitereAktionen} />
+          <Rechts>
+            <MenueKnopf text="Darstellung" titel="Spalten, angezeigte Vertretungsarten und Einstellungen" eintraege={darstellung} />
+          </Rechts>
+        </>}
       </>}
-      filter={<>
-        <Feld titel="Ansicht"><Select size="small" value={ansicht} onChange={(_, d) => ansichtSetzen(d.value)}>{ANSICHTEN.map((x) => <option key={x} value={x}>{ansichtText(x)}</option>)}</Select></Feld>
-        <Feld titel={lehrerSicht ? 'Lehrkraft' : 'Klasse'}>
-          <Select size="small" value={element != null ? String(element) : ''} onChange={(_, d) => { behalten.current.clear(); setElement(d.value ? Number(d.value) : null); }}>
-            <option value="">(alle)</option>{elListe.map((x) => <option key={x.id} value={x.id}>{x.k}</option>)}
-          </Select>
-        </Feld>
+      filter={schlank ? undefined : <>
+        <Feld titel="Ansicht">{ansichtFeld}</Feld>
+        <Feld titel={lehrerSicht ? 'Lehrkraft' : 'Klasse'}>{elementFeld}</Feld>
         <Feld titel="Zeitraum"><ZeitraumAuswahl z={zr} /></Feld>
-        <Schalter text="Nur offene" an={filter.offen} titel="Nur Vertretungen ohne Lehrkraft oder ohne Raum zeigen" beiAenderung={(x) => { behalten.current.clear(); setFilter((f) => ({ ...f, offen: x })); }} />
-        <Schalter text="Nur Kollisionen" an={filter.kollisionen} titel="Nur Vertretungen mit Doppelbelegung von Lehrkraft oder Raum zeigen" beiAenderung={(x) => { behalten.current.clear(); setFilter((f) => ({ ...f, kollisionen: x })); }} />
-        <Schalter text="Veranstaltungen zusammenfassen" an={filter.sammeln} titel="Entfälle und Freistellungen einer Veranstaltung je Tag in einer Zeile zeigen" beiAenderung={(x) => { a.parameterSetzen({ sammeln: x }); setFilter((f) => ({ ...f, sammeln: x })); }} />
+        <Schalter text="Nur offene" an={filter.offen} titel="Nur Vertretungen ohne Lehrkraft oder ohne Raum zeigen" beiAenderung={offenSetzen} />
+        <Schalter text="Nur Kollisionen" an={filter.kollisionen} titel="Nur Vertretungen mit Doppelbelegung von Lehrkraft oder Raum zeigen" beiAenderung={kollSetzen} />
+        <Schalter text="Veranstaltungen zusammenfassen" an={filter.sammeln} titel="Entfälle und Freistellungen einer Veranstaltung je Tag in einer Zeile zeigen" beiAenderung={sammelnSetzen} />
       </>}
       fuss={<>
         <Feld titel="Nr."><Input size="small" style={{ width: 80 }} inputMode="numeric" value={nr} title="Nummer eingeben und Enter: zur Vertretung springen" onChange={(_, d) => setNr(d.value)} onKeyDown={(e) => { if (e.key === 'Enter') void zur(Number(nr)); }} /></Feld>
         <span style={status.art === 'fehler' ? { color: 'var(--up-entfall)' } : status.art === 'warnung' ? { color: 'var(--up-warnung)' } : undefined}>{status.text}</span>
         <FussText rechts>{daten ? `${daten.zeilen.length} ${daten.zeilen.length === 1 ? 'Zeile' : 'Zeilen'} · ${daten.offen} offen` : ''}</FussText>
       </>}>
-      <Tabelle<VZeile> ref={tabelle} name="vertretungen" spalten={spalten} zeilen={daten?.zeilen || []} zeilenHoehe={30}
+      <Tabelle<VZeile> ref={tabelle} name="vertretungen" spalten={spalten} zeilen={daten?.zeilen || []} zeilenHoehe={schlank ? 34 : 30}
         leerText="Im gewählten Zeitraum gibt es keine Vertretungen."
         zeilenKlasse={(z) => [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.current.has(z.m.v) ? 'vt-behalten' : ''].filter(Boolean).join(' ')}
         aendern={schreiben ? async (z, s, wert) => { await aktion('/aendern', { spalte: s.schluessel, wert }, zielIds(z)); } : undefined}

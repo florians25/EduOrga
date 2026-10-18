@@ -124,7 +124,9 @@ export function MenueKnopf({ text, eintraege, titel, art = 'toolbar', icon, appe
     setListe(typeof eintraege === 'function' ? await eintraege() : eintraege);
   };
   const knopf = art === 'toolbar'
-    ? <ToolbarButton title={titel || text} icon={icon} disabled={deaktiviert}>{text}<ChevronDown16Regular style={{ marginLeft: 4 }} /></ToolbarButton>
+    ? (text
+      ? <ToolbarButton title={titel || text} icon={icon} disabled={deaktiviert}>{text}<ChevronDown16Regular style={{ marginLeft: 4 }} /></ToolbarButton>
+      : <ToolbarButton title={titel} aria-label={titel} icon={icon} disabled={deaktiviert} />)
     : <MenuButton title={titel || text} icon={icon} appearance={appearance} disabled={deaktiviert} menuIcon={<ChevronDown16Regular />}>{text}</MenuButton>;
   return (
     <Menu onOpenChange={(_, d) => { void oeffnen(d.open); }}>

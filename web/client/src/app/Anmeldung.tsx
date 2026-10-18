@@ -60,7 +60,7 @@ function Rahmen({ sitzung, titel, untertitel, children }: { sitzung: Sitzung | n
           <Stack gap={1.5} sx={{ maxWidth: 480 }}>
             <Typography sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }} component="h2">Hinweise der Schule</Typography>
             {hinweise.map(h => (
-              <Box key={h.id} sx={{ display: 'flex', gap: 1.5, p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.14)' }}>
+              <Box key={h.id} sx={{ display: 'flex', gap: 1.5, p: 2, borderRadius: 2, bgcolor: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.14)' }}>
                 <CampaignOutlined sx={{ color: 'rgba(255,255,255,.8)' }} />
                 <Box><Typography sx={{ fontWeight: 600 }}>{h.titel}</Typography>{h.text && <Typography sx={{ color: 'rgba(255,255,255,.75)', whiteSpace: 'pre-line', fontSize: 13, mt: 0.25 }}>{h.text}</Typography>}</Box>
               </Box>

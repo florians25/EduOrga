@@ -17,6 +17,7 @@ import { useStudio, zustand } from '@/kern/zustand';
 import { AnsichtRahmen, Ladeanzeige } from '@/komponenten/ansicht';
 import { formular, frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
+import { VersionsInfo } from '@/shell/updatehinweis';
 import { hochladen, importBerichtZeigen, oeffnenMit, type ImportBericht } from './aktionen';
 
 const useStile = makeStyles({
@@ -278,10 +279,12 @@ function SeiteBenutzer() {
 function SeiteUeber() {
   const s = useStile();
   const system = useStudio((x) => x.system);
+  const admin = useStudio((x) => x.benutzer?.rolle === 'Admin');
   return (
     <>
       <div className={s.kopf}><h2 className={s.h2}>Über UntPlan Studio</h2></div>
       <Eigenschaften zeilen={[['Anwendung', (system?.anwendung || 'UntPlan Studio').replace(' (Beta)', '')], ['Version', system?.version || '']]} />
+      {admin ? <div className={s.eigenschaften}><VersionsInfo /></div> : null}
       <p className={s.einleitung} style={{ marginTop: 16 }}>Stunden-, Kurs- und Vertretungsplanung für Schulen im Browser. Alle Berechnungen (Planung, Optimierung, Vertretungsvorschläge, Auswertungen) laufen auf dem Server; Schuldateien (.up) lassen sich jederzeit herunterladen und wieder hochladen.</p>
       <p className={s.leise}>Schrift: IBM Plex Sans (SIL Open Font License 1.1). Oberfläche mit Fluent UI (MIT-Lizenz). <Link href="/api/system" target="_blank">Systeminformation</Link></p>
     </>

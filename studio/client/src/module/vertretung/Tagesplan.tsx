@@ -1,5 +1,6 @@
 // Tagespläne im Vertretungsmodus: Woche des Planungsdatums für Klasse, Lehrkraft, Raum oder Fach mit allen Vertretungen –
-// Änderungen hervorgehoben, Entfälle durchgestrichen, offene Stunden „???“, Online-Stunden gekennzeichnet. Drag & Drop
+// Änderungen hervorgehoben, Entfälle durchgestrichen, offene Stunden mit Plakette „Offen“, Online-Stunden gekennzeichnet.
+// Wahlweise nur der Planungstag (Parameter tag, Tagesplanung) statt der ganzen Woche. Drag & Drop
 // (dnd-kit): Verlegen, Tauschen (mit Rückfrage), Verdrängen; Vormerkungen in den Plan ziehen. Kontextmenü: Stunde entfallen
 // lassen, Entfall aufheben (auch Block), findet online statt, als Vormerkung beiseitelegen, Text, Änderungen zurücknehmen,
 // Vertretungsvorschlag, Sondereinsatz, Lehrkraft abwesend melden.
@@ -53,9 +54,9 @@ function Eintrag({ e, t, stunde, typ, kompakt, ziehbar, planId, gewaehlt, waehle
   };
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: `${planId}|${t.datum}|${stunde}|${e.u}|${e.zeile}`, data: daten, disabled: !ziehbar });
   const wert = (neu: string, a: string | null | undefined) => {
-    if (e.status === 'Offen' && !neu && typ !== 'lehrer') return <span className="vt-rottext">???</span>;
+    if (e.status === 'Offen' && !neu && typ !== 'lehrer') return a ? <span className="vt-alt">{a}</span> : <span className="vt-leer">–</span>;
     if (!a) return <>{neu || ''}</>;
-    return <><span className="vt-neutext">{neu || '???'}</span><span className="vt-alt"> ({a})</span></>;
+    return <><span className="vt-neutext">{neu || '–'}</span><span className="vt-alt"> {a}</span></>;
   };
   const titel = [`${e.u ? `U-Nr. ${e.u}` : ''}${e.vtr ? ` · Vtr-Nr. ${e.vtr}` : ''}`, `${e.fach} – ${e.klassen} – ${e.lehrer || '???'}${e.raum ? ` – ${e.raum}` : ''}`,
     e.art ? `${e.art}${e.text ? `: ${e.text}` : ''}` : e.text, e.lehrerAlt ? `statt ${e.lehrerAlt}` : '', e.fix ? 'fixiert' : '',
@@ -66,12 +67,14 @@ function Eintrag({ e, t, stunde, typ, kompakt, ziehbar, planId, gewaehlt, waehle
       style={e.farbe && !geaendert ? { ['--fachfarbe' as string]: e.farbe } : undefined} title={titel} data-vtr={e.vtr} data-u={e.u}
       onClick={waehlen} onDoubleClick={doppel} onContextMenu={(ev) => { ev.preventDefault(); ev.stopPropagation(); kontext(ev); }}>
       <span className="kopfzeile">
-        <span className={`fach${e.fachAlt ? ' vt-rottext' : ''}`}>{e.fach || e.art || '—'}</span>
+        <span className={`fach${e.fachAlt ? ' vt-rottext' : ''}`} title={e.fach || e.art || ''}>{e.fach || e.art || '—'}</span>
         {kompakt ? null : <span className="zeile3">{wert(zeilen[1] || '', alt[1])}</span>}
       </span>
-      <span className="zeile2">{wert(zeilen[0] || '', alt[0])}</span>
-      {e.online ? <span className="online">Online</span> : null}
-      {geaendert && e.status ? <span className={`plakette vt-pl-${e.status}`}>{STATUSTEXT[e.status] || e.art || e.status}</span> : null}
+      <span className="fusszeile">
+        <span className="zeile2">{wert(zeilen[0] || '', alt[0])}</span>
+        {e.online ? <span className="online">Online</span> : null}
+        {geaendert && e.status ? <span className={`plakette vt-pl-${e.status}`}>{STATUSTEXT[e.status] || e.art || e.status}</span> : null}
+      </span>
       {e.fix ? <span className="fix" title="fixiert" /> : null}
     </div>
   );
@@ -87,6 +90,7 @@ export default function Tagesplan({ p }: AnsichtProps) {
   const element = ersterOder(liste, p.element);
   const verknuepft = p.verknuepft !== false;
   const kompakt = !!p.kompakt;
+  const nurTag = !!p.tag;
   const planId = `tp-${a.id}`;
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [ziele, setZiele] = useState<(string | null)[][] | null>(null);
@@ -119,6 +123,14 @@ export default function Tagesplan({ p }: AnsichtProps) {
     onDragEnd: () => { ladeNr.current++; setZiele(null); },
     onDragCancel: () => { ladeNr.current++; setZiele(null); },
   });
+
+  // Sichtbare Tage: ganze Woche oder nur der Planungstag (Index in plan.tage)
+  const sichtbar = useMemo(() => {
+    const alle = (plan?.tage || []).map((_, i) => i);
+    if (!nurTag || !plan) return alle;
+    const i = plan.tage.findIndex((t) => t.datum === datum);
+    return i >= 0 ? [i] : alle;
+  }, [plan, nurTag, datum]);
 
   const ablage = (tagIndex: number, stunde: number): AblageDaten | null => {
     const t = plan?.tage[tagIndex];
@@ -188,10 +200,11 @@ export default function Tagesplan({ p }: AnsichtProps) {
     const st = plan.zeitraster.stunden;
     return plan.zellen.map((z): RasterBlock | null => {
       const j = st.findIndex((x) => x.nr === z.stunde);
-      if (j < 0) return null;
+      const spalte = sichtbar.indexOf(z.tag);
+      if (j < 0 || spalte < 0) return null;
       const t = plan.tage[z.tag]!;
       return {
-        key: `${z.tag}:${z.stunde}`, tag: z.tag, von: j, laenge: 1,
+        key: `${z.tag}:${z.stunde}`, tag: spalte, von: j, laenge: 1,
         inhalt: z.eintraege.map((e) => {
           const k = `${z.tag}:${z.stunde}:${e.u}:${e.zeile}:${e.vtr ?? ''}`;
           return (
@@ -204,10 +217,11 @@ export default function Tagesplan({ p }: AnsichtProps) {
         }),
       };
     }).filter((b): b is RasterBlock => !!b);
-  }, [plan, typ, kompakt, gewaehlt, schreiben]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [plan, typ, kompakt, gewaehlt, schreiben, sichtbar]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const offen = plan ? plan.zellen.reduce((x, z) => x + z.eintraege.filter((e) => e.offen && !e.durch).length, 0) : 0;
-  const entfall = plan ? plan.zellen.reduce((x, z) => x + z.eintraege.filter((e) => e.status === 'Entfall').length, 0) : 0;
+  const zellenSichtbar = plan ? plan.zellen.filter((z) => sichtbar.includes(z.tag)) : [];
+  const offen = zellenSichtbar.reduce((x, z) => x + z.eintraege.filter((e) => e.offen && !e.durch).length, 0);
+  const entfall = zellenSichtbar.reduce((x, z) => x + z.eintraege.filter((e) => e.status === 'Entfall').length, 0);
   const lang = plan?.element.lang && !plan.element.lang.includes(plan.element.kurz) ? ` – ${plan.element.lang}` : '';
 
   return (
@@ -217,6 +231,7 @@ export default function Tagesplan({ p }: AnsichtProps) {
         <Trenner />
         <MenueKnopf text="Optionen" titel="Verknüpfung mit der Auswahl, kompakte Darstellung, Vormerkungen" eintraege={() => [
           { text: 'Folgt der gewählten Vertretung', haken: verknuepft, aktion: () => a.parameterSetzen({ verknuepft: !verknuepft }) },
+          { text: 'Nur Planungstag', haken: nurTag, aktion: () => a.parameterSetzen({ tag: !nurTag }) },
           { text: 'Kompakt', haken: kompakt, aktion: () => a.parameterSetzen({ kompakt: !kompakt }) },
           null,
           { text: 'Vormerkungen …', aktion: () => a.oeffnen('vertretung.vormerkungen', {}) },
@@ -226,7 +241,7 @@ export default function Tagesplan({ p }: AnsichtProps) {
       fuss={<><span>{offen} offen</span><span>{entfall} {entfall === 1 ? 'Entfall' : 'Entfälle'}</span></>}>
       {plan ? (
         <div className={s.info}>
-          <span>Woche {plan.woche}</span>
+          <span>{nurTag && sichtbar.length === 1 ? `${plan.tage[sichtbar[0]!]!.kurz} ${plan.tage[sichtbar[0]!]!.text}` : `Woche ${plan.woche}`}</span>
           <span className={s.lg}><i className={s.lgPunkt} style={{ border: '1.5px solid var(--up-aenderung)', background: 'var(--up-aenderung-flaeche)' }} />Vertretung</span>
           <span className={s.lg}><i className={s.lgPunkt} style={{ background: 'var(--up-entfall-flaeche)', border: '1px solid var(--up-entfall)' }} />Entfall</span>
           <span className={s.lg}><i className={s.lgPunkt} style={{ border: '1.5px dashed var(--up-entfall)' }} />Offen</span>
@@ -236,9 +251,10 @@ export default function Tagesplan({ p }: AnsichtProps) {
         </div>
       ) : null}
       {plan ? (
-        <Raster id={planId} kompakt={kompakt} stunden={plan.zeitraster.stunden} bloecke={bloecke} ziele={ziele} ablage={ablage} zeitAnzeigen={!kompakt}
-          tage={plan.tage.map((t) => ({ kopf: <span>{`${t.kurz} ${t.text}`}</span>, titel: t.frei || '', klasse: `${t.heute ? 'heute' : ''}${t.unterrichtstag ? '' : ' frei'}`, gesperrt: !t.unterrichtstag }))}
-          feldKontextmenue={(i, st, ev) => kontext(null, i, st, ev)} />
+        <Raster id={planId} kompakt={kompakt} stunden={plan.zeitraster.stunden} bloecke={bloecke} zeitAnzeigen={!kompakt} className={nurTag ? 'ra-tag' : undefined}
+          ziele={ziele ? sichtbar.map((i) => ziele[i] || []) : null} ablage={(i, st) => ablage(sichtbar[i]!, st)}
+          tage={sichtbar.map((i) => plan.tage[i]!).map((t) => ({ kopf: <span>{`${t.kurz} ${t.text}${nurTag && t.frei ? ` · ${t.frei}` : ''}`}</span>, titel: t.frei || '', klasse: `${t.heute ? 'heute' : ''}${t.unterrichtstag ? '' : ' frei'}`, gesperrt: !t.unterrichtstag }))}
+          feldKontextmenue={(i, st, ev) => kontext(null, sichtbar[i]!, st, ev)} />
       ) : null}
     </AnsichtRahmen>
   );

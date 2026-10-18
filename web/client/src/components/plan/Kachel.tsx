@@ -1,45 +1,49 @@
-// Stundenkachel: Fachfarbe als Tönung, Kopfzeile Fach und Raum, darunter Lehrkraft bzw. Klasse; Status als Schraffur (Entfall),
-// Petrol-Rahmen (Änderung), Bernstein (Prüfung), Violett gestrichelt (Termin), grau gestrichelt (Lehrkraft vertreten). Plaketten und
-// Symbole (online, Hausaufgabe fällig, Notizen) unten. Überfahren zeigt eine Kurzinfo, Klick öffnet die Stundendetails.
+// Stundenkachel: weiße Fläche mit 1-px-Linie (Radius 3 px), Fachfarbe nur als 8-px-Quadrat vor dem Fachkürzel; Kopfzeile Fach und Raum,
+// darunter Lehrkraft bzw. Klasse. Status: Entfall rot durchgestrichen mit feiner Schraffur, Änderung/Prüfung über die Linienfarbe und eine
+// Plakette in Großbuchstaben (ohne Fläche), Termin und vertretene Stunde gestrichelt. Unten Plaketten und Symbole (online, Hausaufgabe
+// fällig, Notizen). Überfahren zeigt eine Kurzinfo, Klick öffnet die Stundendetails.
 import { memo, type CSSProperties, type KeyboardEvent } from 'react';
 import { alpha, Box, Stack, Tooltip, Typography, useTheme, type Theme } from '@mui/material';
-import VideocamOutlined from '@mui/icons-material/VideocamOutlined';
+import LinkRounded from '@mui/icons-material/LinkRounded';
 import EditNoteRounded from '@mui/icons-material/EditNoteRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import type { Karte } from '../../api/types';
 import { artVon, gueltigeFarbe, infoText, istEntfall, istOnline, kachelZeilen, kopfRaeume, plaketten, sichererLink, abwesendSet, statusText, titelText, type Typ, type Plakette } from './logik';
 import { WerteListe, wertText } from './Werte';
 
+/** Statusbezeichnung: 10–11 px Großbuchstaben in der Statusfarbe, ohne Fläche (keine Pillen). */
 export function PlaketteChip({ p, klein = false }: { p: Plakette; klein?: boolean }) {
-  const t = useTheme();
-  const farbe = p.ton === 'neutral' ? t.palette.text.secondary : t.palette.status[p.ton].main;
   const chip = (
-    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: klein ? 16 : 18, px: 0.6, borderRadius: 1, fontSize: klein ? 9.5 : 10.5, fontWeight: 600,
-      letterSpacing: '0.04em', textTransform: 'uppercase', color: p.ton === 'neutral' ? 'text.secondary' : '#fff', bgcolor: p.ton === 'neutral' ? alpha(farbe, 0.12) : farbe,
-      whiteSpace: 'nowrap', flex: 'none' }}>{p.text}</Box>
+    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', fontSize: klein ? 10 : 10.5, lineHeight: '14px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+      color: p.ton === 'neutral' ? 'text.secondary' : `status.${p.ton}.main`, whiteSpace: 'nowrap', flex: 'none' }}>{p.text}</Box>
   );
   return p.hinweis ? <Tooltip title={p.hinweis}>{chip}</Tooltip> : chip;
 }
 
-/** Hintergrund, Rahmen und Textfarbe je Art. */
+/** Fachfarbe als kleines Quadrat (8 px) vor dem Fachkürzel. */
+export function FachQuadrat({ farbe, groesse = 8, sx }: { farbe: string | null | undefined; groesse?: number; sx?: object }) {
+  const f = gueltigeFarbe(farbe);
+  return <Box component="span" aria-hidden sx={{ display: 'inline-block', width: groesse, height: groesse, borderRadius: '1px', flex: 'none', bgcolor: f ?? 'transparent',
+    border: f ? 0 : 1, borderColor: 'text.disabled', boxShadow: f ? 'inset 0 0 0 1px rgba(0,0,0,.08)' : 'none', ...sx }} />;
+}
+
+/** Fläche, Rahmen und Textfarbe je Art: weiße Kachel mit 1-px-Linie; Status über Linienfarbe, Schraffur und Plakette – keine farbigen Flächen. */
 export function kachelStil(k: Karte, typ: Typ, t: Theme): CSSProperties & Record<string, unknown> {
   const art = artVon(k, typ);
-  const fach = gueltigeFarbe(k.farbe);
   const papier = t.palette.background.paper;
-  const dunkel = t.palette.mode === 'dark';
-  const ton = fach ? alpha(fach, dunkel ? 0.22 : 0.17) : alpha(t.palette.text.secondary, 0.07);
-  const basis = { background: `linear-gradient(${ton}, ${ton}), ${papier}`, border: `1px solid ${fach ? alpha(fach, 0.45) : t.palette.divider}` };
+  const linie = t.palette.divider;
+  const basis = { backgroundColor: papier, border: `1px solid ${linie}` };
+  const s = t.palette.status;
   switch (art) {
     case 'entfall': return {
-      background: `repeating-linear-gradient(135deg, ${alpha(t.palette.status.entfall.main, 0.11)} 0 1.5px, transparent 1.5px 7px), ${t.palette.status.entfall.flaeche}`,
-      border: `1px solid ${alpha(t.palette.status.entfall.main, 0.35)}`, color: alpha(t.palette.text.primary, 0.72),
+      backgroundColor: papier, backgroundImage: `repeating-linear-gradient(135deg, ${alpha(s.entfall.main, 0.07)} 0 1px, transparent 1px 6px)`,
+      border: `1px solid ${alpha(s.entfall.main, 0.32)}`, color: t.palette.text.secondary,
     };
-    case 'aenderung': return { ...basis, border: `1.5px solid ${t.palette.status.aenderung.main}`, boxShadow: `inset 0 0 0 1px ${alpha(t.palette.status.aenderung.main, 0.12)}` };
-    case 'pruefung': return { background: t.palette.status.pruefung.flaeche, border: `1.5px solid ${alpha(t.palette.status.pruefung.main, 0.7)}` };
-    case 'termin': return { background: t.palette.status.termin.flaeche, border: `1.5px dashed ${alpha(t.palette.status.termin.main, 0.7)}` };
-    case 'abwesend': return { background: `repeating-linear-gradient(135deg, ${alpha(t.palette.text.secondary, 0.07)} 0 1.5px, transparent 1.5px 7px), ${papier}`,
-      border: `1.5px dashed ${alpha(t.palette.text.secondary, 0.55)}`, color: t.palette.text.secondary };
-    case 'buchung': return { background: t.palette.status.frei.flaeche, border: `1.5px dashed ${alpha(t.palette.status.frei.main, 0.6)}` };
+    case 'aenderung': return { ...basis, border: `1px solid ${alpha(s.aenderung.main, 0.55)}` };
+    case 'pruefung': return { ...basis, border: `1px solid ${alpha(s.pruefung.main, 0.55)}` };
+    case 'termin': return { ...basis, border: `1px dashed ${alpha(t.palette.text.secondary, 0.6)}` };
+    case 'abwesend': return { ...basis, border: `1px dashed ${alpha(t.palette.text.secondary, 0.6)}`, color: t.palette.text.secondary };
+    case 'buchung': return { ...basis, border: `1px dashed ${alpha(s.frei.main, 0.6)}` };
     default: return basis;
   }
 }
@@ -54,7 +58,7 @@ export function KachelInfo({ k, typ }: { k: Karte; typ: Typ }) {
   return (
     <Box sx={{ minWidth: 220, maxWidth: 320 }}>
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.75 }}>
-        {gueltigeFarbe(k.farbe) && <Box sx={{ width: 10, height: 10, borderRadius: 0.75, bgcolor: k.farbe }} />}
+        {gueltigeFarbe(k.farbe) && <FachQuadrat farbe={k.farbe} groesse={10} />}
         <Typography sx={{ fontWeight: 600 }}>{k.fachName || k.fach || k.text || k.art}</Typography>
         {st && k.status !== 'regulaer' && <Typography variant="caption" sx={{ ml: 'auto', fontWeight: 600, color: entfall ? 'status.entfall.main' : 'status.aenderung.main' }}>{st}</Typography>}
       </Stack>
@@ -78,7 +82,8 @@ export interface KachelProps {
 export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt, vorbei, zeit, style, gross }: KachelProps) {
   const t = useTheme();
   const entfall = istEntfall(k, typ);
-  const kompakt = hoehe < 46;
+  const art = artVon(k, typ);
+  const kompakt = hoehe < 44;
   const sehrKlein = hoehe < 30;
   const mittel = !kompakt && hoehe < 74 && !gross;
   const zeilen = kachelZeilen(k, typ);
@@ -86,73 +91,75 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   const pl = plaketten(k, typ);
   const info = infoText(k);
   const online = istOnline(k, typ);
-  const titel = k.fach ? (k.fachAlt && !entfall ? <><Box component="s" sx={{ color: 'text.secondary', fontWeight: 400, mr: 0.4 }}>{k.fachAlt}</Box><Box component="span" sx={{ color: 'status.aenderung.main' }}>{k.fach}</Box></> : k.fach) : (k.text || k.art || '—');
+  const durch = entfall ? 'line-through' : 'none';
+  const titel = k.fach ? (k.fachAlt && !entfall ? <><Box component="s" sx={{ color: 'text.disabled', fontWeight: 400, mr: 0.5 }}>{k.fachAlt}</Box><Box component="span" sx={{ color: 'status.aenderung.main', textDecoration: 'underline', textDecorationThickness: '1px', textUnderlineOffset: '3px' }}>{k.fach}</Box></> : k.fach) : (k.text || k.art || '—');
   const abw = abwesendSet(k);
   const symbole = (
     <>
       {online && (k.onlineLink && sichererLink(k.onlineLink) ? (
         <Tooltip title="Online-Unterricht beitreten">
           <Box component="a" href={k.onlineLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} aria-label="Online-Unterricht beitreten"
-            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, height: 18, px: 0.6, borderRadius: 1, bgcolor: 'primary.main', color: '#fff', fontSize: 10.5, fontWeight: 600, textDecoration: 'none', flex: 'none' }}>
-            <VideocamOutlined sx={{ fontSize: 13 }} />Online
+            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: 'primary.main', fontSize: 10.5, lineHeight: '14px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+              textDecoration: 'none', flex: 'none', '&:hover': { textDecoration: 'underline' } }}>
+            <LinkRounded sx={{ fontSize: 13 }} />Online
           </Box>
         </Tooltip>
       ) : (
         <Tooltip title="Findet online statt">
-          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, height: 18, px: 0.6, borderRadius: 1, bgcolor: alpha(t.palette.primary.main, 0.12), color: 'primary.main', fontSize: 10.5, fontWeight: 600, flex: 'none' }}>
-            <VideocamOutlined sx={{ fontSize: 13 }} />Online
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: 'text.secondary', fontSize: 10.5, lineHeight: '14px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', flex: 'none' }}>
+            <LinkRounded sx={{ fontSize: 13 }} />Online
           </Box>
         </Tooltip>
       ))}
-      {k.hausaufgabeFaellig && <Tooltip title="Hausaufgabe fällig"><EditNoteRounded sx={{ fontSize: 16, color: 'text.secondary' }} aria-label="Hausaufgabe fällig" /></Tooltip>}
-      {info.length > 0 && <Tooltip title={<Box sx={{ whiteSpace: 'pre-line' }}>{info.join('\n')}</Box>}><InfoOutlined sx={{ fontSize: 15, color: 'text.secondary' }} aria-label="Hinweis" /></Tooltip>}
+      {k.hausaufgabeFaellig && <Tooltip title="Hausaufgabe fällig"><EditNoteRounded sx={{ fontSize: 15, color: 'text.secondary' }} aria-label="Hausaufgabe fällig" /></Tooltip>}
+      {info.length > 0 && <Tooltip title={<Box sx={{ whiteSpace: 'pre-line' }}>{info.join('\n')}</Box>}><InfoOutlined sx={{ fontSize: 14, color: 'text.secondary' }} aria-label="Hinweis" /></Tooltip>}
     </>
   );
   const hatSymbole = online || k.hausaufgabeFaellig || info.length > 0;
   const tasten = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(k); } };
+  const hover = art === 'entfall' ? {} : { backgroundColor: t.palette.background.default };
   return (
     <Tooltip title={<KachelInfo k={k} typ={typ} />} placement="right-start" enterDelay={450} enterNextDelay={300} disableInteractive
-      slotProps={{ tooltip: { sx: { bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', boxShadow: '0 12px 32px rgba(21,26,33,.16)', p: 1.5, maxWidth: 360 } }, arrow: { sx: { color: 'background.paper', '&:before': { border: 1, borderColor: 'divider' } } } }}>
-      <Box role="button" tabIndex={0} aria-label={titelText(k)} onClick={() => onOpen?.(k)} onKeyDown={tasten} data-karte=""
+      slotProps={{ tooltip: { sx: { bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', boxShadow: '0 8px 24px rgba(21,26,33,.14)', p: 1.5, maxWidth: 360 } }, arrow: { sx: { color: 'background.paper', '&:before': { border: 1, borderColor: 'divider' } } } }}>
+      <Box role="button" tabIndex={0} aria-label={titelText(k)} onClick={() => onOpen?.(k)} onKeyDown={tasten} data-karte="" data-art={art}
         sx={{
-          position: 'relative', ...kachelStil(k, typ, t), borderRadius: 1.25, px: kompakt ? 0.75 : 0.9, py: sehrKlein ? 0 : kompakt ? 0.35 : 0.6, overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default',
-          display: 'flex', flexDirection: 'column', gap: 0.15, fontSize: 12.5, lineHeight: 1.25, color: entfall ? undefined : 'text.primary',
-          opacity: gedimmt ? 0.28 : vorbei ? 0.62 : 1, transition: 'opacity .12s, box-shadow .12s, transform .12s',
-          '&:hover': { boxShadow: '0 4px 14px rgba(21,26,33,.14)', zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
+          position: 'relative', ...kachelStil(k, typ, t), borderRadius: '3px', px: 1, py: sehrKlein ? 0 : kompakt ? 0.375 : 0.75, overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default',
+          display: 'flex', flexDirection: 'column', gap: '1px', fontSize: 12, lineHeight: 1.25, color: entfall ? undefined : 'text.primary', fontVariantNumeric: 'tabular-nums',
+          opacity: gedimmt ? 0.3 : vorbei ? 0.6 : 1, transition: 'opacity .12s, background-color .12s, border-color .12s',
+          '&:hover': { ...hover, zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
           ...style,
         }}>
-        <Stack direction="row" alignItems="baseline" gap={0.75} sx={{ minWidth: 0, flex: 'none' }}>
-          <Typography component="span" noWrap sx={{ fontWeight: 600, fontSize: gross ? 14.5 : 13, textDecoration: entfall ? 'line-through' : 'none', minWidth: 0, flex: '0 1 auto' }}>{titel}</Typography>
+        <Stack direction="row" alignItems="center" gap={0.75} sx={{ minWidth: 0, flex: 'none', height: gross ? 20 : 17 }}>
+          {k.fach && <FachQuadrat farbe={k.farbe} />}
+          <Typography component="span" noWrap sx={{ fontWeight: 600, fontSize: gross ? 14 : 13, lineHeight: 1.2, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, minWidth: 0, flex: '0 1 auto' }}>{titel}</Typography>
           {kompakt && zeilen[0] && (
-            <Typography component="span" noWrap sx={{ fontSize: 11.5, color: 'text.secondary', textDecoration: entfall ? 'line-through' : 'none', minWidth: 0 }}>
+            <Typography component="span" noWrap sx={{ fontSize: 12, color: 'text.secondary', textDecoration: durch, minWidth: 0 }}>
               <WerteListe werte={zeilen[0].werte} entfall={entfall} mitAlt={false} abwesend={zeilen[0].art === 'klassen' ? abw : undefined} />
             </Typography>
           )}
           {raeume.length > 0 && (
-            <Typography component="span" noWrap sx={{ ml: 'auto', fontSize: 12, fontWeight: 500, color: 'text.secondary', textDecoration: entfall ? 'line-through' : 'none', flex: 'none', maxWidth: '55%' }}>
+            <Typography component="span" noWrap sx={{ ml: 'auto', fontSize: 12, fontWeight: 500, color: 'text.secondary', textDecoration: durch, flex: 'none', maxWidth: '55%', textAlign: 'right' }}>
               <WerteListe werte={raeume} entfall={entfall} mitAlt={!kompakt} />
             </Typography>
           )}
         </Stack>
         {!kompakt && zeilen.length > 0 && (
-          <Box sx={{ flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+          <Box sx={{ flex: '0 1 auto', minHeight: 0, overflow: 'hidden', pl: k.fach ? '14px' : 0 }}>
             {(mittel ? zeilen.slice(0, 1) : zeilen).map((z, i) => (
-              <Typography key={i} component="div" noWrap sx={{ fontSize: 12, lineHeight: '15px', color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: entfall ? 'line-through' : 'none' }}>
+              <Typography key={i} component="div" noWrap sx={{ fontSize: 12, lineHeight: '16px', color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: durch }}>
                 <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} />
               </Typography>
             ))}
           </Box>
         )}
         {!kompakt && (pl.length > 0 || hatSymbole || zeit) && (
-          <Stack direction="row" alignItems="center" gap={0.5} sx={mittel
-            ? { position: 'absolute', right: 4, bottom: 3, maxWidth: 'calc(100% - 8px)', overflow: 'hidden', justifyContent: 'flex-end' }
-            : { mt: 'auto', pt: 0.25, minWidth: 0, flex: 'none', flexWrap: 'nowrap', overflow: 'hidden' }}>
-            {pl.slice(0, mittel ? 1 : 3).map((p, i) => <PlaketteChip key={i} p={p} klein={!gross} />)}
+          <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: 'auto', pl: k.fach ? '14px' : 0, minWidth: 0, flex: 'none', flexWrap: 'nowrap', overflow: 'hidden', height: 15 }}>
+            {pl.slice(0, mittel ? 2 : 3).map((p, i) => <PlaketteChip key={i} p={p} klein={!gross} />)}
             {zeit && <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary' }}>{zeit}</Typography>}
-            <Box sx={{ ml: mittel ? 0 : 'auto', display: 'flex', alignItems: 'center', gap: 0.4 }}>{symbole}</Box>
+            <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>{symbole}</Box>
           </Stack>
         )}
-        {kompakt && !sehrKlein && pl[0] && <Box sx={{ position: 'absolute', right: 3, bottom: 2 }}><PlaketteChip p={pl[0]} klein /></Box>}
+        {kompakt && !sehrKlein && pl[0] && <Box sx={{ position: 'absolute', right: 6, bottom: 2 }}><PlaketteChip p={pl[0]} klein /></Box>}
       </Box>
     </Tooltip>
   );

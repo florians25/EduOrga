@@ -33,6 +33,34 @@ export async function absenzenSpeichern(art: string, neu: NeueAbsenz[], alt: num
   return r;
 }
 
+/** Formular einer Abwesenheit (Element, Von/ab Std., Bis/bis Std., Grund, Text, bei Klassen Begleitung). */
+async function absenzFormular(artName: string, titel: string, von0: string, letzte: number, z?: Partial<AZeile>) {
+  const art = ARTEN.find((x) => x.art === artName) || ARTEN[0]!;
+  const gruende = await elemente('abwesenheitsgrund');
+  const w = await formular(titel, [
+    { name: 'element', titel: art.einzel, wert: z?.element || '', pflicht: true, hinweis: art.art === 'lehrer' ? 'Kurzname, z. B. MUE' : undefined },
+    { name: 'von', titel: 'Von', wert: datumText(z?.vonIso || von0), hinweis: 'TT.MM.JJJJ' },
+    { name: 'sv', titel: 'Ab Stunde', art: 'zahl', wert: z?.sv || 1 },
+    { name: 'bis', titel: 'Bis', wert: datumText(z?.bisIso || von0), hinweis: 'TT.MM.JJJJ' },
+    { name: 'sb', titel: 'Bis Stunde', art: 'zahl', wert: z?.sb || letzte },
+    { name: 'grund', titel: 'Grund', art: 'auswahl', wert: z?.grund || '', optionen: [{ wert: '', text: '' }, ...gruende.map((g) => ({ wert: g.k, text: g.l ? `${g.k} – ${g.l}` : g.k }))] },
+    { name: 'text', titel: 'Text', wert: z?.text || '' },
+    ...(art.art === 'klasse' ? [{ name: 'begleit', titel: 'Begleitung', wert: z?.begleit || '', hinweis: 'Kurznamen der Lehrkräfte; gelten ebenfalls als abwesend (z. B. Klassenfahrt).' }] : []),
+  ], { okText: 'Speichern', breite: '480px' });
+  if (!w) return null;
+  const von = datumLesen(w.von, von0);
+  return { element: String(w.element).trim(), von, bis: datumLesen(w.bis, von), sv: Number(w.sv) || 1, sb: Number(w.sb) || letzte, grund: w.grund, text: w.text, begleit: w.begleit || '' };
+}
+
+/** Neue Abwesenheit (Lehrkraft, Klasse oder Raum) über ein Formular erfassen – z. B. aus der Tagesplanung. true = gespeichert. */
+export async function abwesenheitErfassen(art: 'lehrer' | 'klasse' | 'raum', datum: string, letzte: number, quelle?: string): Promise<boolean> {
+  const einzel = ARTEN.find((x) => x.art === art)!.einzel;
+  const x = await absenzFormular(art, `Abwesenheit erfassen – ${einzel}`, datum, letzte);
+  if (!x) return false;
+  await absenzenSpeichern(art, [{ id: 0, ...x }], [], quelle, 'Abwesenheit eingeben');
+  return true;
+}
+
 interface AZeile { id: string; nr: string; element: string; elementId?: number; vonIso: string; bisIso: string; sv: string; sb: string; grund: string; text: string; begleit: string; offen: string; va?: number; entwurf?: boolean }
 interface AbsenzDaten {
   zeilen: { id: string | number; nr: number; element: string; elementId: number; von: string; bis: string; sv: number; sb: number; grund: string; text: string; begleit: string; offen: number }[];
@@ -133,23 +161,7 @@ export default function Absenzen({ p }: AnsichtProps) {
 
   const markierte = () => (tabelle.current?.ausgewaehlte() || []).filter((z) => !z.va && !z.id.startsWith('neu')).map((z) => Number(String(z.nr).replace(' *', '')));
 
-  async function formularAbsenz(titel: string, z?: AZeile) {
-    const gruende = await elemente('abwesenheitsgrund');
-    const von0 = zrRef.current.von || '';
-    const w = await formular(titel, [
-      { name: 'element', titel: art.einzel, wert: z?.element || '', pflicht: true },
-      { name: 'von', titel: 'Von', wert: datumText(z?.vonIso || von0), hinweis: 'TT.MM.JJJJ' },
-      { name: 'sv', titel: 'Ab Stunde', art: 'zahl', wert: z?.sv || 1 },
-      { name: 'bis', titel: 'Bis', wert: datumText(z?.bisIso || von0), hinweis: 'TT.MM.JJJJ' },
-      { name: 'sb', titel: 'Bis Stunde', art: 'zahl', wert: z?.sb || letzte() },
-      { name: 'grund', titel: 'Grund', art: 'auswahl', wert: z?.grund || '', optionen: [{ wert: '', text: '' }, ...gruende.map((g) => ({ wert: g.k, text: g.l ? `${g.k} – ${g.l}` : g.k }))] },
-      { name: 'text', titel: 'Text', wert: z?.text || '' },
-      ...(art.art === 'klasse' ? [{ name: 'begleit', titel: 'Begleitung', wert: z?.begleit || '', hinweis: 'Kurznamen der Lehrkräfte; gelten ebenfalls als abwesend (z. B. Klassenfahrt).' }] : []),
-    ], { okText: 'Speichern', breite: '480px' });
-    if (!w) return null;
-    const von = datumLesen(w.von, von0);
-    return { element: String(w.element).trim(), von, bis: datumLesen(w.bis, von), sv: Number(w.sv) || 1, sb: Number(w.sb) || letzte(), grund: w.grund, text: w.text, begleit: w.begleit || '' };
-  }
+  const formularAbsenz = (titel: string, z?: AZeile) => absenzFormular(art.art, titel, zrRef.current.von || '', letzte(), z);
   async function neuDialog() {
     await entwurfUebernehmen();
     const x = await formularAbsenz('Neue Abwesenheit');

@@ -16,7 +16,7 @@ export function Plakette({ ton = 'neutral', children, fest = false, sx, title }:
   const t = useTheme();
   const farbe = ton === 'neutral' ? t.palette.text.secondary : ton === 'primaer' ? t.palette.primary.main : ton === 'warnung' ? t.palette.status.pruefung.main : t.palette.status[ton].main;
   return (
-    <Box component="span" title={title} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, height: 22, px: 1, borderRadius: 999, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
+    <Box component="span" title={title} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, height: 20, px: 0.75, borderRadius: '3px', fontSize: 11.5, fontWeight: 600, whiteSpace: 'nowrap',
       color: fest ? '#fff' : farbe, bgcolor: fest ? farbe : alpha(farbe, ton === 'neutral' ? 0.1 : 0.12), ...sx }}>{children}</Box>
   );
 }
@@ -26,7 +26,7 @@ export function SuchFeld({ wert, onWert, platzhalter = 'Suchen', breite = 260, a
     <TextField value={wert} onChange={e => onWert(e.target.value)} placeholder={platzhalter} aria-label={platzhalter} type="search" autoFocus={autoFocus}
       sx={{ width: breite, maxWidth: '100%' }}
       slotProps={{ input: {
-        sx: { borderRadius: 999, bgcolor: 'background.default' },
+        sx: { borderRadius: '6px', bgcolor: 'background.default' },
         startAdornment: <InputAdornment position="start"><SearchRounded fontSize="small" /></InputAdornment>,
         endAdornment: wert ? <InputAdornment position="end"><IconButton size="small" onClick={() => onWert('')} aria-label="Suche löschen"><CloseRounded fontSize="small" /></IconButton></InputAdornment> : null,
       } }} />
@@ -87,7 +87,7 @@ export function Kennzahl({ wert, text, ton = 'primaer', onClick, unter }: { wert
   const t = useTheme();
   const farbe = ton === 'neutral' ? t.palette.text.primary : ton === 'primaer' ? t.palette.primary.main : ton === 'warnung' ? t.palette.status.pruefung.main : t.palette.status[ton].main;
   return (
-    <Paper variant="outlined" onClick={onClick} sx={{ p: 2, minWidth: 0, borderRadius: 3.5, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s', '&:hover': onClick ? { boxShadow: '0 4px 14px rgba(21,26,33,.08)' } : {} }}>
+    <Paper variant="outlined" onClick={onClick} sx={{ p: 2, minWidth: 0, borderRadius: 2, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s', '&:hover': onClick ? { boxShadow: '0 4px 14px rgba(21,26,33,.08)' } : {} }}>
       <Typography sx={{ fontSize: 28, fontWeight: 600, color: farbe, lineHeight: 1.1 }}>{wert}</Typography>
       <Typography variant="body2" color="text.secondary" noWrap title={text} sx={{ mt: 0.5 }}>{text}</Typography>
       {unter}
@@ -100,7 +100,7 @@ export function DatumKachel({ datum, klein }: { datum: string; klein?: boolean }
   const d = ausIso(datum);
   const heute = datum === heuteIso();
   return (
-    <Box sx={{ width: klein ? 44 : 52, flex: 'none', textAlign: 'center', borderRadius: 2.5, py: 0.5, bgcolor: heute ? 'primary.main' : 'action.hover', color: heute ? 'primary.contrastText' : 'text.primary' }}>
+    <Box sx={{ width: klein ? 44 : 52, flex: 'none', textAlign: 'center', borderRadius: 2, py: 0.5, bgcolor: heute ? 'primary.main' : 'action.hover', color: heute ? 'primary.contrastText' : 'text.primary' }}>
       <Typography sx={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', opacity: 0.8, lineHeight: 1.2 }}>{WOCHENTAGE_KURZ[(d.getDay() + 6) % 7]}</Typography>
       <Typography sx={{ fontSize: klein ? 16 : 19, fontWeight: 600, lineHeight: 1.1 }}>{d.getDate()}</Typography>
       <Typography sx={{ fontSize: 10.5, opacity: 0.8, lineHeight: 1.2 }}>{MONATE[d.getMonth()].slice(0, 3)}</Typography>

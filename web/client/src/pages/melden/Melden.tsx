@@ -86,8 +86,8 @@ function Uebersicht() {
   const g = useLaden(sig => holen<Meldung[]>('/api/app/meldungen', sig).catch(() => [] as Meldung[]), []);
   const offen = (g.daten ?? []).filter(m => m.status === 'offen').length;
   const kachel = (href: string, icon: ReactNode, titel: string, text: string, zahl = 0) => (
-    <Paper variant="outlined" component="a" href={href} sx={{ p: 2.25, display: 'flex', gap: 2, alignItems: 'center', textAlign: 'left', borderRadius: 3.5, justifyContent: 'flex-start', textDecoration: 'none', color: 'inherit', transition: 'border-color .12s, box-shadow .12s', '&:hover': { borderColor: 'primary.main', boxShadow: '0 6px 18px rgba(21,26,33,.07)' } }}>
-      <Badge badgeContent={zahl} color="primary"><Box sx={{ width: 46, height: 46, borderRadius: 3, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main' }}>{icon}</Box></Badge>
+    <Paper variant="outlined" component="a" href={href} sx={{ p: 2.25, display: 'flex', gap: 2, alignItems: 'center', textAlign: 'left', borderRadius: 2, justifyContent: 'flex-start', textDecoration: 'none', color: 'inherit', transition: 'border-color .12s, box-shadow .12s', '&:hover': { borderColor: 'primary.main', boxShadow: '0 6px 18px rgba(21,26,33,.07)' } }}>
+      <Badge badgeContent={zahl} color="primary"><Box sx={{ width: 46, height: 46, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main' }}>{icon}</Box></Badge>
       <Box sx={{ flex: 1 }}><Typography sx={{ fontWeight: 600 }}>{titel}</Typography><Typography variant="body2" color="text.secondary">{text}</Typography></Box>
       <ArrowForwardIosRounded sx={{ fontSize: 14, color: 'text.disabled' }} />
     </Paper>
@@ -113,7 +113,7 @@ function FormKarte({ icon, titel, unter, children, fuss }: { icon: ReactNode; ti
   return (
     <Paper variant="outlined" sx={{ maxWidth: 820 }}>
       <Stack direction="row" gap={2} alignItems="center" sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider' }}>
-        <Box sx={{ width: 44, height: 44, borderRadius: 3, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main' }}>{icon}</Box>
+        <Box sx={{ width: 44, height: 44, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main' }}>{icon}</Box>
         <Box><Typography variant="h3">{titel}</Typography><Typography variant="body2" color="text.secondary">{unter}</Typography></Box>
       </Stack>
       <Box sx={{ p: 2.5 }}>{children}</Box>

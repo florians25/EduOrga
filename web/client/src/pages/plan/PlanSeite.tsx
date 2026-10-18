@@ -199,7 +199,7 @@ export default function PlanSeite({ teile }: SeitenProps) {
   return (
     <Seite dokumentTitel={titel}>
       <Box ref={leiste} className="nicht-drucken" sx={{ position: 'sticky', top: oben, zIndex: 8, bgcolor: 'background.default', pt: { xs: 0.5, lg: 0 }, pb: 1.5, mt: { lg: -1 } }}>
-        <Paper variant="outlined" sx={{ p: 1.25, borderRadius: 3.5, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.25, rowGap: 1.25 }}>
+        <Paper variant="outlined" sx={{ p: 1.25, borderRadius: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.25, rowGap: 1.25 }}>
           {istMein ? (
             <Box sx={{ px: 1, minWidth: 0 }}>
               <Typography sx={{ fontWeight: 600 }}>{TYPEN[typ]} {element}{kind?.name ? ` · ${kind.name}` : ''}</Typography>
@@ -234,10 +234,10 @@ export default function PlanSeite({ teile }: SeitenProps) {
               const an = i === tagIndex;
               return (
                 <Button key={x.datum} onClick={() => setTagWahl(i)} variant={an ? 'contained' : 'outlined'} aria-pressed={an}
-                  sx={{ flexDirection: 'column', minWidth: 64, py: 0.5, lineHeight: 1.15, borderRadius: 3, position: 'relative' }}>
+                  sx={{ flexDirection: 'column', minWidth: 64, py: 0.5, lineHeight: 1.15, borderRadius: 2, position: 'relative' }}>
                   <Box component="span" sx={{ fontSize: 12, opacity: 0.85 }}>{wochentagKurz(x.datum)}</Box>
                   <Box component="span" sx={{ fontWeight: 600 }}>{datumKurz(x.datum)}</Box>
-                  {n > 0 && <Box component="span" sx={{ position: 'absolute', top: 4, right: 6, width: 6, height: 6, borderRadius: 3, bgcolor: an ? '#fff' : 'status.aenderung.main' }} />}
+                  {n > 0 && <Box component="span" sx={{ position: 'absolute', top: 4, right: 6, width: 6, height: 6, borderRadius: 2, bgcolor: an ? '#fff' : 'status.aenderung.main' }} />}
                 </Button>
               );
             })}
@@ -246,7 +246,7 @@ export default function PlanSeite({ teile }: SeitenProps) {
       </Box>
       <Fehler fehler={plan.fehler} neu={plan.neu} />
       {!p ? <Laden hoehe={400} /> : (
-        <Paper variant="outlined" sx={{ borderRadius: 3.5, overflow: 'visible', opacity: plan.laedt ? 0.7 : 1, transition: 'opacity .12s' }}>
+        <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'visible', opacity: plan.laedt ? 0.7 : 1, transition: 'opacity .12s' }}>
           <Wochenraster plan={p} onOpen={(k, l) => setDetails({ k, liste: l })}
             optionen={{ nurTag: einst.ansicht === 'tag' ? tagIndex : null, kartenZeiten: einst.zeiten, aufsichten: einst.aufsichten, abwesenheiten: einst.abwesenheiten, fokus, oben: oben + leistenHoehe }} />
         </Paper>
