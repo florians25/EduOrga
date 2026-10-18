@@ -1,23 +1,26 @@
 # XcodeGen-Beschreibung von UntPlan Next (Alternative zum mitgelieferten Xcode-Projekt, das Ordner synchronisiert).
-# Erzeugen: im Ordner ios/UntPlanNext/ "xcodegen generate" ausführen (überschreibt UntPlanNext.xcodeproj).
+# Erzeugen: im Ordner ios/ "xcodegen generate" ausführen (überschreibt ios/UntPlanNext.xcodeproj).
+# Übersetzen nur mit Xcode 26 (iOS-26-SDK für Liquid Glass); Zielsystem iOS 18.
 name: UntPlanNext
 options:
   bundleIdPrefix: de.untplan
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "18.0"
   developmentLanguage: de
   createIntermediateGroups: true
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    SDKROOT: iphoneos
 targets:
   UntPlanNext:
     type: application
     platform: iOS
-    deploymentTarget: "17.0"
+    deploymentTarget: "18.0"
     sources:
-      # Der ganze Ordner (Swift-Dateien und Assets.xcassets); Info.plist liegt daneben und wird über INFOPLIST_FILE eingebunden
+      # Der ganze Ordner ios/UntPlanNext (Swift-Dateien und Assets.xcassets); ios/Info.plist liegt daneben und wird über
+      # INFOPLIST_FILE eingebunden
       - path: UntPlanNext
     settings:
       base:

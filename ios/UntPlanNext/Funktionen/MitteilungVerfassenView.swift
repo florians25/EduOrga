@@ -658,7 +658,7 @@ struct EmpfaengerauswahlView: View {
     }
 }
 
-/// Filter mit feinem Rand („Liste ⌄“); aktiv in Marine auf heller Marine-Fläche.
+/// Filter mit feinem Rand („Liste ⌄“); aktiv in Petrol auf heller Petrol-Fläche.
 private struct Filterkapsel: View {
     let titel: String
     let aktiv: Bool

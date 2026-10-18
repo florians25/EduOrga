@@ -58,8 +58,8 @@ struct HauptView: View {
             // Nach der Anmeldung bzw. beim Start einmal den eigenen Plan prüfen (Lehrkräfte) und das Gerät für
             // Push-Mitteilungen beim Server hinterlegen
             if neu == .angemeldet {
-                // Einrichtungslink beim Start erhalten: „Mehr“ öffnet die Konten mit „Konto hinzufügen“
-                if zustand.einrichtungsAdresse != nil { zustand.reiter = .mehr }
+                // Einrichtungslink beim Start erhalten: Profil öffnet die Konten mit „Konto hinzufügen“
+                if zustand.einrichtungsAdresse != nil { zustand.mehrOffen = true }
                 zustand.pushTokenMelden()
                 Task { await zustand.planPruefen() }
             }
@@ -89,26 +89,28 @@ struct HauptView: View {
             zustand.reiter = .heute
         case .mitteilungen:
             zustand.reiter = .postfach
-        case .stundenplan, .suche:
+        case .stundenplan:
             zustand.schnellaktion = aktion
             zustand.reiter = .plan
+        case .suche:
+            zustand.reiter = .suche
         }
     }
 }
 
-/// Reiter der Tab-Leiste.
+/// Reiter der Tab-Leiste. Profil, Konten und Einstellungen („Mehr“) öffnen sich als Blatt über den Avatar oben rechts.
 enum AppReiter: Hashable, CaseIterable {
     case heute
     case plan
     case postfach
-    case mehr
+    case suche
 
     var titel: String {
         switch self {
         case .heute: return "Heute"
         case .plan: return "Plan"
         case .postfach: return "Postfach"
-        case .mehr: return "Mehr"
+        case .suche: return "Suche"
         }
     }
 
@@ -116,18 +118,21 @@ enum AppReiter: Hashable, CaseIterable {
     var symbol: String {
         switch self {
         case .heute: return "sun.max"
-        case .plan: return "calendar.day.timeline.left"
+        case .plan: return "calendar"
         case .postfach: return "tray"
-        case .mehr: return "ellipsis.circle"
+        case .suche: return "magnifyingglass"
         }
     }
 }
 
-/// Tab-Leiste des Systems: Heute · Plan · Postfach · Mehr. Der Zähler ungelesener Mitteilungen steht als Plakette am
-/// Postfach; erneutes Antippen von „Plan“ führt zur heutigen Woche zurück.
+/// Tab-Leiste des Systems: Heute · Plan · Postfach · Suche (Reiter mit der Rolle „Suche“ – ab iOS 26 als eigene
+/// Glasfläche rechts, das Suchfeld wandert in die Leiste). Ab iOS 26 klappt die Leiste beim Rollen nach unten ein.
+/// Der Zähler ungelesener Mitteilungen steht als Plakette am Postfach; erneutes Antippen von „Plan“ führt zu heute
+/// zurück. Profil und Einstellungen als Blatt (Avatar oben rechts in jedem Reiter).
 @MainActor
 struct AppTabView: View {
     @EnvironmentObject var zustand: AppZustand
+    @EnvironmentObject var favoriten: Favoriten
 
     /// Auswahl des Reiters über AppZustand (erneutes Antippen von „Plan“ zählt `stundenplanHeute` hoch).
     private var reiterBindung: Binding<AppReiter> {
@@ -136,22 +141,28 @@ struct AppTabView: View {
 
     var body: some View {
         TabView(selection: reiterBindung) {
-            HeuteView()
-                .tabItem { Label(AppReiter.heute.titel, systemImage: AppReiter.heute.symbol) }
-                .tag(AppReiter.heute)
-            PlanView()
-                .tabItem { Label(AppReiter.plan.titel, systemImage: AppReiter.plan.symbol) }
-                .tag(AppReiter.plan)
-            MitteilungenView()
-                .tabItem { Label(AppReiter.postfach.titel, systemImage: AppReiter.postfach.symbol) }
-                .badge(zustand.ungelesen)
-                .tag(AppReiter.postfach)
-            MehrView()
-                .tabItem { Label(AppReiter.mehr.titel, systemImage: AppReiter.mehr.symbol) }
-                .tag(AppReiter.mehr)
+            Tab("Heute", systemImage: "sun.max", value: AppReiter.heute) {
+                HeuteView()
+            }
+            Tab("Plan", systemImage: "calendar", value: AppReiter.plan) {
+                PlanView()
+            }
+            Tab("Postfach", systemImage: "tray", value: AppReiter.postfach) {
+                MitteilungenView()
+            }
+            .badge(zustand.ungelesen)
+            Tab("Suche", systemImage: "magnifyingglass", value: AppReiter.suche, role: .search) {
+                SucheView()
+            }
         }
+        .tabLeisteEinklappbar()
         .tint(Farben.akzent)
         .sensoryFeedback(.selection, trigger: zustand.reiter)
+        .sheet(isPresented: $zustand.mehrOffen) {
+            MehrView()
+                .environmentObject(zustand)
+                .environmentObject(favoriten)
+        }
     }
 }
 

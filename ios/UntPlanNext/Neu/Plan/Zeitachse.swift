@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Der Tag als Zeitachse mit echter Uhrzeit: links die Zeitspalte (volle Stunden und die Stunden des Zeitrasters als
 /// Spur), rechts die Kacheln in ihrer wirklichen Länge. Pausen als ruhige Bänder, Freistunden gestrichelt, die eigene
-/// Abwesenheit als graue Fläche, heute die aktuelle Uhrzeit als Linie in Marine. Gleichzeitige Stunden stehen
+/// Abwesenheit als graue Fläche, heute die aktuelle Uhrzeit als Linie in Petrol. Gleichzeitige Stunden stehen
 /// nebeneinander (Anordnung wie in UntPlan Web, `Kachelbau.anordnen`).
 struct Zeitachse: View {
     let tag: Tagesansicht
@@ -244,6 +244,7 @@ struct Zeitachse: View {
                     .zoomQuelle(quelle, in: raum)
             }
             .buttonStyle(KachelDruckStil())
+            .stundenMenue(k) { antippen(k, quelle) }
             .position(x: x + spurBreite / 2, y: y(k.beginn) + 1.5 + h / 2)
         }
     }

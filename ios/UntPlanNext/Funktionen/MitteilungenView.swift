@@ -106,6 +106,7 @@ struct MitteilungenView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { neuKnopf }
             }
+            .profilWerkzeug()
             .task(id: ordner) { await laden() }
             .navigationDestination(for: Int.self) { id in
                 if let m = liste.first(where: { $0.id == id }) {
@@ -578,7 +579,7 @@ struct Anhangpille: View {
 // MARK: - Werkzeuge
 
 /// Symbolknopf in einer Werkzeugleiste (Lesebestätigung, Antwort nicht erlaubt, Kamera, Foto, Datei); `aktiv` hebt ihn
-/// als eingeschalteten Schalter hervor (Symbol in Marine auf heller Marine-Fläche).
+/// als eingeschalteten Schalter hervor (Symbol in Petrol auf heller Petrol-Fläche).
 struct Werkzeugknopf: View {
     let symbol: String
     let text: String

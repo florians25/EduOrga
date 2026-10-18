@@ -219,7 +219,7 @@ struct AnmeldungView: View {
                         .foregroundStyle(Farben.entfall)
                         .font(.footnote)
                 } else if hinzufuegen {
-                    Text("Das bisherige Konto bleibt angemeldet; unter „Mehr“ → „Konten“ wechseln Sie jederzeit zurück.")
+                    Text("Das bisherige Konto bleibt angemeldet; unter „Profil“ (Avatar oben rechts) → „Konten und Schulen“ wechseln Sie jederzeit zurück.")
                         .font(.footnote)
                 }
             }
@@ -276,7 +276,7 @@ struct AnmeldungView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Primärknopf über die ganze Zeile (Marine, weiße Schrift), während der Arbeit mit Ladekreis.
+    /// Primärknopf über die ganze Zeile (Petrol, weiße Schrift), während der Arbeit mit Ladekreis.
     private func primaerKnopf(titel: String, arbeitet: Bool, aktiv: Bool, aktion: @escaping () -> Void) -> some View {
         Button(action: aktion) {
             HStack {

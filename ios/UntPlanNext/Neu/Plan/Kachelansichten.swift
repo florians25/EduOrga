@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Text einer Kachelzeile
 
-/// Zeile einer Kachel als Text: geänderte Werte petrolfarben unterstrichen, wegfallende durchgestrichen. Wurde genau ein
+/// Zeile einer Kachel als Text: geänderte Werte violett unterstrichen, wegfallende durchgestrichen. Wurde genau ein
 /// Wert ersetzt (Vertretung, Raumänderung), steht „alt → neu“.
 func kachelText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
     var ergebnis = Text("")
@@ -37,8 +37,8 @@ func kachelText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
     return ergebnis
 }
 
-/// Werte als „alt → neu“ für die große Stundenansicht (alt durchgestrichen, neu petrolfarben unterstrichen; ohne
-/// neuen Wert der alte Wert petrolfarben durchgestrichen).
+/// Werte als „alt → neu“ für die große Stundenansicht (alt durchgestrichen, neu violett unterstrichen; ohne
+/// neuen Wert der alte Wert violett durchgestrichen).
 func wechselText(_ werte: [Wert], trenner: String = ", ") -> Text {
     var ergebnis = Text("")
     var erster = true
@@ -67,7 +67,7 @@ func wechselText(_ werte: [Wert], trenner: String = ", ") -> Text {
 
 /// Stundenkachel der Zeitachse: Fachfarbe als Tönung, Fach groß, Raum als Feld rechts, darunter Lehrkraft bzw. Klasse;
 /// Status als Plakette mit Symbol. Entfall schraffiert und durchgestrichen, Termine gestrichelt, Prüfung bernsteinfarben,
-/// Änderungen mit Petrol-Rahmen. Je nach Höhe drei Fassungen (groß, mittel, eine Zeile).
+/// Änderungen mit violettem Rahmen. Je nach Höhe drei Fassungen (groß, mittel, eine Zeile).
 struct ZeitKachel: View {
     let kachel: Kachel
     let hoehe: CGFloat
@@ -222,7 +222,7 @@ struct ZeitKachel: View {
 
     private var marken: some View {
         HStack(spacing: 4) {
-            if let merkmal { Statusabzeichen(merkmal: merkmal, klein: true) }
+            if let merkmal { Statusabzeichen(merkmal: merkmal, klein: true, gefuellt: merkmal.betont) }
             if kachel.online { Statusabzeichen(merkmal: Statuslehre.online, klein: true) }
             if kachel.hausaufgabe {
                 Image(systemName: "checklist")
@@ -269,7 +269,7 @@ struct ZeitKachel: View {
             HStack(spacing: 6) {
                 if !kachel.personenzeilen.isEmpty { personenText }
                 Spacer(minLength: 0)
-                if let merkmal { Statusabzeichen(merkmal: merkmal, klein: true) }
+                if let merkmal { Statusabzeichen(merkmal: merkmal, klein: true, gefuellt: merkmal.betont) }
             }
         }
     }
@@ -332,33 +332,5 @@ struct AufsichtKapsel: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Pausenaufsicht \(kachel.anzeigeTitel), \(kachel.zeitText)" + (m.map { ", \($0.text)" } ?? ""))
         .accessibilityAddTraits(.isButton)
-    }
-}
-
-// MARK: - Belegungsleiste (Wochenleiste)
-
-/// Kleine Leiste mit der Belegung eines Tages: farbige Abschnitte über den Schultag, Entfall gestreift.
-struct Belegungsleiste: View {
-    let stuecke: [Belegungsstueck]?
-    var hoehe: CGFloat = 5
-
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            ZStack(alignment: .leading) {
-                Capsule().fill(Farben.neutralFlaeche)
-                if let stuecke {
-                    ForEach(stuecke) { s in
-                        Rectangle()
-                            .fill(s.entfall ? Farben.entfall.opacity(0.45) : s.farbe)
-                            .frame(width: max(2, (s.bis - s.von) * w - 1), height: hoehe)
-                            .offset(x: s.von * w)
-                    }
-                }
-            }
-            .clipShape(Capsule())
-        }
-        .frame(height: hoehe)
-        .accessibilityHidden(true)
     }
 }

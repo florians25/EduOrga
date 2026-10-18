@@ -113,7 +113,7 @@ struct Infozeile: View {
 struct Stundenzeile: View {
     let karte: Karte
     let typ: String
-    /// Stunde läuft gerade: Uhrzeit in Marine
+    /// Stunde läuft gerade: Uhrzeit in Petrol
     var laeuft: Bool = false
 
     var body: some View {

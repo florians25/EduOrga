@@ -1,13 +1,17 @@
 import SwiftUI
 
 /// Die laufende Stunde als Karte: Fortschrittsring mit Restzeit, Fach, Raum und Lehrkraft bzw. Klasse, Status, darunter
-/// die nächste Stunde. In der Pause bzw. vor dem Unterricht zählt der Ring bis zur nächsten Stunde herunter.
+/// die Bedienknöpfe aus Glas (Details, Raumplan, Online beitreten) und die nächste Stunde. In der Pause bzw. vor dem
+/// Unterricht zählt der Ring bis zur nächsten Stunde herunter. Die Karte selbst ist deckend (Inhalt), nur die Knöpfe
+/// sind Glas.
 struct JetztKarte: View {
     /// Kacheln des heutigen Tages
     let kacheln: [Kachel]
     let raum: Namespace.ID?
     let antippen: (Kachel, String) -> Void
 
+    @EnvironmentObject var zustand: AppZustand
+    @Environment(\.openURL) private var oeffneURL
     @ScaledMetric(relativeTo: .title) private var ringMass: CGFloat = 72
 
     var body: some View {
@@ -52,11 +56,13 @@ struct JetztKarte: View {
             case .laeuft:
                 if let a = lage.aktuell {
                     hauptzeile(kachel: a, lage: lage, genau: genau, titel: nil)
+                    steuerung(a)
                 }
             case .pause, .vorher:
                 if let n = lage.naechste {
                     hauptzeile(kachel: n, lage: lage, genau: genau,
                                titel: lage.phase == .pause ? "Pause bis \(Uhr.uhrzeit(n.beginn))" : "Beginn um \(Uhr.uhrzeit(n.beginn))")
+                    steuerung(n)
                 }
             case .danach:
                 HStack(spacing: 12) {
@@ -86,6 +92,47 @@ struct JetztKarte: View {
         .kartenflaeche()
     }
 
+    /// Bedienknöpfe aus Glas: Details, Raumplan, Online beitreten (Petrol hervorgehoben).
+    private func steuerung(_ k: Kachel) -> some View {
+        let quelle = "jetzt-\(k.id.uuidString)"
+        let raumPlan = k.karte.flatMap { karte in Planziele.fuer(karte, zustand: zustand).first { $0.typ == "raum" } }
+        let online = k.karte.flatMap { karte in karte.online ? Karte.onlineURL(karte.onlineLink) : nil }
+        return GlasGruppe(abstand: 8) {
+            HStack(spacing: 8) {
+                Button {
+                    antippen(k, quelle)
+                } label: {
+                    Text("Details")
+                }
+                .glasKnopf()
+                if let raumPlan {
+                    Button {
+                        Haptik.auswahl()
+                        zustand.planZeigen(raumPlan)
+                    } label: {
+                        Text("Raum \(raumPlan.anzeige)")
+                            .lineLimit(1)
+                    }
+                    .glasKnopf()
+                    .accessibilityLabel("Raumplan \(raumPlan.anzeige)")
+                }
+                if let online {
+                    Button {
+                        Haptik.tippen()
+                        oeffneURL(online)
+                    } label: {
+                        Text("Beitreten")
+                    }
+                    .glasKnopf(hervorgehoben: true)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .font(.subheadline.weight(.semibold))
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
+    }
+
     private func kopfzeile(_ lage: Jetztlage) -> String {
         switch lage.phase {
         case .laeuft: return "JETZT"
@@ -105,10 +152,10 @@ struct JetztKarte: View {
             HStack(alignment: .center, spacing: 16) {
                 ZStack {
                     Circle()
-                        .stroke(Farben.neutralFlaeche, lineWidth: 7)
+                        .stroke(Farben.neutralFlaeche, lineWidth: 8)
                     Circle()
                         .trim(from: 0, to: CGFloat(lage.fortschritt(genau)))
-                        .stroke(farbe, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                        .stroke(farbe, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     VStack(spacing: -2) {
                         Text("\(rest)")
@@ -177,7 +224,7 @@ struct JetztKarte: View {
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.bottom, 12)
             .contentShape(Rectangle())
             .zoomQuelle(quelle, in: raum)
         }

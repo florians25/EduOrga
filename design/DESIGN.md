@@ -1,7 +1,7 @@
 # UntPlan Designsystem
 
 Verbindliche Gestaltungsgrundlage für **UntPlan Studio** (Planung im Browser), **UntPlan Web** (Portal für Lehrkräfte,
-Schüler und Eltern), **UntPlan Mobile** (PWA) und **UntPlan für iOS**. Ziel: ein eigenständiges, sachliches und
+Schüler und Eltern), **UntPlan Mobile** (PWA) und **UntPlan Next** (iOS). Ziel: ein eigenständiges, sachliches und
 hochwertiges Erscheinungsbild für den Einsatz an Schulen – erkennbar als *ein* Produkt, ohne Anlehnung an die
 Gestaltung anderer Stundenplanprogramme.
 
@@ -95,7 +95,7 @@ iOS verwendet die Systemschrift (SF Pro) – das ist dort der Standard und wirkt
 | **Studio** | Seitenbasierte Web-Anwendung (eine Seite je Aufgabe, Adresse in der URL, Zurück-Taste funktioniert). Helle Seitenleiste nur mit Text (Bereiche und Seiten), Kopfleiste mit Wortmarke, Schuldatei, Modus, Suche, Konto. Jede Seite: Seitenkopf (Titel 20 px, Untertitel, Aktionen rechts als Textknöpfe), Filterleiste, Inhalt; Details in einem Seitenbereich rechts; Bearbeiten in Dialogen. Arbeitsplätze, die mehrere Inhalte gleichzeitig brauchen (Vertretungsplanung, manuelles Planen), sind fest gestaltete Seiten mit Haupt- und Nebenbereich – keine frei schwebenden oder frei teilbaren Fenster, keine Reiterleisten mit Fenstern. |
 | **Web** | Moderner, freundlicher Stil der bisherigen Bedienelemente (Pillen-Knöpfe, runde Felder, weiche Karten mit Radius 12 px) in den Farben dieses Designsystems. Seitenleiste mit eigenen Linien-Symbolen vor den Bereichen (Unterpunkte als Text), abgerundete aktive Zeile, einklappbar zur Symbolleiste. Eigener Stundenplan (Abschnitt 5) und eigene Klassenbuch-Seiten. Keine Symbole oder Grafiken anderer Produkte. |
 | **Mobile (PWA)** | Untere Leiste *Heute · Plan · Postfach · Mehr* (Linien-Symbol + Beschriftung, das ist auf Telefonen Standard), große Seitentitel, Listen statt Karten-Kacheln, keine Logo-Kachel. |
-| **iOS** | `TabView` *Heute · Plan · Postfach · Mehr* mit SF Symbols, `NavigationStack` mit großen Titeln, Akzentfarbe Marine. Eine App für alle Schulen: Ersteinrichtung mit der Adresse der Schule, dann Anmeldung. Plan startet mit dem Tag als Liste (Uhrzeit links, Kacheln nach Abschnitt 5), Raster für Woche bzw. Tage im Menü. |
+| **iOS** (UntPlan Next, `ios/`) | Tab-Leiste des Systems *Heute · Plan · Postfach · Suche* (Suche mit der Rolle „Suche“), Profil und Einstellungen als Blatt hinter dem Avatar oben rechts. Akzentfarbe **Petrol** `#0b5d57` (heller `#138a80`, dunkel `#3fb3a6`); Statusfarben bewusst weit davon entfernt: Änderung/Vertretung Violett `#6d4fc2`, Termin Magenta `#a3347c`, Prüfung Bernstein, Entfall Rot, Ferien Blau. **Liquid Glass** (iOS 26, Xcode 26) nur auf der Bedienebene über dem Inhalt – Tab-Leiste (klappt beim Rollen ein), schwebende Wochenleiste, Werkzeug- und Filterknöpfe, Bedienknöpfe der Jetzt-Karte, Knöpfe über dem Kopf der Stundenansicht; hervorgehobene Knöpfe Petrol-Glas. Inhalte (Kacheln, Karten, Listen) deckend; iOS 18 erhält dieselbe Form mit Material. Plan: Tag als Liste großer Kacheln (Fach und Raum groß, Änderungen mit gefüllter Plakette, Rahmen und Tönung, Pausen/Freistunden kompakt), waagrecht wischen = Tag, Wochenübersicht als Matrix, wahlweise Zeitachse. Systemschrift SF Pro mit Dynamic Type, Abstände im 8-pt-Raster. Die frühere App „UntPlan für iOS“ liegt nur noch als Archiv in `archiv/ios-alt/`. |
 
 ## 8. Sprache und Abgrenzung
 

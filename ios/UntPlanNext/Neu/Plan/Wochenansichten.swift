@@ -1,86 +1,129 @@
 import SwiftUI
 
-// MARK: - Wochenleiste
+// MARK: - Wochenleiste (schwebend, Glas)
 
-/// Waagrecht blätternde Leiste mit den Schultagen einer Woche: Wochentag, Datum und eine kleine Belegungsleiste je Tag
-/// (Stunden in der Fachfarbe, Änderungen petrol, Entfall rot). Der gewählte Tag ist Marine hinterlegt, heute in Marine.
-struct Wochenleiste: View {
+/// Schwebende Wochenleiste aus Liquid Glass unten im Plan – mit dem Daumen erreichbar: Pfeile für die vorige bzw.
+/// nächste Woche, dazwischen die Schultage (Kürzel, Datum, Punkt bei Änderungen bzw. Entfall). Der gewählte Tag ist
+/// Petrol hinterlegt (die Markierung gleitet beim Wechsel), heute steht in Petrol. Gesten auf der Leiste: waagrecht
+/// wischen = andere Woche, nach oben ziehen = Wochenübersicht, nach unten ziehen = zurück zum Tag.
+struct Wochenschalter: View {
     @ObservedObject var modell: Planmodell
-    let montage: [String]
-    @Binding var woche: String?
+    let montag: String
+    /// Gewählter Tag (leer in der Wochenübersicht)
     let gewaehlt: String
-    /// Tagesansicht: Tage wählbar; Wochenansicht: nur Überblick (Antippen wechselt in den Tag)
+    let wocheAktiv: Bool
     let waehlen: (String) -> Void
+    let blaettern: (Int) -> Void
+    /// true = Wochenübersicht, false = Tag
+    let ansicht: (Bool) -> Void
+
+    @Namespace private var markierung
+
+    init(modell: Planmodell, montag: String, gewaehlt: String, wocheAktiv: Bool, waehlen: @escaping (String) -> Void,
+         blaettern: @escaping (Int) -> Void, ansicht: @escaping (Bool) -> Void) {
+        _modell = ObservedObject(wrappedValue: modell)
+        self.montag = montag
+        self.gewaehlt = gewaehlt
+        self.wocheAktiv = wocheAktiv
+        self.waehlen = waehlen
+        self.blaettern = blaettern
+        self.ansicht = ansicht
+    }
 
     var body: some View {
-        ScrollView(.horizontal) {
-            LazyHStack(spacing: 0) {
-                ForEach(montage, id: \.self) { m in
-                    wochenSeite(m)
-                        .padding(.horizontal, 10)
-                        .containerRelativeFrame(.horizontal)
-                        .task(id: "\(modell.typ)|\(modell.element)|\(m)") { await modell.laden(montag: m) }
+        GlasGruppe(abstand: 8) {
+            HStack(spacing: 8) {
+                Button {
+                    Haptik.auswahl()
+                    blaettern(-1)
+                } label: {
+                    GlasSymbol(name: "chevron.left", groesse: 44)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Vorige Woche")
+
+                HStack(spacing: 2) {
+                    ForEach(modell.tage(montag: montag), id: \.self) { d in
+                        tagKnopf(d)
+                    }
+                }
+                .padding(4)
+                .frame(maxWidth: .infinity)
+                .glasFlaeche(Capsule(), interaktiv: true)
+                .overlay(alignment: .top) {
+                    // Griff: deutet an, dass sich die Leiste nach oben zur Wochenübersicht ziehen lässt
+                    Capsule()
+                        .fill(Farben.text3.opacity(0.5))
+                        .frame(width: 28, height: 3)
+                        .offset(y: -7)
+                        .opacity(wocheAktiv ? 0 : 1)
+                        .accessibilityHidden(true)
+                }
+
+                Button {
+                    Haptik.auswahl()
+                    blaettern(1)
+                } label: {
+                    GlasSymbol(name: "chevron.right", groesse: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Nächste Woche")
             }
-            .scrollTargetLayout()
         }
-        .scrollTargetBehavior(.paging)
-        .scrollIndicators(.hidden)
-        .scrollPosition(id: $woche)
+        .animation(.snappy(duration: 0.28), value: gewaehlt)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 24)
+                .onEnded { wert in
+                    let dx = wert.translation.width
+                    let dy = wert.translation.height
+                    if abs(dy) > abs(dx) {
+                        if dy < -24 { Haptik.auswahl(); ansicht(true) }
+                        if dy > 24 { Haptik.auswahl(); ansicht(false) }
+                    } else if abs(dx) > 40 {
+                        Haptik.auswahl()
+                        blaettern(dx < 0 ? 1 : -1)
+                    }
+                }
+        )
+        .task(id: "\(modell.typ)|\(modell.element)|\(montag)") { await modell.laden(montag: montag) }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Woche")
+        .accessibilityAction(named: wocheAktiv ? "Tag zeigen" : "Wochenübersicht zeigen") { ansicht(!wocheAktiv) }
     }
 
-    private func wochenSeite(_ montag: String) -> some View {
-        HStack(spacing: 4) {
-            ForEach(modell.tage(montag: montag), id: \.self) { d in
-                tagFeld(d)
-            }
-        }
-    }
-
-    private func tagFeld(_ d: String) -> some View {
+    private func tagKnopf(_ d: String) -> some View {
         let istGewaehlt = d == gewaehlt
         let heute = Datumsformat.istHeute(d)
         let t = modell.tag(d)
-        let aenderungen = (t?.anzahlAenderung ?? 0) + (t?.anzahlEntfall ?? 0)
+        let entfall = (t?.anzahlEntfall ?? 0) > 0
+        let aenderung = (t?.anzahlAenderung ?? 0) > 0
         return Button {
             Haptik.auswahl()
             waehlen(d)
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: 1) {
                 Text(Datumsformat.anzeige(d, "EE").replacingOccurrences(of: ".", with: ""))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(istGewaehlt ? Farben.aufAkzent.opacity(0.85) : (heute ? Farben.akzent : Farben.text3))
+                    .font(.caption2.weight(.semibold))
+                    .opacity(istGewaehlt ? 0.9 : 1)
                 Text(Datumsformat.anzeige(d, "d"))
-                    .font(.title3.weight(istGewaehlt || heute ? .bold : .medium))
+                    .font(.headline)
                     .monospacedDigit()
-                    .foregroundStyle(istGewaehlt ? Farben.aufAkzent : (heute ? Farben.akzent : Farben.text))
-                Group {
-                    if t?.frei == true {
-                        Capsule().fill(Farben.frei.opacity(0.45)).frame(height: 5)
-                    } else {
-                        Belegungsleiste(stuecke: t?.belegung)
-                    }
-                }
-                .padding(.horizontal, 6)
-                .opacity(istGewaehlt ? 0.95 : 1)
                 Circle()
-                    .fill((t?.anzahlEntfall ?? 0) > 0 ? Farben.entfall : Farben.aenderung)
+                    .fill(istGewaehlt ? Farben.aufAkzent : (entfall ? Farben.entfall : Farben.aenderung))
                     .frame(width: 5, height: 5)
-                    .opacity(aenderungen > 0 ? 1 : 0)
+                    .opacity(entfall || aenderung ? 1 : 0)
             }
-            .padding(.vertical, 7)
-            .frame(maxWidth: .infinity)
+            .foregroundStyle(istGewaehlt ? Farben.aufAkzent : (heute ? Farben.akzent : (t?.frei == true ? Farben.text3 : Farben.text)))
+            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+            .frame(maxWidth: .infinity, minHeight: 48)
             .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(istGewaehlt ? Farben.akzent : Color.clear)
-            }
-            .overlay {
-                if heute && !istGewaehlt {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(Farben.primaerRand, lineWidth: 1)
+                if istGewaehlt {
+                    Capsule()
+                        .fill(Farben.akzent)
+                        .matchedGeometryEffect(id: "auswahl", in: markierung)
                 }
             }
-            .contentShape(Rectangle())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
@@ -103,8 +146,8 @@ struct Wochenleiste: View {
 // MARK: - Wochenmatrix
 
 /// Die Woche als kompakte Matrix: Spalten = Tage, Zeilen = Stunden des Zeitrasters. Jede Zelle in der Fachfarbe mit
-/// Fach und Raum; Entfall schraffiert, Vertretung mit Petrol-Rahmen, Prüfung bernsteinfarben, Termine violett. Oben die
-/// Kennzahlen der Woche. Antippen öffnet die Stunde groß.
+/// Fach und Raum; Entfall schraffiert, Vertretung mit violettem Rahmen, Prüfung bernsteinfarben, Termine magenta. Oben
+/// die Kennzahlen der Woche. Antippen öffnet die Stunde groß, langes Drücken zeigt die Aktionen der Stunde.
 struct Wochenmatrix: View {
     @ObservedObject var modell: Planmodell
     let montag: String
@@ -314,6 +357,7 @@ struct Wochenmatrix: View {
                     .zoomQuelle(quelle, in: raum)
             }
             .buttonStyle(KachelDruckStil())
+            .stundenMenue(k) { antippen(k, tag, quelle) }
         } else {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Farben.flaeche2)

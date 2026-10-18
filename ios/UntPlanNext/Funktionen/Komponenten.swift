@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Werte als Text
 
-/// Werte (Lehrkräfte, Klassen, Räume) als Text: alter Wert durchgestrichen, geänderter Wert petrolfarben unterstrichen.
+/// Werte (Lehrkräfte, Klassen, Räume) als Text: alter Wert durchgestrichen, geänderter Wert violett unterstrichen.
 /// `offen`: Lehrkräfte einer offenen Vertretung – die abwesende Lehrkraft ohne neuen Wert steht durchgestrichen in Petrol.
 func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> Text {
     var ergebnis = Text("")
@@ -26,7 +26,7 @@ func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> 
     return ergebnis
 }
 
-/// Geänderter Wert: petrolfarben und unterstrichen.
+/// Geänderter Wert: violett und unterstrichen.
 func geaendertText(_ text: String) -> Text {
     Text(text)
         .foregroundColor(Farben.aenderung)
@@ -169,7 +169,7 @@ struct Segmentschalter<Wert: Hashable>: View {
 
 // MARK: - Ladebalken
 
-/// Schmaler Fortschrittsbalken (2 pt, unbestimmt) direkt unter einer Kopfzeile: ein Segment in Marine läuft gleichmäßig
+/// Schmaler Fortschrittsbalken (2 pt, unbestimmt) direkt unter einer Kopfzeile: ein Segment in Petrol läuft gleichmäßig
 /// über eine blasse Spur. Nimmt keine Antippen an.
 struct Ladebalken: View {
     let aktiv: Bool

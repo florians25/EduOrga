@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Große Stundenansicht (bildschirmfüllend, ab iOS 18 mit Zoom aus der Kachel): Kopf in der Fachfarbe mit Fach, Zeit
+/// Große Stundenansicht (bildschirmfüllend, mit Zoom aus der Kachel; Knöpfe oben aus Liquid Glass): Kopf in der Fachfarbe mit Fach, Zeit
 /// und Status, darunter Karten für Änderungen, Raum/Lehrkraft/Klasse, Online-Unterricht, Thema und Hausaufgaben, für
 /// Lehrkräfte das Klassenbuch (Schüler*innen, Lehrstoff, Einträge, Raum) und die Notizen. Unterseiten (Bearbeiten)
 /// öffnen sich im selben Stapel.
@@ -259,43 +259,52 @@ struct StundenBuehneInhalt: View {
         }
     }
 
+    /// Knöpfe oben rechts aus Glas: Menü (Im Plan anzeigen, Teilen) und Schließen.
     private var kopfknoepfe: some View {
-        HStack(spacing: 10) {
-            if !planziele.isEmpty {
-                Menu {
-                    Section("Im Plan anzeigen") {
-                        ForEach(planziele) { plan in
-                            Button(plan.anzeige) {
-                                zustand.planZeigen(plan)
-                                schliessen()
+        GlasGruppe(abstand: 8) {
+            HStack(spacing: 8) {
+                if !planziele.isEmpty || kachel != nil {
+                    Menu {
+                        if !planziele.isEmpty {
+                            Section("Im Plan anzeigen") {
+                                ForEach(planziele) { plan in
+                                    Button {
+                                        zustand.planZeigen(plan)
+                                        schliessen()
+                                    } label: {
+                                        Label(Planziele.titel(plan), systemImage: Planziele.symbol(plan))
+                                    }
+                                }
                             }
                         }
+                        if let k = kachel {
+                            ShareLink(item: Stundentext.teilen(k)) {
+                                Label("Teilen", systemImage: "square.and.arrow.up")
+                            }
+                        }
+                    } label: {
+                        rundSymbol("ellipsis")
                     }
-                } label: {
-                    rundSymbol("ellipsis")
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Weitere Aktionen")
                 }
-                .accessibilityLabel("Im Plan anzeigen")
+                Button {
+                    Haptik.tippen()
+                    schliessen()
+                } label: {
+                    rundSymbol("xmark")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Schließen")
             }
-            Button {
-                Haptik.tippen()
-                schliessen()
-            } label: {
-                rundSymbol("xmark")
-            }
-            .accessibilityLabel("Schließen")
         }
-        .padding(.trailing, 14)
-        .padding(.top, 6)
+        .padding(.trailing, Stilmass.rand)
+        .padding(.top, 4)
     }
 
+    /// Runder Glasknopf über dem farbigen Kopf.
     private func rundSymbol(_ name: String) -> some View {
-        Image(systemName: name)
-            .font(.system(size: 15, weight: .bold))
-            .foregroundStyle(schrift)
-            .frame(width: 34, height: 34)
-            .background(Circle().fill(schrift.opacity(0.18)))
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
+        GlasSymbol(name: name, farbe: schrift, groesse: 44)
     }
 
     @ViewBuilder
@@ -612,7 +621,7 @@ struct StundenBuehneInhalt: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glasKnopf(hervorgehoben: true)
                     .tint(Farben.akzent)
                     .accessibilityHint("Öffnet den Link zum Online-Unterricht")
                 }
@@ -1031,16 +1040,12 @@ struct AufsichtBuehne: View {
                 Haptik.tippen()
                 schliessen()
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color.white)
-                    .frame(width: 34, height: 34)
-                    .background(Circle().fill(Color.white.opacity(0.2)))
-                    .frame(width: 44, height: 44)
+                GlasSymbol(name: "xmark", farbe: Color.white, groesse: 44)
             }
+            .buttonStyle(.plain)
             .accessibilityLabel("Schließen")
-            .padding(.trailing, 14)
-            .padding(.top, 6)
+            .padding(.trailing, Stilmass.rand)
+            .padding(.top, 4)
         }
         .toolbar(.hidden, for: .navigationBar)
     }

@@ -1,21 +1,19 @@
 import SwiftUI
 import UIKit
 
-/// Unterseiten des Reiters „Mehr“.
+/// Unterseiten von Profil und Einstellungen („Mehr“).
 enum Mehrseite: Hashable {
     case kontaktdaten
     case passwort
     case neues
     case ueber
     case darstellung
-    /// Pläne einer Art (Klassen, Lehrkräfte, Räume) – Antippen öffnet den Plan im Reiter „Plan“
-    case plaene(Plankategorie)
 }
 
-/// Reiter „Mehr“: oben das Profil (Name, Rolle, Schule) mit Konten und Schulen, darunter Schule und Unterricht (Termine,
-/// Abwesenheiten, Entschuldigungen, Aufsichten, Hausaufgaben, Änderungen), Sprechtage, Pläne, Einstellungen
-/// (Mitteilungen, Darstellung, Kontaktdaten und Kalender, Passwort) und Info sowie Abmelden. Jede Funktion der App ist
-/// hier erreichbar.
+/// Profil und Einstellungen („Mehr“) als Blatt über dem Avatar oben rechts: oben das Profil (Name, Rolle, Schule) mit
+/// Konten und Schulen, darunter Schule und Unterricht (Termine, Abwesenheiten, Entschuldigungen, Aufsichten,
+/// Hausaufgaben, Änderungen), Sprechtage, Einstellungen (Mitteilungen, Darstellung, Kontaktdaten und Kalender,
+/// Passwort) und Info sowie Abmelden. Pläne anderer Klassen, Lehrkräfte und Räume stehen im Reiter „Suche“.
 struct MehrView: View {
     @EnvironmentObject var zustand: AppZustand
     @Namespace private var zoom
@@ -27,6 +25,7 @@ struct MehrView: View {
     @State private var sprechtagWahl: SprechtagWahl? = nil
     @State private var wahl: Stundenwahl? = nil
     @Environment(\.horizontalSizeClass) private var groessenklasse
+    @Environment(\.dismiss) private var schliessen
 
     private var login: String { profil?.login ?? zustand.benutzer?.login ?? "" }
 
@@ -66,7 +65,6 @@ struct MehrView: View {
                 if !sprechtage.isEmpty {
                     sprechtagAbschnitt
                 }
-                planAbschnitt
                 einstellungenAbschnitt
                 Section {
                     Button(role: .destructive) {
@@ -82,10 +80,14 @@ struct MehrView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(Farben.grund.ignoresSafeArea())
-            .navigationTitle("Mehr")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("Profil")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig") { schliessen() }
+                        .fontWeight(.semibold)
+                }
+            }
             .navigationDestination(for: Mehrseite.self) { seite in
                 switch seite {
                 case .kontaktdaten: KontaktdatenView(profil: profil, name: name)
@@ -93,7 +95,6 @@ struct MehrView: View {
                 case .neues: NeuigkeitenView()
                 case .ueber: UeberView()
                 case .darstellung: DarstellungView()
-                case .plaene(let kategorie): PlanlisteSeite(kategorie: kategorie)
                 }
             }
             .navigationDestination(for: Startziel.self) { ziel in
@@ -222,27 +223,6 @@ struct MehrView: View {
         }
     }
 
-    /// Pläne anderer Klassen, Lehrkräfte und Räume (soweit das Konto sie sehen darf).
-    private var planAbschnitt: some View {
-        Section {
-            NavigationLink(value: Mehrseite.plaene(.klasse)) {
-                Mehrzeile(titel: "Klassen")
-            }
-            if zustand.darfLehrerplaene {
-                NavigationLink(value: Mehrseite.plaene(.lehrer)) {
-                    Mehrzeile(titel: "Lehrkräfte")
-                }
-            }
-            NavigationLink(value: Mehrseite.plaene(.raum)) {
-                Mehrzeile(titel: "Räume")
-            }
-        } header: {
-            Text("Pläne")
-        } footer: {
-            Text("Ein gewählter Plan öffnet sich im Reiter „Plan“.")
-        }
-    }
-
     /// Einstellungen und Info.
     private var einstellungenAbschnitt: some View {
         Section("Einstellungen") {
@@ -288,13 +268,27 @@ struct MehrView: View {
     }
 }
 
-/// Darstellung: Dichte der Zeitachse und Startansicht des Plans.
+/// Darstellung: Tag als Liste oder Zeitachse, Dichte der Zeitachse und Startansicht des Plans.
 struct DarstellungView: View {
     @AppStorage("zeitachseDichte") private var dichte: Double = 1.0
     @AppStorage("planModus") private var modusRoh = Planmodus.tag.rawValue
+    @AppStorage("tagesDarstellung") private var darstellungRoh = Tagesdarstellung.liste.rawValue
 
     var body: some View {
         List {
+            Section {
+                Picker("Tag als", selection: $darstellungRoh) {
+                    ForEach(Tagesdarstellung.allCases) { d in
+                        Text(d.titel).tag(d.rawValue)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Tag im Plan")
+            } footer: {
+                Text("Liste: große Kacheln, Pausen und Freistunden kompakt. Zeitachse: Stunden in ihrer echten Länge.")
+            }
             Section {
                 Picker("Zeitachse", selection: $dichte) {
                     Text("Kompakt").tag(0.75)
@@ -325,7 +319,7 @@ struct DarstellungView: View {
     }
 }
 
-/// Zeile im Reiter „Mehr“: Titel, optional ein Wert rechts – ohne Symbol davor.
+/// Zeile in Profil und Einstellungen: Titel, optional ein Wert rechts – ohne Symbol davor.
 struct Mehrzeile: View {
     let titel: String
     var wert: String? = nil
@@ -348,36 +342,6 @@ struct Mehrzeile: View {
             }
         }
         .contentShape(Rectangle())
-    }
-}
-
-/// Pläne einer Art aus „Mehr“: die Liste der Klassen, Lehrkräfte bzw. Räume; ein Tipp öffnet den Plan im Reiter „Plan“.
-struct PlanlisteSeite: View {
-    let kategorie: Plankategorie
-    @EnvironmentObject var zustand: AppZustand
-    @State private var elemente: Elemente? = nil
-    @State private var fehler: String? = nil
-
-    var body: some View {
-        ElementlisteView(kategorie: kategorie, elemente: elemente, auswahl: nil) { plan in
-            zustand.planZeigen(plan)
-        }
-        .overlay {
-            if let fehler {
-                Fehlerhinweis(text: fehler)
-                    .padding(16)
-                    .frame(maxHeight: .infinity, alignment: .top)
-            }
-        }
-        .task {
-            guard elemente == nil else { return }
-            do {
-                elemente = try await zustand.api.elemente()
-                fehler = nil
-            } catch {
-                if let text = zustand.fehlertext(error) { fehler = text }
-            }
-        }
     }
 }
 

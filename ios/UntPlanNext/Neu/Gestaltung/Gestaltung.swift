@@ -1,20 +1,23 @@
 import SwiftUI
 import UIKit
 
-// Gestaltung von UntPlan Next: Marine als Akzent, Statusfarben aus `design/tokens.css` (über `Farben`), Systemschrift
-// mit Dynamic Type. Eigene Bausteine nur für die neue Zeitachse, die Jetzt-Karte und die große Stundenansicht.
+// Gestaltung von UntPlan Next: Petrol als Akzent, Statusfarben über `Farben` (Änderung Violett, Termin Magenta,
+// Prüfung Bernstein, Entfall Rot), Systemschrift SF Pro mit Dynamic Type, Abstände im 8-pt-Raster. Liquid Glass nur
+// über die Helfer in `Glas.swift` und nur auf der Bedienebene; Inhalte sind deckend.
 
 // MARK: - Maße
 
 enum Stilmass {
+    /// Grundraster (alle Abstände sind Vielfache davon bzw. die halbe Stufe 4)
+    static let raster: CGFloat = 8
     /// Radius von Karten und Flächen
-    static let radius: CGFloat = 14
-    /// Radius der Stundenkacheln auf der Zeitachse
-    static let kachelRadius: CGFloat = 9
+    static let radius: CGFloat = 16
+    /// Radius der Stundenkacheln
+    static let kachelRadius: CGFloat = 12
     /// Seitenrand
     static let rand: CGFloat = 16
     /// Breite der Zeitspalte links neben der Zeitachse
-    static let zeitspalte: CGFloat = 54
+    static let zeitspalte: CGFloat = 56
 }
 
 // MARK: - Fachfarben
@@ -59,9 +62,12 @@ enum Fachfarbe {
         })
     }
 
-    /// Kopf der großen Stundenansicht: Fachfarbe deckend (dunkel: abgedunkelt), ohne Fachfarbe Marine.
+    /// Ersatz ohne Fachfarbe: Petrol #0b5d57.
+    private static let petrol = (0x0B / 255.0, 0x5D / 255.0, 0x57 / 255.0)
+
+    /// Kopf der großen Stundenansicht: Fachfarbe deckend (dunkel: abgedunkelt), ohne Fachfarbe Petrol.
     static func kopf(_ hex: String) -> Color {
-        let f = anteile(hex) ?? (0x23 / 255.0, 0x4F / 255.0, 0x96 / 255.0)
+        let f = anteile(hex) ?? petrol
         return Color(uiColor: UIColor { merkmale in
             if merkmale.userInterfaceStyle == .dark {
                 return uiFarbe(f.r * 0.62, f.g * 0.62, f.b * 0.62)
@@ -72,7 +78,7 @@ enum Fachfarbe {
 
     /// Schrift auf dem Kopf: weiß auf dunklen, fast schwarz auf hellen Fachfarben.
     static func schriftAufKopf(_ hex: String) -> Color {
-        let f = anteile(hex) ?? (0x23 / 255.0, 0x4F / 255.0, 0x96 / 255.0)
+        let f = anteile(hex) ?? petrol
         return Color(uiColor: UIColor { merkmale in
             let faktor = merkmale.userInterfaceStyle == .dark ? 0.62 : 1
             let l = leuchtdichte(f.r * faktor, f.g * faktor, f.b * faktor)
@@ -89,6 +95,9 @@ struct Statusmerkmal: Hashable {
     let farbe: Color
     let flaeche: Color
     let symbol: String
+    /// Muss auffallen (Entfall, Vertretung, Raumänderung, Zusatzstunde, offen, Prüfung): gefüllte Plakette, Rahmen und
+    /// getönte Kachel
+    var betont: Bool = false
 }
 
 enum Statuslehre {
@@ -96,26 +105,26 @@ enum Statuslehre {
     static func merkmal(_ k: Kachel) -> Statusmerkmal? {
         switch k.art {
         case .entfall:
-            return Statusmerkmal(text: "Entfall", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche, symbol: "xmark")
+            return Statusmerkmal(text: "Entfall", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche, symbol: "xmark", betont: true)
         case .aenderung:
             if k.raumAenderung {
-                return Statusmerkmal(text: "Raumänderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.right")
+                return Statusmerkmal(text: "Raumänderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.right", betont: true)
             }
             if k.zusatz {
-                return Statusmerkmal(text: "Zusatzstunde", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "plus")
+                return Statusmerkmal(text: "Zusatzstunde", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "plus", betont: true)
             }
             if k.karte?.istOffeneVertretung == true {
-                return Statusmerkmal(text: "Offen", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "questionmark")
+                return Statusmerkmal(text: "Offen", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "questionmark", betont: true)
             }
             return Statusmerkmal(text: "Vertretung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche,
-                                 symbol: "arrow.left.arrow.right")
+                                 symbol: "arrow.left.arrow.right", betont: true)
         case .normal:
             if k.raumAenderung {
-                return Statusmerkmal(text: "Raumänderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.right")
+                return Statusmerkmal(text: "Raumänderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.right", betont: true)
             }
             return nil
         case .klausur:
-            return Statusmerkmal(text: "Prüfung", farbe: Farben.pruefung, flaeche: Farben.pruefungFlaeche, symbol: "doc.text")
+            return Statusmerkmal(text: "Prüfung", farbe: Farben.pruefung, flaeche: Farben.pruefungFlaeche, symbol: "doc.text", betont: true)
         case .termin, .ganztagTermin:
             let buchung = k.karte?.istRaumbuchung == true
             return Statusmerkmal(text: buchung ? "Raumbuchung" : "Termin", farbe: Farben.termin, flaeche: Farben.terminFlaeche,
@@ -131,9 +140,9 @@ enum Statuslehre {
         case .aufsicht:
             switch k.aufsichtsstand {
             case .regulaer: return Statusmerkmal(text: "Aufsicht", farbe: Farben.text2, flaeche: Farben.neutralFlaeche, symbol: "figure.walk")
-            case .vertretung: return Statusmerkmal(text: "Vertretung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.left.arrow.right")
+            case .vertretung: return Statusmerkmal(text: "Vertretung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.left.arrow.right", betont: true)
             case .abgegeben: return Statusmerkmal(text: "Vertreten", farbe: Farben.text2, flaeche: Farben.neutralFlaeche, symbol: "arrow.uturn.right")
-            case .entfall: return Statusmerkmal(text: "Entfällt", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche, symbol: "xmark")
+            case .entfall: return Statusmerkmal(text: "Entfällt", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche, symbol: "xmark", betont: true)
             }
         }
     }
@@ -248,34 +257,41 @@ extension View {
     }
 }
 
-/// Status-Plakette mit Symbol (Kachel, Kopf der Stundenansicht).
+/// Status-Plakette mit Symbol (Kachel, Kopf der Stundenansicht). Gefüllt (Statusfarbe als Fläche, helle Schrift) für
+/// alles, was auffallen muss.
 struct Statusabzeichen: View {
     let merkmal: Statusmerkmal
     var klein: Bool = false
     /// Auf farbigem Grund (Kopf der Stundenansicht): weiße Fläche
     var aufKopf: Bool = false
+    /// Statusfarbe als Fläche (Entfall, Vertretung …)
+    var gefuellt: Bool = false
+
+    private var schrift: Color { gefuellt && !aufKopf ? Farben.aufStatus : merkmal.farbe }
+    private var flaeche: Color { aufKopf ? Color.white : (gefuellt ? merkmal.farbe : merkmal.flaeche) }
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 4) {
             Image(systemName: merkmal.symbol)
-                .font(.system(size: klein ? 8 : 10, weight: .bold))
+                .font(klein ? Font.caption2.weight(.bold) : Font.caption.weight(.bold))
+                .imageScale(.small)
                 .accessibilityHidden(true)
             Text(merkmal.text.uppercased())
-                .font(.system(size: klein ? 9 : 11, weight: .semibold))
-                .tracking(klein ? 0.2 : 0.4)
+                .font(klein ? Font.caption2.weight(.bold) : Font.caption.weight(.bold))
+                .tracking(0.4)
                 .lineLimit(1)
         }
-        .foregroundStyle(merkmal.farbe)
-        .padding(.horizontal, klein ? 4 : 7)
-        .padding(.vertical, klein ? 1.5 : 3)
-        .background(aufKopf ? Color.white : merkmal.flaeche, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+        .foregroundStyle(schrift)
+        .padding(.horizontal, klein ? 6 : 8)
+        .padding(.vertical, klein ? 2 : 4)
+        .background(flaeche, in: Capsule())
         .fixedSize()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(merkmal.text)
     }
 }
 
-// MARK: - Zoom-Übergang (iOS 18), sonst Standard
+// MARK: - Zoom-Übergang
 
 /// Quelle des Zoom-Übergangs (Kachel, Karte).
 struct ZoomQuelle: ViewModifier {
@@ -285,11 +301,7 @@ struct ZoomQuelle: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if let raum {
-            if #available(iOS 18.0, *) {
-                content.matchedTransitionSource(id: id, in: raum)
-            } else {
-                content
-            }
+            content.matchedTransitionSource(id: id, in: raum)
         } else {
             content
         }
@@ -304,11 +316,7 @@ struct ZoomZiel: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if let raum {
-            if #available(iOS 18.0, *) {
-                content.navigationTransition(.zoom(sourceID: id, in: raum))
-            } else {
-                content
-            }
+            content.navigationTransition(.zoom(sourceID: id, in: raum))
         } else {
             content
         }
@@ -340,8 +348,8 @@ struct Stundenwahl: Identifiable {
 }
 
 extension View {
-    /// Große Stundenansicht bildschirmfüllend zeigen: ab iOS 18 mit Zoom aus der angetippten Kachel (Wischen nach unten
-    /// schließt), auf iOS 17 als Vollbild von unten.
+    /// Große Stundenansicht bildschirmfüllend zeigen – mit Zoom aus der angetippten Kachel (Wischen nach unten bzw.
+    /// Zusammenziehen schließt).
     func stundenBuehne(_ wahl: Binding<Stundenwahl?>, raum: Namespace.ID?, zustand: AppZustand) -> some View {
         fullScreenCover(item: wahl) { w in
             StundenBuehne(wahl: w)

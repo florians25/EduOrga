@@ -8,7 +8,7 @@ gemeinsamen Fachlogik:
 | **UntPlan Studio** | Stundenplanung, Vertretungsplanung und Verwaltung – Web-Anwendung für Schulleitung und Planungsteam | [`studio/`](studio/README.md) |
 | **UntPlan Web** | Stundenplan, Vertretungen, Klassenbuch und Kommunikation für Lehrkräfte, Schülerinnen, Schüler und Eltern | [`web/`](web/README.md) |
 | **UntPlan Mobile** | installierbare App (PWA) zu UntPlan Web | [`mobile/`](mobile/README.md) |
-| **UntPlan für iOS** | native iPhone- und iPad-App zu UntPlan Web | [`ios/`](ios/README.md) |
+| **UntPlan Next** | native iPhone- und iPad-App zu UntPlan Web (SwiftUI, Liquid Glass, Xcode 26, iOS 18+) | [`ios/`](ios/README.md) |
 
 ![UntPlan Studio](studio/docs/bilder/uebersicht.png)
 
@@ -56,7 +56,7 @@ src/UntPlan.Portal          Referenzserver der Synchronisationsschnittstelle
 studio/                     UntPlan Studio (ASP.NET Core + Oberfläche ohne Build-Schritt)
 web/                        UntPlan Web
 mobile/                     UntPlan Mobile (PWA)
-ios/                        UntPlan für iOS (SwiftUI)
+ios/                        UntPlan Next für iOS (SwiftUI; frühere App archiviert in archiv/ios-alt/)
 design/                     Designsystem: Grundwerte, Schrift, Signet
 installation/               Gesamtinstallation mit Docker (install.sh, update.sh, docker-compose.yml)
 tests/                      xUnit-Tests der Fachlogik

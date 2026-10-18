@@ -163,11 +163,13 @@ struct NeuigkeitenView: View {
 
     private let punkte: [Punkt] = [
         Punkt(titel: "UntPlan Next", text: "Eine eigenständige App neben „UntPlan“: eigenes Symbol, eigene Konten und Einstellungen. Beide Apps lassen sich gleichzeitig installieren."),
-        Punkt(titel: "Zeitachse", text: "Der Tag als Zeitachse mit echter Uhrzeit: Stunden, Pausen und Freistunden in ihrer wirklichen Länge, die aktuelle Uhrzeit als Linie."),
-        Punkt(titel: "Jetzt-Karte", text: "Die laufende Stunde mit Fortschrittsring und Restzeit, darunter die nächste Stunde – auf „Heute“ und im Plan."),
-        Punkt(titel: "Wochenleiste", text: "Waagrecht blättern zwischen den Wochen; jeder Tag zeigt seine Belegung und Änderungen als kleine Leiste."),
-        Punkt(titel: "Wochenmatrix", text: "Die ganze Woche als kompakte Matrix nach Stunden – Entfall, Vertretung und Prüfung auf einen Blick."),
-        Punkt(titel: "Große Stundenansicht", text: "Eine Stunde öffnet sich bildschirmfüllend: Kopf in der Fachfarbe, Änderungen „alt → neu“, Thema, Hausaufgaben, Online-Unterricht und – für Lehrkräfte – das Klassenbuch."),
+        Punkt(titel: "Liquid Glass", text: "Tab-Leiste, Wochenleiste und Bedienknöpfe aus Liquid Glass (iOS 26) schweben über dem Inhalt; die Tab-Leiste klappt beim Rollen ein. Petrol als neue Akzentfarbe."),
+        Punkt(titel: "Mit einer Hand", text: "Waagrecht wischen wechselt den Tag, die schwebende Wochenleiste unten wählt Tag und Woche; nach oben ziehen zeigt die Wochenübersicht."),
+        Punkt(titel: "Große Kacheln", text: "Fach und Raum groß, Änderungen mit kräftiger Plakette, Rahmen und „alt → neu“; Pausen und Freistunden kompakt. Langes Drücken: Raumplan, Plan der Lehrkraft bzw. Klasse, Teilen, Online-Link."),
+        Punkt(titel: "Suche", text: "Eigener Reiter für Klassen, Lehrkräfte und Räume – Pläne öffnen direkt, Favoriten mit Stern."),
+        Punkt(titel: "Jetzt-Karte", text: "Die laufende Stunde mit Fortschrittsring und Restzeit, darunter die nächste Stunde."),
+        Punkt(titel: "Zeitachse", text: "Wahlweise der Tag als Zeitachse mit echter Uhrzeit (Menü im Plan bzw. Darstellung)."),
+        Punkt(titel: "Große Stundenansicht", text: "Eine Stunde öffnet sich mit Zoom aus der Kachel: Kopf in der Fachfarbe, Änderungen „alt → neu“, Thema, Hausaufgaben, Online-Unterricht und – für Lehrkräfte – das Klassenbuch."),
     ]
 
     var body: some View {

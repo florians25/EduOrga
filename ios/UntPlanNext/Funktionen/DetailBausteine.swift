@@ -86,28 +86,21 @@ extension View {
         }
     }
 
-    /// Höhenstufen und Größe eines Blatts.
+    /// Höhenstufen und Größe eines Blatts. Ab iOS 26 kein eigener Hintergrund: Blätter mit Höhenstufen bekommen das
+    /// Liquid Glass des Systems (bei voller Höhe wird es deckend).
     @ViewBuilder
     func blattGroesse(_ art: Blattart, breit: Bool) -> some View {
         if breit {
             switch art {
             case .detail:
-                if #available(iOS 18.0, *) {
-                    self
-                        .frame(width: Detailblatt.breite, height: Detailblatt.hoehe)
-                        .presentationSizing(.fitted)
-                        .presentationBackground(Farben.blatt)
-                } else {
-                    self.presentationBackground(Farben.blatt)
-                }
+                self
+                    .frame(width: Detailblatt.breite, height: Detailblatt.hoehe)
+                    .presentationSizing(.fitted)
+                    .blattHintergrund()
             case .formular:
-                if #available(iOS 18.0, *) {
-                    self
-                        .presentationSizing(.form)
-                        .presentationBackground(Farben.blatt)
-                } else {
-                    self.presentationBackground(Farben.blatt)
-                }
+                self
+                    .presentationSizing(.form)
+                    .blattHintergrund()
             }
         } else {
             switch art {
@@ -115,11 +108,11 @@ extension View {
                 self
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
-                    .presentationBackground(Farben.blatt)
+                    .blattHintergrund()
             case .formular:
                 self
                     .presentationDetents([.large])
-                    .presentationBackground(Farben.blatt)
+                    .blattHintergrund()
             }
         }
     }
@@ -426,13 +419,13 @@ enum Wertbaustein: Hashable {
     case pfeil
     case trenner
     case offen(String)
-    /// Neuer bzw. geänderter Wert (z. B. Vertretung): petrolfarben unterstrichen
+    /// Neuer bzw. geänderter Wert (z. B. Vertretung): violett unterstrichen
     case neu(String)
     /// Status-Plakette rechts neben dem Fach („Prüfung“, „Veranstaltung“)
     case pille(String)
 }
 
-/// Wertzeile im Kopf der Details: Änderungen als „alt → neu“ (alt durchgestrichen, neu petrolfarben unterstrichen),
+/// Wertzeile im Kopf der Details: Änderungen als „alt → neu“ (alt durchgestrichen, neu violett unterstrichen),
 /// fehlende Werte (abwesende Lehrkraft bzw. Klasse) durchgestrichen. Genau eine Zeile; bei vielen Werten lässt sie sich
 /// waagrecht scrollen. Mit `kuerzenAb`: Sind es mehr Werte (z. B. alle Lehrkräfte oder alle Klassen einer
 /// Veranstaltung), stehen nur die ersten und dahinter „… +N“; Antippen klappt die ganze Liste umbrechend auf (und

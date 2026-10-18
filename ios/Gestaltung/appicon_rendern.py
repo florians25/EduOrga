@@ -1,13 +1,13 @@
 """App-Symbol von UntPlan Next rendern (hell, dunkel, getönt; je 1024 px, Xcode erzeugt die übrigen Größen).
 
-Aufruf (im Ordner ios/UntPlanNext/):
+Aufruf (im Ordner ios/):
     python3 Gestaltung/appicon_rendern.py UntPlanNext/Assets.xcassets/AppIcon.appiconset [/pfad/vorschau.png]
 Benötigt nur Pillow.
 
 Abwandlung des Symbols von „UntPlan“, damit beide Apps nebeneinander auf dem Home-Bildschirm unterscheidbar sind:
 dasselbe Monogramm „UP“ (Geometrie wie design/logo/monogramm.svg, 64er-Raster, 6er-Strich), etwas kleiner und nach oben
-gerückt, auf Marine-600 (#234f96) statt Marine-900; darunter die Jetzt-Linie der Zeitachse (waagrechter Strich mit Punkt)
-in hellem Marine. Flächig, ohne eigene Eckrundung (iOS legt die Maske selbst darüber), ohne Verläufe und Schatten.
+gerückt, auf Petrol (#0b5d57, Akzentfarbe von UntPlan Next) statt Marine-900; darunter die Jetzt-Linie (waagrechter
+Strich mit Punkt) in hellem Petrol. Flächig, ohne eigene Eckrundung (iOS legt die Maske selbst darüber), ohne Verläufe und Schatten.
 """
 import os
 import sys
@@ -27,10 +27,10 @@ VERSATZ_X = 64 * (1 - MASSSTAB) / 2 + 0.2
 VERSATZ_Y = 2.2
 
 VARIANTEN = {
-    # hell: Marine-600 mit weißem UP, Jetzt-Linie in Marine-200
-    "AppIcon.png": {"grund": (0x23, 0x4F, 0x96, 255), "zeichen": (255, 255, 255, 255), "linie": (0xB6, 0xCB, 0xEC, 255), "modus": "RGB"},
-    # dunkel (ab iOS 18): durchsichtiger Grund, UP in hellem Marine, Linie in Marine-400
-    "AppIcon-Dark.png": {"grund": None, "zeichen": (0xDC, 0xE6, 0xF6, 255), "linie": (0x55, 0x82, 0xC8, 255), "modus": "RGBA"},
+    # hell: Petrol #0b5d57 mit weißem UP, Jetzt-Linie in hellem Petrol
+    "AppIcon.png": {"grund": (0x0B, 0x5D, 0x57, 255), "zeichen": (255, 255, 255, 255), "linie": (0x8E, 0xDB, 0xD1, 255), "modus": "RGB"},
+    # dunkel (ab iOS 18): durchsichtiger Grund, UP in sehr hellem Petrol, Linie in Petrol #3fb3a6
+    "AppIcon-Dark.png": {"grund": None, "zeichen": (0xD5, 0xF0, 0xEC, 255), "linie": (0x3F, 0xB3, 0xA6, 255), "modus": "RGBA"},
     # getönt (ab iOS 18): weiß auf durchsichtigem Grund, das System färbt ein (Linie etwas schwächer)
     "AppIcon-Tinted.png": {"grund": None, "zeichen": (255, 255, 255, 255), "linie": (255, 255, 255, 150), "modus": "LA"},
 }
