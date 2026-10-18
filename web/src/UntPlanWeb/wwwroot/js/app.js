@@ -71,7 +71,7 @@ const kontext = {
     const h = document.getElementById('titel');
     if (h) h.innerHTML = text ? `${e(text)}${zusatz ? ` <small>${e(zusatz)}</small>` : ''}` : '';
     const k = document.getElementById('kopftitel');
-    if (k) k.textContent = text || 'UntPlanWeb';
+    if (k) k.textContent = text || 'UntPlan';
     const r = document.getElementById('aktionen');
     if (r) r.innerHTML = rechts;
     kopf?.classList.toggle('d-none', !text && !rechts);

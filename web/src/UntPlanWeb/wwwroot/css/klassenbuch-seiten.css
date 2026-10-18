@@ -121,3 +121,24 @@
 .kb-seiten .kbe-reiter { border-bottom: 1px solid var(--up-rand); }
 .kb-seiten .kbe-reiter :is(a, button) .bi { display: none; }
 .kb-seiten .sp-knopf { border-radius: var(--up-radius); }
+
+/* Filter im Suchfeld: gewählter Wert als hell hinterlegtes Rechteck */
+.kb-seiten .u-sf-filter, .kb-seiten .u-sf-filter .au-knopf { height: 24px; border-radius: var(--up-radius-s); }
+.kb-seiten .u-sf-filter .au-knopf { font-size: var(--up-gr-m); font-weight: 500; }
+.kb-seiten .u-sf-filter .au-knopf:hover { background: var(--up-flaeche-hover); }
+.kb-seiten .u-sf-filter.gewaehlt { background: var(--up-primaer-flaeche); box-shadow: inset 0 0 0 1px var(--up-primaer-rand); }
+.kb-seiten .u-sf-filter.gewaehlt .au-knopf { color: var(--up-marine-700); }
+.kb-seiten .u-sf-filter.gewaehlt .u-sf-weg { color: var(--up-marine-700); }
+
+/* „Hinzufügen“-Knöpfe der Listen */
+.kb-seiten .nl-hinzu { height: var(--kb-feld-h); padding: 0 12px; gap: 6px; border: 1px solid var(--up-primaer); border-radius: var(--up-radius); background: var(--up-primaer);
+  color: #fff; font-size: var(--up-gr-m); font-weight: 500; box-shadow: none; }
+.kb-seiten .nl-hinzu:hover { background: var(--up-primaer-hover); border-color: var(--up-primaer-hover); }
+.kb-seiten .nl-hinzu .bi { width: 14px; height: 14px; }
+
+/* Einstellungen: Reiter als Textreiter mit Unterstrich */
+.kb-seiten .kbe-reiter { gap: 0; padding: 0; background: none; border: 0; border-bottom: 1px solid var(--up-rand); border-radius: 0; }
+.kb-seiten .kbe-reiter button { height: 36px; padding: 0 14px; border-radius: 0; font-size: var(--up-gr-n); font-weight: 500; color: var(--up-text-2);
+  box-shadow: inset 0 -2px 0 transparent; }
+.kb-seiten .kbe-reiter button:hover { background: none; color: var(--up-text); }
+.kb-seiten .kbe-reiter button.an { background: none; color: var(--up-marine-700); box-shadow: inset 0 -2px 0 var(--up-primaer); }

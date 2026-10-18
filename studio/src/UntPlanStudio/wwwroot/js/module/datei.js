@@ -26,21 +26,22 @@ function backstage({ seite } = {}) {
   }
   leeren(bereich);
   const d = zustand.dokument, schreiben = !!zustand.benutzer?.darfSchreiben;
-  const knopf = (id, text, sym, aktion, deaktiviert = false) =>
-    h('button', { type: 'button', class: id === seite ? 'aktiv' : '', disabled: deaktiviert, dataset: { seite: id }, onclick: aktion || (() => backstage({ seite: id })) }, symbol(sym), text);
-  const nav = h('nav', null,
-    h('button', { type: 'button', class: 'zurueck', title: 'Zurück (Esc)', onclick: schliessen, disabled: !d }, symbol('pfeil_links'), 'Zurück zur Arbeit'),
-    knopf('info', 'Informationen', 'info', null, !d),
-    knopf('neu', 'Neu', 'neu', null, !schreiben),
-    knopf('oeffnen', 'Öffnen', 'oeffnen'),
-    knopf('speichern', 'Speichern', 'speichern', () => speichern().then(schliessen).catch(fehlerMelden), !d || !schreiben),
-    knopf('herunterladen', 'Herunterladen (.up)', 'herunterladen', () => herunterladen(), !d),
-    knopf('import', 'BAL-Import', 'bal', null, !d || !schreiben),
-    knopf('schliessen', 'Schließen', 'schliessen', async () => { await dokumentSchliessen(); backstage({ seite: 'oeffnen' }); }, !d),
-    h('hr'),
-    knopf('konto', 'Konto', 'benutzer'),
-    zustand.benutzer?.rolle === 'Admin' ? knopf('benutzer', 'Benutzer', 'klassen') : null,
-    knopf('ueber', 'Über UntPlan Studio', 'hilfe'));
+  const knopf = (id, text, aktion, deaktiviert = false) =>
+    h('button', { type: 'button', class: id === seite ? 'aktiv' : '', 'aria-current': id === seite ? 'page' : null, disabled: deaktiviert, dataset: { seite: id }, onclick: aktion || (() => backstage({ seite: id })) }, text);
+  const nav = h('nav', { 'aria-label': 'Schuldateien' },
+    h('button', { type: 'button', class: 'zurueck', title: 'Zurück (Esc)', onclick: schliessen, disabled: !d }, symbol('pfeil_links'), 'Zurück'),
+    h('div', { class: 'ds-navtitel' }, 'Schuldatei'),
+    knopf('info', 'Informationen', null, !d),
+    knopf('neu', 'Neu', null, !schreiben),
+    knopf('oeffnen', 'Öffnen'),
+    knopf('speichern', 'Speichern', () => speichern().then(schliessen).catch(fehlerMelden), !d || !schreiben),
+    knopf('herunterladen', 'Herunterladen (.up)', () => herunterladen(), !d),
+    knopf('import', 'BAL-Import', null, !d || !schreiben),
+    knopf('schliessen', 'Schließen', async () => { await dokumentSchliessen(); backstage({ seite: 'oeffnen' }); }, !d),
+    h('div', { class: 'ds-navtitel' }, 'Konto und System'),
+    knopf('konto', 'Konto'),
+    zustand.benutzer?.rolle === 'Admin' ? knopf('benutzer', 'Benutzer') : null,
+    knopf('ueber', 'Über UntPlan Studio'));
   const inhalt = h('div', { class: 'seite' });
   bereich.append(nav, inhalt);
   const seiten = { info: seiteInfo, neu: seiteNeu, oeffnen: seiteOeffnen, import: seiteImport, konto: seiteKonto, benutzer: seiteBenutzer, ueber: seiteUeber };
@@ -53,18 +54,18 @@ function seiteInfo(el) {
   const d = zustand.dokument;
   if (!d) return seiteOeffnen(el);
   const z = d.zaehler || {};
-  el.append(h('h1', null, 'Informationen'),
-    h('table', { class: 'dokumentliste', style: { maxWidth: '640px' } }, h('tbody', null,
-      [['Dokument', d.name], ['Schule', d.schulname], ['Schuljahr', d.schuljahr], ['Aktive Periode', `${d.periode}${d.periodeFixiert ? ' (fixiert)' : ''}`],
-        ['Herkunft', d.herkunft], ['Angelegt von', d.besitzer], ['Stand', d.geaendert ? 'ungespeicherte Änderungen (werden automatisch gespeichert)' : d.gespeichert ? `gespeichert ${datumDe(d.gespeichert)}` : 'gespeichert'],
-        ['Inhalt', `${z.klassen} Klassen, ${z.lehrer} Lehrkräfte, ${z.raeume} Räume, ${z.faecher} Fächer, ${z.unterrichte} Unterrichte, ${z.planstunden} verplante Stunden, ${z.nichtVerplant} nicht verplant`],
-        ['Geöffnet in', `${d.abonnenten} Fenster(n)/Sitzung(en)`]]
-        .map(([k, v]) => h('tr', null, h('td', { class: 'leise', style: { width: '160px' } }, k), h('td', null, v ?? ''))))),
-    h('p', null, h('button', { class: 'knopf', type: 'button', onclick: umbenennen }, 'Umbenennen …')));
+  el.append(h('div', { class: 'ds-kopf' }, h('h1', null, 'Informationen'), h('button', { class: 'knopf', type: 'button', onclick: umbenennen }, 'Umbenennen …')),
+    h('table', { class: 'dokumentliste ds-eigenschaften' }, h('tbody', null,
+      [['Name', d.name], ['Schule', d.schulname], ['Schuljahr', d.schuljahr], ['Aktive Periode', `${d.periode}${d.periodeFixiert ? ' (fixiert)' : ''}`],
+        ['Herkunft', d.herkunft], ['Angelegt von', d.besitzer], ['Stand', d.geaendert ? 'Ungespeicherte Änderungen (werden automatisch gespeichert)' : d.gespeichert ? `Gespeichert am ${datumDe(d.gespeichert)}` : 'Gespeichert'],
+        ['Inhalt', `${z.klassen} Klassen, ${z.lehrer} Lehrkräfte, ${z.raeume} Räume, ${z.faecher} Fächer`],
+        ['Planung', `${z.unterrichte} Unterrichte, ${z.planstunden} verplante Stunden, ${z.nichtVerplant} nicht verplant`],
+        ['Geöffnet', d.abonnenten === 1 ? 'In einer Sitzung' : `In ${d.abonnenten} Sitzungen`]]
+        .map(([k, v]) => h('tr', null, h('th', { scope: 'row' }, k), h('td', null, v ?? ''))))));
 }
 
 async function umbenennen() {
-  const w = await formular('Dokument umbenennen', [{ name: 'name', titel: 'Name', wert: zustand.dokument.name, pflicht: true }]);
+  const w = await formular('Schuldatei umbenennen', [{ name: 'name', titel: 'Name', wert: zustand.dokument.name, pflicht: true }]);
   if (!w) return;
   const stand = await api.put(api.dok('/name'), { name: w.name });
   zustand.dokument = stand;
@@ -75,7 +76,7 @@ async function umbenennen() {
 function seiteNeu(el) {
   el.append(h('h1', null, 'Neu'),
     h('div', { class: 'kacheln' },
-      kachel('neu', 'Leere Schuldatei', 'Neue Schule mit Fächern und Zeitraster (NRW-Vorgaben).', async () => {
+      kachel('Leere Schuldatei', 'Neue Schule mit Fächern und Zeitraster nach den Vorgaben in NRW.', 'Anlegen …', async () => {
         const w = await formular('Neue Schuldatei', [
           { name: 'schulname', titel: 'Schulname', pflicht: true },
           { name: 'schulform', titel: 'Schulform', art: 'auswahl', wert: 'GY', optionen: [['GY', 'Gymnasium'], ['GE', 'Gesamtschule'], ['RS', 'Realschule'], ['HS', 'Hauptschule'], ['SK', 'Sekundarschule'], ['GS', 'Grundschule'], ['BK', 'Berufskolleg'], ['FS', 'Förderschule']].map(([wert, text]) => ({ wert, text })) },
@@ -83,12 +84,15 @@ function seiteNeu(el) {
         if (!w) return;
         await oeffnenMit(() => api.post('/api/dokumente/neu', w));
       }),
-      kachel('beispiel', 'Beispielschule', 'Fiktives Gymnasium mit verplantem Stundenplan zum Ausprobieren.', () => oeffnenMit(() => api.post('/api/dokumente/beispiel'))),
-      kachel('hochladen', 'Datei hochladen', 'Schuldatei (.up) oder BAL-Datei vom Rechner übernehmen.', hochladen)));
+      kachel('Beispielschule', 'Erfundenes Gymnasium mit fertigem Stundenplan zum Ausprobieren.', 'Öffnen', () => oeffnenMit(() => api.post('/api/dokumente/beispiel'))),
+      kachel('Datei hochladen', 'Schuldatei (.up) oder BAL-Datei von diesem Rechner übernehmen.', 'Datei wählen …', hochladen)));
 }
 
-function kachel(sym, titel, text, aktion) {
-  return h('button', { class: 'kachel', type: 'button', onclick: () => Promise.resolve().then(aktion).catch(fehlerMelden) }, symbol(sym), h('b', null, titel), h('span', { class: 'klein' }, text));
+function kachel(titel, text, knopfText, aktion) {
+  const los = () => Promise.resolve().then(aktion).catch(fehlerMelden);
+  return h('div', { class: 'kachel' },
+    h('div', { class: 'ds-text' }, h('b', null, titel), h('span', { class: 'klein' }, text)),
+    h('button', { class: 'knopf', type: 'button', onclick: los }, knopfText));
 }
 
 async function oeffnenMit(f) {
@@ -114,24 +118,28 @@ async function hochladen(datei) {
 }
 
 async function seiteOeffnen(el) {
-  const ablage = h('div', { class: 'ablage' }, 'Schuldatei (.up) oder BAL-Datei hierher ziehen – oder ', h('button', { class: 'knopf klein', type: 'button', onclick: () => hochladen().catch(fehlerMelden) }, symbol('hochladen'), 'Datei auswählen …'));
+  const ablage = h('div', { class: 'ablage' }, 'Schuldatei (.up) oder BAL-Datei hierher ziehen oder ', h('button', { class: 'knopf klein', type: 'button', onclick: () => hochladen().catch(fehlerMelden) }, 'Datei wählen …'));
   ablage.addEventListener('dragover', (e) => { e.preventDefault(); ablage.classList.add('ueber'); });
   ablage.addEventListener('dragleave', () => ablage.classList.remove('ueber'));
   ablage.addEventListener('drop', (e) => { e.preventDefault(); ablage.classList.remove('ueber'); const f = e.dataTransfer.files?.[0]; if (f) hochladen(f).catch(fehlerMelden); });
   const tabelle = h('table', { class: 'dokumentliste' });
   el.append(h('h1', null, 'Öffnen'), zustand.benutzer?.darfSchreiben ? ablage : null, h('h3', null, 'Schuldateien auf dem Server'), tabelle);
+  tabelle.append(h('tbody', null, h('tr', null, h('td', { class: 'ds-leer' }, 'Wird geladen …'))));
   const { dokumente, zuletzt } = await api.get('/api/dokumente');
   const sortiert = [...dokumente].sort((a, b) => (zuletzt.indexOf(a.id) + 1 || 999) - (zuletzt.indexOf(b.id) + 1 || 999));
-  tabelle.append(h('thead', null, h('tr', null, h('th', null, 'Name'), h('th', null, 'Geändert'), h('th', null, 'Größe'), h('th', null, 'Herkunft'), h('th', null, ''))),
-    h('tbody', null, sortiert.length ? sortiert.map((d) => h('tr', { class: 'zeile', dataset: { id: d.id }, onclick: (e) => { if (!e.target.closest('button')) oeffnenMit(() => api.get(`/api/dokumente/${d.id}`)).catch(fehlerMelden); } },
-      h('td', null, h('div', { class: 'name' }, d.name, zuletzt.includes(d.id) ? h('span', { class: 'leise' }, '  · zuletzt verwendet') : null), h('div', { class: 'leise' }, d.besitzer)),
-      h('td', null, datumDe(d.geaendert), d.ungespeichert ? h('span', { class: 'leise' }, ' (offen)') : null),
-      h('td', null, groesse(d.groesse)),
+  const oeffnenZeile = (d) => oeffnenMit(() => api.get(`/api/dokumente/${d.id}`)).catch(fehlerMelden);
+  tabelle.replaceChildren(h('thead', null, h('tr', null, h('th', null, 'Name'), h('th', null, 'Geändert'), h('th', { class: 'zahl' }, 'Größe'), h('th', null, 'Herkunft'), h('th', null, ''))),
+    h('tbody', null, sortiert.length ? sortiert.map((d) => h('tr', { class: 'zeile', tabindex: 0, dataset: { id: d.id },
+      onclick: (e) => { if (!e.target.closest('button, a')) oeffnenZeile(d); },
+      onkeydown: (e) => { if (e.key === 'Enter' && e.target === e.currentTarget) oeffnenZeile(d); } },
+      h('td', null, h('div', { class: 'name' }, d.name, zuletzt.includes(d.id) ? h('span', { class: 'plakette ds-zuletzt' }, 'Zuletzt verwendet') : null), h('div', { class: 'leise' }, d.besitzer)),
+      h('td', { class: 'ds-datum' }, datumDe(d.geaendert), d.ungespeichert ? h('div', { class: 'leise' }, 'Geöffnet, nicht gespeichert') : null),
+      h('td', { class: 'zahl' }, groesse(d.groesse)),
       h('td', { class: 'leise' }, d.herkunft),
       h('td', { class: 'aktionen' },
-        h('a', { class: 'knopf klein', href: `/api/dokumente/${d.id}/herunterladen`, title: 'Herunterladen (.up)' }, symbol('herunterladen')),
-        zustand.benutzer?.darfSchreiben ? h('button', { class: 'knopf klein gefahr', type: 'button', title: 'Löschen', onclick: () => loeschen(d) }, symbol('loeschen')) : null)))
-      : h('tr', null, h('td', { colspan: 5, class: 'leise' }, 'Noch keine Schuldateien vorhanden – legen Sie unter „Neu“ eine an oder laden Sie eine hoch.'))));
+        h('a', { class: 'knopf klein still', href: `/api/dokumente/${d.id}/herunterladen`, title: 'Als .up-Datei herunterladen' }, 'Herunterladen'),
+        zustand.benutzer?.darfSchreiben ? h('button', { class: 'knopf klein still', type: 'button', onclick: () => loeschen(d) }, 'Löschen') : null)))
+      : h('tr', null, h('td', { colspan: 5, class: 'ds-leer' }, 'Noch keine Schuldateien vorhanden. Legen Sie unter „Neu“ eine an oder laden Sie eine Datei hoch.'))));
 }
 
 async function loeschen(d) {
@@ -146,8 +154,9 @@ function seiteImport(el) {
   const optionen = [['zeitraster', 'Zeitraster'], ['stammdaten', 'Stammdaten'], ['unterrichtErsetzen', 'Unterricht und Stundenplan der aktiven Periode ersetzen'], ['stundenplan', 'Stundenplan'], ['pausenaufsichten', 'Pausenaufsichten'], ['zeitwuensche', 'Zeitwünsche']];
   const haken = Object.fromEntries(optionen.map(([k]) => [k, h('input', { type: 'checkbox', checked: true })]));
   el.append(h('h1', null, 'BAL-Import'),
-    h('p', null, 'Übernimmt einen Stundenplan aus einer BAL-Datei (WILLI2-Stundenplan) in die geöffnete Schuldatei. Der Import lässt sich rückgängig machen (Strg+Z).'),
-    h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px', margin: '12px 0 18px' } }, optionen.map(([k, t]) => h('label', { class: 'kontrolle' }, haken[k], t))),
+    h('p', { class: 'ds-einleitung' }, 'Übernimmt einen Stundenplan aus einer BAL-Datei (WILLI2) in die geöffnete Schuldatei. Der Import lässt sich mit Strg+Z rückgängig machen.'),
+    h('h3', null, 'Übernehmen'),
+    h('div', { class: 'ds-optionen' }, optionen.map(([k, t]) => h('label', { class: 'kontrolle' }, haken[k], t))),
     h('button', { class: 'knopf primaer', type: 'button', onclick: async () => {
       const datei = await dateiWaehlen('.txt,.bal,.csv,text/plain');
       if (!datei) return;
@@ -158,50 +167,54 @@ function seiteImport(el) {
         schliessen();
         importBerichtZeigen(b);
       } catch (e) { fehlerMelden(e); } finally { weg(); }
-    } }, symbol('bal'), 'BAL-Datei wählen und importieren …'));
+    } }, 'BAL-Datei wählen und importieren …'));
 }
 
 function seiteKonto(el) {
   const b = zustand.benutzer;
   el.append(h('h1', null, 'Konto'),
-    h('p', null, `Angemeldet als ${b.anzeigename} (${b.name}), Rolle ${b.rolle}.`),
-    h('div', { style: { display: 'flex', gap: '8px' } },
+    h('table', { class: 'dokumentliste ds-eigenschaften' }, h('tbody', null,
+      [['Name', b.anzeigename], ['Benutzername', b.name], ['Rolle', b.rolle]].map(([k, v]) => h('tr', null, h('th', { scope: 'row' }, k), h('td', null, v ?? ''))))),
+    h('div', { class: 'ds-knoepfe' },
       h('button', { class: 'knopf', type: 'button', onclick: async () => {
         const w = await formular('Passwort ändern', [{ name: 'alt', titel: 'Bisheriges Passwort', art: 'passwort', pflicht: true }, { name: 'neu', titel: 'Neues Passwort', art: 'passwort', pflicht: true, hinweis: 'mindestens 6 Zeichen' }]);
         if (!w) return;
         await api.post('/api/ich/passwort', w).then(() => hinweis('Passwort geändert.', 'ok')).catch(fehlerMelden);
-      } }, symbol('einstellungen'), 'Passwort ändern …'),
-      h('button', { class: 'knopf', type: 'button', onclick: async () => { await api.post('/api/abmeldung'); location.reload(); } }, symbol('abmelden'), 'Abmelden')));
+      } }, 'Passwort ändern …'),
+      h('button', { class: 'knopf', type: 'button', onclick: async () => { await api.post('/api/abmeldung'); location.reload(); } }, 'Abmelden')));
 }
 
 async function seiteBenutzer(el) {
-  const liste = h('table', { class: 'dokumentliste', style: { maxWidth: '760px' } });
-  el.append(h('h1', null, 'Benutzer'), h('p', null, h('button', { class: 'knopf', type: 'button', onclick: async () => {
+  const liste = h('table', { class: 'dokumentliste' });
+  el.append(h('div', { class: 'ds-kopf' }, h('h1', null, 'Benutzer'), h('button', { class: 'knopf', type: 'button', onclick: async () => {
     const w = await formular('Neuer Benutzer', [
       { name: 'name', titel: 'Benutzername', pflicht: true }, { name: 'anzeigename', titel: 'Anzeigename' },
       { name: 'rolle', titel: 'Rolle', art: 'auswahl', wert: 'Planer', optionen: [{ wert: 'Planer', text: 'Planer (bearbeiten)' }, { wert: 'Leser', text: 'Leser (nur lesen)' }, { wert: 'Admin', text: 'Administrator' }] },
       { name: 'passwort', titel: 'Passwort', art: 'passwort', pflicht: true, hinweis: 'mindestens 6 Zeichen' }], { okText: 'Anlegen' });
     if (!w) return;
     await api.post('/api/benutzer', w).then(() => backstage({ seite: 'benutzer' })).catch(fehlerMelden);
-  } }, symbol('plus'), 'Benutzer anlegen …')), liste);
+  } }, 'Benutzer anlegen …')), liste);
   const benutzer = await api.get('/api/benutzer');
+  const ROLLEN = { Admin: 'Administrator', Planer: 'Planer', Leser: 'Leser' };
   liste.append(h('thead', null, h('tr', null, ['Benutzer', 'Rolle', 'Letzte Anmeldung', ''].map((t) => h('th', null, t)))),
     h('tbody', null, benutzer.map((b) => h('tr', null,
-      h('td', null, h('div', { class: 'name' }, b.anzeigename), h('div', { class: 'leise' }, b.name)), h('td', null, b.rolle), h('td', null, datumDe(b.letzteAnmeldung)),
+      h('td', null, h('div', { class: 'name' }, b.anzeigename), h('div', { class: 'leise' }, b.name)), h('td', null, ROLLEN[b.rolle] || b.rolle), h('td', { class: 'ds-datum' }, b.letzteAnmeldung ? datumDe(b.letzteAnmeldung) : h('span', { class: 'leise' }, 'Noch nie')),
       h('td', { class: 'aktionen' },
-        h('button', { class: 'knopf klein', type: 'button', onclick: async () => {
+        h('button', { class: 'knopf klein still', type: 'button', onclick: async () => {
           const w = await formular(`Passwort für ${b.name}`, [{ name: 'passwort', titel: 'Neues Passwort', art: 'passwort', pflicht: true }]);
           if (w) await api.post(`/api/benutzer/${encodeURIComponent(b.name)}/passwort`, w).then(() => hinweis('Passwort gesetzt.', 'ok')).catch(fehlerMelden);
-        } }, 'Passwort …'),
-        h('button', { class: 'knopf klein gefahr', type: 'button', onclick: async () => {
+        } }, 'Passwort setzen …'),
+        h('button', { class: 'knopf klein still', type: 'button', onclick: async () => {
           if (await frage(`Benutzer „${b.name}“ löschen?`, { ja: 'Löschen', gefahr: true })) await api.loeschen(`/api/benutzer/${encodeURIComponent(b.name)}`).then(() => backstage({ seite: 'benutzer' })).catch(fehlerMelden);
-        } }, symbol('loeschen')))))));
+        } }, 'Löschen'))))));
 }
 
 function seiteUeber(el) {
   el.append(h('h1', null, 'Über UntPlan Studio'),
-    h('p', null, `${(zustand.system?.anwendung || 'UntPlan Studio').replace(' (Beta)', '')} ${zustand.system?.version || ''}`),
-    h('p', null, 'Stunden-, Kurs- und Vertretungsplanung für Schulen im Browser. Alle Berechnungen (Planung, Optimierung, Vertretungsvorschläge, Auswertungen) laufen auf dem Server; Schuldateien (.up) lassen sich jederzeit herunterladen und wieder hochladen.'),
+    h('table', { class: 'dokumentliste ds-eigenschaften' }, h('tbody', null,
+      [['Anwendung', (zustand.system?.anwendung || 'UntPlan Studio').replace(' (Beta)', '')], ['Version', zustand.system?.version || '']]
+        .map(([k, v]) => h('tr', null, h('th', { scope: 'row' }, k), h('td', null, v))))),
+    h('p', { class: 'ds-einleitung' }, 'Stunden-, Kurs- und Vertretungsplanung für Schulen im Browser. Alle Berechnungen (Planung, Optimierung, Vertretungsvorschläge, Auswertungen) laufen auf dem Server; Schuldateien (.up) lassen sich jederzeit herunterladen und wieder hochladen.'),
     h('p', { class: 'leise' }, 'Schrift: IBM Plex Sans (SIL Open Font License 1.1). Symbole auf Grundlage von Lucide (ISC-Lizenz).'));
 }
 

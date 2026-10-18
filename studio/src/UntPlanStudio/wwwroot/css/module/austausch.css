@@ -24,7 +24,7 @@
 
 /* ---------- Import und Export ---------- */
 .ax-inhalt { flex: 1; min-height: 0; overflow: auto; padding: 20px 24px 28px; display: flex; flex-direction: column; gap: 20px; }
-.ax-karte { max-width: 980px; border: 1px solid var(--rand); border-radius: 6px; background: var(--flaeche); }
+.ax-karte { flex: none; max-width: 980px; border: 1px solid var(--rand); border-radius: 6px; background: var(--flaeche); }
 .ax-karte h3 { margin: 0; padding: 12px 16px; font-size: 13px; font-weight: var(--fett); color: var(--text); border-bottom: 1px solid var(--rand-leise); }
 .ax-zeile { display: flex; align-items: center; gap: 16px; min-height: 52px; padding: 8px 16px; border-bottom: 1px solid var(--rand-leise); }
 .ax-zeile:last-child { border-bottom: 0; }

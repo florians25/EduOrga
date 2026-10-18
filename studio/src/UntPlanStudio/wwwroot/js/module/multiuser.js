@@ -171,9 +171,9 @@ function verwaltungFenster(f) {
       abschnitt('Gruppen',
         v.gruppen.length ? h('table', { class: 'mu-tabelle' }, h('thead', null, h('tr', null, h('th', null, 'Gruppe'), ...v.bereiche.map((b) => h('th', null, b.text)), h('th', null, 'Rechte'), h('th'))),
           h('tbody', null, v.gruppen.map((g) => h('tr', null, h('td', null, h('b', null, g.name)), ...v.bereiche.map((b) => h('td', null, v.stufen.find((s) => s.stufe === g.stufen[b.bereich])?.text || '')),
-            h('td', { class: 'leise' }, g.rechte.map((r) => v.rechteListe.find((x) => x.recht === r)?.text || r).join(', ')),
+            h('td', { class: 'leise mu-rechtezahl', title: g.rechte.map((r) => v.rechteListe.find((x) => x.recht === r)?.text || r).join(', ') }, g.rechte.length === 1 ? '1 Recht' : `${g.rechte.length} Rechte`),
             h('td', { class: 'aktion' }, h('button', { class: 'knopf klein', type: 'button', onclick: () => gruppeBearbeiten(g) }, 'Bearbeiten …'),
-              h('button', { class: 'knopf klein still', type: 'button', onclick: async () => { if (await frage(`Gruppe „${g.name}“ löschen?`, { gefahr: true, ja: 'Löschen' })) { v = await api.loeschen(`/api/multiuser/gruppen/${g.id}`).catch(fehlerMelden) || v; zeichnen(); } } }, 'Löschen')))))))
+              h('button', { class: 'knopf klein still', type: 'button', onclick: async () => { if (await frage(`Gruppe „${g.name}“ löschen?`, { gefahr: true, ja: 'Löschen' })) { v = await api.loeschen(`/api/multiuser/gruppen/${g.id}`).catch(fehlerMelden) || v; zeichnen(); } } }, 'Löschen'))))))
           : h('p', { class: 'mu-leer' }, 'Noch keine Gruppen angelegt.')),
       abschnitt('Benutzer',
         h('p', { class: 'mu-text leise' }, 'Administratoren haben immer alle Rechte, Leser lesen nur. Planer ohne Gruppe dürfen alle Bereiche bearbeiten.'),
