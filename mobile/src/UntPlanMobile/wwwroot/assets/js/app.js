@@ -1,12 +1,12 @@
 /* =====================================================================
-   app.js — UntPlanMobile (Oberfläche der Stundenplan-PWA)
+   app.js — UntPlan Mobile (Oberfläche der Stundenplan-PWA)
    ---------------------------------------------------------------------
-   Übernommen aus der Stundenplan-PWA. Angepasst sind nur die Endpunkte
-   (api/mobile, api/login, api/classbook, api/home, api/messages,
-   api/accounts statt der PHP-Dateien), die Langnamen und Kategorien aus
-   UntPlanWeb, die Fassung und Funktionen, die UntPlanWeb nicht kennt
-   (Entwürfe, Anhänge, Notizen für Schüler*innen, Onlineunterricht,
-   mehrere Profile).
+   Stundenplan, Stundendetails mit Klassenbuch, Startseite „Heute“,
+   Postfach und „Mehr“ (Konto, Darstellung, App). Die Daten kommen über
+   die Endpunkte von UntPlan Mobile (api/mobile, api/login,
+   api/classbook, api/home, api/messages, api/accounts …) aus UntPlan Web.
+   Gestaltung nach design/DESIGN.md; Symbole aus der eingebetteten
+   Lucide-Sammlung (sym()).
    ===================================================================== */
 (() => {
 'use strict';
@@ -14,6 +14,11 @@
 const S = window.TT_SEED;
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+/* Linien-Symbol aus der Symbolsammlung der Seite (Lucide, ISC-Lizenz).
+   Strichstärke, Enden und Farbe kommen aus app.css (.ico, currentColor). */
+const sym = (name, cls = '') =>
+  `<svg class="ico${cls ? ' ' + cls : ''}" aria-hidden="true" focusable="false"><use href="#i-${name}"></use></svg>`;
 
 /* =====================================================================
    Datum
@@ -53,7 +58,7 @@ const store = {
   del(k){ try { localStorage.removeItem('tt.'+k); } catch {} }
 };
 
-/* Ansicht: Tag, 2 Tage, 3 Tage oder Woche – wie im ⋮-Menü des Originals.
+/* Ansicht: Tag, 2 Tage, 3 Tage oder Woche (Menü oben rechts im Plan).
    Gemerkt wird sie auf dem Gerät. */
 const TAGE_ANSICHT = { day:1, day2:2, day3:3 };
 const tageAnsicht = () => TAGE_ANSICHT[state.view] || 0;
@@ -159,10 +164,11 @@ function buildLayout(times, pre = 0){
   const rows = [];
   nos.forEach((n, i) => {
     const st = minutes(times[n].start), en = minutes(times[n].end);
-    rows.push({ y:(st - t0) * PPM + pre, label:times[n].start, no:n });
+    rows.push({ y:(st - t0) * PPM + pre, label:times[n].start, ende:times[n].end, no:n });
     const next = nos[i+1];
     if (!next || minutes(times[next].start) > en)
-      rows.push({ y:(en - t0) * PPM + pre, label:times[n].end, no:null });
+      rows.push({ y:(en - t0) * PPM + pre, label:times[n].end, no:null,
+                  pause: next ? (minutes(times[next].start) - en) * PPM : 0 });
   });
   const last = nos[nos.length-1];
   return {
@@ -455,17 +461,11 @@ const viewKind = e => {
   return e.type === 'mine' ? 'teacher' : e.type;
 };
 
-/* Zeichen unten rechts auf der Kachel — die Originalgrafiken (info.svg,
-   tt-homework-icon.svg) mit ihrem weißen Feld hinter der grauen Scheibe mit
-   ausgespartem „i“ bzw. dem Haus, flach (kein Schatten, kein Verlauf). Sie liegen
-   einmal in der Symbolsammlung und werden nur per <use> verwiesen — keine
-   Kopie des Pfads je Kachel. Farben (hell/dunkel) über fill/color. */
-/* Info-Zeichen wie im Original (nachgemessen 116/108): abgerundetes Feld in
-   der Farbe der Zeichenfläche, darin eine graue Scheibe mit ausgespartem
-   „i“ (Punkt, Schaft mit Fuß). Hell: Feld #f3f5f7, dunkel #313d44. */
-const KACHEL_INFO = '<svg class="ticon ticon--info" viewBox="0 0 16 16" aria-hidden="true"><rect class="ticon__feld" width="16" height="16" rx="3.4"/><circle class="ticon__scheibe" cx="8" cy="8" r="6.2"/><circle class="ticon__feld" cx="8" cy="5.05" r="0.98"/><path class="ticon__feld" d="M6.55 6.75H8.72V10.3H9.45V11.35H6.5V10.3H7.25V7.8H6.55Z"/></svg>';
-/* Online-Unterricht (online_lesson.svg): Kamera im abgerundeten Quadrat. */
-const KACHEL_ONLINE = '<svg class="ticon ticon--online" viewBox="0 0 28 28" aria-hidden="true"><path d="m20 11.011-3 1v-1a1.5 1.5 0 0 0-1.5-1.5h-6a1.5 1.5 0 0 0-1.5 1.5v6a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5v-1l3 1v-6z"/><path d="M8 24.511a4.5 4.5 0 0 1-4.5-4.5v-12a4.5 4.5 0 0 1 4.5-4.5h12a4.5 4.5 0 0 1 4.5 4.5v12a4.5 4.5 0 0 1-4.5 4.5H8z"/></svg>';
+/* Zeichen unten rechts auf der Kachel: Info (Notiz bzw. Vertretungstext),
+   Online-Unterricht und Hausaufgabe – Linien-Symbole aus der
+   Symbolsammlung, per <use> verwiesen, Farbe über currentColor. */
+const KACHEL_INFO = sym('info', 'ticon ticon--info');
+const KACHEL_ONLINE = sym('video', 'ticon ticon--online');
 /* Verlegung: Ursprungsstunde mit Pfeil nach rechts (rotes Feld), Zielstunde
    mit Pfeil nach links (grünes Feld). */
 
@@ -480,23 +480,23 @@ function plusWert(card, key, text){
 }
 if (typeof window !== 'undefined') window.UntPlanPlus = { plusWert };
 /* PLUS-ENDE */
-const KACHEL_VIDEO = '<svg class="ticon ticon--video" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.8" y="6.4" width="12.6" height="11.2" rx="2.4"/><path d="m15.4 10.6 5.8-3.4v9.6l-5.8-3.4z"/></svg>';
+const KACHEL_VIDEO = sym('video', 'ticon ticon--video');
 /* Schloss (Linien) für gesperrte Wochen. */
-const SPERRE_SCHLOSS = '<svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"/><path d="M8.4 10.5V7.8a3.6 3.6 0 0 1 7.2 0v2.7"/><path d="M12 14.2v2.2"/></svg>';
+const SPERRE_SCHLOSS = sym('lock');
 /* SPERRE-BEGINN (wird von den Tests ausgeführt) */
 /* Gesperrte Woche oder gesperrter Tag (außerhalb des Plan-Fensters der
    Rolle): genau dieser Satz, darunter kleiner der Hinweis des Servers
-   (`sperrhinweis`). Fehlt er oder ist er leer, steht dort derselbe
-   Standardsatz wie in der iOS-App und am Rechner. */
-const SPERRE_TITEL = 'Es werden hier keine Termine angezeigt.';
-const SPERRE_STANDARD = 'Die Anzeige des Stundenplans ist durch Ihren Administrator beschränkt';
+   (`sperrhinweis`). Fehlt er oder ist er leer, steht dort ein
+   Standardsatz. */
+const SPERRE_TITEL = 'Für diesen Zeitraum ist kein Plan freigegeben.';
+const SPERRE_STANDARD = 'Die Schule zeigt den Plan nur für einen begrenzten Zeitraum an.';
 function sperrErklaerung(hinweis){
   const t = String(hinweis ?? '').trim();
   return t || SPERRE_STANDARD;
 }
 window.UntPlanSperre = { titel: SPERRE_TITEL, standard: SPERRE_STANDARD, erklaerung: sperrErklaerung };
 /* SPERRE-ENDE */
-const KACHEL_HA = '<svg class="ticon ticon--exakt" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-tt-homework-icon" width="16" height="16"></use></svg>';
+const KACHEL_HA = sym('notebook-pen', 'ticon ticon--hw');
 
 /* TRENNER-BEGINN (wird von den Tests ausgeführt) */
 /* Trennzeichen zwischen mehreren Werten (Lehrkräfte, Klassen, Räume):
@@ -540,7 +540,7 @@ function lineValue(card, key){
    Kürzel, keine Labels, nichts Durchgestrichenes auf der Kachel. Eine
    entfallene Aufsicht (`_supCancelled`) trägt kein Zeichen: Sie steht im
    Entfall-Stil da (rosa, Ort durchgestrichen), der Anlass in den Details. */
-const AUFSICHT_DOTS = '<svg viewBox="0 0 12 12"><circle cx="2.4" cy="6" r="1.05"/><circle cx="6" cy="6" r="1.05"/><circle cx="9.6" cy="6" r="1.05"/></svg>';
+const AUFSICHT_DOTS = '<svg class="ico" aria-hidden="true" focusable="false"><use href="#i-ellipsis"></use></svg>';
 function aufsichtInhalt(card){
   const ort = `<span class="card__line">${esc(card.subject || 'Aufsicht')}</span>`;
   const vertreten = !card._supCancelled && (card._supSub || card._supAbsent);
@@ -621,7 +621,7 @@ function klassTokens(card, kind, alle){
   return toks.length ? toks : null;
 }
 
-/* Zeilenbelegung nach Vorlage:
+/* Zeilenbelegung der Kachel:
    Klassenplan   Lehrkraft · Fach · Raum · Klasse
    Lehrerplan    Klasse    · Fach · Raum · Lehrkraft
    Der letzte Wert entfällt, wenn er die betrachtete Entität selbst ist
@@ -788,10 +788,10 @@ function cardLines(card, kind){
                    && label && l.text.toUpperCase() === label));
 }
 
-/* Zeilenabstand der Kachel wie in app.css. */
+/* Zeilenabstand der Kachel wie in app.css (.card__line): am Telefon
+   14 px, auf breiten Bildschirmen 16 px. */
 const KARTE_SCHMAL = window.matchMedia ? window.matchMedia('(max-width:699px)') : null;
-/* Sprint 26: Kartentexte etwas enger – 13,5 px am iPhone, sonst 13,8 px (wie iOS). */
-const karteZeile = () => (KARTE_SCHMAL && KARTE_SCHMAL.matches) ? 13.5 : 13.8;
+const karteZeile = () => (KARTE_SCHMAL && KARTE_SCHMAL.matches) ? 14 : 16;
 
 function cardEndDate(card){
   const t = state.times[Math.min(card.lesson + card.span - 1, 12)] || state.times[card.lesson];
@@ -1046,8 +1046,8 @@ function renderWeekHead(){
       /* Derselbe Kopf wie in der Woche: „Fr.“ über „16“ — nur eben eine
          einzige, breite Spalte. KW und Monat stehen links wie dort. */
       return `<button class="dayhead ${n === 1 ? 'dayhead--day' : ''} ${d === today ? 'is-today' : ''}" data-day="${d}">
-         <span class="dayhead__name">${WD_SHORT[(dd.getDay()+6)%7]}</span>
-         <span class="dayhead__num">${dd.getDate()}</span>
+         <span class="dayhead__name">${WD_SHORT[(dd.getDay()+6)%7].replace('.', '')}</span>
+         <span class="dayhead__num">${dd.getDate()}.${dd.getMonth() + 1}.</span>
        </button>`;
     }).join('');
     stripRuhe($('#headStrip'));
@@ -1071,8 +1071,8 @@ function renderWeekHead(){
     const dd = parseISO(d);
     const sel = state.view === 'day' && d === state.day;
     return `<button class="dayhead ${d === today ? 'is-today' : ''} ${sel ? 'is-picked' : ''}" data-day="${d}">
-      <span class="dayhead__name">${WD_SHORT[i % 5]}</span>
-      <span class="dayhead__num">${dd.getDate()}</span>
+      <span class="dayhead__name">${WD_SHORT[i % 5].replace('.', '')}</span>
+      <span class="dayhead__num">${dd.getDate()}.${dd.getMonth() + 1}.</span>
     </button>`;
   }).join('');
   stripRuhe($('#headStrip'));
@@ -1267,8 +1267,8 @@ function renderGrid(){
      stehen direkt über der ersten Stunde – nicht oben am Rand mit leerem
      Streifen dazwischen. Platz dafür gibt es nur, wenn im gezeigten
      Streifen (alle drei Wochen bzw. Tage) wirklich eine solche Pille liegt;
-     sonst beginnt das Raster wie im Original 15 px unter der Tagesleiste.
-     Wie in der iOS-App: mit Pille 34 px bis zur ersten Linie, ohne 15 px. */
+     sonst beginnt das Raster 15 px unter der Tagesleiste (mit Pille
+     34 px bis zur ersten Linie). */
   /* PRE_LUFT: Abstand der Pille zur ersten Stunde. Mit 2 px wirkte sie
      abgesetzt; jetzt liegt sie so dicht davor wie die Pausenaufsichten
      zwischen zwei Stunden (gut 1,5 px sichtbare Luft). */
@@ -1327,16 +1327,20 @@ function renderGrid(){
 
 
   /* Zeilen + Zeitspalte */
+  /* Je Stunde: Nummer, darunter Beginn und Ende; Pausen als graues Band. */
   L.rows.forEach(r => {
-    html += `<div class="slotrow ${r.no ? '' : 'slotrow--pause'}" style="top:${r.y}px">
-      <span class="slotrow__time">${r.label}</span>
-      ${r.no ? `<span class="slotrow__no">${r.no}.</span>` : ''}
-    </div>`;
+    html += r.no
+      ? `<div class="slotrow" style="top:${r.y}px">
+           <span class="slotrow__no">${r.no}</span>
+           <span class="slotrow__time">${r.label}</span>
+           <span class="slotrow__time slotrow__time--ende">${r.ende}</span>
+         </div>`
+      : `<div class="slotrow slotrow--pause" style="top:${r.y}px;height:${Math.max(0, r.pause || 0)}px"></div>`;
   });
   html += `<div class="slotrow" style="top:${L.total}px"></div>`;
-  /* Unter der letzten Stunde läuft das Raster weiter — am iPhone bis ganz
-     unten hinter die Glasleiste, wie im Original. Leere Zeilen im Takt
-     einer Stunde, ohne Beschriftung. */
+  /* Unter der letzten Stunde läuft das Raster weiter — bis ganz unten
+     hinter die untere Leiste. Leere Zeilen im Takt einer Stunde, ohne
+     Beschriftung. */
   const takt = (() => {
     const t1 = (state.times || {})[1];
     const m = t1 ? minutes(t1.end) - minutes(t1.start) : 45;
@@ -1557,8 +1561,8 @@ function renderGrid(){
          Zeichen unten auf der Kachel sagt „findet online statt“. */
       const online = !!card.online && !isHoliday && !isSup && card.blockType !== 'cancelled';
       if (online) lines = lines.filter(l => l.key !== 'room');
-      /* Tagesansicht wie im Original: dieselbe Kachel wie in der Woche —
-         Balken, Zeilen, Plaketten —, nur breiter. Keine Zusatzdetails. */
+      /* Tagesansicht: dieselbe Kachel wie in der Woche — Zeilen,
+         Plaketten —, nur breiter. Keine Zusatzdetails. */
 
       /* Passen nicht alle Zeilen in die Karte, wird gekürzt und unten rechts
          ein Zeichen gesetzt — dann ohne Info-Punkt. */
@@ -1612,7 +1616,7 @@ function renderGrid(){
         style += lane(Math.max(2, card._n), card._i, 0, 100, isDay ? 4 : 2);
         cls.push('is-priority');
       } else if (card._side && !isDay && !nebenFeld){
-        /* Entfallene Originalstunden treten hinter das Feld zurück. */
+        /* Entfallene ursprüngliche Stunden treten hinter das Feld zurück. */
         return;
       } else if (card._side){
         style += lane(card._n, card._i, 50, 100, isDay ? 4 : 2);
@@ -1668,7 +1672,7 @@ function renderGrid(){
       const timeA = (state.times[card.lesson] || {}).start || '';
       const timeB = (state.times[Math.min(card.lesson + card.span - 1, 12)] || {}).end || '';
 
-      const DOTS = '<svg viewBox="0 0 12 12"><circle cx="6" cy="2.4" r="1.05"/><circle cx="6" cy="6" r="1.05"/><circle cx="6" cy="9.6" r="1.05"/></svg>';
+      const DOTS = sym('ellipsis');
 
       /* Inhalt einer Kartenzeile: Plaketten, Kopplungs-Kürzel oder Text. */
       /* Offene Vertretung (noch niemand eingeteilt): Die bisherige Lehrkraft
@@ -1704,9 +1708,7 @@ function renderGrid(){
 
       const body = isHoliday
         ? `<span class="holiday-inner">
-             <span class="holiday-mark" aria-hidden="true">
-               <svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"/><path d="M8.4 10.5V7.8a3.6 3.6 0 0 1 7.2 0v2.7"/></svg>
-             </span>
+             <span class="holiday-mark" aria-hidden="true">${sym('sun')}</span>
              <span class="card__line">${esc(card.subject || 'Ferien')}</span>
              ${card.holidayName ? `<span class="card__line holiday-name">${esc(card.holidayName)}</span>` : ''}
              ${card.holidayRange ? `<span class="card__line holiday-range">${esc(card.holidayRange)}</span>` : ''}
@@ -1777,7 +1779,8 @@ function renderGrid(){
          entscheidet der Server: beim Entfall die des ausfallenden Fachs,
          nicht die der Stunde, die stattdessen läuft. */
       if (card.color && /^#?[0-9a-f]{3,8}$/i.test(card.color))
-        style += `--bar:${card.color.startsWith('#') ? card.color : '#' + card.color};`;
+        style += `--fach:${card.color.startsWith('#') ? card.color : '#' + card.color};`;
+      else cls.push('ohne-fach');
 
       /* --- Was in der unteren rechten Ecke steht -------------------------
          Drei Dinge bewerben sich um dieselbe Ecke: der Info-Punkt, das
@@ -1807,7 +1810,7 @@ function renderGrid(){
          zuerst die Hausaufgabe weg, dann das Onlinezeichen; Info bleibt am
          längsten stehen. Wurde wirklich gekürzt, steht allein das
          Kürzungszeichen dort. Ein Verlegungszeichen gibt es auf der Kachel
-         nicht (wie iOS) – die Verlegung steht in den Details. */
+         nicht – die Verlegung steht in den Details. */
       const platz = Math.max(1, Math.floor((kachelBreit - 18 + 3) / 17));
       const vorrang = [zeigInfo && 'info', online && 'online', zeigHw && 'hw'].filter(Boolean).slice(0, platz);
       const ikon = n => n === 'online' ? `<span class="card__ic card__ic--online">${KACHEL_ONLINE}</span>`
@@ -1821,13 +1824,27 @@ function renderGrid(){
       }
       if (online) cls.push('has-online');
 
+      /* Statusplakette oben rechts – nur auf Kacheln, die breit genug sind
+         (Container-Abfrage in app.css); auf schmalen Wochenspalten tragen
+         Fläche, Rahmen und Schraffur die Aussage allein. */
+      const plakette = isHoliday || isSup ? ''
+        : released ? (kind === 'class' ? 'ohne Klasse' : card.classAbsent ? 'Klasse fehlt' : 'ohne mich')
+        : (isStandby && card.standbyAbsent) ? 'ohne mich'
+        : card.blockType === 'cancelled' ? 'Entfall'
+        : card.blockType === 'klausur' ? 'Prüfung'
+        : (card.blockType === 'gs' || card.blockType === 'absence') ? 'Veranstaltung'
+        : card.blockType === 'change' && card.extra ? 'Zusatz'
+        : card.blockType === 'change' && (card.openSub || card.openRoom) ? 'offen'
+        : card.blockType === 'change' ? 'Änderung'
+        : '';
+      if (plakette){ cls.push('has-status'); style += `--sb:${Math.round(plakette.length * 6.4 + 14)}px;`; }
       const tag = isHoliday ? 'div' : 'button';
       html += `<${tag} class="${cls.join(' ')}" style="${style}"
                  data-date="${date}" data-lesson="${card.lesson}" data-idx="${card._uid}"
                  ${isHoliday ? '' : 'type="button"'}>
         ${body}
         ${eckzeichen}
-        ${(released || (isStandby && card.standbyAbsent) || (isSup && card._supAbsent)) ? '<span class="corners" aria-hidden="true"><i></i><i></i><i></i><i></i></span>' : ''}
+        ${plakette ? `<span class="card__status">${esc(plakette)}</span>` : ''}
         ${(isHoliday || isSup) ? '' : `<span class="card__times"><span>${timeA}</span><span>${timeB}</span></span>`}
       </${tag}>`;
 
@@ -1923,6 +1940,7 @@ function renderGrid(){
      Sonst läge der dünne Balken über einer Woche, in der es „jetzt" gar
      nicht gibt. */
   const ti     = dates.indexOf(todayISO);
+  let jetztY = null;
   const midAt  = cols;                     /* erste Spalte des mittleren Abschnitts */
   const midLen = cols;
   if (ti >= midAt && ti < midAt + midLen){
@@ -1933,6 +1951,7 @@ function renderGrid(){
       const wkCols  = midLen;
       html += `<div class="nowline nowline--week" style="top:${y}px;left:${colAt(wkStart)};width:calc(${colW} * ${wkCols})"></div>`;
       html += `<div class="nowline nowline--today" style="top:${y}px;left:${colAt(ti)};width:${colW}"></div>`;
+      jetztY = y;
     }
   }
 
@@ -1967,6 +1986,8 @@ function renderGrid(){
   }
 
   html += '</div></div>';  /* colstrip, colclip */
+  /* Kreis der Jetzt-Linie am Rand der Zeitspalte (außerhalb des Streifens) */
+  if (jetztY !== null) html += `<div class="nowpunkt" style="top:${jetztY}px"></div>`;
   html += '</div>';        /* grid */
   /* Nur austauschen, was sich wirklich geändert hat (siehe rasterEinsetzen):
      Beim Minutentakt, nach stillem Nachladen oder beim Zurückkehren in die
@@ -2267,9 +2288,14 @@ const THEME_LABEL = { auto:'Automatisch', light:'Hell', dark:'Dunkel' };
 function applyTheme(mode){
   const dark = mode === 'dark' ||
     (mode !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  /* tokens.css wechselt die Rollenfarben über data-thema; .is-dark bleibt
+     für die wenigen Stellen in app.css, die es zusätzlich brauchen. */
+  document.documentElement.setAttribute('data-thema', dark ? 'dunkel' : 'hell');
   document.documentElement.classList.toggle('is-dark', dark);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = dark ? '#000000' : '#ffffff';
+  if (meta) meta.content = dark ? '#161b22' : '#ffffff';
+  const leiste = document.getElementById('statusleiste');
+  if (leiste) leiste.setAttribute('content', dark ? 'black-translucent' : 'default');
 }
 
 function currentTheme(){ return store.get('theme', 'auto'); }
@@ -2342,7 +2368,7 @@ function pickDefaultDay(){
 
 function renderDayBar(){
   /* In der Tagesansicht steht der Tag bereits im Kopf — die zusätzliche
-     Leiste entfällt, wie in der Vorlage. Gewechselt wird per Wischen,
+     Leiste entfällt. Gewechselt wird per Wischen,
      zurück durch Tippen auf den Tag. */
   const bar = $('#dayswitch');
   bar.hidden = true;
@@ -2906,20 +2932,27 @@ function iosAnim(el, cls){
   });
 })();
 
+/* Von wo eine Liste (Termine, Abwesenheiten …) geöffnet wurde – dorthin
+   führt „Zurück“. */
+let listeZurueck = 'start';
+
 function showScreen(name){
   const vorher = state.screen;
   state.screen = name;
-  /* Listen (Termine, Abwesenheiten …) sind Unterseiten der Startseite:
-     hinein von rechts, zurück wieder nach rechts hinaus. */
-  if (name === 'list' && vorher === 'start') iosAnim($('#screenList'), 'ios-push');
-  if (vorher === 'list' && name === 'start'){
-    iosAnim($('#screenList'), 'ios-leave');
-    iosAnim($('#screenStart'), 'ios-pop');
+  /* Listen sind Unterseiten von „Heute“: hinein von rechts, zurück wieder
+     nach rechts hinaus. */
+  if (name === 'list' && vorher !== 'list'){
+    listeZurueck = vorher === 'profile' ? 'profile' : 'start';
+    const lab = $('#lstBackLabel');
+    if (lab) lab.textContent = listeZurueck === 'profile' ? 'Mehr' : 'Heute';
+    iosAnim($('#screenList'), 'ios-push');
   }
-  /* Schüler*innen haben nur ihren eigenen Plan — dann führt die Auswahl
-     ins Leere und die Knöpfe dafür verschwinden. */
-  /* Schüler*innen dürfen Klassen- und Raumpläne ansehen; die Auswahl
-     bleibt also. Verborgen wird alles, wofür ihnen das Recht fehlt. */
+  if (vorher === 'list' && name !== 'list' && name === listeZurueck){
+    iosAnim($('#screenList'), 'ios-leave');
+    iosAnim($('#screen' + (name === 'profile' ? 'Profile' : 'Start')), 'ios-pop');
+  }
+  /* Schüler*innen dürfen Klassen- und Raumpläne ansehen; verborgen wird
+     alles, wofür ihnen das Recht fehlt. */
   if (state.isStudent) rechteAnwenden();
   const map = { plan:'#screenPlan', start:'#screenStart', msg:'#screenMsg',
                 profile:'#screenProfile', list:'#screenList' };
@@ -2929,40 +2962,27 @@ function showScreen(name){
      Browser die Seite tatsächlich aufgebaut hat. */
   if (name === 'plan') requestAnimationFrame(feinKuerzung);
   $$('.tab').forEach(t => {
-    /* Die Listen gehören zur Startseite — dort bleibt der Reiter stehen. */
-    const on = t.dataset.screen === (name === 'list' ? 'start' : name);
+    /* Die Listen gehören zu der Seite, von der sie geöffnet wurden. */
+    const on = t.dataset.screen === (name === 'list' ? listeZurueck : name);
     t.classList.toggle('is-active', on);
     t.setAttribute('aria-selected', on ? 'true' : 'false');
   });
-  /* Die Kopfleiste bleibt auf allen Seiten stehen — sonst käme man vom
-     Start aus nicht an den Profilwechsel. Nur die Planauswahl in der Mitte
-     verschwindet dort, weil sie ohne Plan nichts auswählt. */
-  $('#topbar').style.display = (name === 'list') ? 'none' : '';
-  /* Der Grund der Kopfleiste folgt der Seite, damit oben keine Kante
-     entsteht. (:has kann noch nicht jeder Browser.) */
-  document.body.classList.toggle('has-plain-top', name !== 'plan' && name !== 'msg');
-  /* Die Startseite hatte einen eigenen Knopf zum Planwechsel — mit der
-     durchgehenden Kopfleiste stünde er doppelt da. */
-  const zweit = $('#btnSwitchEntity2');
-  if (zweit) zweit.hidden = true;
-  const titel = $('#btnEntityPicker');
-  if (titel) titel.style.visibility = (name === 'plan') ? '' : 'hidden';
-  const akt = $('#topbarActions');
-  if (akt) akt.style.visibility = (name === 'plan') ? '' : 'hidden';
-  /* Der Kontoknopf wandert mit: Auf dem Mitteilungsbildschirm steht er in
-     dessen eigener Kopfzeile, sonst in der Leiste der App. So sitzen Titel
-     und Knöpfe dort auf einer Höhe, und über ihnen bleibt es einfarbig. */
-  const konto = $('#btnSwitchEntity');
-  if (name === 'msg'){
-    document.body.classList.add('is-msgtop');
-    $('#msgHeadLeft').appendChild(konto);
-    renderMessages();
-  } else if (document.body.classList.contains('is-msgtop')) {
-    document.body.classList.remove('is-msgtop');
-    konto.hidden = false;
-    $('.topbar').prepend(konto);
-  }
+  const seite = $(map[name]);
+  if (seite && seite.classList.contains('seite')) kopfAbgleichen(seite);
+  if (name === 'msg') renderMessages();
 }
+
+/* Große Seitentitel: Beim Rollen geht der Titel in die kompakte Kopfzeile
+   über (Titel dort einblenden, Trennlinie zeigen). */
+function kopfAbgleichen(seite){
+  const titel = seite.querySelector('.grosstitel');
+  const klein = seite.querySelector('.kopf__titel');
+  if (klein && titel && !klein.dataset.fest) klein.textContent = titel.textContent;
+  const grenze = titel && titel.offsetParent ? titel.offsetTop + titel.offsetHeight - 52 : 8;
+  seite.classList.toggle('is-kompakt', seite.scrollTop > Math.max(8, grenze));
+}
+$$('.seite').forEach(seite => seite.addEventListener('scroll', () => kopfAbgleichen(seite), { passive:true }));
+
 $$('.tab').forEach(t => t.addEventListener('click', () => {
   /* Steht man schon auf dem Stundenplan, führt ein zweiter Tipp zurück zur
      laufenden Woche — wie das Antippen des aktiven Reiters in einer App. */
@@ -3025,9 +3045,7 @@ function renderStart(){
   const WD = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 
   $('#startSchool').textContent = (BOOT && BOOT.school) || 'Stundenplan';
-  $('#startWeekday').textContent = WD[now.getDay()];
-  $('#startDayNum').textContent  = now.getDate();
-  $('#startMonth').textContent   = MONTHS[now.getMonth()];
+  $('#startDatum').textContent = `${WD[now.getDay()]}, ${now.getDate()}. ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 
   /* Marke unter dem Datum: an unterrichtsfreien Tagen das Datum in Blau. */
   /* Die Startseite zeigt ausschließlich den eigenen Plan. Ist er noch
@@ -3044,7 +3062,7 @@ function renderStart(){
   const free = todayCards.some(c => c.holiday);
   const tag = $('#startTag');
   tag.hidden = !free;
-  if (free) tag.textContent = `${now.getDate()}.${now.getMonth() + 1}.`;
+  if (free) tag.textContent = 'unterrichtsfrei';
 
   /* Die nächsten Stunden, nach Tagen gruppiert. */
   const all = [];
@@ -3061,7 +3079,7 @@ function renderStart(){
 
   /* Ferien und Feiertage der nächsten 7 Tage (je Zeitraum einmal): Liegen
      sie vor der nächsten Stunde, stehen sie in der Karte — ohne Stunden
-     als ganze Fläche wie „Genieße die Zeit!“, sonst als Zeile davor. */
+     als ganze Fläche, sonst als Zeile davor. */
   const ferien = [];
   Object.keys(quelle).sort().forEach(d => {
     if (d < iso(now) || d >= bis7) return;
@@ -3077,13 +3095,13 @@ function renderStart(){
                                  : `${WD[parseISO(f.date).getDay()]}, ${parseISO(f.date).getDate()}. ${MONTHS[parseISO(f.date).getMonth()]}`;
 
   const box = $('#startNext');
-  /* Liegt die Woche außerhalb des Plan-Fensters der Rolle, gibt es nichts
-     zu genießen — wie in der iOS-App steht dann der Sperrsatz. */
+  /* Liegt die Woche außerhalb des Plan-Fensters der Rolle, steht dort der
+     Sperrsatz (wie im Plan selbst). */
   const gesperrt = !!((startWeek && startWeek.byDate === quelle) ? startWeek.gesperrt
                      : (istIch && state.week && state.week.gesperrt));
   if (!upcoming.length && gesperrt){
     box.innerHTML = `<div class="nextnone nextnone--sperre">
-      <span class="sperre__kreis" aria-hidden="true">${SPERRE_SCHLOSS}</span>
+      ${SPERRE_SCHLOSS}
       <b>Keine Stunden</b>
       <span>${SPERRE_TITEL}</span></div>`;
     return;
@@ -3091,9 +3109,7 @@ function renderStart(){
   if (!upcoming.length && ferienVorher.length){
     const f = ferienVorher[0];
     box.innerHTML = `<div class="nextnone nextnone--ferien">
-      <svg viewBox="0 0 24 24" class="ico"><rect x="3.5" y="5" width="17" height="15.5" rx="2.4"/>
-        <path d="M3.5 9.6h17M8 3.4v3.4M16 3.4v3.4"/>
-        <path d="m12 12.4 1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3z"/></svg>
+      ${sym('sun')}
       <b>${esc(f.name)}</b>
       <span>${esc(ferienText(f))}</span>
       ${ferienVorher.slice(1).map(g => `<span>${esc(g.name)} · ${esc(ferienText(g))}</span>`).join('')}</div>`;
@@ -3101,40 +3117,46 @@ function renderStart(){
   }
   if (!upcoming.length){
     box.innerHTML = `<div class="nextnone">
-      <svg viewBox="0 0 24 24" class="ico"><rect x="3.5" y="5" width="17" height="15.5" rx="2.4"/>
-        <path d="M3.5 9.6h17M8 3.4v3.4M16 3.4v3.4"/>
-        <path d="m12 12.4 1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3z"/></svg>
-      <b>Genieße die Zeit!</b>
+      ${sym('calendar-off')}
+      <b>Kein Unterricht</b>
       <span>In den nächsten 7 Tagen ist kein Unterricht geplant.</span></div>`;
     return;
   }
 
   let last = '';
-  /* Ferienzeile vor den Stunden: blauer Balken, Name und Zeitraum. */
+  /* Ferienzeile vor bzw. nach den Stunden: hellblaues Feld mit Name und Zeitraum. */
   const ferienZeile = f => `<div class="nextrow nextrow--ferien">
-      <span class="nextrow__bar"></span>
-      <span class="nextrow__main"><span>${esc(f.name)}</span><span>${esc(ferienText(f))}</span></span>
-      <span class="nextrow__times"></span>
+      <span class="nextrow__zeit">${sym('sun')}</span>
+      <span class="nextrow__main"><b>${esc(f.name)}</b><span>${esc(ferienText(f))}</span></span>
     </div>`;
+  const tagName = d => {
+    const t = iso(now), m = iso(addDays(now, 1));
+    const dd = parseISO(d);
+    return d === t ? 'Heute' : d === m ? 'Morgen'
+      : `${WD[dd.getDay()]}, ${dd.getDate()}. ${MONTHS[dd.getMonth()]}`;
+  };
   /* Ferien nach den nächsten Stunden (innerhalb der 7 Tage) stehen darunter. */
   const ferienNachher = ferien.filter(f => !ferienVorher.includes(f));
   box.innerHTML = ferienVorher.map(ferienZeile).join('') + upcoming.map(c => {
     const dd = parseISO(c.date);
     /* Die Karte zeigt immer den eigenen Plan — der Zusatz sagt das auch,
        selbst wenn im Stundenplan gerade eine fremde Klasse ausgewählt ist. */
-    const head = c.date !== last
-      ? `<div class="nextday">${dd.getDate()}. ${MONTHS_SHORT[dd.getMonth()]}
-           <span>Mein Stundenplan</span></div>` : '';
+    void dd;
+    const head = c.date !== last ? `<div class="nextday">${esc(tagName(c.date))}</div>` : '';
     last = c.date;
     const t1 = (state.times[c.lesson] || {}).start || '';
     const t2 = (state.times[Math.min(c.lesson + c.span - 1, 12)] || {}).end || '';
     const off = c.blockType === 'cancelled';
-    const lines = [c.class || c.teacher, c.subject, c.room].filter(Boolean);
-    return head + `<button class="nextrow ${off ? 'is-off' : ''}"
+    const art = off ? ['is-off', 'Entfall'] : c.blockType === 'klausur' ? ['is-exam', 'Prüfung']
+              : c.blockType === 'change' ? ['is-change', 'Änderung'] : ['', ''];
+    const oben = [c.subject || c.subjectOrig, c.class || c.teacher].filter(Boolean).join(' · ');
+    const unten = [c.room || c.roomOrig, c.class ? c.teacher : ''].filter(Boolean).join(' · ');
+    const farbe = c.color && /^#?[0-9a-f]{3,8}$/i.test(c.color) ? ` style="--fach:${c.color.startsWith('#') ? c.color : '#' + c.color}"` : '';
+    return head + `<button class="nextrow ${art[0]}"${farbe}
         data-date="${c.date}" data-lesson="${c.lesson}" data-idx="${c._uid}">
-      <span class="nextrow__bar"></span>
-      <span class="nextrow__main">${lines.map(l => `<span>${esc(l)}</span>`).join('')}</span>
-      <span class="nextrow__times"><span>${t1}</span><span>${t2}</span></span>
+      <span class="nextrow__zeit"><b>${t1}</b><span>${t2}</span></span>
+      <span class="nextrow__main"><b>${esc(oben)}</b>${unten ? `<span>${esc(unten)}</span>` : ''}</span>
+      ${art[1] ? `<span class="plakette plakette--${art[0].slice(3)}">${art[1]}</span>` : ''}
     </button>`;
   }).join('') + ferienNachher.map(ferienZeile).join('');
 
@@ -3144,17 +3166,17 @@ function renderStart(){
   }));
 }
 
-/* Infos zum Tag oben auf der Startseite: Karte mit farbigem Kopf (Nachricht blau mit Megafon, Veranstaltung grün),
-   Kennzeichen „neu“ und Text – mehrere Karten werden waagrecht gewischt. */
+/* Infos zum Tag oben auf „Heute“: je Nachricht bzw. Veranstaltung eine Karte mit Symbol, Art und Text –
+   mehrere Karten werden waagrecht gewischt. */
 function newsZeichnen(liste){
   const box = $('#startNews');
   if (!box) return;
   box.hidden = !liste.length;
-  const MEGAFON = '<svg viewBox="0 0 24 24" class="ico"><path d="M3.8 10v4h3l7.4 4V6L6.8 10z"/><path d="M6.8 14l1.3 4.6h2.3L9.4 14.4M17.6 9.4a3.6 3.6 0 0 1 0 5.2"/></svg>';
-  const GRUPPE = '<svg viewBox="0 0 24 24" class="ico"><circle cx="8.5" cy="8.4" r="2.6"/><circle cx="15.8" cy="8.4" r="2.6"/><path d="M3.8 18.4c.5-3 2.4-4.6 4.7-4.6s4.2 1.6 4.7 4.6M11.4 14.6c.9-.6 2.2-.8 4.4-.8 2.3 0 4.2 1.6 4.6 4.6"/></svg>';
+  const MEGAFON = sym('megaphone');
+  const GRUPPE = sym('users');
   box.innerHTML = liste.map(n => `<article class="newscard newscard--${n.kind === 'event' ? 'event' : 'news'}">
-      <header class="newscard__head">${n.kind === 'event' ? GRUPPE : MEGAFON}<span class="newscard__neu">neu</span></header>
-      <div class="newscard__body"><b>${esc(n.title || '')}</b><p>${esc(n.text || '')}</p></div>
+      <header class="newscard__head">${n.kind === 'event' ? GRUPPE : MEGAFON}<b>${esc(n.title || (n.kind === 'event' ? 'Veranstaltung' : 'Nachricht zum Tag'))}</b><span class="newscard__neu">neu</span></header>
+      <div class="newscard__body"><p>${esc(n.text || '')}</p></div>
     </article>`).join('');
 }
 
@@ -3200,7 +3222,7 @@ let msgOpt = { receipt:false, noReply:false };
 let msgMax = { files:5, mb:7 };
 
 /* Kürzel aus dem Namen: „Scheibel Florian-Fynn" wird zu „SF", ein
-   Kürzel wie „NEU" zu „N" (wie in der iOS-App). */
+   Kürzel wie „NEU" zu „N". */
 function initialen(name){
   const t = String(name || '').replace(/[^\p{L}\s-]/gu, ' ').trim().split(/[\s-]+/).filter(Boolean);
   if (!t.length) return '?';
@@ -3242,12 +3264,12 @@ function msgText(roh){
     .replace(/\n/g, '<br>');
 }
 
-const MSG_CLIP = '<svg viewBox="0 0 24 24" class="ico msgrow__clip" aria-label="Anhang"><path d="M20 11.5 12 19.4a4.6 4.6 0 0 1-6.5-6.5l8.4-8.3a3 3 0 1 1 4.3 4.3l-8.2 8.2a1.5 1.5 0 0 1-2.1-2.1l7.6-7.6"/></svg>';
-const MSG_PDF = '<svg viewBox="0 0 24 24" class="ico msgfile__ico" aria-hidden="true"><rect x="4.6" y="3.4" width="14.8" height="17.2" rx="2"/><path d="M8.4 16.6c2.2-1.2 4.6-4.4 3.8-6.6-.5-1.4-2-.4-1.3 1.9.8 2.6 3.3 4.4 4.8 4.3 1.3-.1.7-1.6-1.4-1.4-2.4.2-4.6 1.4-5.9 1.8"/></svg>';
-const MSG_DATEI = '<svg viewBox="0 0 24 24" class="ico msgfile__ico" aria-hidden="true"><path d="M7 3.4h6.8l4.6 4.6v11a1.6 1.6 0 0 1-1.6 1.6H7a1.6 1.6 0 0 1-1.6-1.6V5A1.6 1.6 0 0 1 7 3.4z"/><path d="M13.6 3.6V8.2h4.6"/></svg>';
+const MSG_CLIP = sym('paperclip', 'msgrow__clip');
+const MSG_PDF = sym('file-text', 'msgfile__ico');
+const MSG_DATEI = sym('file', 'msgfile__ico');
 
 /* ------------------------------------------------------------------
-   Liste — Posteingang wie in der iOS-App: Avatar mit Initiale, Absender,
+   Liste — Posteingang: Kreis mit Initialen, Absender,
    Betreff, Vorschau, Büroklammer bei Anhängen
    ------------------------------------------------------------------ */
 function msgZeile(m){
@@ -3280,9 +3302,7 @@ const MSG_LEER = {
 function msgLeer(){
   const [t1, t2] = MSG_LEER[msgBox];
   return `<div class="msgempty">
-      <span class="msgempty__ico">
-        <svg viewBox="0 0 24 24"><rect x="3.6" y="5.6" width="16.8" height="12.8" rx="2"/><path d="m4.4 6.6 7.6 6 7.6-6"/></svg>
-      </span>
+      <span class="msgempty__ico">${sym('inbox')}</span>
       <b>${t1}</b><span>${t2}</span>
     </div>`;
 }
@@ -3290,8 +3310,10 @@ function msgLeer(){
 async function renderMessages(){
   msgLesenSchliessen();
   msgPopsZu();
-  $('#msgBoxBtn').textContent = MSG_FACH_NAME[msgBox];
-  $$('#msgBoxPop [data-box]').forEach(b => b.classList.toggle('is-on', b.dataset.box === msgBox));
+  $$('#msgTabs [data-box]').forEach(b => {
+    b.classList.toggle('is-on', b.dataset.box === msgBox);
+    b.setAttribute('aria-selected', b.dataset.box === msgBox ? 'true' : 'false');
+  });
   const ziel = $('#msgList');
   let d;
   try {
@@ -3316,7 +3338,6 @@ async function msgPunktHolen(){
 /* Popover (Verfassen, Ordner) schließen. */
 function msgPopsZu(){
   $('#msgNewPop').hidden = true;
-  $('#msgBoxPop').hidden = true;
 }
 
 /* ------------------------------------------------------------------
@@ -3334,7 +3355,7 @@ function msgLesenSchliessen(){
   document.body.classList.remove('is-msgread');
   /* Beim Lesen nimmt der Pfeil zurück den Platz des Kontoknopfes ein —
      zwei Knöpfe nebeneinander wären dort zu eng. */
-  $('#btnSwitchEntity').hidden = false;
+  $('#screenMsg').classList.remove('is-lesen');
   msgOffen = null;
 }
 
@@ -3378,13 +3399,14 @@ async function msgOeffnen(id){
   $('#msgBack').hidden = false;
   $('#msgSearch').hidden = true;
   $('#msgNew').hidden = true;
-  $('#btnSwitchEntity').hidden = true;
+  $('#screenMsg').classList.add('is-lesen');
+  $('#screenMsg').scrollTop = 0;
   document.body.classList.add('is-msgread');
   msgPunktHolen();
 }
 
 /* ------------------------------------------------------------------
-   Schreiben — Editor wie in der iOS-App
+   Schreiben — Editor als Blatt von unten
    ------------------------------------------------------------------ */
 function msgEmpfaengerZeigen(){
   const max = 3;
@@ -3502,9 +3524,9 @@ function msgDateienDazu(liste){
 }
 
 /* ------------------------------------------------------------------
-   Empfänger wählen — Blatt wie in der iOS-App: Filter-Pillen
-   (Ausgewählt, Liste, Klasse, Abteilung), „Alle auswählen", Zeilen mit
-   Auswahlkreis, Avatar, Kürzel und Rollen; Suchfeld schwebt unten.
+   Empfänger wählen — Blatt mit Suchfeld, Filtern (Ausgewählt, Liste,
+   Klasse, Abteilung), „Alle auswählen“ und Zeilen mit Auswahlkästchen,
+   Initialen, Kürzel und Rollen.
    ------------------------------------------------------------------ */
 /* TO-BEGINN – Filter der Empfängerauswahl (in sich geschlossen; die Tests
    führen diesen Abschnitt mit Node aus). */
@@ -3561,8 +3583,8 @@ async function msgToOeffnen(){
   toZeigen();
 }
 
-const TO_CHEV = '<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
-const TO_HAKEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 12.5 3.8 3.8L17.5 9"/></svg>';
+const TO_CHEV = sym('chevron-down');
+const TO_HAKEN = sym('check');
 
 function toZeigen(){
   if (!toDaten) return;
@@ -3671,13 +3693,8 @@ $('#sheetTo').addEventListener('click', e => {
 /* ------------------------------------------------------------------
    Bedienung
    ------------------------------------------------------------------ */
-$('#msgBoxBtn').addEventListener('click', e => {
-  e.stopPropagation();
-  $('#msgNewPop').hidden = true;
-  const pop = $('#msgBoxPop');
-  pop.hidden = !pop.hidden;
-});
-$$('#msgBoxPop [data-box]').forEach(b => b.addEventListener('click', () => {
+$$('#msgTabs [data-box]').forEach(b => b.addEventListener('click', () => {
+  if (msgBox === b.dataset.box) return;
   msgBox = b.dataset.box;
   renderMessages();
 }));
@@ -3698,7 +3715,6 @@ $('#msgQuery').addEventListener('input', () => {
 });
 $('#msgNew').addEventListener('click', e => {
   e.stopPropagation();
-  $('#msgBoxPop').hidden = true;
   /* Schüler*innen und Erziehungsberechtigte schreiben nur den erlaubten
      Lehrkräften — für sie gibt es keine Wahl „Kolleg*innen". */
   if (state.isStudent){ msgNeu('individuell'); return; }
@@ -3707,7 +3723,7 @@ $('#msgNew').addEventListener('click', e => {
 });
 $$('#msgNewPop [data-typ]').forEach(b => b.addEventListener('click', () => msgNeu(b.dataset.typ)));
 document.addEventListener('click', e => {
-  if (!e.target.closest('#msgNewPop, #msgNew, #msgBoxPop, #msgBoxBtn')) msgPopsZu();
+  if (!e.target.closest('#msgNewPop, #msgNew')) msgPopsZu();
 });
 $('#msgClose').addEventListener('click', () => SH.write.close());
 $('#msgToRow').addEventListener('click', msgToOeffnen);
@@ -3728,17 +3744,12 @@ $('#msgOptNoReply').addEventListener('click', () => {
 msgFetch('options').then(o => { msgMax = { files: o.maxAttachments || 5, mb: o.maxAttachmentMb || 7 }; }).catch(() => {});
 
 $('#btnAbout').addEventListener('click', () =>
-  toast('UntPlanMobile · Fassung ' + BUILD));
-
-/* Erscheinungsbild reihum: Automatisch → Hell → Dunkel */
-
-$('#btnSwitchEntity2').addEventListener('click', openPicker);
+  toast('UntPlan Mobile · Fassung ' + BUILD));
 /* =====================================================================
    Startseite: Termine, Abwesenheiten, Klassenleitung
    ---------------------------------------------------------------------
-   Drei Listen aus derselben Schnittstelle. Der Aufbau folgt der Vorlage:
-   Kopfzeile mit Titel und Zeitraum, darunter Karten mit Datum, Uhrzeit,
-   Anlass und Stand.
+   Drei Listen aus derselben Schnittstelle: großer Titel mit Zeitraum,
+   darunter Karten mit Datum, Uhrzeit, Anlass und Stand.
    ===================================================================== */
 const HOME_URL = new URL('api/home', location.href).href;
 let listeStand = { art:null, von:null, bis:null, klasse:null, zeitraum:null, stand:'alle', umfang:'mine', kind:null };
@@ -3760,11 +3771,7 @@ const deTag = iso => {
   return `${d.getDate()}. ${MONTHS_SHORT[d.getMonth()]}`;
 };
 
-const STAND_ICO = {
-  ok:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.2 12.3 2.6 2.6L16 9.8"/></svg>',
-  open: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>',
-  no:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>'
-};
+const STAND_ICO = { ok:'circle-check', open:'circle-dashed', no:'circle-x' };
 
 function listeOeffnen(art, extra){
   /* Die Klassenleitung startet mit den eigenen Klassen und den offenen
@@ -3780,20 +3787,10 @@ function listeOeffnen(art, extra){
   listeZeichnen();
 }
 
-/* Leerbild wie in der Vorlage: Zeichen im hellen Kreis, dann die beiden
-   Zeilen darunter. */
+/* Leerer Zustand: ein Linien-Symbol, ein Satz, ein Hinweis. */
 const LEER = (titel, text) => `
   <div class="lst__empty">
-    <span class="lst__emptyIco">
-      <svg viewBox="0 0 24 24">
-        <ellipse cx="12" cy="6.4" rx="7" ry="2.8"/>
-        <path d="M5 6.4v5.2c0 1.5 3.1 2.8 7 2.8 1 0 2-.1 2.8-.3"/>
-        <path d="M5 11.6v5.2c0 1.4 2.6 2.6 6.1 2.8"/>
-        <circle cx="17.4" cy="17.4" r="3.9"/>
-        <path d="M16.3 16.3a1.2 1.2 0 0 1 2.2.7c0 .8-1.1 1-1.1 1.7"/>
-        <circle cx="17.4" cy="20.1" r=".5" fill="currentColor" stroke="none"/>
-      </svg>
-    </span>
+    <span class="lst__emptyIco">${sym('inbox')}</span>
     <b>${titel}</b>
     <span>${text}</span>
   </div>`;
@@ -3821,7 +3818,7 @@ async function listeZeichnen(){
     $('#lstBody').innerHTML = `<div class="lst__empty"><b>Nicht erreichbar</b><span>${esc(e.message)}</span></div>`;
     return;
   }
-  /* In der Vorlage steht dort nur das Ende des Zeitraums. */
+  /* Zeitraum der Liste unter dem Titel. */
   $('#lstRange').textContent = d.from ? `${deDate(d.from)} - ${deDate(d.to)}` : `bis ${deDate(d.to)}`;
   /* Die eigenen Klassen für den Filter merken. */
   if (d.classes) listeStand.klassen = d.classes;
@@ -3837,8 +3834,8 @@ async function listeZeichnen(){
     $('#lstBody').innerHTML = d.items.length ? d.items.map(x => `
       <article class="lstcard">
         <b>${esc(deTag(x.date))}</b>
-        <p class="lstcard__line"><svg viewBox="0 0 24 24" class="lstcard__ico"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.1 2"/></svg>${esc(x.timeFrom)} – ${esc(x.timeTo)}</p>
-        <p class="lstcard__line"><svg viewBox="0 0 24 24" class="lstcard__ico"><circle cx="12" cy="12" r="8.6"/><path d="M12 11.2v5.4"/><circle cx="12" cy="7.9" r=".95" fill="currentColor" stroke="none"/></svg>${esc([x.art, x.subject, x.class].filter(Boolean).join(' · '))}</p>
+        <p class="lstcard__line">${sym('clock', 'lstcard__ico')}${esc(x.timeFrom)} – ${esc(x.timeTo)}</p>
+        <p class="lstcard__line">${sym('info', 'lstcard__ico')}${esc([x.art, x.subject, x.class].filter(Boolean).join(' · '))}</p>
         ${x.room ? `<p class="lstcard__sub">Raum ${esc(x.room)}</p>` : ''}
         ${x.text ? `<p class="lstcard__sub">${esc(x.text)}</p>` : ''}
       </article>`).join('')
@@ -3959,21 +3956,21 @@ function entKarte(a, i){
   return `<div class="ent-row" data-i="${i}">
       ${darf ? `<div class="ent-row__acts ent-row__acts--l">
         <button type="button" class="ent-row__act is-gruen" data-ent="entschuldigt">
-          <svg viewBox="0 0 24 24" class="ico"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Entschuldigt</button>
+          ${sym('check')}Entschuldigt</button>
       </div>
       <div class="ent-row__acts ent-row__acts--r">
         <button type="button" class="ent-row__act is-rot" data-ent="unentschuldigt">
-          <svg viewBox="0 0 24 24" class="ico"><path d="m6 6 12 12M18 6 6 18"/></svg>Nicht entsch.</button>
+          ${sym('x')}Nicht entsch.</button>
         ${zurueck ? `<button type="button" class="ent-row__act is-grau" data-ent="offen">
-          <svg viewBox="0 0 24 24" class="ico"><path d="M9 7 4.5 11.5 9 16"/><path d="M5 11.5h9.5a5 5 0 0 1 0 10H12"/></svg>Zurück&shy;nehmen</button>` : ''}
+          ${sym('undo-2')}Zurück&shy;nehmen</button>` : ''}
       </div>` : ''}
       <article class="lstcard ent-row__front" role="button" tabindex="0">
         <b>${esc(a.schueler || '')}</b>
         <p class="lstcard__sub">${esc(a.klasse || '')}${a.fehlstunden ? ` · ${a.fehlstunden} ${a.fehlstunden === 1 ? 'Stunde' : 'Stunden'}` : ''}</p>
-        <p class="lstcard__line"><svg viewBox="0 0 24 24" class="lstcard__ico"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.1 2"/></svg>${esc(entZeitraum(a))}</p>
-        ${text ? `<p class="lstcard__line lstcard__line--note"><svg viewBox="0 0 24 24" class="lstcard__ico"><path d="M15.6 3.4H6.3A1.8 1.8 0 0 0 4.5 5.2v13.6a1.8 1.8 0 0 0 1.8 1.8h11.4a1.8 1.8 0 0 0 1.8-1.8V6.9z"/><path d="M7.8 8.8h7.8M7.8 12h7.8M7.8 15.2h4"/></svg><span>${esc(text)}</span></p>` : ''}
+        <p class="lstcard__line">${sym('clock', 'lstcard__ico')}${esc(entZeitraum(a))}</p>
+        ${text ? `<p class="lstcard__line lstcard__line--note">${sym('notebook-text', 'lstcard__ico')}<span>${esc(text)}</span></p>` : ''}
         <p class="lstcard__line lstcard__stand lstcard__stand--${ton}">
-          <svg viewBox="0 0 24 24" class="lstcard__ico">${STAND_ICO[ton] || ''}</svg>${esc(stand)}${
+          ${sym(STAND_ICO[ton] || 'circle-dashed', 'lstcard__ico')}${esc(stand)}${
           a.lehrerGesamt ? ` <span class="lstcard__sm">· ${a.lehrerBearbeitet || 0}/${a.lehrerGesamt} Lehrkräfte bearbeitet</span>` : ''}</p>
       </article>
     </div>`;
@@ -4124,7 +4121,7 @@ function entZeichnen(){
     <p class="ent__zeit">${esc(entZeitraum(a))}${a.fehlstunden ? ` · ${a.fehlstunden} ${a.fehlstunden === 1 ? 'Stunde' : 'Stunden'}` : ''}</p>
     ${String(a.text || '').trim() ? `<p class="ent__text">${esc(a.text)}</p>` : ''}
 
-    <span class="dabs__lab">STATUS</span>
+    <span class="dabs__lab">Status</span>
     <div class="ent__seg" role="radiogroup">
       ${['offen', 'entschuldigt', 'unentschuldigt'].map(k => `<button type="button" role="radio" data-st="${k}"
         class="ent__segbtn ent__segbtn--${ton(k)} ${d.status === k ? 'is-on' : ''}" aria-checked="${d.status === k}">${
@@ -4133,20 +4130,20 @@ function entZeichnen(){
 
     <div class="dabs__grid">
       <div>
-        <span class="dabs__lab">EINGANG</span>
+        <span class="dabs__lab">Eingang</span>
         <div class="dabs__fields"><input class="dabs__pill" type="date" id="entDatum" value="${esc(d.datum)}"></div>
       </div>
       <div>
-        <span class="dabs__lab">NACHWEIS</span>
+        <span class="dabs__lab">Nachweis</span>
         <div class="dabs__fields"><select class="dabs__pill" id="entNachweis">${ENT_NACHWEIS.map(([v, n]) =>
           `<option value="${v}"${d.nachweis === v ? ' selected' : ''}>${n}</option>`).join('')}</select></div>
       </div>
     </div>
 
-    <span class="dabs__lab">TEXT DER ENTSCHULDIGUNG</span>
+    <span class="dabs__lab">Text der Entschuldigung</span>
     <textarea class="dabs__area" id="entText" maxlength="1000" placeholder="Text hier eingeben">${esc(d.text)}</textarea>
 
-    ${stunden ? `<span class="dabs__lab">STUNDEN${a.lehrerGesamt ? ` · ${a.lehrerBearbeitet || 0}/${a.lehrerGesamt} LEHRKRÄFTE BEARBEITET` : ''}</span>
+    ${stunden ? `<span class="dabs__lab">Stunden${a.lehrerGesamt ? ` · ${a.lehrerBearbeitet || 0}/${a.lehrerGesamt} Lehrkräfte bearbeitet` : ''}</span>
     <ul class="ent__stunden">${stunden}</ul>` : ''}
 
     ${darf && (a.status !== 'offen' || (a.stunden || []).some(s => s.status !== 'offen'))
@@ -4189,11 +4186,11 @@ function absKinder(d){
     `<button type="button" class="lstchip${k.id === listeStand.kind ? ' is-on' : ''}" data-kind="${k.id}" aria-pressed="${k.id === listeStand.kind}">${esc(k.name)}${k.class ? ' (' + esc(k.class) + ')' : ''}</button>`).join('')}</div>`;
 }
 
-/* Eine Karte wie in der Vorlage: Datum, Uhrzeit, Anlass, Stand. */
+/* Eine Karte: Datum, Uhrzeit, Anlass, Stand. */
 function karteAbwesenheit(x, mitName){
   const zeit = x.timeFrom || x.timeTo ? `${esc(x.timeFrom)} - ${esc(x.timeTo)}`
                                       : `${deDate(x.from)} - ${deDate(x.to)}`;
-  /* „15. Okt. - 16. Okt.“ wie im Original */
+  /* „15. Okt. - 16. Okt.“ */
   const tagP = d => { const t = deTag(d); return /\.$/.test(t) ? t : t + '.'; };
   const anlass = [x.art, x.reason].filter(Boolean).join(' · ');
   return `
@@ -4202,12 +4199,12 @@ function karteAbwesenheit(x, mitName){
             ? tagP(x.from) + ' - ' + tagP(x.to)
             : tagP(x.from)))}</b>
       ${mitName ? `<p class="lstcard__sub">${esc(deDate(x.from))}${x.from !== x.to ? ' – ' + esc(deDate(x.to)) : ''}</p>` : ''}
-      <p class="lstcard__line"><svg viewBox="0 0 24 24" class="lstcard__ico"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.1 2"/></svg>${zeit}${
+      <p class="lstcard__line">${sym('clock', 'lstcard__ico')}${zeit}${
         x.lessons ? ` <span class="lstcard__sm">(${esc(x.lessons)})</span>` : ''}</p>
-      ${anlass ? `<p class="lstcard__line"><svg viewBox="0 0 24 24" class="lstcard__ico"><circle cx="12" cy="12" r="8.6"/><path d="M12 11.2v5.4"/><circle cx="12" cy="7.9" r=".95" fill="currentColor" stroke="none"/></svg>${esc(anlass)}</p>` : ''}
-      ${String(x.note || '').trim() ? `<p class="lstcard__line lstcard__line--note"><svg viewBox="0 0 24 24" class="lstcard__ico"><path d="M15.6 3.4H6.3A1.8 1.8 0 0 0 4.5 5.2v13.6a1.8 1.8 0 0 0 1.8 1.8h11.4a1.8 1.8 0 0 0 1.8-1.8V6.9z"/><path d="M7.8 8.8h7.8M7.8 12h7.8M7.8 15.2h4"/></svg><span>${esc(String(x.note).trim())}</span></p>` : ''}
+      ${anlass ? `<p class="lstcard__line">${sym('info', 'lstcard__ico')}${esc(anlass)}</p>` : ''}
+      ${String(x.note || '').trim() ? `<p class="lstcard__line lstcard__line--note">${sym('notebook-text', 'lstcard__ico')}<span>${esc(String(x.note).trim())}</span></p>` : ''}
       <p class="lstcard__line lstcard__stand lstcard__stand--${x.tone}">
-        <svg viewBox="0 0 24 24" class="lstcard__ico">${STAND_ICO[x.tone] || ''}</svg>${esc(x.label)}${
+        ${sym(STAND_ICO[x.tone] || 'circle-dashed', 'lstcard__ico')}${esc(x.label)}${
         x.source ? ` <span class="lstcard__sm">· ${esc(x.source)}</span>` : ''}</p>
       ${mitName ? `
         <div class="lstcard__acts">
@@ -4246,7 +4243,7 @@ function sptStatus(t){
   if (s) return s;
   return t.phase === 'einladung' ? 'angekuendigt' : String(t.phase || '');
 }
-/* Untertitel auf der Startseite (wie iOS): angekündigt der Text des Servers
+/* Untertitel auf „Heute“: angekündigt der Text des Servers
    (Datum, Zeit, Ort und Anmeldebeginn), sonst Datum und Text. */
 function sptUntertitel(k){
   if (!k) return '';
@@ -4289,7 +4286,7 @@ const sptKind = k => k ? [k.vorname, k.name].filter(Boolean).join(' ') + (k.klas
    auch angekündigte Sprechtage (noch keine Buchung möglich) mit Datum, Ort
    und Anmeldebeginn. Die Karten kommen mit der Startseite (aus /heute) oder
    einzeln über api/sprechtag/start. */
-const SPT_MEGAFON = '<svg viewBox="0 0 24 24" class="ico"><path d="M4 10.2v3.6a1 1 0 0 0 1 1h2.4l6.6 4V5.2l-6.6 4H5a1 1 0 0 0-1 1z"/><path d="M17.2 9.2a4 4 0 0 1 0 5.6M19.6 7a7.2 7.2 0 0 1 0 10"/><path d="m8.2 14.8.9 4.4"/></svg>';
+const SPT_MEGAFON = sym('megaphone');
 let sptIcoNormal = null;
 function sptStartZeigen(karten){
   const row = $('#btnSprechtag');
@@ -4344,7 +4341,7 @@ async function sprechtagZeichnen(){
         <span class="spt__was"><b>${esc(x.sprechtag.name)}</b>
           <span>${esc(x.sprechtag.datumText)} · ${esc(sptZeiten(x.sprechtag))} Uhr${x.sprechtag.ort ? ' · ' + esc(x.sprechtag.ort) : ''}</span>
           <span>${x.termine} ${x.termine === 1 ? 'Termin' : 'Termine'} · ${esc(SPT_STATUS[sptStatus(x.sprechtag)] || SPT_PHASE[x.sprechtag.phase] || x.sprechtag.phase)}</span></span>
-        <svg viewBox="0 0 24 24" class="ico spt__chev"><path d="m10 6 6 6-6 6"/></svg>
+        ${sym('chevron-right', 'spt__chev')}
       </button>`).join('')}</div></div>`;
     $$('#lstBody .spt__tag').forEach(b => b.addEventListener('click', () => { spt.id = +b.dataset.id; spt.filter = 'alle'; sprechtagZeichnen(); }));
     return;
@@ -4384,14 +4381,14 @@ const sptTagZahl = d => { const m = /^\d{4}-(\d{2})-(\d{2})/.exec(d || ''); retu
 const sptMonat = d => { const m = /^\d{4}-(\d{2})/.exec(d || ''); return m ? SPT_MONATE[+m[1] - 1] || '' : ''; };
 const sptKuerzel = n => String(n || '').split(/\s+/).filter(Boolean).slice(-2).map(w => w[0]).join('').toUpperCase();
 const SPT_ICO = {
-  uhr:  '<svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.1 2"/></svg>',
-  raum: '<svg viewBox="0 0 24 24" class="ico"><path d="M5 20V5.6A1.6 1.6 0 0 1 6.6 4h10.8A1.6 1.6 0 0 1 19 5.6V20M3 20h18"/><circle cx="15" cy="12.5" r=".9" fill="currentColor" stroke="none"/></svg>',
-  sperr:'<svg viewBox="0 0 24 24" class="ico"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>',
-  frei: '<svg viewBox="0 0 24 24" class="ico"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 6.8-1.2"/></svg>',
-  weg:  '<svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="8.6"/><path d="m9 9 6 6M15 9l-6 6"/></svg>',
-  kal:  '<svg viewBox="0 0 24 24" class="ico"><rect x="4.2" y="5" width="15.6" height="14.5" rx="2"/><path d="M4.2 9.4h15.6M8.2 3.2v3.4M15.8 3.2v3.4"/></svg>',
-  ort:  '<svg viewBox="0 0 24 24" class="ico"><path d="M12 20.5s-6-5.6-6-10.3a6 6 0 0 1 12 0c0 4.7-6 10.3-6 10.3z"/><circle cx="12" cy="10.2" r="2.1"/></svg>',
-  video:'<svg viewBox="0 0 24 24" class="ico"><rect x="3.5" y="6.5" width="12" height="11" rx="2"/><path d="m15.5 10.6 5-3v8.8l-5-3"/></svg>'
+  uhr:  sym('clock'),
+  raum: sym('door-open'),
+  sperr:sym('lock'),
+  frei: sym('lock-open'),
+  weg:  sym('circle-x'),
+  kal:  sym('calendar'),
+  ort:  sym('map-pin'),
+  video:sym('video')
 };
 
 /* Bestätigung als Aktionsblatt wie in iOS: Gruppe mit Titel, Text,
@@ -4530,7 +4527,7 @@ function sptLehrkraftZeichnen(){
           <span class="spt__zeit"><b>${esc(sptZeit(f.beginn))}</b><small>bis ${esc(sptZeit(f.ende))}</small></span>
           <span class="spt__punkt" aria-hidden="true"></span>
           <span class="spt__was"><b>${name}</b><span>${unter}</span></span>
-          ${aktiv ? '<svg viewBox="0 0 24 24" class="ico spt__chev"><path d="m10 6 6 6-6 6"/></svg>' : ''}
+          ${aktiv ? sym('chevron-right', 'spt__chev') : ''}
         </div>
       </div>`;
   };
@@ -4625,7 +4622,7 @@ function sptElternZeichnen(){
           <span class="spt__punkt" aria-hidden="true"></span>
           <span class="spt__was"><b>${esc(x.lehrerName || x.lehrer)}</b><span>${esc([sptKind(x.schueler), x.online ? 'Online' : x.raum ? 'Raum ' + x.raum : ''].filter(Boolean).join(' · '))}</span>${
             x.online && /^https?:\/\//i.test(x.link || '') ? `<a class="spt__link" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">${SPT_ICO.video}Online-Termin öffnen</a>` : ''}</span>
-          ${absagbar ? '<svg viewBox="0 0 24 24" class="ico spt__chev"><path d="m10 6 6 6-6 6"/></svg>' : ''}
+          ${absagbar ? sym('chevron-right', 'spt__chev') : ''}
         </div>
       </div>`).join('')}</div>`
     : `<div class="spt__leerBox spt__leerBox--klein">${SPT_ICO.kal}<b>Noch keine Termine</b><span>${d.buchbar && !nurLesen ? 'Tippen Sie unten auf eine freie Zeit, um einen Termin zu buchen.' : 'Es sind keine Termine gebucht.'}</span></div>`);
@@ -4698,7 +4695,7 @@ $('#lstBack').addEventListener('click', () => {
     spt.id = 0; spt.offen = ''; sprechtagZeichnen(); return;
   }
   if (listeStand.art === 'sprechtag'){ spt.id = 0; spt.offen = ''; spt.liste = null; spt.filter = 'alle'; }
-  showScreen('start');
+  showScreen(listeZurueck);
 });
 
 /* Suche in der Liste: filtert die bereits geladenen Einträge. */
@@ -4708,13 +4705,6 @@ $('#lstSearch').addEventListener('input', e => {
   listeZeichnen();
 });
 
-/* Die vier neuen Zeilen auf der Profilseite. */
-[['#btnContact', 'Kontaktdaten'], ['#btnPassword', 'Passwort ändern'],
- ['#btnNews', 'Was gibt es Neues'], ['#btnRate', 'App bewerten']]
-  .forEach(([sel, name]) => {
-    const el = $(sel);
-    if (el) el.addEventListener('click', () => toast(name + ' folgt.'));
-  });
 /* Filter zum Antippen statt zweier Eingabeaufforderungen. */
 const LST_RANGE = [
   { id:'woche', name:'Diese Woche' }, { id:'monat', name:'Dieser Monat' },
@@ -4752,7 +4742,6 @@ function zeitraumSetzen(id){
 
 function filterZeichnen(){
   const r = LST_RANGE.find(v => v.id === (listeStand.zeitraum || 'jahr')) || LST_RANGE[3];
-  /* In der Vorlage heißt es „Aktuelles Schuljahr", nicht nur „Schuljahr". */
   $('#fRangeVal').textContent = r.id === 'jahr' ? 'Aktuelles Schuljahr' : r.name;
   $('#fOpenTog').classList.toggle('is-on', (listeStand.stand || 'alle') === 'offen');
   $('#fOpenRow').style.display = listeStand.art === 'exams' ? 'none' : '';
@@ -4979,8 +4968,10 @@ function pickerShowRoot(){
   $('#pickerList').hidden = true;
   $('#pickerIndex').hidden = true;
   $('#pickerBody').scrollTop = 0;
-  $('#pickerTitle').textContent = 'Stundenplan auswählen';
+  $('#pickerTitle').textContent = 'Plan auswählen';
   $('#pickerSearch').value = '';
+  $('#pickerBack').innerHTML = sym('x');
+  $('#pickerBack').setAttribute('aria-label', 'Schließen');
 }
 
 const PK_TITLE = { class:'Klassen', teacher:'Lehrkräfte', room:'Räume', mine:'Mein Stundenplan' };
@@ -4990,6 +4981,8 @@ function pickerOpen(type){
   $('#pickerRoot').hidden = true;
   $('#pickerList').hidden = false;
   $('#pickerTitle').textContent = PK_TITLE[type] || 'Auswahl';
+  $('#pickerBack').innerHTML = sym('chevron-left');
+  $('#pickerBack').setAttribute('aria-label', 'Zurück');
   renderPicker();
 }
 
@@ -5116,11 +5109,10 @@ function renderPicker(){
     return;
   }
 
-  const CHECK = '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
+  const CHECK = sym('check');
   const TYPE_CHIP = { class:'Klasse', teacher:'Lehrkraft', room:'Raum', student:'Schüler*in', mine:'Mein Stundenplan' };
   /* Zeichen je Planart — dieselben wie in der Übersicht darüber. */
-  const PICK_SYM = { class:'ic-shared-classentity', teacher:'ic-shared-teacherentity', room:'ic-shared-roomentity',
-                     student:'ic-lessons-students', mine:'ic-my-timetable' };
+  const PICK_SYM = { class:'users', teacher:'user-round', room:'door-open', student:'graduation-cap', mine:'calendar-check' };
   const grouped = !q && pickerType && pickerType !== 'mine';
 
   let html = q ? `<div class="pk__count">${list.length} ${list.length === 1 ? 'Treffer' : 'Treffer'}</div>` : '';
@@ -5139,16 +5131,16 @@ function renderPicker(){
     const active = e === state.entity;
     html += `<button class="picker-item ${active ? 'is-active' : ''}"${anker}
       data-type="${e.type}" data-id="${e.id}">
-      <span class="picker-item__ava picker-item__ava--sym">${PICK_SYM[e.type] ? `<svg class="uic" viewBox="0 0 28 28" aria-hidden="true"><use href="#${PICK_SYM[e.type]}"></use></svg>` : esc((e.label || '?').slice(0, 3).toUpperCase())}</span>
+      <span class="picker-item__ava picker-item__ava--sym">${PICK_SYM[e.type] ? sym(PICK_SYM[e.type]) : esc((e.label || '?').slice(0, 3).toUpperCase())}</span>
       <span class="picker-item__main"><b>${esc(e.label)}</b>
-        ${TYPE_CHIP[e.type] ? `<span class="picker-item__chip">${esc(TYPE_CHIP[e.type])}</span>` : ''}
+        ${TYPE_CHIP[e.type] && !grouped ? `<span class="picker-item__chip">${esc(TYPE_CHIP[e.type])}</span>` : ''}
         ${e.classTeacher ? `<span class="picker-item__chip picker-item__chip--kl">Klassenlehrkraft: ${esc(e.classTeacher)}</span>` : ''}</span>
       <span class="picker-item__mark">${active ? CHECK : ''}</span>
     </button>`;
   });
   $('#pickerList').innerHTML = html;
 
-  /* Alphabet-Register A–Z am rechten Rand (wie in der iOS-App): immer alle
+  /* Alphabet-Register A–Z am rechten Rand: immer alle
      Buchstaben; fehlt einer, springt das Register zum nächsten vorhandenen.
      Tippen und Ziehen springen. */
   pkRegister(letters, pickerType !== 'mine' && list.length > 1);
@@ -5225,13 +5217,13 @@ async function profilListe(){
   box.innerHTML = list.map(a => `
     <button class="profrow ${a.current ? 'is-on' : ''}" data-token="${esc(a.token)}">
       <span class="profrow__mark">${a.current
-        ? '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></svg>' : ''}</span>
+        ? sym('check') : ''}</span>
       <span class="profrow__main">
         <b>${esc(a.label || 'Profil')}</b>
         ${a.info ? `<span>${esc(a.info)}</span>` : ''}
       </span>
       <span class="profrow__del" data-del="${esc(a.token)}" role="button" aria-label="Profil entfernen">
-        <svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        ${sym('x')}
       </span>
     </button>`).join('');
 
@@ -5274,18 +5266,11 @@ async function profilListe(){
   }));
 }
 
-$('#btnSwitchEntity').addEventListener('click', e => {
+/* Die Kontozeile unter „Mehr“ öffnet den Profilwechsel. */
+$('#btnSwitchAccount').addEventListener('click', e => {
   e.stopPropagation();
   const pop = $('#profPop');
   if (!pop.hidden){ pop.hidden = true; return; }
-  pop.hidden = false;
-  profilListe();
-});
-/* Die Kontokarte auf der Profilseite führt zum selben Fenster wie der
-   Knopf oben. Sie trägt den Doppelpfeil und sieht damit aus, als ließe
-   sich hier wechseln — bisher tat sie beim Antippen nichts. */
-$('#btnSwitchAccount').addEventListener('click', () => {
-  const pop = $('#profPop');
   pop.hidden = false;
   profilListe();
 });
@@ -5315,7 +5300,7 @@ $('#loginCancel').addEventListener('click', () => {
 });
 document.addEventListener('click', e => {
   const pop = $('#profPop');
-  if (pop && !pop.hidden && !e.target.closest('#profPop') && !e.target.closest('#btnSwitchEntity'))
+  if (pop && !pop.hidden && !e.target.closest('#profPop') && !e.target.closest('#btnSwitchAccount'))
     pop.hidden = true;
 });
 
@@ -5362,7 +5347,7 @@ $('#btnInfo').addEventListener('click', () => {
 });
 
 /* ---------- Menü ---------- */
-/* Der Haken sitzt bei der gerade laufenden Ansicht — wie im Muster. Vor
+/* Der Haken sitzt bei der gerade laufenden Ansicht. Vor
    jedem Öffnen frisch gesetzt, damit er dem tatsächlichen Stand folgt. */
 function markMenuView(){
   $$('#sheetMenu .menu-item--view').forEach(b => {
@@ -5436,10 +5421,10 @@ $$('#sheetMenu .menu-item').forEach(b => b.addEventListener('click', () => {
 }));
 
 /* ---------- Gehe zu Datum ----------
-   Popover wie im Original: oben „Heute“ und „Auswählen“, darunter der
-   Monat mit Pfeilen und die Tage MO–SO. Heute steht farbig, der gewählte
-   Tag mit Kreis. „Auswählen“ springt zum gewählten Tag – in der Woche zu
-   dessen Woche, in den Tagesansichten auf genau diesen Tag. */
+   Klappfenster am Menüknopf: Monat mit Pfeilen, die Tage Mo–So, unten
+   „Heute“ und „Anzeigen“. Heute steht in Marine, der gewählte Tag gefüllt.
+   „Anzeigen“ springt zum gewählten Tag – in der Woche zu dessen Woche, in
+   den Tagesansichten auf genau diesen Tag. */
 function datumAnspringen(isoDay){
   const tag = schultag(isoDay);
   state.weekStart = iso(mondayOf(parseISO(tag)));
@@ -5610,7 +5595,7 @@ function detailFuerSchueler(rows){
 function detailTabLabel(c){
   if (c.blockType === 'holiday' || c.blockType === 'event') return c.subject || 'Termin';
   if (c.blockType === 'gs' || c.blockType === 'absence')    return 'Veranstaltung';
-  if (c.blockType === 'standby')                            return c.subject || 'ZBer';
+  if (c.blockType === 'standby')                            return c.subject || 'Bereitschaft';
   if (c.blockType === 'supervision')                        return c.subject || 'Aufsicht';
   return (c.subject || c.subjectOrig || c.class || c.teacher || '·').toString();
 }
@@ -5632,7 +5617,7 @@ function renderDetailTabs(c){
     && x.lesson <= c.lesson + c.span - 1 && c.lesson <= x.lesson + x.span - 1);
 
   if (gleich.length < 2){ box.hidden = true; box.innerHTML = ''; return; }
-  /* Wie in den Sollbildern: die Veranstaltung vorn, danach die Stunden. */
+  /* Die Veranstaltung vorn, danach die Stunden. */
   const istV = x => x.blockType === 'absence' || x.blockType === 'gs';
   gleich.sort((a, b) => (istV(b) - istV(a)) || (a.lesson - b.lesson));
 
@@ -5692,7 +5677,7 @@ function renderDetail(){
   const kind = viewKind(state.entity);
 
   const two = n => String(n).padStart(2, '0');
-  /* „Fr. | 16.10.26“ – der Strich etwas heller, wie im Sollbild. */
+  /* „Fr. | 16.10.26“ – der Strich etwas heller. */
   $('#detailDate').innerHTML =
     `${WD_SHORT[(d.getDay()+6)%7]}<span class="detail__when-sep">|</span>${two(d.getDate())}.${two(d.getMonth()+1)}.${String(d.getFullYear()).slice(2)}`;
   $('#detailTime').textContent = `${t1.replace(/^0/, '')} - ${t2.replace(/^0/, '')}`;
@@ -5714,7 +5699,7 @@ function renderDetail(){
   renderDetailTabs(c);
   renderDetailTeil();
 
-  /* Kopfblock nach den Mobile-Sollbildern:
+  /* Kopfblock:
        Klasse | Kursbezeichnung
        Fach  [ZUSÄTZLICHE UNTERRICHTSSTUNDE]
        alter Raum (durchgestrichen) → neuer Raum
@@ -5799,27 +5784,28 @@ function renderDetail(){
 
   /* Entfallene Pausenaufsicht: dasselbe Banner wie eine entfallene Stunde. */
   const banner = c._supCancelled ? 'ENTFÄLLT' : ({ cancelled:'ENTFÄLLT', 'class-absent':'KLASSE ABWESEND' }[c.blockType] || '');
-  /* Keine Plaketten im Detail (wie im Original). Jede Angabe steht nur
+  /* Im Kopf der Details stehen die Werte als Text. Jede Angabe steht nur
      einmal: doppelte Lehrkräfte, Klassen oder Räume fallen weg. */
   const einmal = arr => arr.filter((x, i) => arr.findIndex(y => y.toUpperCase() === x.toUpperCase()) === i);
   /* Veranstaltung: nur ein eingetragenes Fach, nie die Bezeichnung (die
      trägt `subject` bei Veranstaltungen). */
   const veranstFach = istVeranstaltung ? String(c.eventSubject || '').trim() : '';
   /* Art der Stunde als graue Pille in Großbuchstaben rechts neben dem Fach
-     (Veranstaltung: neben dem Anlass) – wie im Original. Gibt es keine
+     (Veranstaltung: neben dem Anlass). Gibt es keine
      solche Zeile, steht sie allein unter der Überschrift. */
-  /* Zusätzliche Unterrichtsstunde: Plakette „Zusätzl. Unterrichtsstunde“
+  /* Zusätzliche Unterrichtsstunde: Plakette „Zusatzstunde“
      statt eines Vertretungstexts (nie beim Entfall). */
   const artPille = c.blockType === 'klausur' ? 'Prüfung' : istVeranstaltung ? 'Veranstaltung'
-                 : (zusatz && c.blockType !== 'cancelled') ? 'Zusätzl. Unterrichtsstunde' : '';
-  const pilleHtml = artPille ? `<span class="dpill dpill--art">${esc(artPille.toUpperCase())}</span>` : '';
+                 : (zusatz && c.blockType !== 'cancelled') ? 'Zusatzstunde' : '';
+  const pilleArt = c.blockType === 'klausur' ? 'pruefung' : istVeranstaltung ? 'termin' : 'aenderung';
+  const pilleHtml = artPille ? `<span class="dpill dpill--art plakette plakette--${pilleArt}">${esc(artPille)}</span>` : '';
 
   /* --- Aktionszeilen ----------------------------------------------------
      Alles, was zum Klassenbuch gehört (online, Raum, Lehrstoff,
      Schüler*innen, Klassenbucheinträge, Notizen für Lehrkräfte), gibt es
      nur für die eigene Stunde mit Unterricht. Fremde Stunden, Zusatz-
-     stunden ohne Unterricht und Veranstaltungen zeigen wie in den
-     Sollbildern nur Vertretungstext bzw. Information, Hausaufgaben und –
+     stunden ohne Unterricht und Veranstaltungen zeigen nur
+     Vertretungstext bzw. Information, Hausaufgaben und –
      wenn hinterlegt – die Notizen für Schüler*innen. */
   const off = c.blockType === 'cancelled';
   const onlineD = !!(c.online || cbOnline) && !off && !istVeranstaltung;
@@ -5838,7 +5824,7 @@ function renderDetail(){
   if (beitreten && !voll && !off)
     rows.push({ ico:'online', title:'Online-Unterricht beitreten', key:'join', sub: linkKurz(beitreten), link: beitreten });
   if (voll && c.date >= iso(new Date())) rows.push({ ico:'room', key:'room', chips:werteListe(c.room) });
-  /* Prüfung: eigene Zeile mit dem Fach, wie im Original. */
+  /* Prüfung: eigene Zeile mit dem Fach. */
   if (c.blockType === 'klausur')
     rows.push({ ico:'exam', title:'Prüfung', key:'exam', sub: c.subject || c.subjectOrig || '' });
   /* Verlegung: Ursprung und Ziel untereinander (fehlt die Gegenseite, nur
@@ -5888,7 +5874,7 @@ function renderDetail(){
 
   const zeilen = state.isStudent ? detailFuerSchueler(rows) : rows;
   const ico = r => `<span class="drow2__ico">${DICO[r.ico] || DICO.note}</span>`;
-  const PFEIL = '<svg viewBox="0 0 24 24" class="ico drow2__chev"><path d="m9.5 5.5 6.5 6.5-6.5 6.5"/></svg>';
+  const PFEIL = sym('chevron-right', 'drow2__chev');
 
   $('#detailBody').innerHTML = `
     <div class="dhead ${(c.blockType === 'cancelled' || c.blockType === 'class-absent') ? 'is-off' : ''}">
@@ -5918,7 +5904,7 @@ function renderDetail(){
           <input type="url" class="dlink" id="dOnlineLink" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false"
                  enterkeyhint="done" placeholder="Link zum Online-Unterricht (https://…)" value="${esc(r.link || '')}">
           ${r.link ? `<a class="dlink__go" href="${esc(r.link)}" target="_blank" rel="noopener noreferrer" aria-label="Link öffnen">
-            <svg viewBox="0 0 24 24" class="ico"><path d="M14 4.5h5.5V10M19.5 4.5 11 13M17.5 13.5v4.2a1.8 1.8 0 0 1-1.8 1.8H6.3a1.8 1.8 0 0 1-1.8-1.8V8.3a1.8 1.8 0 0 1 1.8-1.8h4.2"/></svg></a>` : '<span></span>'}
+            ${sym('external-link')}</a>` : '<span></span>'}
         </div>` : r.key === 'moved' ? `
         <div class="drow2 drow2--moved" data-key="moved" aria-label="${esc([r.title].concat(r.lines).join(', '))}">
           <span class="drow2__ico">${DICO.moved}</span>
@@ -5930,7 +5916,7 @@ function renderDetail(){
             `<button type="button" class="droom__chip" data-chip="${i}">${esc(x)}</button>`).join('')
             : '<button type="button" class="droom__chip droom__neu">Raum hinzufügen</button>'}</span>
           ${r.chips.length ? `<button type="button" class="droom__add" aria-label="Raum hinzufügen">
-            <svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v8.8M7.6 12h8.8"/></svg>
+            ${sym('circle-plus')}
           </button>` : '<span></span>'}
         </div>` : `
         <div class="drow2" data-key="${r.key || ''}" role="button">
@@ -5939,7 +5925,7 @@ function renderDetail(){
           <span class="drow2__end">
             ${r.toggle !== undefined
               ? `<span class="dtoggle ${r.toggle ? 'is-on' : ''}" role="switch" aria-checked="${r.toggle ? 'true' : 'false'}"></span>`
-              : `${r.done ? '<svg viewBox="0 0 24 24" class="ico drow2__done"><circle cx="12" cy="12" r="9"/><path d="m8.2 12.3 2.6 2.6L16 9.8"/></svg>' : ''}
+              : `${r.done ? sym('circle-check', 'drow2__done') : ''}
                  ${r.count !== undefined ? `<span class="drow2__count ${r.tone === 'red' ? 'is-red' : ''} ${r.checked ? 'is-checked' : ''}">${r.count}</span>` : ''}
                  ${PFEIL}`}
           </span>
@@ -5976,36 +5962,25 @@ function renderDetail(){
   if (state.isStudent) rechteAnwenden();
 }
 
-/* Symbole der Aktionszeilen – nachgezeichnet nach den Sollbildern. */
+/* Symbole der Aktionszeilen (Lucide). */
 const DICO = (() => {
-  /* Alle Zeichen auf demselben 28er-Raster mit derselben Strichstärke
-     (1,5 Einheiten) — die Symbole der Sammlung sind als Umriss mit dieser
-     Stärke gezeichnet, die eigenen als Linie mit genau diesem Wert. Die
-     Notiz lag vorher auf einem 32er-Raster und wirkte dadurch dünner, die
-     selbst gezeichneten (Hausaufgaben, Raum, Info) dicker. */
-  const u = id => `<svg viewBox="0 0 28 28" class="uic ico dico dico--sym"><use href="#${id}"></use></svg>`;
-  const linie = (inner, vb) => `<svg viewBox="${vb || '0 0 28 28'}" class="ico dico dico--linie" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
-  /* Notiz der Sammlung, auf das 28er-Raster zugeschnitten (32er-Vorlage). */
-  const notiz = linie('<path d="M26.5 25.75a1.5 1.5 0 0 1-1.5 1.5H7a1.5 1.5 0 0 1-1.5-1.5V6.25A1.5 1.5 0 0 1 7 4.75h15.045c.392 0 .768.153 1.048.426l2.954 2.883c.29.282.453.67.453 1.074V25.75zm-16.455-13.5h12m-12 4.5h12m-12 4.5h6"/>', '2 2 28 28');
+  const z = name => sym(name, 'dico');
   return {
-    note:          notiz,
-    substitution:  notiz,
-    lehrstoff:     notiz,
-    notes_students:notiz,
-    notes_teachers:notiz,
-    online:        u('ic-online-lesson'),
-    students:      u('ic-lessons-classes'),
-    homework:      u('ic-homework'),
-    classbook:     u('ic-navigation-class-register'),
-    /* Info zur Stunde: normal gezeichnet — Kreis mit „i“ als Linienzeichen
-       wie die übrigen Zeilen, keine gefüllte Scheibe mit ausgespartem „i“
-       (die wirkte, besonders im Dunkelmodus, invertiert). */
-    info:          linie('<circle cx="14" cy="14" r="10.25"/><path d="M14 12.6v7"/><circle cx="14" cy="8.9" r=".55" fill="currentColor"/>'),
-    room:          u('ic-shared-roomentity'),
-    exam:          u('ic-examinations'),
-    /* Verlegung: Pfeil nach rechts (Ursprung → Ziel) */
-    moved:         linie('<path d="M4.5 14h17.5M16.5 8.5 22 14l-5.5 5.5"/>'),
-    link:          linie('<path d="M12.2 15.8a4.6 4.6 0 0 0 6.5 0l3.6-3.6a4.6 4.6 0 0 0-6.5-6.5l-1.5 1.5"/><path d="M15.8 12.2a4.6 4.6 0 0 0-6.5 0l-3.6 3.6a4.6 4.6 0 0 0 6.5 6.5l1.5-1.5"/>')
+    note:          z('notebook-text'),
+    substitution:  z('replace'),
+    lehrstoff:     z('book-open'),
+    notes_students:z('sticky-note'),
+    notes_teachers:z('notebook-text'),
+    online:        z('video'),
+    students:      z('users'),
+    homework:      z('notebook-pen'),
+    classbook:     z('book-marked'),
+    info:          z('info'),
+    room:          z('door-open'),
+    exam:          z('clipboard-list'),
+    /* Verlegung: Pfeil von der Ursprungs- zur Zielstunde */
+    moved:         z('arrow-right-left'),
+    link:          z('link')
   };
 })();
 
@@ -6092,7 +6067,7 @@ async function raumListeOeffnen(c, op, alt){
   $('#dsubWhen').hidden = true;
   $('#dsubSave').hidden = true;
   $('#dsubAddTop').hidden = true;
-  $('#dsubBack').innerHTML = '<svg viewBox="0 0 24 24" class="ico"><path d="m14 6-6 6 6 6"/></svg>';
+  $('#dsubBack').innerHTML = sym('chevron-left');
   $('#detailSub').classList.add('dsub--raum');
   $('#detailSub').hidden = false;
   const body = $('#dsubBody');
@@ -6115,15 +6090,15 @@ function raumListeZeichnen(){
   const treffer = st.liste.filter(x =>
     (!st.abteilung || x.kind === st.abteilung) &&
     (!q || String(x.code).toLowerCase().includes(q) || String(x.name || '').toLowerCase().includes(q)));
-  const TUER = '<svg viewBox="0 0 28 28" class="uic ico rzeile__sym"><use href="#ic-shared-roomentity"></use></svg>';
+  const TUER = sym('door-open', 'rzeile__sym');
   const neu = !body.querySelector('.rsuche');
   if (neu){
     body.innerHTML = `
       <label class="rsuche">
-        <svg viewBox="0 0 24 24" class="ico"><circle cx="10.8" cy="10.8" r="6.2"/><path d="m15.4 15.4 4.4 4.4"/></svg>
+        ${sym('search')}
         <input type="search" id="raumSuche" placeholder="Suchen" autocomplete="off" enterkeyhint="search">
         <button type="button" class="rsuche__x" id="raumSucheX" aria-label="Suche leeren">
-          <svg viewBox="0 0 24 24" class="ico"><path d="m7 7 10 10M17 7 7 17"/></svg>
+          ${sym('x')}
         </button>
       </label>
       <div class="rfilter"><button type="button" class="rpill" id="raumAbteilung"></button></div>
@@ -6452,16 +6427,10 @@ async function cbSaveText(c, key, value){
 /* ---------------------------------------------------------------------
    Unteransicht
    --------------------------------------------------------------------- */
-/* Leere Ansicht wie in der Vorlage: Sinnbild, Überschrift, Hinweis. */
+/* Leerer Zustand: Linien-Symbol, Überschrift, Hinweis. */
 const cbEmpty = titel => `
   <div class="dsub__empty">
-    <span class="dsub__empty-ico" aria-hidden="true">
-      <svg viewBox="0 0 24 24">
-        <ellipse cx="12" cy="6.6" rx="7.2" ry="2.8"/>
-        <path d="M4.8 6.6v10.8c0 1.6 3.2 2.8 7.2 2.8s7.2-1.2 7.2-2.8V6.6"/>
-        <path d="M4.8 12c0 1.6 3.2 2.8 7.2 2.8s7.2-1.2 7.2-2.8"/>
-      </svg>
-    </span>
+    <span class="dsub__empty-ico" aria-hidden="true">${sym('inbox')}</span>
     <b>${esc(titel)}</b>
     <span>Derzeit gibt es hier noch nichts</span>
   </div>`;
@@ -6480,9 +6449,7 @@ function cbItemRow(key, o, i){
         <b>${esc(o.text || '')}</b>
         ${zeile2 ? `<span>${esc(zeile2)}</span>` : ''}
       </span>
-      ${state.isStudent ? '' : `<button data-del="${i}" aria-label="Löschen">
-        <svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
-      </button>`}
+      ${state.isStudent ? '' : `<button data-del="${i}" aria-label="Löschen">${sym('trash-2')}</button>`}
     </div>`;
 }
 
@@ -6509,7 +6476,7 @@ function openClassbook(key){
   $('#dsubSave').classList.toggle('is-besen', CB[key].kind === 'students');
   $('#dsubSave').setAttribute('aria-label', CB[key].kind === 'students' ? 'Alle als anwesend markieren' : 'Speichern');
   $('#dsubSave').innerHTML = CB[key].kind === 'students' ? ATT_BESEN
-    : '<svg viewBox="0 0 24 24" class="ico"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
+    : sym('check');
   $('#dsubAddTop').hidden = CB[key].kind !== 'list';
   /* Suche unter dem Kopf — nur bei den Klassenbucheinträgen. */
   const sucheBox = $('#dsubSucheBox');
@@ -6522,8 +6489,8 @@ function openClassbook(key){
   /* Reine Textansichten schließen mit dem Kreuz, Listen führen zurück. */
   const zu = CB[key].kind === 'readonly' || CB[key].kind === 'text';
   $('#dsubBack').innerHTML = zu
-    ? '<svg viewBox="0 0 24 24" class="ico"><path d="m6 6 12 12M18 6 6 18"/></svg>'
-    : '<svg viewBox="0 0 24 24" class="ico"><path d="m14 6-6 6 6 6"/></svg>';
+    ? sym('x')
+    : sym('chevron-left');
   $('#dsubWhen').hidden = CB[key].kind === 'readonly';
 
   const body = $('#dsubBody');
@@ -6623,7 +6590,7 @@ if ($('#dsubSuche')) $('#dsubSuche').addEventListener('input', dsubSucheAnwenden
 let attList = [], attFilter = 'all';
 /* Mehrfachauswahl für einen gemeinsamen Klassenbucheintrag (Buch-Symbol). */
 let attPick = new Set();
-const ATT_BESEN = '<svg viewBox="0 0 24 24" class="ico"><path d="M19.6 4.4 13 11"/><path d="M11.3 9.4l3.3 3.3-1 1.1c-.9.9-1.3 2.3-1 3.6l.4 1.7c-2.9-.3-5.6-1.6-7.6-3.7l1.7-.4c1.3-.3 2.4-1.1 3-2.3z"/><path d="M7.9 15.7 6.6 17M10.3 17.4l-.9 1.5"/></svg>';
+const ATT_BESEN = sym('check-check');
 /* Erst wenn wirklich kontrolliert wurde, steht das grüne Häkchen da.
    Beides gehört zu genau einer Stunde — welcher, hält attFor fest. Ohne
    das zeigte die Übersicht die Werte der zuletzt geöffneten Stunde. */
@@ -6776,26 +6743,13 @@ function attArrival(c, want){
   return { state:'present', arrival:'' };
 }
 
-/* Symbole der Vorlage. Der Zustand steht links im Kreis: grüner Haken =
-   anwesend, rote Uhr = abwesend, gelbe Rücklaufuhr = später gekommen. */
-const ATT_ICON = {
-  open:    '<circle cx="12" cy="12" r="9"/>',
-  present: '<circle cx="12" cy="12" r="9"/><path d="m8.1 12.2 2.7 2.7 5.1-5.3"/>',
-  absent:  '<circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.2 2"/>',
-  late:    '<path d="M5.04 7.3A8.4 8.4 0 1 1 5.12 16.82"/>'
-         + '<path d="M4.2 6.5 3.2 11.3l4.8-.9"/>'
-         + '<path d="M12 7.9V12h3.9"/>'
-};
+/* Zustand links als Kreissymbol: Haken = anwesend, Kreuz = abwesend,
+   Wecker = später gekommen, leerer Kreis = noch offen. */
+const ATT_ICON = { open:'circle', present:'circle-check', absent:'circle-x', late:'alarm-clock' };
 
 /* Rechts in der Zeile: Vermerk (vorhanden = Buch, sonst Seite mit Plus)
    und die Uhr, die das Fenster zur Abwesenheit öffnet. */
-const ATT_ACT_ICON = {
-  noteAdd: '<path d="M18.6 11.8V5.9A1.5 1.5 0 0 0 17.1 4.4H6.3A1.5 1.5 0 0 0 4.8 5.9v11.9a1.5 1.5 0 0 0 1.5 1.5h5.3"/>'
-         + '<circle cx="17.3" cy="17.3" r="4.2"/><path d="M17.3 14.9v4.8M14.9 17.3h4.8"/>',
-  note:    '<path d="M6.4 4.5h11a1.5 1.5 0 0 1 1.5 1.5v13.5H7.9a1.5 1.5 0 0 1-1.5-1.5z"/>'
-         + '<path d="M6.4 17.6h12.5"/>',
-  clock:   '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.1 2"/>'
-};
+const ATT_ACT_ICON = { noteAdd:'book-plus', note:'book-marked', clock:'clock' };
 
 /* Das Band über der Liste. Das Häkchen erscheint erst, wenn die Kontrolle
    auch wirklich gemacht wurde — vorher steht dort nur, ab wann es losgeht. */
@@ -6804,8 +6758,7 @@ function attBand(c, win, d, two){
     return `<div class="att__band">Kontrolle der Abwesenheiten ist ab `
          + `${two(d.getDate())}.${two(d.getMonth()+1)}.${d.getFullYear()} – ${win.from} möglich</div>`;
   if (attChecked)
-    return '<div class="att__band"><svg viewBox="0 0 24 24" class="att__band-ok">'
-         + '<path d="m5 12.5 4.5 4.5L19 7"/></svg> Abwesenheiten wurden kontrolliert</div>';
+    return `<div class="att__band att__band--ok">${sym('check', 'att__band-ok')} Abwesenheiten wurden kontrolliert</div>`;
   return '<div class="att__band att__band--todo">Abwesenheiten noch nicht kontrolliert</div>';
 }
 
@@ -6854,15 +6807,15 @@ function drawAttendance(c){
     return head + `
       <div class="att__row is-${s.state} ${s.locked ? 'is-locked' : ''} ${attPick.has(s.id) ? 'is-picked' : ''}" data-id="${s.id}">
         <span class="att__swipe att__swipe--in ${attRight(s.state, win.läuft) === 'late' ? 'is-late' : ''}" aria-hidden="true">
-          <svg viewBox="0 0 24 24">${attRight(s.state, win.läuft) === 'late' ? ATT_ICON.late : ATT_ICON.present}</svg>
+          ${sym(attRight(s.state, win.läuft) === 'late' ? ATT_ICON.late : ATT_ICON.present)}
         </span>
         <span class="att__swipe att__swipe--out" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.2 2"/></svg>
+          ${sym(ATT_ICON.absent)}
         </span>
         <div class="att__inner">
           <button class="att__mark" data-act="cycle"
                   aria-label="${s.locked ? 'Entschuldigt — nicht änderbar' : 'Anwesenheit ändern'}">
-            <svg viewBox="0 0 24 24">${ATT_ICON[s.state] || ATT_ICON.open}</svg>
+            ${sym(ATT_ICON[s.state] || ATT_ICON.open)}
           </button>
           <span class="att__main">
             <b>${esc(s.name)}</b>
@@ -6879,10 +6832,10 @@ function drawAttendance(c){
           <span class="att__acts">
             <button data-act="note" class="${attPick.has(s.id) ? 'is-on' : ''}" aria-pressed="${attPick.has(s.id)}"
                     aria-label="Für Klassenbucheintrag auswählen">
-              <svg viewBox="0 0 24 24">${(s.remarks || []).length ? ATT_ACT_ICON.note : ATT_ACT_ICON.noteAdd}</svg>
+              ${sym((s.remarks || []).length ? ATT_ACT_ICON.note : ATT_ACT_ICON.noteAdd)}
             </button>
             <button data-act="absence" aria-label="Abwesenheit bearbeiten">
-              <svg viewBox="0 0 24 24">${ATT_ACT_ICON.clock}</svg>
+              ${sym(ATT_ACT_ICON.clock)}
             </button>
           </span>
         </div>
@@ -6906,7 +6859,7 @@ function drawAttendance(c){
     ${attPick.size ? `
       <div class="att__bar">
         <button type="button" class="att__bar-x" data-bar="cancel" aria-label="Auswahl aufheben">
-          <svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+          ${sym('x')}</button>
         <button type="button" class="att__bar-go" data-bar="entry">Klassenbucheintrag (${attPick.size})</button>
       </div>`
     : (!state.isStudent && !store.get('att.hinweisZu', false)) ? `
@@ -6915,7 +6868,7 @@ function drawAttendance(c){
         <span class="att__hint-text"><b>Klassenbucheintrag</b>
           <span>Tippen Sie mehrere Schüler*innen an, um einen gemeinsamen Eintrag zu erstellen.</span></span>
         <button type="button" class="att__hint-x" aria-label="Hinweis schließen">
-          <svg viewBox="0 0 24 24"><path d="m8 8 8 8M16 8l-8 8"/></svg></button>
+          ${sym('x')}</button>
       </div>` : ''}`;
 
   /* Die Buchstabenleiste passt nur zu einer nach Namen sortierten Liste.
@@ -6982,7 +6935,7 @@ function drawAttendance(c){
 
     if (act === 'note'){
       /* Das Buch wählt die Schülerin bzw. den Schüler für einen gemeinsamen
-         Klassenbucheintrag aus (wie im Sollbild); unten erscheint dann die
+         Klassenbucheintrag aus; unten erscheint dann die
          Leiste zum Anlegen. */
       if (attPick.has(rec.id)) attPick.delete(rec.id); else attPick.add(rec.id);
       drawAttendance(c);
@@ -7012,7 +6965,7 @@ function drawAttendance(c){
 }
 
 /* ---------------------------------------------------------------------
-   Wisch-Geste wie in der Vorlage: die Zeile wandert mit dem Finger, aus
+   Wisch-Geste: die Zeile wandert mit dem Finger, aus
    der frei werdenden Kante wächst eine farbige Pille — links grün mit
    Haken (anwesend), rechts rot mit Uhr (abwesend). Über die Schwelle
    hinaus wird der Zustand gesetzt.
@@ -7048,7 +7001,7 @@ function attBindSwipe(c){
                         : dx < 0 ? !!attLeft(rec && rec.state) : true;
 
     /* Die Zeile wandert mit dem Finger; in der frei werdenden Fläche steht
-       der Knopf wie im Original – eine Pille mit etwas Luft zur Zeile. */
+       das Zustandsfeld mit etwas Luft zur Zeile. */
     const paint = dx => {
       if (!erlaubt(dx)) dx = 0;
       inner.style.transform = `translateX(${dx}px)`;
@@ -7135,7 +7088,7 @@ function attBindSwipe(c){
    ---------------------------------------------------------------------
    Ein Fenster für alles, was eingetippt wird: neue Hausaufgabe, neuer
    Klassenbucheintrag, Bemerkung zu einer Schülerin, Notizfelder. Aufbau
-   nach der Vorlage — Kreuz links, Titel, oranger Haken rechts, darunter
+   als Blatt — Kreuz links, Titel, Haken rechts, darunter
    beschriftete Zeilen.
    ===================================================================== */
 let formSpec = null;
@@ -7189,20 +7142,20 @@ function drawForm(){
   $('#dformBody').innerHTML = f.map(x => {
     if (x.t === 'hint')
       return `<p class="dform__hint">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9v.1"/></svg>
+                ${sym('info')}
                 ${esc(x.text)}</p>`;
     if (x.t === 'people')
       return `<button class="dform__row dform__row--nav dform__row--people" type="button" data-people>
                 <span class="dform__lab">${esc(x.label)}<small>${esc(x.text || '')}</small></span>
                 <span></span>
-                <svg viewBox="0 0 24 24" class="dform__chev"><path d="m10 6 6 6-6 6"/></svg>
+                ${sym('chevron-right', 'dform__chev')}
               </button>`;
     if (x.t === 'text')
       return `<label class="dform__row dform__row--nav">
                 <span class="dform__lab">${esc(x.label)}</span>
                 <textarea class="dform__in" id="ff-${x.key}" rows="1"
                   placeholder="${esc(x.placeholder || 'Text hier eingeben')}">${esc(x.value || '')}</textarea>
-                <svg viewBox="0 0 24 24" class="dform__chev"><path d="m10 6 6 6-6 6"/></svg>
+                ${sym('chevron-right', 'dform__chev')}
               </label>`;
     if (x.t === 'area')
       return `<div class="dform__block">
@@ -7218,7 +7171,7 @@ function drawForm(){
       return `<button class="dform__row dform__row--nav" type="button" data-pick="${x.key}">
                 <span class="dform__lab">${esc(x.label)}</span>
                 ${x.value ? `<span class="dform__val">${esc(x.value)}</span>` : '<span></span>'}
-                <svg viewBox="0 0 24 24" class="dform__chev"><path d="m10 6 6 6-6 6"/></svg>
+                ${sym('chevron-right', 'dform__chev')}
               </button>`;
     if (x.t === 'toggle')
       return `<div class="dform__row dform__row--val">
@@ -7340,7 +7293,7 @@ async function gemeinsamerEintrag(c){
   const arten = await loadRemarkTypes(c);
   const namen = arten.map(t => t.name);
   const gewaehlt = attList.filter(s => attPick.has(s.id));
-  /* Wie im Original: „Neuer Klassenbucheintrag“ mit den gewählten
+  /* „Neuer Klassenbucheintrag“ mit den gewählten
      Schüler*innen, der Eintragskategorie und dem Text. */
   openForm({
     title: 'Neuer Klassenbucheintrag',
@@ -7394,7 +7347,7 @@ async function openItemSheet(key, index){
   const alt  = index !== undefined ? itemParse(list[index]) : {};
   const neu  = index === undefined;
 
-  /* Klassenbucheintrag wie im Original: Eintragskategorie, darunter der Text. */
+  /* Klassenbucheintrag: Eintragskategorie, darunter der Text. */
   const fields = key === 'homework' ? [{ t:'text', key:'text', label:'Text', value:alt.text || '' }] : [];
   if (key === 'homework'){
     fields.push({ t:'area', key:'note', label:'Bemerkung', value:alt.note || '' });
@@ -7467,7 +7420,7 @@ const absInitials = name => String(name || '').trim().split(/\s+/)
 /* ---------------------------------------------------------------------
    Abwesenheiten einer Schülerin / eines Schülers (Uhr in der Zeile)
    ---------------------------------------------------------------------
-   Wie im Original: Liste der Abwesenheiten mit Datum, Uhrzeit und Grund,
+   Liste der Abwesenheiten mit Datum, Uhrzeit und Grund,
    oben rechts „+“ für eine neue, unten die Suche. Ein Eintrag öffnet
    „Abwesenheit bearbeiten“. Die Klassenleitung sieht alle Zeiträume der
    letzten Wochen, sonst steht dort die Abwesenheit dieser Stunde.
@@ -7511,10 +7464,10 @@ function ablZeichnen(){
   const datum = x => x.toDate && x.toDate !== x.fromDate ? `${deDate(x.fromDate)} – ${deDate(x.toDate)}` : deDate(x.fromDate);
   $('#dablBody').innerHTML = liste.length ? liste.map(x => `
     <button type="button" class="dabl__item" data-i="${ablItems.indexOf(x)}">
-      <svg viewBox="0 0 24 24" class="dabl__ico"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.1 2"/></svg>
+      ${sym('clock', 'dabl__ico')}
       <span class="dabl__when"><span>${esc(datum(x))}</span><span>${esc(hm(x.fromTime))} - ${esc(hm(x.toTime))}</span></span>
-      <svg viewBox="0 0 24 24" class="ico dabl__chev"><path d="m9.5 5.5 6.5 6.5-6.5 6.5"/></svg>
-      <svg viewBox="0 0 24 24" class="dabl__ico"><circle cx="12" cy="12" r="8.6"/><path d="M12 11.2v5.4"/><circle cx="12" cy="7.9" r=".95" fill="currentColor" stroke="none"/></svg>
+      ${sym('chevron-right', 'dabl__chev')}
+      ${sym('info', 'dabl__ico')}
       <span class="dabl__grund">${esc(x.reasonName || attReasonName(x.reason) || 'Ohne Angabe')}${x.text ? ` <i>· ${esc(x.text)}</i>` : ''}</span>
     </button>`).join('')
     : cbEmpty(q ? 'Keine Treffer' : 'Keine Abwesenheiten');
@@ -7603,14 +7556,14 @@ function drawAbsence(){
 
     <div class="dabs__grid">
       <div>
-        <span class="dabs__lab">START</span>
+        <span class="dabs__lab">Beginn</span>
         <div class="dabs__fields">
           <input class="dabs__pill" type="date" id="absFromDate" value="${esc(d.fromDate)}">
           <input class="dabs__pill" type="time" id="absFromTime" step="60" value="${esc(d.fromTime)}">
         </div>
       </div>
       <div>
-        <span class="dabs__lab">ENDE</span>
+        <span class="dabs__lab">Ende</span>
         <div class="dabs__fields">
           <input class="dabs__pill" type="date" id="absToDate" value="${esc(d.toDate)}">
           <input class="dabs__pill" type="time" id="absToTime" step="60" value="${esc(d.toTime)}">
@@ -7618,13 +7571,13 @@ function drawAbsence(){
       </div>
     </div>
 
-    <span class="dabs__lab">ABWESENHEITSGRUND</span>
+    <span class="dabs__lab">Grund</span>
     <button class="dabs__sel" id="absReason" type="button">
       <span class="${reasonLabel ? '' : 'is-empty'}">${esc(reasonLabel || 'Grund wählen')}</span>
-      <svg viewBox="0 0 24 24" class="ico"><path d="m10 6 6 6-6 6"/></svg>
+      ${sym('chevron-right')}
     </button>
 
-    <span class="dabs__lab">TEXT FÜR ABWESENHEIT</span>
+    <span class="dabs__lab">Text zur Abwesenheit</span>
     <textarea class="dabs__area" id="absText" placeholder="Text hier eingeben">${esc(d.text)}</textarea>
 
     <div class="dabs__switch">
@@ -7952,14 +7905,12 @@ function renderDetailMenu(){
   const pop = $('#detailMenuPop');
   if (!c){ pop.hidden = true; return; }
 
-  /* Klasse: Gruppe vor der Tafel. Lehrkraft: Person mit Zeigestock an der
-     Tafel. Raum: Tür mit Klinke. */
-  /* Die Symbole der Vorbild-Sammlung. Sie sind Füllflächen und brauchen
-     deshalb `uic` statt `ico` — dort steht Kontur an, Füllung aus. */
+  /* Symbole je Planart: Klasse = Personengruppe, Lehrkraft = Person,
+     Raum = Tür. */
   const ICO = {
-    class:   'ic-shared-classentity',
-    teacher: 'ic-shared-teacherentity',
-    room:    'ic-shared-roomentity'
+    class:   'users',
+    teacher: 'user-round',
+    room:    'door-open'
   };
   const LBL = { class:'Klasse', teacher:'Lehrkraft', room:'Raum' };
 
@@ -7998,7 +7949,7 @@ function renderDetailMenu(){
   pop.innerHTML = items.length
     ? `<div class="dmenu__head">Im Stundenplan anzeigen</div>`
       + items.map((i, n) => `<button data-n="${n}">
-         <svg class="uic ico"><use href="#${ICO[i.type] || 'ic-shared-classentity'}"></use></svg>
+         ${sym(ICO[i.type] || 'users')}
          <span>${esc(i.label)}</span>
        </button>`).join('')
     : '<div class="dmenu__empty">Keine weiteren Pläne zu dieser Stunde.</div>';
@@ -8353,13 +8304,12 @@ document.addEventListener('visibilitychange', () => {
   const name = state.ownName || (state.own && state.own.info) || eigen.info
              || state.ownCode || eigen.code || eigen.label || '';
   const kurz = state.ownCode || eigen.code || '';
-  /* Wie im Vorbild: groß das Kürzel, in der Kontokarte die Anmeldung mit
-     der Rolle als Plakette. Ohne Kürzel (Administration) steht der Name
-     oben, ohne Anmeldenamen der Name in der Karte. */
+  /* In der Kontozeile unter „Mehr“: Anmeldename, darunter Name bzw.
+     Kürzel und die Rolle als Plakette. */
   const login = (state.user && state.user.login) || '';
   $('#profileName').textContent = login || name || kurz || 'Profil';
   const full = $('#profileFullName');
-  if (full) full.textContent = kurz || name || 'Profil';
+  if (full) full.textContent = [name, kurz && kurz !== name ? kurz : ''].filter(Boolean).join(' · ');
   const btnKonto = $('#btnSwitchAccount');
   if (btnKonto && name) btnKonto.title = name;
   /* Ob Schüler*in oder Lehrkraft, sagt die Art des eigenen Plans — ein
@@ -8649,15 +8599,4 @@ function planwachtStart(){
 }
 })();
 
-/* Der Reiter „Stundenplan“ trägt wie in der Vorlage die heutige Tageszahl
-   im Kalendersymbol — beim Start, beim Zurückkommen zur App und nach
-   Mitternacht neu gesetzt. */
-(function tagesZahlImReiter(){
-  const setzen = () => {
-    const n = String(new Date().getDate());
-    document.querySelectorAll('.tab .tabnum').forEach(t => { if (t.textContent !== n) t.textContent = n; });
-  };
-  setzen();
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) setzen(); });
-  setInterval(setzen, 60000);
-})();
+

@@ -49,8 +49,8 @@ struct LokalerAnhang: Identifiable {
 
 // MARK: - Blatt: Empfängerauswahl und Editor
 
-/// Neue Mitteilung im Blatt (Vorlagen 143/144): zuerst die Empfängerauswahl, nach dem Haken der Editor; die Zeile „An“
-/// im Editor öffnet die Auswahl erneut. Mit Anhängen: Entwurf anlegen, Dateien hochladen, dann senden.
+/// Neue Mitteilung im Blatt: zuerst die Empfängerauswahl, nach „Fertig“ der Editor; die Zeile „An“ im Editor öffnet
+/// die Auswahl erneut. Mit Anhängen: Entwurf anlegen, Dateien hochladen, dann senden.
 struct MitteilungVerfassenView: View {
     let start: Verfassen
     let gesendet: () -> Void
@@ -89,7 +89,7 @@ struct MitteilungVerfassenView: View {
         _text = State(initialValue: start.text)
     }
 
-    /// Randloses iPhone-Blatt mit eigener Animation schließen, sonst das Systemblatt.
+    /// Blatt schließen.
     private func schliessen() {
         if let blattSchliessen { blattSchliessen() } else { systemSchliessen() }
     }
@@ -139,7 +139,7 @@ struct MitteilungVerfassenView: View {
         }
     }
 
-    // MARK: Editor (Vorlage 144)
+    // MARK: Editor
 
     private var editor: some View {
         VStack(spacing: 0) {
@@ -150,21 +150,21 @@ struct MitteilungVerfassenView: View {
             }, rechts: {
                 sendenKnopf
             })
-            Rectangle().fill(MitteilungDetailView.trennFarbe).frame(height: 1)
             anZeile
-            Rectangle().fill(MitteilungDetailView.trennFarbe).frame(height: 1)
+            Rectangle().fill(Farben.rand).frame(height: 0.5)
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     TextField("Betreff", text: $betreff)
-                        .font(.system(size: 20))
-                        .foregroundStyle(Farben.tinte)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Farben.text)
                         .tint(Farben.akzent)
                         .focused($fokus, equals: .betreff)
                         .submitLabel(.next)
                         .onSubmit { fokus = .text }
-                    TextField("Text hier eingeben", text: $text, axis: .vertical)
-                        .font(.system(size: 15))
-                        .foregroundStyle(Farben.tinte)
+                    Divider()
+                    TextField("Text", text: $text, axis: .vertical)
+                        .font(.body)
+                        .foregroundStyle(Farben.text)
                         .tint(Farben.akzent)
                         .lineLimit(6...)
                         .focused($fokus, equals: .text)
@@ -182,8 +182,8 @@ struct MitteilungVerfassenView: View {
                         Fehlerhinweis(text: fehler)
                     }
                 }
-                .padding(.horizontal, 16.5)
-                .padding(.top, 24)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
                 .padding(.bottom, 24)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -219,22 +219,23 @@ struct MitteilungVerfassenView: View {
         }
     }
 
-    /// Senden: Papierflieger im runden Glasknopf (orange, sobald Empfänger, Betreff und Text vorhanden sind).
+    /// „Senden“ rechts im Kopf (aktiv, sobald Empfänger, Betreff und Text vorhanden sind).
     @ViewBuilder
     private var sendenKnopf: some View {
         if sendet {
             ProgressView()
                 .frame(width: Detailmass.knopf, height: Detailmass.knopf)
+                .padding(.horizontal, 8)
         } else {
             Button {
                 Task { await senden() }
             } label: {
-                Image(systemName: "paperplane")
-                    .font(.system(size: 21, weight: .light))
-                    .foregroundStyle(bereit ? Farben.akzent : Color(hell: 0x9AA5AE, dunkel: 0x616063))
-                    .frame(width: Detailmass.knopf, height: Detailmass.knopf)
-                    .liquidGlas(Circle())
-                    .contentShape(Circle())
+                Text("Senden")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(bereit ? Farben.akzent : Farben.pfeil)
+                    .padding(.horizontal, 8)
+                    .frame(minHeight: Detailmass.knopf)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(!bereit)
@@ -242,43 +243,41 @@ struct MitteilungVerfassenView: View {
         }
     }
 
-    /// „An [ABB] >“ (Vorlage 144: Zeile 44 pt zwischen zwei Trennlinien, „An“ 15 pt, Kapsel 32,3 pt hoch #DDDEE4 mit
-    /// 16,6 pt Innenabstand, Pfeil 26,7 pt vom rechten Rand) – antippen öffnet die Auswahl.
+    /// Zeile „An“ mit den gewählten Empfängern als Felder; antippen öffnet die Auswahl.
     private var anZeile: some View {
         Button {
             fokus = nil
-            withAnimation(.easeInOut(duration: 0.2)) { schritt = .auswahl }
+            withAnimation(.easeOut(duration: 0.12)) { schritt = .auswahl }
         } label: {
-            HStack(spacing: 17) {
-                Text("An")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color(hell: 0x48606F, dunkel: 0xE3E2E9))
+            HStack(spacing: 12) {
+                Text("An:")
+                    .font(.subheadline)
+                    .foregroundStyle(Farben.text2)
                 ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         if empfaenger.isEmpty {
                             Text("Empfänger wählen")
-                                .font(.system(size: 15))
-                                .foregroundStyle(Farben.gedaempft)
+                                .font(.subheadline)
+                                .foregroundStyle(Farben.text3)
                         }
                         ForEach(empfaenger) { e in
                             Text(e.kuerzel)
-                                .font(.system(size: 15))
-                                .foregroundStyle(Color(hell: 0x253746, dunkel: 0x0C1216))
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Farben.akzent)
                                 .lineLimit(1)
-                                .padding(.horizontal, 16.6)
-                                .frame(height: 32.3)
-                                .background(Color(hell: 0xE3E7EB, dunkel: 0xDDDEE4), in: Capsule())
+                                .padding(.horizontal, 8)
+                                .frame(height: 26)
+                                .background(Farben.primaerFlaeche, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                         }
                     }
                 }
                 .scrollIndicators(.hidden)
                 .allowsHitTesting(empfaenger.count > 3)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 22, weight: .light))
-                    .foregroundStyle(Color(hell: 0x48606F, dunkel: 0xC7CBD3))
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(Farben.akzent)
             }
-            .padding(.leading, 16.2)
-            .padding(.trailing, 26.7)
+            .padding(.horizontal, 16)
             .frame(height: 44)
             .contentShape(Rectangle())
         }
@@ -287,57 +286,42 @@ struct MitteilungVerfassenView: View {
         .accessibilityHint("Öffnet die Empfängerauswahl")
     }
 
-    /// Über der Tastatur: links Lesebestätigung anfordern | Antwort nicht erlaubt, rechts Kamera | Foto | Datei.
+    /// Werkzeugleiste über der Tastatur: links die Optionen (Lesebestätigung anfordern, Antworten nicht erlauben),
+    /// rechts Kamera, Foto und Datei.
     private var werkzeuge: some View {
-        HStack {
-            Glasgruppe {
-                Glasgruppenknopf(symbol: "envelope", text: "Lesebestätigung anfordern", aktiv: lesebestaetigung,
-                                 zusatz: "questionmark.circle") {
-                    lesebestaetigung.toggle()
-                    hinweisZeigen(lesebestaetigung ? "Lesebestätigung wird angefordert" : "Keine Lesebestätigung")
+        HStack(spacing: 4) {
+            Menu {
+                Toggle(isOn: $lesebestaetigung) {
+                    Label("Lesebestätigung anfordern", systemImage: "envelope.open")
                 }
                 if start.typ != .antwort || zustand.istKollegium {
-                    Glasgruppenknopf(symbol: "envelope", text: "Antwort nicht erlaubt", aktiv: antwortGesperrt,
-                                     zusatz: "xmark.circle") {
-                        antwortGesperrt.toggle()
-                        hinweisZeigen(antwortGesperrt ? "Antworten nicht erlaubt" : "Antworten erlaubt")
+                    Toggle(isOn: $antwortGesperrt) {
+                        Label("Antworten nicht erlauben", systemImage: "arrowshape.turn.up.left")
                     }
                 }
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundStyle(Farben.akzent)
+                    .frame(width: 40, height: 36)
+                    .background(lesebestaetigung || antwortGesperrt ? Farben.primaerFlaeche : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
+            .accessibilityLabel("Optionen")
+            .accessibilityValue([lesebestaetigung ? "Lesebestätigung angefordert" : "",
+                                 antwortGesperrt ? "Antworten nicht erlaubt" : ""].filter { !$0.isEmpty }.joined(separator: ", "))
             Spacer(minLength: 12)
-            Glasgruppe {
-                if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                    Glasgruppenknopf(symbol: "camera", text: "Foto aufnehmen") { kameraOffen = true }
-                }
-                Glasgruppenknopf(symbol: "photo.on.rectangle", text: "Foto auswählen") { fotosOffen = true }
-                Glasgruppenknopf(symbol: "paperclip", text: "Datei anhängen") { dateienOffen = true }
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Werkzeugknopf(symbol: "camera", text: "Foto aufnehmen") { kameraOffen = true }
             }
+            Werkzeugknopf(symbol: "photo.on.rectangle", text: "Foto auswählen") { fotosOffen = true }
+            Werkzeugknopf(symbol: "paperclip", text: "Datei anhängen") { dateienOffen = true }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 9)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Farben.flaeche2)
         .overlay(alignment: .top) {
-            if let hinweis {
-                Text(hinweis)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.black.opacity(0.78), in: Capsule())
-                    .offset(y: -44)
-                    .transition(.opacity)
-                    .allowsHitTesting(false)
-            }
-        }
-    }
-
-    @State private var hinweis: String? = nil
-
-    private func hinweisZeigen(_ text: String) {
-        withAnimation { hinweis = text }
-        Task {
-            try? await Task.sleep(nanoseconds: 1_600_000_000)
-            if hinweis == text { withAnimation { hinweis = nil } }
+            Rectangle().fill(Farben.rand).frame(height: 0.5)
         }
     }
 
@@ -423,11 +407,11 @@ struct MitteilungVerfassenView: View {
     }
 }
 
-// MARK: - Empfängerauswahl (Vorlage 143)
+// MARK: - Empfängerauswahl
 
-/// Empfängerauswahl als Blatt: X links, Haken rechts, Titel „Mitteilung an“ / „Kolleg*innen“; darunter waagrecht
-/// scrollbare Filter-Kapseln (Ausgewählt, Liste, Klasse, Abteilung), „Alle auswählen“ und die Personen mit Auswahlkreis,
-/// Avatar, Kürzel und Rollen-Kapseln; unten schwebt das gläserne Suchfeld.
+/// Empfängerauswahl als Blatt: „Abbrechen“ links, „Fertig“ rechts, Titel „Mitteilung an“ / „Kolleg*innen“; darunter das
+/// Suchfeld, waagrecht scrollbare Filter (Ausgewählt, Liste, Klasse, Abteilung), „Alle auswählen“ und die Personen mit
+/// Auswahlkreis, Initialen, Kürzel und Rollen.
 struct EmpfaengerauswahlView: View {
     let typ: Verfassenstyp
     let daten: Personenauswahl?
@@ -499,18 +483,21 @@ struct EmpfaengerauswahlView: View {
                 Button {
                     fertig(ergebnis())
                 } label: {
-                    Rundknopf(symbol: "checkmark", gewicht: .light, groesse: 21)
+                    Text("Fertig")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Farben.akzent)
+                        .padding(.horizontal, 8)
+                        .frame(minHeight: Detailmass.knopf)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(auswahl.isEmpty ? "Fertig" : "Fertig, \(auswahl.count) ausgewählt")
             })
+            suchfeld
             filterleiste
             personenliste(inhalt: sichtbar)
         }
         .background(Farben.blatt.ignoresSafeArea())
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            suchfeld
-        }
     }
 
     /// Ergebnis in der Reihenfolge der Liste; bisher gewählte, hier unbekannte Empfänger bleiben vorn erhalten.
@@ -585,8 +572,10 @@ struct EmpfaengerauswahlView: View {
         }
         .scrollIndicators(.hidden)
         .tint(Color.primary)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
+        .padding(.bottom, 8)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Farben.rand).frame(height: 0.5)
+        }
     }
 
     // MARK: Liste
@@ -605,14 +594,14 @@ struct EmpfaengerauswahlView: View {
                         auswahl.formUnion(inhalt.map(\.id))
                     }
                 } label: {
-                    HStack(spacing: 18.8) {
+                    HStack(spacing: 14) {
                         Auswahlkreis(gewaehlt: alleGewaehlt)
                         Text("Alle auswählen")
-                            .font(.system(size: 15))
-                            .foregroundStyle(Farben.tinte)
+                            .font(.body)
+                            .foregroundStyle(Farben.text)
                         Spacer(minLength: 0)
                     }
-                    .padding(.vertical, 17)
+                    .padding(.vertical, 12)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -620,7 +609,7 @@ struct EmpfaengerauswahlView: View {
             } else if daten != nil {
                 Text(suche.isEmpty ? "Keine Empfänger." : "Keine Treffer für „\(suche)“.")
                     .font(.system(size: 16))
-                    .foregroundStyle(Farben.gedaempft)
+                    .foregroundStyle(Farben.text3)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 30)
                     .auswahlzeile()
@@ -638,16 +627,14 @@ struct EmpfaengerauswahlView: View {
         .environment(\.defaultMinListRowHeight, 0)
     }
 
-    /// Gläsernes Suchfeld unten (Vorlage 143: 49 pt hoch, 26 pt von den Seiten, Unterkante 26,5 pt über dem
-    /// Bildschirmrand; Lupe 22 pt vom Feldrand, „Suchen“ 17 pt knapp 5 pt daneben).
+    /// Suchfeld oben in der Auswahl (gleiches Aussehen wie das Suchfeld des Systems).
     private var suchfeld: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(Farben.tinte)
+                .font(.system(size: 15, weight: .regular))
+                .foregroundStyle(Farben.text3)
             TextField("Suchen", text: $suche)
-                .font(.system(size: 17))
-                .foregroundStyle(Farben.tinte)
+                .foregroundStyle(Farben.text)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.search)
@@ -657,75 +644,66 @@ struct EmpfaengerauswahlView: View {
                     suche = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Farben.gedaempft)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Farben.pfeil)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Suche leeren")
             }
         }
-        .padding(.leading, 22)
-        .padding(.trailing, 18)
-        .frame(height: 49)
-        .liquidGlas(Capsule())
-        .contentShape(Capsule())
+        .padding(.horizontal, 10)
+        .frame(height: 36)
+        .background(Farben.neutralFlaeche, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .contentShape(Rectangle())
         .onTapGesture { sucheFokus = true }
-        .padding(.horizontal, 26)
-        .padding(.top, 6)
-        // Am iPhone liegt das Feld etwas in den unteren sicheren Bereich hinein (wie im Original)
-        .offset(y: 7.5)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 8)
     }
 }
 
-/// Filter-Kapsel mit Rand („Liste ⌄“), Vorlage 143: 42 pt hoch, 16 pt Innenabstand, Text 15 pt #E6E8EC, Pfeil 11 × 6,6 pt,
-/// Rand 1 pt #888E95; 8 pt Abstand zwischen den Kapseln. Aktiv leicht hinterlegt.
+/// Filter mit feinem Rand („Liste ⌄“); aktiv in Marine auf heller Marine-Fläche.
 private struct Filterkapsel: View {
     let titel: String
     let aktiv: Bool
     let pfeil: Bool
 
     var body: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 5) {
             Text(titel)
-                .font(.system(size: 15))
+                .font(.subheadline)
                 .lineLimit(1)
             if pfeil {
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 10, weight: .semibold))
             }
         }
-        .foregroundStyle(Color(hell: 0x253746, dunkel: 0xE6E8EC))
-        .padding(.horizontal, 16)
-        .frame(height: 42)
-        .background(aktiv ? Farben.knopf : Color.clear, in: Capsule())
+        .foregroundStyle(aktiv ? Farben.akzent : Farben.text)
+        .padding(.horizontal, 10)
+        .frame(height: 32)
+        .background(aktiv ? Farben.primaerFlaeche : Farben.flaeche, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .overlay {
-            Capsule().strokeBorder(aktiv ? Farben.tinte2 : Color(hell: 0xB7C0C7, dunkel: 0x888E95), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(aktiv ? Farben.primaerRand : Farben.randStark, lineWidth: 1)
         }
-        .contentShape(Capsule())
+        .contentShape(Rectangle())
     }
 }
 
-/// Runder Auswahlkreis (leer bzw. orange mit Haken).
+/// Runder Auswahlkreis (leer bzw. gefüllt mit Haken) wie in den Listen des Systems.
 struct Auswahlkreis: View {
     let gewaehlt: Bool
 
     var body: some View {
-        ZStack {
-            if gewaehlt {
-                Circle().fill(Farben.akzent)
-                Image(systemName: "checkmark")
-                    .font(.system(size: 11.5, weight: .medium))
-                    .foregroundStyle(.white)
-            } else {
-                Circle().strokeBorder(Color(hell: 0x9AA5AE, dunkel: 0x8F949E), lineWidth: 1.2)
-            }
-        }
-        .frame(width: 24.5, height: 24.5)
-        .accessibilityHidden(true)
+        Image(systemName: gewaehlt ? "checkmark.circle.fill" : "circle")
+            .font(.system(size: 22, weight: .regular))
+            .foregroundStyle(gewaehlt ? Farben.akzent : Farben.pfeil)
+            .frame(width: 24, height: 24)
+            .accessibilityHidden(true)
     }
 }
 
-/// Zeile der Empfängerauswahl: Auswahlkreis, grauer Avatar mit Initialen, Kürzel und Rollen-Kapseln.
+/// Zeile der Empfängerauswahl: Auswahlkreis, Initialen bzw. Gruppensymbol, Kürzel und Rollen.
 struct Personenzeile: View {
     let empfaenger: Empfaenger
     let gewaehlt: Bool
@@ -733,31 +711,28 @@ struct Personenzeile: View {
 
     var body: some View {
         Button(action: umschalten) {
-            HStack(spacing: 18.4) {
+            HStack(spacing: 14) {
                 Auswahlkreis(gewaehlt: gewaehlt)
-                HStack(spacing: 8.7) {
+                HStack(spacing: 10) {
                     Group {
                         if empfaenger.istPerson {
-                            Text(empfaenger.initialen)
-                                .font(.system(size: 17.5))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.6)
+                            Initialen(name: empfaenger.name, groesse: 36, vorgabe: empfaenger.initialen)
                         } else {
                             Image(systemName: empfaenger.id.hasPrefix("liste:") ? "list.bullet" : "person.3")
-                                .font(.system(size: 18, weight: .light))
+                                .font(.system(size: 15, weight: .regular))
+                                .foregroundStyle(Farben.akzent)
+                                .frame(width: 36, height: 36)
+                                .background(Farben.primaerFlaeche, in: Circle())
                         }
                     }
-                    .foregroundStyle(.white)
-                    .frame(width: Mitteilungszeile.avatarGroesse, height: Mitteilungszeile.avatarGroesse)
-                    .background(Mitteilungszeile.avatarFarbe, in: Circle())
                     VStack(alignment: .leading, spacing: 4) {
                         Text(empfaenger.istPerson ? empfaenger.kuerzel : empfaenger.name)
-                            .font(.system(size: 15))
-                            .foregroundStyle(Farben.tinte)
+                            .font(.body)
+                            .foregroundStyle(Farben.text)
                             .lineLimit(1)
                         let pills = empfaenger.pills
                         if !pills.isEmpty {
-                            Umbruchlayout(abstand: 4.4, zeilenabstand: 4) {
+                            Umbruchlayout(abstand: 4, zeilenabstand: 4) {
                                 ForEach(Array(pills.enumerated()), id: \.offset) { _, p in
                                     Rollenkapsel(text: p.text)
                                 }
@@ -767,7 +742,7 @@ struct Personenzeile: View {
                     Spacer(minLength: 0)
                 }
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -776,20 +751,19 @@ struct Personenzeile: View {
     }
 }
 
-/// Rollen-Kapsel („Lehrkraft“, „Klassenlehrkraft | DTI1A“), Vorlage 143: 20,6 pt hoch, Text 12,5 pt #07131C auf #7F8F9C,
-/// 9,2 pt Innenabstand, 4,4 pt Abstand zur nächsten Kapsel.
+/// Rolle einer Person („Lehrkraft“, „Klassenlehrkraft | 5A“): kleine neutrale Fläche, Radius 3 pt.
 struct Rollenkapsel: View {
     let text: String
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12.5))
-            .foregroundStyle(Color(hell: 0x40525E, dunkel: 0x07131C))
+            .font(.caption)
+            .foregroundStyle(Farben.text2)
             .lineLimit(1)
             .minimumScaleFactor(0.75)
-            .padding(.horizontal, 9.2)
-            .frame(height: 20.6)
-            .background(Color(hell: 0xD3DAE0, dunkel: 0x7F8F9C), in: Capsule())
+            .padding(.horizontal, 6)
+            .frame(height: 18)
+            .background(Farben.neutralFlaeche, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
     }
 }
 
@@ -846,27 +820,13 @@ private extension View {
     }
 }
 
-/// Titel in der Mitte der Mitteilungsblätter (Vorlagen 143/144): 15,5 pt Regular #CDD1D4, Untertitel 11,5 pt – etwas
-/// kleiner als der Titel der Stundendetails.
+/// Titel in der Mitte der Mitteilungsblätter: Titel halbfett, darunter klein der Untertitel.
 struct Mitteilungstitel: View {
     let titel: String
     var untertitel: String? = nil
 
-    private static let farbe = Color(hell: 0x5D727F, dunkel: 0xCDD1D4)
-
     var body: some View {
-        VStack(spacing: 1.5) {
-            Text(titel)
-                .font(.system(size: 15.5))
-            if let untertitel, !untertitel.isEmpty {
-                Text(untertitel)
-                    .font(.system(size: 11.5))
-            }
-        }
-        .foregroundStyle(Self.farbe)
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-        .accessibilityElement(children: .combine)
+        Blatttitel(titel: titel, untertitel: untertitel)
     }
 }
 

@@ -11,7 +11,7 @@
      classOrig, teacherOrig, roomOrig, subjectOrig
      blockType           normal | change | cancelled | klausur | event | class-absent
      changed             ['room'] | ['teacher'] | ['class'] | ['subject']
-     highlight           true = kräftiger grüner Rahmen (neue Änderung)
+     highlight           true = kräftiger Rahmen (neue Änderung)
      info                Text für das ⓘ-Zeichen und die Detailansicht
      parallel            {index, count} für nebeneinanderliegende Karten
    ===================================================================== */

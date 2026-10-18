@@ -14,9 +14,9 @@ final class AppZustand: ObservableObject {
     @Published var phase: Phase = .startet
     @Published var sitzung: Sitzung?
     @Published var ungelesen = 0
-    /// Gewählter Reiter der Tab-Leiste (die App startet im Stundenplan).
-    @Published var reiter: AppReiter = .stundenplan
-    /// Zählt hoch, wenn der bereits gewählte Reiter „Stundenplan“ erneut angetippt wird (zurück zur heutigen Woche).
+    /// Gewählter Reiter der Tab-Leiste (die App startet im Plan).
+    @Published var reiter: AppReiter = .plan
+    /// Zählt hoch, wenn der bereits gewählte Reiter „Plan“ erneut angetippt wird (zurück zur heutigen Woche).
     @Published var stundenplanHeute = 0
     /// Zählt hoch, wenn sich der Plan geändert hat (z. B. Raumbuchung in den Stundendetails) – der Stundenplan lädt neu.
     @Published var planGeaendert = 0
@@ -69,9 +69,9 @@ final class AppZustand: ObservableObject {
         return b.familie || ["schueler", "eltern"].contains(b.rolle.lowercased())
     }
 
-    /// Reiter wählen; erneutes Antippen des Stundenplans führt zur heutigen Woche zurück.
+    /// Reiter wählen; erneutes Antippen des Plans führt zur heutigen Woche zurück.
     func reiterWaehlen(_ neu: AppReiter) {
-        if neu == reiter && neu == .stundenplan {
+        if neu == reiter && neu == .plan {
             stundenplanHeute += 1
         }
         if neu != reiter { reiter = neu }
@@ -135,7 +135,7 @@ final class AppZustand: ObservableObject {
     /// Oberfläche für ein anderes Konto zurücksetzen (Reiter, Anfragen, zwischengespeicherte Kacheln).
     private func oberflaecheZuruecksetzen() {
         ungelesen = 0
-        reiter = .stundenplan
+        reiter = .plan
         planAnfrage = nil
         schnellaktion = nil
         tagAnfrage = nil
@@ -201,10 +201,10 @@ final class AppZustand: ObservableObject {
         Push.tokenMelden()
     }
 
-    /// Plan im Reiter „Stundenplan“ öffnen.
+    /// Plan im Reiter „Plan“ öffnen.
     func planZeigen(_ plan: PlanAuswahl) {
         planAnfrage = plan
-        reiter = .stundenplan
+        reiter = .plan
     }
 
     /// Notiz einer Stunde gespeichert (nil = unverändert): Karte im Plan sofort anpassen und den Plan neu laden.

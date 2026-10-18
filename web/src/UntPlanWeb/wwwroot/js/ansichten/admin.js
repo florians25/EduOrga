@@ -450,36 +450,12 @@ async function ansicht(ziel, kontext) {
   ziel.innerHTML = `<div class="card u-einstellungen"><div class="card-header">Globale Einstellungen der Oberfläche</div><div class="card-body"><form>
     ${schalter('nachrichtenAnzeigen', 'Nachrichten zum Tag auf der Startseite anzeigen', w)}
     ${schalter('rss', 'Öffentliche Nachrichten zum Tag als RSS-Feed veröffentlichen (/rss/nachrichten.xml)', w)}
-    ${schalter('kartenZeiten', 'Uhrzeiten auf den Stundenkarten anzeigen (Voreinstellung)', w)}
+    ${schalter('kartenZeiten', 'Uhrzeiten in den Stundenkacheln anzeigen (Voreinstellung)', w)}
     <div class="row g-3 my-1"><div class="col-sm-6"><label class="form-label">Startseite nach der Anmeldung</label><select class="form-select" name="startseite">
       <option value="heute" ${w.startseite === 'heute' ? 'selected' : ''}>Heute</option><option value="stundenplan" ${w.startseite === 'stundenplan' ? 'selected' : ''}>Mein Stundenplan</option></select></div></div>
     <button class="btn btn-primary mt-2" type="submit">Speichern</button></form></div></div>
-    <div class="card u-einstellungen mt-3"><div class="card-header">Schrift</div><div class="card-body" data-schriften></div></div><div class="mt-3" data-schuelerquelle></div>`;
+    <div class="mt-3" data-schuelerquelle></div>`;
   einstellungBinden(ziel.querySelector('form'), 'ansicht', () => kontext.sitzungNeu());
   import('./import.js').then(m => m.quelleKarte(ziel.querySelector('[data-schuelerquelle]'))).catch(() => { /* ohne Schülerquelle */ });
-  schriften(ziel.querySelector('[data-schriften]'));
 }
 
-/** Hausschrift (z. B. AvenirNextPro): lizenzierte Schriftdateien hochladen; sie liegen nur im Datenordner dieses Servers. */
-async function schriften(box) {
-  const liste = await holen('/api/app/admin/schriften');
-  const schnitt = x => `${({ 200: 'Ultra Light', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Demi', 700: 'Bold', 800: 'Heavy' })[x.gewicht] ?? x.gewicht}${x.kursiv ? ' Italic' : ''}`;
-  box.innerHTML = `<p class="small text-body-secondary">Die Oberfläche verwendet die Schrift <b>AvenirNextPro</b>, sobald die Schriftdateien hier hochgeladen sind (.otf, .ttf, .woff oder .woff2, Schnitt aus dem Dateinamen, z. B. „…-Regular“, „…-Medium“). Verwendet werden nur Regular und Medium; Demi/Bold nur ersatzweise, wenn Medium fehlt.
-      Die Dateien werden nicht mit UntPlanWeb ausgeliefert – bitte nur Schriften mit gültiger Web-Lizenz verwenden. Ohne Dateien gilt die freie Ersatzschrift Nunito Sans.</p>
-    ${liste.length ? `<table class="table table-sm align-middle"><thead><tr><th>Datei</th><th>Schnitt</th><th class="text-end">Größe</th><th></th></tr></thead><tbody>
-      ${liste.map(x => `<tr><td>${e(x.datei)}</td><td style="font-family:AvenirNextPro;font-weight:${x.cssGewicht ?? x.gewicht};font-style:${x.kursiv ? 'italic' : 'normal'}">${schnitt(x)}</td><td class="text-end small">${Math.round(x.groesse / 1024)} KB</td>
-        <td class="text-end"><button class="btn btn-sm btn-outline-danger" data-schrift-weg="${e(x.datei)}" title="Löschen">${icon('loeschen')}</button></td></tr>`).join('')}</tbody></table>` : '<p class="small">Noch keine Schriftdateien hochgeladen.</p>'}
-    <label class="btn btn-outline-secondary btn-sm">${icon('plus')}Schriftdateien hochladen<input type="file" class="d-none" accept=".otf,.ttf,.woff,.woff2" multiple data-schrift-datei></label>`;
-  box.querySelector('[data-schrift-datei]').onchange = async ev => {
-    const fd = new FormData();
-    [...ev.target.files].forEach(f => fd.append('dateien', f));
-    try {
-      const r = await fetch('/api/app/admin/schriften', { method: 'POST', body: fd, headers: { 'X-UntPlanWeb': '1' } });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).fehler || 'Hochladen fehlgeschlagen.');
-      toast('Schrift hochgeladen – die Seite wird neu geladen.'); setTimeout(() => location.reload(), 600);
-    } catch (err) { toast(err.message, true); }
-  };
-  box.querySelectorAll('[data-schrift-weg]').forEach(b => b.onclick = async () => {
-    try { await senden(`/api/app/admin/schriften/${encodeURIComponent(b.dataset.schriftWeg)}`, null, 'DELETE'); schriften(box); } catch (err) { toast(err.message, true); }
-  });
-}

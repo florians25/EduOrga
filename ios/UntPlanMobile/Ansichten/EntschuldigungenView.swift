@@ -5,8 +5,8 @@ import SwiftUI
 //   Stunden der Fachlehrkräfte – mit Warnung), mit Stand „2/3 Lehrer bearbeitet“ und den Texten je Stunde.
 // - Fachlehrkraft: einzelne Fehlstunden aus dem eigenen Unterricht entschuldigen (auch mehrere auf einmal); ist der
 //   Status schon gesetzt, zeigt der Dialog nur noch den Text (gesperrt).
-// Erreichbar über die Startseite („Entschuldigungen“), die Schülerliste der Stunde und die Abwesenheitsliste einer
-// Person – jeweils durch Wischen nach links (runde Pill „Entschuldigen“) bzw. Antippen.
+// Erreichbar über „Heute“ bzw. „Mehr“ („Entschuldigungen“), die Schülerliste der Stunde und die Abwesenheitsliste einer
+// Person – jeweils durch Wischen nach links („Entschuldigen“) bzw. Antippen.
 
 /// Was entschuldigt werden soll.
 enum Entschuldigungsziel {
@@ -31,10 +31,11 @@ struct Entschuldigungsauftrag: Identifiable {
 
 // MARK: - Dialog
 
-/// Dialog „Entschuldigung“ im Stil von „Abwesenheit bearbeiten“: Kopf mit X, Titel und Haken (Klassenleitung zusätzlich
-/// „Zurücknehmen“); Avatar mit Name und Klasse; ABWESENHEIT (Zeitraum, Grund, Stand der Lehrkräfte), STATUS als
-/// Segment-Schalter, DATUM der Entschuldigung, NACHWEIS (Klassenleitung), TEXT; darunter die Fehlstunden mit den Texten
-/// der Lehrkräfte (Klassenleitung) bzw. die Texte anderer Lehrkräfte derselben Abwesenheit (Fachlehrkraft).
+/// Dialog „Entschuldigung“ im Stil von „Abwesenheit bearbeiten“: Kopf mit „Schließen“, Titel und „Sichern“
+/// (Klassenleitung zusätzlich „Zurücknehmen“); Initialen mit Name und Klasse; Abwesenheit (Zeitraum, Grund, Stand der
+/// Lehrkräfte), Status als Segmentschalter, Datum der Entschuldigung, Nachweis (Klassenleitung), Text; darunter die
+/// Fehlstunden mit den Texten der Lehrkräfte (Klassenleitung) bzw. die Texte anderer Lehrkräfte derselben Abwesenheit
+/// (Fachlehrkraft).
 struct EntschuldigenView: View {
     let auftrag: Entschuldigungsauftrag
     var fertig: () -> Void = {}
@@ -120,14 +121,14 @@ struct EntschuldigenView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         kopf
                         Rectangle()
-                            .fill(Farben.trennlinie)
+                            .fill(Farben.rand)
                             .frame(height: 0.5)
                         if inhalt != nil {
                             formular
                         } else if !laedt {
                             Text(fehler ?? "Für diese Abwesenheit ist keine Entschuldigung möglich.")
                                 .font(.system(size: 15))
-                                .foregroundStyle(Farben.gedaempft)
+                                .foregroundStyle(Farben.text3)
                                 .padding(16)
                         }
                     }
@@ -140,7 +141,7 @@ struct EntschuldigenView: View {
                         Button {
                             zuruecknehmenFragen = true
                         } label: {
-                            Rundknopf(symbol: "arrow.uturn.backward", gewicht: .light, groesse: 18)
+                            Rundknopf(symbol: "arrow.uturn.backward")
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Entschuldigung zurücknehmen")
@@ -173,23 +174,14 @@ struct EntschuldigenView: View {
 
     private var kopf: some View {
         HStack(spacing: 12) {
-            Text(Initialen.kuerzel(name.isEmpty ? "?" : name))
-                .font(.system(size: 17, weight: .regular))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(Farben.avatar, in: Circle())
+            Initialen(name: name.isEmpty ? "?" : name, groesse: 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text(name.isEmpty ? "Schüler*in" : name)
-                    .font(.system(size: 19))
-                    .foregroundStyle(Farben.tinte)
+                    .font(.headline)
+                    .foregroundStyle(Farben.text)
                     .lineLimit(1)
                 if !klasse.isEmpty {
-                    Text(klasse)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Farben.tinte)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                        .background(Farben.zahlPlakette.opacity(0.55), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    Rollenkapsel(text: klasse)
                 }
             }
             Spacer(minLength: 0)
@@ -200,10 +192,10 @@ struct EntschuldigenView: View {
 
     @ViewBuilder
     private var formular: some View {
-        Feldtitel(text: "ABWESENHEIT")
+        Feldtitel(text: "Abwesenheit")
         abwesenheitsblock
             .padding(.horizontal, 16)
-        Feldtitel(text: "STATUS")
+        Feldtitel(text: "Status")
         Segmentschalter(auswahl: $status, statusAuswahl)
             .disabled(gesperrt)
             .opacity(gesperrt ? 0.6 : 1)
@@ -212,11 +204,11 @@ struct EntschuldigenView: View {
             Label("Warnung: Der Entschuldigungsstatus \(ueberschreibt == 1 ? "einer Fehlstunde" : "von \(ueberschreibt) Fehlstunden") wird überschrieben.",
                   systemImage: "exclamationmark.triangle")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Farben.entfallRand)
+                .foregroundStyle(Farben.entfall)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
         }
-        Feldtitel(text: "DATUM")
+        Feldtitel(text: "Datum")
         HStack {
             DatePicker("Datum der Entschuldigung", selection: $datum, in: ...Date(), displayedComponents: .date)
                 .labelsHidden()
@@ -225,7 +217,7 @@ struct EntschuldigenView: View {
         }
         .padding(.horizontal, 16)
         if istLeitung {
-            Feldtitel(text: "NACHWEIS")
+            Feldtitel(text: "Nachweis")
             Menu {
                 Picker("Nachweis", selection: $nachweis) {
                     ForEach(Entschuldigungsnachweis.allCases) { n in
@@ -236,49 +228,57 @@ struct EntschuldigenView: View {
                 HStack {
                     Text(nachweis.anzeige)
                         .font(.system(size: 17))
-                        .foregroundStyle(nachweis == .keiner ? Farben.gedaempft : Farben.tinte)
+                        .foregroundStyle(nachweis == .keiner ? Farben.text3 : Farben.text)
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(Farben.gedaempft)
+                        .foregroundStyle(Farben.text3)
                 }
-                .padding(.horizontal, 10)
-                .frame(height: 52)
-                .background(Farben.eingabeFeld, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .padding(.horizontal, 12)
+                .frame(height: 44)
+                .background(Farben.flaeche2, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(Farben.randStark, lineWidth: 1)
+                }
                 .contentShape(Rectangle())
             }
             .tint(Color.primary)
             .disabled(gesperrt)
             .padding(.horizontal, 16)
         }
-        Feldtitel(text: "TEXT")
-        TextField(gesperrt ? "Kein Text" : "Text hier eingeben", text: $text, axis: .vertical)
-            .font(.system(size: 16))
-            .foregroundStyle(Farben.tinte)
+        Feldtitel(text: "Text")
+        TextField(gesperrt ? "Kein Text" : "Text eingeben", text: $text, axis: .vertical)
+            .font(.body)
+            .foregroundStyle(Farben.text)
             .lineLimit(3...8)
             .padding(10)
             .frame(minHeight: 104, alignment: .topLeading)
-            .background(Farben.eingabeFeld, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(Farben.flaeche2, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(Farben.randStark, lineWidth: 1)
+            }
             .disabled(gesperrt)
             .padding(.horizontal, 16)
         if !istLeitung {
             Text("Der Text ist für Lehrkräfte sichtbar, die ebenfalls eine Fehlstunde in dieser Abwesenheit haben.")
                 .font(.system(size: 12))
-                .foregroundStyle(Farben.gedaempft)
+                .foregroundStyle(Farben.text3)
                 .padding(.horizontal, 16)
                 .padding(.top, 6)
         }
         if let hinweis = sperrhinweis {
             Label(hinweis, systemImage: "lock")
                 .font(.system(size: 13))
-                .foregroundStyle(Farben.tinte2)
+                .foregroundStyle(Farben.text2)
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
         }
         if let fehler {
             Text(fehler)
                 .font(.system(size: 14))
-                .foregroundStyle(Farben.entfallRand)
+                .foregroundStyle(Farben.entfall)
                 .padding(16)
         }
         stundenliste
@@ -305,31 +305,31 @@ struct EntschuldigenView: View {
                 ForEach(l) { f in
                     Text([f.zeitraum, f.fach].filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.system(size: 15))
-                        .foregroundStyle(Farben.tinte)
+                        .foregroundStyle(Farben.text)
                 }
                 if let f = l.first, !f.abwesenheitText.isEmpty {
                     Text(f.abwesenheitText)
                         .font(.system(size: 14))
-                        .foregroundStyle(Farben.tinte2)
+                        .foregroundStyle(Farben.text2)
                 }
             }
         case .leitung(let a):
             VStack(alignment: .leading, spacing: 4) {
                 Text(a.zeitraum)
                     .font(.system(size: 15))
-                    .foregroundStyle(Farben.tinte)
+                    .foregroundStyle(Farben.text)
                 let info = [a.grund, a.text].filter { !$0.isEmpty }.joined(separator: " – ")
                 if !info.isEmpty {
                     Text(info)
                         .font(.system(size: 14))
-                        .foregroundStyle(Farben.tinte2)
+                        .foregroundStyle(Farben.text2)
                 }
                 HStack(spacing: 8) {
                     Entschuldigungsmarke(status: a.stand, mehrdeutig: a.mehrdeutig)
                     if let b = a.bearbeitetText {
                         Text(b)
                             .font(.system(size: 13))
-                            .foregroundStyle(Farben.gedaempft)
+                            .foregroundStyle(Farben.text3)
                     }
                 }
                 .padding(.top, 2)
@@ -345,7 +345,7 @@ struct EntschuldigenView: View {
     private var stundenliste: some View {
         switch inhalt {
         case .leitung(let a) where !a.stunden.isEmpty:
-            Feldtitel(text: "FEHLSTUNDEN")
+            Feldtitel(text: "Fehlstunden")
             VStack(spacing: 8) {
                 ForEach(a.stunden) { s in
                     stundenkarte(zeit: "\(Datumsformat.anzeige(s.datum, "EE, dd.MM."))  \(Detailmass.uhrzeit(s.beginn)) - \(Detailmass.uhrzeit(s.ende))",
@@ -358,7 +358,7 @@ struct EntschuldigenView: View {
             let texte = l.flatMap(\.texte)
             let eigene = l.compactMap(\.entschuldigung).filter { !$0.text.isEmpty }
             if !eigene.isEmpty {
-                Feldtitel(text: "ENTSCHULDIGUNG")
+                Feldtitel(text: "Entschuldigung")
                 VStack(spacing: 8) {
                     ForEach(Array(eigene.enumerated()), id: \.offset) { e in
                         stundenkarte(zeit: [e.element.lehrer, e.element.rolle == "klassenleitung" ? "Klassenleitung" : "",
@@ -369,7 +369,7 @@ struct EntschuldigenView: View {
                 .padding(.horizontal, 16)
             }
             if !texte.isEmpty {
-                Feldtitel(text: "TEXTE ANDERER LEHRKRÄFTE")
+                Feldtitel(text: "Texte anderer Lehrkräfte")
                 VStack(spacing: 8) {
                     ForEach(Array(texte.enumerated()), id: \.offset) { t in
                         stundenkarte(zeit: [t.element.lehrer, t.element.zeit].filter { !$0.isEmpty }.joined(separator: " · "),
@@ -390,24 +390,28 @@ struct EntschuldigenView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(zeit)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Farben.tinte)
+                    .foregroundStyle(Farben.text)
                 Spacer(minLength: 6)
                 Entschuldigungsmarke(status: status)
             }
             if !wer.isEmpty {
                 Text(wer)
                     .font(.system(size: 13))
-                    .foregroundStyle(Farben.gedaempft)
+                    .foregroundStyle(Farben.text3)
             }
             if !text.isEmpty {
                 Text(text)
                     .font(.system(size: 14))
-                    .foregroundStyle(Farben.tinte2)
+                    .foregroundStyle(Farben.text2)
             }
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Farben.eingabeFeld, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(Farben.flaeche2, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(Farben.rand, lineWidth: 1)
+        }
         .accessibilityElement(children: .combine)
     }
 
@@ -510,29 +514,22 @@ struct EntschuldigenView: View {
     }
 }
 
-/// Status als kleine Marke: entschuldigt grün, nicht entschuldigt rot, offen orange (mit „Mehrdeutig“).
+/// Status als Plakette: entschuldigt grün, nicht entschuldigt in der Entfall-Farbe, offen in Bernstein (mit „Mehrdeutig“).
 struct Entschuldigungsmarke: View {
     let status: Entschuldigungsstatus
     var mehrdeutig: Bool = false
 
-    private var farbe: Color {
+    private var farben: (farbe: Color, flaeche: Color) {
         switch status {
-        case .entschuldigt: return Farben.gruen
-        case .unentschuldigt: return Farben.entfallRand
-        case .offen: return Farben.orange
+        case .entschuldigt: return (Farben.ok, Farben.okFlaeche)
+        case .unentschuldigt: return (Farben.entfall, Farben.entfallFlaeche)
+        case .offen: return (Farben.warnung, Farben.warnungFlaeche)
         }
     }
 
     var body: some View {
-        Text(status.anzeige.uppercased() + (mehrdeutig && status == .offen ? " (MEHRDEUTIG)" : ""))
-            .font(.system(size: 11, weight: .medium))
-            .tracking(0.3)
-            .foregroundStyle(farbe)
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
-            .background(farbe.opacity(0.13), in: Capsule())
+        Plakette(text: status.anzeige + (mehrdeutig && status == .offen ? " (mehrdeutig)" : ""),
+                 farbe: farben.farbe, flaeche: farben.flaeche)
     }
 }
 
@@ -540,7 +537,7 @@ struct Entschuldigungsmarke: View {
 
 /// Seite „Entschuldigungen“: Klassenleitung – Abwesenheiten der eigenen Klassen; Fachlehrkraft – Fehlstunden aus dem
 /// eigenen Unterricht (bei beiden Rechten oben umschaltbar). Filter „Offen | Alle“, Zeitraum die letzten 30 Tage.
-/// Nach links wischen: runde Pill „Entschuldigen“; Antippen öffnet denselben Dialog. Fachlehrkräfte können über
+/// Nach links wischen: „Entschuldigen“; Antippen öffnet denselben Dialog. Fachlehrkräfte können über
 /// „Auswählen“ mehrere Fehlstunden auf einmal entschuldigen.
 struct EntschuldigungenView: View {
     enum Sicht: Hashable {
@@ -587,16 +584,8 @@ struct EntschuldigungenView: View {
         .toolbar(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                VStack(spacing: 1) {
-                    Text("Entschuldigungen")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Farben.tinte2)
-                    Text("\(Datumsformat.anzeige(von, "dd.MM.yyyy")) - \(Datumsformat.anzeige(Date(), "dd.MM.yyyy"))")
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Farben.gedaempft)
-                }
-                .lineLimit(1)
-                .accessibilityElement(children: .combine)
+                Blatttitel(titel: "Entschuldigungen",
+                           untertitel: "\(Datumsformat.anzeige(von, "dd.MM.yyyy")) – \(Datumsformat.anzeige(Date(), "dd.MM.yyyy"))")
             }
             if sicht == .fachlehrer {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -606,7 +595,6 @@ struct EntschuldigungenView: View {
                             auswahl = []
                         }
                     }
-                    .font(.system(size: 16, weight: .regular))
                     .tint(Farben.akzent)
                 }
             }
@@ -704,7 +692,7 @@ struct EntschuldigungenView: View {
     private func leer(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 15))
-            .foregroundStyle(Farben.gedaempft)
+            .foregroundStyle(Farben.text3)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
             .padding(.top, 14)
@@ -715,24 +703,24 @@ struct EntschuldigungenView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(a.schueler)
-                        .font(.system(size: 17))
-                        .foregroundStyle(Farben.tinte)
+                        .font(.body)
+                        .foregroundStyle(Farben.text)
                         .lineLimit(1)
                     if !a.klasse.isEmpty {
                         Text(a.klasse)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Farben.tinte2)
+                            .foregroundStyle(Farben.text2)
                     }
                 }
                 Text(a.zeitraum)
                     .font(.system(size: 14))
-                    .foregroundStyle(Farben.tinte2)
+                    .foregroundStyle(Farben.text2)
                 HStack(spacing: 8) {
                     Entschuldigungsmarke(status: a.stand, mehrdeutig: a.mehrdeutig)
                     if let b = a.bearbeitetText {
                         Text(b)
                             .font(.system(size: 13))
-                            .foregroundStyle(Farben.gedaempft)
+                            .foregroundStyle(Farben.text3)
                             .lineLimit(1)
                     }
                 }
@@ -740,13 +728,13 @@ struct EntschuldigungenView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right")
-                .font(.system(size: 19, weight: .ultraLight))
-                .foregroundStyle(Farben.gedaempft)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Farben.pfeil)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 11)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Farben.trennlinie).frame(height: 0.5).padding(.horizontal, 16)
+            Rectangle().fill(Farben.rand).frame(height: 0.5).padding(.horizontal, 16)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -755,32 +743,30 @@ struct EntschuldigungenView: View {
     private func fehlstundenZeile(_ f: Fehlstunde, moeglich: Bool) -> some View {
         HStack(spacing: 12) {
             if auswahlModus {
-                Image(systemName: auswahl.contains(f.id) ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 21, weight: .light))
-                    .foregroundStyle(auswahl.contains(f.id) ? Farben.akzent : Farben.gedaempft)
+                Auswahlkreis(gewaehlt: auswahl.contains(f.id))
                     .opacity(moeglich ? 1 : 0.35)
             }
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(f.schueler)
-                        .font(.system(size: 17))
-                        .foregroundStyle(Farben.tinte)
+                        .font(.body)
+                        .foregroundStyle(Farben.text)
                         .lineLimit(1)
                     if !f.klasse.isEmpty {
                         Text(f.klasse)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Farben.tinte2)
+                            .foregroundStyle(Farben.text2)
                     }
                 }
                 Text([f.zeitraum, f.fach].filter { !$0.isEmpty }.joined(separator: " · "))
                     .font(.system(size: 14))
-                    .foregroundStyle(Farben.tinte2)
+                    .foregroundStyle(Farben.text2)
                 HStack(spacing: 6) {
                     Entschuldigungsmarke(status: f.stand)
                     if f.gesperrt {
                         Image(systemName: "lock")
                             .font(.system(size: 11))
-                            .foregroundStyle(Farben.gedaempft)
+                            .foregroundStyle(Farben.text3)
                             .accessibilityLabel("gesperrt")
                     }
                 }
@@ -789,21 +775,21 @@ struct EntschuldigungenView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             if !auswahlModus {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 19, weight: .ultraLight))
-                    .foregroundStyle(Farben.gedaempft)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Farben.pfeil)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 11)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Farben.trennlinie).frame(height: 0.5).padding(.horizontal, 16)
+            Rectangle().fill(Farben.rand).frame(height: 0.5).padding(.horizontal, 16)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(auswahl.contains(f.id) ? .isSelected : [])
     }
 
-    /// Unten im Auswahlmodus: „Entschuldigen (n)“ als runde Pill.
+    /// Unten im Auswahlmodus: „Entschuldigen (n)“ als Primärknopf.
     private var auswahlLeiste: some View {
         let gewaehlt = (fehlstunden ?? []).filter { auswahl.contains($0.id) }
         return Button {
@@ -812,14 +798,14 @@ struct EntschuldigungenView: View {
             oeffnen(.fehlstunden(gewaehlt), name: gleich ? erste.schueler : "\(gewaehlt.count) Fehlstunden", klasse: gleich ? erste.klasse : "")
         } label: {
             Label(gewaehlt.isEmpty ? "Fehlstunden auswählen" : "Entschuldigen (\(gewaehlt.count))", systemImage: "checkmark.seal")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 22)
-                .frame(height: 46)
-                .background(gewaehlt.isEmpty ? Farben.zahlPlakette : Farben.entschuldigen, in: Capsule())
+                .font(.body.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.borderedProminent)
+        .tint(Farben.akzent)
         .disabled(gewaehlt.isEmpty)
+        .padding(.horizontal, 16)
         .padding(.vertical, 10)
     }
 

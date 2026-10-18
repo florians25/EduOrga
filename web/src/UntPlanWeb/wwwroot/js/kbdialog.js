@@ -104,7 +104,7 @@ export function fussUebernehmen(box, auswahl = '.ad-knoepfe') {
   let fuss = box.fuss;
   if (!fuss) { fuss = document.createElement('footer'); fuss.className = 'kbd-fuss'; box.append(fuss); box.fuss = fuss; }
   const knoepfe = [...leiste.querySelectorAll('button')];
-  const haupt = b => b.classList.contains('sd-orange') || b.matches('[data-ad-speichern="1"], [data-ab-speichern], [data-klausur-speichern], [data-pv-speichern]')
+  const haupt = b => b.classList.contains('sd-haupt') || b.matches('[data-ad-speichern="1"], [data-ab-speichern], [data-klausur-speichern], [data-pv-speichern]')
     || (knoepfe.filter(x => x.matches('[data-ad-speichern]')).length === 1 && b.matches('[data-ad-speichern]'));
   const gefahr = b => b.classList.contains('rot') || b.matches('[data-ab-loeschen]');
   const zu = b => b.matches('[data-ad-zu]');

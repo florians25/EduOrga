@@ -30,235 +30,149 @@ extension Color {
     }
 }
 
-/// Farben wie in UntPlanWeb und UntPlanMobile (PWA, app.css), jeweils hell und dunkel.
+/// Farben des UntPlan-Designsystems (`design/tokens.css`), jeweils als dynamische Farbe für hell und dunkel.
+/// Marke Marine, Neutraltöne Schiefer, fachliche Statusfarben mit heller Fläche. Die Statusfarben haben im Dunkelmodus
+/// eine aufgehellte Variante, damit Text und Linien auf dunklen Flächen lesbar bleiben.
 enum Farben {
-    // Akzente
-    static let akzent = Color(hexWert: 0xF56B2A)
-    /// Ladebalken: kräftiges Orange
-    static let ladebalken = Color(hexWert: 0xFF6A13)
-    static let akzentSanft = Color(hell: 0xFFF1E2, dunkel: 0x3A2414)
-    static let orange = Color(hexWert: 0xF07C00)
-    static let heute = Color(hexWert: 0xEF5A2A)
-    static let jetztLinie = Color(hexWert: 0xE65D35)
-    static let rot = Color(hexWert: 0xF40041)
+    // MARK: Marke
 
-    // Text
-    static let tinte = Color(hell: 0x253746, dunkel: 0xF2F4F6)
-    static let tinte2 = Color(hell: 0x48606F, dunkel: 0xC9D1D8)
-    static let gedaempft = Color(hell: 0x6B7A85, dunkel: 0x8D949C)
-    static let rinne = Color(hell: 0x65717A, dunkel: 0x9AA1A8)
-    static let titelGrau = Color(hell: 0x5D727F, dunkel: 0x93A6B2)
-    /// Großer Text im Kopfblock der Stundendetails (Original: fast schwarz)
-    static let detailText = Color(hell: 0x1F2328, dunkel: 0xF2F4F6)
-    /// Grauer Text in den Stundendetails (Raum, Lehrkraft, Untertitel) – eine Stufe dunkler als `gedaempft`
-    static let detailGrau = Color(hell: 0x55636E, dunkel: 0xA9B0B8)
-    /// Trennstrich „|“ im Kopfblock (Original: hellgrau)
-    static let detailTrenner = Color(hell: 0x9AA4AD, dunkel: 0x6E7881)
-    static let abschnitt = Color(hexWert: 0x8B9AA5)
-    static let pfeil = Color(hell: 0x9AA7B1, dunkel: 0x6E7881)
+    /// Primärfarbe Marine (Knöpfe, aktive Navigation, Links, Auswahl, Jetzt-Linie)
+    static let akzent = Color(hell: 0x234F96, dunkel: 0x6F9BE0)
+    /// Helle Fläche der Primärfarbe (Auswahl, Avatare, Hinweise)
+    static let primaerFlaeche = Color(hell: 0xEEF3FB, dunkel: 0x17243A)
+    /// Schrift auf Flächen in der Primärfarbe (Primärknopf)
+    static let aufAkzent = Color(hell: 0xFFFFFF, dunkel: 0x0F1318)
+    /// Rand der Primärfarbe (Auswahlrahmen)
+    static let primaerRand = Color(hell: 0xB6CBEC, dunkel: 0x2A4370)
 
-    // Flächen
-    static let leiste = Color(hell: 0xFFFFFF, dunkel: 0x000000)
-    static let grund = Color(hell: 0xEEF0F3, dunkel: 0x000000)
-    static let flaeche = Color(hell: 0xFFFFFF, dunkel: 0x1C1C1E)
-    static let blatt = Color(hell: 0xFFFFFF, dunkel: 0x1C1C1E)
-    static let knopf = Color(hell: 0xF1F3F5, dunkel: 0x2A2A2E)
-    static let suchfeld = Color(hell: 0xF1F3F5, dunkel: 0x1C1C1E)
-    static let avatar = Color(hexWert: 0x8B9AA5)
-    static let zahlPlakette = Color(hell: 0x7B8A96, dunkel: 0x636B73)
+    // MARK: Text
 
-    // Linien
-    static let linie = Color(hell: 0xCCD3D9, dunkel: 0x34343A)
-    static let trennlinie = Color(hell: 0xE4E7EA, dunkel: 0x38383A)
-    static let rasterOben = Color(hell: 0xF2F4F7, dunkel: 0x1C1C1E)
-    static let rasterUnten = Color(hell: 0xE7E9EF, dunkel: 0x1C1C1E)
+    /// Haupttext
+    static let text = Color(hell: 0x232A33, dunkel: 0xE6E9EE)
+    /// Zweittext (Lehrkraft, Klasse, Untertitel)
+    static let text2 = Color(hell: 0x4D5866, dunkel: 0xB3BBC6)
+    /// Hinweistext, Symbole in Listen, Zeitspalte
+    static let text3 = Color(hell: 0x6B7684, dunkel: 0x8C96A3)
+    /// Pfeile und Platzhalter (schwächer als Hinweistext)
+    static let pfeil = Color(hell: 0x98A2AF, dunkel: 0x5B6573)
 
-    // Karten im Wochenraster
-    static let karte = Color(hell: 0xFFFFFF, dunkel: 0x5E7383)
-    static let karteVergangen = Color(hell: 0xF2F4F5, dunkel: 0x323D45)
-    static let karteBalken = Color(hell: 0xBFC7D2, dunkel: 0xBFC7CE)
-    static let karteText = Color(hell: 0x253746, dunkel: 0xF4F6F8)
-    static let kartenSchatten = Color(hell: 0x1F2F3D, dunkel: 0x000000, deckkraftHell: 0.30, deckkraftDunkel: 0)
-    static let kartenSchattenWeich = Color(hell: 0x1F2F3D, dunkel: 0x000000, deckkraftHell: 0.22, deckkraftDunkel: 0)
+    // MARK: Flächen
 
-    // Änderung grün
-    static let aenderungHintergrund = Color(hell: 0xE3FFF2, dunkel: 0x005840)
-    static let aenderungVergangen = Color(hell: 0xE4FFF2, dunkel: 0x323D45)
-    static let aenderungRand = Color(hell: 0x019169, dunkel: 0x20C0A2)
-    static let gruen = Color(hell: 0x0B7D65, dunkel: 0x22C0A1)
-    static let gruenSchrift = Color(hell: 0xFFFFFF, dunkel: 0x05201A)
+    /// Seitenhintergrund
+    static let grund = Color(hell: 0xF4F6F8, dunkel: 0x0F1318)
+    /// Karten, Raster, Tabellen
+    static let flaeche = Color(hell: 0xFFFFFF, dunkel: 0x161B22)
+    /// Leicht abgesetzte Fläche (Spaltenköpfe, Zeitspalte)
+    static let flaeche2 = Color(hell: 0xFAFBFC, dunkel: 0x1B2129)
+    /// Hintergrund der Blätter (Stundendetails, Formulare)
+    static let blatt = Color(hell: 0xFFFFFF, dunkel: 0x161B22)
+    /// Neutrale Fläche für Zahl-Plaketten, Eingabefelder und stille Knöpfe
+    static let neutralFlaeche = Color(hell: 0xEBEEF2, dunkel: 0x222A34)
+    /// Eigene Abwesenheit hinter den Stunden
+    static let abwesendFlaeche = Color(hell: 0xDCE1E7, dunkel: 0x2A323D)
 
-    // Entfall rot
-    static let entfallHintergrund = Color(hell: 0xFFF3F2, dunkel: 0x81012F)
-    static let entfallVergangen = Color(hell: 0xFFF4F3, dunkel: 0x323D45)
-    static let entfallRand = Color(hell: 0xE00047, dunkel: 0xDF0047)
+    // MARK: Linien
 
-    // Prüfung
-    static let pruefungHintergrund = Color(hell: 0xFFF6D5, dunkel: 0x4A3F22)
-    static let pruefungVergangen = Color(hell: 0xFEF7D7, dunkel: 0x323D45)
-    static let pruefungRand = Color(hell: 0xA1512C, dunkel: 0xD9962A)
+    /// Alle 1-pt-Ränder und Trennlinien
+    static let rand = Color(hell: 0xDCE1E7, dunkel: 0x2A323D)
+    /// Kräftiger Rand (Eingaben, Kacheln ohne Fachfarbe)
+    static let randStark = Color(hell: 0xC3CAD3, dunkel: 0x3A4452)
+    /// Zeilentrenner im Stundenraster
+    static let linie = Color(hell: 0xEBEEF2, dunkel: 0x222A34)
+    /// Pausenband im Stundenraster
+    static let pause = Color(hell: 0xF4F6F8, dunkel: 0x12171D)
 
-    // Veranstaltung, Ferien
-    static let veranstaltungHintergrund = Color(hell: 0xDFFEF5, dunkel: 0x054035)
-    static let veranstaltungBand = Color(hell: 0xD5EBFE, dunkel: 0x8A9BAF)
-    static let ferienHintergrund = Color(hell: 0xD5EBFE, dunkel: 0x6B83C4)
-    static let ferienLinie = Color(hell: 0xB3D6F6, dunkel: 0x6A82BF)
-    static let ferienTinte = Color(hell: 0x2B3F52, dunkel: 0x161A24)
+    // MARK: Fachliche Statusfarben
 
-    /// Runde Pill „Entschuldigen“ beim Wischen (Schüler- und Abwesenheitslisten)
-    static let entschuldigen = Color(hell: 0x2E7BCF, dunkel: 0x3A86D6)
+    /// Entfall, Fehler
+    static let entfall = Color(hell: 0xB42318, dunkel: 0xEE7B70)
+    static let entfallFlaeche = Color(hell: 0xFDF0EF, dunkel: 0x2C1715)
+    /// Vertretung, Raum- und Lehrerwechsel, Verlegung
+    static let aenderung = Color(hell: 0x0B7A75, dunkel: 0x4CC2BB)
+    static let aenderungFlaeche = Color(hell: 0xE7F5F4, dunkel: 0x0F2826)
+    /// Klausur, Prüfung
+    static let pruefung = Color(hell: 0xA15C07, dunkel: 0xE3A54B)
+    static let pruefungFlaeche = Color(hell: 0xFDF4E3, dunkel: 0x2A2010)
+    /// Veranstaltung, Termin, Raumbuchung
+    static let termin = Color(hell: 0x5A4FB3, dunkel: 0xA59CF0)
+    static let terminFlaeche = Color(hell: 0xF1EFFB, dunkel: 0x1F1C35)
+    /// Ferien, unterrichtsfrei
+    static let frei = Color(hell: 0x2F6F9F, dunkel: 0x79B0DC)
+    static let freiFlaeche = Color(hell: 0xEDF4FA, dunkel: 0x132231)
+    /// Warnung, offen, Konflikt (Bernstein wie Prüfung)
+    static let warnung = Color(hell: 0xA15C07, dunkel: 0xE3A54B)
+    static let warnungFlaeche = Color(hell: 0xFDF4E3, dunkel: 0x2A2010)
+    /// Erledigt, bestätigt
+    static let ok = Color(hell: 0x1D7A46, dunkel: 0x5CC48A)
+    static let okFlaeche = Color(hell: 0xE9F6EE, dunkel: 0x11261A)
 
-    // Marker oben rechts auf den Karten (wie im Web: Prüfung gelber Kreis, Entfall rotes Dreieck, Änderung/Zusatz grün)
-    static let markerGelb = Color(hell: 0xF7C600, dunkel: 0xF2C200)
-    static let markerRot = Color(hell: 0xF03E3E, dunkel: 0xE5484D)
-    static let markerGruen = Color(hell: 0x1F9D55, dunkel: 0x22A866)
+    // MARK: Fachfarben
 
-    // Info-Zeichen auf den Karten
-    static let infoFeld = Color(hell: 0xF2F4F6, dunkel: 0x2B3138)
-    static let infoScheibe = Color(hell: 0x828E9B, dunkel: 0x9AA6B2)
-    static let infoZeichen = Color(hell: 0xFFFFFF, dunkel: 0x2B3138)
+    /// Fachfarbe aus dem Plan (nil = keine Fachfarbe).
+    static func fachfarbe(_ hex: String) -> Color? {
+        Color(hex: hex)
+    }
 
-    // Köpfe der Infokarten
-    static let nachrichtKopf = Color(hexWert: 0x4C9BD8)
-    static let veranstaltungKopf = Color(hexWert: 0x3FAE6A)
-    static let hinweisKopf = Color(hexWert: 0xF07C00)
-
-    // Untere Leiste (Glas)
-    static let leisteText = Color(hell: 0x2B333A, dunkel: 0xC9CED3)
-    static let leisteAktiv = Color(hell: 0x253746, dunkel: 0xFFFFFF)
-    /// Helles Feld hinter dem aktiven Reiter der oberen Kapsel (iPad)
-    static let reiterAktiv = Color(hell: 0xF4ECE7, dunkel: 0xFFFFFF, deckkraftHell: 0.95, deckkraftDunkel: 0.13)
-
-    // Segment-Schalter und Reiter (Vorlage seite-8, 133)
-    static let segmentGrund = Color(hell: 0xEDEFF2, dunkel: 0x2C2C2E)
-    static let segmentAktiv = Color(hell: 0xFFFFFF, dunkel: 0x636366)
-    static let segmentSchatten = Color(hell: 0x1F2F3D, dunkel: 0x000000, deckkraftHell: 0.16, deckkraftDunkel: 0.35)
-    /// Statuspille „Prüfung“/„Veranstaltung“ im Kopf der Stundendetails (Web: #e6e9ed / #4a5662)
-    static let pilleFlaeche = Color(hell: 0xE6E9ED, dunkel: 0x3A3F45)
-    static let pilleText = Color(hell: 0x4A5662, dunkel: 0xD3D9DF)
-    /// Statuspille „PRÜFUNG“/„VERANSTALTUNG“ rechts neben dem Fach (Vorlage 140: graue Kapsel, weiße Großbuchstaben)
-    static let statusPilleFlaeche = Color(hell: 0x8E99A3, dunkel: 0x6E7881)
-    /// Zeile der Reiter (mehrere Stunden zur selben Zeit) in den Stundendetails
-    static let reiterGrund = Color(hell: 0xF3F5F7, dunkel: 0x242427)
-    /// Unterstreichung des aktiven Reiters: dunkelgrau im hellen, weiß im dunklen Modus
-    static let reiterStrich = Color(hell: 0x3A4550, dunkel: 0xFFFFFF)
-
-    // Raumbuchung (gelb-orangener Rand). Raumänderungen erscheinen grün wie eine Änderung (aenderungHintergrund/-Rand).
-    static let raumRand = Color(hell: 0xE9A23B, dunkel: 0xF0B04A)
-    /// Kopfblock der Stundendetails bei Entfall (Original: hellgrau #dfe1e6) und roter Balken „ENTFÄLLT“
-    static let detailEntfallFlaeche = Color(hell: 0xDFE1E6, dunkel: 0x2C2F36)
-    static let detailEntfallBalken = Color(hexWert: 0xFF0000)
-    // Abwesenheit auf der Startseite (graue Fläche)
-    static let abwesendFlaeche = Color(hell: 0x868F99, dunkel: 0x4A5058)
-    /// Zahl der Abwesenden in den Stundendetails (Vorlage: dunkelrote Scheibe)
-    static let abwesendRot = Color(hell: 0xB0063A, dunkel: 0x8E0B3A)
-    /// Leiste „Abwesenheiten wurden kontrolliert“ (Schüler*innen)
-    static let kontrollLeiste = Color(hell: 0xE8EDF1, dunkel: 0x323D47)
-    /// Felder im Abwesenheitsdialog (Grund, Text)
-    static let eingabeFeld = Color(hell: 0xF1F3F5, dunkel: 0x323D47)
-
-    // Kacheln im Raster (app.css: .card--event, .corners, .card--supervision, .card--standby, Zählkarte)
-    static let karteTextVergangen = Color(hell: 0x3D4F59, dunkel: 0xF4F6F8)
-    static let aenderungText = Color(hell: 0x253746, dunkel: 0xEAFFF8)
-    static let entfallText = Color(hell: 0x253746, dunkel: 0xFFFFFF)
-    static let entfallPlakettenText = Color(hell: 0x48606F, dunkel: 0xFFFFFF)
-    static let terminRand = Color(hell: 0x7FD4B6, dunkel: 0x7FD4B6)
-    static let terminTitel = Color(hell: 0x00654C, dunkel: 0xF4F6F8)
-    static let eckklammer = Color(hell: 0x5F7180, dunkel: 0x8D949C)
-    static let aufsichtBalken = Color(hell: 0xD379E9, dunkel: 0xE08CFF)
-    static let bereitschaftBalken = Color(hell: 0x01FFFF, dunkel: 0x3EE6FF)
-    static let bereitschaftRand = Color(hell: 0x5F7180, dunkel: 0xC3CCD4)
-    static let bereitschaftRandVergangen = Color(hell: 0xB7C2CB, dunkel: 0x4A5560)
-    static let bereitschaftText = Color(hell: 0x5D727F, dunkel: 0xCFD6DC)
-    static let kartenSchattenFlach = Color(hell: 0x1F2F3D, dunkel: 0x000000, deckkraftHell: 0.30, deckkraftDunkel: 0.30)
-    static let veranstaltungFlaeche = Color(hell: 0xE0FDF3, dunkel: 0x22352F)
-    static let veranstaltungRand = Color(hell: 0xA9DCCB, dunkel: 0x3D6457)
-    static let zaehlerFlaeche = Color(hell: 0xF4F6F7, dunkel: 0x323D45)
-    static let zaehlerText = Color(hell: 0x3F5666, dunkel: 0xF2F4F6)
-    static let zaehlerAenderungFlaeche = Color(hell: 0xE3FFF2, dunkel: 0x20C0A2)
-    static let zaehlerAenderungText = Color(hell: 0x00654C, dunkel: 0xEAFFF7)
-
-    /// Fachfarbe für den Balken, sonst Grau.
+    /// Fachfarbe für Markierungen, ohne Fachfarbe ein neutrales Schiefergrau.
     static func fach(_ hex: String) -> Color {
-        Color(hex: hex) ?? karteBalken
+        Color(hex: hex) ?? Color(hell: 0x98A2AF, dunkel: 0x6B7684)
+    }
+
+    /// Tönung einer Stundenkachel: Fachfarbe mit 14 % Deckkraft über der Fläche (im Dunkelmodus 22 %, damit die Tönung
+    /// auf dem dunklen Raster sichtbar bleibt).
+    static func fachTon(_ hex: String) -> Color? {
+        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.hasPrefix("#") { s.removeFirst() }
+        guard s.count == 6, let wert = UInt32(s, radix: 16) else { return nil }
+        return Color(hell: wert, dunkel: wert, deckkraftHell: 0.14, deckkraftDunkel: 0.22)
     }
 }
 
-/// Darstellung einer Stundenkarte je nach Status (Werte aus app.css).
+/// Fachlicher Status einer Stunde für Listen und Plaketten (Startseite, Änderungen, Benachrichtigungen):
+/// Plakettentext, Farbe und ob der Inhalt durchgestrichen wird.
 struct Kartenstil {
-    var hintergrund: Color
-    var rand: Color?
-    var randBreite: CGFloat
-    var schatten: Bool
     var durchgestrichen: Bool
     var plakette: String?
     var plaketteFarbe: Color
+    var plaketteFlaeche: Color
 
-    /// Farbe der Plakette für geänderte Werte auf der Karte: grün bei Vertretung und Raumänderung, sonst gelb-orange (Buchung, Prüfung).
-    var wertFarbe: Color = Farben.gruen
-
-    init(_ karte: Karte, vergangen: Bool = false) {
-        // Klausuren und Raumbuchungen nie als Vertretung (grün) darstellen
+    init(_ karte: Karte) {
+        // Klausuren und Raumbuchungen nie als Vertretung darstellen
         if karte.istPruefung && karte.status != "entfall" && karte.status != "abwesend" {
-            self.init(hintergrund: vergangen ? Farben.pruefungVergangen : Farben.pruefungHintergrund,
-                      rand: Farben.pruefungRand, schatten: false, durchgestrichen: false,
-                      plakette: "Prüfung", plaketteFarbe: Farben.pruefungRand)
+            self.init(durchgestrichen: false, plakette: "Prüfung", farbe: Farben.pruefung, flaeche: Farben.pruefungFlaeche)
             return
         }
         if karte.istRaumbuchung && ["buchung", "geaendert", "offen", "regulaer"].contains(karte.status) {
-            self.init(hintergrund: vergangen ? Farben.karteVergangen : Farben.karte,
-                      rand: Farben.raumRand, schatten: true, durchgestrichen: false,
-                      plakette: "Raumbuchung", plaketteFarbe: Farben.raumRand)
+            self.init(durchgestrichen: false, plakette: "Raumbuchung", farbe: Farben.termin, flaeche: Farben.terminFlaeche)
             return
         }
-        // Online-Unterricht: keine eigene Farbe und kein Label (nur das Online-Zeichen)
         if Kachelbau.istBereitschaftAbwesend(karte) {
-            self.init(hintergrund: Color.clear, rand: Farben.eckklammer, schatten: false, durchgestrichen: false,
-                      plakette: "Lehrkraft abwesend", plaketteFarbe: Farben.gedaempft)
+            self.init(durchgestrichen: false, plakette: "Lehrkraft abwesend", farbe: Farben.text2, flaeche: Farben.neutralFlaeche)
             return
         }
         switch karte.status {
         case "veranstaltung":
-            self.init(hintergrund: Farben.veranstaltungFlaeche,
-                      rand: vergangen ? nil : Farben.veranstaltungRand, schatten: false, durchgestrichen: false,
-                      plakette: "Veranstaltung", plaketteFarbe: Farben.gruen)
-            randBreite = vergangen ? 0 : 1
+            self.init(durchgestrichen: false, plakette: "Veranstaltung", farbe: Farben.termin, flaeche: Farben.terminFlaeche)
         case "entfall":
-            self.init(hintergrund: vergangen ? Farben.entfallVergangen : Farben.entfallHintergrund,
-                      rand: Farben.entfallRand, schatten: false, durchgestrichen: true,
-                      plakette: "Entfall", plaketteFarbe: Farben.entfallRand)
+            self.init(durchgestrichen: true, plakette: "Entfall", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche)
         case "geaendert" where Kartenstil.nurRaumGeaendert(karte):
-            // Raumänderung: grün wie eine Änderung (nie gelb/braun – das bleibt Prüfungen vorbehalten), neuer Raum als grüne Plakette
-            self.init(hintergrund: vergangen ? Farben.aenderungVergangen : Farben.aenderungHintergrund,
-                      rand: Farben.aenderungRand, schatten: true, durchgestrichen: false,
-                      plakette: "Raumänderung", plaketteFarbe: Farben.gruen)
+            self.init(durchgestrichen: false, plakette: "Raumänderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche)
         case "geaendert":
-            self.init(hintergrund: vergangen ? Farben.aenderungVergangen : Farben.aenderungHintergrund,
-                      rand: Farben.aenderungRand, schatten: true, durchgestrichen: false,
-                      plakette: "Änderung", plaketteFarbe: Farben.gruen)
+            self.init(durchgestrichen: false, plakette: "Änderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche)
         case "offen":
-            self.init(hintergrund: vergangen ? Farben.aenderungVergangen : Farben.aenderungHintergrund,
-                      rand: Farben.aenderungRand, schatten: true, durchgestrichen: false,
-                      plakette: "Offen", plaketteFarbe: Farben.gruen)
+            self.init(durchgestrichen: false, plakette: "Offen", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche)
         case "klausur":
-            self.init(hintergrund: vergangen ? Farben.pruefungVergangen : Farben.pruefungHintergrund,
-                      rand: Farben.pruefungRand, schatten: false, durchgestrichen: false,
-                      plakette: "Prüfung", plaketteFarbe: Farben.pruefungRand)
+            self.init(durchgestrichen: false, plakette: "Prüfung", farbe: Farben.pruefung, flaeche: Farben.pruefungFlaeche)
         case "abwesend":
-            self.init(hintergrund: Farben.karteVergangen, rand: Farben.gedaempft, schatten: false, durchgestrichen: false,
-                      plakette: "Abgegeben", plaketteFarbe: Farben.gedaempft)
+            self.init(durchgestrichen: false, plakette: "Abgegeben", farbe: Farben.text2, flaeche: Farben.neutralFlaeche)
         case "vorgemerkt":
-            self.init(hintergrund: Farben.akzentSanft, rand: Farben.akzent, schatten: false, durchgestrichen: false,
-                      plakette: "Vorgemerkt", plaketteFarbe: Farben.akzent)
+            self.init(durchgestrichen: false, plakette: "Vorgemerkt", farbe: Farben.akzent, flaeche: Farben.primaerFlaeche)
         case "buchung":
-            self.init(hintergrund: vergangen ? Farben.karteVergangen : Farben.karte, rand: Farben.raumRand, schatten: true, durchgestrichen: false,
-                      plakette: "Raumbuchung", plaketteFarbe: Farben.raumRand)
+            self.init(durchgestrichen: false, plakette: "Raumbuchung", farbe: Farben.termin, flaeche: Farben.terminFlaeche)
         case "bereitschaft":
-            self.init(hintergrund: Color.clear, rand: Farben.karteBalken, schatten: false, durchgestrichen: false,
-                      plakette: "Bereitschaft", plaketteFarbe: Farben.gedaempft)
+            self.init(durchgestrichen: false, plakette: "Bereitschaft", farbe: Farben.text2, flaeche: Farben.neutralFlaeche)
         default:
-            self.init(hintergrund: vergangen ? Farben.karteVergangen : Farben.karte, rand: nil, schatten: true, durchgestrichen: false,
-                      plakette: nil, plaketteFarbe: Farben.gruen)
+            self.init(durchgestrichen: false, plakette: nil, farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche)
         }
     }
 
@@ -270,14 +184,10 @@ struct Kartenstil {
         return true
     }
 
-    private init(hintergrund: Color, rand: Color?, schatten: Bool, durchgestrichen: Bool, plakette: String?, plaketteFarbe: Color) {
-        self.hintergrund = hintergrund
-        self.rand = rand
-        self.randBreite = rand == nil ? 0 : 2
-        self.schatten = schatten
+    private init(durchgestrichen: Bool, plakette: String?, farbe: Color, flaeche: Color) {
         self.durchgestrichen = durchgestrichen
         self.plakette = plakette
-        self.plaketteFarbe = plaketteFarbe
-        self.wertFarbe = ["Raumbuchung", "Prüfung"].contains(plakette ?? "") ? plaketteFarbe : Farben.gruen
+        self.plaketteFarbe = farbe
+        self.plaketteFlaeche = flaeche
     }
 }

@@ -11,6 +11,7 @@ try { importScripts('./assets/js/planwacht.js?v=__FASSUNG__'); } catch (e){ /* o
 const SHELL = [
   './',
   './manifest.webmanifest',
+  './assets/css/tokens.css?v=__FASSUNG__',
   './assets/css/app.css?v=__FASSUNG__',
   './assets/js/app.js?v=__FASSUNG__',
   './assets/js/data.js?v=__FASSUNG__',
@@ -18,7 +19,10 @@ const SHELL = [
   './assets/js/planwacht.js?v=__FASSUNG__',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
-  './assets/icons/favicon.svg'
+  './assets/icons/favicon.svg',
+  './assets/fonts/plex-sans-400.woff2',
+  './assets/fonts/plex-sans-500.woff2',
+  './assets/fonts/plex-sans-600.woff2'
 ];
 
 self.addEventListener('install', e => {
@@ -109,7 +113,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  /* Übriges Statisches (Symbole, Schriften): Cache zuerst, aber nur aus
+  /* Übriges Statisches (App-Symbole, Schriften): Cache zuerst, aber nur aus
      dem Cache dieser Fassung — sonst gewinnt wieder eine alte Kopie. */
   e.respondWith(
     caches.open(VERSION).then(c => c.match(req)).then(hit => {

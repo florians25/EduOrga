@@ -2,8 +2,7 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
-/// Kurzbefehle beim langen Drücken auf das App-Symbol (wie die „shortcuts“ der PWA):
-/// Heute, Mein Stundenplan, Mitteilungen, Plan suchen.
+/// Kurzbefehle beim langen Drücken auf das App-Symbol: Heute, Mein Stundenplan, Postfach, Plan suchen.
 enum Schnellaktion: String, CaseIterable {
     case heute
     case stundenplan
@@ -17,7 +16,7 @@ enum Schnellaktion: String, CaseIterable {
         switch self {
         case .heute: return "Heute"
         case .stundenplan: return "Mein Stundenplan"
-        case .mitteilungen: return "Mitteilungen"
+        case .mitteilungen: return "Postfach"
         case .suche: return "Plan suchen"
         }
     }
@@ -32,9 +31,9 @@ enum Schnellaktion: String, CaseIterable {
 
     var symbol: String {
         switch self {
-        case .heute: return "building.columns"
+        case .heute: return "house"
         case .stundenplan: return "calendar"
-        case .mitteilungen: return "envelope"
+        case .mitteilungen: return "tray"
         case .suche: return "magnifyingglass"
         }
     }

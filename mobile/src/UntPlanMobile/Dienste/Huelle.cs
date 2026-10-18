@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace UntPlanMobile.Dienste;
 
 /// <summary>
-/// App-Hülle (statt shell.php/index.php der Vorlage): Vorlagen/index.html mit eingebetteter Symbolsammlung und den
+/// App-Hülle: Vorlagen/index.html mit eingebetteter Symbolsammlung und den
 /// Startdaten (window.TT_BOOT), sowie der Service Worker mit der aktuellen Fassung im Cachenamen.
 /// Die Fassung ist ein Prüfwert über alle Dateien der Oberfläche – jede Änderung erneuert den Cache auf den Geräten.
 /// </summary>

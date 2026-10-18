@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Raumliste der Raumbuchung (wie in der PWA): Kopf „C197 ersetzen“ bzw. „Raum hinzufügen“, darunter Suchfeld und Filter
+/// Raumliste der Raumbuchung: Kopf „C197 ersetzen“ bzw. „Raum hinzufügen“, darunter Suchfeld und Filter
 /// nach Abteilung (Raumart), dann die freien buchbaren Räume der Stunde. Antippen bucht den Raum als Raumänderung
 /// (POST /api/app/mobil/raum); danach zeigen die Details die neuen Räume und der Stundenplan lädt neu.
 struct RaumSeite: View {
@@ -51,17 +51,22 @@ struct RaumSeite: View {
                             }
                         }
                     } label: {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 5) {
                             Text(abteilung.isEmpty ? "Abteilung" : abteilung)
                                 .lineLimit(1)
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 10, weight: .semibold))
                         }
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(abteilung.isEmpty ? Farben.tinte2 : Color.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(abteilung.isEmpty ? Farben.knopf : Farben.akzent, in: Capsule())
+                        .font(.subheadline)
+                        .foregroundStyle(abteilung.isEmpty ? Farben.text : Farben.akzent)
+                        .padding(.horizontal, 10)
+                        .frame(height: 32)
+                        .background(abteilung.isEmpty ? Farben.flaeche : Farben.primaerFlaeche,
+                                    in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(abteilung.isEmpty ? Farben.randStark : Farben.primaerRand, lineWidth: 1)
+                        }
                     }
                     .tint(Color.primary)
                     .disabled(abteilungen.isEmpty)
@@ -88,7 +93,7 @@ struct RaumSeite: View {
                     if treffer.isEmpty {
                         Text(raeume.isEmpty ? "Kein buchbarer Raum frei" : "Kein Raum gefunden")
                             .font(.system(size: 15))
-                            .foregroundStyle(Farben.gedaempft)
+                            .foregroundStyle(Farben.text3)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 20)
                             .padding(.top, 12)
@@ -111,7 +116,7 @@ struct RaumSeite: View {
             VStack(spacing: 10) {
                 Text("Freie Räume werden gesucht …")
                     .font(.system(size: 14))
-                    .foregroundStyle(Farben.gedaempft)
+                    .foregroundStyle(Farben.text3)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -119,18 +124,18 @@ struct RaumSeite: View {
 
     private func zeile(_ r: FreierRaum) -> some View {
         HStack(spacing: 12) {
-            Listensymbol(name: "SymbolRaum", groesse: 26)
+            Listensymbol(name: Symbole.raum, groesse: 26)
             VStack(alignment: .leading, spacing: 2) {
                 Text(r.kurz)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(Farben.detailText)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Farben.text)
                     .lineLimit(1)
                 let unter = [r.name != r.kurz ? r.name : "", r.raumart, r.kapazitaet.map { "\($0) Plätze" } ?? ""]
                     .filter { !$0.isEmpty }.joined(separator: " · ")
                 if !unter.isEmpty {
                     Text(unter)
                         .font(.system(size: 14))
-                        .foregroundStyle(Farben.gedaempft)
+                        .foregroundStyle(Farben.text3)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -139,12 +144,7 @@ struct RaumSeite: View {
             if bucht == r.kurz {
                 ProgressView()
             } else if r.urspruenglich {
-                Text("ursprünglich")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Farben.tinte2)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Farben.knopf, in: Capsule())
+                Plakette(text: "Ursprünglich", farbe: Farben.text2, flaeche: Farben.neutralFlaeche)
             }
         }
         .padding(.horizontal, 16)

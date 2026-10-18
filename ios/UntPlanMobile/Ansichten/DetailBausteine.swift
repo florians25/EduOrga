@@ -3,7 +3,7 @@ import UIKit
 
 // MARK: - Wisch-Geste zum Zurückgehen
 
-/// Bei verborgener Navigationsleiste (Detail-Unterseiten, Planauswahl) schaltet UIKit die Rand-Wischgeste zum Zurückgehen ab.
+/// Bei verborgener Navigationsleiste (Detail-Unterseiten) schaltet UIKit die Rand-Wischgeste zum Zurückgehen ab.
 /// Mit eigenem Delegate bleibt sie aktiv – aber nur, wenn es eine Seite zum Zurückgehen gibt.
 extension UINavigationController: UIGestureRecognizerDelegate {
     override open func viewDidLoad() {
@@ -17,21 +17,12 @@ extension UINavigationController: UIGestureRecognizerDelegate {
     }
 }
 
-// MARK: - Blatt der Stundendetails
+// MARK: - Blätter
 
-/// Feste Maße des Detailblatts auf dem iPad (wie in der Vorlage: mittig über dem Plan, breiter als ein Formblatt).
+/// Maße der Blätter auf dem iPad (Stundendetails mittig über dem Plan).
 enum Detailblatt {
     static let breite: CGFloat = 620
-    /// Höhe auf dem iPad (etwas länger als ein Formblatt; die Breite bleibt 620 pt)
     static let hoehe: CGFloat = 740
-    /// iPhone: volle Breite, 85 % der Höhe (Planauswahl, Formulare, Info …; nicht bis ganz oben)
-    static let iPhoneAnteil: CGFloat = 0.85
-    /// iPhone: Stunden- und Aufsichtsdetails randlos über die volle Breite, 90 % der Bildschirmhöhe
-    static let iPhoneDetailAnteil: CGFloat = 0.90
-    static let radius: CGFloat = 24
-
-    /// Höhe aller Blätter auf dem iPhone: 85 % (auch unter iOS 26). Auf dem iPad (Formblatt) ignoriert das System die Stufe.
-    static var iPhoneStufen: Set<PresentationDetent> { [.fraction(iPhoneAnteil)] }
 }
 
 /// Tastatur schließen (Fokus abgeben) – z. B. beim Schließen eines Blatts, damit keine Einrückung hängen bleibt.
@@ -42,105 +33,23 @@ enum Tastatur {
     }
 }
 
-extension View {
-    /// Blatt auf dem iPhone nur 85 % hoch (Planauswahl, Formulare, Info …); auf dem iPad bleibt das Formblatt.
-    func iPhoneBlatt() -> some View {
-        presentationDetents(Detailblatt.iPhoneStufen)
-    }
-
-    /// Stundendetails als weißes Blatt mit großen Ecken: auf dem iPad fest 620 × 640 pt mittig (die Größe bleibt beim
-    /// Wechsel in Unterseiten und beim Ein-/Ausblenden der Tastatur gleich). Auf dem iPhone zeigt `detailPraesentation`
-    /// stattdessen das randlose 90-%-Blatt (`Randblatt`); der Zweig für schmale Breiten bleibt als Rückfall.
-    /// Die Tastatur verschiebt bzw. staucht das Blatt selbst nicht; Textfelder in Unterseiten weichen ihr innen aus.
-    @ViewBuilder
-    func detailBlatt(breit: Bool) -> some View {
-        if breit {
-            if #available(iOS 18.0, *) {
-                self
-                    .frame(width: Detailblatt.breite, height: Detailblatt.hoehe)
-                    .presentationSizing(.fitted)
-                    .presentationCornerRadius(Detailblatt.radius)
-                    .presentationBackground(Farben.blatt)
-            } else {
-                // iOS 17: Formblatt des Systems (540 × 620 pt), nur die Ecken angleichen
-                self
-                    .presentationCornerRadius(Detailblatt.radius)
-                    .presentationBackground(Farben.blatt)
-            }
-        } else {
-            self
-                .presentationDetents(Detailblatt.iPhoneStufen)
-                .presentationDragIndicator(.hidden)
-                .presentationContentInteraction(.scrolls)
-                .presentationCornerRadius(Detailblatt.radius)
-                .presentationBackground(Farben.blatt)
-        }
-    }
-
-}
-
-// MARK: - Randloses Detailblatt (iPhone)
-
 private struct BlattSchliessenSchluessel: EnvironmentKey {
     static let defaultValue: (@MainActor () -> Void)? = nil
 }
 
 extension EnvironmentValues {
-    /// Schließt das randlose Detailblatt mit seiner Animation (nil = Systemblatt, dann `dismiss`).
+    /// Eigene Schließen-Aktion eines Blatts (nil = Systemblatt, dann `dismiss`).
     var blattSchliessen: (@MainActor () -> Void)? {
         get { self[BlattSchliessenSchluessel.self] }
         set { self[BlattSchliessenSchluessel.self] = newValue }
     }
 }
 
-extension View {
-    /// Stunden- bzw. Aufsichtsdetails zeigen: auf dem iPad als festes Formblatt (`detailBlatt`), auf dem iPhone als
-    /// randloses Blatt über die volle Breite und 90 % der Höhe. Die Systemblätter von iOS 26 schweben bei Teilhöhen mit
-    /// Abstand zum Rand – deshalb zeichnet das iPhone-Blatt sich selbst (auf allen iOS-Versionen gleich).
-    /// `art`: auf dem iPad das feste Detailblatt (620 × 740 pt) oder ein Formblatt des Systems (Formulare, Auswahl …);
-    /// auf dem iPhone sehen beide gleich aus (Randblatt).
-    func detailPraesentation<Item: Identifiable, Blatt: View>(item: Binding<Item?>, breit: Bool, art: Blattart = .detail,
-                                                              @ViewBuilder blatt: @escaping (Item) -> Blatt) -> some View {
-        modifier(DetailPraesentation(item: item, breit: breit, art: art, blatt: blatt))
-    }
-
-    /// Wie `detailPraesentation`, aber mit einem Schalter (Planauswahl, Info, Hilfe, Formulare, Kontenauswahl …): auf dem
-    /// iPhone dasselbe randlose 90-%-Blatt wie die Stundendetails, auf dem iPad je nach `art`.
-    func blattPraesentation<Blatt: View>(isPresented: Binding<Bool>, breit: Bool, art: Blattart = .formular,
-                                         @ViewBuilder blatt: @escaping () -> Blatt) -> some View {
-        detailPraesentation(item: Binding<Blattschalter?>(get: { isPresented.wrappedValue ? Blattschalter() : nil },
-                                                          set: { isPresented.wrappedValue = $0 != nil }),
-                            breit: breit, art: art) { _ in
-            blatt()
-        }
-    }
-
-    /// Auf dem iPad: festes Detailblatt bzw. Formblatt des Systems (mit gleichen Ecken und Hintergrund).
-    @ViewBuilder
-    func iPadBlatt(_ art: Blattart) -> some View {
-        switch art {
-        case .detail:
-            detailBlatt(breit: true)
-        case .formular:
-            if #available(iOS 18.0, *) {
-                self
-                    .presentationSizing(.form)
-                    .presentationCornerRadius(Detailblatt.radius)
-                    .presentationBackground(Farben.blatt)
-            } else {
-                self
-                    .presentationCornerRadius(Detailblatt.radius)
-                    .presentationBackground(Farben.blatt)
-            }
-        }
-    }
-}
-
-/// Größe eines Blatts auf dem iPad (auf dem iPhone sind alle Blätter gleich: randlos, volle Breite, 90 % hoch).
+/// Größe eines Blatts.
 enum Blattart {
-    /// Festes Detailblatt 620 × 740 pt (Stunden-, Aufsichtsdetails, Sprechtag)
+    /// Stunden-, Aufsichtsdetails, Sprechtag: iPhone halb bzw. ganz hoch (Ziehgriff), iPad fest 620 × 740 pt
     case detail
-    /// Formblatt des Systems (Planauswahl, Info, Formulare, Kontenauswahl …)
+    /// Planauswahl, Info, Formulare, Kontenauswahl: iPhone groß, iPad Formblatt des Systems
     case formular
 }
 
@@ -155,150 +64,82 @@ enum Geraet {
     static var istPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 }
 
-private struct DetailPraesentation<Item: Identifiable, Blatt: View>: ViewModifier {
-    @Binding var item: Item?
-    let breit: Bool
-    let art: Blattart
-    let blatt: (Item) -> Blatt
-    /// Auf dem iPhone gezeigtes Element: ohne Systemanimation präsentiert, das Blatt fährt selbst ein und aus.
-    @State private var randElement: Item? = nil
-
-    func body(content: Content) -> some View {
-        content
-            .sheet(item: Binding(get: { breit ? item : nil }, set: { item = $0 })) { element in
-                blatt(element)
-                    // Systemblatt: ein äußeres Randblatt darf hier nicht mitgeschlossen werden
-                    .environment(\.blattSchliessen, nil)
-                    .iPadBlatt(art)
-            }
-            .fullScreenCover(item: Binding(get: { randElement }, set: { neu in
-                randElement = neu
-                if neu == nil { item = nil }
-            })) { element in
-                Randblatt(schliessen: { item = nil }) {
-                    blatt(element)
-                }
-                .presentationBackground(.clear)
-            }
-            .onChange(of: item?.id) { _, _ in abgleichen() }
-            .onChange(of: breit) { _, _ in abgleichen() }
-            .onAppear { abgleichen() }
-    }
-
-    /// Blatt auf dem iPhone ohne die Einblendung des Vollbilds zeigen bzw. entfernen.
-    private func abgleichen() {
-        let neu = breit ? nil : item
-        guard neu?.id != randElement?.id else { return }
-        var transaktion = Transaction()
-        transaktion.disablesAnimations = true
-        withTransaction(transaktion) { randElement = neu }
-    }
-}
-
-/// Randloses Blatt (iPhone): volle Breite ohne seitlichen Abstand, 90 % der Bildschirmhöhe, oben große Ecken; dahinter
-/// ein abgedunkelter Plan (Antippen schließt). Am Kopf nach unten ziehen schließt ebenfalls. Bei eingeblendeter Tastatur
-/// bleibt die Oberkante stehen und das Blatt endet über der Tastatur (Textfelder bleiben sichtbar).
-struct Randblatt<Inhalt: View>: View {
-    let schliessen: () -> Void
-    @ViewBuilder let inhalt: () -> Inhalt
-    @State private var sichtbar = false
-    @State private var zug: CGFloat = 0
-    @State private var schliesst = false
-
-    /// Höhe des Bereichs oben, an dem sich das Blatt nach unten ziehen lässt (Kopf mit X, Titel und ⋮).
-    private let griffHoehe: CGFloat = 72
-
-    var body: some View {
-        GeometryReader { geo in
-            let gesamt = geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom
-            let blattHoehe = gesamt * Detailblatt.iPhoneDetailAnteil
-            // Oberkante fest bei 10 % der Bildschirmhöhe; unten endet das Blatt am sicheren Bereich (bzw. an der Tastatur)
-            let innenHoehe = max(geo.size.height + geo.safeAreaInsets.top - (gesamt - blattHoehe), 120)
-            ZStack(alignment: .bottom) {
-                Color.black
-                    .opacity(sichtbar ? 0.32 * Double(1 - min(zug / max(blattHoehe, 1), 1)) : 0)
-                    .ignoresSafeArea()
-                    .contentShape(Rectangle())
-                    .onTapGesture { zuklappen(blattHoehe) }
-                    .accessibilityHidden(true)
-                inhalt()
-                    .environment(\.blattSchliessen, { zuklappen(blattHoehe) })
-                    .frame(maxWidth: .infinity)
-                    .frame(height: innenHoehe, alignment: .top)
-                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: Detailblatt.radius, bottomLeadingRadius: 0,
-                                                      bottomTrailingRadius: 0, topTrailingRadius: Detailblatt.radius,
-                                                      style: .continuous))
-                    .background(alignment: .top) {
-                        UnevenRoundedRectangle(topLeadingRadius: Detailblatt.radius, bottomLeadingRadius: 0,
-                                               bottomTrailingRadius: 0, topTrailingRadius: Detailblatt.radius,
-                                               style: .continuous)
-                            .fill(Farben.blatt)
-                            .ignoresSafeArea(edges: .bottom)
-                            .shadow(color: .black.opacity(0.12), radius: 10, y: -2)
-                    }
-                    .simultaneousGesture(ziehen(blattHoehe, kopfUnten: geo.size.height - innenHoehe + griffHoehe))
-                    .offset(y: sichtbar ? zug : blattHoehe + 60)
-                    .accessibilityAction(.escape) { zuklappen(blattHoehe) }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            .coordinateSpace(NamedCoordinateSpace.named(Self.raum))
-        }
-        .onAppear {
-            withAnimation(.spring(response: 0.36, dampingFraction: 0.92)) { sichtbar = true }
+extension View {
+    /// Blatt des Systems mit den Höhenstufen je Art: Stundendetails auf dem iPhone mittel und groß mit Ziehgriff,
+    /// Formulare groß; auf dem iPad ein festes Detailblatt bzw. das Formblatt.
+    func detailPraesentation<Item: Identifiable, Blatt: View>(item: Binding<Item?>, breit: Bool, art: Blattart = .detail,
+                                                              @ViewBuilder blatt: @escaping (Item) -> Blatt) -> some View {
+        sheet(item: item) { element in
+            blatt(element)
+                .environment(\.blattSchliessen, nil)
+                .blattGroesse(art, breit: breit)
         }
     }
 
-    private static var raum: String { "randblatt" }
+    /// Wie `detailPraesentation`, aber mit einem Schalter (Planauswahl, Info, Hilfe, Formulare, Kontenauswahl …).
+    func blattPraesentation<Blatt: View>(isPresented: Binding<Bool>, breit: Bool, art: Blattart = .formular,
+                                         @ViewBuilder blatt: @escaping () -> Blatt) -> some View {
+        sheet(isPresented: isPresented) {
+            blatt()
+                .environment(\.blattSchliessen, nil)
+                .blattGroesse(art, breit: breit)
+        }
+    }
 
-    /// Nach unten ziehen am Kopf des Blatts (nicht in der Liste, die selbst rollt). Gemessen im festen Koordinatenraum
-    /// des Vollbilds, damit das mitwandernde Blatt die Strecke nicht verfälscht.
-    private func ziehen(_ hoehe: CGFloat, kopfUnten: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 10, coordinateSpace: NamedCoordinateSpace.named(Self.raum))
-            .onChanged { wert in
-                guard !schliesst, wert.startLocation.y <= kopfUnten else { return }
-                zug = max(0, wert.translation.height)
-            }
-            .onEnded { wert in
-                guard !schliesst, wert.startLocation.y <= kopfUnten else { return }
-                let weit = wert.translation.height > hoehe * 0.25
-                let schnell = wert.predictedEndTranslation.height > hoehe * 0.45
-                if weit || schnell {
-                    zuklappen(hoehe)
+    /// Höhenstufen und Größe eines Blatts.
+    @ViewBuilder
+    func blattGroesse(_ art: Blattart, breit: Bool) -> some View {
+        if breit {
+            switch art {
+            case .detail:
+                if #available(iOS 18.0, *) {
+                    self
+                        .frame(width: Detailblatt.breite, height: Detailblatt.hoehe)
+                        .presentationSizing(.fitted)
+                        .presentationBackground(Farben.blatt)
                 } else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) { zug = 0 }
+                    self.presentationBackground(Farben.blatt)
+                }
+            case .formular:
+                if #available(iOS 18.0, *) {
+                    self
+                        .presentationSizing(.form)
+                        .presentationBackground(Farben.blatt)
+                } else {
+                    self.presentationBackground(Farben.blatt)
                 }
             }
-    }
-
-    /// Blatt ausfahren, danach die Präsentation ohne weitere Animation beenden.
-    private func zuklappen(_ hoehe: CGFloat) {
-        guard !schliesst else { return }
-        schliesst = true
-        Tastatur.schliessen()
-        withAnimation(.easeIn(duration: 0.22)) {
-            sichtbar = false
-            zug = 0
-        } completion: {
-            schliessen()
+        } else {
+            switch art {
+            case .detail:
+                self
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(Farben.blatt)
+            case .formular:
+                self
+                    .presentationDetents([.large])
+                    .presentationBackground(Farben.blatt)
+            }
         }
     }
 }
 
-// MARK: - Maße der Stundendetails (Original 117/118, iPhone)
+// MARK: - Maße der Stundendetails
 
 enum Detailmass {
     /// Linker Rand von Kopfblock und Liste
-    static let rand: CGFloat = 17
-    /// Zeilenhöhe im Kopfblock (Grundlinienabstand im Original ≈ 31 pt)
-    static let zeile: CGFloat = 31
-    /// „Klasse | Gruppe“ und Fach
+    static let rand: CGFloat = 16
+    /// Zeilenhöhe im Kopfblock
+    static let zeile: CGFloat = 26
+    /// Fach bzw. Titel im Kopfblock
     static let gross: CGFloat = 22
     /// Raum und Lehrkraft
-    static let klein: CGFloat = 17
-    /// Durchmesser der runden Glasknöpfe im Kopf
+    static let klein: CGFloat = 15
+    /// Tippfläche der Knöpfe im Kopf
     static let knopf: CGFloat = 44
 
-    /// „07:45“ → „7:45“ (ohne führende Null wie im Original).
+    /// „07:45“ → „7:45“ (ohne führende Null).
     static func uhrzeit(_ text: String) -> String {
         text.count == 5 && text.hasPrefix("0") ? String(text.dropFirst()) : text
     }
@@ -306,77 +147,34 @@ enum Detailmass {
 
 // MARK: - Kopf des Blatts
 
-/// Runder Glasknopf (44 pt) im Kopf des Blatts: X, Zurück, ⋮ …
-/// Ab iOS 26 echtes Liquid Glass (interaktiv), davor ein Milchglas-Kreis mit feinem Rand und weichem Schatten.
+/// Symbolknopf im Kopf eines Blatts: Symbol in der Akzentfarbe, 44 pt Tippfläche, ohne Hintergrund. „⋮“-Menüs zeigen
+/// das System-Symbol „ellipsis.circle“.
 struct Rundknopf: View {
     let symbol: String
-    var gewicht: Font.Weight = .light
-    var groesse: CGFloat = 16
+    var gewicht: Font.Weight = .regular
+    var groesse: CGFloat = 17
     var drehung: Double = 0
 
+    private var name: String { symbol == "ellipsis" ? "ellipsis.circle" : symbol }
+
     var body: some View {
-        glas(
-            Image(systemName: symbol)
-                .font(.system(size: groesse, weight: gewicht))
-                .rotationEffect(.degrees(drehung))
-                .foregroundStyle(Farben.tinte2)
-                .frame(width: Detailmass.knopf, height: Detailmass.knopf)
-        )
-        .contentShape(Circle())
-    }
-
-    private func glas<V: View>(_ inhalt: V) -> some View {
-        inhalt.liquidGlas(Circle())
+        Image(systemName: name)
+            .font(.system(size: min(max(groesse, 16), 19), weight: .regular))
+            .foregroundStyle(Farben.akzent)
+            .frame(width: Detailmass.knopf, height: Detailmass.knopf)
+            .contentShape(Rectangle())
     }
 }
 
-/// Liquid Glass für Knöpfe in Kopfzeilen (Kreis bzw. Kapsel): ab iOS 26 echtes, interaktives Glas, davor ein
-/// Milchglas-Feld (ultraThinMaterial) mit feinem hellen Rand und weichem Schatten.
-struct Liquidglas<Form: InsettableShape>: ViewModifier {
-    let form: Form
-
-    func body(content: Content) -> some View {
-        #if compiler(>=6.2)
-        if #available(iOS 26.0, *) {
-            content.glassEffect(.regular.interactive(), in: form)
-        } else {
-            milchglas(content)
-        }
-        #else
-        milchglas(content)
-        #endif
-    }
-
-    private func milchglas<V: View>(_ inhalt: V) -> some View {
-        inhalt
-            .background {
-                form
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        form
-                            .strokeBorder(Color(hell: 0xFFFFFF, dunkel: 0xFFFFFF, deckkraftHell: 0.8, deckkraftDunkel: 0.16), lineWidth: 0.5)
-                    }
-                    .shadow(color: Color(hell: 0x141C24, dunkel: 0x000000, deckkraftHell: 0.14, deckkraftDunkel: 0.4), radius: 6, y: 3)
-            }
-    }
-}
-
-extension View {
-    /// Liquid Glass (ab iOS 26) bzw. Milchglas mit feinem Rand – wie die runden Knöpfe der Kopfzeilen.
-    func liquidGlas<Form: InsettableShape>(_ form: Form) -> some View {
-        modifier(Liquidglas(form: form))
-    }
-}
-
-/// Kopfzeile des Blatts: links ein runder Knopf, in der Mitte der (zweizeilige) Titel, rechts optional ein Knopf.
-/// Der Titel steht immer genau mittig, unabhängig davon, ob rechts etwas steht.
+/// Kopfzeile eines Blatts wie eine Navigationsleiste: links Schließen bzw. Zurück, mittig der (zweizeilige) Titel,
+/// rechts optional Aktionen; unten eine feine Linie. Der Titel steht immer genau mittig.
 struct Blattkopf<Mitte: View, Rechts: View>: View {
     let symbol: String
     let symbolText: String
     let aktion: () -> Void
     let mitte: Mitte
     let rechts: Rechts
-    /// Lädt der Inhalt? Dann läuft unten am Kopf der orange Ladebalken.
+    /// Lädt der Inhalt? Dann läuft unten am Kopf der Ladebalken.
     var laedt: Bool = false
 
     init(symbol: String, symbolText: String, aktion: @escaping () -> Void, laedt: Bool = false,
@@ -393,10 +191,10 @@ struct Blattkopf<Mitte: View, Rechts: View>: View {
         ZStack {
             mitte
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, Detailmass.knopf + 12)
+                .padding(.horizontal, 96)
             HStack(spacing: 0) {
                 Button(action: aktion) {
-                    Rundknopf(symbol: symbol, gewicht: .light, groesse: 20)
+                    linkerKnopf
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(symbolText)
@@ -404,13 +202,41 @@ struct Blattkopf<Mitte: View, Rechts: View>: View {
                 rechts
             }
         }
-        .padding(.horizontal, 15)
-        .padding(.top, 15)
-        .padding(.bottom, 9)
-        .frame(minHeight: 68)
+        .padding(.horizontal, 8)
+        .padding(.top, 6)
+        .frame(minHeight: 52)
         .background(Farben.blatt)
         .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Farben.rand)
+                .frame(height: 0.5)
+        }
+        .overlay(alignment: .bottom) {
             Ladebalken(aktiv: laedt)
+        }
+    }
+
+    /// „Schließen“ als Text, „Zurück“ mit Pfeil – wie in den Navigationsleisten des Systems.
+    @ViewBuilder
+    private var linkerKnopf: some View {
+        if symbol == "chevron.left" {
+            HStack(spacing: 3) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 17, weight: .semibold))
+                Text("Zurück")
+                    .font(.body)
+            }
+            .foregroundStyle(Farben.akzent)
+            .padding(.horizontal, 6)
+            .frame(minHeight: Detailmass.knopf)
+            .contentShape(Rectangle())
+        } else {
+            Text(symbolText)
+                .font(.body)
+                .foregroundStyle(Farben.akzent)
+                .padding(.horizontal, 8)
+                .frame(minHeight: Detailmass.knopf)
+                .contentShape(Rectangle())
         }
     }
 }
@@ -421,7 +247,7 @@ extension Blattkopf where Rechts == EmptyView {
     }
 }
 
-/// Titel in der Mitte des Kopfs wie im Original: „Do. | 08.10.26“ 17 pt grau, darunter die Uhrzeit 13 pt grau.
+/// Titel in der Mitte des Kopfs: Titel 17 pt halbfett, darunter klein der Untertitel (z. B. Uhrzeit).
 struct Blatttitel: View {
     let titel: String
     var untertitel: String? = nil
@@ -429,20 +255,21 @@ struct Blatttitel: View {
 
     var body: some View {
         VStack(spacing: 1) {
-            HStack(spacing: 3) {
+            HStack(spacing: 4) {
                 Text(titel)
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundStyle(Farben.titelGrau)
+                    .font(.headline)
+                    .foregroundStyle(Farben.text)
                 if pfeil {
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Farben.titelGrau)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Farben.text3)
                 }
             }
             if let untertitel, !untertitel.isEmpty {
                 Text(untertitel)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Farben.titelGrau)
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(Farben.text2)
             }
         }
         .lineLimit(1)
@@ -451,8 +278,8 @@ struct Blatttitel: View {
     }
 }
 
-/// Rahmen einer Unterseite im selben Blatt: Kopf mit Zurück (bzw. X), Titel mittig, darunter der Inhalt.
-/// Die Navigationsleiste des Systems bleibt verborgen, damit das Blatt überall gleich aussieht.
+/// Rahmen einer Unterseite im selben Blatt: Kopf mit Zurück (bzw. Schließen), Titel mittig, darunter der Inhalt.
+/// Die Navigationsleiste des Systems bleibt verborgen; der Kopf ist ihr nachgebildet.
 struct DetailSeitenRahmen<Inhalt: View, Rechts: View>: View {
     let titel: String
     let untertitel: String?
@@ -460,7 +287,7 @@ struct DetailSeitenRahmen<Inhalt: View, Rechts: View>: View {
     let zurueck: (() -> Void)?
     let inhalt: Inhalt
     let rechts: Rechts
-    /// Lädt die Seite? Dann läuft unter dem Kopf der orange Ladebalken.
+    /// Lädt die Seite? Dann läuft unter dem Kopf der Ladebalken.
     let laedt: Bool
     @Environment(\.dismiss) private var schliessen
 
@@ -488,8 +315,7 @@ struct DetailSeitenRahmen<Inhalt: View, Rechts: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .background(Farben.blatt.ignoresSafeArea())
-        // Keine eigene Tastatur-Logik: Textfelder weichen der Tastatur über den Sicherheitsbereich aus (System);
-        // beim Verlassen der Seite wird der Fokus abgegeben, damit nichts verschoben bleibt
+        // Beim Verlassen der Seite den Fokus abgeben, damit keine Tastatur-Einrückung hängen bleibt
         .onDisappear { Tastatur.schliessen() }
         .toolbar(.hidden, for: .navigationBar)
     }
@@ -502,7 +328,7 @@ extension DetailSeitenRahmen where Rechts == EmptyView {
     }
 }
 
-/// Runder Knopf „Sichern“ (Haken) rechts im Kopf einer Unterseite.
+/// Textknopf „Sichern“ rechts im Kopf einer Unterseite (halbfett in der Akzentfarbe, inaktiv grau).
 struct SichernKnopf: View {
     let speichert: Bool
     let aktiv: Bool
@@ -514,14 +340,15 @@ struct SichernKnopf: View {
         if speichert {
             ProgressView()
                 .frame(width: Detailmass.knopf, height: Detailmass.knopf)
+                .padding(.horizontal, 8)
         } else {
             Button(action: aktion) {
-                Image(systemName: symbol)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(aktiv ? Color.white : Farben.gedaempft)
-                    .frame(width: Detailmass.knopf, height: Detailmass.knopf)
-                    .background(aktiv ? Farben.akzent : Farben.knopf, in: Circle())
-                    .contentShape(Circle())
+                Text(beschriftung)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(aktiv ? Farben.akzent : Farben.pfeil)
+                    .padding(.horizontal, 8)
+                    .frame(minHeight: Detailmass.knopf)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(!aktiv)
@@ -532,24 +359,17 @@ struct SichernKnopf: View {
 
 // MARK: - Zeilen der Liste
 
-/// Graue runde Zahl (Original: Kreis 31 pt, schiefergrau) mit weißer Ziffer – auch bei 0.
+/// Zahl in einer neutralen Kapsel (Hausaufgaben, Klassenbucheinträge) – auch bei 0.
 struct GrauePlakette: View {
     let zahl: Int
 
     var body: some View {
-        // Einen Ticken kleiner als zuvor (31 pt / 17 pt)
-        Text("\(zahl)")
-            .font(.system(size: 15.5))
-            .monospacedDigit()
-            .foregroundStyle(.white)
-            .padding(.horizontal, 7)
-            .frame(minWidth: 28, minHeight: 28)
-            .background(Farben.zahlPlakette, in: Capsule())
+        ZahlPlakette(zahl: zahl)
     }
 }
 
-/// Zeile der Detailliste wie im Original (ohne Trennlinien): Symbol links grau in Linienstil (≈ 30 pt), Titel 19 pt,
-/// optional grauer Untertitel 17 pt (einzeilig), rechts runde Zahl und dünner grauer Pfeil. Mindesthöhe 56 pt.
+/// Zeile der Detailliste: SF Symbol links in der Akzentfarbe, Titel, optional grauer Untertitel (einzeilig), rechts
+/// Zahl und Pfeil. Mindesthöhe 52 pt.
 struct Detailzeile<Rechts: View>: View {
     let symbol: String
     let titel: String
@@ -571,16 +391,15 @@ struct Detailzeile<Rechts: View>: View {
     var body: some View {
         HStack(spacing: 12) {
             Listensymbol(name: symbol)
-            VStack(alignment: .leading, spacing: 3) {
-                // Menütext eine Stufe kräftiger (Regular statt Light), Untertitel etwas dunkler (Vorlage 140)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(titel)
-                    .font(.system(size: 19, weight: .regular))
-                    .foregroundStyle(Farben.detailText)
+                    .font(.body)
+                    .foregroundStyle(Farben.text)
                     .lineLimit(1)
                 if let untertitel, !untertitel.isEmpty {
                     Text(untertitel.replacingOccurrences(of: "\n", with: " "))
-                        .font(.system(size: 17))
-                        .foregroundStyle(Farben.detailGrau)
+                        .font(.subheadline)
+                        .foregroundStyle(Farben.text2)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -588,19 +407,18 @@ struct Detailzeile<Rechts: View>: View {
             Spacer(minLength: 6)
             rechts
             if let zahl {
-                GrauePlakette(zahl: zahl)
-                    .padding(.trailing, 4)
+                ZahlPlakette(zahl: zahl)
             }
             if pfeil {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 20, weight: .ultraLight))
-                    .foregroundStyle(Farben.gedaempft)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Farben.pfeil)
             }
         }
         .padding(.leading, Detailmass.rand)
-        .padding(.trailing, 22)
-        .padding(.vertical, 10)
-        .frame(minHeight: 56)
+        .padding(.trailing, 16)
+        .padding(.vertical, 8)
+        .frame(minHeight: 52)
         .contentShape(Rectangle())
     }
 }
@@ -620,13 +438,13 @@ enum Wertbaustein: Hashable {
     case pfeil
     case trenner
     case offen(String)
-    /// Neuer Wert (z. B. Vertretung) – im Detail normaler Text
+    /// Neuer bzw. geänderter Wert (z. B. Vertretung): petrolfarben unterstrichen
     case neu(String)
-    /// Statuspille rechts neben dem Fach („PRÜFUNG“, „VERANSTALTUNG“) wie in Vorlage 140
+    /// Status-Plakette rechts neben dem Fach („Prüfung“, „Veranstaltung“)
     case pille(String)
 }
 
-/// Wertzeile im Kopf der Details – nur Text, keine Plaketten: Änderungen als „alt → neu“ (alt durchgestrichen),
+/// Wertzeile im Kopf der Details: Änderungen als „alt → neu“ (alt durchgestrichen, neu petrolfarben unterstrichen),
 /// fehlende Werte (abwesende Lehrkraft bzw. Klasse) durchgestrichen. Genau eine Zeile; bei vielen Werten lässt sie sich
 /// waagrecht scrollen. Mit `kuerzenAb`: Sind es mehr Werte (z. B. alle Lehrkräfte oder alle Klassen einer
 /// Veranstaltung), stehen nur die ersten und dahinter „… +N“; Antippen klappt die ganze Liste umbrechend auf (und
@@ -634,8 +452,9 @@ enum Wertbaustein: Hashable {
 struct Wertzeile: View {
     let bausteine: [Wertbaustein]
     var schrift: CGFloat = 13
-    /// Raum und Lehrkraft eine Stufe dunkler als zuvor (Vorlage 140)
-    var farbe: Color = Farben.detailGrau
+    var farbe: Color = Farben.text2
+    /// Schriftstärke (Fach im Kopf halbfett)
+    var gewicht: Font.Weight = .regular
     /// Ab mehr als so vielen Werten kürzen (nil = nie)
     var kuerzenAb: Int? = nil
     @State private var aufgeklappt = false
@@ -643,7 +462,7 @@ struct Wertzeile: View {
     /// Übliche Grenze im Kopf der Stundendetails: mehr als 6 Werte werden gekürzt.
     static let kuerzungsgrenze = 6
 
-    /// Werte der Zeile: Bausteine zwischen den Trennstrichen (ohne Pille).
+    /// Werte der Zeile: Bausteine zwischen den Trennstrichen (ohne Plakette).
     private var gruppen: [[Wertbaustein]] {
         var ergebnis: [[Wertbaustein]] = [[]]
         for b in bausteine {
@@ -675,8 +494,8 @@ struct Wertzeile: View {
             let sichtbar = max(grenze - 1, 1)
             if aufgeklappt {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(Self.fliesstext(alle, trenner: Farben.detailTrenner))
-                        .font(.system(size: schrift))
+                    Text(Self.fliesstext(alle))
+                        .font(.system(size: schrift, weight: gewicht))
                         .foregroundStyle(farbe)
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
@@ -685,7 +504,7 @@ struct Wertzeile: View {
                 }
                 .padding(.vertical, 3)
                 .contentShape(Rectangle())
-                .onTapGesture { withAnimation(.easeInOut(duration: 0.2)) { aufgeklappt = false } }
+                .onTapGesture { withAnimation(.easeOut(duration: 0.12)) { aufgeklappt = false } }
                 .accessibilityAddTraits(.isButton)
                 .accessibilityHint("Liste einklappen")
             } else {
@@ -695,16 +514,16 @@ struct Wertzeile: View {
                             baustein(eintrag.element)
                         }
                         Button {
-                            withAnimation(.easeInOut(duration: 0.2)) { aufgeklappt = true }
+                            withAnimation(.easeOut(duration: 0.12)) { aufgeklappt = true }
                         } label: {
                             Text("… +\(alle.count - sichtbar)")
-                                .foregroundStyle(Farben.detailGrau)
+                                .foregroundStyle(Farben.akzent)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(alle.count - sichtbar) weitere anzeigen")
                         if let pille { baustein(.pille(pille)) }
                     }
-                    .font(.system(size: schrift))
+                    .font(.system(size: schrift, weight: gewicht))
                     .foregroundStyle(farbe)
                 }
             }
@@ -715,7 +534,7 @@ struct Wertzeile: View {
                         baustein(eintrag.element)
                     }
                 }
-                .font(.system(size: schrift))
+                .font(.system(size: schrift, weight: gewicht))
                 .foregroundStyle(farbe)
             }
         }
@@ -732,22 +551,33 @@ struct Wertzeile: View {
     }
 
     /// Aufgeklappte Liste als ein umbrechender Text (durchgestrichene Werte bleiben durchgestrichen).
-    private static func fliesstext(_ gruppen: [[Wertbaustein]], trenner: Color) -> AttributedString {
+    private static func fliesstext(_ gruppen: [[Wertbaustein]]) -> AttributedString {
         var text = AttributedString()
         for (i, g) in gruppen.enumerated() {
             if i > 0 {
-                var t = AttributedString(" | ")
-                t.foregroundColor = trenner
+                var t = AttributedString(" · ")
+                t.foregroundColor = Farben.text3
                 text.append(t)
             }
             for (j, b) in g.enumerated() {
                 if j > 0 { text.append(AttributedString(" ")) }
                 switch b {
-                case .text(let w), .neu(let w):
+                case .text(let w):
                     text.append(AttributedString(w))
-                case .weg(let w), .offen(let w):
+                case .neu(let w):
+                    var t = AttributedString(w)
+                    t.foregroundColor = Farben.aenderung
+                    t.underlineStyle = .single
+                    text.append(t)
+                case .weg(let w):
                     var t = AttributedString(w)
                     t.strikethroughStyle = .single
+                    t.foregroundColor = Farben.text3
+                    text.append(t)
+                case .offen(let w):
+                    var t = AttributedString(w)
+                    t.strikethroughStyle = .single
+                    t.foregroundColor = Farben.aenderung
                     text.append(t)
                 case .pfeil:
                     text.append(AttributedString("→"))
@@ -762,23 +592,34 @@ struct Wertzeile: View {
     @ViewBuilder
     private func baustein(_ b: Wertbaustein) -> some View {
         switch b {
-        case .text(let t), .neu(let t):
+        case .text(let t):
             Text(t)
-        case .weg(let t), .offen(let t):
+        case .neu(let t):
             Text(t)
-                .strikethrough(true)
+                .underline(true, color: Farben.aenderung)
+                .foregroundStyle(Farben.aenderung)
+        case .weg(let t):
+            Text(t)
+                .strikethrough(true, color: Farben.text3)
+                .foregroundStyle(Farben.text3)
+        case .offen(let t):
+            Text(t)
+                .strikethrough(true, color: Farben.aenderung)
+                .foregroundStyle(Farben.aenderung)
         case .pfeil:
-            Text("→")
+            Image(systemName: "arrow.right")
+                .font(.system(size: max(schrift - 4, 10), weight: .semibold))
+                .foregroundStyle(Farben.text3)
         case .trenner:
-            Text("|")
-                .foregroundStyle(Farben.detailTrenner)
+            Text("·")
+                .foregroundStyle(Farben.text3)
         case .pille(let t):
             Statuspille(text: t)
-                .padding(.leading, 12)
+                .padding(.leading, 8)
         }
     }
 
-    /// Bausteine aus Werten: geänderte Werte als „alt → neu“ (nur Räume, `pfeil`) bzw. „alt | neu“ (Lehrkräfte, Klassen),
+    /// Bausteine aus Werten: geänderte Werte als „alt → neu“ (nur Räume, `pfeil`) bzw. „alt · neu“ (Lehrkräfte, Klassen),
     /// offene Lehrkraft (kein neuer Wert) durchgestrichen.
     static func bausteine(_ werte: [Wert], durchgestrichen: Bool, offenAlsPlakette: Bool, pfeil: Bool = false) -> [Wertbaustein] {
         var ergebnis: [Wertbaustein] = []
@@ -794,12 +635,17 @@ struct Wertzeile: View {
                 // Offene Vertretung ohne bekannte Lehrkraft
                 teil.append(.offen("???"))
             } else {
+                var ersetzt = false
                 if !alt.isEmpty && alt != w.k {
                     teil.append(.weg(alt))
-                    teil.append(pfeil ? .pfeil : .trenner)
+                    teil.append(.pfeil)
+                    ersetzt = true
                 }
                 // Hinzugekommener Wert (plus) mit „+“ davor, z. B. „+B070“
-                if !w.k.isEmpty { teil.append(.text(w.plus ? "+" + w.k : w.k)) }
+                if !w.k.isEmpty {
+                    let wert = w.plus ? "+" + w.k : w.k
+                    teil.append(ersetzt || w.plus ? .neu(wert) : .text(wert))
+                }
             }
             guard !teil.isEmpty else { continue }
             if !ergebnis.isEmpty { ergebnis.append(.trenner) }
@@ -809,21 +655,22 @@ struct Wertzeile: View {
     }
 }
 
-/// Statuspille genau nach Vorlage 140: Großbuchstaben, weiße Schrift auf grauer Kapsel (#8e99a3), rechts neben dem Fach.
+/// Status-Plakette im Kopf der Details („Prüfung“, „Veranstaltung“, „Zusatzstunde“, „Entfällt“) in der passenden
+/// Statusfarbe.
 struct Statuspille: View {
     let text: String
 
+    private var farben: (farbe: Color, flaeche: Color) {
+        let t = text.lowercased()
+        if t.contains("prüf") || t.contains("klausur") { return (Farben.pruefung, Farben.pruefungFlaeche) }
+        if t.contains("veranstalt") || t.contains("termin") || t.contains("buchung") { return (Farben.termin, Farben.terminFlaeche) }
+        if t.contains("entf") { return (Farben.entfall, Farben.entfallFlaeche) }
+        if t.contains("zusatz") || t.contains("vertret") || t.contains("änder") { return (Farben.aenderung, Farben.aenderungFlaeche) }
+        return (Farben.text2, Farben.neutralFlaeche)
+    }
+
     var body: some View {
-        Text(text.uppercased())
-            .font(.system(size: 14, weight: .regular))
-            .tracking(0.3)
-            .foregroundStyle(.white)
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.horizontal, 8.5)
-            .padding(.vertical, 1.5)
-            .background(Farben.statusPilleFlaeche, in: Capsule())
-            .accessibilityLabel(text)
+        Plakette(text: text, farbe: farben.farbe, flaeche: farben.flaeche)
     }
 }
 
@@ -849,84 +696,65 @@ struct EinzeilenScroller<Inhalt: View>: View {
 
 // MARK: - Symbole der Liste
 
-/// Symbol links in der Detailliste – alle gleich stark: Vektorgrafiken aus Assets.xcassets (Name beginnt mit „Symbol“,
-/// als Vorlage eingefärbt) werden in ihrer Grundgröße gezeichnet, sodass jede Linie 1,5 pt breit ist und die Zeichen
-/// gleich groß wirken (≈ 24 pt); SF Symbols ohne Vektorgrafik in leichter Stärke mit gleicher Linienbreite. Grau in
-/// einem festen Feld (Standard 30 pt), damit die Titel bündig stehen.
+/// SF-Symbol-Namen für die Listen der App (an einer Stelle, damit Details, Planauswahl und Favoriten gleich bleiben).
+enum Symbole {
+    static let raum = "door.left.hand.closed"
+    static let klasse = "person.3"
+    static let lehrkraft = "person"
+    static let schuelerplan = "graduationcap"
+    static let schueler = "person.2"
+    static let hausaufgaben = "checklist"
+    static let klassenbuch = "book.closed"
+    static let lehrstoff = "text.book.closed"
+    static let notiz = "note.text"
+    static let info = "info.circle"
+    static let hinweis = "exclamationmark.circle"
+    static let online = "video"
+    static let pruefung = "list.clipboard"
+    static let verlegung = "arrow.right.square"
+    static let datum = "calendar"
+    static let konto = "person.crop.circle"
+}
+
+/// Symbol links in einer Detailzeile: SF Symbol in der Akzentfarbe in einem festen Feld, damit die Titel bündig stehen.
 struct Listensymbol: View {
     let name: String
-    var groesse: CGFloat = 30
-
-    /// Grundgröße der Vektorgrafiken in pt (Zeichenfläche × Faktor, damit die Linie 1,5 pt breit wird).
-    static func grundgroesse(_ name: String) -> CGSize {
-        switch name {
-        // 28er-Zeichenfläche mit 1,5er-Linien (Raum, Klasse, Lehrkraft, Schüler*innen, Hausaufgaben)
-        case "SymbolRaum", "SymbolKlasse", "SymbolLehrer", "SymbolSchuelerPlan", "SymbolHausaufgaben":
-            return CGSize(width: 28, height: 28)
-        // Kamera: Zeichenfläche 22 mit 1,35er-Linien
-        case "SymbolOnline":
-            return CGSize(width: 24.4, height: 24.4)
-        // Gruppe: 24 × 18 mit 1,5er-Linien
-        case "SymbolSchueler":
-            return CGSize(width: 24, height: 18)
-        default:
-            return CGSize(width: 24, height: 24)
-        }
-    }
+    var groesse: CGFloat = 28
 
     var body: some View {
-        // Kleinere Felder (z. B. 26 pt in der Raumliste) verkleinern alles im selben Verhältnis
-        let faktor = min(1, groesse / 30)
-        Group {
-            if name.hasPrefix("Symbol") {
-                let g = Self.grundgroesse(name)
-                Image(name)
-                    .renderingMode(.template)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: g.width * faktor, height: g.height * faktor)
-            } else {
-                Image(systemName: name)
-                    .font(.system(size: 21 * faktor, weight: .light))
-                    .frame(width: 24 * faktor, height: 24 * faktor)
-            }
-        }
-        .foregroundStyle(Farben.gedaempft)
-        .frame(width: groesse, height: groesse)
-        .accessibilityHidden(true)
+        Image(systemName: name)
+            .font(.system(size: 17 * min(1, groesse / 28), weight: .regular))
+            .foregroundStyle(Farben.akzent)
+            .frame(width: groesse, height: groesse)
+            .accessibilityHidden(true)
     }
 }
 
 // MARK: - Schüler*innen-Plakette
 
-/// Zahl der Abwesenden wie in der Vorlage: dunkelrote Scheibe (grau bei 0), oben rechts ein kleines Häkchen,
-/// wenn die Abwesenheiten der Stunde kontrolliert wurden.
+/// Zahl der Abwesenden: in der Entfall-Farbe (neutral bei 0), daneben ein Haken, wenn die Abwesenheiten der Stunde
+/// kontrolliert wurden.
 struct SchuelerPlakette: View {
     let zahl: Int
     let kontrolliert: Bool
 
     var body: some View {
-        // Einen Ticken kleiner als zuvor (31 pt / 17 pt)
-        Text("\(zahl)")
-            .font(.system(size: 15.5))
-            .monospacedDigit()
-            .foregroundStyle(.white)
-            .padding(.horizontal, 7)
-            .frame(minWidth: 28, minHeight: 28)
-            .background(zahl > 0 ? Farben.abwesendRot : Farben.zahlPlakette, in: Capsule())
-            .overlay(alignment: .topTrailing) {
-                if kontrolliert {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 6.5, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(width: 12, height: 12)
-                        .background(Farben.zahlPlakette, in: Circle())
-                        .overlay { Circle().strokeBorder(Farben.blatt, lineWidth: 1) }
-                        .offset(x: 3, y: -3)
-                }
+        HStack(spacing: 4) {
+            if kontrolliert {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Farben.ok)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(kontrolliert ? "\(zahl) abwesend, kontrolliert" : "\(zahl) abwesend")
+            Text("\(zahl)")
+                .font(.system(size: 13, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(zahl > 0 ? Farben.entfall : Farben.text2)
+                .padding(.horizontal, 7)
+                .frame(minWidth: 22, minHeight: 22)
+                .background(zahl > 0 ? Farben.entfallFlaeche : Farben.neutralFlaeche, in: Capsule())
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(kontrolliert ? "\(zahl) abwesend, kontrolliert" : "\(zahl) abwesend")
     }
 }
 
@@ -941,7 +769,7 @@ struct RaumZiel: Hashable, Identifiable {
     var id: String { "\(aktion)|\(alt)" }
 }
 
-/// Raumzeile wie in der PWA: jeder Raum als Chip (Tippen: „Ersetzen“ / „Löschen“), rechts „+“ für einen weiteren Raum.
+/// Raumzeile: jeder Raum als Feld mit feinem Rand (Tippen: „Ersetzen“ / „Löschen“), rechts „+“ für einen weiteren Raum.
 struct RaumZeile: View {
     let raeume: [Wert]
     @Binding var ziel: RaumZiel?
@@ -961,13 +789,13 @@ struct RaumZeile: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Listensymbol(name: "SymbolRaum")
+            Listensymbol(name: Symbole.raum)
             EinzeilenScroller {
                 HStack(spacing: 8) {
                     if aktuelle.isEmpty {
                         Text("Kein Raum")
-                            .font(.system(size: 17))
-                            .foregroundStyle(Farben.gedaempft)
+                            .font(.body)
+                            .foregroundStyle(Farben.text3)
                     }
                     ForEach(aktuelle, id: \.self) { raum in
                         Menu {
@@ -984,12 +812,17 @@ struct RaumZeile: View {
                             .disabled(aktuelle.count < 2)
                         } label: {
                             Text(raum)
-                                .font(.system(size: 17))
-                                .foregroundStyle(Farben.detailText)
+                                .font(.body.weight(.medium))
+                                .monospacedDigit()
+                                .foregroundStyle(Farben.text)
                                 .lineLimit(1)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 5)
-                                .background(Farben.knopf, in: Capsule())
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Farben.flaeche2, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .strokeBorder(Farben.randStark, lineWidth: 1)
+                                }
                         }
                         .tint(Color.primary)
                         .accessibilityLabel("Raum \(raum)")
@@ -999,25 +832,24 @@ struct RaumZeile: View {
             }
             if arbeitet {
                 ProgressView()
-                    .frame(width: 31, height: 31)
+                    .frame(width: 32, height: 32)
             } else {
                 Button {
                     ziel = RaumZiel(aktion: "hinzufuegen", alt: "")
                 } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundStyle(Farben.tinte2)
-                        .frame(width: 31, height: 31)
-                        .background(Farben.knopf, in: Circle())
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundStyle(Farben.akzent)
+                        .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Raum hinzufügen")
             }
         }
         .padding(.leading, Detailmass.rand)
-        .padding(.trailing, 22)
-        .padding(.vertical, 10)
-        .frame(minHeight: 56)
+        .padding(.trailing, 16)
+        .padding(.vertical, 8)
+        .frame(minHeight: 52)
         .alert("Nicht gespeichert", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {

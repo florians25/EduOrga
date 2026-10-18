@@ -17,7 +17,7 @@ targets:
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      # Der ganze Ordner, also auch Ansichten/PlanAuswahlView.swift, Ansichten/TabLeiste.swift, Dienste/Favoriten.swift
+      # Der ganze Ordner, also auch Ansichten/PlanAuswahlView.swift, Ansichten/MehrView.swift, Dienste/Favoriten.swift
       # und Dienste/Planmitteilungen.swift (Info.plist wird nicht als Ressource kopiert, sondern über INFOPLIST_FILE eingebunden)
       - path: UntPlanMobile
         excludes:

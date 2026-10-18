@@ -30,7 +30,7 @@ public sealed record PlanKarte(
     bool VertretungOffen = false,
     // „Findet online statt“ mit Link zum Online-Unterricht (Klassenbuch der Stunde)
     bool Online = false, string? OnlineLink = null,
-    // zusätzliche Unterrichtsstunde (nicht im Regelplan): Badge „Zusätzl. Unterrichtsstunde“, nie ein Vertretungstext
+    // zusätzliche Unterrichtsstunde (nicht im Regelplan): Plakette „Zusatzstunde“, nie ein Vertretungstext
     bool Zusaetzlich = false,
     // Verlegung: "von" = ursprüngliche Stunde (Pfeil nach rechts), "nach" = Zielstunde (Pfeil nach links), sonst null
     string? Verlegung = null,
@@ -145,7 +145,7 @@ public sealed class Kachel
     /// die bisherige steht immer durchgestrichen in der grünen Plakette – auf Karten und im Kopf der Stundendetails.
     /// </summary>
     [JsonPropertyName("teacherOpen")] public bool? LehrkraftOffen { get; set; }
-    /// <summary>Zusatzstunde (zusätzlicher Unterricht): Plakette „Zusätzl. Unterrichtsstunde“ in den Details, kein Vertretungstext.</summary>
+    /// <summary>Zusatzstunde (zusätzlicher Unterricht): Plakette „Zusatzstunde“ in den Details, kein Vertretungstext.</summary>
     [JsonPropertyName("extra")] public bool? Zusatz { get; set; }
     /// <summary>Verlegung: "von" = ursprüngliche Stunde (Zeichen mit Pfeil nach rechts), "nach" = Zielstunde (Pfeil nach links).</summary>
     [JsonPropertyName("moved")] public string? Verlegung { get; set; }
@@ -182,7 +182,7 @@ public sealed class Kachel
     [JsonPropertyName("teacherAbsent")] public bool? LehrerAbwesend { get; set; }
     [JsonPropertyName("teacherList")] public List<KoppEintrag>? Kopplung { get; set; }
     [JsonPropertyName("classList")] public List<KlassenEintrag>? Klassenliste { get; set; }
-    /// <summary>Unterricht in UntPlanWeb – Schlüssel fürs Klassenbuch (auch als entryId, wie in der Vorlage).</summary>
+    /// <summary>Unterricht in UntPlanWeb – Schlüssel fürs Klassenbuch (auch als entryId).</summary>
     [JsonPropertyName("entryId")] public int? Eintrag { get; set; }
     [JsonPropertyName("unterricht")] public int? Unterricht { get; set; }
     [JsonPropertyName("hasHw")] public bool? Hausaufgabe { get; set; }

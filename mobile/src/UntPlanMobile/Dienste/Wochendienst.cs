@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace UntPlanMobile.Dienste;
 
 /// <summary>
-/// Eine Woche im Format der Oberfläche (wie api/mobile.php?action=week der Vorlage). Gesperrt (nur gesetzt, wenn wahr):
+/// Eine Woche im Format der Oberfläche (api/mobile?action=week). Gesperrt (nur gesetzt, wenn wahr):
 /// Woche außerhalb der Wochenbegrenzung der Rolle – leere Tage, die Oberfläche zeigt das Schloss mit dem Sperrhinweis.
 /// </summary>
 public sealed record WochenAntwort(
@@ -30,7 +30,7 @@ public sealed class Wochendienst
 
     public Wochendienst(UntPlanWebVerbindung web, Kontodienst konten, Zeitgeber zeit) { _web = web; _konten = konten; _zeit = zeit; }
 
-    /// <summary>Eigener Plan im Format der Vorlage: type „mine“, label = Kürzel, info = Name, kind = class/teacher.</summary>
+    /// <summary>Eigener Plan im Format der Oberfläche: type „mine“, label = Kürzel, info = Name, kind = class/teacher.</summary>
     public static object Eigen(Konto k) => new
     {
         type = "mine",

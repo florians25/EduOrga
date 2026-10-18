@@ -8,7 +8,7 @@ namespace UntPlanWeb.Tests;
 
 /// <summary>
 /// Anforderungen UW-14 (reine Raumbuchung ohne Nebeneffekte), UW-15 (eigene Abwesenheit, Bereitschaften),
-/// „---“ bei zusätzlichem Unterricht ohne Lehrkraft, formatierte Tagestexte (HTML-Bereinigung), Schülerverwaltung, Schrift.
+/// „---“ bei zusätzlichem Unterricht ohne Lehrkraft, formatierte Tagestexte (HTML-Bereinigung), Schülerverwaltung.
 /// </summary>
 public class OberflaecheTests
 {
@@ -490,41 +490,5 @@ public class OberflaecheTests
         var nachher = s.Dienst<Paketdienst>().Aktuell!.Schueler;
         Assert.Equal(andere.Kurz, nachher.Single(x => x.Id == id).Klasse);
         Assert.DoesNotContain(nachher, x => x.Id == neuId);
-    }
-
-    // ------------------------------------------------------------------ Schrift (UW-04)
-
-    [Fact]
-    public void Schrift_wird_nur_mit_vorhandenen_Dateien_eingebunden()
-    {
-        var ordner = Path.Combine(Path.GetTempPath(), "untplanweb-schrift-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            Directory.CreateDirectory(Path.Combine(ordner, "fonts"));
-            Assert.DoesNotContain("@font-face", OberflaecheApi.SchriftCss(ordner));
-            foreach (var f in new[] { "AvenirNextPro-Regular.woff2", "AvenirNextPro-Regular.otf", "AvenirNextPro-Demi.woff2", "AvenirNextPro-BoldIt.ttf", "fremd.woff2" })
-                File.WriteAllText(Path.Combine(ordner, "fonts", f), "");
-            var css = OberflaecheApi.SchriftCss(ordner);
-            // jedes CSS-Gewicht 100–900 fest belegt (normal und kursiv), keine Lücken für browserabhängige Ersatzwahl
-            Assert.Equal(18, css.Split("@font-face").Length - 1);
-            Assert.Contains("font-synthesis: none", css);
-            Assert.Contains("url(\"../fonts/AvenirNextPro-Regular.woff2\") format(\"woff2\"), url(\"../fonts/AvenirNextPro-Regular.otf\") format(\"opentype\"); font-weight: 400; font-style: normal", css);
-            Assert.Contains("font-weight: 600", css);
-            Assert.Contains("font-weight: 700; font-style: italic", css);
-            Assert.DoesNotContain("fremd", css);
-            Assert.Contains("--u-schrift: \"AvenirNextPro\", \"Avenir Next\", \"Nunito Sans\"", css);
-            // nur Regular und Medium: 100–400 → Regular, 500–900 → Medium; fehlt Medium, vertritt ihn der leichteste fettere Schnitt
-            Assert.Equal(new[] { (100, 400), (200, 400), (300, 400), (400, 400), (500, 600), (600, 600), (700, 600), (800, 600), (900, 600) }, SchriftApi.Zuordnung(new[] { 400, 600 }));
-            var mitMedium = SchriftApi.Zuordnung(new[] { 300, 400, 500, 600, 700 });
-            Assert.Equal(new[] { 400, 500 }, mitMedium.Select(x => x.Schnitt).Distinct().OrderBy(x => x));
-            Assert.Contains((700, 500), mitMedium);
-            Assert.Contains((900, 500), mitMedium);
-            // mit Medium-Datei werden Demi/Bold nicht mehr geladen
-            File.WriteAllText(Path.Combine(ordner, "fonts", "AvenirNextPro-Medium.woff2"), "");
-            css = OberflaecheApi.SchriftCss(ordner);
-            Assert.DoesNotContain("AvenirNextPro-Demi", css);
-            Assert.Contains("AvenirNextPro-Medium.woff2\") format(\"woff2\"); font-weight: 700; font-style: normal", css);
-        }
-        finally { Directory.Delete(ordner, true); }
     }
 }

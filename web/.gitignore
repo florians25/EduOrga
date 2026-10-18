@@ -1,1 +1,2 @@
-src/UntPlanWeb/wwwroot/fonts/AvenirNextPro*
+# lokale Daten beim Entwickeln (dotnet run)
+src/UntPlanWeb/daten/

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Ansicht des Stundenplans (⋮-Menü „Ansicht“): ein Tag, zwei bzw. drei Tage oder die ganze Woche.
+/// Ansicht des Stundenplans (Menü „Ansicht“): ein Tag, zwei bzw. drei Tage oder die ganze Woche.
 enum Planansicht: String, CaseIterable, Identifiable {
     case tag
     case zweiTage
@@ -18,13 +18,13 @@ enum Planansicht: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Spalten-Symbol (Vektorgrafik in Assets.xcassets)
-    var bild: String {
+    /// SF Symbol der Ansicht.
+    var symbol: String {
         switch self {
-        case .tag: return "AnsichtTag"
-        case .zweiTage: return "AnsichtZweiTage"
-        case .dreiTage: return "AnsichtDreiTage"
-        case .woche: return "AnsichtWoche"
+        case .tag: return "rectangle"
+        case .zweiTage: return "rectangle.split.2x1"
+        case .dreiTage: return "rectangle.split.3x1"
+        case .woche: return "calendar"
         }
     }
 
@@ -39,10 +39,10 @@ enum Planansicht: String, CaseIterable, Identifiable {
     }
 }
 
-/// Stundenplan als Wochenraster nach Uhrzeit: oben Konto-Knopf, Planname als Menü, (i) und ⋮,
-/// darunter KW/Monat und Tage, links die Zeitspalte. Wischen blättert wie Seiten zur nächsten bzw.
-/// vorherigen Woche (bzw. Tagen); die Ansicht folgt dem Finger, gleitet mit Feder-Animation weiter oder zurück.
-/// ⋮-Menü wie in der Vorlage: „Gehe zu Datum“ (Kalender als Popover), Ansicht Tag / 2 Tage / 3 Tage / Woche, Hilfe.
+/// Stundenplan als Raster nach Uhrzeit: in der Navigationsleiste links „Heute“, mittig der Planname (öffnet die
+/// Planauswahl), rechts das Menü; darunter die Spaltenköpfe der Tage, links die Zeitspalte. Waagrechtes Wischen blättert
+/// zur nächsten bzw. vorherigen Woche (bzw. Tagen); die Ansicht folgt dem Finger und gleitet weiter oder zurück.
+/// Menü: „Gehe zu Datum“ (Kalender), Ansicht Tag / 2 Tage / 3 Tage / Woche, Abwesenheiten, Favorit, Legende, Hilfe.
 struct StundenplanView: View {
     @EnvironmentObject var zustand: AppZustand
     @EnvironmentObject var favoriten: Favoriten
@@ -195,23 +195,19 @@ struct StundenplanView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if istBreit {
-                    plantitel
-                        .padding(.top, 2)
-                        .padding(.bottom, 6)
-                }
                 inhalt
-                    // Kräftiger oranger Ladebalken direkt unter der Kopfzeile, solange der Plan lädt
+                    // Schmaler Ladebalken direkt unter der Navigationsleiste, solange der Plan lädt
                     .overlay(alignment: .top) {
                         Ladebalken(aktiv: laedt)
                     }
             }
-            .background(Farben.leiste.ignoresSafeArea())
-            .navigationTitle("")
+            .background(Farben.flaeche.ignoresSafeArea())
+            .navigationTitle(titel)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarBackground(Farben.flaeche, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar { leiste }
-            // Stunden- und Aufsichtsdetails: iPad festes Formblatt, iPhone randlos über die volle Breite und 90 % hoch
+            // Stunden- und Aufsichtsdetails: iPhone als Blatt mit Ziehgriff (halb bzw. ganz hoch), iPad festes Blatt
             .detailPraesentation(item: $detail, breit: istBreit) { d in
                 StundendetailView(karten: d.karten, start: d.start, typ: typ, element: element)
                     .environmentObject(zustand)
@@ -220,7 +216,7 @@ struct StundenplanView: View {
                 AufsichtDetailView(aufsicht: a)
                     .environmentObject(zustand)
             }
-            // Planauswahl, Info und Hilfe: am iPhone dasselbe randlose 90-%-Blatt wie die Stundendetails.
+            // Planauswahl, Legende und Hilfe als Formblatt.
             // Ein Planwechsel ändert nur `auswahl` – `datum` bleibt, man bleibt also in der angezeigten Woche (bzw. an den
             // angezeigten Tagen) und springt nicht zur heutigen Woche.
             .blattPraesentation(isPresented: $zeigeAuswahl, breit: istBreit) {
@@ -247,7 +243,7 @@ struct StundenplanView: View {
                 if an { Task { await eigeneAbwesenheitenLaden(montag: montag) } }
             }
             .onChange(of: zustand.schnellaktion) { _, _ in schnellaktionUebernehmen() }
-            // Reiter „Stundenplan“ erneut angetippt: zurück zur heutigen Woche
+            // Reiter „Plan“ erneut angetippt: zurück zur heutigen Woche
             .onChange(of: zustand.stundenplanHeute) { _, _ in zurHeutigenWoche() }
             // Plan geändert (z. B. Raumbuchung in den Stundendetails): neu laden
             .onChange(of: zustand.planGeaendert) { _, _ in Task { await laden(neu: true) } }
@@ -328,29 +324,20 @@ struct StundenplanView: View {
         return "Mein Stundenplan"
     }
 
-    // MARK: - Leiste: Konto links, Planname (iPhone) in der Mitte, (i) und ⋮ rechts
+    // MARK: - Leiste: „Heute“ links, Planname in der Mitte, Menü rechts
 
     @ToolbarContentBuilder
     private var leiste: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            KontoKnopf()
-        }
-        if !istBreit {
-            ToolbarItem(placement: .principal) {
-                plantitel
+            Button("Heute") {
+                springen(zu: Date())
             }
+            .accessibilityHint("Springt zum heutigen Tag")
         }
-        // (i) und ⋮ wie in der Vorlage nebeneinander (iPhone und iPad)
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            Button {
-                zeigeInfo = true
-            } label: {
-                Glasknopf {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 18, weight: .regular))
-                }
-            }
-            .accessibilityLabel("Informationen zum Plan")
+        ToolbarItem(placement: .principal) {
+            plantitel
+        }
+        ToolbarItem(placement: .topBarTrailing) {
             menue
         }
     }
@@ -360,39 +347,40 @@ struct StundenplanView: View {
         Button {
             zeigeAuswahl = true
         } label: {
-            // Nur so breit wie der Name (höchstens 170 bzw. 360 pt): ein fest breiter Knopf würde von den Knöpfen rechts
-            // aus der Mitte geschoben – so steht die Planauswahl immer oben mittig
-            Hoechstbreite(breite: istBreit ? 360 : 170).callAsFunction {
+            // Nur so breit wie der Name (höchstens 190 bzw. 360 pt): so bleibt die Planauswahl immer oben mittig
+            Hoechstbreite(breite: istBreit ? 360 : 190).callAsFunction {
                 HStack(spacing: 4) {
                     Text(titel)
-                        .font(.system(size: istBreit ? 17 : 19, weight: .medium))
+                        .font(.headline)
+                        .foregroundStyle(Farben.text)
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: istBreit ? 11 : 13, weight: .medium))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Farben.text3)
                 }
             }
-            .foregroundStyle(Farben.titelGrau)
             .padding(.vertical, 4)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 6)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Stundenplan auswählen, aktuell \(titel)")
     }
 
-    /// ⋮-Menü wie in der Vorlage: „Gehe zu Datum“, Abschnitt „Ansicht“ (Tag, 2 Tage, 3 Tage, Woche mit Häkchen), Hilfe.
+    /// Menü: „Gehe zu Datum“, Abschnitt „Ansicht“ (Tag, 2 Tage, 3 Tage, Woche mit Häkchen), Abwesenheiten, Favorit,
+    /// Aktualisieren, Legende und Hilfe.
     private var menue: some View {
         Menu {
             Button {
                 zeigeDatum = true
             } label: {
-                Label("Gehe zu Datum", image: "GeheZuDatum")
+                Label("Gehe zu Datum", systemImage: Symbole.datum)
             }
             Section("Ansicht") {
                 Picker("Ansicht", selection: Binding(get: { ansicht }, set: { ansichtWechseln($0) })) {
                     ForEach(Planansicht.allCases) { a in
-                        Label(a.titel, image: a.bild)
+                        Label(a.titel, systemImage: a.symbol)
                             .tag(a)
                     }
                 }
@@ -401,7 +389,7 @@ struct StundenplanView: View {
             }
             if auswahl == nil {
                 Section {
-                    // Eigene Abwesenheit als grauer Balken hinter den Stunden ein- bzw. ausblenden
+                    // Eigene Abwesenheit als Fläche hinter den Stunden ein- bzw. ausblenden
                     Toggle(isOn: $zeigeAbwesenheiten) {
                         Label("Abwesenheiten anzeigen", systemImage: "person.badge.clock")
                     }
@@ -422,20 +410,21 @@ struct StundenplanView: View {
                     Label("Aktualisieren", systemImage: "arrow.clockwise")
                 }
                 Button {
+                    zeigeInfo = true
+                } label: {
+                    Label("Legende und Planangaben", systemImage: "info.circle")
+                }
+                Button {
                     zeigeHilfe = true
                 } label: {
                     Label("Hilfe", systemImage: "questionmark.circle")
                 }
             }
         } label: {
-            Glasknopf {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 17, weight: .medium))
-                    .rotationEffect(.degrees(90))
-            }
+            Image(systemName: "ellipsis.circle")
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(Farben.akzent)
         }
-        // Symbole im Menü schwarz bzw. weiß je nach Modus (nicht orange bzw. grau)
-        .tint(Color.primary)
         .accessibilityLabel("Menü")
         .popover(isPresented: $zeigeDatum, arrowEdge: .top) {
             GeheZuDatumView(start: tageModus ? tag : datum) { gewaehlt in
@@ -459,7 +448,7 @@ struct StundenplanView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Farben.rasterOben)
+            .background(Farben.grund)
         } else if element.isEmpty && auswahl == nil {
             ContentUnavailableView {
                 Label("Kein eigener Plan", systemImage: "calendar.badge.exclamationmark")
@@ -470,10 +459,10 @@ struct StundenplanView: View {
                     .buttonStyle(.borderedProminent)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Farben.rasterOben)
+            .background(Farben.grund)
         } else {
-            // Das Raster läuft wie im Original bis zum unteren Rand hinter der Tab-Leiste weiter; damit auch die letzte
-            // Stunde über die Leiste gescrollt werden kann, bekommt das Raster unten den verdeckten Bereich als Abstand.
+            // Das Raster läuft bis zum unteren Rand hinter der Tab-Leiste weiter; damit auch die letzte Stunde über die
+            // Leiste gescrollt werden kann, bekommt das Raster unten den verdeckten Bereich als Abstand.
             GeometryReader { aussen in
                 blaetterflaeche(untenFrei: aussen.safeAreaInsets.bottom)
                     .ignoresSafeArea(.container, edges: .bottom)
@@ -740,14 +729,13 @@ extension StundenplanView {
     }
 }
 
-/// Gesperrte Woche (außerhalb des Plan-Fensters der Rolle) im Stil der Startseiten-Fläche (Vorlage „Genieße die
-/// Zeit!“): flache Fläche mit Kalender-Symbol oben mittig, Titel genau „Es werden hier keine Termine angezeigt.“ (Medium)
-/// und darunter grau, zweizeilig der Hinweis des Servers (`sperrhinweis`); fehlt er, steht dort der Standardsatz.
+/// Gesperrte Woche (außerhalb des freigegebenen Zeitraums der Rolle): leerer Zustand mit Schloss, Titel und dem Hinweis
+/// des Servers (`sperrhinweis`); fehlt er, steht dort der Standardsatz.
 struct Sperrhinweis: View {
     let hinweis: String?
 
-    static let titel = "Es werden hier keine Termine angezeigt."
-    static let standardHinweis = "Die Anzeige des Stundenplans ist durch Ihren Administrator beschränkt"
+    static let titel = "Plan nicht freigegeben"
+    static let standardHinweis = "Für diesen Zeitraum hat die Schule den Plan noch nicht freigegeben."
 
     private var erklaerung: String {
         let text = (hinweis ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -755,44 +743,44 @@ struct Sperrhinweis: View {
     }
 
     var body: some View {
-        Hinweisfeld(titel: Self.titel, text: erklaerung, flaeche: Color(hell: 0xFFFFFF, dunkel: 0x313D44))
-            .frame(maxWidth: 300)
+        Hinweisfeld(titel: Self.titel, text: erklaerung, symbol: "lock")
+            .frame(maxWidth: 320)
             .padding(.horizontal, 24)
     }
 }
 
-/// Seite einer noch nicht geladenen Woche: Kopf mit KW und Tagen, darunter ein Ladekreis.
+/// Seite einer noch nicht geladenen Woche: Spaltenkopf mit Kalenderwoche, darunter ein Ladekreis.
 struct Platzhalterwoche: View {
     let montag: Date
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .bottom, spacing: 0) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("KW \(Datumsformat.kalenderwoche(montag))")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Farben.tinte2)
-                    Text(Wochenkopf.monat(montag))
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Farben.tinte)
-                }
-                .padding(.leading, 6)
+            HStack(spacing: 0) {
+                Text("KW \(Datumsformat.kalenderwoche(montag))")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Farben.text3)
+                    .padding(.leading, 8)
                 Spacer()
             }
             .lineLimit(1)
-            .padding(.top, 2)
-            .padding(.bottom, 8)
-            .background(Farben.leiste)
+            .frame(height: Wochenkopf.hoehe)
+            .background(Farben.flaeche)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Farben.rand).frame(height: 1)
+            }
             ZStack {
-                LinearGradient(colors: [Farben.rasterOben, Farben.rasterUnten], startPoint: .top, endPoint: .bottom)
+                Farben.flaeche
                 ProgressView()
             }
         }
     }
 }
 
-/// Hilfen für den Wochenkopf.
+/// Hilfen für den Kopf der Tagesspalten.
 enum Wochenkopf {
+    /// Höhe des Spaltenkopfs
+    static let hoehe: CGFloat = 40
+
     /// Kurzer Monatsname ohne Punkt, z. B. „Okt“.
     static func monat(_ datum: Date) -> String {
         var s = Datumsformat.anzeige(datum, "LLL")
@@ -801,7 +789,8 @@ enum Wochenkopf {
     }
 }
 
-/// Info (i) bzw. Hilfe (⋮-Menü): Bedienung (nur Hilfe), Legende der Kartenfarben und Angaben zur Woche.
+/// Legende und Angaben zum Plan bzw. Hilfe (Menü): Bedienung (nur Hilfe), Legende mit echten Beispielkacheln und
+/// Angaben zur Woche.
 struct PlanInfoView: View {
     let titel: String
     let plan: Wochenplan?
@@ -809,31 +798,26 @@ struct PlanInfoView: View {
     @Environment(\.dismiss) private var systemSchliessen
     @Environment(\.blattSchliessen) private var blattSchliessen
 
-    /// Randloses iPhone-Blatt mit eigener Animation schließen, sonst das Systemblatt.
     private func schliessen() {
         if let blattSchliessen { blattSchliessen() } else { systemSchliessen() }
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Kopf wie bei den Stundendetails: runder Glasknopf X links, Titel mittig
-            Blattkopf(symbol: "xmark", symbolText: "Schließen", aktion: { schliessen() }) {
-                Blatttitel(titel: titel)
-            }
+        NavigationStack {
             List {
                 if hilfe {
                     Section("Bedienung") {
                         hilfezeile("hand.draw", "Waagrecht wischen: nächste bzw. vorherige Woche (in der Tagesansicht die nächsten Tage).")
                         hilfezeile("hand.tap", "Stunde antippen: Details mit Lehrstoff, Schüler*innen, Hausaufgaben und Notizen.")
-                        hilfezeile("calendar.day.timeline.left", "Tag im Kopf antippen: Tagesansicht; erneut antippen: zurück zur Woche.")
-                        hilfezeile("arrow.uturn.backward", "„KW“ links oben bzw. den Reiter „Stundenplan“ erneut antippen: zurück zur heutigen Woche.")
-                        hilfezeile("rectangle.split.3x1", "⋮ → Ansicht: Tag, 2 Tage, 3 Tage oder Woche.")
-                        hilfezeile("calendar", "⋮ → Gehe zu Datum: Tag im Kalender wählen und „Auswählen“ tippen; „Heute“ springt zum heutigen Tag.")
+                        hilfezeile("calendar.day.timeline.left", "Tag im Spaltenkopf antippen: Tagesansicht; erneut antippen: zurück zur Woche.")
+                        hilfezeile("arrow.uturn.backward", "„Heute“ bzw. den Reiter „Plan“ erneut antippen: zurück zum heutigen Tag.")
+                        hilfezeile("rectangle.split.3x1", "Menü → Ansicht: Tag, 2 Tage, 3 Tage oder Woche.")
+                        hilfezeile("calendar", "Menü → Gehe zu Datum: Tag im Kalender wählen und „Auswählen“ tippen.")
                         hilfezeile("chevron.down", "Planname oben antippen: anderen Stundenplan (Klasse, Lehrkraft, Raum) wählen.")
                     }
                     Section("Schüler*innen (Lehrkräfte)") {
                         hilfezeile("checkmark.circle", "Von links nach rechts wischen: anwesend.")
-                        hilfezeile("clock", "Von rechts nach links wischen: abwesend; „War in Vorstunde abwesend!“ weist auf Fehlzeiten der Vorstunde hin.")
+                        hilfezeile("clock", "Von rechts nach links wischen: abwesend; ein Hinweis zeigt Fehlzeiten in der Vorstunde.")
                         hilfezeile("book.closed", "Buch: neuer Klassenbucheintrag; Uhr: Abwesenheiten der Person bearbeiten.")
                     }
                 }
@@ -847,87 +831,100 @@ struct PlanInfoView: View {
                     }
                 }
                 Section("Legende") {
-                    legende(Farben.karte, rand: nil, "Unterricht wie geplant")
-                    legende(Farben.aenderungHintergrund, rand: Farben.aenderungRand, "Vertretung, Änderung bzw. Raumänderung (grün hinterlegt: geänderter Wert)")
-                    legende(Farben.entfallHintergrund, rand: Farben.entfallRand, "Entfall (durchgestrichen)")
-                    legende(Farben.pruefungHintergrund, rand: Farben.pruefungRand, "Klausur bzw. Prüfung (nur diese gelb)")
-                    legende(Farben.aenderungHintergrund, rand: nil, "Veranstaltung (über den ganzen Zeitraum)")
-                    HStack(spacing: 12) {
-                        Eckklammern(laenge: 8, radius: 3)
-                            .stroke(Farben.eckklammer, lineWidth: 1.4)
-                            .frame(width: 34, height: 22)
-                        Text("Stunde läuft ohne die Lehrkraft (abgegeben bzw. abwesend, Kürzel durchgestrichen)")
-                    }
+                    legende(.normal, "Unterricht wie geplant (Fläche in der Fachfarbe)")
+                    legende(.aenderung, "Vertretung, Änderung bzw. Raumänderung – geänderter Wert unterstrichen")
+                    legende(.entfall, "Entfall – schraffiert und durchgestrichen")
+                    legende(.klausur, "Klausur bzw. Prüfung")
+                    legende(.veranstaltung, "Veranstaltung, Termin bzw. Raumbuchung")
+                    legende(.abgegeben, "Stunde läuft ohne die Lehrkraft (abgegeben bzw. abwesend)")
+                    legende(.bereitschaft, "Bereitschaft")
+                    legende(.aufsicht, "Pausenaufsicht")
                     HStack(spacing: 12) {
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .strokeBorder(Farben.bereitschaftRand, style: StrokeStyle(lineWidth: 1.5, dash: [4, 2]))
-                            .frame(width: 34, height: 22)
-                        Text("Bereitschaft")
+                            .fill(Farben.freiFlaeche)
+                            .frame(width: 64, height: 34)
+                        Text("Ferien, Feiertag oder unterrichtsfrei")
                     }
                     HStack(spacing: 12) {
-                        HStack(spacing: 0) {
-                            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                                .fill(Farben.aufsichtBalken)
-                                .frame(width: 3, height: 10)
-                                .padding(.leading, 3)
-                            Spacer(minLength: 0)
+                        HStack(spacing: 6) {
+                            Image(systemName: Symbole.info)
+                            Image(systemName: Symbole.hausaufgaben)
+                            Image(systemName: Symbole.online)
                         }
-                        .frame(width: 34, height: 14)
-                        .background(Farben.karte, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .strokeBorder(Farben.linie, lineWidth: 0.5)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Farben.text3)
+                        .frame(width: 64)
+                        Text("Information bzw. Notiz, Hausaufgabe fällig, online")
+                    }
+                    HStack(spacing: 12) {
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                                .fill(Farben.akzent)
+                                .frame(width: 64, height: 1)
+                            Circle()
+                                .fill(Farben.akzent)
+                                .frame(width: 7, height: 7)
                         }
-                        Text("Pausenaufsicht")
-                    }
-                    legende(Farben.ferienHintergrund, rand: nil, "Ferien, Feiertag oder unterrichtsfrei")
-                    HStack(spacing: 12) {
-                        Infozeichen()
-                            .frame(width: 34)
-                        Text("Hinweis bzw. Notiz zur Stunde")
-                    }
-                    HStack(spacing: 12) {
-                        Hausaufgabenzeichen()
-                            .frame(width: 34)
-                        Text("Hausaufgabe fällig")
-                    }
-                    HStack(spacing: 12) {
-                        Rectangle()
-                            .fill(Farben.jetztLinie)
-                            .frame(width: 34, height: 2)
+                        .frame(width: 64)
                         Text("Aktuelle Uhrzeit")
                     }
                 }
+                .font(.subheadline)
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(Farben.grund)
+            .navigationTitle(titel)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig") { schliessen() }
+                }
+            }
         }
-        .background(Farben.blatt.ignoresSafeArea())
     }
 
     private func hilfezeile(_ symbol: String, _ text: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .regular))
+                .font(.system(size: 15, weight: .regular))
                 .foregroundStyle(Farben.akzent)
-                .frame(width: 34)
+                .frame(width: 26)
             Text(text)
-                .font(.system(size: 15))
+                .font(.subheadline)
         }
     }
 
-    private func legende(_ farbe: Color, rand: Color?, _ text: String) -> some View {
+    /// Beispielkachel einer Art mit Erklärung.
+    private func legende(_ art: Kachelart, _ text: String) -> some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(farbe)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .strokeBorder(rand ?? Farben.linie, lineWidth: rand == nil ? 0.5 : 1.5)
-                }
-                .frame(width: 34, height: 22)
+            KachelView(kachel: Self.beispiel(art), breite: 64, hoehe: 34)
+                .frame(width: 64, height: art == .aufsicht ? 18 : 34)
+                .frame(height: 34)
+                .accessibilityHidden(true)
             Text(text)
         }
+    }
+
+    /// Beispielkachel für die Legende.
+    static func beispiel(_ art: Kachelart) -> Kachel {
+        var k = Kachel(art: art, datum: "", von: 1, bis: 1, beginn: 480, ende: 525)
+        k.balkenHex = art == .normal || art == .aenderung || art == .entfall ? "#3364B0" : ""
+        switch art {
+        case .aenderung:
+            k.zeilen = [Kachelzeile(schluessel: "fach", teile: [Kachelteil(text: "MA")], fett: true),
+                        Kachelzeile(schluessel: "lehrer", teile: [Kachelteil(text: "KLE", stil: .plakette)])]
+        case .veranstaltung:
+            k.zeilen = [Kachelzeile(schluessel: "anlass", teile: [Kachelteil(text: "Ausflug")], fett: true)]
+        case .bereitschaft:
+            k.titel = "BER"
+            k.zeilen = [Kachelzeile(schluessel: "fach", teile: [Kachelteil(text: "BER")])]
+        case .aufsicht:
+            k.titel = "Hof"
+            k.zeilen = [Kachelzeile(schluessel: "fach", teile: [Kachelteil(text: "Hof")], fett: true)]
+        default:
+            k.zeilen = [Kachelzeile(schluessel: "fach", teile: [Kachelteil(text: art == .klausur ? "DE" : "MA")], fett: true),
+                        Kachelzeile(schluessel: "lehrer", teile: [Kachelteil(text: "SCH")])]
+        }
+        return k
     }
 }
 
@@ -995,8 +992,8 @@ struct Rastermass {
     }
 }
 
-/// Raster mit Tagesspalten; Höhe nach Uhrzeit (1,2704 pt je Minute wie in der PWA), Pausen als Lücken.
-/// Kacheln, Spuren und Zählstreifen kommen aus `Kachelbau` (Logik der PWA).
+/// Raster mit Tagesspalten; Höhe nach Uhrzeit (1,3 pt je Minute), Pausen als schmale graue Bänder.
+/// Kacheln, Spuren und Zählstreifen kommen aus `Kachelbau` (dieselbe Logik wie UntPlan Web).
 struct WochenrasterView: View {
     let plan: Wochenplan
     let typ: String
@@ -1010,11 +1007,11 @@ struct WochenrasterView: View {
     var nurTage: [String]? = nil
     /// Stand der geladenen Woche (für den Vergleich, ob neu gezeichnet werden muss)
     var stand: Int = 0
-    /// Eigene Abwesenheiten je Tag (yyyy-MM-dd): grauer Balken hinter den Stunden (nur „Mein Plan“, abschaltbar)
+    /// Eigene Abwesenheiten je Tag (yyyy-MM-dd): Fläche hinter den Stunden (nur „Mein Plan“, abschaltbar)
     var abwesenheiten: [String: [Abwesenheitsbalken]] = [:]
     /// Vom unteren Rand verdeckter Bereich (Tab-Leiste, Home-Balken): das Raster läuft darunter weiter
     var untenFrei: CGFloat = 0
-    /// Antippen von „KW / Monat“ (Woche: zur aktuellen Woche, Tag: zurück zur Woche).
+    /// Antippen der Kalenderwoche (Woche: zur aktuellen Woche, Tag: zurück zur Woche).
     var heuteAntippen: (() -> Void)? = nil
     /// Antippen eines Tageskopfs (Tagesansicht öffnen bzw. schließen).
     var tagAntippen: ((String) -> Void)? = nil
@@ -1028,11 +1025,11 @@ struct WochenrasterView: View {
     /// iPhone (schmale Breite): schmale Zeitspalte und kleinere Schrift, damit fünf Tage lesbar nebeneinander passen.
     private var kompakt: Bool { groessenklasse == .compact }
 
-    // Maße aus app.css (iPhone: Zeitspalte 38 pt)
-    private var rinnenBreite: CGFloat { kompakt ? 38 : 45 }
-    private var tagesLuecke: CGFloat { kompakt ? 2 : 3 }
-    /// Höhe je Minute – Woche und Tag gleich (Raster wie im Original).
-    private let proMinute: CGFloat = 1.2704
+    /// Breite der Zeitspalte (Stundennummer, Beginn und Ende)
+    private var rinnenBreite: CGFloat { kompakt ? 40 : 52 }
+    private var tagesLuecke: CGFloat { kompakt ? 3 : 4 }
+    /// Höhe je Minute – Woche und Tag gleich.
+    private let proMinute: CGFloat = 1.3
     private let abstandUnten: CGFloat = 28
 
     private var tage: [Tageskopf] {
@@ -1053,7 +1050,7 @@ struct WochenrasterView: View {
         let ende = zeiten.last?.ende ?? 960
         let jetzt = Date()
         // Kacheln je Tag aus dem Zwischenspeicher: gleiche Daten (Stand) liefern dieselben Kacheln mit denselben
-        // Kennungen – SwiftUI behält die Kartenansichten, statt sie bei jedem Zeichnen neu aufzubauen
+        // Kennungen – SwiftUI behält die Kachelansichten, statt sie bei jedem Zeichnen neu aufzubauen
         let minute = Int(jetzt.timeIntervalSinceReferenceDate / 60)
         let basis = "\(typ)|\(element)|\(plan.montag)|\(stand)|\(nurTage?.joined(separator: ",") ?? "w")|\(minute)"
         let kacheln: [String: [Kachel]] = Dictionary(
@@ -1065,68 +1062,62 @@ struct WochenrasterView: View {
             uniquingKeysWith: { erste, _ in erste })
         let vorErster = kacheln.values.contains { liste in liste.contains { $0.vorErsterStunde } }
         let pausenAufsichten = kacheln.values.flatMap { $0 }.filter { $0.art == .aufsicht && $0.inPause && !$0.vorErsterStunde }
-        // Tagesansicht und iPhone: Aufsicht vor der 1. Stunde sitzt dichter am Plan, der Streifen darüber bleibt gleich hoch
-        let mass = Rastermass(oben: vorErster ? (dichteAufsicht ? 31 : 34) : 15, start: start, proMinute: proMinute,
+        // Tagesansicht und iPhone: Aufsicht vor der 1. Stunde sitzt dichter am Plan
+        let mass = Rastermass(oben: vorErster ? (dichteAufsicht ? 30 : 33) : 10, start: start, proMinute: proMinute,
                               dehnungen: Rastermass.dehnungen(pausenAufsichten, proMinute: proMinute,
-                                                              mindestens: nurTage == nil ? 24 : 30))
+                                                              mindestens: nurTage == nil ? 22 : 28))
         GeometryReader { geo in
             let spalten = max(tage.count, 1)
-            let rand: CGFloat = nurTage == nil ? 0 : 3
-            let spaltenBreite = max(kompakt ? 34 : 40, (geo.size.width - rinnenBreite - rand) / CGFloat(spalten))
+            let spaltenBreite = max(kompakt ? 34 : 40, (geo.size.width - rinnenBreite) / CGFloat(spalten))
             let hoehe = mass.y(ende) + abstandUnten + untenFrei
             VStack(spacing: 0) {
-                // Kopf (KW/Monat und Tage) steht fest über dem scrollenden Raster und wird nie gestaucht
-                wochenkopf(spaltenBreite: spaltenBreite, kacheln: kacheln)
+                // Kopf (Kalenderwoche und Tage) steht fest über dem scrollenden Raster und wird nie gestaucht
+                wochenkopf(spaltenBreite: spaltenBreite)
                     .fixedSize(horizontal: false, vertical: true)
                     .layoutPriority(1)
                     .zIndex(1)
                 if plan.gesperrt {
-                    // Woche außerhalb des Plan-Fensters: statt der Karten der Sperrhinweis (Blättern bleibt möglich)
+                    // Woche außerhalb des freigegebenen Zeitraums: statt der Kacheln der Sperrhinweis (Blättern bleibt möglich)
                     Sperrhinweis(hinweis: plan.sperrhinweis)
                         .padding(.bottom, untenFrei)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(
-                            LinearGradient(colors: [Farben.rasterOben, Farben.rasterUnten], startPoint: .top, endPoint: .bottom)
-                                .ignoresSafeArea(edges: .bottom)
-                        )
+                        .background(Farben.flaeche.ignoresSafeArea(edges: .bottom))
                 } else {
-                ScrollViewReader { leser in
-                ScrollView(.vertical) {
-                    ZStack(alignment: .topLeading) {
-                        // Anker knapp über der 1. Stunde (bzw. über den Pillen vor der 1. Stunde)
-                        VStack(spacing: 0) {
-                            Color.clear.frame(height: vorErster ? 0 : max(0, mass.y(start) - 8))
-                            Color.clear.frame(width: 1, height: 1).id(Self.ersteStundeAnker)
-                            Spacer(minLength: 0)
+                    ScrollViewReader { leser in
+                        ScrollView(.vertical) {
+                            ZStack(alignment: .topLeading) {
+                                // Anker knapp über der 1. Stunde (bzw. über den Kacheln vor der 1. Stunde)
+                                VStack(spacing: 0) {
+                                    Color.clear.frame(height: vorErster ? 0 : max(0, mass.y(start) - 8))
+                                    Color.clear.frame(width: 1, height: 1).id(Self.ersteStundeAnker)
+                                    Spacer(minLength: 0)
+                                }
+                                .accessibilityHidden(true)
+                                heuteSpalte(spaltenBreite: spaltenBreite, hoehe: hoehe)
+                                zeitspalte(zeiten, mass: mass, breite: geo.size.width)
+                                ForEach(Array(tage.enumerated()), id: \.element.id) { eintrag in
+                                    tagesspalte(eintrag.element, kacheln: kacheln[eintrag.element.datum] ?? [], zeiten: zeiten,
+                                                mass: mass, ende: ende, breite: spaltenBreite - tagesLuecke, hoehe: hoehe)
+                                        .offset(x: rinnenBreite + CGFloat(eintrag.offset) * spaltenBreite + tagesLuecke / 2)
+                                }
+                                jetztLinie(mass: mass, start: start, ende: ende, breite: geo.size.width)
+                            }
+                            .frame(width: geo.size.width, height: hoehe, alignment: .topLeading)
+                            .opacity(laedt ? 0.55 : 1)
+                            .animation(.linear(duration: 0.12), value: laedt)
                         }
-                        .accessibilityHidden(true)
-                        zeitspalte(zeiten, mass: mass, breite: geo.size.width)
-                        ForEach(Array(tage.enumerated()), id: \.element.id) { eintrag in
-                            tagesspalte(eintrag.element, kacheln: kacheln[eintrag.element.datum] ?? [], zeiten: zeiten,
-                                        mass: mass, ende: ende, breite: spaltenBreite - tagesLuecke, hoehe: hoehe)
-                                .offset(x: rinnenBreite + CGFloat(eintrag.offset) * spaltenBreite + tagesLuecke / 2)
+                        .scrollIndicators(.hidden)
+                        // Richtungssperre: beim waagrechten Wischen scrollt das Raster nicht mit
+                        .scrollDisabled(senkrechtGesperrt)
+                        .modifier(Scrollsperre(sperre: tippsperre))
+                        .background(Farben.flaeche.ignoresSafeArea(edges: .bottom))
+                        .onAppear {
+                            // Beim Öffnen so scrollen, dass die 1. Stunde vollständig sichtbar ist
+                            DispatchQueue.main.async {
+                                leser.scrollTo(Self.ersteStundeAnker, anchor: .top)
+                            }
                         }
-                        jetztLinie(mass: mass, start: start, ende: ende, spaltenBreite: spaltenBreite, breite: geo.size.width)
                     }
-                    .frame(width: geo.size.width, height: hoehe, alignment: .topLeading)
-                    .opacity(laedt ? 0.55 : 1)
-                    .animation(.easeOut(duration: 0.18), value: laedt)
-                }
-                .scrollIndicators(.hidden)
-                // Richtungssperre: beim waagrechten Wischen scrollt das Raster nicht mit
-                .scrollDisabled(senkrechtGesperrt)
-                .modifier(Scrollsperre(sperre: tippsperre))
-                .background(
-                    LinearGradient(colors: [Farben.rasterOben, Farben.rasterUnten], startPoint: .top, endPoint: .bottom)
-                        .ignoresSafeArea(edges: .bottom)
-                )
-                .onAppear {
-                    // Beim Öffnen so scrollen, dass die 1. Stunde vollständig sichtbar ist
-                    DispatchQueue.main.async {
-                        leser.scrollTo(Self.ersteStundeAnker, anchor: .top)
-                    }
-                }
-                }
                 }
             }
         }
@@ -1134,94 +1125,91 @@ struct WochenrasterView: View {
 
     private static let ersteStundeAnker = "ersteStunde"
 
-    // MARK: Kopf mit KW, Monat und Tagen (.weekhead)
+    // MARK: Kopf mit Kalenderwoche und Tagen
 
-    @ViewBuilder
-    private func wochenkopf(spaltenBreite: CGFloat, kacheln: [String: [Kachel]]) -> some View {
-        if let nurTage, nurTage.count == 1, let tag = tage.first {
-            tageskopf(tag, iso: tag.datum, spaltenBreite: spaltenBreite)
-        } else {
-            HStack(alignment: .bottom, spacing: 0) {
-                kwFeld
-                ForEach(tage) { tag in
-                    let heute = Datumsformat.istHeute(tag.datum)
-                    VStack(spacing: kompakt ? 2 : 3) {
-                        Text(Datumsformat.anzeige(tag.datum, "EE"))
-                            .font(.system(size: kompakt ? 12 : 12.5, weight: .regular))
-                            .foregroundStyle(heute ? Farben.heute : Farben.tinte2)
-                        Text(Datumsformat.anzeige(tag.datum, "d"))
-                            .font(.system(size: kompakt ? 17 : 18, weight: .medium))
-                            .tracking(-0.36)
-                            .foregroundStyle(heute ? Farben.heute : Farben.tinte)
-                    }
-                    .lineLimit(1)
-                    .frame(width: spaltenBreite)
-                    .contentShape(Rectangle())
-                    .onTapGesture { tagAntippen?(tag.datum) }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityHint("Tagesansicht öffnen")
-                }
+    /// Spaltenköpfe „Mo 19.10.“ (Wochentag halbfett, Datum normal); heute in Marine mit 2-pt-Linie unter dem Kopf.
+    /// Links über der Zeitspalte die Kalenderwoche.
+    private func wochenkopf(spaltenBreite: CGFloat) -> some View {
+        HStack(alignment: .center, spacing: 0) {
+            kwFeld
+            ForEach(tage) { tag in
+                tageskopf(tag, spaltenBreite: spaltenBreite)
             }
-            .padding(.top, 2)
-            .padding(.bottom, 8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Farben.leiste)
+        }
+        .frame(height: Wochenkopf.hoehe)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Farben.flaeche)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Farben.rand)
+                .frame(height: 1)
         }
     }
 
     private var kwFeld: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text("KW \(Datumsformat.kalenderwoche(montagDatum))")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Farben.tinte2)
-            Text(Wochenkopf.monat(montagDatum))
-                .font(.system(size: 18, weight: .medium))
-                .tracking(-0.18)
-                .foregroundStyle(Farben.tinte)
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.6)
-        .padding(.leading, kompakt ? 4 : 6)
-        .frame(width: rinnenBreite, alignment: .leading)
-        .contentShape(Rectangle())
-        .onTapGesture { heuteAntippen?() }
-        .accessibilityAddTraits(.isButton)
-        .accessibilityHint(nurTage == nil ? "Zur aktuellen Woche" : "Zurück zur Wochenansicht")
-    }
-
-    /// Kopf der Tagesansicht wie der Wochenkopf: links „KW / Monat“, darüber mittig in der Tagesspalte „Fr.“ und groß
-    /// die Tageszahl (heute orange). Ein Tipp führt zurück zur Woche.
-    private func tageskopf(_ tag: Tageskopf, iso: String, spaltenBreite: CGFloat) -> some View {
-        let heute = Datumsformat.istHeute(iso)
-        return HStack(alignment: .bottom, spacing: 0) {
-            kwFeld
-            VStack(spacing: kompakt ? 2 : 3) {
-                Text(Datumsformat.anzeige(iso, "EE"))
-                    .font(.system(size: kompakt ? 12 : 12.5, weight: .regular))
-                    .foregroundStyle(heute ? Farben.heute : Farben.tinte2)
-                Text(Datumsformat.anzeige(iso, "d"))
-                    .font(.system(size: kompakt ? 17 : 18, weight: .medium))
-                    .tracking(-0.36)
-                    .foregroundStyle(heute ? Farben.heute : Farben.tinte)
-            }
+        Text("KW \(Datumsformat.kalenderwoche(montagDatum))")
+            .font(.system(size: kompakt ? 10 : 11, weight: .semibold))
+            .monospacedDigit()
+            .foregroundStyle(Farben.text3)
             .lineLimit(1)
-            .frame(width: spaltenBreite)
+            .minimumScaleFactor(0.7)
+            .frame(width: rinnenBreite)
+            .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
-            .onTapGesture { tagAntippen?(iso) }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(Datumsformat.anzeige(iso, "EEEE, d. MMMM"))
+            .onTapGesture { heuteAntippen?() }
+            .accessibilityLabel("Kalenderwoche \(Datumsformat.kalenderwoche(montagDatum))")
             .accessibilityAddTraits(.isButton)
-            .accessibilityHint("Zurück zur Wochenansicht")
-        }
-        .padding(.top, 2)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Farben.leiste)
+            .accessibilityHint(nurTage == nil ? "Zur aktuellen Woche" : "Zurück zur Wochenansicht")
     }
 
-    // MARK: Zeitspalte und Linien (.slotrow)
+    /// Kopf einer Tagesspalte. Tagesansicht: ausgeschrieben („Montag, 19. Oktober“); ein Tipp öffnet bzw. schließt die
+    /// Tagesansicht.
+    private func tageskopf(_ tag: Tageskopf, spaltenBreite: CGFloat) -> some View {
+        let heute = Datumsformat.istHeute(tag.datum)
+        let einzeln = nurTage?.count == 1
+        return Group {
+            if einzeln {
+                Text(Datumsformat.anzeige(tag.datum, "EEEE, d. MMMM"))
+                    .font(.subheadline.weight(.semibold))
+            } else if kompakt && spaltenBreite < 64 {
+                VStack(spacing: 0) {
+                    Text(Datumsformat.anzeige(tag.datum, "EE"))
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(Datumsformat.anzeige(tag.datum, "d.M."))
+                        .font(.system(size: 11))
+                        .monospacedDigit()
+                }
+            } else {
+                (Text(Datumsformat.anzeige(tag.datum, "EE")).fontWeight(.semibold)
+                    + Text(" " + Datumsformat.anzeige(tag.datum, "d.M.")).monospacedDigit())
+                    .font(.system(size: kompakt ? 12 : 13))
+            }
+        }
+        .foregroundStyle(heute ? Farben.akzent : Farben.text)
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
+        .frame(width: spaltenBreite)
+        .frame(maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            if heute {
+                Rectangle()
+                    .fill(Farben.akzent)
+                    .frame(height: 2)
+                    .padding(.horizontal, tagesLuecke / 2)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { tagAntippen?(tag.datum) }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Datumsformat.anzeige(tag.datum, "EEEE, d. MMMM") + (heute ? ", heute" : ""))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(einzeln ? "Zurück zur Wochenansicht" : "Tagesansicht öffnen")
+    }
 
+    // MARK: Zeitspalte, Linien und Pausen
+
+    /// Links je Stunde die Nummer (13 pt halbfett) und darunter Beginn und Ende (11 pt); rechts daneben über alle Spalten
+    /// eine feine Linie am Stundenbeginn und in den Pausen ein schmales graues Band ohne Text.
     private func zeitspalte(_ zeiten: [Rasterzeit], mass: Rastermass, breite: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
             ForEach(Array(zeiten.enumerated()), id: \.element.id) { eintrag in
@@ -1229,35 +1217,43 @@ struct WochenrasterView: View {
                 let oben = mass.y(z.beginn)
                 let unten = mass.yEnde(z.ende)
                 let naechste: Rasterzeit? = eintrag.offset + 1 < zeiten.count ? zeiten[eintrag.offset + 1] : nil
-                let pauseDanach = naechste == nil || (naechste?.beginn ?? 0) > z.ende
 
                 linie(breite: breite)
                     .offset(x: rinnenBreite, y: oben)
-                Text(Rasterzeit.uhrzeit(z.beginn))
-                    .font(.system(size: kompakt ? 10.5 : 12, weight: .medium).monospacedDigit())
-                    .tracking(kompakt ? 0 : 0.12)
-                    .foregroundStyle(Farben.rinne)
-                    .fixedSize()
-                    .offset(x: kompakt ? 4 : 8, y: oben + 2)
-                if unten - oben > 36 {
-                    Text("\(z.nr).")
-                        .font(.system(size: kompakt ? 14.5 : 16, weight: .regular))
-                        .foregroundStyle(Farben.tinte2)
-                        .fixedSize()
-                        .offset(x: kompakt ? 11 : 14, y: oben + (unten - oben) / 2 - 10)
+                // Pause bis zur nächsten Stunde als Band
+                if let naechste, mass.y(naechste.beginn) - unten > 2 {
+                    Rectangle()
+                        .fill(Farben.pause)
+                        .frame(width: max(breite - rinnenBreite, 0), height: mass.y(naechste.beginn) - unten)
+                        .offset(x: rinnenBreite, y: unten)
                 }
-                if pauseDanach {
+                VStack(spacing: 1) {
+                    Text("\(z.nr)")
+                        .font(.system(size: kompakt ? 12 : 13, weight: .semibold))
+                        .foregroundStyle(Farben.text)
+                    if unten - oben > 34 {
+                        Text(Rasterzeit.uhrzeit(z.beginn))
+                            .font(.system(size: kompakt ? 9.5 : 11).monospacedDigit())
+                            .foregroundStyle(Farben.text3)
+                        Text(Rasterzeit.uhrzeit(z.ende))
+                            .font(.system(size: kompakt ? 9.5 : 11).monospacedDigit())
+                            .foregroundStyle(Farben.text3)
+                    }
+                }
+                .lineLimit(1)
+                .fixedSize()
+                .frame(width: rinnenBreite)
+                .offset(y: oben + 4)
+                if naechste == nil {
                     linie(breite: breite)
                         .offset(x: rinnenBreite, y: unten)
-                    Text(Rasterzeit.uhrzeit(z.ende))
-                        .font(.system(size: kompakt ? 10.5 : 12, weight: .medium).monospacedDigit())
-                        .tracking(kompakt ? 0 : 0.12)
-                        .foregroundStyle(Farben.rinne)
-                        .fixedSize()
-                        .frame(height: 15, alignment: .bottom)
-                        .offset(x: kompakt ? 4 : 8, y: unten - 3 - 15)
                 }
             }
+            // Rand zwischen Zeitspalte und Tagen
+            Rectangle()
+                .fill(Farben.rand)
+                .frame(width: 1, height: max(mass.yEnde(zeiten.last?.ende ?? mass.start) + abstandUnten, 0))
+                .offset(x: rinnenBreite - 1)
         }
         .accessibilityHidden(true)
     }
@@ -1268,21 +1264,34 @@ struct WochenrasterView: View {
             .frame(width: max(breite - rinnenBreite, 0), height: 1)
     }
 
+    /// Heutige Spalte ganz leicht in Marine hinterlegt (nur in der Mehrtagesansicht).
+    @ViewBuilder
+    private func heuteSpalte(spaltenBreite: CGFloat, hoehe: CGFloat) -> some View {
+        if nurTage?.count != 1, let i = tage.firstIndex(where: { Datumsformat.istHeute($0.datum) }) {
+            Rectangle()
+                .fill(Farben.primaerFlaeche.opacity(0.55))
+                .frame(width: spaltenBreite, height: hoehe)
+                .offset(x: rinnenBreite + CGFloat(i) * spaltenBreite)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+
     // MARK: Tagesspalte
 
     private func tagesspalte(_ tag: Tageskopf, kacheln: [Kachel], zeiten: [Rasterzeit], mass: Rastermass,
                              ende: Int, breite: CGFloat, hoehe: CGFloat) -> some View {
-        // Gleichzeitige Stunden (Kopplungen, Vertretung neben Entfall …) nebeneinander in gleich breiten Spuren wie im Web
+        // Gleichzeitige Stunden (Kopplungen, Vertretung neben Entfall …) nebeneinander in gleich breiten Spuren
         let belegung = Kachelbau.anordnen(kacheln, spaltenBreite: breite, tagesansicht: nurTage?.count == 1)
         let vorErste = belegung.lagen.filter { $0.kachel.vorErsterStunde }.map(\.kachel.id)
         return ZStack(alignment: .topLeading) {
             if tag.frei {
                 ferienfeld(tag)
-                    // Wie im Original bis zum unteren Rand (auch hinter der Tab-Leiste)
+                    // Bis zum unteren Rand (auch hinter der Tab-Leiste)
                     .frame(width: breite, height: max(hoehe - mass.y(mass.start) - 1, 20))
                     .offset(y: mass.y(mass.start) + 1)
             } else {
-                // Eigene Abwesenheit: grauer Balken hinter den Stunden – die Karten liegen voll lesbar darüber
+                // Eigene Abwesenheit: Fläche hinter den Stunden – die Kacheln liegen voll lesbar darüber
                 ForEach(abwesenheiten[tag.datum] ?? []) { b in
                     abwesenheitsfeld(b, belegung: belegung, mass: mass, breite: breite, vorErste: vorErste)
                         .zIndex(0)
@@ -1312,8 +1321,8 @@ struct WochenrasterView: View {
         .frame(width: breite, height: hoehe, alignment: .topLeading)
     }
 
-    /// Grauer Abwesenheitsbalken über die ganze Spaltenbreite. „Abwesend“ steht dezent nur in der größten Lücke ohne Karte
-    /// (mindestens 18 pt hoch) – liegt überall eine Karte darüber, bleibt der Balken ohne Text.
+    /// Fläche der eigenen Abwesenheit über die ganze Spaltenbreite. „Abwesend“ steht dezent nur in der größten Lücke ohne
+    /// Kachel (mindestens 18 pt hoch) – liegt überall eine Kachel darüber, bleibt die Fläche ohne Text.
     private func abwesenheitsfeld(_ b: Abwesenheitsbalken, belegung: Tagesbelegung, mass: Rastermass, breite: CGFloat,
                                   vorErste: [UUID]) -> some View {
         let oben = mass.y(b.beginn) + 1
@@ -1322,7 +1331,7 @@ struct WochenrasterView: View {
             .map { rechteck($0, mass: mass, breite: breite, vorErste: vorErste) }
             .filter { $0.maxY > oben && $0.minY < unten }
             .sorted { $0.minY < $1.minY }
-        // größte freie Lücke im Balken
+        // größte freie Lücke in der Fläche
         var luecke: (von: CGFloat, bis: CGFloat) = (oben, oben)
         var y = oben
         for r in belegt {
@@ -1332,14 +1341,14 @@ struct WochenrasterView: View {
         if unten - y > luecke.bis - luecke.von { luecke = (y, unten) }
         let textHoehe = luecke.bis - luecke.von
         return ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Farben.abwesendFlaeche.opacity(0.32))
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(Farben.abwesendFlaeche.opacity(0.6))
                 .frame(width: breite, height: unten - oben)
                 .offset(y: oben)
             if textHoehe >= 18 {
                 Text(b.text)
                     .font(.system(size: kompakt ? 11 : 12, weight: .medium))
-                    .foregroundStyle(Farben.tinte2)
+                    .foregroundStyle(Farben.text2)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
                     .multilineTextAlignment(.center)
@@ -1389,30 +1398,30 @@ struct WochenrasterView: View {
         let n = CGFloat(max(1, lage.spuren))
         let spurBreite = (bereich - (n - 1) * lage.luecke) / n
         x += CGFloat(lage.spur) * (spurBreite + lage.luecke)
-        // Jede Kachel genau eine Spur breit (wie im Web: width = 100 % / Zahl der Spuren)
+        // Jede Kachel genau eine Spur breit
         var w = spurBreite
         var y: CGFloat
         var h: CGFloat
         if k.vorErsterStunde {
-            // Pille über dem Raster (Aufsicht vor der ersten Stunde, ganztägiger Termin); mehrere nebeneinander
+            // Kachel über dem Raster (Aufsicht vor der ersten Stunde, ganztägiger Termin); mehrere nebeneinander
             let anzahl = CGFloat(max(1, vorErste.count))
             let i = CGFloat(vorErste.firstIndex(of: k.id) ?? 0)
             w = (breite - (anzahl - 1) * 2) / anzahl
             x = i * (w + 2)
-            // Direkt über der Linie der 1. Stunde (im freien Streifen vor ihr), nie nach oben in den Tageskopf;
-            // in der Tagesansicht und auf dem iPhone noch dichter an der 1. Stunde (1 pt statt 4 pt Abstand zur Linie)
-            h = 22
-            y = max(3, mass.y(mass.start) - h - (dichteAufsicht ? 1 : 4))
+            // Direkt über der Linie der 1. Stunde (im freien Streifen vor ihr); in der Tagesansicht und auf dem iPhone
+            // noch dichter an der 1. Stunde
+            h = 20
+            y = max(3, mass.y(mass.start) - h - (dichteAufsicht ? 2 : 4))
         } else if k.inPause {
             // Aufsicht: mittig in der (bei Bedarf gedehnten) Pause, vollständig sichtbar
             let oben = mass.yEnde(k.beginn)
             let unten = k.ende > k.beginn ? mass.yEnde(k.ende) : mass.y(k.ende)
             let luecke = max(0, unten - oben)
-            h = max(16, min(nurTage == nil ? 22 : 26, luecke - 2))
+            h = max(16, min(nurTage == nil ? 20 : 24, luecke - 2))
             y = oben + max(1, (luecke - h) / 2)
         } else {
-            y = mass.y(k.beginn) + 1
-            h = max(16, mass.yEnde(k.ende) - mass.y(k.beginn) - 1)
+            y = mass.y(k.beginn) + 1.5
+            h = max(16, mass.yEnde(k.ende) - mass.y(k.beginn) - 3)
         }
         return CGRect(x: x, y: y, width: max(w, 8), height: h)
     }
@@ -1420,8 +1429,9 @@ struct WochenrasterView: View {
     private func streifenRechteck(_ st: Zaehlstreifen, zeiten: [Rasterzeit], mass: Rastermass, breite: CGFloat) -> CGRect {
         let beginn = zeiten.first(where: { $0.nr == st.von })?.beginn ?? st.kacheln.map(\.beginn).min() ?? mass.start
         let ende = zeiten.first(where: { $0.nr == st.bis })?.ende ?? st.kacheln.map(\.ende).max() ?? (beginn + 45)
-        let y = mass.y(beginn) + 1
-        return CGRect(x: breite - Kachelbau.zaehlerBreite, y: y, width: Kachelbau.zaehlerBreite, height: max(16, mass.yEnde(ende) - mass.y(beginn) - 1))
+        let y = mass.y(beginn) + 1.5
+        return CGRect(x: breite - Kachelbau.zaehlerBreite, y: y, width: Kachelbau.zaehlerBreite,
+                      height: max(16, mass.yEnde(ende) - mass.y(beginn) - 3))
     }
 
     /// Art des freien Tages als Überschrift („Ferien“, „Feiertag“ …).
@@ -1434,62 +1444,62 @@ struct WochenrasterView: View {
         }
     }
 
-    /// Ferien und Feiertage: hellblaue Spalte über den ganzen Tag mit Schloss (Vorlage: „Ferien / pädagogischer Tag“).
+    /// Ferien und Feiertage: die ganze Spalte hellblau mit Name und Zeitraum.
     private func ferienfeld(_ tag: Tageskopf) -> some View {
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(Farben.ferienHintergrund)
-            .overlay {
-                // Bezeichnung (12,5 pt Medium, Zeitraum 11 pt Regular), mehrzeilig und zentriert – bricht um statt abgeschnitten zu werden
-                VStack(spacing: 2) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 10.5, weight: .medium))
-                        .padding(.bottom, 1)
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
+            .fill(Farben.freiFlaeche)
+            .overlay(alignment: .top) {
+                // Bezeichnung mehrzeilig und zentriert – bricht um statt abgeschnitten zu werden
+                VStack(spacing: 3) {
                     Text(freiTitel(tag))
-                        .font(.system(size: 12.5, weight: .medium))
+                        .font(.system(size: 12, weight: .semibold))
                         .multilineTextAlignment(.center)
-                        .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
                     if let grund = tag.freiGrund, !grund.isEmpty, grund.lowercased() != freiTitel(tag).lowercased() {
                         Text(grund)
-                            .font(.system(size: 12.5, weight: .medium))
+                            .font(.system(size: 12))
                             .multilineTextAlignment(.center)
-                            .lineLimit(nil)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if let von = tag.freiVon, let bis = tag.freiBis, !von.isEmpty, !bis.isEmpty {
-                        Text(von == bis ? Datumsformat.anzeige(von, "dd.MM.") : "\(Datumsformat.anzeige(von, "dd.MM.")) bis \(Datumsformat.anzeige(bis, "dd.MM."))")
-                            .font(.system(size: 11, weight: .regular))
+                        Text(von == bis ? Datumsformat.anzeige(von, "dd.MM.") : "\(Datumsformat.anzeige(von, "dd.MM.")) – \(Datumsformat.anzeige(bis, "dd.MM."))")
+                            .font(.system(size: 11).monospacedDigit())
+                            .foregroundStyle(Farben.text2)
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
                             .minimumScaleFactor(0.8)
-                            .padding(.top, 3)
                     }
                 }
-                .foregroundStyle(Farben.ferienTinte)
-                .padding(.horizontal, 3)
+                .foregroundStyle(Farben.frei)
+                .padding(.horizontal, 4)
+                .padding(.top, 16)
             }
+            .accessibilityElement(children: .combine)
     }
 
     // MARK: Jetzt-Linie
 
-    private func jetztLinie(mass: Rastermass, start: Int, ende: Int, spaltenBreite: CGFloat, breite: CGFloat) -> some View {
+    /// Aktuelle Uhrzeit: 1-pt-Linie in Marine über die Tage mit kleinem Kreis am Rand der Zeitspalte (nur in Wochen bzw.
+    /// Tagen, die heute enthalten).
+    private func jetztLinie(mass: Rastermass, start: Int, ende: Int, breite: CGFloat) -> some View {
         TimelineView(.periodic(from: .now, by: 60)) { kontext in
             let minute = Datumsformat.kalender.component(.hour, from: kontext.date) * 60
                 + Datumsformat.kalender.component(.minute, from: kontext.date)
-            let heuteIndex = tage.firstIndex(where: { $0.datum == Datumsformat.iso(kontext.date) })
-            if let heuteIndex, minute >= start, minute <= ende {
-                let hoehe = mass.y(minute)
+            let heuteDabei = tage.contains(where: { $0.datum == Datumsformat.iso(kontext.date) })
+            if heuteDabei, minute >= start, minute <= ende {
+                let y = mass.y(minute)
                 ZStack(alignment: .topLeading) {
                     Rectangle()
-                        .fill(Farben.jetztLinie)
-                        .frame(width: max(breite - rinnenBreite, 0), height: 1.5)
-                        .offset(x: rinnenBreite, y: hoehe - 0.75)
-                    Capsule()
-                        .fill(Farben.jetztLinie)
-                        .frame(width: spaltenBreite - tagesLuecke, height: 3)
-                        .offset(x: rinnenBreite + CGFloat(heuteIndex) * spaltenBreite + tagesLuecke / 2, y: hoehe - 1.5)
+                        .fill(Farben.akzent)
+                        .frame(width: max(breite - rinnenBreite, 0), height: 1)
+                        .offset(x: rinnenBreite, y: y - 0.5)
+                    Circle()
+                        .fill(Farben.akzent)
+                        .frame(width: 7, height: 7)
+                        .offset(x: rinnenBreite - 3.5, y: y - 3.5)
                 }
                 .allowsHitTesting(false)
+                .accessibilityHidden(true)
             }
         }
     }
@@ -1578,16 +1588,15 @@ struct KartenKnopfStil: ButtonStyle {
     }
 }
 
-/// Details einer Pausenaufsicht im gleichen Aufbau wie alle Stundendetails: Blattkopf mit X, Datum | Zeit und ⋮;
-/// Kopfblock mit Ort, „Pausenaufsicht“, Zeitraum und Lehrkraft (nur Text; Vertretung: alt durchgestrichen → neu);
-/// darunter nur „Im Stundenplan anzeigen“ für die beteiligten Lehrkräfte.
+/// Details einer Pausenaufsicht im gleichen Aufbau wie die Stundendetails: Kopf mit „Schließen“, Datum und Zeit und
+/// Menü; Kopfblock mit Ort, „Pausenaufsicht“, Zeitraum und Lehrkraft (Vertretung: alt durchgestrichen → neu);
+/// darunter „Im Stundenplan anzeigen“ für die beteiligten Lehrkräfte.
 struct AufsichtDetailView: View {
     let aufsicht: Aufsicht
     @EnvironmentObject var zustand: AppZustand
     @Environment(\.dismiss) private var systemSchliessen
     @Environment(\.blattSchliessen) private var blattSchliessen
 
-    /// Randloses iPhone-Blatt mit eigener Animation schließen, sonst das Systemblatt.
     private func schliessen() {
         if let blattSchliessen { blattSchliessen() } else { systemSchliessen() }
     }
@@ -1634,7 +1643,7 @@ struct AufsichtDetailView: View {
         }
     }
 
-    /// Entfallene Aufsicht (Statuspille „ENTFÄLLT“ neben „Pausenaufsicht“).
+    /// Entfallene Aufsicht (Plakette „Entfällt“ neben „Pausenaufsicht“).
     private var entfaellt: Bool { Kachelbau.aufsichtsstand(aufsicht.status) == .entfall }
 
     /// Anlass einer entfallenen Aufsicht (z. B. „Abwesenheit“ bzw. Titel der Veranstaltung); sonst leer.
@@ -1655,8 +1664,7 @@ struct AufsichtDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             Blattkopf(symbol: "xmark", symbolText: "Schließen", aktion: { schliessen() }, mitte: {
-                Blatttitel(titel: "\(Datumsformat.anzeige(aufsicht.datum, "EE")) | \(Datumsformat.anzeige(aufsicht.datum, "dd.MM.yy"))",
-                           untertitel: zeit)
+                Blatttitel(titel: Datumsformat.anzeige(aufsicht.datum, "EE, dd.MM.yy"), untertitel: zeit)
             }, rechts: {
                 if !planziele.isEmpty {
                     Menu {
@@ -1666,43 +1674,66 @@ struct AufsichtDetailView: View {
                                     zustand.planZeigen(plan)
                                     schliessen()
                                 } label: {
-                                    Label(plan.anzeige, image: "SymbolLehrer")
+                                    Label(plan.anzeige, systemImage: Symbole.lehrkraft)
                                 }
                             }
                         }
                     } label: {
-                        Rundknopf(symbol: "ellipsis", gewicht: .medium, groesse: 18, drehung: 90)
+                        Rundknopf(symbol: "ellipsis")
                     }
-                    .tint(Color.primary)
                     .accessibilityLabel("Weitere Aktionen")
                 }
             })
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Wertzeile(bausteine: [.text(ort)], schrift: Detailmass.gross, farbe: Farben.detailText)
-                            .frame(height: Detailmass.zeile)
-                        Wertzeile(bausteine: entfaellt ? [.text("Pausenaufsicht"), .pille("ENTFÄLLT")] : [.text("Pausenaufsicht")],
-                                  schrift: Detailmass.gross, farbe: Farben.detailText)
-                            .frame(height: Detailmass.zeile)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(ort)
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(entfaellt ? Farben.text2 : Farben.text)
+                            .strikethrough(entfaellt, color: Farben.entfall)
+                        HStack(spacing: 8) {
+                            Text("Pausenaufsicht")
+                                .font(.subheadline)
+                                .foregroundStyle(Farben.text2)
+                            if entfaellt {
+                                Plakette(text: "Entfällt", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche)
+                            } else if Kachelbau.aufsichtsstand(aufsicht.status) != .regulaer {
+                                Plakette(text: "Vertretung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche)
+                            }
+                        }
                         if !entfallGrund.isEmpty {
-                            Wertzeile(bausteine: [.text(entfallGrund)], schrift: Detailmass.klein)
-                                .frame(height: Detailmass.zeile)
+                            Text(entfallGrund)
+                                .font(.subheadline)
+                                .foregroundStyle(Farben.text2)
                         }
-                        Wertzeile(bausteine: [.text(aufsicht.beginn.isEmpty ? pause : "\(zeit) · \(pause)")], schrift: Detailmass.klein)
-                            .frame(height: Detailmass.zeile)
-                        if !lehrkraft.isEmpty {
-                            Wertzeile(bausteine: lehrkraft, schrift: Detailmass.klein)
-                                .frame(height: Detailmass.zeile)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label {
+                                Text(aufsicht.beginn.isEmpty ? pause : "\(zeit) · \(pause)")
+                                    .monospacedDigit()
+                            } icon: {
+                                Image(systemName: "clock")
+                                    .foregroundStyle(Farben.text3)
+                            }
+                            if !lehrkraft.isEmpty {
+                                Label {
+                                    Wertzeile(bausteine: lehrkraft, schrift: Detailmass.klein, farbe: Farben.text)
+                                } icon: {
+                                    Image(systemName: Symbole.lehrkraft)
+                                        .foregroundStyle(Farben.text3)
+                                }
+                            }
                         }
+                        .font(.subheadline)
+                        .foregroundStyle(Farben.text)
+                        .padding(.top, 6)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Detailmass.rand)
-                    .padding(.top, 10)
-                    .padding(.bottom, 12)
+                    .padding(.top, 14)
+                    .padding(.bottom, 14)
                     .accessibilityElement(children: .combine)
                     Rectangle()
-                        .fill(Farben.trennlinie)
+                        .fill(Farben.rand)
                         .frame(height: 1)
                     VStack(spacing: 0) {
                         if !aufsicht.gang.isEmpty && aufsicht.gang != ort {
@@ -1713,36 +1744,18 @@ struct AufsichtDetailView: View {
                                 zustand.planZeigen(plan)
                                 schliessen()
                             } label: {
-                                Detailzeile(symbol: "SymbolLehrer", titel: "Im Stundenplan anzeigen", untertitel: plan.anzeige)
+                                Detailzeile(symbol: Symbole.lehrkraft, titel: "Im Stundenplan anzeigen", untertitel: plan.anzeige)
                             }
                             .buttonStyle(ZeilenKnopfStil())
                         }
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 4)
                     .padding(.bottom, 24)
                 }
             }
             .scrollIndicators(.hidden)
         }
         .background(Farben.blatt.ignoresSafeArea())
-    }
-}
-
-extension View {
-    /// Blatt mit fester Größe: auf dem iPad als Formblatt (feste Größe, ändert sich weder beim Inhalt noch beim Wechsel
-    /// in Unterseiten), auf dem iPhone als großes Blatt.
-    @ViewBuilder
-    func festesBlatt(breit: Bool) -> some View {
-        if breit {
-            if #available(iOS 18.0, *) {
-                self.presentationSizing(.form)
-            } else {
-                // iOS 17: Blätter erscheinen auf dem iPad als Formblatt mit fester Größe
-                self
-            }
-        } else {
-            self.iPhoneBlatt()
-        }
     }
 }
 

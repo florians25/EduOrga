@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - Neuer Klassenbucheintrag
 
-/// Formular „Neuer Klassenbucheintrag“ wie in der Vorlage: Kopf mit X, Titel und orangem Haken; darunter die Zeilen
-/// „Schüler*innen (n)“ mit den Namen und „Eintragskategorie“ (je mit Pfeil) und ein Textfeld
-/// „Hier klicken um Text einzutragen.“ Gespeichert wird je Schüler*in ein Eintrag (ohne Auswahl zur Klasse).
+/// Formular „Neuer Klassenbucheintrag“: Kopf mit „Schließen“, Titel und „Sichern“; darunter die Zeilen
+/// „Schüler*innen (n)“ mit den Namen und „Eintragskategorie“ (je mit Pfeil) und ein Textfeld.
+/// Gespeichert wird je Schüler*in ein Eintrag (ohne Auswahl zur Klasse).
 struct NeuerKlassenbucheintragView: View {
     let vorauswahl: [Schueler]
     @EnvironmentObject var daten: Stundendaten
@@ -12,7 +12,7 @@ struct NeuerKlassenbucheintragView: View {
     @Environment(\.dismiss) private var systemSchliessen
     @Environment(\.blattSchliessen) private var blattSchliessen
 
-    /// Randloses iPhone-Blatt mit eigener Animation schließen, sonst das Systemblatt.
+    /// Blatt schließen.
     private func schliessen() {
         if let blattSchliessen { blattSchliessen() } else { systemSchliessen() }
     }
@@ -49,9 +49,9 @@ struct NeuerKlassenbucheintragView: View {
                         }
                         .buttonStyle(ZeilenKnopfStil())
                         Formulartrenner()
-                        TextField("Hier klicken um Text einzutragen.", text: $text, axis: .vertical)
+                        TextField("Text des Eintrags", text: $text, axis: .vertical)
                             .font(.system(size: 15))
-                            .foregroundStyle(Farben.tinte)
+                            .foregroundStyle(Farben.text)
                             .lineLimit(4...12)
                             .focused($fokus)
                             .padding(.horizontal, 16)
@@ -61,7 +61,7 @@ struct NeuerKlassenbucheintragView: View {
                         if let fehler {
                             Text(fehler)
                                 .font(.system(size: 14))
-                                .foregroundStyle(Farben.entfallRand)
+                                .foregroundStyle(Farben.entfall)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(16)
                         }
@@ -102,12 +102,12 @@ struct Formularzeile: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(titel)
                     .font(.system(size: 16))
-                    .foregroundStyle(Farben.tinte)
+                    .foregroundStyle(Farben.text)
                     .lineLimit(1)
                 if !untertitel.isEmpty {
                     Text(untertitel)
                         .font(.system(size: 13))
-                        .foregroundStyle(Farben.tinte2)
+                        .foregroundStyle(Farben.text2)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -115,8 +115,8 @@ struct Formularzeile: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             if pfeil {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 19, weight: .ultraLight))
-                    .foregroundStyle(Farben.gedaempft)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Farben.pfeil)
             }
         }
         .padding(.horizontal, 16)
@@ -130,7 +130,7 @@ struct Formularzeile: View {
 struct Formulartrenner: View {
     var body: some View {
         Rectangle()
-            .fill(Farben.trennlinie)
+            .fill(Farben.rand)
             .frame(height: 0.5)
             .padding(.horizontal, 16)
     }
@@ -156,12 +156,10 @@ struct SchuelerAuswahlView: View {
                         if gewaehlt.contains(s.id) { gewaehlt.remove(s.id) } else { gewaehlt.insert(s.id) }
                     } label: {
                         HStack(spacing: 12) {
-                            Image(systemName: gewaehlt.contains(s.id) ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 20, weight: .light))
-                                .foregroundStyle(gewaehlt.contains(s.id) ? Farben.akzent : Farben.gedaempft)
+                            Auswahlkreis(gewaehlt: gewaehlt.contains(s.id))
                             Text(s.anzeige)
                                 .font(.system(size: 16))
-                                .foregroundStyle(Farben.tinte)
+                                .foregroundStyle(Farben.text)
                                 .lineLimit(1)
                             Spacer(minLength: 0)
                         }
@@ -194,7 +192,7 @@ struct KategorieAuswahlView: View {
                     HStack {
                         Text(art)
                             .font(.system(size: 16))
-                            .foregroundStyle(Farben.tinte)
+                            .foregroundStyle(Farben.text)
                         Spacer(minLength: 0)
                         if art == auswahl {
                             Image(systemName: "checkmark")
@@ -270,9 +268,9 @@ struct AbwesenheitsEintrag: Identifiable, Hashable {
     }
 }
 
-/// Vorlage „Abwesenheiten“: Kopf mit Zurück, Titel und Name, rechts „+“; je Abwesenheit Datum, Uhrzeit und Grund mit
+/// Seite „Abwesenheiten“: Kopf mit Zurück, Titel und Name, rechts „+“; je Abwesenheit Datum, Uhrzeit und Grund mit
 /// Pfeil; unten das Suchfeld. Lehrkräfte sehen die Abwesenheit dieser Stunde, Klassenleitungen alle der letzten 30 Tage.
-/// Nach links wischen öffnet den Entschuldigungsdialog (runde Pill „Entschuldigen“).
+/// Nach links wischen öffnet den Entschuldigungsdialog.
 struct SchuelerAbwesenheitenView: View {
     let schueler: Schueler
     @EnvironmentObject var daten: Stundendaten
@@ -315,13 +313,13 @@ struct SchuelerAbwesenheitenView: View {
                         if eintraege.isEmpty {
                             Text(suche.isEmpty ? "Keine Abwesenheit eingetragen." : "Keine Treffer.")
                                 .font(.system(size: 15))
-                                .foregroundStyle(Farben.gedaempft)
+                                .foregroundStyle(Farben.text3)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 20)
                                 .padding(.top, 14)
                         }
                         ForEach(eintraege) { e in
-                            // Nach links wischen: runde Pill „Entschuldigen“ (Klassenleitung bzw. Fachlehrkraft)
+                            // Nach links wischen: „Entschuldigen“ (Klassenleitung bzw. Fachlehrkraft)
                             WischZeile(rechtsMoeglich: false, linksMoeglich: entschuldigungsziel(e) != nil,
                                        rechts: {}, links: {
                                            if let z = entschuldigungsziel(e) {
@@ -347,7 +345,7 @@ struct SchuelerAbwesenheitenView: View {
             Button {
                 bearbeiten = AbwesenheitsZiel(eintrag: nil)
             } label: {
-                Rundknopf(symbol: "plus", gewicht: .light, groesse: 22)
+                Rundknopf(symbol: "plus")
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Neue Abwesenheit")
@@ -381,8 +379,8 @@ struct SchuelerAbwesenheitenView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "clock")
-                        .font(.system(size: 13, weight: .light))
-                        .foregroundStyle(Farben.gedaempft)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(Farben.text3)
                         .frame(width: 18)
                         .padding(.top, 2)
                     VStack(alignment: .leading, spacing: 1) {
@@ -390,32 +388,32 @@ struct SchuelerAbwesenheitenView: View {
                         Text(e.zeitraum)
                     }
                     .font(.system(size: 15))
-                    .foregroundStyle(Farben.tinte)
+                    .foregroundStyle(Farben.text)
                 }
                 let grund = [daten.grundName(e.grund), e.text].filter { !$0.isEmpty }.joined(separator: " – ")
                 if !grund.isEmpty {
                     HStack(spacing: 12) {
                         Image(systemName: "info.circle")
-                            .font(.system(size: 13, weight: .light))
-                            .foregroundStyle(Farben.gedaempft)
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundStyle(Farben.text3)
                             .frame(width: 18)
                         Text(grund)
                             .font(.system(size: 15))
-                            .foregroundStyle(Farben.tinte)
+                            .foregroundStyle(Farben.text)
                             .lineLimit(2)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right")
-                .font(.system(size: 19, weight: .ultraLight))
-                .foregroundStyle(Farben.gedaempft)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Farben.pfeil)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Farben.trennlinie)
+                .fill(Farben.rand)
                 .frame(height: 0.5)
                 .padding(.horizontal, 16)
         }
@@ -448,9 +446,9 @@ struct SchuelerAbwesenheitenView: View {
 
 // MARK: - Abwesenheit bearbeiten
 
-/// Vorlage „Abwesenheit bearbeiten“: Kopf mit X, Titel, Papierkorb und Haken; Avatar mit Name und Klasse;
-/// START und ENDE je Datum und Uhrzeit (minutengenau), ABWESENHEITSGRUND (Auswahl), TEXT FÜR ABWESENHEIT und der
-/// Schalter „Erziehungsberechtigte benachrichtigt“. Lehrkräfte ohne Klassenleitung erfassen nur am Tag der Stunde.
+/// Seite „Abwesenheit bearbeiten“: Kopf mit „Schließen“, Titel, Papierkorb und „Sichern“; Initialen mit Name und
+/// Klasse; Beginn und Ende je Datum und Uhrzeit (minutengenau), Abwesenheitsgrund (Auswahl), Text und der Schalter
+/// „Erziehungsberechtigte benachrichtigt“. Lehrkräfte ohne Klassenleitung erfassen nur am Tag der Stunde.
 struct AbwesenheitBearbeitenView: View {
     let schueler: Schueler
     let eintrag: AbwesenheitsEintrag?
@@ -479,60 +477,68 @@ struct AbwesenheitBearbeitenView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     kopf
                     Rectangle()
-                        .fill(Farben.trennlinie)
+                        .fill(Farben.rand)
                         .frame(height: 0.5)
                     zeitraum
                         .padding(.top, 14)
-                    Feldtitel(text: "ABWESENHEITSGRUND")
+                    Feldtitel(text: "Abwesenheitsgrund")
                     NavigationLink {
                         GrundAuswahlView(gruende: daten.gruende, auswahl: $grund)
                     } label: {
                         HStack {
                             Text(grund.isEmpty ? "Kein Grund" : daten.grundName(grund))
                                 .font(.system(size: 17))
-                                .foregroundStyle(grund.isEmpty ? Farben.gedaempft : Farben.tinte)
+                                .foregroundStyle(grund.isEmpty ? Farben.text3 : Farben.text)
                                 .lineLimit(1)
                             Spacer(minLength: 0)
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 19, weight: .ultraLight))
-                                .foregroundStyle(Farben.gedaempft)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Farben.pfeil)
                         }
-                        .padding(.horizontal, 10)
-                        .frame(height: 52)
-                        .background(Farben.eingabeFeld, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .padding(.horizontal, 12)
+                        .frame(height: 44)
+                        .background(Farben.flaeche2, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(Farben.randStark, lineWidth: 1)
+                        }
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, 16)
-                    Feldtitel(text: "TEXT FÜR ABWESENHEIT")
+                    Feldtitel(text: "Text zur Abwesenheit")
                     TextField("Text hier eingeben", text: $text, axis: .vertical)
                         .font(.system(size: 16))
-                        .foregroundStyle(Farben.tinte)
+                        .foregroundStyle(Farben.text)
                         .lineLimit(3...8)
                         .padding(10)
                         .frame(minHeight: 104, alignment: .topLeading)
-                        .background(Farben.eingabeFeld, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .background(Farben.flaeche2, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(Farben.randStark, lineWidth: 1)
+                        }
                         .padding(.horizontal, 16)
                     Toggle(isOn: $eltern) {
                         Text("Erziehungsberechtigte benachrichtigt")
                             .font(.system(size: 15))
-                            .foregroundStyle(Farben.tinte)
+                            .foregroundStyle(Farben.text)
                     }
-                    .tint(Farben.gruen)
+                    .tint(Farben.akzent)
                     .disabled(!verwalten)
                     .padding(.horizontal, 16)
                     .padding(.top, 18)
                     if !verwalten {
                         Text("Abwesenheiten über den Tag der Stunde hinaus und die Benachrichtigung trägt die Klassenleitung ein.")
                             .font(.system(size: 12))
-                            .foregroundStyle(Farben.gedaempft)
+                            .foregroundStyle(Farben.text3)
                             .padding(.horizontal, 16)
                             .padding(.top, 6)
                     }
                     if let fehler {
                         Text(fehler)
                             .font(.system(size: 14))
-                            .foregroundStyle(Farben.entfallRand)
+                            .foregroundStyle(Farben.entfall)
                             .padding(16)
                     }
                 }
@@ -545,7 +551,7 @@ struct AbwesenheitBearbeitenView: View {
                     Button {
                         loeschenFragen = true
                     } label: {
-                        Rundknopf(symbol: "trash", gewicht: .light, groesse: 18)
+                        Rundknopf(symbol: "trash")
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Abwesenheit löschen")
@@ -566,23 +572,14 @@ struct AbwesenheitBearbeitenView: View {
 
     private var kopf: some View {
         HStack(spacing: 12) {
-            Text(Initialen.kuerzel(schueler.anzeige))
-                .font(.system(size: 17, weight: .regular))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(Farben.avatar, in: Circle())
+            Initialen(name: schueler.anzeige, groesse: 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text(schueler.anzeige)
-                    .font(.system(size: 19))
-                    .foregroundStyle(Farben.tinte)
+                    .font(.headline)
+                    .foregroundStyle(Farben.text)
                     .lineLimit(1)
                 if !schueler.klasse.isEmpty {
-                    Text(schueler.klasse)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Farben.tinte)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                        .background(Farben.zahlPlakette.opacity(0.55), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    Rollenkapsel(text: schueler.klasse)
                 }
             }
             Spacer(minLength: 0)
@@ -591,13 +588,13 @@ struct AbwesenheitBearbeitenView: View {
         .padding(.vertical, 12)
     }
 
-    /// START und ENDE: je eine Pille für Datum und Uhrzeit (minutengenau).
+    /// Beginn und Ende: je ein Feld für Datum und Uhrzeit (minutengenau).
     private var zeitraum: some View {
         HStack(alignment: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("START")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Farben.tinte2)
+                Text("Beginn")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Farben.text2)
                     .padding(.leading, 6)
                 DatePicker("Startdatum", selection: $von, in: datumsbereich, displayedComponents: .date)
                     .labelsHidden()
@@ -607,9 +604,9 @@ struct AbwesenheitBearbeitenView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .leading, spacing: 8) {
-                Text("ENDE")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Farben.tinte2)
+                Text("Ende")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Farben.text2)
                     .padding(.leading, 6)
                 DatePicker("Enddatum", selection: $bis, in: datumsbereich, displayedComponents: .date)
                     .labelsHidden()
@@ -682,14 +679,14 @@ struct AbwesenheitBearbeitenView: View {
     }
 }
 
-/// Überschrift eines Felds in Großbuchstaben (START, ABWESENHEITSGRUND …).
+/// Überschrift eines Felds (Abwesenheitsgrund, Text …).
 struct Feldtitel: View {
     let text: String
 
     var body: some View {
         Text(text)
-            .font(.system(size: 13))
-            .foregroundStyle(Farben.tinte2)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Farben.text2)
             .padding(.horizontal, 24)
             .padding(.top, 18)
             .padding(.bottom, 6)
@@ -723,7 +720,7 @@ struct GrundAuswahlView: View {
             HStack {
                 Text(name)
                     .font(.system(size: 16))
-                    .foregroundStyle(kurz.isEmpty ? Farben.gedaempft : Farben.tinte)
+                    .foregroundStyle(kurz.isEmpty ? Farben.text3 : Farben.text)
                 Spacer(minLength: 0)
                 if auswahl.caseInsensitiveCompare(kurz) == .orderedSame {
                     Image(systemName: "checkmark")

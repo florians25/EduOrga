@@ -28,8 +28,8 @@ public static class Kachelbau
 
     /// <summary>
     /// Automatisch erzeugte Standardtexte einer Zusatzstunde („wegen Sondereinsatz“, „Vertretung durch Verlegung“, „Vorziehung“,
-    /// „Vertr. o. Lehrkr.“, „aus Vertretung …“, „Zusatzunterricht“, „Sondereinsatz“, „Zusätzl. Unterrichtsstunde“). Sie entfallen –
-    /// die Plakette „Zusätzl. Unterrichtsstunde“ sagt dasselbe; manuell eingegebene Vertretungstexte bleiben stehen.
+    /// „Vertr. o. Lehrkr.“, „aus Vertretung …“, „Zusatzunterricht“, „Sondereinsatz“, „Zusätzliche Unterrichtsstunde“). Sie entfallen –
+    /// die Plakette „Zusatzstunde“ sagt dasselbe; manuell eingegebene Vertretungstexte bleiben stehen.
     /// </summary>
     private static readonly System.Text.RegularExpressions.Regex ZusatzStandardtext =
         new(@"^\s*(\(?\s*wegen\s+sondereins(a|ä)tz(e)?\s*\)?|sondereins(a|ä)tz(e)?|vertretung\s+durch\s+verlegung|vorziehung|vertr\.\s*o\.\s*lehrkr\.?|aus\s+vertretung\b.*|zusatzunterricht|zus(ä|ae)tzl(\.|iche)\s*unterrichtsstunde)\s*\.?\s*$",
@@ -475,7 +475,7 @@ public static class Kachelbau
                 if (IstZusatzstunde(k))
                 {
                     kachel.Zusatz = true;
-                    // Zusätzliche Unterrichtsstunde: Plakette „Zusätzl. Unterrichtsstunde“; nur Standardtexte entfallen,
+                    // Zusätzliche Unterrichtsstunde: Plakette „Zusatzstunde“; nur Standardtexte entfallen,
                     // ein manuell eingegebener Vertretungstext bleibt (Info-Zeichen auf der Kachel)
                     if (IstZusatzStandardtext(kachel.Info, k.Art)) kachel.Info = "";
                     // Zusatzstunde ohne Lehrkraft: „---“ statt einer leeren Zeile (nicht bei „+++“ – dort steht die bisherige Lehrkraft durchgestrichen)

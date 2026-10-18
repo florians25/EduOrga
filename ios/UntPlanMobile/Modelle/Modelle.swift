@@ -125,7 +125,7 @@ struct SitzungsBenutzer: Decodable, Sendable {
 // MARK: - Plan
 
 /// Angezeigter Wert (Klasse, Lehrkraft, Raum); alt = ursprünglicher Wert, neu = geändert,
-/// plus = hinzugekommen (z. B. zusätzlicher Raum; Anzeige als grünes Label „+B070“).
+/// plus = hinzugekommen (z. B. zusätzlicher Raum; Anzeige hervorgehoben als „+B070“).
 struct Wert: Decodable, Hashable, Sendable {
     var k: String
     var alt: String?
@@ -213,7 +213,7 @@ struct Karte: Decodable, Identifiable, Sendable {
     var zusaetzlich: Bool
     var abwesendeKlassen: [String]
     var abwesendText: String
-    /// Stunde findet online statt (Klassenbuch) – Karte grün mit Plakette „Online“ und Videosymbol.
+    /// Stunde findet online statt (Klassenbuch) – Kachel mit Videosymbol.
     var online: Bool
     /// Link zum Online-Unterricht (leer = keiner; tolerant aus onlineLink/onlineUrl gelesen).
     var onlineLink: String
@@ -381,17 +381,17 @@ struct Karte: Decodable, Identifiable, Sendable {
         return url
     }
 
-    /// Dezente graue Pille im Kopf der Stundendetails (wie im Web): „Prüfung“, „Veranstaltung“ bzw. bei einer
-    /// Zusatzstunde „Zusätzl. Unterrichtsstunde“; nie bei Entfall.
+    /// Status-Plakette im Kopf der Stundendetails: „Prüfung“, „Veranstaltung“ bzw. bei einer Zusatzstunde
+    /// „Zusatzstunde“; nie bei Entfall.
     var statusPille: String? {
         guard !istEntfall else { return nil }
         if istPruefung { return "Prüfung" }
         if istVeranstaltung { return "Veranstaltung" }
-        if istZusatzstunde { return "Zusätzl. Unterrichtsstunde" }
+        if istZusatzstunde { return "Zusatzstunde" }
         return nil
     }
 
-    /// Zusätzliche Unterrichtsstunde (nicht die Zielstunde einer Verlegung): Plakette „Zusätzl. Unterrichtsstunde“,
+    /// Zusätzliche Unterrichtsstunde (nicht die Zielstunde einer Verlegung): Plakette „Zusatzstunde“,
     /// nie ein Vertretungstext.
     var istZusatzstunde: Bool {
         zusaetzlich || (Kachelbau.istZusatzstunde(self) && verlegung == nil)
@@ -440,7 +440,7 @@ struct Karte: Decodable, Identifiable, Sendable {
         return status == "buchung" || a.hasPrefix("raumbuchung") || a.hasPrefix("raumänderung (vorgemerkt)")
     }
 
-    /// Raumbuchungen und Klausuren erscheinen nie als Vertretung (keine grüne Farbe, kein Vertretungstext).
+    /// Raumbuchungen und Klausuren erscheinen nie als Vertretung (kein Änderungsrahmen, kein Vertretungstext).
     var keineVertretung: Bool { istRaumbuchung || istPruefung }
 
     /// Offene Vertretung (Feld vertretungOffen, Status „offen“ oder Lehrkraft ohne neuen Wert mit altem Wert); nie bei Entfall.
@@ -1264,7 +1264,7 @@ struct Schueler: Decodable, Identifiable, Hashable, Sendable {
         klasse = c.text(.klasse)
     }
 
-    /// „Name Vorname“ wie in der Vorlage.
+    /// „Name Vorname“.
     var anzeige: String { [name, vorname].filter { !$0.isEmpty }.joined(separator: " ") }
 }
 
@@ -1310,7 +1310,7 @@ struct Fehlzeiteintrag: Decodable, Sendable {
         text = c.text(.text)
     }
 
-    /// „Abwesend (verspätet)“, „Abwesend (fehlt)“ bzw. „Abwesend (vorzeitig)“ wie in der Vorlage.
+    /// „Abwesend (verspätet)“, „Abwesend (fehlt)“ bzw. „Abwesend (vorzeitig)“.
     var statustext: String {
         switch art {
         case "verspaetet": return "Abwesend (verspätet)"
@@ -1805,7 +1805,7 @@ struct Empfaenger: Decodable, Identifiable, Hashable, Sendable {
 
     var istPerson: Bool { id.hasPrefix("benutzer:") }
 
-    /// Text in der Zeile und in der Pill „An“: Kürzel, sonst „Name (KÜR)“ → „KÜR“, sonst der Name.
+    /// Text in der Zeile und im Feld „An“: Kürzel, sonst „Name (KÜR)“ → „KÜR“, sonst der Name.
     var kuerzel: String {
         if !kuerzelFeld.isEmpty { return kuerzelFeld }
         return Self.kuerzel(aus: name)

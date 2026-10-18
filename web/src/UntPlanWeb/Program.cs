@@ -174,7 +174,6 @@ public class Program
         SsoApi.Abbilden(app);
         ErweiterungApi.Abbilden(app);
         UpdateApi.Abbilden(app);
-        SchriftApi.Abbilden(app);
         MobilApi.Abbilden(app);
         OberflaecheApi.Abbilden(app);
         FamilieApi.Abbilden(app);

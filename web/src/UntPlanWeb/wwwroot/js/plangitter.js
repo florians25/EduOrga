@@ -1,8 +1,9 @@
-// Darstellung der Stundenpläne: Raster nach Unterrichtsstunden, Stundenkarten, Veranstaltungsleiste, Detaildialog mit Klassenbuch.
+// Darstellung der Stundenpläne: Raster nach Unterrichtsstunden, Stundenkacheln (Fachfarbe als Tönung, Status als Schraffur, Rahmen
+// und Plaketten), Zeitspalte mit Stundennummer und Zeiten, Jetzt-Linie, Veranstaltungsleiste, Stundendetails mit Klassenbuch.
 import { e, minuten, jetztMinuten, heuteIso, datumKurz, WOCHENTAGE_KURZ } from './ui.js';
 
 /** Höhe einer Unterrichtsstunde im Raster (Pausen werden nicht maßstäblich dargestellt). */
-const ZEILE = 80;
+const ZEILE = 68;
 
 export const STATUSTEXT = {
   geaendert: 'Änderung', offen: 'Vertretung offen', entfall: 'Entfall', abwesend: 'vertreten', klausur: 'Prüfung',
@@ -29,16 +30,17 @@ const istOnline = (k, typ) => !!k.online && !istEntfall(k, typ) && k.status !== 
 /** Badge bzw. Hinweis einer zusätzlichen Unterrichtsstunde (kein Vertretungstext). */
 export const ZUSATZ_TEXT = 'Zusätzl. Unterrichtsstunde';
 
-/** Hover-Text eines geänderten Werts wie im Original: „B070 → C197“, auch bei Lehrkräften „LAN → ILK“ (erscheint nur beim Überfahren des Labels). */
+/** Hover-Text eines geänderten Werts: „B070 → C197“, auch bei Lehrkräften „LAN → ILK“ (erscheint nur beim Überfahren des Werts). */
 const wechsel = (alt, neu) => `${alt} → ${neu}`;
 /** Hover-Attribute eines geänderten Werts: „alt → neu“ (ohne Durchstreichung). */
 const wechselHover = (alt, neu, lehrkraft = false) => `data-hover="${e(wechsel(alt, neu))}" data-hover-alt="${e(alt)}"`;
 
 /**
- * Werte (Klassen, Lehrkräfte, Räume) wie im Original: neuer Wert als grüne Kürzelbox, bei offener Vertretung der
- * bisherige Wert durchgestrichen in der grünen Box. Der ersetzte alte Wert steht im Detaildialog; bei Entfall erscheinen die ursprünglichen Werte durchgestrichen.
+ * Werte (Klassen, Lehrkräfte, Räume): geänderter Wert petrolfarben unterstrichen, bei offener Vertretung der bisherige Wert
+ * durchgestrichen in der Plakette. Der ersetzte alte Wert steht im Hover und in den Stundendetails; bei Entfall erscheinen die
+ * ursprünglichen Werte durchgestrichen.
  */
-/** Lange Listen kürzen wie im Original: „BEC, BRA, FIS +12“ (vollständig in den Stundendetails). */
+/** Lange Listen kürzen: „BEC, BRA, FIS +12“ (vollständig in den Stundendetails). */
 export function gekuerzt(liste, max = 3, entfall = false, lehrkraft = false) {
   const l = liste || [];
   // gekürzt: „+12“ zeigt beim Überfahren die vollständige Liste (grauer Hover)
@@ -52,7 +54,7 @@ export function werte(liste, entfall = false, lehrkraft = false) {
   return (liste || []).map(w => wertHtml(w, entfall, lehrkraft)).join(', ');
 }
 
-/** Ein Wert: grünes Label bei Änderung („alt → neu“ im Hover), „+B070“ bei hinzugefügtem Wert, entfernter Wert durchgestrichen. */
+/** Ein Wert: hervorgehoben bei Änderung („alt → neu“ im Hover), „+B070“ bei hinzugefügtem Wert, entfernter Wert durchgestrichen. */
 function wertHtml(w, entfall = false, lehrkraft = false) {
   if (entfall) return e(w.alt || w.k);
   if (w.alt && !w.k) return `<span class="lbl weg">${e(w.alt)}</span>`;
@@ -63,7 +65,7 @@ function wertHtml(w, entfall = false, lehrkraft = false) {
   return e(w.k);
 }
 
-/** Pille eines Werts im Hover einer gekürzten Liste: grau, geändert grün, abwesend/entfernt grün durchgestrichen. */
+/** Pille eines Werts im Hover einer gekürzten Liste: neutral, geändert hervorgehoben, abwesend/entfernt durchgestrichen. */
 function wertPille(w, entfall = false) {
   if (entfall) return { t: w.alt || w.k };
   if (w.alt && !w.k) return { t: w.alt, a: 'weg' };
@@ -93,11 +95,11 @@ function titelText(k) {
 
 /**
  * Lehrkraft abwesend: eigene Stunde der angezeigten Lehrkraft wird von anderen gehalten, bzw. die Bereitschaft einer abwesenden
- * Lehrkraft fällt weg (Lehrer- und Tagesansichten) – gestrichelte Karte mit Eck-Klammern statt Entfall. Der Server liefert dafür
- * lehrerAbwesend. Im Raumplan nie: dort erscheint eine Stunde mit abwesender Lehrkraft wie im Klassenplan als grüne Änderungskarte.
+ * Lehrkraft fällt weg (Lehrer- und Tagesansichten) – gestrichelte Kachel statt Entfall. Der Server liefert dafür lehrerAbwesend.
+ * Im Raumplan nie: dort erscheint eine Stunde mit abwesender Lehrkraft wie im Klassenplan als geänderte Kachel.
  */
 export const lehrerAbwesend = (k, typ) => k.status === 'abwesend' && (typ === 'lehrer' || (typ !== 'raum' && !!k.lehrerAbwesend));
-/** Echter Entfall (rot, durchgestrichen); im Raumplan gilt eine verlegte Stunde weiter als Entfall. */
+/** Echter Entfall (schraffiert, durchgestrichen); im Raumplan gilt eine verlegte Stunde weiter als Entfall. */
 const istEntfall = (k, typ) => k.status === 'entfall' || (k.status === 'abwesend' && !lehrerAbwesend(k, typ));
 
 /** Ein Wert der Stunde hat sich geändert (Fach, ersetzter, hinzugefügter bzw. entfernter Wert) – wie Karte.WertGeaendert im Server. */
@@ -112,10 +114,9 @@ const verlegungsText = (k, richtung) => k.verlegungVon && k.verlegungNach ? `${v
   : richtung === 'von' ? 'Verlegt (ursprüngliche Stunde)' : 'Verlegung (hierher verlegt)';
 
 /**
- * Symbole oben rechts, untereinander: Verlegung (Ursprung rotes Dreieck, Ziel grünes Quadrat, je mit weißem Pfeil nach rechts; Hover
- * „Ursprung → Ziel“ nur auf dem Symbol), Entfall-Dreieck,
- * Prüfung (gelber Kreis), „+“ (zusätzliche Stunde), Änderung (grünes Quadrat). Prüfung, Zusatzstunde und Zielstunde einer Verlegung
- * zeigen darunter zusätzlich das grüne Quadrat, wenn sich ein Wert geändert hat (wie Karte.Marker im Server).
+ * Plaketten der Kachel (css/karten.css): Verlegung (Ursprung bzw. Ziel, Hover „Ursprung → Ziel“ nur auf der Plakette), Entfall,
+ * Prüfung, „+“ bzw. „Termin“ (zusätzliche Stunde, Veranstaltung), Änderung (als Rahmen der Kachel). Prüfung, Zusatzstunde und
+ * Zielstunde einer Verlegung zeigen zusätzlich die Änderung, wenn sich ein Wert geändert hat (wie Karte.Marker im Server).
  */
 function marker(k, typ) {
   const m = [];
@@ -133,7 +134,7 @@ function marker(k, typ) {
   return m.length ? `<span class="mks" aria-hidden="true">${m.join('')}</span>` : '';
 }
 
-/** Text für das Info-Symbol: Vertretungstext und Notizen (wie im Original unten rechts auf der Karte). */
+/** Text für das Info-Symbol: Vertretungstext und Notizen (Symbol unten auf der Kachel). */
 export function infoText(k) {
   const z = [];
   // Zusatzstunden: der Server liefert nur von Hand eingegebene Texte (Standardtexte entfallen) – diese erscheinen wie sonst auch
@@ -143,22 +144,17 @@ export function infoText(k) {
   return z.join('\n');
 }
 
-/** Symbole unten rechts: fällige Hausaufgabe und Info (Original-Icons). */
+/** Symbole unten auf der Kachel: online, fällige Hausaufgabe und Info. */
 function eckSymbole(k, typ) {
   const info = infoText(k);
-  const hw = k.hausaufgabeFaellig ? '<img class="ecke-hw" src="img/wu/exact/tt-homework-icon.svg" alt="" data-hover="Hausaufgabe fällig" data-hover-art="dunkel">' : '';
-  const i = info ? `<img class="ecke-info" src="img/wu/exact/info.svg" alt="" data-hover="${e(info)}" data-hover-art="dunkel">` : '';
-  // „Findet online statt“: Symbol online_lesson unten auf der Karte (statt eines Raumlabels)
+  const hw = k.hausaufgabeFaellig ? '<i class="sym sym-square-pen ecke-hw" data-hover="Hausaufgabe fällig" data-hover-art="dunkel" aria-label="Hausaufgabe fällig"></i>' : '';
+  const i = info ? `<i class="sym sym-info ecke-info" data-hover="${e(info)}" data-hover-art="dunkel" aria-label="Hinweis"></i>` : '';
+  // „Findet online statt“: Symbol unten auf der Kachel (statt eines Raums)
   const online = istOnline(k, typ)
-    ? '<img class="ecke-online" src="img/wu/klassenbuch/online_lesson.svg" alt="Findet online statt" data-hover="Findet online statt" data-hover-art="dunkel">' : '';
+    ? '<i class="sym sym-video ecke-online" data-hover="Findet online statt" data-hover-art="dunkel" aria-label="Findet online statt"></i>' : '';
   return hw || i || online ? `<span class="ecke">${online}${hw}${i}</span>` : '';
 }
 
-/**
- * Inhalt einer Karte wie im Original: im Klassenplan Lehrkraft (fett), Fach, Raum; im Lehrerplan Klasse(n) (fett), Fach, Raum;
- * im Raumplan Klasse(n), Lehrkraft, Fach. Bei zusammengefassten Kopplungen (gleiches Fach und gleicher Raum) stehen alle
- * Lehrkräfte und Klassen auf der Karte. Ohne Fach (Veranstaltung, Klausur, Buchung) steht die Bezeichnung oben.
- */
 /** Abwesende Klassen einer Karte (Absenz aus UntPlan). */
 const abwesend = k => new Set((k.abwesendeKlassen || []).map(x => x.toLowerCase()));
 /** Klassen mit durchgestrichenen abwesenden Klassen. */
@@ -180,52 +176,57 @@ function zeileHtml(klasse, x, kompakt = false, voll = '') {
 }
 const zeilenText = x => x && typeof x === 'object' ? x.inline : x;
 
+/**
+ * Inhalt einer Kachel. Kopfzeile: Fach (ohne Fach die Bezeichnung, z. B. Veranstaltung, Klausur, Buchung) links, Raum rechts – im
+ * Raumplan nur ein geänderter Raum. Darunter im Klassenplan die Lehrkraft (bei Kopplung alle, dazu die Klassen), im Lehrerplan die
+ * Klasse(n) und ggf. die vertretende Lehrkraft, im Raumplan Klasse(n) und Lehrkraft. Bei zusammengefassten Kopplungen (gleiches Fach
+ * und gleicher Raum) stehen alle Lehrkräfte und Klassen auf der Kachel.
+ */
 export function karteInhalt(k, typ, kompakt = false) {
   const entfall = istEntfall(k, typ);
-  // online: kein Raumlabel (auch kein künstliches) – nur das Symbol unten auf der Karte
+  // online: kein Raum (auch kein künstlicher) – nur das Symbol unten auf der Kachel
   const raum = istOnline(k, typ) ? '' : werte(k.raeume, entfall);
   const fach = k.fachAlt && !entfall ? `<span class="lbl" ${wechselHover(k.fachAlt, k.fach)}>${e(k.fach)}</span>` : e(k.fach || '');
   // gekürzte Fachzeile: Hover mit dem vollständigen Fachnamen
   const fachVoll = k.fachName && k.fachName !== k.fach ? k.fachName : '';
   const ohneFach = !k.fach;
-  let oben, rest;
+  // Raumänderung (neuer, hinzugefügter, entfernter bzw. offener Raum): auch im Raumplan steht der Raum hervorgehoben
+  // („R105 → R109“ im Hover, „+R109“, durchgestrichen) – sonst wäre die Änderung dort nicht zu sehen
+  const raumGeaendert = !entfall && raum && (k.raeume || []).some(w => w.alt || w.neu);
+  const kopfRaum = typ === 'raum' && !raumGeaendert ? '' : raum;
+  let titel, rest;
   if (ohneFach) {
-    // Veranstaltung, Klausur, Buchung: Bezeichnung, dann Klassen, Lehrkräfte (gekürzt) und Raum
-    oben = e(k.text || k.art || '—');
-    rest = [werteListe(k.klassen, entfall), typ !== 'lehrer' || k.lehrer.length > 1 ? werteListe(k.lehrer, entfall, true) : '', raum];
+    // Veranstaltung, Klausur, Buchung: Bezeichnung, dann Klassen und Lehrkräfte (gekürzt)
+    titel = e(k.text || k.art || '—');
+    rest = [werteListe(k.klassen, entfall), typ !== 'lehrer' || k.lehrer.length > 1 ? werteListe(k.lehrer, entfall, true) : ''];
   } else if (typ === 'klasse') {
-    const lehrer = werteListe(k.lehrer, entfall, true);
-    oben = lehrer || fach;
-    // Mitklassen (gekoppelt bzw. parallel identisch, z. B. INF13 auf der Karte von INF12) ganz unten; eine fehlende Mitklasse
-    // steht wie eine abwesende Lehrkraft durchgestrichen im grünen Label
+    titel = fach;
+    // Mitklassen (gekoppelt bzw. parallel identisch, z. B. INF13 auf der Kachel von INF12) ganz unten; eine fehlende Mitklasse
+    // steht wie eine abwesende Lehrkraft durchgestrichen in der Plakette
     const mit = !entfall && (k.mitklassen || []).length ? `<span class="mitklassen">${werte(k.mitklassen)}</span>` : '';
-    rest = [lehrer ? fach : '', raum, k.klassen.length > 1 || abwesend(k).size ? klassenWerte(k, entfall) : '', mit];
+    rest = [werteListe(k.lehrer, entfall, true), k.klassen.length > 1 || abwesend(k).size ? klassenWerte(k, entfall) : '', mit];
   } else if (typ === 'raum') {
-    oben = klassenWerte(k, entfall) || fach;
-    // Raumänderung (neuer, hinzugefügter, entfernter bzw. offener Raum): auch im Raumplan steht der Raum als grünes Label
-    // („R105 → R109“ im Hover, „+R109“, durchgestrichen) – sonst wäre die Änderung hier nicht zu sehen
-    const raumGeaendert = !entfall && raum && (k.raeume || []).some(w => w.alt || w.neu);
-    rest = [werteListe(k.lehrer, entfall, true), k.klassen.length ? fach : '', raumGeaendert ? raum : ''];
+    titel = fach;
+    rest = [klassenWerte(k, entfall), werteListe(k.lehrer, entfall, true)];
   } else {
-    oben = klassenWerte(k, entfall) || fach;
-    // Eigene Abwesenheit: die vertretende Lehrkraft als grünes Label (Hover „HOF → BEC“); ohne Vertretung (Vertretung ohne
+    titel = fach;
+    // Eigene Abwesenheit: die vertretende Lehrkraft hervorgehoben (Hover „HOF → BEC“); ohne Vertretung (Vertretung ohne
     // Lehrkraft, weggefallene Bereitschaft) das eigene Kürzel durchgestrichen. Kopplung: alle Lehrkräfte.
     const abw = k.lehrer.filter(w => w.alt || w.k);
     const lehrerZeile = lehrerAbwesend(k, typ) ? (abw.length ? liste(abw.map(w => w.k && w.alt
         ? `<span class="lbl" ${wechselHover(w.alt, w.k, true)}>${e(w.k)}</span>`
         : `<span class="lbl weg">${e(w.alt || w.k)}</span>`), abw.map(w => w.k && w.alt ? { t: w.k, a: 'neu' } : { t: w.alt || w.k, a: 'weg' })) : '')
-      // Vertretung: die vertretende Lehrkraft als grünes Label – auch im eigenen Plan der vertretenden Lehrkraft (bei reiner
-      // Raumänderung liefert der Server die Lehrkraft ohne Änderung, dann kein Label)
+      // Vertretung: die vertretende Lehrkraft hervorgehoben – auch im eigenen Plan der vertretenden Lehrkraft (bei reiner
+      // Raumänderung liefert der Server die Lehrkraft ohne Änderung, dann ohne Hervorhebung)
       : k.lehrer.length > 1 || k.lehrer.some(w => w.alt || w.neu) ? werteListe(k.lehrer, entfall, true) : '';
-    rest = [k.klassen.length ? fach : '', raum, lehrerZeile];
+    rest = [klassenWerte(k, entfall), lehrerZeile];
   }
   const zeilen = rest.filter(x => x);
-  // abwesende Klasse: Label „abwesend …“ (Hover mit den Klassen)
+  // abwesende Klasse: Plakette „abwesend …“ (Hover mit den Klassen)
   if (abwesend(k).size && !entfall) zeilen.push(`<span class="abw-label" data-hover="${e([...abwesend(k)].join(', ') + ' ' + (k.abwesendText || 'abwesend'))}" data-hover-art="dunkel">${e(k.abwesendText || 'abwesend')}</span>`);
-  // Hover einer gekürzten Zeile: jede Zeile für sich (Werteliste als Pillen, Fach mit vollem Namen, sonst der vollständige Text)
-  const voll = x => x === fach && fachVoll ? fachVoll : '';
-  const rumpf = kompakt ? (zeilen.length ? `<div class="z2">${zeilen.map(zeilenText).join(' · ')}</div>` : '') : zeilen.map(x => zeileHtml('z2', x, false, voll(x))).join('');
-  return `${marker(k, typ)}${zeileHtml('z1', oben, false, voll(oben))}${rumpf}${eckSymbole(k, typ)}`;
+  const kopf = `<div class="z1"${fachVoll && titel === fach ? ` data-voll="${e(fachVoll)}"` : ''}><span class="z-fach">${titel}</span>${kopfRaum ? `<span class="z-raum">${kopfRaum}</span>` : ''}</div>`;
+  const rumpf = kompakt ? (zeilen.length ? `<div class="z2">${zeilen.map(zeilenText).join(' · ')}</div>` : '') : zeilen.map(x => zeileHtml('z2', x)).join('');
+  return `${kopf}${rumpf}${marker(k, typ)}${eckSymbole(k, typ)}`;
 }
 
 /** CSS-Klassen einer Karte (Status, Lehrkraft abwesend, vergangen). */
@@ -277,32 +278,35 @@ export function spuren(karten) {
   return res;
 }
 
-/** Fachfarbe als CSS-Variable für den Akzentbalken (nur gültige #RRGGBB-Werte). */
+/** Fachfarbe als CSS-Variable für die Tönung der Kachel (nur gültige #RRGGBB-Werte). */
 export const fachStil = k => /^#[0-9a-f]{6}$/i.test(k.farbe || '') ? `--fach:${k.farbe};` : '';
 
 const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
-/** Höhe einer Pausenzeile mit Aufsichten. */
-const PAUSE = 30;
+/** Höhe einer Pausenzeile mit Aufsichten bzw. eines schmalen Pausenbands (Pause ohne Aufsicht). */
+const PAUSE = 28;
+const BAND = 6;
 
 /**
- * Zeilenaufbau: je Stunde eine Zeile, dazu eine Pausenzeile nur dort, wo im Zeitraster wirklich eine Pause liegt
- * (Ende ≠ nächster Beginn) und in dieser Woche eine Pausenaufsicht stattfindet. Liefert die Oberkante jeder Stunde und jeder Pausenzeile.
+ * Zeilenaufbau: je Stunde eine Zeile; wo im Zeitraster wirklich eine Pause liegt (Ende ≠ nächster Beginn), eine Pausenzeile, wenn in
+ * dieser Woche eine Pausenaufsicht stattfindet, sonst ein schmales Band ohne Text. Liefert die Oberkante jeder Stunde, jeder
+ * Pausenzeile (pause) und jedes Bands (band, jeweils nach der Stundennummer davor).
  */
 function zeilenAufbau(zeiten, aufsichten) {
   const pausenNach = new Set(aufsichten.map(a => a.nachStunde));
-  const oben = [], pause = new Map();
+  const oben = [], pause = new Map(), band = new Map();
   let y = 0;
   zeiten.forEach((z, i) => {
     const vorher = i === 0 ? z.nr - 1 : zeiten[i - 1].nr;
     const luecke = i === 0 || zeiten[i - 1].ende !== z.beginn;
     if (luecke && pausenNach.has(vorher)) { pause.set(vorher, y); y += PAUSE; }
+    else if (luecke && i > 0) { band.set(vorher, y); y += BAND; }
     oben.push(y);
     y += ZEILE;
   });
   const letzte = zeiten[zeiten.length - 1].nr;
   if (pausenNach.has(letzte)) { pause.set(letzte, y); y += PAUSE; }
-  return { oben, pause, hoehe: y };
+  return { oben, pause, band, hoehe: y };
 }
 
 /** Position der Jetzt-Linie (null außerhalb des Unterrichts). */
@@ -311,8 +315,9 @@ function jetztPosition(zeiten, aufbau, jetzt) {
     const b = minuten(zeiten[i].beginn), en = minuten(zeiten[i].ende);
     if (jetzt >= b && jetzt < en) return Math.round(aufbau.oben[i] + (jetzt - b) / Math.max(1, en - b) * ZEILE);
     if (i + 1 < zeiten.length && jetzt >= en && jetzt < minuten(zeiten[i + 1].beginn)) {
-      const p = aufbau.pause.get(zeiten[i].nr);
-      return p === undefined ? aufbau.oben[i + 1] : Math.round(p + (jetzt - en) / Math.max(1, minuten(zeiten[i + 1].beginn) - en) * PAUSE);
+      const p = aufbau.pause.get(zeiten[i].nr), bd = aufbau.band.get(zeiten[i].nr);
+      const anteil = (jetzt - en) / Math.max(1, minuten(zeiten[i + 1].beginn) - en);
+      return p !== undefined ? Math.round(p + anteil * PAUSE) : bd !== undefined ? Math.round(bd + anteil * BAND) : aufbau.oben[i + 1];
     }
   }
   return null;
@@ -388,7 +393,7 @@ const datumDe = iso => iso ? iso.split('-').reverse().join('.') : '';
 /** automatisch benannter einzelner freier Tag aus UntPlan („19.10.2026“) – kein eigener Name */
 const nurDatum = n => /^\d{1,2}\.\d{1,2}\.(\d{2,4})?$/.test((n || '').trim());
 
-/** Ferien, Feiertage und freie Tage wie im Original: hellblaue Fläche je Tag, mittig Schloss + Art, Name und Zeitraum. */
+/** Ferien, Feiertage und freie Tage: hellblaue Fläche je Tag, mittig Art, Name und Zeitraum. */
 function freiUeberlagerung(t) {
   const titel = FREI[t.freiArt];
   if (!titel) return t.freiGrund ? `<div class="tt-frei">${e(t.freiGrund)}</div>` : '';
@@ -405,19 +410,21 @@ function freiInhalt(liste) {
   const vons = liste.map(x => x.freiVon || x.datum).filter(Boolean).sort(), bise = liste.map(x => x.freiBis || x.freiVon || x.datum).filter(Boolean).sort();
   const von = vons[0], bis = bise[bise.length - 1];
   const zeitraum = von ? (bis && bis !== von ? `${datumDe(von)} - ${datumDe(bis)}` : datumDe(von)) : '';
-  return `<div class="inhalt"><div class="art"><i class="bi bi-lock-fill" aria-hidden="true"></i> ${titel}</div>${namen.length ? `<div>${e(namen.join(', '))}</div>` : ''}${zeitraum ? `<div>${zeitraum}</div>` : ''}</div>`;
+  return `<div class="inhalt"><div class="art"><i class="bi bi-calendar-x" aria-hidden="true"></i> ${titel}</div>${namen.length ? `<div>${e(namen.join(', '))}</div>` : ''}${zeitraum ? `<div>${zeitraum}</div>` : ''}</div>`;
 }
 
 const leisteEintrag = (text, art) => `<div class="tt-ereignis ${art}" title="${e(text)}">${e(text)}</div>`;
 
-/** Wochentag und Datum wie im Original: „Mo 12.10.“ */
+/** Wochentag und Datum: „Mo 12.10.“ */
 export const tagKopf = (i, iso) => { const [, m, t] = iso.split('-'); return `${WOCHENTAGE_KURZ[i] ?? ''} ${t}.${m}.`; };
+/** Spaltenkopf: Wochentag (Medium) und Datum (Regular). */
+const tagKopfHtml = (i, iso) => { const [w, d] = tagKopf(i, iso).split(' '); return `<span class="tt-wt">${e(w)}</span> <span class="tt-dat">${e(d)}</span>`; };
 
 /** Wochenraster als HTML. plan: Antwort von /api/app/plan; gewaehlterTag: Index für die Mobilansicht. */
 export function wochenGitter(plan, { gewaehlterTag = null, kartenZeiten = false, aufsichten: aufsichtModus = 'normal' } = {}) {
   const alle = plan.zeitraster.filter(z => z.beginn && z.ende);
   if (!alle.length) return '<div class="alert alert-secondary">Kein Zeitraster übertragen.</div>';
-  // Raster immer vollständig (alle Stunden des Zeitrasters), wie im Original
+  // Raster immer vollständig (alle Stunden des Zeitrasters)
   const zeiten = alle;
   const index = new Map(zeiten.map((z, i) => [z.nr, i]));
   const letzte = zeiten[zeiten.length - 1].nr;
@@ -434,21 +441,21 @@ export function wochenGitter(plan, { gewaehlterTag = null, kartenZeiten = false,
 
   let html = `<div class="tt" style="--tage:${tage.length}"><div class="tt-ecke"></div>`;
   tage.forEach((t, i) => {
-    html += `<div class="tt-tag ${t.datum === heute ? 'heute' : ''} ${i === ausgewaehlt ? 'gewaehlt' : ''} ${i === plan.tage.length - 1 ? 'letzter' : ''}">${e(tagKopf(i, t.datum))}</div>`;
+    html += `<div class="tt-tag ${t.datum === heute ? 'heute' : ''} ${i === ausgewaehlt ? 'gewaehlt' : ''} ${i === plan.tage.length - 1 ? 'letzter' : ''}">${tagKopfHtml(i, t.datum)}</div>`;
   });
   if (mitLeiste) {
     html += '<div class="tt-ecke"></div>';
     tage.forEach((t, i) => { html += `<div class="tt-leiste ${i === ausgewaehlt ? 'gewaehlt' : ''}">${hinweise(t).map(h => leisteEintrag(h, 'hinweis')).join('')}</div>`; });
   }
 
-  // Zeitachse wie im Original: Beginn oben an der Stunde, Ende unten (über der Linie), dazwischen die Stundennummer
+  // Zeitspalte: je Stunde die Nummer, darunter Beginn und Ende
   html += `<div class="tt-achse" style="height:${aufbau.hoehe}px">`;
-  // Uhrzeiten auf den Karten eingeblendet: links nur die Stundennummern (keine Uhrzeiten doppelt)
+  // Uhrzeiten auf den Kacheln eingeblendet: links nur die Stundennummern (keine Uhrzeiten doppelt)
   zeiten.forEach((z, i) => {
-    const oben = aufbau.oben[i];
-    if (!kartenZeiten) html += `<div class="tt-zeit beginn" style="top:${oben}px">${e(z.beginn)}</div>`;
-    html += `<div class="tt-nr${kartenZeiten ? ' allein' : ''}" style="top:${oben}px">${e(z.bezeichnung || z.nr)}.</div>`;
-    if (!kartenZeiten) html += `<div class="tt-zeit ende" style="top:${oben + ZEILE}px">${e(z.ende)}</div>`;
+    html += `<div class="tt-stunde" style="top:${aufbau.oben[i]}px;height:${ZEILE}px"><div class="tt-nr${kartenZeiten ? ' allein' : ''}">${e(z.bezeichnung || z.nr)}</div>`;
+    if (!kartenZeiten) html += `<div class="tt-zeit beginn">${e(z.beginn)}</div>`;
+    if (!kartenZeiten) html += `<div class="tt-zeit ende">${e(z.ende)}</div>`;
+    html += '</div>';
   });
   if (jetztY !== null) html += `<div class="tt-jetzt-zeit" style="top:${jetztY}px">${hhmm(jetzt)}</div>`;
   html += '</div>';
@@ -456,14 +463,15 @@ export function wochenGitter(plan, { gewaehlterTag = null, kartenZeiten = false,
   const linien = new Set();
   zeiten.forEach((z, j) => { linien.add(aufbau.oben[j]); linien.add(aufbau.oben[j] + ZEILE); });
   tage.forEach((t, i) => {
-    html += `<div class="tt-spalte ${t.frei ? 'frei ' + e(t.freiArt || '') : ''} ${i === ausgewaehlt ? 'gewaehlt' : ''}" style="height:${aufbau.hoehe}px">`;
+    html += `<div class="tt-spalte ${t.frei ? 'frei ' + e(t.freiArt || '') : ''} ${t.datum === heute ? 'heute' : ''} ${i === ausgewaehlt ? 'gewaehlt' : ''}" style="height:${aufbau.hoehe}px">`;
     html += [...linien].map(y => `<div class="tt-linie" style="top:${y}px"></div>`).join('');
     html += [...aufbau.pause.values()].map(y => `<div class="tt-pause" style="top:${y}px;height:${PAUSE}px"></div>`).join('');
+    html += [...aufbau.band.values()].map(y => `<div class="tt-band" style="top:${y}px;height:${BAND}px"></div>`).join('');
     if (t.frei) html += freiUeberlagerung(t);
     // eigene Abwesenheit: graue Fläche hinter den Stunden (wird nach den Karten berechnet und hier eingefügt)
     const vorKarten = html.length, belegt = [];
     const karten = plan.karten.filter(k => k.datum === t.datum && index.has(k.von));
-    // Veranstaltungen, die nicht schon als Karte (Teilnahme) im Plan stehen – als grüne Zusatzkarte
+    // Veranstaltungen, die nicht schon als Kachel (Teilnahme) im Plan stehen – als zusätzliche Kachel
     const ereignisKarten = t.ereignisse.filter(x => index.has(Math.max(x.von, zeiten[0].nr)) && !karten.some(k => k.text === x.titel && k.von <= x.bis && k.bis >= x.von))
       .map(x => ({ ereignis: true, datum: t.datum, von: Math.max(x.von, zeiten[0].nr), bis: Math.min(x.bis, letzte), status: 'veranstaltung', fach: '', text: x.titel, art: 'Veranstaltung',
         klassen: x.klassen.map(k => ({ k })), lehrer: x.lehrer.map(k => ({ k })), raeume: x.raeume.map(k => ({ k })) }));
@@ -476,13 +484,13 @@ export function wochenGitter(plan, { gewaehlterTag = null, kartenZeiten = false,
       // Veranstaltungen (und bei halbierten/ausgeblendeten Aufsichten alle Karten) laufen über die Pause hinweg durch
       for (const [von, bis] of abschnitte(k, aufbau, index, k.status === 'veranstaltung' || aufsichtModus !== 'normal')) {
         const iv = index.get(von), ib = index.get(Math.min(bis, letzte)) ?? iv;
-        const oben = aufbau.oben[iv] + 1, h = aufbau.oben[ib] + ZEILE - aufbau.oben[iv] - 1;
-        // Beginn und Ende links in der Karte (Einstellung „Uhrzeiten auf den Karten“); bei zwei parallelen Stunden nur in der linken
+        const oben = aufbau.oben[iv] + 2, h = aufbau.oben[ib] + ZEILE - aufbau.oben[iv] - 4;
+        // Beginn und Ende in der Kachel (Einstellung „Uhrzeiten auf den Kacheln“); bei zwei parallelen Stunden nur in der linken
         const mitZeit = kartenZeiten && h >= 60 && (anzahl === 1 || (anzahl === 2 && spur === 0));
-        const zeit = mitZeit ? `<span class="zt o">${e(zeiten[iv].beginn)}</span><span class="zt u">${e(zeiten[ib].ende)}</span>` : '';
+        const zeit = mitZeit ? `<span class="zt">${e(zeiten[iv].beginn)}–${e(zeiten[ib].ende)}</span>` : '';
         belegt.push([oben, oben + h, spur * breite, breite]);
         html += `<div class="std ${e(kartenKlasse(k, plan.typ, heute, jetzt))} ${mitZeit ? 'mit-zeit' : ''}" ${nr} tabindex="0" role="button"
-          aria-label="${e(titelText(k))}" style="${fachStil(k)}top:${oben}px;height:${h}px;left:calc(${spur * breite}% + 1px);width:calc(${breite}% - 1px)">${zeit}${karteInhalt(k, plan.typ, h < 60)}</div>`;
+          aria-label="${e(titelText(k))}" style="${fachStil(k)}top:${oben}px;height:${h}px;left:calc(${spur * breite}% + 2px);width:calc(${breite}% - 4px)">${karteInhalt(k, plan.typ, h < 56)}${zeit}</div>`;
       }
     }
     // Pausenaufsichten in der Pausenzeile
@@ -494,17 +502,16 @@ export function wochenGitter(plan, { gewaehlterTag = null, kartenZeiten = false,
     for (const [nach, liste] of proPause) {
       const breite = 100 / liste.length;
       liste.forEach((a, j) => {
-        // auf der Karte nur der Aufsichtsbereich (z. B. „Hof“) – nicht „Früh …“ bzw. der lange Name; Details im Tooltip
+        // auf der Kachel nur der Aufsichtsbereich (z. B. „Hof“) – nicht „Früh …“ bzw. der lange Name; Details im Tooltip
         const ort = aufsichtOrt(a);
         const titel = aufsichtTitel(a);
-        // Vertretung wie bei den Stundenkarten: abwesendes Kürzel durchgestrichen, Vertretung als grünes Label (ohne Vertretung
-        // das abwesende Kürzel durchgestrichen im grünen Label); im Plan der abwesenden Lehrkraft gestrichelt
+        // Vertretung wie bei den Stundenkacheln: die Vertretung hervorgehoben hinter dem Ort; im Plan der abwesenden Lehrkraft gestrichelt
         const label = aufsichtLabel(a);
         const vorbei = a.datum < heute || (a.datum === heute && a.ende && minuten(a.ende) <= jetzt);
         belegt.push([aufbau.pause.get(nach), aufbau.pause.get(nach) + PAUSE, j * breite, breite]);
-        // Label direkt hinter dem Ort (ein Leerzeichen), Hover „ALT → NEU“ wie auf den Stundenkarten – dann ohne Browser-Tooltip.
-        // Lage wie die Stundenkarten: von der Linie (1px darunter) bis an die nächste Linie, gleiche Breite und Einrückung
-        html += `<div class="aufsicht u-hover-bereich ${e(a.status)} ${ueberPause(nach) ? 'schmal' : ''} ${vorbei ? 'vergangen' : ''}" style="top:${aufbau.pause.get(nach) + 1}px;height:${PAUSE - 1}px;left:calc(${j * breite}% + 1px);width:calc(${breite}% - 1px)"
+        // Vertretung direkt hinter dem Ort (ein Leerzeichen), Hover „ALT → NEU“ wie auf den Stundenkacheln – dann ohne Browser-Tooltip.
+        // Lage wie die Stundenkacheln: 2px innerhalb der Pausenzeile, gleiche Breite und Einrückung
+        html += `<div class="aufsicht u-hover-bereich ${e(a.status)} ${ueberPause(nach) ? 'schmal' : ''} ${vorbei ? 'vergangen' : ''}" style="top:${aufbau.pause.get(nach) + 2}px;height:${PAUSE - 4}px;left:calc(${j * breite}% + 2px);width:calc(${breite}% - 4px)"
           ${label ? '' : `title="${e(titel)}"`} aria-label="${e(titel)}"><span class="auf-text">${e(ort)}${label ? ' ' + label : ''}</span></div>`;
       });
     }
@@ -518,11 +525,11 @@ export function wochenGitter(plan, { gewaehlterTag = null, kartenZeiten = false,
   return plan.gesperrt ? `<div class="tt-gesperrt">${html}${sperreHtml(plan.sperrhinweis)}</div>` : html;
 }
 
-/** Meldung „keine Termine“ bei beschränkter Anzeige: weißer Kreis mit Schloss, Titel, Hinweis der Administration. */
+/** Meldung „keine Termine“ bei beschränkter Anzeige: Schloss, Titel, Hinweis der Administration. */
 export function sperreHtml(hinweis) {
   return `<div class="tt-sperre" role="status"><span class="tt-sperre-symbol" aria-hidden="true"><i class="bi bi-lock"></i></span>
     <p class="tt-sperre-titel">Es werden hier keine Termine angezeigt.</p>
-    <p class="tt-sperre-text">${e(hinweis || 'Die Anzeige des Stundenplans ist durch Ihren Administrator beschränkt')}</p></div>`;
+    <p class="tt-sperre-text">${e(hinweis || 'Die Anzeige des Stundenplans ist durch die Administration beschränkt.')}</p></div>`;
 }
 
 export function tagAuswahl(plan, gewaehlt) {
@@ -576,7 +583,7 @@ function hoverVerbergen(sofort = false) {
 }
 /** Kartenzeile gekürzt (Text endet mit „…“ bzw. Werteliste mit „+5“)? */
 function zeileGekuerzt(z) {
-  const t = z.querySelector(':scope > .z-namen') ?? z;
+  const t = z.querySelector(':scope > .z-namen, :scope > .z-fach') ?? z;
   return t.scrollWidth > t.clientWidth + 1;
 }
 document.addEventListener('mouseover', ev => {

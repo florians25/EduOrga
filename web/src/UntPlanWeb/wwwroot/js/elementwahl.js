@@ -1,6 +1,6 @@
 // Elementwahl (Planwahl): Auswahlknopf mit dem einheitlichen Auswahlmenü (Suche, Kürzel mit Langname als zweite Zeile, Tastatur)
 // und dem Schalter „Alle anzeigen“ (alle Elemente als Pillen neben der Liste für die schnelle Wahl ohne Scrollen).
-import { e } from './ui.js';
+import { e, icon } from './ui.js';
 import { menueOeffnen, menueSchliessen } from './auswahl.js';
 
 /** eintraege: [{ kurz, name }]; wert: aktuelles Kürzel; beiWahl(kurz). Liefert ein DOM-Element. */
@@ -8,10 +8,10 @@ export function elementWahl({ eintraege, wert, platzhalter = 'Auswählen …', b
   const wurzel = document.createElement('div');
   wurzel.className = 'position-relative elementwahl';
   const aktuell = eintraege.find(x => x.kurz.toLowerCase() === String(wert ?? '').toLowerCase());
-  // Knopf wie im Original: Kürzel mit Info-Symbol; beim Zeigen auf das Symbol erscheint z. B. „Klassenlehrkraft: KM“
+  // Knopf: Kürzel, daneben der Zusatz (z. B. „Klassenlehrkraft: KM“) in Hinweisfarbe, Pfeil für die Liste
   const infoText = aktuell ? info(aktuell) : '';
-  wurzel.innerHTML = `<button class="btn btn-outline-secondary bg-white text-body dropdown-toggle wahl-knopf" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="${e(aktuell ? `${aktuell.kurz}${infoText ? ' – ' + infoText : ''}` : platzhalter)}">
-      ${aktuell ? `<span>${e(aktuell.kurz)}</span>${infoText ? `<span class="wahl-info" data-tip="${e(infoText)}"><img src="img/wu/exact/info-dropdown-dark.svg" alt=""></span>` : ''}` : `<span class="text-body-secondary">${e(platzhalter)}</span>`}
+  wurzel.innerHTML = `<button class="btn btn-outline-secondary wahl-knopf" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="${e(aktuell ? `${aktuell.kurz}${infoText ? ' – ' + infoText : ''}` : platzhalter)}">
+      ${aktuell ? `<b class="wahl-kurz">${e(aktuell.kurz)}</b>${infoText ? `<span class="wahl-info" title="${e(infoText)}">${e(infoText)}</span>` : ''}` : `<span class="text-body-secondary">${e(platzhalter)}</span>`}${icon('unten', 'wahl-pfeil')}
     </button>`;
   const knopf = wurzel.querySelector('button');
   const liste = eintraege.map(x => ({ wert: x.kurz, text: x.kurz, zweit: x.name && x.name !== x.kurz ? x.name : '', element: x }));

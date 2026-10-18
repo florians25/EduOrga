@@ -1,5 +1,6 @@
-// UntPlanWeb – Einstieg: Sitzung laden, Anmeldung/Einrichtung, Hülle im Stil des Vorbilds (linke Navigationsleiste mit
-// Untermenüs, Schuljahr-Pille, Benutzer unten, Konto wechseln) und Hash-Router.
+// UntPlan Web – Einstieg: Sitzung laden, Anmeldung/Einrichtung, Hülle und Hash-Router.
+// Hülle: Kopfleiste (Signet, Schule, Hauptbereiche, Suche, Mitteilungen, Infocenter, Konto), darunter je Bereich eine Reiterleiste;
+// auf dem Telefon eine untere Leiste mit vier Hauptbereichen und „Mehr“ (Blatt mit allen übrigen Bereichen).
 import { LOGO, icon, e, holen, senden, api, fehler, alarm, lade, initialen, toast } from './ui.js';
 import { beobachten as auswahlBeobachten } from './auswahl.js';
 import { beobachten as kalenderBeobachten } from './kalender.js';
@@ -42,11 +43,7 @@ const app = document.getElementById('app');
 let sitzung = null;
 let elementeCache = null;
 let laufendeAnsicht = null;
-/** Geöffnetes Untermenü (Gruppen-ID) oder null für das Hauptmenü. */
-let untermenue = null;
 let aktiverPunkt = null;
-/** Nächstes Zeichnen bzw. Markieren der Navigation blendet die Menüpunkte gestaffelt ein (nach einem Klick in der Seitenleiste). */
-let navEinblendenAngefordert = false;
 
 /** Gemeinsamer Kontext für alle Ansichten. */
 const kontext = {
@@ -55,7 +52,7 @@ const kontext = {
   /** Schüler- bzw. Elternkonto mit eigenen Seiten (Abwesenheiten, Fehlzeiten, Hausaufgaben des Kindes). */
   get familie() { return familie(sitzung?.benutzer); },
   /**
-   * Gewähltes Schuljahr (Schuljahr-Pille in der Navigation): { von, bis, text, aktuell }. Listen und Berichte nehmen es als Zeitraum;
+   * Gewähltes Schuljahr (Auswahl in der Kopfleiste): { von, bis, text, aktuell }. Listen und Berichte nehmen es als Zeitraum;
    * ohne Auswahl gilt das aktuelle Schuljahr aus UntPlan.
    */
   get schuljahr() { return gewaehltesSchuljahr(); },
@@ -72,13 +69,13 @@ const kontext = {
     const h = document.getElementById('titel');
     if (h) h.innerHTML = text ? `${e(text)}${zusatz ? ` <small>${e(zusatz)}</small>` : ''}` : '';
     const k = document.getElementById('kopftitel');
-    if (k) k.textContent = text || 'UntPlanWeb';
+    if (k) k.textContent = text || bereichVon(aktiverPunkt)?.text || 'UntPlan';
     const r = document.getElementById('aktionen');
     if (r) r.innerHTML = rechts;
     kopf?.classList.toggle('d-none', !text && !rechts);
-    document.title = text ? `${text} – UntPlanWeb` : 'UntPlanWeb';
+    document.title = text ? `${text} – UntPlan` : 'UntPlan';
   },
-  /** Weiße Werkzeugleiste über dem Inhalt (z. B. Suche und Zeitraum im Klassenbuch); leer = keine Leiste. */
+  /** Werkzeugleiste über dem Inhalt (z. B. Suche und Zeitraum im Klassenbuch); leer = keine Leiste. */
   werkzeug(html = '') {
     const w = document.getElementById('werkzeug');
     if (!w) return null;
@@ -110,13 +107,13 @@ function dialogeSchliessen() {
   window.dispatchEvent(new CustomEvent('untplan:abmeldung'));
   document.querySelectorAll('.modal').forEach(m => { try { bootstrap.Modal.getInstance(m)?.dispose(); } catch { /* schon weg */ } m.remove(); });
   document.querySelectorAll('.modal-backdrop, .u-hover-label').forEach(x => x.remove());
-  document.body.classList.remove('modal-open', 'leiste-zu');
+  document.body.classList.remove('modal-open');
   document.body.style.removeProperty('overflow');
   document.body.style.removeProperty('padding-right');
 }
 window.addEventListener('hashchange', () => route());
 
-// Einmalanmeldung für UntPlanMobile: nach der Anmeldung zurück zu /sso/… (nur relative Pfade, kein offener Weiterleiter)
+// Einmalanmeldung für UntPlan Mobile: nach der Anmeldung zurück zu /sso/… (nur relative Pfade, kein offener Weiterleiter)
 const weiterNachAnmeldung = (() => {
   const w = new URLSearchParams(location.search).get('weiter');
   if (w && w.startsWith('/sso/') && !w.startsWith('//')) {
@@ -129,7 +126,7 @@ const weiterNachAnmeldung = (() => {
 async function start() {
   try { sitzung = await holen('/api/app/sitzung'); }
   catch (err) {
-    app.innerHTML = `<main class="anmeldung"><div class="karte">${alarm('danger', err.message)}<button class="btn btn-primary w-100" data-neu>Erneut versuchen</button></div></main>`;
+    app.innerHTML = `<main class="anmeldung"><div class="an-karte">${alarm('danger', err.message)}<button class="btn btn-primary w-100" data-neu>Erneut versuchen</button></div></main>`;
     app.querySelector('[data-neu]').onclick = () => location.reload();
     return;
   }
@@ -149,32 +146,29 @@ async function start() {
 // ------------------------------------------------------------------ Anmeldung und Einrichtung
 
 /**
- * Anmeldeseite: zweigeteilt. Links eine ruhige, warme Verlaufsfläche mit Bildmarke, Schulname, heutigem Datum und einer
- * zurückhaltenden Illustration (stilisierte Stundenplanwoche); rechts auf hellem Grund eine Formularkarte mit Pill-Knopf.
- * Auf dem Telefon steht ein schmaler Kopf mit Bildmarke und Schulname über der Karte.
+ * Anmeldeseite: zweigeteilt. Links eine ruhige Marine-Fläche mit Signet, Schulname, heutigem Datum und den öffentlichen Hinweisen
+ * der Schule; rechts auf hellem Grund das Formular. Auf dem Telefon steht ein schmaler Kopf mit Signet und Schulname über dem Formular.
  */
 function anmeldeRahmen(titel, inhalt, untertitel = '') {
   const heute = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const schule = sitzung?.schule?.name || 'UntPlanWeb';
+  const schule = sitzung?.schule?.name || '';
   app.innerHTML = `<main class="anmeldung an-seite">
-    <section class="an-buehne" aria-label="${e(schule)}">
-      <div class="an-marke">${LOGO}<span>UntPlanWeb</span></div>
+    <section class="an-seite-info" aria-label="${e(schule || 'UntPlan')}">
+      <div class="an-marke">${LOGO}<span>UntPlan</span></div>
       <div class="an-text">
         <p class="an-datum">${e(heute)}</p>
-        <h2 class="an-schule">${e(schule)}</h2>
-        <p class="an-zeile">Stundenplan, Vertretungen und Klassenbuch – an einem Ort, immer aktuell.</p>
+        ${schule ? `<h2 class="an-schule">${e(schule)}</h2>` : ''}
+        <p class="an-zeile">Stundenplan, Vertretungen und Klassenbuch der Schule.</p>
       </div>
       <div class="an-hinweise" data-hinweise hidden></div>
-      ${anmeldeBild()}
     </section>
     <section class="an-bereich">
       <div class="an-karte">
         <div class="an-kopf">${LOGO}<div><h1 class="an-titel">${e(titel)}</h1>${untertitel ? `<p class="an-unter">${e(untertitel)}</p>` : ''}</div></div>
         <div class="lg-form">${inhalt}</div>
       </div>
-      <footer class="an-fuss"><button type="button" class="lg-app d-none" data-pwa>${icon('herunterladen')}Als App installieren</button>
-        <span class="lg-app-text" data-pwa-text>Tipp: Auf dem Smartphone über „Zum Startbildschirm hinzufügen“ wie eine App nutzen.</span>
-        <span class="lg-impressum">UntPlanWeb · Webbegleiter zu UntPlan</span></footer>
+      <footer class="an-fuss"><button type="button" class="btn btn-outline-secondary lg-app d-none" data-pwa>${icon('herunterladen')}Als App installieren</button>
+        <span class="lg-app-text" data-pwa-text>Auf dem Smartphone lässt sich UntPlan über „Zum Startbildschirm hinzufügen“ wie eine App nutzen.</span></footer>
     </section></main>`;
   // App installieren (PWA), sobald der Browser es anbietet
   const pwa = app.querySelector('[data-pwa]');
@@ -193,7 +187,7 @@ function anmeldeRahmen(titel, inhalt, untertitel = '') {
   return app.querySelector('form');
 }
 /**
- * Öffentliche Hinweise der Schule (z. B. „Elternsprechtag am …“) dezent auf der Anmeldeseite – ohne Anmeldung, ohne Cookies und ohne Tracking;
+ * Öffentliche Hinweise der Schule (z. B. „Elternsprechtag am …“) auf der Anmeldeseite – ohne Anmeldung, ohne Cookies und ohne Tracking;
  * der Server liefert nur freigegebene, allgemeine Hinweise im Anzeigezeitraum (reiner Text).
  */
 async function oeffentlicheHinweise(box) {
@@ -204,43 +198,24 @@ async function oeffentlicheHinweise(box) {
     if (r.ok) liste = await r.json();
   } catch { return; }
   if (!Array.isArray(liste) || !liste.length || !box.isConnected) return;
-  box.innerHTML = `<h2 class="visually-hidden">Hinweise der Schule</h2>${liste.map(h => `<article class="an-hinweis">
+  box.innerHTML = `<h2 class="an-hinweise-titel">Hinweise der Schule</h2>${liste.map(h => `<article class="an-hinweis">
       <i class="bi bi-megaphone" aria-hidden="true"></i><div><h3>${e(h.titel)}</h3>${h.text ? `<p>${e(h.text).replace(/\n/g, '<br>')}</p>` : ''}</div></article>`).join('')}`;
   box.hidden = false;
-}
-/** Ruhige Illustration der Anmeldeseite: stilisierte Stundenplanwoche mit runden Karten (rein dekorativ). */
-function anmeldeBild() {
-  const farben = ['#f56b2a', '#7fb2d6', '#8ccfa8', '#f3c95c', '#c5b3e6'];
-  const spalten = [[0, 1, 3], [0, 2, 3, 4], [1, 2, 4], [0, 1, 2, 4], [0, 3]];
-  let karten = '';
-  spalten.forEach((reihen, t) => reihen.forEach(r => {
-    const f = farben[(t * 2 + r) % farben.length];
-    karten += `<rect x="${34 + t * 74}" y="${58 + r * 54}" width="62" height="44" rx="10" fill="#fff" opacity=".92"/>`
-      + `<rect x="${40 + t * 74}" y="${64 + r * 54}" width="4" height="32" rx="2" fill="${f}"/>`
-      + `<rect x="${50 + t * 74}" y="${68 + r * 54}" width="30" height="5" rx="2.5" fill="#c9d0d6"/><rect x="${50 + t * 74}" y="${79 + r * 54}" width="20" height="4" rx="2" fill="#e1e5e9"/>`;
-  }));
-  return `<svg class="an-bild" viewBox="0 0 420 340" aria-hidden="true" focusable="false">
-      <rect x="14" y="14" width="392" height="312" rx="26" fill="#fff" opacity=".45"/>
-      ${[0, 1, 2, 3, 4].map(t => `<rect x="${44 + t * 74}" y="32" width="42" height="8" rx="4" fill="#fff" opacity=".9"/>`).join('')}
-      ${[0, 1, 2, 3, 4, 5].map(r => `<line x1="30" x2="390" y1="${54 + r * 54}" y2="${54 + r * 54}" stroke="#fff" stroke-opacity=".7"/>`).join('')}
-      ${karten}
-      <circle cx="356" cy="290" r="34" fill="#f56b2a" opacity=".12"/><circle cx="356" cy="290" r="12" fill="#f56b2a" opacity=".5"/>
-    </svg>`;
 }
 window.addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); window.__pwaAngebot = ev; window.dispatchEvent(new Event('untplan:pwa')); });
 
 const meldung = (form, text) => { form.querySelector('[data-meldung]').innerHTML = alarm('danger', text); };
 
 function anmeldung() {
-  document.title = 'Anmelden – UntPlanWeb';
+  document.title = 'Anmelden – UntPlan';
   const form = anmeldeRahmen('Anmelden', `<form autocomplete="on">
-      <label class="lg-feld"><span>Benutzername</span><input id="login" name="login" autocomplete="username" placeholder="z. B. mustermann" required autofocus></label>
-      <label class="lg-feld"><span>Passwort</span><input id="passwort" name="passwort" type="password" autocomplete="current-password" placeholder="Passwort eingeben" required></label>
+      <label class="lg-feld"><span>Benutzername</span><input id="login" name="login" autocomplete="username" required autofocus></label>
+      <label class="lg-feld"><span>Passwort</span><input id="passwort" name="passwort" type="password" autocomplete="current-password" required></label>
       <div data-meldung></div>
       <button class="btn btn-primary lg-login" type="submit">Anmelden</button>
       <button type="button" class="lg-vergessen" data-vergessen aria-expanded="false">Passwort vergessen?</button>
       <p class="lg-hinweis d-none" data-vergessen-text>Ein neues Passwort vergibt die Administration Ihrer Schule. Bitte wenden Sie sich dorthin.</p>
-    </form>`, 'Mit Ihrem Schulkonto weiter zu Stundenplan und Klassenbuch.');
+    </form>`, 'Mit dem Konto Ihrer Schule.');
   // Zugriff gesperrt (Wartungsmodus): Hinweis der Administration über dem Formular
   holen('/api/app/zugriff').then(z => {
     if (z.gesperrt) form.querySelector('[data-meldung]').insertAdjacentHTML('beforebegin', `<div class="lg-wartung" role="status"><i class="bi bi-lock" aria-hidden="true"></i><span>${e(z.hinweis)}</span></div>`);
@@ -263,16 +238,15 @@ function anmeldung() {
 }
 
 function einrichtung() {
-  document.title = 'Einrichtung – UntPlanWeb';
+  document.title = 'Einrichtung – UntPlan';
   const form = anmeldeRahmen('Ersteinrichtung', `<form>
-      <p class="small text-body-secondary text-center">Legen Sie die Schule und das Administrationskonto an.</p>
       <div class="mb-3"><label class="form-label">Name der Schule</label><input class="form-control" name="schulname" required autofocus></div>
       <div class="mb-3"><label class="form-label">Benutzername</label><input class="form-control" name="login" value="admin" required autocomplete="username"></div>
       <div class="mb-3"><label class="form-label">Passwort</label><input class="form-control" name="passwort" type="password" minlength="8" required autocomplete="new-password"><div class="form-text">Mindestens 8 Zeichen.</div></div>
       <div class="mb-3"><label class="form-label">Passwort wiederholen</label><input class="form-control" name="passwort2" type="password" minlength="8" required autocomplete="new-password"></div>
       <div data-meldung></div>
       <button class="btn btn-primary w-100" type="submit">Einrichten</button>
-    </form>`);
+    </form>`, 'Legen Sie die Schule und das Administrationskonto an.');
   form.onsubmit = async ev => {
     ev.preventDefault();
     if (form.passwort.value !== form.passwort2.value) return meldung(form, 'Die Passwörter stimmen nicht überein.');
@@ -286,16 +260,15 @@ function einrichtung() {
 }
 
 function passwortPflicht() {
-  document.title = 'Passwort ändern – UntPlanWeb';
+  document.title = 'Passwort ändern – UntPlan';
   const form = anmeldeRahmen('Neues Passwort festlegen', `<form>
-      <p class="small text-body-secondary text-center">Bitte vergeben Sie vor der ersten Nutzung ein eigenes Passwort.</p>
       <div class="mb-3"><label class="form-label">Bisheriges Passwort</label><input class="form-control" name="alt" type="password" required autocomplete="current-password" autofocus></div>
       <div class="mb-3"><label class="form-label">Neues Passwort</label><input class="form-control" name="neu" type="password" minlength="8" required autocomplete="new-password"><div class="form-text">Mindestens 8 Zeichen.</div></div>
       <div class="mb-3"><label class="form-label">Neues Passwort wiederholen</label><input class="form-control" name="neu2" type="password" minlength="8" required autocomplete="new-password"></div>
       <div data-meldung></div>
       <button class="btn btn-primary w-100 mb-2" type="submit">Speichern</button>
       <button class="btn btn-link w-100 btn-sm" type="button" data-abmelden>Abmelden</button>
-    </form>`);
+    </form>`, 'Bitte vergeben Sie vor der ersten Nutzung ein eigenes Passwort.');
   form.querySelector('[data-abmelden]').onclick = abmelden;
   form.onsubmit = async ev => {
     ev.preventDefault();
@@ -313,154 +286,164 @@ async function abmelden() {
   start();
 }
 
-// ------------------------------------------------------------------ Menü (Aufbau wie im Original)
+// ------------------------------------------------------------------ Bereiche und Reiter
 
-/** Haupt- und Untermenüpunkte je nach Rolle. Ein Punkt hat nav (Schlüssel für „aktiv“), href, text, icon. */
+/**
+ * Hauptbereiche je Rolle. Ein Bereich hat id, text, icon und unter (Reiter); ein Reiter hat nav (Schlüssel für „aktiv“ und die Rechte-
+ * prüfung im Router), href und text; abschnitt trennt Reitergruppen durch einen Strich; gruppe (mit unter) bildet einen Reiter mit
+ * Auswahlliste (Verwaltung). prio: Reihenfolge in der unteren Leiste auf dem Telefon (die vier kleinsten Werte).
+ */
 function menue() {
   const b = sitzung.benutzer;
   const k = b.kollegium;
   const m = [
-    { id: 'heute', nav: 'heute', href: '#/heute', text: 'Heute', icon: 'dashboard' },
-    { id: 'uebersicht', nav: 'uebersicht', href: '#/uebersicht', text: 'Übersicht', icon: 'uebersicht' },
-    { id: 'mitteilungen', text: 'Mitteilungen', icon: 'mitteilungen', zaehler: true, unter: [
-      { nav: 'mitteilungen', href: '#/mitteilungen', text: 'Posteingang', icon: 'posteingang', zaehler: true },
-      { nav: 'mitteilungen-gesendet', href: '#/mitteilungen/gesendet', text: 'Gesendet', icon: 'gesendet' },
-      { nav: 'mitteilungen-entwuerfe', href: '#/mitteilungen/entwuerfe', text: 'Entwürfe', icon: 'entwuerfe' },
-      ...(k ? [{ nav: 'mitteilungen-listen', href: '#/mitteilungen/listen', text: 'Listen', icon: 'listen' }] : []),
-      ...(b.rolle === 'admin' ? [{ nav: 'mitteilungen-einstellungen', href: '#/mitteilungen/einstellungen', text: 'Einstellungen', icon: 'verwaltung' }] : []),
+    { id: 'heute', text: 'Heute', icon: 'heute', prio: 1, unter: [
+      { nav: 'heute', href: '#/heute', text: 'Mein Tag' },
+      { nav: 'uebersicht', href: '#/uebersicht', text: 'Überblick' },
+    ] },
+    { id: 'mitteilungen', text: 'Kommunikation', icon: 'kommunikation', prio: 5, zaehler: true, unter: [
+      { nav: 'mitteilungen', href: '#/mitteilungen', text: 'Posteingang', zaehler: true },
+      { nav: 'mitteilungen-gesendet', href: '#/mitteilungen/gesendet', text: 'Gesendet' },
+      { nav: 'mitteilungen-entwuerfe', href: '#/mitteilungen/entwuerfe', text: 'Entwürfe' },
+      ...(k ? [{ nav: 'mitteilungen-listen', href: '#/mitteilungen/listen', text: 'Verteilerlisten' }] : []),
+      ...(b.rolle === 'admin' ? [{ nav: 'mitteilungen-einstellungen', href: '#/mitteilungen/einstellungen', text: 'Einstellungen' }] : []),
     ] },
   ];
   const plaene = [];
-  if (b.element) plaene.push({ nav: 'plan-mein', href: '#/plan/mein', text: 'Mein Stundenplan', icon: 'meinplan' });
-  plaene.push({ nav: 'plan-klasse', href: '#/plan/klasse', text: 'Klasse', icon: 'klasse' });
-  if (k) plaene.push({ nav: 'plan-lehrer', href: '#/plan/lehrer', text: 'Lehrkraft', icon: 'lehrkraft' });
-  plaene.push({ nav: 'plan-raum', href: '#/plan/raum', text: 'Raum', icon: 'raumplan' });
+  if (b.element) plaene.push({ nav: 'plan-mein', href: '#/plan/mein', text: 'Mein Plan' });
+  plaene.push({ nav: 'plan-klasse', href: '#/plan/klasse', text: 'Klassen' });
+  if (k) plaene.push({ nav: 'plan-lehrer', href: '#/plan/lehrer', text: 'Lehrkräfte' });
+  plaene.push({ nav: 'plan-raum', href: '#/plan/raum', text: 'Räume' });
   if (k) {
-    plaene.push({ nav: 'tag-klasse', href: '#/tag/klasse', text: 'Tag - Klassen', icon: 'tagklassen' });
-    plaene.push({ nav: 'tag-lehrer', href: '#/tag/lehrer', text: 'Tag - Lehrkräfte', icon: 'taglehrer' });
-    plaene.push({ nav: 'tag-raum', href: '#/tag/raum', text: 'Tag - Räume', icon: 'tagraeume' });
-    plaene.push({ nav: 'vertretungen', href: '#/vertretungen', text: 'Vertretungsplan', icon: 'vertretungen' });
-    m.push({ id: 'stundenplan', text: 'Stundenplan', icon: 'stundenplan', unter: plaene });
-    // Unterricht wie in der Vorlage: Mein Unterricht, Klasse, Schüler*in, Prüfungen, Prüfungskalender, Aufgaben, Lehrkraft - Tag, Klasse - Tag
-    m.push({ id: 'unterricht', text: 'Unterricht', icon: 'unterricht', unter: [
-      { nav: 'unterricht', href: '#/unterricht', text: b.element ? 'Mein Unterricht' : 'Unterricht', icon: 'meineunterrichte' },
-      { nav: 'buchen-unterricht', href: '#/buchen/unterricht', text: 'Neuer Unterricht', icon: 'meineunterrichte' },
-      { nav: 'unterricht-klasse', href: '#/unterricht/klasse', text: 'Klasse', icon: 'klasse' },
-      // Unterricht Klassen (unterrichtklassen.js): Schülergruppen, Abmeldungen, befristeter Unterrichtswechsel
-      ...(b.rechte?.['unterricht.klassen'] ? [{ nav: 'unterrichtklassen', href: '#/unterrichtklassen', text: 'Unterricht Klassen', icon: 'benutzer' }] : []),
-      { nav: 'schueler', href: '#/schueler', text: 'Schüler*in', icon: 'benutzer' },
-      { nav: 'pruefungen', href: '#/pruefungen', text: 'Prüfungen', icon: 'klausur' },
-      { nav: 'pruefungskalender', href: '#/pruefungskalender', text: 'Prüfungskalender', icon: 'pruefung' },
-      { nav: 'aufgaben', href: '#/aufgaben', text: 'Aufgaben', icon: 'vertretungen' },
-      { nav: 'u-tag-lehrer', href: '#/tag/lehrer/-/u', text: 'Lehrkraft - Tag', icon: 'taglehrer' },
-      { nav: 'u-tag-klasse', href: '#/tag/klasse/-/u', text: 'Klasse - Tag', icon: 'tagklassen' },
-      ...(b.admin || b.rechte?.['klassenbuch.einstellungen'] ? [{ nav: 'kbeinstellungen-unterricht', href: '#/kbeinstellungen/unterricht', text: 'Einstellungen', icon: 'verwaltung' }] : []),
+    plaene.push({ nav: 'tag-klasse', href: '#/tag/klasse', text: 'Klassen am Tag', abschnitt: 'tag' });
+    plaene.push({ nav: 'tag-lehrer', href: '#/tag/lehrer', text: 'Lehrkräfte am Tag', abschnitt: 'tag' });
+    plaene.push({ nav: 'tag-raum', href: '#/tag/raum', text: 'Räume am Tag', abschnitt: 'tag' });
+    m.push({ id: 'stundenplan', text: 'Stundenplan', icon: 'stundenplan', prio: 2, unter: plaene });
+    m.push({ id: 'vertretungen', text: 'Vertretungen', icon: 'vertretungen', prio: 3, unter: [
+      { nav: 'vertretungen', href: '#/vertretungen', text: 'Vertretungsplan' },
     ] });
-    m.push({ id: 'klassenbuch', text: 'Klassenbuch', icon: 'klassenbuchnav', unter: [
-      { nav: 'klassenbuch', href: '#/klassenbuch', text: 'Übersicht', icon: 'uebersicht' },
-      { nav: 'offen', href: '#/offen', text: 'Offene Stunden', icon: 'offen' },
-      { nav: 'eintraege', href: '#/eintraege', text: 'Klassenbucheinträge', icon: 'eintraege' },
-      { nav: 'hausaufgaben', href: '#/hausaufgaben', text: 'Hausaufgaben', icon: 'hausaufgaben' },
-      { nav: 'dienste', href: '#/dienste', text: 'Klassendienste', icon: 'klassendienste' },
-      { nav: 'berichte', href: '#/berichte', text: 'Berichte', icon: 'berichte' },
-      { nav: 'klassenbuch-woche', href: '#/klassenbuch/-/woche', text: 'Wochenübersicht', icon: 'woche' },
-      ...(b.fehlzeiten ? [{ nav: 'abwesenheiten', href: '#/abwesenheiten', text: 'Abwesenheiten', icon: 'abwesenheiten' },
-        { nav: 'fehlzeiten', href: '#/klassenbuch/-/fehlzeiten', text: 'Fehlzeiten', icon: 'fehlzeiten' }] : []),
+    // Unterricht: eigener Unterricht, Lerngruppen, Schüler*innen, Prüfungen, Aufgaben, Tageslisten
+    m.push({ id: 'unterricht', text: 'Unterricht', icon: 'unterricht', prio: 6, unter: [
+      { nav: 'unterricht', href: '#/unterricht', text: b.element ? 'Mein Unterricht' : 'Unterricht' },
+      { nav: 'unterricht-klasse', href: '#/unterricht/klasse', text: 'Klassen' },
+      // Lerngruppen (unterrichtklassen.js): Schülergruppen, Abmeldungen, befristeter Unterrichtswechsel
+      ...(b.rechte?.['unterricht.klassen'] ? [{ nav: 'unterrichtklassen', href: '#/unterrichtklassen', text: 'Lerngruppen' }] : []),
+      { nav: 'schueler', href: '#/schueler', text: 'Schüler*innen' },
+      { nav: 'buchen-unterricht', href: '#/buchen/unterricht', text: 'Unterricht anlegen' },
+      { nav: 'pruefungen', href: '#/pruefungen', text: 'Prüfungen', abschnitt: 'pruefung' },
+      { nav: 'pruefungskalender', href: '#/pruefungskalender', text: 'Prüfungskalender', abschnitt: 'pruefung' },
+      { nav: 'aufgaben', href: '#/aufgaben', text: 'Aufgaben', abschnitt: 'pruefung' },
+      { nav: 'u-tag-lehrer', href: '#/tag/lehrer/-/u', text: 'Tagesliste Lehrkraft', abschnitt: 'tag' },
+      { nav: 'u-tag-klasse', href: '#/tag/klasse/-/u', text: 'Tagesliste Klasse', abschnitt: 'tag' },
+      ...(b.admin || b.rechte?.['klassenbuch.einstellungen'] ? [{ nav: 'kbeinstellungen-unterricht', href: '#/kbeinstellungen/unterricht', text: 'Einstellungen', abschnitt: 'einst' }] : []),
+    ] });
+    m.push({ id: 'klassenbuch', text: 'Klassenbuch', icon: 'klassenbuchnav', prio: 4, unter: [
+      { nav: 'klassenbuch', href: '#/klassenbuch', text: 'Übersicht' },
+      { nav: 'klassenbuch-woche', href: '#/klassenbuch/-/woche', text: 'Woche' },
+      { nav: 'offen', href: '#/offen', text: 'Unbearbeitete Stunden' },
+      { nav: 'eintraege', href: '#/eintraege', text: 'Einträge' },
+      { nav: 'hausaufgaben', href: '#/hausaufgaben', text: 'Hausaufgaben' },
+      { nav: 'dienste', href: '#/dienste', text: 'Dienste' },
+      ...(b.fehlzeiten ? [{ nav: 'abwesenheiten', href: '#/abwesenheiten', text: 'Abwesenheiten', abschnitt: 'fehl' },
+        { nav: 'fehlzeiten', href: '#/klassenbuch/-/fehlzeiten', text: 'Fehlzeiten', abschnitt: 'fehl' }] : []),
       // Fachlehrer-Entschuldigungen: Fehlstunden des eigenen Unterrichts entschuldigen
-      ...(b.fachlehrerEntschuldigungen ? [{ nav: 'entschuldigen', href: '#/entschuldigen', text: b.fehlzeiten ? 'Fehlzeiten eigener Unterricht' : 'Fehlzeiten', icon: 'fehlzeiten' }] : []),
-      { nav: 'befreiungen', href: '#/befreiungen', text: 'Befreiungen', icon: 'befreiungen' },
-      { nav: 'sitzplan', href: '#/sitzplan', text: 'Sitzplan', icon: 'sitzplan', verborgen: true },
-      ...(b.admin || b.rechte?.['klassenbuch.einstellungen'] ? [{ nav: 'kbeinstellungen', href: '#/kbeinstellungen', text: 'Einstellungen', icon: 'verwaltung' }] : []),
+      ...(b.fachlehrerEntschuldigungen ? [{ nav: 'entschuldigen', href: '#/entschuldigen', text: b.fehlzeiten ? 'Fehlzeiten eigener Unterricht' : 'Fehlzeiten', abschnitt: 'fehl' }] : []),
+      { nav: 'befreiungen', href: '#/befreiungen', text: 'Befreiungen', abschnitt: 'fehl' },
+      { nav: 'sitzplan', href: '#/sitzplan', text: 'Sitzplan', verborgen: true },
+      { nav: 'berichte', href: '#/berichte', text: 'Berichte', abschnitt: 'bericht' },
+      ...(b.admin || b.rechte?.['klassenbuch.einstellungen'] ? [{ nav: 'kbeinstellungen', href: '#/kbeinstellungen', text: 'Einstellungen', abschnitt: 'bericht' }] : []),
     ] });
-    m.push({ id: 'melden', text: 'Melden', icon: 'ruckmeldung', unter: [
+    // Melden (Rückmeldungen an die Planung) und Buchen (buchen.js: Räume, Ressourcen, Aktivitäten; Verwaltung nur für die Administration)
+    m.push({ id: 'melden', text: 'Melden & Buchen', icon: 'meldenbuchen', prio: 7, unter: [
       { nav: 'melden-uebersicht', href: '#/melden', text: 'Übersicht', icon: 'ruckmeldung' },
-      { nav: 'melden-abwesenheit', href: '#/melden/abwesenheit', text: 'Abwesenheit melden', icon: 'abwesend' },
-      { nav: 'melden-klausur', href: '#/melden/klausur', text: 'Prüfung eintragen', icon: 'klausur' },
-      { nav: 'melden-meine', href: '#/melden/meine', text: 'Meine Meldungen', icon: 'protokoll' },
-    ] });
-    // Buchungsmodul (buchen.js): Räume, Ressourcen, Aktivitäten; Verwaltung der Ressourcen und Raumdaten nur für die Administration
-    m.push({ id: 'buchen', text: 'Buchen', icon: 'meldenbuchen', unter: [
-      { nav: 'buchen-raum', href: '#/buchen/raum', text: 'Raum buchen', icon: 'raum' },
-      { nav: 'buchen-ressource', href: '#/buchen/ressource', text: 'Ressource buchen', icon: 'ressource' },
-      { nav: 'buchen-aktivitaet', href: '#/buchen/aktivitaet', text: 'Neue Aktivität', icon: 'meineunterrichte' },
-      { nav: 'buchen-meine', href: '#/buchen/meine', text: 'Meine Buchungen', icon: 'protokoll' },
-      { nav: 'buchen-raeume', href: '#/buchen/raeume', text: 'Raumübersicht', icon: 'tagraeume' },
-      { nav: 'buchen-ressourcen', href: '#/buchen/ressourcen', text: 'Ressourcenübersicht', icon: 'woche' },
-      ...(b.admin ? [{ nav: 'buchen-verwaltung', href: '#/buchen/verwaltung', text: 'Ressourcen verwalten', icon: 'stammdaten' },
-        { nav: 'buchen-raumdaten', href: '#/buchen/raumdaten', text: 'Raumdaten', icon: 'raumplan' }] : []),
+      { nav: 'melden-abwesenheit', href: '#/melden/abwesenheit', text: 'Abwesenheit melden' },
+      { nav: 'melden-klausur', href: '#/melden/klausur', text: 'Prüfung eintragen' },
+      { nav: 'melden-meine', href: '#/melden/meine', text: 'Meine Meldungen' },
+      { nav: 'buchen-raum', href: '#/buchen/raum', text: 'Raum buchen', abschnitt: 'buchen' },
+      { nav: 'buchen-ressource', href: '#/buchen/ressource', text: 'Ressource buchen', abschnitt: 'buchen' },
+      { nav: 'buchen-aktivitaet', href: '#/buchen/aktivitaet', text: 'Aktivität anlegen', abschnitt: 'buchen' },
+      { nav: 'buchen-meine', href: '#/buchen/meine', text: 'Meine Buchungen', abschnitt: 'buchen' },
+      { nav: 'buchen-raeume', href: '#/buchen/raeume', text: 'Raumbelegung', abschnitt: 'belegung' },
+      { nav: 'buchen-ressourcen', href: '#/buchen/ressourcen', text: 'Ressourcenbelegung', abschnitt: 'belegung' },
+      ...(b.admin ? [{ nav: 'buchen-verwaltung', href: '#/buchen/verwaltung', text: 'Ressourcen verwalten', abschnitt: 'belegung' },
+        { nav: 'buchen-raumdaten', href: '#/buchen/raumdaten', text: 'Raumdaten', abschnitt: 'belegung' }] : []),
     ] });
   } else if (familie(b)) {
-    // Schüler*innen und Erziehungsberechtigte wie im Original: Heute, Übersicht, Mitteilungen, Mein Stundenplan, Weitere Stundenpläne,
-    // Abwesenheiten, Hausaufgaben (Lehrerpläne gibt es nicht)
-    m[1] = { id: 'uebersicht', nav: 'uebersicht', href: '#/uebersicht', text: 'Übersicht', icon: 'meinedaten' };
-    // Mitteilungen mit Untermenü nach den Rechten (Mitteilungs-Einstellungen und Rechte-Modell): Posteingang immer; Gesendet und Entwürfe,
+    // Schüler*innen und Erziehungsberechtigte: Heute, Überblick, Stundenpläne (eigener Plan, Klassen, Räume), Abwesenheiten,
+    // Hausaufgaben, Kommunikation (Lehrerpläne gibt es nicht)
+    // Kommunikation nach den Rechten (Mitteilungs-Einstellungen und Rechte-Modell): Posteingang immer; Gesendet und Entwürfe,
     // wenn das Konto schreiben oder antworten darf; Verfassen nur mit Senderecht (an die erlaubten Lehrkräfte/Klassenleitung)
     const mt = b.mitteilungen ?? { senden: false, antworten: false };
-    m[2] = { id: 'mitteilungen', text: 'Mitteilungen', icon: 'mitteilungen', zaehler: true, unter: [
-      { nav: 'mitteilungen', href: '#/mitteilungen', text: 'Posteingang', icon: 'posteingang', zaehler: true },
-      ...(mt.senden || mt.antworten ? [{ nav: 'mitteilungen-gesendet', href: '#/mitteilungen/gesendet', text: 'Gesendet', icon: 'gesendet' },
-        { nav: 'mitteilungen-entwuerfe', href: '#/mitteilungen/entwuerfe', text: 'Entwürfe', icon: 'entwuerfe' }] : []),
-      ...(mt.senden ? [{ nav: 'mitteilungen-verfassen', href: '#/mitteilungen/verfassen', text: 'Verfassen', icon: 'verfassen' }] : []),
+    m[1] = { id: 'mitteilungen', text: 'Kommunikation', icon: 'kommunikation', prio: 4, zaehler: true, unter: [
+      { nav: 'mitteilungen', href: '#/mitteilungen', text: 'Posteingang', zaehler: true },
+      ...(mt.senden || mt.antworten ? [{ nav: 'mitteilungen-gesendet', href: '#/mitteilungen/gesendet', text: 'Gesendet' },
+        { nav: 'mitteilungen-entwuerfe', href: '#/mitteilungen/entwuerfe', text: 'Entwürfe' }] : []),
+      ...(mt.senden ? [{ nav: 'mitteilungen-verfassen', href: '#/mitteilungen/verfassen', text: 'Verfassen' }] : []),
     ] };
-    if (b.element) m.push({ id: 'plan-mein', nav: 'plan-mein', href: '#/plan/mein', text: 'Mein Stundenplan', icon: 'meinplan' });
-    m.push({ id: 'weitere', text: 'Weitere Stundenpläne', icon: 'stundenplan', unter: plaene.filter(p => p.nav !== 'plan-mein') });
-    m.push({ id: 'abwesenheiten', nav: 'abwesenheiten', href: '#/abwesenheiten', text: 'Abwesenheiten', icon: 'abwesenheiten' });
-    m.push({ id: 'hausaufgaben', nav: 'hausaufgaben', href: '#/hausaufgaben', text: 'Hausaufgaben', icon: 'hausaufgaben' });
+    m.push({ id: 'stundenplan', text: 'Stundenplan', icon: 'stundenplan', prio: 2, unter: plaene });
+    m.push({ id: 'abwesenheiten', text: 'Abwesenheiten', icon: 'abwesenheiten', prio: 5, unter: [{ nav: 'abwesenheiten', href: '#/abwesenheiten', text: 'Abwesenheiten' }] });
+    m.push({ id: 'hausaufgaben', text: 'Hausaufgaben', icon: 'hausaufgaben', prio: 3, unter: [{ nav: 'hausaufgaben', href: '#/hausaufgaben', text: 'Hausaufgaben' }] });
   } else {
-    if (b.element) m.push({ id: 'plan-mein', nav: 'plan-mein', href: '#/plan/mein', text: 'Mein Stundenplan', icon: 'meinplan' });
-    m.push({ id: 'weitere', text: 'Weitere Stundenpläne', icon: 'stundenplan', unter: plaene.filter(p => p.nav !== 'plan-mein') });
-    m.push({ id: 'vertretungen', nav: 'vertretungen', href: '#/vertretungen', text: 'Vertretungsplan', icon: 'vertretungen' });
-    m.push({ id: 'hausaufgaben', nav: 'hausaufgaben', href: '#/hausaufgaben', text: 'Hausaufgaben', icon: 'hausaufgaben' });
-    m.push({ id: 'pruefungen', nav: 'pruefungen', href: '#/pruefungen', text: 'Prüfungen', icon: 'pruefung' });
+    m.push({ id: 'stundenplan', text: 'Stundenplan', icon: 'stundenplan', prio: 2, unter: plaene });
+    m.push({ id: 'vertretungen', text: 'Vertretungen', icon: 'vertretungen', prio: 3, unter: [{ nav: 'vertretungen', href: '#/vertretungen', text: 'Vertretungsplan' }] });
+    m.push({ id: 'hausaufgaben', text: 'Hausaufgaben', icon: 'hausaufgaben', prio: 4, unter: [{ nav: 'hausaufgaben', href: '#/hausaufgaben', text: 'Hausaufgaben' }] });
+    m.push({ id: 'pruefungen', text: 'Prüfungen', icon: 'pruefungen', prio: 6, unter: [{ nav: 'pruefungen', href: '#/pruefungen', text: 'Prüfungen' }] });
   }
   // Sprechtag (sprechtag.js): Lehrkräfte, Schulleitung, Administration, Erziehungsberechtigte und Schüler*innen (nur lesen – Ankündigung, eigene Termine)
-  if (k || b.rolle === 'eltern' || b.rolle === 'schueler') m.push({ id: 'sprechtag', nav: 'sprechtag', href: '#/sprechtag', text: 'Sprechtag', icon: 'aktive' });
+  if (k || b.rolle === 'eltern' || b.rolle === 'schueler') m.find(x => x.id === 'mitteilungen').unter.push({ id: 'sprechtag', nav: 'sprechtag', href: '#/sprechtag', text: 'Sprechtag', abschnitt: 'sprechtag' });
   if (b.admin) {
-    m.push({ id: 'stammdaten', text: 'Stammdaten', icon: 'stammdaten', unter: [
-      { nav: 'stammdaten-klassen', href: '#/stammdaten/klassen', text: 'Klassen', icon: 'klasse' },
-      { nav: 'stammdaten-schueler', href: '#/stammdaten/schueler', text: 'Schüler*innen', icon: 'benutzer' },
-      { nav: 'stammdaten-lehrer', href: '#/stammdaten/lehrer', text: 'Lehrkräfte', icon: 'lehrkraft' },
-      { nav: 'stammdaten-faecher', href: '#/stammdaten/faecher', text: 'Fächer', icon: 'klausur' },
-      { nav: 'stammdaten-raeume', href: '#/stammdaten/raeume', text: 'Räume', icon: 'raumplan' },
-      { nav: 'stammdaten-versionen', href: '#/stammdaten/versionen', text: 'Stundenplan-Versionen', icon: 'versionen' },
-      { nav: 'stammdaten-gruende', href: '#/stammdaten/gruende', text: 'Abwesenheitsgründe', icon: 'abwesenheiten' },
-      { nav: 'stammdaten-dienste', href: '#/stammdaten/dienste', text: 'Dienste', icon: 'klassendienste' },
-      { nav: 'stammdaten-notenschemen', href: '#/stammdaten/notenschemen', text: 'Notenschemen', icon: 'berichte' },
-      { nav: 'stammdaten-pruefungsarten', href: '#/stammdaten/pruefungsarten', text: 'Prüfungsarten', icon: 'klausur' },
-    ] });
-    m.push({ id: 'admin', text: 'Administration', icon: 'verwaltung', unter: [
-      { nav: 'admin-sync', href: '#/admin/sync', text: 'Übersicht & Synchronisation', icon: 'synchron' },
-      { nav: 'admin-nachrichten', href: '#/admin/nachrichten', text: 'Nachrichten zum Tag', icon: 'nachrichten' },
-      { nav: 'hinweise', href: '#/hinweise', text: 'Hinweise Anmeldeseite', icon: 'info' },
-      { nav: 'admin-freietage', href: '#/admin/freietage', text: 'Freie Tage & Ferien', icon: 'freietage' },
-      { nav: 'admin-import', href: '#/admin/import', text: 'Import', icon: 'import' },
-      { nav: 'admin-export', href: '#/admin/export', text: 'Export', icon: 'export' },
-      { nav: 'admin-aktive', href: '#/admin/aktive', text: 'Aktive Benutzer', icon: 'aktive' },
-      { nav: 'admin-zugriff', href: '#/admin/zugriff', text: 'Zugriff ent-/sperren', icon: 'sperre' },
-      { nav: 'admin-ueber', href: '#/admin/ueber', text: 'Über UntPlan', icon: 'info' },
-      { nav: 'admin-rechte', href: '#/admin/rechte', text: 'Rechte und Rollen', icon: 'rechte' },
-      { nav: 'admin-benutzer', href: '#/admin/benutzer', text: 'Benutzer', icon: 'benutzer' },
-      { nav: 'admin-personen', href: '#/admin/personen', text: 'Personen & Konten', icon: 'lehrkraft' },
-      { nav: 'admin-zuordnung', href: '#/admin/zuordnung', text: 'Zuordnungsgruppen', icon: 'zuordnung' },
-      { nav: 'admin-rueckmeldungen', href: '#/admin/rueckmeldungen', text: 'Rückmeldungen', icon: 'ruckmeldung' },
-      { nav: 'admin-sperren', href: '#/admin/sperren', text: 'Prüfungssperren', icon: 'sperre' },
-      { nav: 'admin-verspaetung', href: '#/admin/verspaetung', text: 'Verspätungen & Fehlzeiten', icon: 'abwesenheiten' },
-      { nav: 'admin-ansicht', href: '#/admin/ansicht', text: 'Ansichtseinstellungen', icon: 'ansicht' },
-      { nav: 'admin-monitore', href: '#/admin/monitore', text: 'Monitoransichten', icon: 'monitor' },
-      { nav: 'admin-protokoll', href: '#/admin/protokoll', text: 'Protokoll', icon: 'protokoll' },
+    m.push({ id: 'admin', text: 'Verwaltung', icon: 'verwaltung', prio: 9, unter: [
+      { nav: 'admin-sync', href: '#/admin/sync', text: 'Übersicht' },
+      { gruppe: 'stammdaten', text: 'Stammdaten', unter: [
+        { nav: 'stammdaten-klassen', href: '#/stammdaten/klassen', text: 'Klassen' },
+        { nav: 'stammdaten-schueler', href: '#/stammdaten/schueler', text: 'Schüler*innen' },
+        { nav: 'stammdaten-lehrer', href: '#/stammdaten/lehrer', text: 'Lehrkräfte' },
+        { nav: 'stammdaten-faecher', href: '#/stammdaten/faecher', text: 'Fächer' },
+        { nav: 'stammdaten-raeume', href: '#/stammdaten/raeume', text: 'Räume' },
+        { nav: 'stammdaten-versionen', href: '#/stammdaten/versionen', text: 'Stundenplan-Versionen' },
+        { nav: 'stammdaten-gruende', href: '#/stammdaten/gruende', text: 'Abwesenheitsgründe' },
+        { nav: 'stammdaten-dienste', href: '#/stammdaten/dienste', text: 'Dienste' },
+        { nav: 'stammdaten-notenschemen', href: '#/stammdaten/notenschemen', text: 'Notenschemen' },
+        { nav: 'stammdaten-pruefungsarten', href: '#/stammdaten/pruefungsarten', text: 'Prüfungsarten' },
+      ] },
+      { gruppe: 'benutzer', text: 'Benutzer & Rechte', unter: [
+        { nav: 'admin-benutzer', href: '#/admin/benutzer', text: 'Benutzer' },
+        { nav: 'admin-personen', href: '#/admin/personen', text: 'Personen & Konten' },
+        { nav: 'admin-rechte', href: '#/admin/rechte', text: 'Rechte und Rollen' },
+        { nav: 'admin-zuordnung', href: '#/admin/zuordnung', text: 'Zuordnungsgruppen' },
+        { nav: 'admin-aktive', href: '#/admin/aktive', text: 'Aktive Benutzer' },
+      ] },
+      { gruppe: 'inhalte', text: 'Inhalte', unter: [
+        { nav: 'admin-nachrichten', href: '#/admin/nachrichten', text: 'Nachrichten zum Tag' },
+        { nav: 'hinweise', href: '#/hinweise', text: 'Hinweise auf der Anmeldeseite' },
+        { nav: 'admin-freietage', href: '#/admin/freietage', text: 'Freie Tage & Ferien' },
+        { nav: 'admin-monitore', href: '#/admin/monitore', text: 'Monitore' },
+      ] },
+      { gruppe: 'daten', text: 'Daten', unter: [
+        { nav: 'admin-import', href: '#/admin/import', text: 'Import' },
+        { nav: 'admin-export', href: '#/admin/export', text: 'Export' },
+        { nav: 'admin-rueckmeldungen', href: '#/admin/rueckmeldungen', text: 'Rückmeldungen' },
+        { nav: 'admin-protokoll', href: '#/admin/protokoll', text: 'Protokoll' },
+      ] },
+      { gruppe: 'einstellungen', text: 'Einstellungen', unter: [
+        { nav: 'admin-ansicht', href: '#/admin/ansicht', text: 'Darstellung' },
+        { nav: 'admin-sperren', href: '#/admin/sperren', text: 'Prüfungssperren' },
+        { nav: 'admin-verspaetung', href: '#/admin/verspaetung', text: 'Verspätungen & Fehlzeiten' },
+        { nav: 'admin-zugriff', href: '#/admin/zugriff', text: 'Zugriff sperren' },
+        { nav: 'admin-ueber', href: '#/admin/ueber', text: 'Version & Updates' },
+      ] },
     ] });
   } else {
-    // Rechte-Modell: einzelne Administrationsbereiche auch ohne Administration (Nachrichten zum Tag, Import, Benutzerverwaltung)
+    // Rechte-Modell: einzelne Verwaltungsbereiche auch ohne Administration (Nachrichten zum Tag, Import, Benutzerverwaltung)
     const r = b.rechte ?? {};
     const unter = [];
-    if (b.nachrichten) unter.push({ nav: 'admin-nachrichten', href: '#/admin/nachrichten', text: 'Nachrichten zum Tag', icon: 'nachrichten' });
-    if (r['infocenter.verwalten']) unter.push({ nav: 'hinweise', href: '#/hinweise', text: 'Hinweise Anmeldeseite', icon: 'info' });
-    if (r['admin.import']) unter.push({ nav: 'admin-import', href: '#/admin/import', text: 'Import', icon: 'import' });
-    if (r['admin.wartung']) unter.push({ nav: 'admin-aktive', href: '#/admin/aktive', text: 'Aktive Benutzer', icon: 'aktive' },
-      { nav: 'admin-zugriff', href: '#/admin/zugriff', text: 'Zugriff ent-/sperren', icon: 'sperre' }, { nav: 'admin-ueber', href: '#/admin/ueber', text: 'Über UntPlan', icon: 'info' });
-    if (r['admin.benutzer']) unter.push({ nav: 'admin-benutzer', href: '#/admin/benutzer', text: 'Benutzer', icon: 'benutzer' }, { nav: 'admin-personen', href: '#/admin/personen', text: 'Personen & Konten', icon: 'lehrkraft' });
-    if (unter.length === 1) m.push({ id: 'admin', ...unter[0] });
-    else if (unter.length) m.push({ id: 'admin', text: 'Administration', icon: 'verwaltung', unter });
+    if (b.nachrichten) unter.push({ nav: 'admin-nachrichten', href: '#/admin/nachrichten', text: 'Nachrichten zum Tag' });
+    if (r['infocenter.verwalten']) unter.push({ nav: 'hinweise', href: '#/hinweise', text: 'Hinweise auf der Anmeldeseite' });
+    if (r['admin.import']) unter.push({ nav: 'admin-import', href: '#/admin/import', text: 'Import' });
+    if (r['admin.wartung']) unter.push({ nav: 'admin-aktive', href: '#/admin/aktive', text: 'Aktive Benutzer' },
+      { nav: 'admin-zugriff', href: '#/admin/zugriff', text: 'Zugriff sperren' }, { nav: 'admin-ueber', href: '#/admin/ueber', text: 'Version & Updates' });
+    if (r['admin.benutzer']) unter.push({ nav: 'admin-benutzer', href: '#/admin/benutzer', text: 'Benutzer' }, { nav: 'admin-personen', href: '#/admin/personen', text: 'Personen & Konten' });
+    if (unter.length) m.push({ id: 'admin', text: 'Verwaltung', icon: 'verwaltung', prio: 9, unter });
   }
   return m;
 }
@@ -468,14 +451,20 @@ function menue() {
 /** Schüler- bzw. Elternkonto mit zugeordneter Person (eigene Seiten „Meine Daten“); Klassenkonten ohne Zuordnung behalten die Klassenansicht. */
 function familie(b) { return !!b?.familie && (b.rolle === 'eltern' || (b.schuelerIds ?? []).length > 0); }
 
-const allePunkte = () => menue().flatMap(g => g.unter ? g.unter : [g]);
+/** Reiter eines Bereichs, Auswahllisten (gruppe) aufgelöst. */
+const reiterVon = bereich => (bereich?.unter ?? []).flatMap(p => p.gruppe ? p.unter : [p]);
+const allePunkte = () => menue().flatMap(reiterVon);
+/** Bereich, zu dem ein Navigationsschlüssel gehört. */
+function bereichVon(nav) { return sitzung?.benutzer && nav ? menue().find(g => reiterVon(g).some(p => p.nav === nav)) : null; }
+/** Ziel eines Bereichs: der erste sichtbare Reiter. */
+const bereichZiel = g => reiterVon(g).find(p => !p.verborgen)?.href ?? '#/heute';
 
-/** Schlüssel des aktiven Menüpunkts aus der Adresse. */
+/** Schlüssel des aktiven Reiters aus der Adresse. */
 function navAus(teile) {
   const b = sitzung.benutzer;
   const [name, a, c] = teile;
   switch (name) {
-    // „Mein Stundenplan“ nur über #/plan/mein; unter „Lehrkraft“/„Klasse“ bleibt der Menüpunkt aktiv, auch beim eigenen Element
+    // „Mein Plan“ nur über #/plan/mein; unter „Lehrkräfte“/„Klassen“ bleibt der Reiter aktiv, auch beim eigenen Element
     case 'plan': return !a || a === 'mein' ? 'plan-mein' : 'plan-' + a;
     case 'tag': return (teile[3] === 'u' ? 'u-tag-' : 'tag-') + (a || 'klasse');
     case 'unterricht': return a === 'klasse' ? 'unterricht-klasse' : 'unterricht';
@@ -488,12 +477,6 @@ function navAus(teile) {
     case 'admin': return 'admin-' + (a || (b.admin ? 'sync' : 'nachrichten'));
     default: return name || 'heute';
   }
-}
-
-function punktHtml(p) {
-  const attr = p.unter ? `data-gruppe="${p.id}"` : `data-nav="${p.nav}"`;
-  return `<a class="u-nav-punkt" href="${p.unter ? p.unter.find(x => x.href)?.href : p.href}" ${attr} title="${e(p.text)}"><span class="u-nav-sym">${icon(p.icon)}</span><span class="u-nav-text">${e(p.text)}</span>`
-    + `${p.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</a>`;
 }
 
 /** Schuljahre zur Auswahl: das aktuelle aus UntPlan und die sieben vorherigen (1.8. – 31.7.). */
@@ -521,93 +504,30 @@ function schuljahrText() {
   return v === b ? v : `${v}/${b}`;
 }
 
-/** Navigationsleiste neu zeichnen (Haupt- oder Untermenü). */
-function leisteZeichnen() {
-  const leiste = document.getElementById('seitenleiste');
-  if (!leiste) return;
-  const gruppen = menue();
-  const gruppe = gruppen.find(g => g.id === untermenue && g.unter);
-  const jahr = schuljahrText();
-  leiste.classList.toggle('mit-unter', !!gruppe);
-  leiste.querySelector('[data-leistenkopf]').innerHTML = gruppe
-    ? `<div class="u-unterkopf"><button type="button" class="u-zurueck" data-zurueck title="Zurück" aria-label="Zurück">${icon('zurueck')}</button><b title="${e(gruppe.text)}">${e(gruppe.text)}</b></div>`
-    : `<a class="u-marke" href="#/heute" title="UntPlanWeb">${LOGO}<span><b>UntPlanWeb</b><small>${e(sitzung.schule.name || '')}</small></span></a>`;
-  const gw = gewaehltesSchuljahr();
-  leiste.querySelector('[data-jahr]').innerHTML = jahr ? `<span class="u-jahrwahl">
-      <button type="button" class="u-jahr mit-pfeil ${gw.aktuell ? '' : 'anders'}" data-jahrwahl aria-haspopup="listbox" aria-expanded="false" aria-describedby="u-jahr-tipp">${e(gw.text)} <i class="bi bi-chevron-down"></i></button>
-      <span class="u-jahr-tipp" id="u-jahr-tipp" role="tooltip">Aktuelles Schuljahr: ${e(jahr)}</span>
-      <span class="u-jahrliste d-none" role="listbox" data-jahrliste>${schuljahre().map(x => `<button type="button" role="option" data-jahr-von="${x.von}" aria-selected="${x.text === gw.text}" class="${x.text === gw.text ? 'an' : ''}">${e(x.text)}</button>`).join('')}</span></span>` : '';
-  const jw = leiste.querySelector('[data-jahrwahl]');
-  if (jw) {
-    const liste = leiste.querySelector('[data-jahrliste]');
-    jw.onclick = ev => { ev.stopPropagation(); liste.classList.toggle('d-none'); jw.setAttribute('aria-expanded', String(!liste.classList.contains('d-none'))); };
-    liste.querySelectorAll('[data-jahr-von]').forEach(b => b.onclick = () => {
-      try { sessionStorage.setItem('untplan:schuljahr', b.dataset.jahrVon); } catch { /* privat */ }
-      liste.classList.add('d-none');
-      leisteZeichnen();
-      toast(`Schuljahr ${b.textContent} gewählt.`);
-      route();
-    });
-    document.addEventListener('click', () => liste.classList.add('d-none'), { once: true });
-  }
-  const nav = leiste.querySelector('nav');
-  nav.className = `u-nav ${gruppe ? 'u-nav-unter' : ''} ${gruppe && ['admin', 'stammdaten'].includes(gruppe.id) ? 'u-nav-kompakt' : ''}`;
-  // verborgene Punkte (z. B. Sitzplan – nur über das Zahnrad in den Stundendetails) bleiben als Route erlaubt, stehen aber nicht im Menü
-  nav.innerHTML = (gruppe ? gruppe.unter.filter(p => !p.verborgen) : gruppen).map(punktHtml).join('');
-  aktivMarkieren();
-  zaehlerAktualisieren();
-}
-
-/**
- * Menüpunkte nach einem Klick in der Seitenleiste von oben nach unten gestaffelt einblenden (Deckkraft und 6px Versatz, 220ms, 24ms
- * Abstand, höchstens 14 Stufen). Nur transform/opacity – kein Einfluss auf das Layout; bei „Bewegung reduzieren“ keine Animation.
- */
-function navEinblenden() {
-  if (!navEinblendenAngefordert) return;
-  navEinblendenAngefordert = false;
-  const nav = document.querySelector('#seitenleiste nav');
-  if (!nav || typeof nav.animate !== 'function') return;
-  try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch { /* ohne matchMedia */ }
-  [...nav.querySelectorAll('.u-nav-punkt')].forEach((p, i) => {
-    p.getAnimations?.().forEach(a => a.cancel());
-    p.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
-      { duration: 220, delay: Math.min(i, 14) * 24, easing: 'cubic-bezier(.2, .7, .3, 1)', fill: 'backwards' });
-  });
-}
-
-function aktivMarkieren() {
-  navEinblenden();
-  const gruppen = menue();
-  const gruppe = gruppen.find(g => g.unter?.some(p => p.nav === aktiverPunkt));
-  document.querySelectorAll('#seitenleiste [data-nav]').forEach(a => a.classList.toggle('aktiv', a.dataset.nav === aktiverPunkt));
-  document.querySelectorAll('#seitenleiste [data-gruppe]').forEach(a => a.classList.toggle('aktiv', a.dataset.gruppe === gruppe?.id));
-  document.querySelector('.u-benutzer')?.classList.toggle('aktiv', aktiverPunkt === 'profil');
-}
+// ------------------------------------------------------------------ Hülle
 
 function huelle() {
   const b = sitzung.benutzer;
-  let zu = false;
-  try { zu = localStorage.getItem('untplan:leiste') === 'zu'; } catch { /* privat */ }
   app.innerHTML = `
-    <div class="u-app ${zu ? 'zu' : ''}">
-      <header class="u-kopfleiste">
-        <button type="button" class="rundknopf" data-menue aria-label="Menü öffnen" aria-controls="seitenleiste">${icon('menue')}</button>
-        ${LOGO}<b id="kopftitel">UntPlanWeb</b>
-      </header>
-      <aside class="u-leiste" id="seitenleiste" aria-label="Navigation">
-        <div data-leistenkopf></div>
-        <div class="u-jahrzeile" data-jahr></div>
-        <nav class="u-nav"></nav>
-        <div class="u-fuss">
-          <button type="button" class="u-griff" data-einklappen title="Navigation ein-/ausklappen" aria-label="Navigation ein- oder ausklappen"><span></span></button>
-          <button type="button" class="u-benutzer" data-kontomenue title="Konto" aria-haspopup="menu" aria-expanded="false"><span class="u-avatar">${e(b.login.slice(0, 1).toUpperCase())}</span>
-            <span class="u-benutzer-text"><b>${e(b.login)}</b><small>${e(b.rollenname)}</small></span></button>
-          <div class="u-kontomenue d-none" role="menu" data-konten></div>
-          <a class="u-abmelden u-neuigkeiten" href="#/neuigkeiten" data-neuigkeiten title="Neuigkeiten">${icon('nachrichten')}<span>Neuigkeiten</span></a>
-          <button type="button" class="u-abmelden" data-abmelden title="Abmelden">${icon('abmelden')}<span>Abmelden</span></button>
+    <div class="u-app">
+      <header class="u-kopf nicht-drucken">
+        <div class="u-marke">
+          <a class="u-marke-signet" href="#/heute" aria-label="Startseite">${LOGO}</a>
+          <div class="u-marke-text"><a href="#/heute" class="u-schule" title="${e(sitzung.schule.name || 'UntPlan')}">${e(sitzung.schule.name || 'UntPlan')}</a><span data-jahr></span></div>
+          <b class="u-kopftitel" id="kopftitel">UntPlan</b>
         </div>
-      </aside>
-      <div class="u-schleier" data-schleier></div>
+        <nav class="u-bereiche" aria-label="Hauptbereiche" data-bereiche></nav>
+        <div class="u-kopf-rechts">
+          <button type="button" class="u-kopfknopf u-suchknopf" data-suche-oeffnen title="Suchen (Strg+K)" aria-label="Suchen">${icon('suchen')}<span>Klasse, Lehrkraft, Raum …</span><kbd>Strg K</kbd></button>
+          <a class="u-kopfknopf" href="#/mitteilungen" data-kopf-post title="Mitteilungen" aria-label="Mitteilungen">${icon('kommunikation')}<span class="u-zahl d-none" data-zaehler></span></a>
+          <span class="u-ic-platz" data-ic-platz></span>
+          <div class="u-konto-platz">
+            <button type="button" class="u-konto" data-kontomenue title="Konto" aria-haspopup="menu" aria-expanded="false"><span class="u-avatar">${e(initialen(b.anzeigename || b.login))}</span>${icon('unten', 'u-konto-pfeil')}</button>
+            <div class="u-kontomenue d-none" role="menu" data-konten></div>
+          </div>
+        </div>
+      </header>
+      <nav class="u-reiterleiste nicht-drucken" aria-label="Seiten des Bereichs" data-reiter></nav>
       <main class="u-haupt">
         <div class="u-werkzeug d-none nicht-drucken" id="werkzeug"></div>
         <div class="u-inhalt">
@@ -616,40 +536,274 @@ function huelle() {
           <div id="seite"></div>
         </div>
       </main>
+      <nav class="u-unten nicht-drucken" aria-label="Hauptbereiche" data-unten></nav>
+      <div class="u-blatt-schleier" data-blatt-schleier hidden></div>
+      <section class="u-blatt nicht-drucken" data-blatt role="dialog" aria-label="Alle Bereiche" hidden></section>
     </div>`;
-  const huelleEl = app.querySelector('.u-app');
-  document.body.classList.toggle('leiste-zu', zu);
-  const leiste = document.getElementById('seitenleiste');
-  const mobilZu = () => huelleEl.classList.remove('offen');
-  app.querySelector('[data-abmelden]').onclick = abmelden;
-  // Infocenter (Knopf unten rechts): Infos der Schule und Neuigkeiten, Zahl ungelesener Einträge auch am Eintrag „Neuigkeiten“
-  import('./infocenter.js').then(m => m.starten(kontext)).catch(() => { /* ohne Infocenter */ });
-  app.querySelector('[data-menue]').onclick = () => huelleEl.classList.add('offen');
-  app.querySelector('[data-schleier]').onclick = mobilZu;
-  app.querySelector('[data-einklappen]').onclick = () => {
-    const z = huelleEl.classList.toggle('zu');
-    document.body.classList.toggle('leiste-zu', z);
-    try { localStorage.setItem('untplan:leiste', z ? 'zu' : 'offen'); } catch { /* privat */ }
-  };
   app.querySelector('[data-kontomenue]').onclick = ev => { ev.stopPropagation(); kontomenue(); };
-  leiste.addEventListener('click', ev => {
-    if (ev.target.closest('[data-zurueck]')) { untermenue = null; navEinblendenAngefordert = true; leisteZeichnen(); return; }
-    const g = ev.target.closest('[data-gruppe]');
-    if (g) {
-      // Gruppe öffnet ihr Untermenü und zeigt (wie im Original) gleich die erste Seite; auf dem Telefon bleibt das Menü offen
-      untermenue = g.dataset.gruppe;
-      navEinblendenAngefordert = true;
-      leisteZeichnen();
-      return;
-    }
-    // Seitenwechsel über einen Menüpunkt: beim nächsten Markieren (route) die Punkte gestaffelt einblenden – nicht beim Klick auf die offene Seite
-    const punkt = ev.target.closest('[data-nav]');
-    if (punkt && punkt.getAttribute('href') !== location.hash) navEinblendenAngefordert = true;
-    if (ev.target.closest('[data-nav], .u-marke, [data-profil]')) mobilZu();
+  app.querySelector('[data-suche-oeffnen]').onclick = () => sucheOeffnen();
+  app.querySelector('[data-blatt-schleier]').onclick = () => blattZu();
+  // Infocenter (Glocke in der Kopfleiste): Infos der Schule und Neuigkeiten, Zahl ungelesener Einträge
+  import('./infocenter.js').then(m => m.starten(kontext, app.querySelector('[data-ic-platz]'))).catch(() => { /* ohne Infocenter */ });
+  if (!window.__huelleTasten) {
+    window.__huelleTasten = true;
+    document.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape') { kontomenueZu(); blattZu(); bereichMenueZu(); }
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'k' && document.querySelector('.u-app')) { ev.preventDefault(); sucheOeffnen(); }
+    });
+    document.addEventListener('click', ev => {
+      if (!ev.target.closest('[data-konten]')) kontomenueZu();
+      if (!ev.target.closest('[data-bereich-menue], [data-bereich-auf]')) bereichMenueZu();
+      if (!ev.target.closest('[data-jahrwahl], [data-jahrliste]')) document.querySelector('[data-jahrliste]')?.classList.add('d-none');
+    });
+    let warte = 0;
+    window.addEventListener('resize', () => { cancelAnimationFrame(warte); warte = requestAnimationFrame(() => { bereicheEinpassen(); reiterEinpassen(); }); });
+  }
+  kopfZeichnen();
+}
+
+/** Kopfleiste (Bereiche, Schuljahr), Reiterleiste und untere Leiste nach dem aktiven Reiter zeichnen. */
+function kopfZeichnen() {
+  const gruppen = menue();
+  const aktiv = bereichVon(aktiverPunkt);
+  const nav = document.querySelector('[data-bereiche]');
+  if (!nav) return;
+  nav.innerHTML = gruppen.map(g => `<a class="u-bereich ${g === aktiv || g.id === aktiv?.id ? 'aktiv' : ''}" href="${bereichZiel(g)}" data-bereich="${g.id}" ${g.id === aktiv?.id ? 'aria-current="page"' : ''}>${e(g.text)}${g.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</a>`).join('')
+    + `<div class="u-bereich-mehr" hidden><button type="button" class="u-bereich" data-bereich-auf aria-haspopup="menu" aria-expanded="false">Mehr${icon('unten')}</button>
+        <div class="u-menue d-none" role="menu" data-bereich-menue></div></div>`;
+  nav.querySelector('[data-bereich-auf]').onclick = ev => {
+    ev.stopPropagation();
+    const m = nav.querySelector('[data-bereich-menue]');
+    const auf = m.classList.toggle('d-none');
+    ev.currentTarget.setAttribute('aria-expanded', String(!auf));
+  };
+  jahrZeichnen();
+  reiterZeichnen(aktiv);
+  untenZeichnen(gruppen, aktiv);
+  bereicheEinpassen();
+  zaehlerAktualisieren();
+}
+
+/** Schuljahr-Auswahl unter dem Schulnamen. */
+function jahrZeichnen() {
+  const platz = document.querySelector('[data-jahr]');
+  if (!platz) return;
+  const jahr = schuljahrText();
+  const gw = gewaehltesSchuljahr();
+  platz.innerHTML = jahr ? `<span class="u-jahrwahl">
+      <button type="button" class="u-jahr ${gw.aktuell ? '' : 'anders'}" data-jahrwahl aria-haspopup="listbox" aria-expanded="false" title="Schuljahr wählen (aktuell: ${e(jahr)})">Schuljahr ${e(gw.text)}${icon('unten')}</button>
+      <span class="u-jahrliste u-menue d-none" role="listbox" data-jahrliste>${schuljahre().map(x => `<button type="button" role="option" data-jahr-von="${x.von}" aria-selected="${x.text === gw.text}" class="${x.text === gw.text ? 'an' : ''}">${e(x.text)}${x.aktuell ? '<small>aktuell</small>' : ''}</button>`).join('')}</span></span>` : '';
+  const jw = platz.querySelector('[data-jahrwahl]');
+  if (!jw) return;
+  const liste = platz.querySelector('[data-jahrliste]');
+  jw.onclick = ev => { ev.stopPropagation(); liste.classList.toggle('d-none'); jw.setAttribute('aria-expanded', String(!liste.classList.contains('d-none'))); };
+  liste.querySelectorAll('[data-jahr-von]').forEach(b => b.onclick = () => {
+    try { sessionStorage.setItem('untplan:schuljahr', b.dataset.jahrVon); } catch { /* privat */ }
+    liste.classList.add('d-none');
+    jahrZeichnen();
+    toast(`Schuljahr ${b.firstChild.textContent} gewählt.`);
+    route();
   });
-  document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { mobilZu(); kontomenueZu(); } });
-  document.addEventListener('click', ev => { if (!ev.target.closest('[data-konten]')) kontomenueZu(); });
-  leisteZeichnen();
+}
+
+/**
+ * Hauptbereiche, die nicht in die Kopfleiste passen, wandern in „Mehr“ (von hinten nach vorn; der aktive Bereich bleibt sichtbar).
+ * Auf dem Telefon ist die Leiste ausgeblendet (untere Leiste).
+ */
+function bereicheEinpassen() {
+  const nav = document.querySelector('[data-bereiche]');
+  if (!nav || !nav.offsetParent) return;
+  const punkte = [...nav.querySelectorAll(':scope > a.u-bereich')];
+  const mehr = nav.querySelector('.u-bereich-mehr');
+  const menue = nav.querySelector('[data-bereich-menue]');
+  punkte.forEach(p => { p.hidden = false; });
+  mehr.hidden = true;
+  if (nav.scrollWidth <= nav.clientWidth + 1) return;
+  mehr.hidden = false;
+  const weg = [];
+  for (const p of [...punkte].reverse()) {
+    if (nav.scrollWidth <= nav.clientWidth + 1) break;
+    if (p.classList.contains('aktiv')) continue;
+    p.hidden = true;
+    weg.unshift(p);
+  }
+  menue.innerHTML = weg.map(p => `<a href="${p.getAttribute('href')}" role="menuitem">${e(p.firstChild.textContent)}</a>`).join('');
+}
+
+/** Reiterleiste des aktiven Bereichs (ohne Leiste bei nur einem Reiter). Gruppen (Verwaltung) als Reiter mit Auswahlliste. */
+function reiterZeichnen(bereich) {
+  const leiste = document.querySelector('[data-reiter]');
+  if (!leiste) return;
+  const sichtbar = (bereich?.unter ?? []).filter(p => !p.verborgen);
+  const einzeln = sichtbar.length <= 1 && !sichtbar[0]?.gruppe;
+  document.querySelector('.u-app')?.classList.toggle('ohne-reiter', !bereich || einzeln);
+  if (!bereich || einzeln) { leiste.innerHTML = ''; return; }
+  let abschnitt = sichtbar[0]?.abschnitt ?? '';
+  leiste.innerHTML = `<div class="u-reiter-innen" data-reiter-innen>${sichtbar.map(p => {
+    const trenner = (p.abschnitt ?? '') !== abschnitt ? '<span class="u-reiter-trenner" aria-hidden="true"></span>' : '';
+    abschnitt = p.abschnitt ?? '';
+    if (p.gruppe) {
+      const an = p.unter.find(x => x.nav === aktiverPunkt);
+      return `${trenner}<div class="u-reiter-gruppe"><button type="button" class="u-reiter ${an ? 'aktiv' : ''}" data-reiter-gruppe="${p.gruppe}" aria-haspopup="menu" aria-expanded="false">${e(p.text)}${an ? `<span class="u-reiter-wahl">${e(an.text)}</span>` : ''}${icon('unten')}</button>
+        <div class="u-menue d-none" role="menu" data-reiter-menue="${p.gruppe}">${p.unter.map(x => `<a href="${x.href}" role="menuitem" class="${x.nav === aktiverPunkt ? 'an' : ''}" data-nav="${x.nav}">${e(x.text)}</a>`).join('')}</div></div>`;
+    }
+    return `${trenner}<a class="u-reiter ${p.nav === aktiverPunkt ? 'aktiv' : ''}" href="${p.href}" data-nav="${p.nav}" ${p.nav === aktiverPunkt ? 'aria-current="page"' : ''}>${e(p.text)}${p.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</a>`;
+  }).join('')}</div><div class="u-reiter-mehr" hidden><button type="button" class="u-reiter" data-reiter-mehr aria-haspopup="menu" aria-expanded="false">Weitere${icon('unten')}</button><div class="u-menue u-menue-rechts d-none" role="menu" data-reiter-mehr-menue></div></div>`;
+  leiste.querySelectorAll('[data-reiter-gruppe]').forEach(k => k.onclick = ev => {
+    ev.stopPropagation();
+    const m = leiste.querySelector(`[data-reiter-menue="${k.dataset.reiterGruppe}"]`);
+    const zu = m.classList.contains('d-none');
+    reiterMenueZu();
+    if (zu) { m.classList.remove('d-none'); k.setAttribute('aria-expanded', 'true'); menueLage(m, k); }
+  });
+  leiste.querySelector('[data-reiter-mehr]').onclick = ev => {
+    ev.stopPropagation();
+    const m = leiste.querySelector('[data-reiter-mehr-menue]');
+    const zu = m.classList.contains('d-none');
+    reiterMenueZu();
+    if (zu) { m.classList.remove('d-none'); ev.currentTarget.setAttribute('aria-expanded', 'true'); }
+  };
+  if (!window.__reiterKlick) { window.__reiterKlick = true; document.addEventListener('click', reiterMenueZu); }
+  reiterEinpassen();
+  // aktiven Reiter auf schmalen Bildschirmen in den sichtbaren Bereich holen
+  requestAnimationFrame(() => leiste.querySelector('.u-reiter.aktiv')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+}
+function reiterMenueZu() {
+  document.querySelectorAll('[data-reiter-menue], [data-reiter-mehr-menue]').forEach(m => m.classList.add('d-none'));
+  document.querySelectorAll('[data-reiter-gruppe], [data-reiter-mehr]').forEach(k => k.setAttribute('aria-expanded', 'false'));
+}
+/** Auswahlliste eines Reiters innerhalb des Fensters halten. */
+function menueLage(m, k) {
+  m.style.left = '';
+  const r = k.getBoundingClientRect();
+  const ueber = r.left + m.offsetWidth - (window.innerWidth - 8);
+  if (ueber > 0) m.style.left = `${-ueber}px`;
+}
+
+/** Desktop: Reiter, die nicht in die Leiste passen, unter „Weitere“. Telefon: die Leiste scrollt waagrecht. */
+function reiterEinpassen() {
+  const leiste = document.querySelector('[data-reiter]');
+  const innen = leiste?.querySelector('[data-reiter-innen]');
+  if (!innen) return;
+  const mehr = leiste.querySelector('.u-reiter-mehr');
+  const menue = leiste.querySelector('[data-reiter-mehr-menue]');
+  const reiter = [...innen.querySelectorAll(':scope > a.u-reiter, :scope > .u-reiter-gruppe, :scope > .u-reiter-trenner')];
+  reiter.forEach(r => { r.hidden = false; });
+  mehr.hidden = true;
+  if (window.innerWidth < 768 || innen.scrollWidth <= innen.clientWidth + 1) return;
+  mehr.hidden = false;
+  const weg = [];
+  for (const r of [...reiter].reverse()) {
+    if (innen.scrollWidth <= innen.clientWidth + 1) break;
+    if (r.classList.contains('aktiv') || r.querySelector?.('.aktiv')) continue;
+    r.hidden = true;
+    if (!r.classList.contains('u-reiter-trenner')) weg.unshift(r);
+  }
+  menue.innerHTML = weg.map(r => r.matches('a') ? `<a href="${r.getAttribute('href')}" role="menuitem">${e(r.firstChild.textContent)}</a>`
+    : [...r.querySelectorAll('[data-nav]')].map(a => `<a href="${a.getAttribute('href')}" role="menuitem">${e(a.textContent)}</a>`).join('')).join('');
+}
+
+/** Untere Leiste (Telefon): die vier Bereiche mit der höchsten Priorität und „Mehr“. */
+function untenZeichnen(gruppen, aktiv) {
+  const leiste = document.querySelector('[data-unten]');
+  if (!leiste) return;
+  const vier = [...gruppen].sort((a, b) => (a.prio ?? 9) - (b.prio ?? 9)).slice(0, 4).sort((a, b) => gruppen.indexOf(a) - gruppen.indexOf(b));
+  const mehrAktiv = aktiv && !vier.includes(vier.find(g => g.id === aktiv.id));
+  leiste.innerHTML = vier.map(g => `<a class="u-unten-punkt ${g.id === aktiv?.id ? 'aktiv' : ''}" href="${bereichZiel(g)}" ${g.id === aktiv?.id ? 'aria-current="page"' : ''}>
+      <span class="u-unten-sym">${icon(g.icon)}${g.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</span><span>${e(g.text === 'Melden & Buchen' ? 'Melden' : g.text)}</span></a>`).join('')
+    + `<button type="button" class="u-unten-punkt ${mehrAktiv ? 'aktiv' : ''}" data-blatt-auf aria-haspopup="dialog"><span class="u-unten-sym">${icon('mehr')}</span><span>Mehr</span></button>`;
+  leiste.querySelector('[data-blatt-auf]').onclick = () => blattAuf();
+}
+
+/** Blatt „Mehr“ (Telefon): alle Bereiche mit ihren Seiten, Schuljahr, Profil und Abmelden. */
+function blattAuf() {
+  const blatt = document.querySelector('[data-blatt]');
+  if (!blatt) return;
+  const b = sitzung.benutzer;
+  const gw = gewaehltesSchuljahr();
+  blatt.innerHTML = `<div class="u-blatt-griff" aria-hidden="true"></div>
+    <header class="u-blatt-kopf"><span class="u-avatar">${e(initialen(b.anzeigename || b.login))}</span><div><b>${e(b.anzeigename || b.login)}</b><small>${e(b.rollenname)}${gw.text ? ` · Schuljahr ${e(gw.text)}` : ''}</small></div>
+      <button type="button" class="u-kopfknopf" data-blatt-zu aria-label="Schließen">${icon('x')}</button></header>
+    <div class="u-blatt-inhalt">${menue().map(g => `<section class="u-blatt-gruppe"><h2>${icon(g.icon)}${e(g.text)}</h2>
+      <div class="u-blatt-liste">${reiterVon(g).filter(p => !p.verborgen).map(p => `<a href="${p.href}" class="${p.nav === aktiverPunkt ? 'aktiv' : ''}">${e(p.text)}</a>`).join('')}</div></section>`).join('')}
+      <section class="u-blatt-gruppe"><h2>${icon('profil')}Konto</h2><div class="u-blatt-liste"><a href="#/profil">Mein Profil</a><a href="#/neuigkeiten">Neuigkeiten</a>
+        <button type="button" data-blatt-abmelden>Abmelden</button></div></section></div>`;
+  blatt.hidden = false;
+  document.querySelector('[data-blatt-schleier]').hidden = false;
+  document.body.classList.add('blatt-offen');
+  blatt.querySelector('[data-blatt-zu]').onclick = blattZu;
+  blatt.querySelector('[data-blatt-abmelden]').onclick = abmelden;
+  blatt.querySelectorAll('a').forEach(a => a.addEventListener('click', blattZu));
+  blatt.querySelector('[data-blatt-zu]').focus();
+}
+function blattZu() {
+  const blatt = document.querySelector('[data-blatt]');
+  if (!blatt || blatt.hidden) return;
+  blatt.hidden = true;
+  document.querySelector('[data-blatt-schleier]').hidden = true;
+  document.body.classList.remove('blatt-offen');
+}
+function bereichMenueZu() {
+  const m = document.querySelector('[data-bereich-menue]');
+  if (!m || m.classList.contains('d-none')) return;
+  m.classList.add('d-none');
+  document.querySelector('[data-bereich-auf]')?.setAttribute('aria-expanded', 'false');
+}
+
+// ------------------------------------------------------------------ Suche (Klassen, Lehrkräfte, Räume und Seiten)
+
+/**
+ * Schnellsuche über der Seite (Strg+K bzw. Lupe in der Kopfleiste): Treffer unter den Seiten des Kontos und den Stundenplänen der
+ * Klassen, Lehrkräfte (nur Kollegium) und Räume. Pfeiltasten wählen, Enter öffnet, Esc schließt.
+ */
+async function sucheOeffnen() {
+  if (document.querySelector('.u-suche-ebene')) return;
+  const el = document.createElement('div');
+  el.className = 'u-suche-ebene';
+  el.innerHTML = `<div class="u-suche-box" role="dialog" aria-label="Suchen">
+      <label class="u-suche-feld">${icon('suchen')}<input type="search" placeholder="Klasse, Lehrkraft, Raum oder Seite" aria-label="Suchen" autocomplete="off" data-suche-eingabe><kbd>Esc</kbd></label>
+      <div class="u-suche-liste" role="listbox" data-suche-liste></div></div>`;
+  document.body.append(el);
+  const eingabe = el.querySelector('input');
+  const liste = el.querySelector('[data-suche-liste]');
+  const zu = () => { el.remove(); document.removeEventListener('keydown', taste, true); };
+  el.addEventListener('mousedown', ev => { if (ev.target === el) zu(); });
+  let treffer = [], wahl = 0;
+  let elemente = null;
+  try { elemente = await kontext.elemente(); } catch { /* nur Seiten */ }
+  const ich = sitzung.benutzer;
+  const seiten = allePunkte().filter(p => !p.verborgen).map(p => ({ art: 'Seite', text: p.text, zusatz: bereichVon(p.nav)?.text ?? '', href: p.href }));
+  const plaene = elemente ? [
+    ...(elemente.klassen ?? []).map(x => ({ art: 'Klasse', text: x.kurz, zusatz: x.name !== x.kurz ? x.name : '', href: `#/plan/klasse/${encodeURIComponent(x.kurz)}` })),
+    ...(ich.kollegium ? (elemente.lehrer ?? []).map(x => ({ art: 'Lehrkraft', text: x.kurz, zusatz: x.name !== x.kurz ? x.name : '', href: `#/plan/lehrer/${encodeURIComponent(x.kurz)}` })) : []),
+    ...(elemente.raeume ?? []).map(x => ({ art: 'Raum', text: x.kurz, zusatz: x.name !== x.kurz ? x.name : '', href: `#/plan/raum/${encodeURIComponent(x.kurz)}` })),
+  ] : [];
+  const zeichnen = () => {
+    const f = eingabe.value.trim().toLowerCase();
+    const passt = x => !f || `${x.text} ${x.zusatz}`.toLowerCase().includes(f);
+    // genaue Kürzel zuerst, dann Anfang, dann enthalten
+    const rang = x => !f ? 0 : x.text.toLowerCase() === f ? 0 : x.text.toLowerCase().startsWith(f) ? 1 : 2;
+    treffer = [...plaene.filter(passt).sort((a, b) => rang(a) - rang(b)).slice(0, f ? 30 : 0), ...seiten.filter(passt).slice(0, f ? 12 : 10)];
+    wahl = Math.min(wahl, Math.max(0, treffer.length - 1));
+    liste.innerHTML = treffer.length ? treffer.map((x, i) => `<a href="${x.href}" role="option" class="u-suche-treffer ${i === wahl ? 'an' : ''}" aria-selected="${i === wahl}" data-i="${i}">
+        <span class="u-suche-art">${e(x.art)}</span><b>${e(x.text)}</b><span class="u-suche-zusatz">${e(x.zusatz)}</span></a>`).join('')
+      : `<div class="u-suche-leer">${icon('suchen')}<span>Keine Treffer für „${e(eingabe.value)}“.</span></div>`;
+    if (!f) liste.insertAdjacentHTML('afterbegin', '<div class="u-suche-kopf">Seiten</div>');
+  };
+  const taste = ev => {
+    if (ev.key === 'Escape') { ev.stopPropagation(); zu(); }
+    else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      wahl = Math.max(0, Math.min(treffer.length - 1, wahl + (ev.key === 'ArrowDown' ? 1 : -1)));
+      zeichnen();
+      liste.querySelector('.an')?.scrollIntoView({ block: 'nearest' });
+    } else if (ev.key === 'Enter' && treffer[wahl]) { ev.preventDefault(); zu(); location.hash = treffer[wahl].href; }
+  };
+  document.addEventListener('keydown', taste, true);
+  eingabe.addEventListener('input', () => { wahl = 0; zeichnen(); });
+  liste.addEventListener('click', ev => { if (ev.target.closest('a')) zu(); });
+  zeichnen();
+  eingabe.focus();
 }
 
 // ------------------------------------------------------------------ Konto: Profil, Konto wechseln, weiteres Konto
@@ -666,22 +820,29 @@ async function kontomenue() {
   if (!m.classList.contains('d-none')) return kontomenueZu();
   m.classList.remove('d-none');
   document.querySelector('[data-kontomenue]').setAttribute('aria-expanded', 'true');
-  m.innerHTML = `<a href="#/profil" role="menuitem" data-profil>${icon('profil')}<span>Mein Profil</span></a><div class="u-kontoliste">${lade()}</div>`;
-  m.querySelector('[data-profil]').onclick = () => kontomenueZu();
+  const b = sitzung.benutzer;
+  m.innerHTML = `<div class="u-konto-kopf"><b>${e(b.anzeigename || b.login)}</b><small>${e(b.login)} · ${e(b.rollenname)}</small></div>
+    <a href="#/profil" role="menuitem" data-profil>${icon('profil')}<span>Mein Profil</span></a>
+    <a href="#/neuigkeiten" role="menuitem" data-neuigkeiten>${icon('neuigkeiten')}<span>Neuigkeiten</span></a>
+    <div class="u-kontoliste">${lade()}</div>
+    <button type="button" role="menuitem" class="u-konto-ab" data-abmelden>${icon('abmelden')}<span>Abmelden</span></button>`;
+  m.querySelectorAll('[data-profil], [data-neuigkeiten]').forEach(a => a.onclick = () => kontomenueZu());
+  m.querySelector('[data-abmelden]').onclick = abmelden;
+  import('./infocenter.js').then(x => x.zahlSetzen?.()).catch(() => { /* ohne Zahl */ });
   let konten = [];
   try { konten = await holen('/api/app/konten'); } catch { /* still */ }
   const andere = konten.filter(k => !k.aktuell);
   m.querySelector('.u-kontoliste').innerHTML = `${andere.length ? '<div class="u-kontokopf">Konto wechseln</div>' : ''}
-    ${andere.map(k => `<div class="u-konto"><button type="button" role="menuitem" data-wechseln="${k.id}"><span class="u-avatar">${e(initialen(k.anzeigename || k.login).slice(0, 1))}</span>
+    ${andere.map(k => `<div class="u-konto-zeile"><button type="button" role="menuitem" data-wechseln="${k.id}"><span class="u-avatar klein">${e(initialen(k.anzeigename || k.login))}</span>
       <span><b>${e(k.login)}</b><small>${e(k.rolle)}</small></span></button><button type="button" class="u-konto-weg" data-vergessen="${k.id}" title="Vom Gerät entfernen" aria-label="Konto vom Gerät entfernen">${icon('x')}</button></div>`).join('')}
     <button type="button" role="menuitem" class="u-konto-neu" data-weiteres>${icon('wechseln')}<span>Weiteres Konto anmelden</span></button>`;
-  m.querySelectorAll('[data-wechseln]').forEach(b => b.onclick = async () => {
-    try { await senden(`/api/app/konten/${b.dataset.wechseln}/wechseln`, {}); history.replaceState(null, '', '#/heute'); untermenue = null; await start(); toast('Konto gewechselt.'); }
+  m.querySelectorAll('[data-wechseln]').forEach(x => x.onclick = async () => {
+    try { await senden(`/api/app/konten/${x.dataset.wechseln}/wechseln`, {}); history.replaceState(null, '', '#/heute'); await start(); toast('Konto gewechselt.'); }
     catch (err) { fehler(err); }
   });
-  m.querySelectorAll('[data-vergessen]').forEach(b => b.onclick = async ev => {
+  m.querySelectorAll('[data-vergessen]').forEach(x => x.onclick = async ev => {
     ev.stopPropagation();
-    try { await api(`/api/app/konten/${b.dataset.vergessen}`, { methode: 'DELETE' }); b.closest('.u-konto').remove(); } catch (err) { fehler(err); }
+    try { await api(`/api/app/konten/${x.dataset.vergessen}`, { methode: 'DELETE' }); x.closest('.u-konto-zeile').remove(); } catch (err) { fehler(err); }
   });
   m.querySelector('[data-weiteres]').onclick = abmelden;
 }
@@ -725,6 +886,8 @@ async function route() {
   // offene Dialoge schließen (z. B. Zurück-Taste im Browser)
   document.querySelectorAll('.modal.show').forEach(m => bootstrap.Modal.getInstance(m)?.hide());
   kontomenueZu();
+  blattZu();
+  document.querySelector('.u-suche-ebene')?.remove();
   const teile = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   let name = teile[0] || (kontext.ansicht.startseite === 'stundenplan' && sitzung.benutzer.element ? 'plan' : 'heute');
   let nav = navAus([name, ...teile.slice(1)]);
@@ -734,10 +897,7 @@ async function route() {
   const erlaubt = name === 'profil' || name === 'neuigkeiten' || (name === 'sprechtag' && sitzung.benutzer.rolle === 'schueler') || allePunkte().some(p => p.nav === nav);
   if (!ANSICHTEN[name] || !erlaubt) { name = 'heute'; nav = 'heute'; }
   aktiverPunkt = nav;
-  // passendes Untermenü öffnen (wie im Original: Stundenplan, Klassenbuch … mit Zurück-Knopf)
-  const gruppe = menue().find(g => g.unter?.some(p => p.nav === nav));
-  if ((gruppe?.id ?? null) !== untermenue) { untermenue = gruppe?.id ?? null; leisteZeichnen(); }
-  else aktivMarkieren();
+  kopfZeichnen();
   const seite = document.getElementById('seite');
   if (!seite) return;
   const nummer = laufendeAnsicht = Symbol(name);
@@ -763,19 +923,19 @@ async function route() {
 }
 
 /**
- * Klassenbuch-Verwaltungsseiten (Kollegium): weißer Kopf über die volle Breite mit Titel, Aktionen und der Suchleiste
- * (Element mit Klasse u-kopfteil, meist .u-sf-leiste mit suchfeldMitFilter), der Inhalt darunter auf grauem Grund. Damit nichts
- * springt bzw. erst grau und dann weiß erscheint, steht der Kopf sofort beim Seitenwechsel: Titel aus dem Menü, die Zeile der
- * Suchleiste als gleich hoher Platzhalter (#kopfplatz, per CSS sichtbar, solange die Seite noch keinen u-kopfteil gezeichnet hat).
+ * Klassenbuch-Verwaltungsseiten (Kollegium): Kopfbereich über die volle Breite (weiße Fläche unter der Reiterleiste) mit Titel,
+ * Aktionen und der Suchleiste (Element mit Klasse u-kopfteil, meist .u-sf-leiste mit suchfeldMitFilter), der Inhalt darunter auf dem
+ * Seitengrund. Damit nichts springt, steht der Kopf sofort beim Seitenwechsel: Titel aus dem Menü, die Zeile der Suchleiste als
+ * gleich hoher Platzhalter (#kopfplatz, per CSS sichtbar, solange die Seite noch keinen u-kopfteil gezeichnet hat).
  * Die Höhe der Suchleiste je Seite wird gemerkt (schmale Bildschirme: umbrechende Leisten).
  * suche: Seite mit Suchleiste im Kopf; titel: Titel bis die Seite ihn setzt (sonst der Menütext).
  */
 // h: übliche Höhe der Suchleiste (breit ≥ 1300px, mittel, schmal < 768px) für den ersten Aufruf; danach gilt die gemessene Höhe
 const WEISSER_KOPF = {
-  offen: { suche: true, h: [60, 60, 106] }, hausaufgaben: { suche: true, h: [60, 60, 140] }, pruefungen: { suche: true, h: [60, 60, 106] },
-  abwesenheiten: { suche: true, h: [60, 110, 174] }, fehlzeiten: { suche: true, h: [112, 112, 314] }, eintraege: { suche: true, h: [60, 60, 142] },
-  dienste: { suche: true, h: [60, 60, 192] }, befreiungen: { suche: true, titel: 'Befreiungen vom Unterricht', h: [60, 60, 142] },
-  berichte: { suche: true, h: [80, 134, 200] }, entschuldigen: { suche: true, titel: 'Fehlzeiten', h: [60, 110, 174] },
+  offen: { suche: true, h: [52, 52, 96] }, hausaufgaben: { suche: true, h: [52, 52, 128] }, pruefungen: { suche: true, h: [52, 52, 96] },
+  abwesenheiten: { suche: true, h: [52, 100, 160] }, fehlzeiten: { suche: true, h: [100, 100, 290] }, eintraege: { suche: true, h: [52, 52, 130] },
+  dienste: { suche: true, h: [52, 52, 176] }, befreiungen: { suche: true, titel: 'Befreiungen vom Unterricht', h: [52, 52, 130] },
+  berichte: { suche: true, h: [72, 124, 186] }, entschuldigen: { suche: true, titel: 'Fehlzeiten', h: [52, 100, 160] },
   kbeinstellungen: { suche: false, titel: 'Klassenbuch-Einstellungen' }, 'kbeinstellungen-unterricht': { suche: false, titel: 'Unterricht-Einstellungen' },
 };
 const kopfStufe = () => innerWidth >= 1300 ? 0 : innerWidth >= 768 ? 1 : 2;
@@ -812,10 +972,9 @@ start();
 
 
 /**
- * Schatten oben (Kopfleiste auf schmalen Bildschirmen, Werkzeugleiste, Plankopf) nur, wenn nach unten gescrollt ist – bei
- * Scroll-Position 0 kein Schatten. Seiten-Scroll (Fenster) setzt body.gescrollt (bzw. plan-gescrollt); eigene Scroll-Container
- * (Dialoge, [data-kopf-schatten]) erhalten selbst die Klasse „gescrollt“. Andere innere Scrollbereiche
- * (Navigation, Tabellen) ändern nichts mehr am Seitenschatten.
+ * Linie unter festen Leisten (Werkzeugleiste, Plankopf) nur, wenn nach unten gescrollt ist – bei Scroll-Position 0 keine.
+ * Seiten-Scroll (Fenster) setzt body.gescrollt (bzw. plan-gescrollt); eigene Scroll-Container (Dialoge, [data-kopf-schatten])
+ * erhalten selbst die Klasse „gescrollt“. Andere innere Scrollbereiche (Tabellen) ändern nichts am Seitenschatten.
  */
 function planScrollBeobachten() {
   if (window.__planScroll) return;

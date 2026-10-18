@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// „Gehe zu Datum“ als Popover am ⋮-Knopf (Vorlage): oben links „Heute“, rechts „Auswählen“, darunter der Monatskalender
-/// mit Mo–So; heute orange, der gewählte Tag orange im hellen Kreis.
+/// „Gehe zu Datum“ als Popover am Menüknopf des Plans: oben links „Heute“, rechts „Auswählen“, darunter der
+/// Monatskalender des Systems (Woche ab Montag).
 struct GeheZuDatumView: View {
     let start: Date
     let auswaehlen: (Date) -> Void
@@ -15,18 +15,21 @@ struct GeheZuDatumView: View {
                 Button("Heute") {
                     auswaehlen(Date())
                 }
-                .font(.system(size: 17, weight: .regular))
-                .foregroundStyle(Farben.tinte)
+                Spacer(minLength: 20)
+                Text("Gehe zu Datum")
+                    .font(.headline)
+                    .foregroundStyle(Farben.text)
                 Spacer(minLength: 20)
                 Button("Auswählen") {
                     auswaehlen(wahl)
                 }
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(Farben.tinte)
+                .fontWeight(.semibold)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 4)
+            .foregroundStyle(Farben.akzent)
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 6)
+            Divider()
             DatePicker("Datum", selection: $wahl, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .labelsHidden()
@@ -37,6 +40,7 @@ struct GeheZuDatumView: View {
                 .padding(.bottom, 8)
         }
         .frame(width: 340)
+        .background(Farben.blatt)
         .onAppear { wahl = start }
     }
 }

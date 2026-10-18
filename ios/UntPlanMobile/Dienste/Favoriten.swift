@@ -12,15 +12,15 @@ struct PlanAuswahl: Hashable, Codable, Identifiable {
     /// Kurzer Anzeigename (Kürzel), z. B. „FIS4A“.
     var anzeige: String { element.isEmpty ? name : element }
 
-    /// Vektorgrafik je Planart (Assets.xcassets, als Vorlage eingefärbt).
+    /// SF Symbol je Planart.
     var bild: String { PlanAuswahl.bild(typ) }
 
     static func bild(_ typ: String) -> String {
         switch typ {
-        case "lehrer": return "SymbolLehrer"
-        case "raum": return "SymbolRaum"
-        case "schueler": return "SymbolSchuelerPlan"
-        default: return "SymbolKlasse"
+        case "lehrer": return Symbole.lehrkraft
+        case "raum": return Symbole.raum
+        case "schueler": return Symbole.schuelerplan
+        default: return Symbole.klasse
         }
     }
 }

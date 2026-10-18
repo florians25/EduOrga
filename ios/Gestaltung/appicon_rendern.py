@@ -1,69 +1,108 @@
-"""App-Symbol von UntPlanMobile aus SVG rendern (hell, dunkel, getönt; je 1024 px, Xcode erzeugt die übrigen Größen).
+"""App-Symbol von UntPlan für iOS aus dem Signet rendern (hell, dunkel, getönt; je 1024 px, Xcode erzeugt die übrigen Größen).
 
 Aufruf (im Ordner ios/):
-    python3 Gestaltung/appicon_rendern.py UntPlanMobile/Assets.xcassets/AppIcon.appiconset /pfad/vorschau.png
-Benötigt cairosvg und Pillow. Die SVG-Quellen landen neben der Vorschau.
-Geometrie wie das Web-Logo (web/.../img/logo.svg): Kalender mit Ringen, Kopflinie und Stundenblöcken, flach, ohne Verläufe.
+    python3 Gestaltung/appicon_rendern.py UntPlanMobile/Assets.xcassets/AppIcon.appiconset [/pfad/vorschau.png]
+Benötigt nur Pillow.
+
+Geometrie und Farben wie das Signet in design/logo/mark.svg (64er-Raster): Marine-Fläche mit 3×3-Raster aus
+Stundenfeldern; ein durchgehender Doppelblock in der Mitte, ein hervorgehobenes Feld unten rechts. Für das App-Symbol
+ohne eigene Eckrundung – iOS legt die Maske selbst darüber. Flach, ohne Verläufe und ohne Schatten.
 """
-import cairosvg, sys, os
-from PIL import Image
-out = sys.argv[1]; vorschau = sys.argv[2]
-S = 28.0          # Skalierung Logo-Raster (28er) -> 1024
-OX = 512 - 14*S
-OY = 512 - 13.9*S
+import os
+import sys
 
-def glyph(linie, block, akzent):
-    # Geometrie wie web/.../img/logo.svg, kräftiger und mit gefüllten Blöcken
-    return f'''
-  <g transform="translate({OX:.2f} {OY:.2f}) scale({S})" fill="none" stroke="{linie}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="3.25" y="5.25" width="21.5" height="19.5" rx="3.4"/>
-    <path d="M9 2.9v4.4M19 2.9v4.4M3.25 10.6h21.5"/>
-    <g stroke="none">
-      <rect x="6.6" y="13.4" width="3.8" height="3.1" rx=".8" fill="{block}"/>
-      <rect x="6.6" y="18.4" width="3.8" height="3.0" rx=".8" fill="{block}"/>
-      <rect x="12.1" y="13.4" width="3.8" height="8.0" rx=".8" fill="{akzent}"/>
-      <rect x="17.6" y="13.4" width="3.8" height="4.6" rx=".8" fill="{block}"/>
-    </g>
-  </g>'''
+from PIL import Image, ImageDraw
 
-def svg(hinter, inhalt):
-    bg = f'<rect width="1024" height="1024" fill="{hinter}"/>' if hinter else ''
-    return f'<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">{bg}{inhalt}</svg>'
+AUSGABE = sys.argv[1] if len(sys.argv) > 1 else "UntPlanMobile/Assets.xcassets/AppIcon.appiconset"
+VORSCHAU = sys.argv[2] if len(sys.argv) > 2 else None
 
-varianten = {
-    # hell: ruhiges Orange (Akzent F56B2A), Symbol weiß, mittlerer Block warm-hell
-    'AppIcon.png':        svg('#F56B2A', glyph('#FFFFFF', '#FFFFFF', '#FFE3D3')),
-    # dunkel (ab iOS 18): transparenter Grund, Symbol im Akzent
-    'AppIcon-Dark.png':   svg(None, glyph('#F56B2A', '#F56B2A', '#FFB48C')),
-    # getönt (ab iOS 18): Graustufen auf transparentem Grund
-    'AppIcon-Tinted.png': svg(None, glyph('#FFFFFF', '#FFFFFF', '#BDBDBD')),
+GROESSE = 1024
+UEBERABTASTUNG = 4          # glatte Kanten: groß zeichnen, dann verkleinern
+RASTER = 64                 # Zeichenfläche von mark.svg
+
+# Felder aus mark.svg: (x, y, Breite, Höhe, Rolle)
+FELDER = [
+    (14, 14, 10, 10, "voll"),
+    (27, 14, 10, 10, "matt"),
+    (40, 14, 10, 10, "matt"),
+    (14, 27, 10, 10, "matt"),
+    (27, 27, 23, 10, "voll"),
+    (14, 40, 10, 10, "matt"),
+    (27, 40, 10, 10, "matt"),
+    (40, 40, 10, 10, "akzent"),
+]
+FELD_RADIUS = 2
+
+# Farben je Variante: Hintergrund (None = durchsichtig) und Feldfarben als (R, G, B, A)
+VARIANTEN = {
+    # hell: Marine-Fläche wie das Signet, Felder weiß bzw. 32 % weiß, Akzentfeld Marine-hell
+    "AppIcon.png": {
+        "grund": (0x1C, 0x3F, 0x7A, 255),
+        "voll": (255, 255, 255, 255),
+        "matt": (255, 255, 255, round(255 * 0.32)),
+        "akzent": (0x8F, 0xB4, 0xEA, 255),
+        "modus": "RGB",
+    },
+    # dunkel (ab iOS 18): durchsichtiger Grund, Felder in hellen Marinetönen
+    "AppIcon-Dark.png": {
+        "grund": None,
+        "voll": (0xDC, 0xE6, 0xF6, 255),
+        "matt": (0x86, 0xA7, 0xDC, round(255 * 0.45)),
+        "akzent": (0x6F, 0x9B, 0xE0, 255),
+        "modus": "RGBA",
+    },
+    # getönt (ab iOS 18): Graustufen auf durchsichtigem Grund, das System färbt ein
+    "AppIcon-Tinted.png": {
+        "grund": None,
+        "voll": (255, 255, 255, 255),
+        "matt": (255, 255, 255, round(255 * 0.35)),
+        "akzent": (0xBD, 0xBD, 0xBD, 255),
+        "modus": "LA",
+    },
 }
-os.makedirs(out, exist_ok=True)
-for name, s in varianten.items():
-    open(os.path.join(os.path.dirname(vorschau), name.replace('.png', '.svg')), 'w').write(s)
-    p = os.path.join(out, name)
-    cairosvg.svg2png(bytestring=s.encode(), write_to=p, output_width=1024, output_height=1024)
-    im = Image.open(p)
-    im = im.convert('RGB') if name == 'AppIcon.png' else im.convert('LA' if 'Tinted' in name else 'RGBA')
-    im.save(p, optimize=True)
 
-# Vorschau: hell, dunkel (auf iOS-Dunkelgrund), getönt (orange getönt) mit Maske
+
+def zeichnen(farben):
+    n = GROESSE * UEBERABTASTUNG
+    s = n / RASTER
+    bild = Image.new("RGBA", (n, n), farben["grund"] or (0, 0, 0, 0))
+    for x, y, b, h, rolle in FELDER:
+        ebene = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+        ImageDraw.Draw(ebene).rounded_rectangle(
+            [x * s, y * s, (x + b) * s - 1, (y + h) * s - 1], radius=FELD_RADIUS * s, fill=farben[rolle])
+        bild = Image.alpha_composite(bild, ebene)
+    return bild.resize((GROESSE, GROESSE), Image.LANCZOS)
+
+
 def maske(n):
-    m = Image.new('L', (n*4, n*4), 0)
-    from PIL import ImageDraw
-    ImageDraw.Draw(m).rounded_rectangle([0,0,n*4-1,n*4-1], radius=int(n*4*0.2237), fill=255)
-    return m.resize((n,n), Image.LANCZOS)
-n = 300; pad = 40
-V = Image.new('RGB', (pad + 3*(n+pad), n + 2*pad + 0), (238,240,243))
-hell = Image.open(os.path.join(out,'AppIcon.png')).convert('RGBA').resize((n,n), Image.LANCZOS)
-dg = Image.new('RGBA', (n,n), (32,32,34,255)); dg.alpha_composite(Image.open(os.path.join(out,'AppIcon-Dark.png')).convert('RGBA').resize((n,n), Image.LANCZOS))
-t = Image.open(os.path.join(out,'AppIcon-Tinted.png')).convert('LA').resize((n,n), Image.LANCZOS)
-tg = Image.new('RGBA', (n,n), (20,20,22,255))
-lum, a = t.split()
-farbe = Image.new('RGBA', (n,n), (245,170,120,255)); farbe.putalpha(Image.eval(a, lambda v: v).point(lambda v: v))
-from PIL import ImageChops
-farbe.putalpha(ImageChops.multiply(a, lum))
-tg.alpha_composite(farbe)
-for i, im in enumerate([hell, dg, tg]):
-    V.paste(im, (pad + i*(n+pad), pad), maske(n))
-V.save(vorschau)
+    """iOS-ähnliche Eckmaske nur für die Vorschau."""
+    m = Image.new("L", (n * 4, n * 4), 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, n * 4 - 1, n * 4 - 1], radius=int(n * 4 * 0.2237), fill=255)
+    return m.resize((n, n), Image.LANCZOS)
+
+
+def main():
+    os.makedirs(AUSGABE, exist_ok=True)
+    fertig = {}
+    for name, farben in VARIANTEN.items():
+        bild = zeichnen(farben)
+        fertig[name] = bild
+        bild.convert(farben["modus"]).save(os.path.join(AUSGABE, name), optimize=True)
+        print("geschrieben:", os.path.join(AUSGABE, name))
+
+    if VORSCHAU:
+        n, rand = 300, 40
+        v = Image.new("RGB", (rand + 3 * (n + rand), n + 2 * rand), (0xF4, 0xF6, 0xF8))
+        hell = fertig["AppIcon.png"].resize((n, n), Image.LANCZOS)
+        dunkel = Image.new("RGBA", (n, n), (0x1C, 0x1C, 0x1E, 255))
+        dunkel.alpha_composite(fertig["AppIcon-Dark.png"].resize((n, n), Image.LANCZOS))
+        getoent = Image.new("RGBA", (n, n), (0x14, 0x14, 0x16, 255))
+        getoent.alpha_composite(fertig["AppIcon-Tinted.png"].resize((n, n), Image.LANCZOS))
+        for i, b in enumerate([hell, dunkel, getoent]):
+            v.paste(b.convert("RGB"), (rand + i * (n + rand), rand), maske(n))
+        v.save(VORSCHAU)
+        print("Vorschau:", VORSCHAU)
+
+
+if __name__ == "__main__":
+    main()

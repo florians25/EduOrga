@@ -307,17 +307,17 @@ a.s-pille { text-decoration: none !important; }
 .lg-impressum { font-size: .75rem; color: #8a96a1; }
 
 /* Dialogknöpfe in den Stundendetails (Speichern | Abbrechen | Löschen) gleich groß */
-.ad-knoepfe > .sd-orange, .ad-knoepfe > .ad-pille:not(.klein), .ad-knoepfe > a.ad-pille {
+.ad-knoepfe > .sd-haupt, .ad-knoepfe > .ad-pille:not(.klein), .ad-knoepfe > a.ad-pille {
   display: inline-flex; align-items: center; justify-content: center; height: var(--s-knopf); min-width: 104px; padding: 0 20px; font-size: .9375rem; font-weight: 600; line-height: 1; box-shadow: none;
 }
 
 /* ------------------------------------------------------------------ Primäre (orange) Knöpfe einheitlich: etwas höher (42px), schmaler (16px seitlich) */
-.btn.btn-primary:not(.btn-sm):not(.btn-lg), .nl-hinzu:not(.bu-klein):not(.os-zeitwahl-fuss *), .sd-orange, .sd-pille.primaer, .sp-knopf.primaer,
-.ad-knoepfe > .sd-orange {
+.btn.btn-primary:not(.btn-sm):not(.btn-lg), .nl-hinzu:not(.bu-klein):not(.os-zeitwahl-fuss *), .sd-haupt, .sd-pille.primaer, .sp-knopf.primaer,
+.ad-knoepfe > .sd-haupt {
   --bs-btn-padding-x: 16px; --bs-btn-padding-y: 0; padding-left: 16px; padding-right: 16px; height: 42px; min-height: 42px;
 }
-.sd-orange, .sd-pille.primaer { padding-top: 0; padding-bottom: 0; display: inline-flex; align-items: center; justify-content: center; }
-.ad-knoepfe > .sd-orange { min-width: 96px; }
+.sd-haupt, .sd-pille.primaer { padding-top: 0; padding-bottom: 0; display: inline-flex; align-items: center; justify-content: center; }
+.ad-knoepfe > .sd-haupt { min-width: 96px; }
 /* Nebenknöpfe in derselben Dialogzeile gleich hoch */
 .modal-footer .btn { height: 42px; min-height: 42px; }
 .ad-knoepfe > .ad-pille:not(.klein), .ad-knoepfe > a.ad-pille { height: 42px; }

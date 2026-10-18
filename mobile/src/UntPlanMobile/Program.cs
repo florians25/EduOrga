@@ -170,6 +170,6 @@ public class Program
         c.Response.Headers["Content-Security-Policy"] =
             $"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; " +
             "manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
-        return Results.Content(huelle.Seite(boot, nonce, "UntPlanMobile"), "text/html; charset=utf-8");
+        return Results.Content(huelle.Seite(boot, nonce, "UntPlan Mobile"), "text/html; charset=utf-8");
     }
 }

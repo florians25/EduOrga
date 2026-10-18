@@ -6,7 +6,7 @@ using UntPlanMobile.Dienste;
 namespace UntPlanMobile.Api;
 
 /// <summary>
-/// Klassenbuch der Stundendetails (Ersatz für api/classbook.php der Vorlage), abgebildet auf UntPlanWeb:
+/// Klassenbuch der Stundendetails (Endpunkt api/classbook der Oberfläche), abgebildet auf UntPlanWeb:
 /// <list type="bullet">
 /// <item>Lehrstoff → Unterrichtsinhalt, Notizen für Schüler*innen → Notiz für Schüler*innen, Notizen für Lehrkräfte → interne Notiz,
 /// Hausaufgaben → Hausaufgabenliste der Stunde (Text, Fälligkeit, Bemerkung).</item>
@@ -423,7 +423,7 @@ public static class KlassenbuchApi
             return new JsonObject
             {
                 ["id"] = id,
-                // wie im Vorbild: „Nachname Vorname“, sortiert nach Nachnamen
+                // „Nachname Vorname“, sortiert nach Nachnamen
                 ["name"] = $"{s["name"]?.GetValue<string>()} {s["vorname"]?.GetValue<string>()}".Trim(),
                 ["class"] = s["klasse"]?.GetValue<string>() ?? "",
                 ["duties"] = new JsonArray(dienste.GetValueOrDefault(id, new List<string>()).Select(x => (JsonNode)JsonValue.Create(x)!).ToArray()),

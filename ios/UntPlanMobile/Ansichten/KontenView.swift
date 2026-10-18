@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Kontenauswahl (Profilwechsel oben links): alle angemeldeten Konten – auch verschiedener Server – mit Haken am aktiven.
+/// Kontenauswahl („Mehr“ → „Konten“ bzw. Konto-Knopf auf „Heute“): alle angemeldeten Konten – auch verschiedener Server – mit Haken am aktiven.
 /// Antippen wechselt ohne Abmelden (Sitzung und Passwort liegen je Konto im Schlüsselbund); „Konto hinzufügen“ meldet
 /// ein weiteres Konto an, Wischen bzw. „Entfernen“ meldet ein Konto ab und löscht es vom Gerät.
 struct KontenauswahlView: View {
@@ -8,7 +8,7 @@ struct KontenauswahlView: View {
     @Environment(\.dismiss) private var systemSchliessen
     @Environment(\.blattSchliessen) private var blattSchliessen
 
-    /// Randloses iPhone-Blatt mit eigener Animation schließen, sonst das Systemblatt.
+    /// Blatt schließen.
     private func schliessen() {
         if let blattSchliessen { blattSchliessen() } else { systemSchliessen() }
     }
@@ -27,7 +27,7 @@ struct KontenauswahlView: View {
 
     var body: some View {
         NavigationStack {
-            // Kopf wie alle Blätter: runder Glasknopf X links, Titel mittig
+            // Kopf wie alle Blätter: „Schließen“ links, Titel mittig
             DetailSeitenRahmen(titel: "Konten", untertitel: nil, symbol: "xmark", zurueck: { schliessen() }) {
             List {
                 Section {
@@ -64,13 +64,11 @@ struct KontenauswahlView: View {
                             .environmentObject(zustand)
                     } label: {
                         Label("Konto hinzufügen", systemImage: "person.badge.plus")
-                            .foregroundStyle(Farben.tinte)
+                            .foregroundStyle(Farben.akzent)
                     }
                 }
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(Farben.grund)
             }
             .confirmationDialog(entfernenKonto.map { "\($0.login) entfernen?" } ?? "",
                                 isPresented: Binding(get: { entfernenKonto != nil }, set: { if !$0 { entfernenKonto = nil } }),
@@ -93,13 +91,13 @@ struct KontenauswahlView: View {
             Initialen(name: konto.name, groesse: 38)
             VStack(alignment: .leading, spacing: 2) {
                 Text(konto.name)
-                    .font(.system(size: 16, weight: konto.id == aktivId ? .medium : .regular))
-                    .foregroundStyle(Farben.tinte)
+                    .font(.body.weight(konto.id == aktivId ? .semibold : .regular))
+                    .foregroundStyle(Farben.text)
                     .lineLimit(1)
                 Text([konto.name != konto.login ? konto.login : "", konto.rollenname, konto.schulname.isEmpty ? konto.serverKurz : konto.schulname]
                     .filter { !$0.isEmpty }.joined(separator: " · "))
-                    .font(.system(size: 13))
-                    .foregroundStyle(Farben.tinte2)
+                    .font(.footnote)
+                    .foregroundStyle(Farben.text2)
                     .lineLimit(2)
             }
             Spacer(minLength: 6)

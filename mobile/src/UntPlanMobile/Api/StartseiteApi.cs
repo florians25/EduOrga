@@ -166,7 +166,7 @@ public static class StartseiteApi
                 case "absences":
                 {
                     var (von, bis) = Zeitraum(p, heute);
-                    // Schüler*innen und Erziehungsberechtigte: eigene Abwesenheiten aus dem Klassenbuch (wie „Meine Abwesenheiten“ im Original)
+                    // Schüler*innen und Erziehungsberechtigte: eigene Abwesenheiten aus dem Klassenbuch (Liste „Meine Abwesenheiten“)
                     if (k.IstSchueler)
                     {
                         // Erziehungsberechtigte mit mehreren Kindern wählen das Kind (student); Summen und Kinder für Kopf und Filter

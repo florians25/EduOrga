@@ -56,7 +56,7 @@ struct KontaktdatenView: View {
                 }
             }
         }
-        .navigationTitle("Kontaktdaten")
+        .navigationTitle("Kontaktdaten und Kalender")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
     }
@@ -93,13 +93,13 @@ struct PasswortView: View {
             } footer: {
                 if !wiederholung.isEmpty && neu != wiederholung {
                     Text("Die neuen Passwörter stimmen nicht überein.")
-                        .foregroundStyle(Farben.entfallRand)
+                        .foregroundStyle(Farben.entfall)
                 }
             }
             if let fehler {
                 Section {
                     Text(fehler)
-                        .foregroundStyle(Farben.entfallRand)
+                        .foregroundStyle(Farben.entfall)
                 }
             }
             Section {
@@ -163,11 +163,11 @@ struct NeuigkeitenView: View {
     }
 
     private let punkte: [Punkt] = [
-        Punkt(symbol: "rectangle.split.3x1", titel: "Wochen blättern", text: "Im Stundenplan folgt die Woche dem Finger und gleitet beim Loslassen zur nächsten bzw. vorherigen Woche."),
-        Punkt(symbol: "rectangle.portrait", titel: "Tagesansicht", text: "Ein Tipp auf den Tageskopf zeigt den Tag über die volle Breite – Wischen wechselt zum Vor- bzw. Folgetag."),
-        Punkt(symbol: "list.bullet.rectangle", titel: "Neue Stundendetails", text: "Lehrstoff, Hausaufgaben, Schüler*innen, Klassenbucheinträge und Notizen direkt aus der Stunde."),
-        Punkt(symbol: "door.left.hand.open", titel: "Im Stundenplan anzeigen", text: "Aus den Stundendetails den Plan eines Raums, einer Klasse oder Lehrkraft öffnen."),
-        Punkt(symbol: "ipad", titel: "Für das iPad", text: "Leiste oben in der Mitte, Inhalte mittig statt über die ganze Breite."),
+        Punkt(symbol: "square.grid.3x3", titel: "Neue Gestaltung", text: "Ruhigeres Erscheinungsbild mit Systemschrift, klaren Kanten und einer Akzentfarbe; Status wie Entfall oder Prüfung auf einen Blick."),
+        Punkt(symbol: "rectangle.split.3x1", titel: "Stundenplan", text: "Kacheln in der Fachfarbe, Entfall schraffiert, Änderungen mit Rahmen; Woche, Tage und Tag per Menü."),
+        Punkt(symbol: "list.bullet.rectangle", titel: "Stundendetails", text: "Lehrstoff, Hausaufgaben, Schüler*innen, Klassenbucheinträge und Notizen direkt aus der Stunde – als Blatt mit Ziehgriff."),
+        Punkt(symbol: "ellipsis.circle", titel: "Reiter „Mehr“", text: "Profil, Konten, Abwesenheiten, Entschuldigungen, Sprechtage, Pläne und Einstellungen an einer Stelle."),
+        Punkt(symbol: "ipad", titel: "Für das iPad", text: "Inhalte mittig statt über die ganze Breite, Details als festes Blatt über dem Plan."),
     ]
 
     var body: some View {
@@ -175,22 +175,22 @@ struct NeuigkeitenView: View {
             ForEach(punkte) { punkt in
                 HStack(alignment: .top, spacing: 14) {
                     Image(systemName: punkt.symbol)
-                        .font(.system(size: 20, weight: .light))
+                        .font(.system(size: 17, weight: .regular))
                         .foregroundStyle(Farben.akzent)
-                        .frame(width: 30)
+                        .frame(width: 26)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(punkt.titel)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(Farben.tinte)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Farben.text)
                         Text(punkt.text)
-                            .font(.system(size: 14))
-                            .foregroundStyle(Farben.tinte2)
+                            .font(.subheadline)
+                            .foregroundStyle(Farben.text2)
                     }
                 }
                 .padding(.vertical, 4)
             }
         }
-        .navigationTitle("Was gibt es Neues")
+        .navigationTitle("Neu in dieser Version")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
     }
@@ -215,7 +215,7 @@ struct UeberView: View {
                 }
             }
             Section("App") {
-                LabeledContent("Version", value: ProfilView.version)
+                LabeledContent("Version", value: MehrView.version)
             }
         }
         .navigationTitle("Über")

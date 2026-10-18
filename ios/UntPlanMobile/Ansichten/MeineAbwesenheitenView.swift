@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// „Meine Abwesenheiten“ für Schüler*innen und Erziehungsberechtigte (Vorlage): Kopf mit Zurück, Titel und Zeitraum,
-/// rechts der Filter (Zeitraum, Status, bei mehreren Kindern das Kind). Je Abwesenheit eine Karte: Datum groß
-/// („15. Okt. - 16. Okt.“), Uhrzeit, Grund, die Bemerkung als eigene Zeile (nur wenn vorhanden) und der Status
-/// (entschuldigt grün, offen orange, nicht entschuldigt rot).
+/// „Meine Abwesenheiten“ für Schüler*innen und Erziehungsberechtigte: gruppierte Liste mit dem Zeitraum als
+/// Überschrift, rechts oben der Filter (Zeitraum, Status, bei mehreren Kindern das Kind). Je Abwesenheit eine Zeile:
+/// Datum, Uhrzeit, Grund, die Bemerkung (nur wenn vorhanden) und der Status als Plakette (entschuldigt, offen,
+/// nicht entschuldigt).
 struct MeineAbwesenheitenView: View {
     @EnvironmentObject var zustand: AppZustand
     @State private var daten: FamilieAbwesenheiten? = nil
@@ -15,66 +15,46 @@ struct MeineAbwesenheitenView: View {
     @State private var laedt = false
     @Environment(\.horizontalSizeClass) private var groessenklasse
 
-    private var rand: CGFloat { groessenklasse == .compact ? 16 : 18 }
-
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                if let fehler {
-                    Fehlerhinweis(text: fehler)
-                }
-                if let daten {
-                    // Oben bewusst keine Box mit Summen bzw. Statistik (der Server liefert summen weiter) – nur die Liste
+        List {
+            if let fehler {
+                Fehlerhinweis(text: fehler)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+            if let daten {
+                // Bewusst keine Summen bzw. Statistik (der Server liefert summen weiter) – nur die Liste
+                Section {
                     if daten.zeilen.isEmpty {
                         Text(filter.status.isEmpty ? "Keine Abwesenheiten im gewählten Zeitraum." : "Keine Abwesenheiten mit diesem Status.")
-                            .font(.system(size: 15))
-                            .foregroundStyle(Farben.gedaempft)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 8)
+                            .font(.subheadline)
+                            .foregroundStyle(Farben.text3)
                     }
                     ForEach(daten.zeilen) { z in
                         Abwesenheitskarte(zeile: z, grund: gruendeName(z.grund))
                     }
-                } else if laedt {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 40)
-                }
-            }
-            .padding(.horizontal, rand)
-            .padding(.top, 8)
-            .padding(.bottom, 28)
-            .zentriert(maxBreite: 736)
-        }
-        .scrollIndicators(.hidden)
-        .background(Farben.grund.ignoresSafeArea())
-        .refreshable { await laden() }
-        .navigationTitle("Meine Abwesenheiten")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.visible, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 1) {
-                    Text("Meine Abwesenheiten")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Farben.tinte2)
-                    if let daten, !daten.von.isEmpty {
-                        Text("\(Datumsformat.anzeige(daten.von, "dd.MM.yyyy")) - \(Datumsformat.anzeige(daten.bis, "dd.MM.yyyy"))")
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(Farben.gedaempft)
+                } header: {
+                    if !daten.von.isEmpty {
+                        Text("\(Datumsformat.anzeige(daten.von, "dd.MM.yyyy")) – \(Datumsformat.anzeige(daten.bis, "dd.MM.yyyy"))")
                     }
                 }
-                .lineLimit(1)
-                .accessibilityElement(children: .combine)
+            } else if laedt {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
             }
+        }
+        .listStyle(.insetGrouped)
+        .refreshable { await laden() }
+        .navigationTitle("Meine Abwesenheiten")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     zeigeFilter = true
                 } label: {
-                    Glasknopf {
-                        Image(systemName: filter.aktiv ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease")
-                            .font(.system(size: 17, weight: .regular))
-                    }
+                    Image(systemName: filter.aktiv ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                 }
                 .accessibilityLabel("Filter")
             }
@@ -138,7 +118,7 @@ struct Abwesenheitsfilter: Equatable {
     var aktiv: Bool { !status.isEmpty }
 }
 
-/// Karte einer Abwesenheit wie in der Vorlage.
+/// Zeile einer Abwesenheit: Datum, Status-Plakette, Uhrzeit, Grund und Bemerkung.
 struct Abwesenheitskarte: View {
     let zeile: Abwesenheitszeitraum
     let grund: String
@@ -170,51 +150,52 @@ struct Abwesenheitskarte: View {
         return [art, grund].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
-    private var status: (text: String, symbol: String, farbe: Color) {
+    private var status: (text: String, farbe: Color, flaeche: Color) {
         // einzelne Stunden entschuldigt (z. B. von Fachlehrkräften), andere nicht: „teilweise entschuldigt“ mit Anzahl
         if zeile.statusGemischt {
-            return ("teilweise entschuldigt (\(zeile.entschuldigt)/\(zeile.fehlstunden))", "circle.lefthalf.filled", Farben.orange)
+            return ("Teilweise \(zeile.entschuldigt)/\(zeile.fehlstunden)", Farben.warnung, Farben.warnungFlaeche)
         }
         switch zeile.status {
-        case "entschuldigt": return ("entschuldigt", "checkmark.circle", Farben.gruen)
-        case "unentschuldigt": return ("nicht entschuldigt", "xmark.circle", Farben.entfallRand)
-        default: return ("offen", "clock.badge.questionmark", Farben.orange)
+        case "entschuldigt": return ("Entschuldigt", Farben.ok, Farben.okFlaeche)
+        case "unentschuldigt": return ("Nicht entschuldigt", Farben.entfall, Farben.entfallFlaeche)
+        default: return ("Offen", Farben.warnung, Farben.warnungFlaeche)
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(titel)
-                .font(.system(size: 21, weight: .regular))
-                .foregroundStyle(Farben.tinte)
-                .padding(.bottom, 2)
-            zeileMitSymbol("clock", zeit, farbe: Farben.tinte2)
+            HStack(alignment: .firstTextBaseline) {
+                Text(titel)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Farben.text)
+                Spacer(minLength: 8)
+                Plakette(text: status.text, farbe: status.farbe, flaeche: status.flaeche)
+            }
+            zeileMitSymbol("clock", zeit)
             if !anlass.isEmpty {
-                zeileMitSymbol("info.circle", anlass, farbe: Farben.tinte2)
+                zeileMitSymbol("info.circle", anlass)
             }
             // Bemerkung bzw. Text als eigene Zeile – nur wenn vorhanden
             let bemerkung = zeile.bemerkung.trimmingCharacters(in: .whitespacesAndNewlines)
             if !bemerkung.isEmpty {
-                zeileMitSymbol("text.bubble", bemerkung, farbe: Farben.tinte2)
+                zeileMitSymbol("text.bubble", bemerkung)
             }
-            zeileMitSymbol(status.symbol, status.text, farbe: Farben.tinte2, symbolFarbe: status.farbe)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
-        .background(Farben.flaeche, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
     }
 
-    private func zeileMitSymbol(_ symbol: String, _ text: String, farbe: Color, symbolFarbe: Color? = nil) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+    private func zeileMitSymbol(_ symbol: String, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
             Image(systemName: symbol)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(symbolFarbe ?? Farben.gedaempft)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(Farben.text3)
                 .frame(width: 18, alignment: .leading)
             Text(text)
-                .font(.system(size: 16))
-                .foregroundStyle(farbe)
+                .font(.subheadline)
+                .monospacedDigit()
+                .foregroundStyle(Farben.text2)
                 .lineLimit(4)
         }
     }
@@ -228,7 +209,7 @@ struct AbwesenheitsfilterView: View {
     @Environment(\.dismiss) private var systemSchliessen
     @Environment(\.blattSchliessen) private var blattSchliessen
 
-    /// Randloses iPhone-Blatt mit eigener Animation schließen, sonst das Systemblatt.
+    /// Blatt schließen.
     private func schliessen() {
         if let blattSchliessen { blattSchliessen() } else { systemSchliessen() }
     }
@@ -265,8 +246,6 @@ struct AbwesenheitsfilterView: View {
                 }
             }
             .environment(\.locale, Locale(identifier: "de_DE"))
-            .scrollContentBackground(.hidden)
-            .background(Farben.grund)
             } rechts: {
                 SichernKnopf(speichert: false, aktiv: true, beschriftung: "Anwenden") {
                     filter = entwurf

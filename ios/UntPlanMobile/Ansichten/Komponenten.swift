@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// Werte (Lehrkräfte, Klassen, Räume) als Text: alter Wert durchgestrichen, geänderter Wert grün.
-/// `offen`: Lehrkräfte einer offenen Vertretung – die alte Lehrkraft ohne neuen Wert steht durchgestrichen auf grüner Fläche.
+// MARK: - Werte als Text
+
+/// Werte (Lehrkräfte, Klassen, Räume) als Text: alter Wert durchgestrichen, geänderter Wert petrolfarben unterstrichen.
+/// `offen`: Lehrkräfte einer offenen Vertretung – die abwesende Lehrkraft ohne neuen Wert steht durchgestrichen in Petrol.
 func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> Text {
     var ergebnis = Text("")
     for (i, w) in werte.enumerated() {
@@ -12,11 +14,11 @@ func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> 
             continue
         }
         if let alt = w.alt, !alt.isEmpty, alt.caseInsensitiveCompare(w.k) != .orderedSame {
-            ergebnis = ergebnis + Text(alt).strikethrough(true, color: Farben.entfallRand)
+            ergebnis = ergebnis + Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
             if !w.k.isEmpty { ergebnis = ergebnis + Text(" ") }
         }
         if w.geaendert {
-            ergebnis = ergebnis + Text(w.k).foregroundColor(Farben.gruen).fontWeight(.medium)
+            ergebnis = ergebnis + geaendertText(w.k)
         } else {
             ergebnis = ergebnis + Text(w.k)
         }
@@ -24,13 +26,20 @@ func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> 
     return ergebnis
 }
 
-/// Grün hinterlegter, durchgestrichener Text (offene Vertretung) – als Text, damit er sich mit anderen Texten verbinden lässt.
+/// Geänderter Wert: petrolfarben und unterstrichen.
+func geaendertText(_ text: String) -> Text {
+    Text(text)
+        .foregroundColor(Farben.aenderung)
+        .underline(true, color: Farben.aenderung)
+        .fontWeight(.medium)
+}
+
+/// Offene Vertretung: abwesende Lehrkraft durchgestrichen in Petrol – als Text, damit er sich mit anderen Texten verbinden lässt.
 func offenText(_ text: String) -> Text {
-    var a = AttributedString("\u{2009}\(text)\u{2009}")
-    a[AttributeScopes.SwiftUIAttributes.BackgroundColorAttribute.self] = Farben.gruen
-    a[AttributeScopes.SwiftUIAttributes.ForegroundColorAttribute.self] = Farben.gruenSchrift
-    a[AttributeScopes.SwiftUIAttributes.StrikethroughStyleAttribute.self] = Text.LineStyle(pattern: .solid, color: Farben.gruenSchrift)
-    return Text(a).fontWeight(.medium)
+    Text(text)
+        .foregroundColor(Farben.aenderung)
+        .strikethrough(true, color: Farben.aenderung)
+        .fontWeight(.medium)
 }
 
 /// Offene Vertretung erkennen: Karte „offen“ bzw. Lehrkraft ohne neuen Wert mit gesetztem alten Wert (nicht bei Entfall).
@@ -52,67 +61,64 @@ func kartenzeilen(_ karte: Karte, typ: String) -> [[Wert]] {
     }
 }
 
-/// Überschrift eines Abschnitts auf der Startseite.
-struct Abschnittstitel: View {
-    let text: String
-    var zusatz: String?
+// MARK: - Hinweise und Plaketten
 
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(text)
-                .font(.title3.weight(.medium))
-            Spacer()
-            if let zusatz {
-                Text(zusatz)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-/// Rote Fehlerzeile.
+/// Fehlerzeile: Symbol und Text in der Entfall-Farbe auf heller Fläche mit feinem Rand.
 struct Fehlerhinweis: View {
     let text: String
 
     var body: some View {
-        Label(text, systemImage: "exclamationmark.triangle.fill")
+        Label(text, systemImage: "exclamationmark.triangle")
             .font(.subheadline)
-            .foregroundStyle(Farben.entfallRand)
+            .foregroundStyle(Farben.entfall)
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(hell: 0xFFF3F2, dunkel: 0x3A1018), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Farben.entfallFlaeche, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(Farben.entfall.opacity(0.25), lineWidth: 1)
+            }
     }
 }
 
-/// Kleines Kennzeichen (Änderung, Entfall, Zusätzliche Unterrichtsstunde …) wie in der Vorlage:
-/// normale Schreibweise, dezent hinterlegt, Schrift in der Kennfarbe.
+/// Plakette (Entfall, Änderung, Prüfung …): 11 pt Großbuchstaben mit etwas Laufweite, Fläche und Schrift in der
+/// Statusfarbe, Radius 3 pt.
 struct Plakette: View {
     let text: String
     let farbe: Color
+    /// Fläche (nil = Statusfarbe mit 12 % Deckkraft)
+    var flaeche: Color? = nil
+    /// Kleinere Plakette für Stundenkacheln
+    var klein: Bool = false
 
     var body: some View {
-        Text(text)
-            .font(.system(size: 12.5, weight: .medium))
+        Text(text.uppercased())
+            .font(.system(size: klein ? 9.5 : 11, weight: .semibold))
+            .tracking(klein ? 0.3 : 0.44)
             .foregroundStyle(farbe)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2.5)
-            .background(farbe.opacity(0.13), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
             .lineLimit(1)
+            .padding(.horizontal, klein ? 3.5 : 6)
+            .padding(.vertical, klein ? 1 : 2)
+            .background(flaeche ?? farbe.opacity(0.12), in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+            .fixedSize()
+            .accessibilityLabel(text)
     }
 }
 
-/// Runder Kreis mit Initialen.
+/// Runder Kreis mit Initialen (Marine auf heller Marine-Fläche).
 struct Initialen: View {
     let name: String
     var groesse: CGFloat = 40
+    /// Fertige Initialen (z. B. vom Server); nil = aus dem Namen bilden
+    var vorgabe: String? = nil
 
     var body: some View {
-        Text(Self.kuerzel(name))
-            .font(.system(size: groesse * 0.38, weight: .medium))
-            .foregroundStyle(.white)
+        Text(vorgabe.map { String($0.prefix(3)) } ?? Self.kuerzel(name))
+            .font(.system(size: groesse * 0.38, weight: .semibold))
+            .foregroundStyle(Farben.akzent)
             .frame(width: groesse, height: groesse)
-            .background(Farben.akzent, in: Circle())
+            .background(Farben.primaerFlaeche, in: Circle())
+            .accessibilityHidden(true)
     }
 
     /// "Muster Erika" wird zu "ME".
@@ -125,172 +131,76 @@ struct Initialen: View {
     }
 }
 
-/// Weiße Karte mit abgerundeten Ecken und weichem Schatten (Startseite, wie .newscard/.daycard).
-struct Kartenhintergrund: ViewModifier {
-    var radius: CGFloat = 22
-
-    func body(content: Content) -> some View {
-        content
-            .background(Farben.flaeche, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .weicherSchatten()
-    }
-}
-
-/// Schatten 0 1 2 rgba(21,33,44,.05), 0 10 26 rgba(21,33,44,.08); im Dunkeln keiner.
-struct WeicherSchatten: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .shadow(color: Color(hell: 0x15212C, dunkel: 0x000000, deckkraftHell: 0.05, deckkraftDunkel: 0), radius: 1, y: 1)
-            .shadow(color: Color(hell: 0x15212C, dunkel: 0x000000, deckkraftHell: 0.08, deckkraftDunkel: 0), radius: 13, y: 10)
-    }
-}
-
-/// Glasfläche wie in der PWA (Milchglas, Glanzkante, weicher Schatten).
-struct Glasflaeche<Form: InsettableShape>: ViewModifier {
-    let form: Form
-
-    func body(content: Content) -> some View {
-        content
-            .background {
-                form
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        form.fill(LinearGradient(colors: [Color(hell: 0xFFFFFF, dunkel: 0x3A3A3E, deckkraftHell: 0.55, deckkraftDunkel: 0.55),
-                                                          Color(hell: 0xFFFFFF, dunkel: 0x1E1E21, deckkraftHell: 0.30, deckkraftDunkel: 0.45)],
-                                                 startPoint: .top, endPoint: .bottom))
-                    }
-                    .overlay {
-                        form.strokeBorder(Color(hell: 0xFFFFFF, dunkel: 0xFFFFFF, deckkraftHell: 0.75, deckkraftDunkel: 0.14), lineWidth: 0.5)
-                    }
-                    .shadow(color: Color(hell: 0x141C24, dunkel: 0x000000, deckkraftHell: 0.10, deckkraftDunkel: 0.35), radius: 9, y: 6)
-            }
-    }
-}
-
-extension View {
-    func alsKarte(radius: CGFloat = 22) -> some View {
-        modifier(Kartenhintergrund(radius: radius))
-    }
-
-    func weicherSchatten() -> some View {
-        modifier(WeicherSchatten())
-    }
-
-    func glas<Form: InsettableShape>(_ form: Form) -> some View {
-        modifier(Glasflaeche(form: form))
-    }
-}
-
-/// Kalenderblatt als Linienzeichen mit Tageszahl oder Stern (Reiter „Stundenplan“, „Mein Stundenplan“).
-struct KalenderSymbol: View {
-    enum Inhalt {
-        case tag(Int)
-        case stern
-    }
-
-    let inhalt: Inhalt
-    var groesse: CGFloat = 24
-    var strich: CGFloat = 1.6
-
-    var body: some View {
-        let b = groesse
-        ZStack(alignment: .top) {
-            RoundedRectangle(cornerRadius: b * 0.16, style: .continuous)
-                .strokeBorder(lineWidth: strich)
-                .frame(width: b * 0.86, height: b * 0.78)
-                .offset(y: b * 0.16)
-            Rectangle()
-                .frame(width: b * 0.86, height: strich)
-                .offset(y: b * 0.36)
-            HStack(spacing: b * 0.34) {
-                Capsule().frame(width: strich, height: b * 0.2)
-                Capsule().frame(width: strich, height: b * 0.2)
-            }
-            .offset(y: b * 0.06)
-            Group {
-                switch inhalt {
-                case .tag(let tag):
-                    Text("\(tag)")
-                        .font(.system(size: b * 0.36, weight: .medium))
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                case .stern:
-                    Image(systemName: "star")
-                        .font(.system(size: b * 0.34, weight: .medium))
-                }
-            }
-            .frame(width: b * 0.8, height: b * 0.5)
-            .offset(y: b * 0.4)
-        }
-        .frame(width: b, height: b, alignment: .top)
-    }
-}
-
-/// Graue runde Zahl-Plakette (Startseite, z. B. Abwesenheiten „1“).
+/// Zahl in einer neutralen Kapsel (Zahl der Termine, Hausaufgaben …).
 struct ZahlPlakette: View {
     let zahl: Int
 
     var body: some View {
         Text("\(zahl)")
-            .font(.system(size: 15, weight: .medium))
+            .font(.system(size: 13, weight: .semibold))
             .monospacedDigit()
-            .foregroundStyle(.white)
+            .foregroundStyle(Farben.text2)
             .padding(.horizontal, 7)
-            .frame(minWidth: 26, minHeight: 26)
-            .background(Farben.zahlPlakette, in: Capsule())
+            .frame(minWidth: 22, minHeight: 22)
+            .background(Farben.neutralFlaeche, in: Capsule())
     }
 }
 
-// MARK: - Obere Leiste, Konto, Listen
+// MARK: - Karten
 
-/// Runder Knopf oben links/rechts. In der Navigationsleiste zeichnet ab iOS 26 das System das Glas selbst,
-/// davor (und außerhalb von Leisten) die eigene Glasfläche.
-struct Glasknopf<Inhalt: View>: View {
-    var inLeiste: Bool = true
+/// Fläche mit feinem Rand statt Schatten (Radius 8 pt).
+struct Kartenhintergrund: ViewModifier {
+    var radius: CGFloat = 8
+
+    func body(content: Content) -> some View {
+        content
+            .background(Farben.flaeche, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(Farben.rand, lineWidth: 1)
+            }
+    }
+}
+
+extension View {
+    func alsKarte(radius: CGFloat = 8) -> some View {
+        modifier(Kartenhintergrund(radius: radius))
+    }
+
+    /// Inhalt mittig mit höchstens dieser Breite (iPad: nicht über die ganze Breite).
+    func zentriert(maxBreite: CGFloat = 700) -> some View {
+        frame(maxWidth: maxBreite)
+            .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Knöpfe in Leisten, Konto
+
+/// Symbolknopf in einer Kopfleiste: Symbol in der Akzentfarbe, 44 pt Tippfläche, ohne Hintergrund.
+struct Leistenknopf<Inhalt: View>: View {
     @ViewBuilder let inhalt: () -> Inhalt
 
-    /// Ab iOS 26 zeichnet die Navigationsleiste das Glas selbst.
-    private var systemGlas: Bool {
-        if #available(iOS 26.0, *) { return inLeiste }
-        return false
-    }
-
     var body: some View {
-        if systemGlas {
-            inhalt()
-                .foregroundStyle(Farben.tinte2)
-                .frame(width: 34, height: 34)
-                .contentShape(Rectangle())
-        } else {
-            inhalt()
-                .foregroundStyle(Farben.tinte2)
-                .frame(width: 44, height: 44)
-                .glas(Circle())
-                .contentShape(Circle())
-        }
+        inhalt()
+            .font(.system(size: 17, weight: .regular))
+            .foregroundStyle(Farben.akzent)
+            .frame(minWidth: 32, minHeight: 32)
+            .contentShape(Rectangle())
     }
 }
 
-/// Person mit Auf-/Ab-Pfeilen unten rechts (Profil wechseln) wie in der Vorlage: eine Vektorgrafik (ProfilWechsel)
-/// mit durchgehend gleicher Strichstärke, die Pfeile (ab, auf) unten rechts neben der Schulter.
+/// Initialen des angemeldeten Kontos als Knopfbeschriftung (Konto wechseln).
 struct KontoSymbol: View {
-    var groesse: CGFloat = 26
+    @EnvironmentObject var zustand: AppZustand
+    var groesse: CGFloat = 30
 
     var body: some View {
-        Image("ProfilWechsel")
-            .renderingMode(.template)
-            .resizable()
-            .scaledToFit()
-            .frame(width: groesse, height: groesse)
-            .foregroundStyle(Farben.gedaempft)
-            .offset(x: 1)
-            .accessibilityHidden(true)
+        Initialen(name: zustand.benutzer?.name ?? zustand.benutzer?.login ?? "?", groesse: groesse)
     }
 }
 
-/// Profilwechsel: öffnet die Kontenauswahl (mehrere Konten gleichzeitig angemeldet – wechseln ohne Abmelden,
-/// Konto hinzufügen bzw. entfernen).
+/// Öffnet die Kontenauswahl (mehrere Konten gleichzeitig angemeldet – wechseln ohne Abmelden, Konto hinzufügen bzw.
+/// entfernen).
 struct KontoMenue<Beschriftung: View>: View {
     @EnvironmentObject var zustand: AppZustand
     @State private var zeigen = false
@@ -305,7 +215,6 @@ struct KontoMenue<Beschriftung: View>: View {
         }
         .accessibilityLabel("Konto wechseln")
         .accessibilityHint("Öffnet die Kontenauswahl")
-        // Am iPhone dasselbe randlose 90-%-Blatt wie die Stundendetails
         .blattPraesentation(isPresented: $zeigen, breit: groessenklasse == .regular) {
             KontenauswahlView()
                 .environmentObject(zustand)
@@ -313,39 +222,42 @@ struct KontoMenue<Beschriftung: View>: View {
     }
 }
 
-/// Runder Glasknopf oben links (Konto wechseln) auf allen Hauptseiten.
+/// Konto-Knopf in der Navigationsleiste: Initialen des Kontos, öffnet die Kontenauswahl.
 struct KontoKnopf: View {
     var body: some View {
         KontoMenue {
-            Glasknopf { KontoSymbol() }
+            KontoSymbol()
         }
+        .buttonStyle(.plain)
     }
 }
 
-/// Zeile einer weißen Gruppe: Symbol links, Titel (und Untertitel), Zahl, Pfeil.
+// MARK: - Zeilen
+
+/// Zeile einer gruppierten Fläche: Symbol links, Titel (und Untertitel), Zahl, Pfeil.
 struct Listenzeile: View {
     let symbol: String
     let titel: String
     var untertitel: String? = nil
     var zahl: Int? = nil
     var pfeil: Bool = true
-    var titelFarbe: Color = Farben.tinte
+    var titelFarbe: Color = Farben.text
 
     var body: some View {
-        HStack(spacing: 13) {
+        HStack(spacing: 12) {
             Image(systemName: symbol)
-                .font(.system(size: 19, weight: .light))
-                .foregroundStyle(Farben.gedaempft)
-                .frame(width: 28)
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(Farben.akzent)
+                .frame(width: 26)
             VStack(alignment: .leading, spacing: 2) {
                 Text(titel)
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundStyle(titelFarbe)
                     .lineLimit(1)
                 if let untertitel, !untertitel.isEmpty {
                     Text(untertitel)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Farben.tinte2)
+                        .font(.footnote)
+                        .foregroundStyle(Farben.text2)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
@@ -353,17 +265,16 @@ struct Listenzeile: View {
             Spacer(minLength: 4)
             if let zahl {
                 ZahlPlakette(zahl: zahl)
-                    .scaleEffect(0.85)
             }
             if pfeil {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(Farben.gedaempft)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Farben.pfeil)
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 6)
-        .frame(minHeight: 50)
+        .padding(.vertical, 8)
+        .frame(minHeight: 48)
         .contentShape(Rectangle())
     }
 }
@@ -372,14 +283,13 @@ struct Listenzeile: View {
 struct Zeilentrenner: View {
     var body: some View {
         Rectangle()
-            .fill(Farben.trennlinie)
+            .fill(Farben.rand)
             .frame(height: 0.5)
-            .padding(.leading, 57)
-            .padding(.trailing, 16)
+            .padding(.leading, 54)
     }
 }
 
-/// Weiße Gruppe mit abgerundeten Ecken (Startseite, Profil).
+/// Gruppierte Fläche mit feinem Rand.
 struct Zeilengruppe<Inhalt: View>: View {
     @ViewBuilder let inhalt: () -> Inhalt
 
@@ -387,52 +297,22 @@ struct Zeilengruppe<Inhalt: View>: View {
         VStack(spacing: 0) {
             inhalt()
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .alsKarte(radius: 20)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .alsKarte(radius: 8)
     }
 }
 
-/// Zeile einer weißen Gruppe: beim Drücken leicht grau hinterlegt.
+/// Zeile einer Fläche: beim Drücken leicht grau hinterlegt.
 struct ZeilenKnopfStil: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(configuration.isPressed ? Farben.trennlinie : Color.clear)
+            .background(configuration.isPressed ? Farben.neutralFlaeche : Color.clear)
     }
 }
 
-/// Zweizeiliger Titel für die Navigationsleiste (z. B. „Mi. | 04.11.26“ und Uhrzeit).
-struct Leistentitel: View {
-    let titel: String
-    var untertitel: String? = nil
+// MARK: - Segmentschalter
 
-    var body: some View {
-        VStack(spacing: 1) {
-            Text(titel)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Farben.tinte2)
-            if let untertitel, !untertitel.isEmpty {
-                Text(untertitel)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Farben.gedaempft)
-            }
-        }
-        .lineLimit(1)
-        .accessibilityElement(children: .combine)
-    }
-}
-
-extension View {
-    /// Inhalt mittig mit höchstens dieser Breite (iPad: nicht über die ganze Breite).
-    func zentriert(maxBreite: CGFloat = 700) -> some View {
-        frame(maxWidth: maxBreite)
-            .frame(maxWidth: .infinity)
-    }
-}
-
-// MARK: - Segment-Schalter
-
-/// Segment-Schalter wie im Original (Schüler*innen: Alle | Abwesend | Anwesend): grauer, voll abgerundeter Hintergrund,
-/// der aktive Teil als helle Kapsel mit leichtem Schatten (gleitet beim Wechsel), Schrift 13 pt (aktiv Medium).
+/// Segmentschalter für Ansichtswechsel und Filter – der native Schalter des Systems.
 struct Segmentschalter<Wert: Hashable>: View {
     struct Eintrag {
         let wert: Wert
@@ -441,7 +321,6 @@ struct Segmentschalter<Wert: Hashable>: View {
 
     @Binding var auswahl: Wert
     let eintraege: [Eintrag]
-    @Namespace private var raum
 
     /// Einträge als (Wert, Titel).
     init(auswahl: Binding<Wert>, _ eintraege: [(Wert, String)]) {
@@ -450,49 +329,23 @@ struct Segmentschalter<Wert: Hashable>: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
+        Picker("Auswahl", selection: $auswahl) {
             ForEach(Array(eintraege.enumerated()), id: \.offset) { _, eintrag in
-                let aktiv = eintrag.wert == auswahl
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
-                        auswahl = eintrag.wert
-                    }
-                } label: {
-                    Text(eintrag.titel)
-                        .font(.system(size: 13, weight: aktiv ? .medium : .regular))
-                        .foregroundStyle(Farben.tinte)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .padding(.horizontal, 6)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 28)
-                        .background {
-                            if aktiv {
-                                Capsule()
-                                    .fill(Farben.segmentAktiv)
-                                    .shadow(color: Farben.segmentSchatten, radius: 2, y: 1)
-                                    .matchedGeometryEffect(id: "aktivesSegment", in: raum)
-                            }
-                        }
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(aktiv ? .isSelected : [])
+                Text(eintrag.titel).tag(eintrag.wert)
             }
         }
-        .padding(2)
-        .background(Farben.segmentGrund, in: Capsule())
+        .pickerStyle(.segmented)
+        .labelsHidden()
     }
 }
 
 // MARK: - Ladebalken
 
-/// Kräftiger Fortschrittsbalken (4 pt, unbestimmt) direkt unter der Kopfzeile: beim Laden von Plan, Details und
-/// Listen läuft ein orangefarbenes Segment von links nach rechts über eine blasse Spur. Nimmt keine Antippen an.
+/// Schmaler Fortschrittsbalken (2 pt, unbestimmt) direkt unter einer Kopfzeile: ein Segment in Marine läuft gleichmäßig
+/// über eine blasse Spur. Nimmt keine Antippen an.
 struct Ladebalken: View {
     let aktiv: Bool
-    /// Kräftig und gut sichtbar (4 pt)
-    var hoehe: CGFloat = 4
+    var hoehe: CGFloat = 2
 
     var body: some View {
         ZStack {
@@ -503,7 +356,7 @@ struct Ladebalken: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: hoehe)
-        .animation(.easeInOut(duration: 0.2), value: aktiv)
+        .animation(.linear(duration: 0.12), value: aktiv)
         .allowsHitTesting(false)
         .accessibilityElement()
         .accessibilityLabel(aktiv ? "Wird geladen" : "")
@@ -514,7 +367,7 @@ struct Ladebalken: View {
 /// Laufendes Segment des Ladebalkens (Zeitachse statt Zustand – läuft ohne Neustart weiter, solange sichtbar).
 private struct LadebalkenLauf: View {
     let hoehe: CGFloat
-    private let dauer: Double = 1.35
+    private let dauer: Double = 1.2
 
     var body: some View {
         GeometryReader { geo in
@@ -522,15 +375,13 @@ private struct LadebalkenLauf: View {
                 let w = geo.size.width
                 let t = kontext.date.timeIntervalSinceReferenceDate
                 let p = t.truncatingRemainder(dividingBy: dauer) / dauer
-                // Weicher Lauf (ease-in-out), das Segment wächst zur Mitte hin etwas
-                let weich = p < 0.5 ? 2 * p * p : 1 - pow(-2 * p + 2, 2) / 2
-                let segment = w * CGFloat(0.22 + 0.18 * sin(Double.pi * p))
-                let x = -segment + (w + segment) * CGFloat(weich)
+                let segment = w * 0.3
+                let x = -segment + (w + segment) * CGFloat(p)
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Farben.ladebalken.opacity(0.22))
-                    Capsule()
-                        .fill(Farben.ladebalken)
+                        .fill(Farben.akzent.opacity(0.15))
+                    Rectangle()
+                        .fill(Farben.akzent)
                         .frame(width: max(segment, 1), height: hoehe)
                         .offset(x: x)
                 }
@@ -542,50 +393,84 @@ private struct LadebalkenLauf: View {
     }
 }
 
-/// Hinweisfläche nach Vorlage (Startseite „Genieße die Zeit!“, nachgemessen): flache, abgerundete Fläche (dunkel
-/// #313d44, hell zartgrau), oben mittig das Kalender-Symbol mit Stern (24 pt), darunter der Titel (14 pt Medium) und
-/// ein grauer, höchstens zweizeiliger Text (12 pt Regular), alles zentriert. Dient auch für Ferien, gesperrte Tage und
-/// gesperrte Wochen im Stundenplan.
+// MARK: - Signet
+
+/// Signet von UntPlan (wie `design/logo/mark.svg`): Marine-Fläche mit einem 3×3-Raster aus Stundenfeldern, ein
+/// durchgehender Doppelblock in der Mitte und ein hervorgehobenes Feld unten rechts. Flach, ohne Verläufe.
+struct Signet: View {
+    var groesse: CGFloat = 64
+
+    var body: some View {
+        let s = groesse / 64
+        ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 14 * s, style: .continuous)
+                .fill(Color(hexWert: 0x1C3F7A))
+            feld(14, 14, 10, 1, s)
+            feld(27, 14, 10, 0.32, s)
+            feld(40, 14, 10, 0.32, s)
+            feld(14, 27, 10, 0.32, s)
+            feld(27, 27, 23, 1, s)
+            feld(14, 40, 10, 0.32, s)
+            feld(27, 40, 10, 0.32, s)
+            RoundedRectangle(cornerRadius: 2 * s, style: .continuous)
+                .fill(Color(hexWert: 0x8FB4EA))
+                .frame(width: 10 * s, height: 10 * s)
+                .offset(x: 40 * s, y: 40 * s)
+        }
+        .frame(width: groesse, height: groesse, alignment: .topLeading)
+        .accessibilityLabel("UntPlan")
+    }
+
+    private func feld(_ x: CGFloat, _ y: CGFloat, _ breite: CGFloat, _ deckkraft: Double, _ s: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 2 * s, style: .continuous)
+            .fill(Color.white.opacity(deckkraft))
+            .frame(width: breite * s, height: 10 * s)
+            .offset(x: x * s, y: y * s)
+    }
+}
+
+// MARK: - Leerer Zustand
+
+/// Leerer Zustand bzw. Hinweisfläche (frei, Ferien, gesperrter Zeitraum): ein Linien-Symbol, ein Titel und ein Satz,
+/// zentriert auf einer ruhigen Fläche mit feinem Rand.
 struct Hinweisfeld: View {
     let titel: String
     let text: String
-    /// Mindesthöhe der Fläche (Startseite: wie die Tageskarte)
+    var symbol: String = "calendar"
+    /// Mindesthöhe der Fläche
     var minHoehe: CGFloat = 0
-    /// Farbe der Fläche (im Stundenplan hell weiß auf dem grauen Raster)
-    var flaeche: Color = Hinweisfeld.standardFlaeche
-
-    static let standardFlaeche = Color(hell: 0xEEF1F4, dunkel: 0x313D44)
-    static let symbolFarbe = Color(hell: 0x5D727F, dunkel: 0xD9E3E9)
-    static let titelFarbe = Color(hell: 0x253746, dunkel: 0xE1E3E5)
-    static let textFarbe = Color(hell: 0x5D6B76, dunkel: 0xBDC5CC)
+    /// Farbe der Fläche
+    var flaeche: Color = Farben.flaeche2
+    /// Symbol- und Titelfarbe (z. B. Ferien in der Ferienfarbe)
+    var tonfarbe: Color? = nil
 
     var body: some View {
-        VStack(spacing: 0) {
-            KalenderSymbol(inhalt: .stern, groesse: 24, strich: 1.5)
-                .foregroundStyle(Self.symbolFarbe)
-                .frame(width: 24, height: 24)
+        VStack(spacing: 6) {
+            Image(systemName: symbol)
+                .font(.system(size: 22, weight: .regular))
+                .foregroundStyle(tonfarbe ?? Farben.text3)
                 .accessibilityHidden(true)
             Text(titel)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Self.titelFarbe)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tonfarbe ?? Farben.text)
                 .multilineTextAlignment(.center)
-                .padding(.top, 9)
             if !text.isEmpty {
                 Text(text)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Self.textFarbe)
+                    .font(.footnote)
+                    .foregroundStyle(Farben.text2)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
-                    .padding(.top, 8)
+                    .lineLimit(3)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, 14)
-        .padding(.top, 20)
-        .padding(.bottom, 21)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 18)
         .frame(maxWidth: .infinity, minHeight: minHoehe)
-        .background(flaeche, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+        .background(flaeche, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(Farben.rand, lineWidth: 1)
+        }
         .accessibilityElement(children: .combine)
     }
 }

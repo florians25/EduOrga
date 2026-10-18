@@ -1,107 +1,70 @@
-// Symbole für Navigation und Seiten: ausschließlich die Original-Icons aus dem Paket des Kollegen (img/wu, 28 × 28).
-// Die Dateien werden als CSS-Maske gezeichnet, damit sie wie im Original grau und im aktiven Menüpunkt orange erscheinen.
-// Kleine Bedienelemente ohne eigenes Original-Icon (Pfeile, Papierkorb …) kommen weiter aus Bootstrap Icons (ui.js).
+// Symbole der Oberfläche: Linien-Symbole aus Lucide (ISC-Lizenz, lib/lucide/LICENSE), gezeichnet als Maske in currentColor
+// (css/symbole.css). Diese Datei ordnet den fachlichen Namen der Oberfläche (Navigation, Seiten, Bedienelemente) ein Symbol zu;
+// Bezeichnungen wie „bi-search“ in den Ansichten sind die allgemeinen Symbolnamen und werden in symbole.css ebenfalls abgebildet.
 
-const W = '/img/wu/';
-
-/** Name → Icon-Datei unter img/wu. */
+/** Fachlicher Name → Lucide-Symbol. */
 const S = {
-  // Hauptmenü
-  dashboard: 'navigation-dashboard.svg',
-  uebersicht: 'overview.svg',
-  mitteilungen: 'admin-messages.svg',
-  meinplan: 'my_timetable.svg',
-  stundenplan: 'navigation-timetable.svg',
-  abwesenheiten: 'absences.svg',
-  hausaufgaben: 'homework.svg',
-  unterricht: 'navigation-lessons.svg',
-  klassenbuchnav: 'navigation-class-register.svg',
-  meldenbuchen: 'resources.svg',
-  verwaltung: 'navigation-administration.svg',
-  stammdaten: 'my_data.svg',
-  meinedaten: 'my_data.svg',
-  vertretungen: 'tasks.svg',
+  // Hauptbereiche
+  heute: 'house', dashboard: 'house', uebersicht: 'layout-dashboard', stundenplan: 'calendar-days', meinplan: 'calendar-check',
+  plan: 'calendar-days', plaene: 'calendar-range', vertretungen: 'arrow-left-right', vertretung: 'arrow-left-right',
+  unterricht: 'presentation', klassenbuchnav: 'notebook-text', klassenbuch: 'notebook-text', kommunikation: 'mail', mitteilungen: 'mail',
+  mitteilung: 'mail', meldenbuchen: 'clipboard-list', melden: 'clipboard-list', verwaltung: 'settings', admin: 'settings',
+  stammdaten: 'database', meinedaten: 'circle-user', pruefungen: 'file-check', sprechtag: 'users',
 
-  // Stundenplan-Untermenü
-  klasse: 'shared_classEntity.svg',
-  lehrkraft: 'shared_teacherEntity.svg',
-  raumplan: 'shared_roomEntity.svg',
-  tagklassen: 'classes_daily.svg',
-  taglehrer: 'teachers_daily.svg',
-  tagraeume: 'rooms_daily.svg',
-  ressource: 'resources.svg',
+  // Stundenplan
+  klasse: 'users', lehrkraft: 'square-user', raumplan: 'door-closed', raum: 'door-open', tag: 'grid-3x3',
+  tagklassen: 'rows-3', taglehrer: 'contact', tagraeume: 'building-2', woche: 'calendar-range', ressource: 'package',
 
   // Klassenbuch
-  woche: 'navigation-class-register.svg',
-  offen: 'open_periods_teacher.svg',
-  eintraege: 'class_register_entries.svg',
-  klassendienste: 'class_services.svg',
-  fehlzeiten: 'absences.svg',
-  befreiungen: 'exemptions.svg',
-  berichte: 'reports.svg',
-  sitzplan: 'lessons_students.svg',
+  offen: 'hourglass', eintraege: 'notebook-pen', klassendienste: 'list-checks', fehlzeiten: 'history', abwesenheiten: 'user-x',
+  befreiungen: 'shield-check', berichte: 'file-chart-column', sitzplan: 'armchair', hausaufgaben: 'square-pen', hausaufgabe: 'square-pen',
 
-  // Mitteilungen
-  posteingang: 'admin-messages.svg',
-  gesendet: 'sent.svg',
-  entwuerfe: 'draft.svg',
-  verfassen: 'homework.svg',
-  listen: 'lessons_students.svg',
+  // Kommunikation
+  posteingang: 'inbox', gesendet: 'send', entwuerfe: 'file-pen', verfassen: 'square-pen', listen: 'list',
 
   // Melden & Buchen, Unterricht
-  abwesend: 'absences.svg',
-  raum: 'shared_roomEntity.svg',
-  klausur: 'examinations.svg',
-  pruefung: 'exam_planner.svg',
-  protokoll: 'reports.svg',
-  meineunterrichte: 'my_lessons.svg',
+  abwesend: 'user-x', klausur: 'file-check', pruefung: 'file-text', protokoll: 'list', meineunterrichte: 'presentation',
 
-  // Administration
-  synchron: 'navigation-administration.svg',
-  benutzer: 'my_data.svg',
-  ruckmeldung: 'tasks.svg',
-  nachrichten: 'admin-messages.svg',
-  monitor: 'navigation-dashboard.svg',
-  freietage: 'navigation-timetable.svg',
-  import: 'reports.svg',
-  export: 'reports.svg',
-  aktive: 'lessons_students.svg',
-  rechte: 'navigation-administration.svg',
-  zuordnung: 'lessons_classes.svg',
-  sperre: 'exam_planner.svg',
-  ansicht: 'overview.svg',
-  versionen: 'navigation-timetable.svg',
+  // Verwaltung
+  synchron: 'refresh-cw', benutzer: 'users', ruckmeldung: 'inbox', nachrichten: 'megaphone', monitor: 'monitor',
+  freietage: 'calendar-x', import: 'upload', export: 'download', aktive: 'users', rechte: 'shield-check', zuordnung: 'network',
+  sperre: 'lock', ansicht: 'sliders-horizontal', versionen: 'history', sitzplanRaum: 'armchair',
 
   // Allgemein
-  zurueck: 'exact/navigation-back.svg',
-  abmelden: 'log_out.svg',
-  profil: 'my_data.svg',
-  wechseln: 'my_data.svg',
-  sitzplanRaum: 'lessons_students.svg',
+  zurueck: 'arrow-left', abmelden: 'log-out', profil: 'circle-user', wechseln: 'user-plus', menue: 'menu', mehr: 'ellipsis',
+  links: 'chevron-left', rechts: 'chevron-right', unten: 'chevron-down', oben: 'chevron-up', drucken: 'printer', plus: 'plus',
+  loeschen: 'trash-2', haken: 'check', x: 'x', schluessel: 'key-round', hochladen: 'upload', herunterladen: 'download',
+  info: 'info', warnung: 'triangle-alert', uhr: 'clock', senden: 'send', suchen: 'search', aktualisieren: 'refresh-cw',
+  kopieren: 'copy', kalender: 'calendar', stift: 'pencil', augen: 'eye', aufsicht: 'eye', schloss: 'lock', csv: 'file-spreadsheet',
+  filter: 'filter', einklappen: 'chevrons-left', glocke: 'bell', online: 'video', neuigkeiten: 'megaphone', hilfe: 'circle-help',
+  einstellungen: 'settings-2', speichern: 'save', link: 'link',
 };
 
-/** Icon als HTML (Maske in currentColor); unbekannte Namen liefern null. */
+/** Symbol als HTML (Maske in currentColor, Größe 1em bzw. über CSS); unbekannte Namen liefern null. */
 export function symbol(name, klasse = '') {
-  const datei = S[name];
-  if (!datei) return null;
-  return `<span class="u-sym wu ${klasse}" style="--wu:url(${W}${datei})" aria-hidden="true"></span>`;
+  const s = S[name];
+  return s ? `<i class="sym sym-${s} ${klasse}" aria-hidden="true"></i>` : null;
 }
 
-/** Farbiges Original-Icon als Bild (z. B. Statuspunkte, Info, Hausaufgabe), Pfad relativ zu img/wu. */
-export const bild = (datei, klasse = '', titel = '') => `<img class="wu-bild ${klasse}" src="${W}${datei}" alt="${titel}" ${titel ? `title="${titel}"` : 'aria-hidden="true"'}>`;
+/** Alle verwendeten Lucide-Namen (für das Erzeugen von css/symbole.css). */
+export const symbolNamen = [...new Set(Object.values(S))];
 
-export const symbolNamen = Object.keys(S);
-
-/** Bildmarke von UntPlanWeb: Stundenplan-Raster als reine Linienzeichnung (Strich 1,5 im 28er-Raster, runde Enden) wie die übrigen
- *  Linien-Icons, grau über currentColor (Farbe in app.css: .logo). Gleiches Motiv wie img/logo.svg (Favicon). */
-export const LOGO = `<svg class="logo" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-  <rect x="3.25" y="5.25" width="21.5" height="19.5" rx="3"/>
-  <path d="M9 3v4.5M19 3v4.5M3.25 10.5h21.5"/>
-  <rect x="6.75" y="13.5" width="3.5" height="3" rx=".75"/>
-  <rect x="6.75" y="18.5" width="3.5" height="2.75" rx=".75"/>
-  <rect x="12.25" y="13.5" width="3.5" height="7.75" rx=".75"/>
-  <rect x="17.75" y="13.5" width="3.5" height="4.5" rx=".75"/>
+/** Signet von UntPlan (Raster mit hervorgehobener Stunde) – farbig auf Marine-Fläche. Gleiches Motiv wie img/logo.svg. */
+export const SIGNET = `<svg class="signet" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+  <rect width="64" height="64" rx="14" fill="#1C3F7A"/>
+  <rect x="14" y="14" width="10" height="10" rx="2" fill="#fff"/><rect x="27" y="14" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/>
+  <rect x="40" y="14" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/><rect x="14" y="27" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/>
+  <rect x="27" y="27" width="23" height="10" rx="2" fill="#fff"/><rect x="14" y="40" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/>
+  <rect x="27" y="40" width="10" height="10" rx="2" fill="#fff" fill-opacity=".32"/><rect x="40" y="40" width="10" height="10" rx="2" fill="#8FB4EA"/>
 </svg>`;
 
-/** RSS-Kachel für „Nachrichten“ (Bootstrap Icon in Orange). */
-export const RSS = '<i class="bi bi-rss-fill u-rss" aria-hidden="true"></i>';
+/** Signet einfarbig (currentColor), z. B. auf dunklem Grund ohne eigene Fläche. */
+export const SIGNET_MONO = `<svg class="signet mono" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g fill="currentColor">
+  <rect x="14" y="14" width="10" height="10" rx="2"/><rect x="27" y="14" width="10" height="10" rx="2" fill-opacity=".35"/>
+  <rect x="40" y="14" width="10" height="10" rx="2" fill-opacity=".35"/><rect x="14" y="27" width="10" height="10" rx="2" fill-opacity=".35"/>
+  <rect x="27" y="27" width="23" height="10" rx="2"/><rect x="14" y="40" width="10" height="10" rx="2" fill-opacity=".35"/>
+  <rect x="27" y="40" width="10" height="10" rx="2" fill-opacity=".35"/><rect x="40" y="40" width="10" height="10" rx="2" fill-opacity=".7"/>
+</g></svg>`;
+
+/** Bildmarke (Signet) für Kopfleiste, Anmeldung und Monitor. */
+export const LOGO = SIGNET;

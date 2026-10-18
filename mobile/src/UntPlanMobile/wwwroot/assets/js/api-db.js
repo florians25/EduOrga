@@ -61,9 +61,9 @@ const TT_DB = (() => {
 
 window.TT_DB = TT_DB;
 
-/* Der Notweg der Vorlage — die Desktopseite timetable.php auslesen —
-   entfällt in UntPlanMobile. app.js fragt ihn trotzdem ab; der Platzhalter
-   sagt „nicht aktiv“. */
+/* Ein zweiter Datenweg (Auslesen einer Desktopseite) gibt es in UntPlan
+   Mobile nicht. app.js fragt ihn trotzdem ab; der Platzhalter sagt
+   „nicht aktiv“. */
 window.TT_API = {
   configure(){}, isLive: () => false,
   fetchWeek: async () => { throw new Error('nicht verfügbar'); },

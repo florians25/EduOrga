@@ -56,16 +56,13 @@ struct AnmeldungView: View {
                 if !hinzufuegen {
                 Section {
                     VStack(spacing: 10) {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 34, weight: .medium))
-                            .foregroundStyle(.white)
-                            .frame(width: 72, height: 72)
-                            .background(Farben.akzent, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        Signet(groesse: 64)
                         Text("UntPlan")
-                            .font(.largeTitle.weight(.medium))
+                            .font(.largeTitle.weight(.semibold))
+                            .foregroundStyle(Farben.text)
                         Text("Stundenplan, Vertretungen und Mitteilungen Ihrer Schule")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Farben.text2)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
@@ -88,7 +85,7 @@ struct AnmeldungView: View {
                                     Initialen(name: konto.name, groesse: 34)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(konto.rollenname.isEmpty ? konto.login : "\(konto.login) · \(konto.rollenname)")
-                                            .foregroundStyle(Farben.tinte)
+                                            .foregroundStyle(Farben.text)
                                         Text(konto.schulname.isEmpty ? konto.serverKurz : konto.schulname)
                                             .font(.footnote)
                                             .foregroundStyle(.secondary)
@@ -116,7 +113,7 @@ struct AnmeldungView: View {
                 } header: {
                     Text("Server-Adresse")
                 } footer: {
-                    Text("Die Adresse von UntPlanWeb Ihrer Schule.")
+                    Text("Die Adresse von UntPlan Web Ihrer Schule.")
                 }
 
                 Section("Anmeldung") {
@@ -144,25 +141,25 @@ struct AnmeldungView: View {
                             Spacer()
                             if laedt {
                                 ProgressView()
-                                    .tint(.white)
+                                    .tint(Farben.aufAkzent)
                             } else {
                                 Text("Anmelden")
-                                    .fontWeight(.medium)
+                                    .fontWeight(.semibold)
                             }
                             Spacer()
                         }
                         .padding(.vertical, 4)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Farben.aufAkzent)
                     }
                     .listRowBackground(bereit ? Farben.akzent : Farben.akzent.opacity(0.45))
                     .disabled(!bereit || laedt)
                 } footer: {
                     if let fehler {
                         Text(fehler)
-                            .foregroundStyle(Farben.entfallRand)
+                            .foregroundStyle(Farben.entfall)
                             .font(.footnote)
                     } else if hinzufuegen {
-                        Text("Das bisherige Konto bleibt angemeldet; Sie können jederzeit über den Profilwechsel oben links zurückwechseln.")
+                        Text("Das bisherige Konto bleibt angemeldet; unter „Mehr“ → „Konten“ wechseln Sie jederzeit zurück.")
                             .font(.footnote)
                     }
                 }

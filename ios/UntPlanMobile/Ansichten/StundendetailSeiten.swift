@@ -406,7 +406,7 @@ final class Stundendaten: ObservableObject {
 
     // MARK: Raumbuchung
 
-    /// Raum ersetzen, hinzufügen oder löschen (wie in der PWA); liefert die Meldung für die Anzeige.
+    /// Raum ersetzen, hinzufügen oder löschen ; liefert die Meldung für die Anzeige.
     func raumAendern(aktion: String, raum: String, alt: String?) async throws -> String {
         guard let u = karte.unterricht else { return "" }
         let antwort = try await api.raumAendern(RaumAenderungDaten(
@@ -449,7 +449,7 @@ enum Detailseite: Hashable {
     case klassenbuch
     case notizSchueler
     case notizLehrer
-    /// Prüfung (Zeile mit dem Fach als Untertitel, Vorlage 140)
+    /// Prüfung (Zeile mit dem Fach als Untertitel)
     case pruefung
 }
 
@@ -472,7 +472,7 @@ struct DetailTextSeite: View {
             ScrollView {
                 Text(text.isEmpty ? "Kein Text." : text)
                     .font(.system(size: 16))
-                    .foregroundStyle(text.isEmpty ? Farben.gedaempft : Farben.tinte)
+                    .foregroundStyle(text.isEmpty ? Farben.text3 : Farben.text)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
@@ -487,7 +487,7 @@ struct NotizSeite: View {
     enum Art {
         case schueler
         case lehrer
-        /// Lehrstoff: eine einfache Textfläche wie in der Vorlage
+        /// Lehrstoff: eine einfache Textfläche
         case lehrstoff
 
         var titel: String {
@@ -502,7 +502,7 @@ struct NotizSeite: View {
             switch self {
             case .schueler: return "Notiz, die Schüler*innen sehen"
             case .lehrer: return "Notiz nur für Lehrkräfte"
-            case .lehrstoff: return "Hier klicken um Lehrstoff einzutragen."
+            case .lehrstoff: return "Lehrstoff eingeben"
             }
         }
 
@@ -540,7 +540,7 @@ struct NotizSeite: View {
         }
     }
 
-    /// Vorlage (Seite „Notizen“): X links, Titel mittig grau, darunter ein großer weißer Textbereich.
+    /// Seite „Notizen“: „Schließen“ links, Titel mittig, darunter ein großer Textbereich.
     var body: some View {
         // Einzelstunde eines Blocks: Untertitel nennt die Stunde, darüber (nur lesend) der geerbte Blockeintrag
         DetailSeitenRahmen(titel: art.titel, untertitel: daten.einzelstunde == nil ? nil : "Nur \(daten.bereichText)",
@@ -594,7 +594,7 @@ struct NotizSeite: View {
                 // und füllt nach dem Schließen wieder die ganze Seite; Wischen nach unten schließt die Tastatur
                 TextEditor(text: $text)
                     .font(.system(size: 16))
-                    .foregroundStyle(Farben.tinte)
+                    .foregroundStyle(Farben.text)
                     .scrollContentBackground(.hidden)
                     .scrollDismissesKeyboard(.interactively)
                     .focused($fokus)
@@ -604,7 +604,7 @@ struct NotizSeite: View {
                         if text.isEmpty {
                             Text(art.platzhalter)
                                 .font(.system(size: 16))
-                                .foregroundStyle(Farben.gedaempft)
+                                .foregroundStyle(Farben.text3)
                                 .padding(.horizontal, 20)
                                 .padding(.top, 16)
                                 .allowsHitTesting(false)
@@ -615,7 +615,7 @@ struct NotizSeite: View {
                 ScrollView {
                     Text(text.isEmpty ? art.leer : text)
                         .font(.system(size: 16))
-                        .foregroundStyle(text.isEmpty ? Farben.gedaempft : Farben.tinte)
+                        .foregroundStyle(text.isEmpty ? Farben.text3 : Farben.text)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(20)
@@ -662,17 +662,17 @@ struct GeerbterBlockText: View {
         VStack(alignment: .leading, spacing: 3) {
             Text("Gilt für den ganzen Block")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Farben.gedaempft)
+                .foregroundStyle(Farben.text3)
             Text(text)
                 .font(.system(size: 15))
-                .foregroundStyle(Farben.tinte2)
+                .foregroundStyle(Farben.text2)
                 .lineLimit(4)
                 .textSelection(.enabled)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .background(Farben.knopf, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Farben.neutralFlaeche, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .padding(.horizontal, 15)
         .padding(.top, 10)
         .accessibilityElement(children: .combine)
@@ -702,7 +702,7 @@ struct OnlineLinkZeile: View {
             Listensymbol(name: "link")
             TextField("Link zum Online-Unterricht", text: $eingabe)
                 .font(.system(size: 17))
-                .foregroundStyle(Farben.detailText)
+                .foregroundStyle(Farben.text)
                 .keyboardType(.URL)
                 .textContentType(.URL)
                 .textInputAutocapitalization(.never)
@@ -717,11 +717,10 @@ struct OnlineLinkZeile: View {
                 Button {
                     Task { await sichern() }
                 } label: {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(width: 31, height: 31)
-                        .background(Farben.akzent, in: Circle())
+                    Text("Sichern")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Farben.akzent)
+                        .frame(minHeight: 32)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Link sichern")
@@ -729,10 +728,10 @@ struct OnlineLinkZeile: View {
                 Button {
                     oeffneURL(url)
                 } label: {
-                    Image(systemName: "arrow.up.right.square")
-                        .font(.system(size: 20, weight: .light))
-                        .foregroundStyle(Farben.gruen)
-                        .frame(width: 31, height: 31)
+                    Image(systemName: "arrow.up.forward.app")
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundStyle(Farben.akzent)
+                        .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Online-Unterricht öffnen")
@@ -784,7 +783,7 @@ struct OnlineLinkZeile: View {
 struct HausaufgabenSeite: View {
     @EnvironmentObject var daten: Stundendaten
     @EnvironmentObject var zustand: AppZustand
-    @State private var formular: HausaufgabeFormular.Vorlage? = nil
+    @State private var formular: HausaufgabeFormular.Startwerte? = nil
     @State private var fehler: String? = nil
 
     private var bearbeitbar: Bool { daten.hausaufgaben?.darf == true }
@@ -796,7 +795,7 @@ struct HausaufgabenSeite: View {
         } rechts: {
             if bearbeitbar {
                 Button {
-                    formular = HausaufgabeFormular.Vorlage(eintrag: nil, stundenDatum: daten.karte.datum)
+                    formular = HausaufgabeFormular.Startwerte(eintrag: nil, stundenDatum: daten.karte.datum)
                 } label: {
                     Rundknopf(symbol: "plus", gewicht: .regular, groesse: 16)
                 }
@@ -804,10 +803,10 @@ struct HausaufgabenSeite: View {
                 .accessibilityLabel("Neue Hausaufgabe")
             }
         }
-        // iPhone: randloses 90-%-Blatt wie die Stundendetails; iPad: Formblatt (Größenklasse im Blatt ist kompakt)
-        .detailPraesentation(item: $formular, breit: Geraet.istPad, art: .formular) { vorlage in
-            HausaufgabeFormular(vorlage: vorlage) { text, faellig, bemerkung in
-                if let id = vorlage.eintrag?.id {
+        // Formular als Blatt; iPad: Formblatt (Größenklasse im Blatt ist kompakt)
+        .detailPraesentation(item: $formular, breit: Geraet.istPad, art: .formular) { werte in
+            HausaufgabeFormular(startwerte: werte) { text, faellig, bemerkung in
+                if let id = werte.eintrag?.id {
                     try await daten.hausaufgabeAendern(id, text: text, faellig: faellig, bemerkung: bemerkung)
                 } else {
                     try await daten.hausaufgabeAnlegen(text: text, faellig: faellig, bemerkung: bemerkung)
@@ -828,13 +827,13 @@ struct HausaufgabenSeite: View {
                 let liste = daten.hausaufgaben?.liste ?? []
                 if liste.isEmpty {
                     Text("Keine Hausaufgaben aufgegeben.")
-                        .foregroundStyle(Farben.gedaempft)
+                        .foregroundStyle(Farben.text3)
                 }
                 ForEach(liste) { ha in
                     zeile(ha)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            if bearbeitbar { formular = HausaufgabeFormular.Vorlage(eintrag: ha, stundenDatum: daten.karte.datum) }
+                            if bearbeitbar { formular = HausaufgabeFormular.Startwerte(eintrag: ha, stundenDatum: daten.karte.datum) }
                         }
                         .swipeActions(edge: .trailing) {
                             if bearbeitbar {
@@ -848,7 +847,7 @@ struct HausaufgabenSeite: View {
                 }
                 if bearbeitbar {
                     Button {
-                        formular = HausaufgabeFormular.Vorlage(eintrag: nil, stundenDatum: daten.karte.datum)
+                        formular = HausaufgabeFormular.Startwerte(eintrag: nil, stundenDatum: daten.karte.datum)
                     } label: {
                         Label("Neue Hausaufgabe", systemImage: "plus.circle.fill")
                     }
@@ -876,7 +875,7 @@ struct HausaufgabenSeite: View {
             } label: {
                 Image(systemName: ha.erledigt ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 20))
-                    .foregroundStyle(ha.erledigt ? Farben.gruen : Farben.gedaempft)
+                    .foregroundStyle(ha.erledigt ? Farben.ok : Farben.pfeil)
             }
             .buttonStyle(.borderless)
             .disabled(!bearbeitbar)
@@ -884,27 +883,27 @@ struct HausaufgabenSeite: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(ha.text)
                     .font(.system(size: 16))
-                    .foregroundStyle(Farben.tinte)
+                    .foregroundStyle(Farben.text)
                 if let f = ha.faellig, !f.isEmpty {
                     Text("fällig \(Datumsformat.anzeige(f, "EE d.M.yyyy"))")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Farben.heute)
+                        .foregroundStyle(Farben.akzent)
                 }
                 if !ha.bemerkung.isEmpty {
                     Text(ha.bemerkung)
                         .font(.system(size: 13))
-                        .foregroundStyle(Farben.tinte2)
+                        .foregroundStyle(Farben.text2)
                 }
                 // Doppel-/Blockstunde: gilt die Hausaufgabe für den ganzen Block oder nur für eine Stunde?
                 if daten.hatEinzelstunden {
                     Text(ha.einzelstunde.map { "Nur \($0). Stunde" } ?? "Ganzer Block")
                         .font(.system(size: 12))
-                        .foregroundStyle(Farben.gedaempft)
+                        .foregroundStyle(Farben.text3)
                 }
                 if !ha.fach.isEmpty || !ha.lehrer.isEmpty {
                     Text([ha.fach, ha.lehrer].filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.system(size: 12))
-                        .foregroundStyle(Farben.gedaempft)
+                        .foregroundStyle(Farben.text3)
                 }
             }
         }
@@ -922,19 +921,19 @@ struct HausaufgabenSeite: View {
 
 /// Formular für eine neue bzw. geänderte Hausaufgabe (Text, Fälligkeit, Bemerkung).
 struct HausaufgabeFormular: View {
-    struct Vorlage: Identifiable {
+    struct Startwerte: Identifiable {
         let id = UUID()
         let eintrag: Hausaufgabeneintrag?
         let stundenDatum: String
     }
 
-    let vorlage: Vorlage
+    let startwerte: Startwerte
     let sichern: (String, Date?, String) async throws -> Void
     @EnvironmentObject var zustand: AppZustand
     @Environment(\.dismiss) private var systemSchliessen
     @Environment(\.blattSchliessen) private var blattSchliessen
 
-    /// Randloses iPhone-Blatt mit eigener Animation schließen, sonst das Systemblatt.
+    /// Blatt schließen.
     private func schliessen() {
         if let blattSchliessen { blattSchliessen() } else { systemSchliessen() }
     }
@@ -945,12 +944,12 @@ struct HausaufgabeFormular: View {
     @State private var speichert = false
     @State private var fehler: String? = nil
 
-    private var stunde: Date { Datumsformat.datum(vorlage.stundenDatum) ?? Date() }
+    private var stunde: Date { Datumsformat.datum(startwerte.stundenDatum) ?? Date() }
 
     var body: some View {
         NavigationStack {
-            // Kopf wie alle Formulare im Blatt: X links, Titel mittig, oranger Haken (Sichern) rechts
-            DetailSeitenRahmen(titel: vorlage.eintrag == nil ? "Neue Hausaufgabe" : "Hausaufgabe", untertitel: nil,
+            // Kopf wie alle Formulare im Blatt: „Schließen“ links, Titel mittig, „Sichern“ rechts
+            DetailSeitenRahmen(titel: startwerte.eintrag == nil ? "Neue Hausaufgabe" : "Hausaufgabe", untertitel: nil,
                                symbol: "xmark", zurueck: { schliessen() }) {
             Form {
                 Section("Hausaufgabe") {
@@ -971,7 +970,7 @@ struct HausaufgabeFormular: View {
                 if let fehler {
                     Section {
                         Text(fehler)
-                            .foregroundStyle(Farben.entfallRand)
+                            .foregroundStyle(Farben.entfall)
                     }
                 }
             }
@@ -984,7 +983,7 @@ struct HausaufgabeFormular: View {
                 }
             }
             .onAppear {
-                if let e = vorlage.eintrag {
+                if let e = startwerte.eintrag {
                     text = e.text
                     bemerkung = e.bemerkung
                     if let f = e.faellig, let d = Datumsformat.datum(f) {
@@ -1055,7 +1054,7 @@ struct KlassenbuchSeite: View {
         return liste
     }
 
-    /// Vorlage: Kopf mit Zurück und Titel mittig; die Suche steht als eigene Zeile unter dem Kopf (nicht daneben gequetscht).
+    /// Kopf mit Zurück und Titel mittig; die Suche steht als eigene Zeile unter dem Kopf.
     var body: some View {
         DetailSeitenRahmen(titel: "Klassenbucheinträge", untertitel: stundenUntertitel(daten.karte), laedt: !daten.geladen) {
             VStack(spacing: 0) {
@@ -1072,7 +1071,7 @@ struct KlassenbuchSeite: View {
         HStack(spacing: 7) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 15, weight: .regular))
-                .foregroundStyle(Farben.gedaempft)
+                .foregroundStyle(Farben.text3)
             TextField("Suchen", text: $suche)
                 .font(.system(size: 16))
                 .textInputAutocapitalization(.never)
@@ -1084,15 +1083,15 @@ struct KlassenbuchSeite: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 15))
-                        .foregroundStyle(Farben.gedaempft)
+                        .foregroundStyle(Farben.text3)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Suche löschen")
             }
         }
-        .padding(.horizontal, 12)
-        .frame(height: 38)
-        .background(Farben.knopf, in: Capsule())
+        .padding(.horizontal, 10)
+        .frame(height: 36)
+        .background(Farben.neutralFlaeche, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var liste: some View {
@@ -1101,25 +1100,25 @@ struct KlassenbuchSeite: View {
                 if daten.vermerke.isEmpty {
                     Text(daten.geladen ? "Keine Klassenbucheinträge an diesem Tag." : "Wird geladen …")
                         .font(.system(size: 15))
-                        .foregroundStyle(Farben.gedaempft)
+                        .foregroundStyle(Farben.text3)
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
                 } else if gruppen.isEmpty {
                     Text("Keine Treffer.")
                         .font(.system(size: 15))
-                        .foregroundStyle(Farben.gedaempft)
+                        .foregroundStyle(Farben.text3)
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
                 }
                 ForEach(gruppen) { g in
                     Text(g.name)
                         .font(.system(size: 13))
-                        .foregroundStyle(Farben.tinte2)
+                        .foregroundStyle(Farben.text2)
                         .padding(.horizontal, 20)
                         .padding(.top, 14)
                         .padding(.bottom, 6)
                     Rectangle()
-                        .fill(Farben.trennlinie)
+                        .fill(Farben.rand)
                         .frame(height: 0.5)
                         .padding(.horizontal, 20)
                     ForEach(g.eintraege) { v in
@@ -1149,7 +1148,7 @@ struct KlassenbuchSeite: View {
             }
         }
         .font(.system(size: 15))
-        .foregroundStyle(Farben.tinte)
+        .foregroundStyle(Farben.text)
         .labelStyle(EintragLabelStil())
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
@@ -1164,7 +1163,7 @@ private struct EintragLabelStil: LabelStyle {
         HStack(spacing: 5) {
             configuration.icon
                 .font(.system(size: 13, weight: .light))
-                .foregroundStyle(Farben.gedaempft)
+                .foregroundStyle(Farben.text3)
             configuration.title
         }
     }
@@ -1172,13 +1171,13 @@ private struct EintragLabelStil: LabelStyle {
 
 // MARK: - Schüler*innen (Anwesenheit)
 
-/// Vorlage (Seite „Schüler*innen“): Kopf mit Zurück, Titel und Datum mittig; darunter das Segment
-/// Alle | Abwesend | Anwesend und die Leiste „✓ Abwesenheiten wurden kontrolliert“ (bzw. zum Bestätigen der Kontrolle),
-/// Abschnitte nach Anfangsbuchstaben mit A–Z-Leiste rechts.
-/// Jede Zeile: grüner Haken-Kreis (anwesend) bzw. rote Uhr (abwesend), Name, darunter „Abwesend (verspätet)“ bzw.
-/// „Abwesend (fehlt)“ oder der Hinweis „War in Vorstunde abwesend!“, rechts Buch mit Plus (neuer Klassenbucheintrag)
-/// und Uhr (Abwesenheiten der Person). Wischen von links nach rechts: anwesend (grün), von rechts nach links: abwesend (rot)
-/// bzw. bei abwesenden Schüler*innen „Entschuldigen“ (runde Pill, öffnet den Entschuldigungsdialog).
+/// Seite „Schüler*innen“: Kopf mit Zurück, Titel und Datum mittig; darunter der Segmentschalter
+/// Alle | Abwesend | Anwesend und die Zeile zur Kontrolle der Abwesenheiten, Abschnitte nach Anfangsbuchstaben mit
+/// Buchstabenleiste rechts.
+/// Jede Zeile: Haken (anwesend) bzw. Uhr (abwesend), Name, darunter der Abwesenheitsstatus oder der Hinweis auf eine
+/// Abwesenheit in der Vorstunde, rechts Buch mit Plus (neuer Klassenbucheintrag) und Uhr (Abwesenheiten der Person).
+/// Wischen von links nach rechts: anwesend, von rechts nach links: abwesend bzw. bei abwesenden Schüler*innen
+/// „Entschuldigen“ (öffnet den Entschuldigungsdialog).
 struct SchuelerSeite: View {
     enum Filter: Hashable {
         case alle
@@ -1186,7 +1185,7 @@ struct SchuelerSeite: View {
         case anwesend
     }
 
-    /// Vorlage für den Klassenbucheintrag (vorausgewählte Schüler*innen).
+    /// Startwerte für den Klassenbucheintrag (vorausgewählte Schüler*innen).
     struct Eintragsvorlage: Identifiable {
         let id = UUID()
         let schueler: [Schueler]
@@ -1295,8 +1294,7 @@ struct SchuelerSeite: View {
                         ForEach(gruppen) { gruppe in
                             Section {
                                 ForEach(gruppe.liste) { s in
-                                    // Wischen wie im Original: nach rechts anwesend (grün, Haken), nach links abwesend
-                                    // (rot, Uhr); die Farbe läuft über die ganze Zeilenbreite
+                                    // Wischen: nach rechts anwesend (Haken), nach links abwesend (Uhr)
                                     // – bei abwesenden Schüler*innen nach links: „Entschuldigen“ (Klassenleitung bzw. Fachlehrkraft)
                                     let fehlzeit = daten.fehlzeit(s)
                                     let abwesend = fehlzeit != nil
@@ -1323,7 +1321,7 @@ struct SchuelerSeite: View {
                             } header: {
                                 Text(gruppe.buchstabe)
                                     .font(.system(size: 12, weight: .regular))
-                                    .foregroundStyle(Farben.gedaempft)
+                                    .foregroundStyle(Farben.text3)
                             }
                             .id(gruppe.buchstabe)
                         }
@@ -1340,14 +1338,14 @@ struct SchuelerSeite: View {
         }
     }
 
-    /// Leiste unter dem Segment: „✓ Abwesenheiten wurden kontrolliert“; noch nicht kontrolliert: antippen zum Bestätigen.
+    /// Zeile unter dem Segmentschalter: „Abwesenheiten kontrolliert“; noch nicht kontrolliert: antippen zum Bestätigen.
     @ViewBuilder
     private var kontrollLeiste: some View {
         if let ab = kontrolleAb {
             let zeit = daten.karte.beginn.isEmpty ? "" : " - \(daten.karte.beginn)"
             leiste(Text("Kontrolle der Abwesenheiten ist ab \(Datumsformat.anzeige(ab, "dd.MM.yyyy"))\(zeit) möglich"))
         } else if liste?.kontrolliert == true {
-            leiste(Text("✓ Abwesenheiten wurden kontrolliert"))
+            leiste(Label("Abwesenheiten kontrolliert", systemImage: "checkmark").foregroundStyle(Farben.ok))
                 .accessibilityLabel("Abwesenheiten wurden kontrolliert")
         } else if bearbeitbar {
             Button {
@@ -1375,18 +1373,21 @@ struct SchuelerSeite: View {
     private func leiste<V: View>(_ inhalt: V) -> some View {
         inhalt
             .font(.system(size: 13, weight: .regular))
-            .foregroundStyle(Farben.tinte2)
+            .foregroundStyle(Farben.text2)
             .multilineTextAlignment(.center)
             .lineLimit(2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 7)
             .padding(.horizontal, 12)
-            .background(Farben.kontrollLeiste)
+            .background(Farben.flaeche2)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Farben.rand).frame(height: 0.5)
+            }
     }
 
     private func untertitel(_ s: Schueler, _ f: Fehlzeiteintrag?) -> (text: String, warnung: Bool)? {
         if let f { return (f.statustext, false) }
-        if daten.inVorstundeAbwesend(s) { return ("War in Vorstunde abwesend!", true) }
+        if daten.inVorstundeAbwesend(s) { return ("In der Vorstunde abwesend", true) }
         var teile: [String] = []
         let dienste = daten.dienste[s.id] ?? []
         if !dienste.isEmpty { teile.append(dienste.joined(separator: ", ")) }
@@ -1404,27 +1405,27 @@ struct SchuelerSeite: View {
                 if speichert == s.id {
                     ProgressView()
                 } else if f != nil {
-                    Image(systemName: "clock")
-                        .foregroundStyle(Farben.entfallRand)
+                    Image(systemName: "clock.fill")
+                        .foregroundStyle(Farben.entfall)
                 } else {
                     Image(systemName: "checkmark.circle")
-                        .foregroundStyle(Farben.gruen)
+                        .foregroundStyle(Farben.ok)
                 }
             }
-            .font(.system(size: 22, weight: .light))
+            .font(.system(size: 20, weight: .regular))
             .frame(width: 28, height: 28)
             .accessibilityLabel(f == nil ? "Anwesend" : "Abwesend")
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(s.anzeige)
-                    .font(.system(size: 18))
-                    .foregroundStyle(Farben.tinte)
+                    .font(.body)
+                    .foregroundStyle(Farben.text)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if let u = untertitel(s, f) {
                     Text(u.text)
                         .font(.system(size: 14, weight: u.warnung ? .medium : .regular))
-                        .foregroundStyle(u.warnung ? Farben.entfallRand : Farben.gedaempft)
+                        .foregroundStyle(u.warnung ? Farben.entfall : Farben.text3)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -1441,9 +1442,9 @@ struct SchuelerSeite: View {
                 abwesenheitenVon = s
             } label: {
                 Image(systemName: "clock")
-                    .font(.system(size: 22, weight: .light))
-                    .foregroundStyle(Farben.tinte2)
-                    .frame(width: 30, height: 30)
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(Farben.akzent)
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel("Abwesenheiten von \(s.anzeige)")
@@ -1466,7 +1467,7 @@ struct SchuelerSeite: View {
                 } label: {
                     Text(gruppe.buchstabe)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(Farben.tinte2)
+                        .foregroundStyle(Farben.text2)
                         .frame(width: 16, height: 14)
                 }
                 .buttonStyle(.plain)
@@ -1503,36 +1504,35 @@ struct BuchPlusSymbol: View {
 
     var body: some View {
         Image(systemName: "book.closed")
-            .font(.system(size: 21, weight: .light))
-            .foregroundStyle(Farben.tinte2)
+            .font(.system(size: 18, weight: .regular))
+            .foregroundStyle(Farben.akzent)
             .overlay(alignment: .bottomTrailing) {
                 if !vorhanden {
-                    Image(systemName: "plus.circle")
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundStyle(Farben.tinte2)
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 10, weight: .regular))
+                        .foregroundStyle(Farben.akzent)
                         .background(Circle().fill(Farben.blatt).padding(1))
                         .offset(x: 4, y: 3)
                 }
             }
-            .frame(width: 30, height: 30)
+            .frame(width: 32, height: 32)
     }
 }
 
 // MARK: - Wischzeile (An-/Abwesenheit, Entschuldigen)
 
-/// Beschriftung einer Wischrichtung (Symbol, Text, Farbe der runden Pill).
+/// Beschriftung einer Wischrichtung (Symbol, Text, Farbe der Fläche).
 struct Wischaktion {
     var symbol: String
     var text: String
     var farbe: Color
 
-    static let anwesend = Wischaktion(symbol: "checkmark.circle", text: "Anwesend", farbe: Farben.gruen)
-    static let abwesend = Wischaktion(symbol: "clock", text: "Abwesend", farbe: Farben.entfallRand)
-    static let entschuldigen = Wischaktion(symbol: "checkmark.seal", text: "Entschuldigen", farbe: Farben.entschuldigen)
+    static let anwesend = Wischaktion(symbol: "checkmark.circle", text: "Anwesend", farbe: Farben.ok)
+    static let abwesend = Wischaktion(symbol: "clock", text: "Abwesend", farbe: Farben.entfall)
+    static let entschuldigen = Wischaktion(symbol: "checkmark.seal", text: "Entschuldigen", farbe: Farben.akzent)
 }
 
-/// Zeile mit Wischgeste wie im Original: nach rechts → anwesend (grüne Fläche mit Haken), nach links → abwesend (rote
-/// Fläche mit Uhr) bzw. – bei abwesenden Schüler*innen und in Abwesenheitslisten – „Entschuldigen“. Ab 80 pt löst das
+/// Zeile mit Wischgeste: nach rechts → anwesend (Fläche mit Haken), nach links → abwesend (Fläche mit Uhr) bzw. – bei abwesenden Schüler*innen und in Abwesenheitslisten – „Entschuldigen“. Ab 80 pt löst das
 /// Loslassen aus; beim Erreichen der Schwelle und beim Auslösen gibt es eine Haptik. Senkrechtes Scrollen der Liste
 /// bleibt frei (Richtung wird zu Beginn festgelegt); in die gesperrte Richtung gibt die Zeile nur mit Widerstand nach.
 /// Für VoiceOver gibt es dieselben Aktionen.
@@ -1588,38 +1588,37 @@ struct WischZeile<Inhalt: View>: View {
             }
     }
 
-    /// Hinter der Zeile erscheint – wie bei den neueren, runden Pills der App – eine voll abgerundete Kapsel, die mit dem
-    /// Wischweg wächst (grün „Anwesend“ mit Haken bzw. rot „Abwesend“ mit Uhr; gesperrte Richtung grau). Ab der Schwelle
-    /// wird die Kapsel kräftiger und das Symbol größer.
+    /// Hinter der Zeile erscheint – wie bei den Wischaktionen des Systems – eine Fläche über die volle Zeilenhöhe, die
+    /// mit dem Wischweg wächst („Anwesend“ mit Haken bzw. „Abwesend“ mit Uhr; gesperrte Richtung grau). Ab der Schwelle
+    /// wird die Fläche kräftiger.
     @ViewBuilder
     private var hintergrund: some View {
         if versatz > 0 {
             HStack(spacing: 0) {
-                wischPill(symbol: rechtsAktion.symbol, text: rechtsAktion.text,
-                          farbe: rechtsMoeglich ? rechtsAktion.farbe : Farben.zahlPlakette, breite: versatz)
+                wischFlaeche(symbol: rechtsAktion.symbol, text: rechtsAktion.text,
+                          farbe: rechtsMoeglich ? rechtsAktion.farbe : Farben.text3, breite: versatz)
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if versatz < 0 {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
-                wischPill(symbol: linksAktion.symbol, text: linksAktion.text,
-                          farbe: linksMoeglich ? linksAktion.farbe : Farben.zahlPlakette, breite: -versatz)
+                wischFlaeche(symbol: linksAktion.symbol, text: linksAktion.text,
+                          farbe: linksMoeglich ? linksAktion.farbe : Farben.text3, breite: -versatz)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    /// Runde Kapsel im freigelegten Bereich (8 pt Abstand zu Rand und Zeile); Text erst, wenn genug Platz ist.
-    private func wischPill(symbol: String, text: String, farbe: Color, breite: CGFloat) -> some View {
-        let innen = max(breite - 12, 0)
-        return HStack(spacing: 6) {
+    /// Fläche im freigelegten Bereich über die volle Zeilenhöhe; Text erst, wenn genug Platz ist.
+    private func wischFlaeche(symbol: String, text: String, farbe: Color, breite: CGFloat) -> some View {
+        let innen = max(breite, 0)
+        return VStack(spacing: 3) {
             Image(systemName: symbol)
-                .font(.system(size: 20, weight: .regular))
-                .scaleEffect(ueberSchwelle ? 1.15 : 1)
-            if innen > CGFloat(text.count) * 8.6 + 44 {
+                .font(.system(size: 17, weight: .semibold))
+            if innen > CGFloat(text.count) * 7 + 16 {
                 Text(text)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.caption.weight(.semibold))
                     .lineLimit(1)
                     .fixedSize()
                     .transition(.opacity)
@@ -1628,10 +1627,7 @@ struct WischZeile<Inhalt: View>: View {
         .foregroundStyle(.white)
         .frame(width: innen)
         .frame(maxHeight: .infinity)
-        .background(farbe.opacity(ueberSchwelle ? 1 : 0.85), in: Capsule())
-        .clipShape(Capsule())
-        .padding(.vertical, 6)
-        .padding(.horizontal, 6)
+        .background(farbe.opacity(ueberSchwelle ? 1 : 0.8))
         .opacity(innen > 4 ? 1 : 0)
         .accessibilityHidden(true)
     }
