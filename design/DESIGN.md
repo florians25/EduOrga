@@ -13,7 +13,8 @@ Gestaltung anderer Stundenplanprogramme.
   keine dunkle Seitenleiste mit Symbolspalte. Vorbild sind nüchterne Fachanwendungen (Verwaltung, Finanzen, ERP).
 * **Keine Effekte um der Effekte willen:** keine Farbverläufe, kein Glas/Blur, keine Emojis, keine Illustrationen,
   keine „Hero“-Flächen, keine verspielten Animationen. Übergänge höchstens 120 ms (Farbe/Deckkraft).
-* **Klare Kanten:** Radius 6 px (Steuerelemente, Karten), 4 px (Plaketten, Stundenkacheln), 8 px (Dialoge).
+* **Klare Kanten:** Radius 6 px (Steuerelemente), 8 px (Karten, Dialoge), 4 px (Rasterrahmen), 3 px (Plaketten,
+  Stundenkacheln). Keine Pillenform für Knöpfe, Felder oder Plaketten.
   1-px-Linien statt Schatten; Schatten nur für schwebende Ebenen (Menüs, Dialoge).
 * **Typografie trägt die Hierarchie**, nicht Farbe: IBM Plex Sans 400/500/600, Ziffern tabellarisch
   (`font-variant-numeric: tabular-nums`) in Tabellen, Zeiten und Rastern.
@@ -38,10 +39,10 @@ Grundwerte in `design/tokens.css` (Präfix `--up-`). Marke **Marine** `#234f96` 
 
 | Status | Farbe | Darstellung |
 |---|---|---|
-| Entfall | `--up-entfall` #b42318 | Kachel schraffiert (45°, 1 px, 8 % Deckkraft), Inhalt durchgestrichen, Plakette „Entfall“ |
-| Vertretung / Änderung / Raumwechsel | `--up-aenderung` #0b7a75 | 1,5-px-Rahmen in Petrol, geänderter Wert petrolfarben unterstrichen, alter Wert durchgestrichen in der Plakette |
-| Prüfung / Klausur | `--up-pruefung` #a15c07 | Plakette „Prüfung“, Fläche hell-bernstein |
-| Veranstaltung / Termin | `--up-termin` #5a4fb3 | Fläche hell-violett, gestrichelter Rahmen |
+| Entfall | `--up-entfall` #b42318 | Kachel fast weiß, fein schraffiert (45°, 1 px, 7 % Deckkraft), Fach rot und durchgestrichen, Plakette „Entfall“ |
+| Vertretung / Änderung / Raumwechsel | `--up-aenderung` #0b7a75 | 1-px-Linie in Petrol, geänderter Wert petrolfarben dünn unterstrichen, alter Wert grau durchgestrichen davor, Plakette „Vertretung“, „Raum“ bzw. „Fach“ |
+| Prüfung / Klausur | `--up-pruefung` #a15c07 | 1-px-Linie in Bernstein, Plakette „Prüfung“ |
+| Veranstaltung / Termin | `--up-termin` #5a4fb3 | weiße Kachel mit gestrichelter neutraler Linie, Plakette „Termin“ |
 | Ferien / unterrichtsfrei | `--up-frei` #2f6f9f | ganzflächig hellblau mit Name und Zeitraum |
 
 Dunkelmodus über `:root[data-thema="dunkel"]` bzw. `data-thema="auto"`; nur die Rollen-Variablen wechseln.
@@ -67,14 +68,26 @@ iOS verwendet die Systemschrift (SF Pro) – das ist dort der Standard und wirkt
 
 ## 5. Stundenplan-Darstellung (gemeinsam für alle Oberflächen)
 
-* **Raster:** weiße Fläche, Spaltenköpfe „Mo 19.10.“ (Wochentag 500, Datum 400, heute: Marine-Text und 2-px-Linie
-  unter dem Kopf). Zeitspalte links schmal: Stundennummer 13 px/600, darunter Beginn–Ende 11 px in `--up-text-3`.
-  Zeilentrenner 1 px `--up-linie`; Pausen als 6–8 px hohe, leicht graue Bänder ohne Text.
-* **Stundenkachel:** Radius 4 px, Innenabstand 4–6 px, Hintergrund = Fachfarbe auf 14 % Deckkraft über Weiß,
-  **kein farbiger Seitenbalken**. Kopfzeile: Fachkürzel 13 px/600 links, Raum rechts (tabellarische Ziffern).
-  Zweite Zeile: Lehrkraft bzw. Klasse 12 px `--up-text-2`. Ohne Fachfarbe: `--up-schiefer-50` mit 1-px-Rand.
-* **Status** wie in Abschnitt 2; Plaketten oben rechts in der Kachel, 10–11 px Großbuchstaben, Radius 3 px.
-* **Jetzt-Linie:** 1 px Marine-600 mit kleinem Kreis am Zeitspaltenrand.
+Leitbild: nüchterner Fachkalender – gerade Linien, weiße Flächen, Farbe nur als Information, nie als Fläche.
+
+* **Raster:** weiße Fläche in einem Rahmen mit Radius 4 px, gerade 1-px-Linien (`--up-linie`). Spaltenköpfe linksbündig
+  „Mo 19.10.“ (Wochentag 600, Datum 400 `--up-text-2`); heute: Marine-Text, 2-px-Marine-Linie oben am Kopf und sehr
+  leichte Marine-Tönung (≈ 3 %) der Spalte. Zeitspalte links schmal mit Trennlinie: Stundennummer 13 px/600, darunter
+  Beginn und Ende 11 px in `--up-text-2`, tabellarische Ziffern. Pausen als schmale graue Bänder (`--up-schiefer-50`)
+  ohne Text. Ganztägige Termine im Tageskopf als gestrichelt umrandete Zeile mit Plakette „Termin“.
+* **Stundenkachel:** weiße Fläche, 1-px-Linie `--up-linie`, Radius 3 px, Innenabstand 5–6 px oben/unten, 8 px seitlich;
+  Überfahren: Fläche `--up-schiefer-50`. **Keine Fachfarbe als Fläche, kein farbiger Seitenbalken:** die Fachfarbe steht
+  nur als 8-px-Quadrat vor dem Fachkürzel. Kopfzeile: Quadrat, Fachkürzel 13 px/600 `--up-text`, Raum rechtsbündig
+  12 px/500 `--up-text-2` (tabellarische Ziffern). Zweite Zeile (unter dem Kürzel eingerückt): Lehrkraft bzw. Klasse
+  12 px `--up-text-2`.
+* **Status** wie in Abschnitt 2; Plaketten in der Kachel unten links als reiner Text: 10–11 px/600 Großbuchstaben,
+  Laufweite +0,04 em, in der Statusfarbe, **ohne Fläche**. „Online“ ebenso, mit Link-Symbol.
+* **Legende** über dem Raster als Text mit kleinen Mustern (10 px) und Anzahl – keine Pillen.
+* **Werkzeugleiste** flach (Trennlinie unten, keine schwebende Karte); Woche/Tag und die Tagauswahl der Tagesansicht als
+  Segmentschalter.
+* **Stundendetails:** weißer Kopf mit Trennlinie (keine Farbfläche): Fachquadrat und Fach 20 px/600, Plaketten, darunter
+  die Angaben als Schlüssel/Wert-Liste (Datum, Zeit, Klasse, Lehrkraft, Raum).
+* **Jetzt-Linie:** 1 px Marine-600 mit kleinem Kreis am Zeitspaltenrand, Uhrzeit als kleines Marine-Schild (Radius 2 px).
 * **Auswahl/Fokus:** 2-px-Ring Marine-500 außen.
 
 ## 6. Bausteine
@@ -85,7 +98,8 @@ iOS verwendet die Systemschrift (SF Pro) – das ist dort der Standard und wirkt
 * **Tabellen:** Kopf 12 px/500 `--up-text-2` auf `--up-flaeche-2`, Zeilen 32 px (dicht 28 px), Zeilenwechsel ohne
   Zebrastreifen, Hover `--up-flaeche-hover`, Auswahl `--up-primaer-flaeche`.
 * **Segmentschalter** für Ansichtswechsel (Tag/Woche, Klasse/Lehrkraft/Raum).
-* **Plaketten:** 11 px/500, Radius 3 px, Fläche der Statusfarbe, Text der Statusfarbe.
+* **Plaketten:** 11 px/600, Radius 3 px, helle Fläche der Statusfarbe, Text der Statusfarbe; in Stundenkacheln nur Text
+  (Abschnitt 5).
 * **Leere Zustände:** ein Linien-Symbol 24 px in `--up-text-3`, ein Satz, optional ein Knopf. Keine Illustrationen.
 
 ## 7. Aufbau je Produkt
@@ -93,7 +107,7 @@ iOS verwendet die Systemschrift (SF Pro) – das ist dort der Standard und wirkt
 | Produkt | Navigation |
 |---|---|
 | **Studio** | React 18 + TypeScript + Fluent UI v9 (`studio/client`), Fluent-Thema aus der Marken-Rampe Marine `#234f96` (hell, dunkel, automatisch), IBM Plex Sans, Status- und Fachfarben aus diesen Tokens. Seitenbasierte Web-Anwendung (eine Seite je Aufgabe, Adresse in der URL, Zurück-Taste funktioniert). Helle Seitenleiste (Fluent Nav) mit Linien-Symbolen vor den Bereichen, Seiten als Text; in schmalen Fenstern überlagernd. Kopfleiste mit Wortmarke, Schuldatei, Modus, Rückgängig/Speichern, Suche (Strg+K), Konto. Jede Seite: Seitenkopf (Bereich, Titel 20 px, Aktionen rechts), Werkzeugleiste mit Textknöpfen, Filterleiste, Inhalt, Fußzeile; Details in einem Nebenbereich rechts; Bearbeiten in Dialogen. Arbeitsplätze, die mehrere Inhalte gleichzeitig brauchen (Tagesplanung, manuelles Planen, Verlegen und Tauschen), sind fest gestaltete Seiten mit verschiebbaren Trennern – keine frei schwebenden Fenster. Keine Verläufe, keine Symbolkacheln. |
-| **Web** | React 18 + TypeScript + MUI v7 (`web/client`), Thema aus diesen Tokens (Marine als Primärfarbe, Statusfarben, kein Orange). Klares Portal: Pillen-Knöpfe, runde Felder, weiche Karten mit Radius 12–14 px, Tabellen mit feinen Linien, Bearbeiten in Dialogen. Seitenleiste mit Linien-Symbolen vor den Bereichen (Unterpunkte als Text), abgerundete aktive Zeile, einklappbar zur Symbolleiste; mobil als Schublade. Eigener Stundenplan (Abschnitt 5: Zeitachse, Jetzt-Linie, Status-Legende) und eigene Klassenbuch-Seiten; Online-Unterricht nur als Schild mit Link (Umschalten in Studio/App). Keine Namen, Symbole oder Grafiken anderer Produkte. |
+| **Web** | React 18 + TypeScript + MUI v7 (`web/client`), Thema aus diesen Tokens (Marine als Primärfarbe, Statusfarben, kein Orange). Sachliches Portal: Knöpfe und Felder Radius 6 px (Höhe 32 px), Karten 8 px, Segmentschalter mit 1-px-Rahmen, Tabellen mit feinen Linien, Bearbeiten in Dialogen. Seitenleiste mit Linien-Symbolen vor den Bereichen (Unterpunkte als Text), leicht abgerundete aktive Zeile, einklappbar zur Symbolleiste; mobil als Schublade. Eigener Stundenplan (Abschnitt 5: Zeitachse, Jetzt-Linie, Status-Legende) und eigene Klassenbuch-Seiten; Online-Unterricht nur als Schild mit Link (Umschalten in Studio/App). Keine Namen, Symbole oder Grafiken anderer Produkte. |
 | **Mobile (PWA)** | Untere Leiste *Heute · Plan · Postfach · Mehr* (Linien-Symbol + Beschriftung, das ist auf Telefonen Standard), große Seitentitel, Listen statt Karten-Kacheln, keine Logo-Kachel. |
 | **iOS** (UntPlan Next, `ios/`) | Tab-Leiste des Systems *Heute · Plan · Postfach · Suche* (Suche mit der Rolle „Suche“), Profil und Einstellungen als Blatt hinter dem Avatar oben rechts. Akzentfarbe **Petrol** `#0b5d57` (heller `#138a80`, dunkel `#3fb3a6`); Statusfarben bewusst weit davon entfernt: Änderung/Vertretung Violett `#6d4fc2`, Termin Magenta `#a3347c`, Prüfung Bernstein, Entfall Rot, Ferien Blau. **Liquid Glass** (iOS 26, Xcode 26) nur auf der Bedienebene über dem Inhalt – Tab-Leiste (klappt beim Rollen ein), schwebende Wochenleiste, Werkzeug- und Filterknöpfe, Bedienknöpfe der Jetzt-Karte, Knöpfe über dem Kopf der Stundenansicht; hervorgehobene Knöpfe Petrol-Glas. Inhalte (Kacheln, Karten, Listen) deckend; iOS 18 erhält dieselbe Form mit Material. Plan: Tag als Liste großer Kacheln (Fach und Raum groß, Änderungen mit gefüllter Plakette, Rahmen und Tönung, Pausen/Freistunden kompakt), waagrecht wischen = Tag, Wochenübersicht als Matrix, wahlweise Zeitachse. Systemschrift SF Pro mit Dynamic Type, Abstände im 8-pt-Raster. Die frühere App „UntPlan für iOS“ liegt nur noch als Archiv in `archiv/ios-alt/`. |
 

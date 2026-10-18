@@ -8,8 +8,8 @@ import LinkRounded from '@mui/icons-material/LinkRounded';
 import EditNoteRounded from '@mui/icons-material/EditNoteRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import type { Karte } from '../../api/types';
-import { artVon, gueltigeFarbe, infoText, istEntfall, istOnline, kachelZeilen, kopfRaeume, plaketten, sichererLink, abwesendSet, statusText, titelText, type Typ, type Plakette } from './logik';
-import { WerteListe, wertText } from './Werte';
+import { artVon, gueltigeFarbe, infoText, istEntfall, istOnline, kachelZeilen, kopfRaeume, plaketten, sichererLink, abwesendSet, statusText, titelText, KACHEL_PLAKETTEN, type Typ, type Plakette } from './logik';
+import { Kuerzel, WerteListe, wertText } from './Werte';
 
 /** Statusbezeichnung: 10–11 px Großbuchstaben in der Statusfarbe, ohne Fläche (keine Pillen). */
 export function PlaketteChip({ p, klein = false }: { p: Plakette; klein?: boolean }) {
@@ -31,19 +31,19 @@ export function FachQuadrat({ farbe, groesse = 8, sx }: { farbe: string | null |
 export function kachelStil(k: Karte, typ: Typ, t: Theme): CSSProperties & Record<string, unknown> {
   const art = artVon(k, typ);
   const papier = t.palette.background.paper;
-  const linie = t.palette.divider;
-  const basis = { backgroundColor: papier, border: `1px solid ${linie}` };
+  const linie = t.palette.kachel.rand;
+  const basis = { backgroundColor: t.palette.kachel.flaeche, border: `1px solid ${linie}` };
   const s = t.palette.status;
   switch (art) {
     case 'entfall': return {
-      backgroundColor: papier, backgroundImage: `repeating-linear-gradient(135deg, ${alpha(s.entfall.main, 0.07)} 0 1px, transparent 1px 6px)`,
-      border: `1px solid ${alpha(s.entfall.main, 0.32)}`, color: t.palette.text.secondary,
+      backgroundColor: papier, backgroundImage: `repeating-linear-gradient(135deg, ${alpha(s.entfall.main, 0.09)} 0 1px, transparent 1px 6px)`,
+      border: `1px solid ${alpha(s.entfall.main, 0.45)}`, color: t.palette.text.secondary,
     };
-    case 'aenderung': return { ...basis, border: `1px solid ${alpha(s.aenderung.main, 0.55)}` };
-    case 'pruefung': return { ...basis, border: `1px solid ${alpha(s.pruefung.main, 0.55)}` };
-    case 'termin': return { ...basis, border: `1px dashed ${alpha(t.palette.text.secondary, 0.6)}` };
-    case 'abwesend': return { ...basis, border: `1px dashed ${alpha(t.palette.text.secondary, 0.6)}`, color: t.palette.text.secondary };
-    case 'buchung': return { ...basis, border: `1px dashed ${alpha(s.frei.main, 0.6)}` };
+    case 'aenderung': return { ...basis, backgroundColor: papier, border: `1px solid ${s.aenderung.main}` };
+    case 'pruefung': return { ...basis, backgroundColor: papier, border: `1px solid ${s.pruefung.main}` };
+    case 'termin': return { ...basis, backgroundColor: papier, border: `1px dashed ${alpha(t.palette.text.secondary, 0.7)}` };
+    case 'abwesend': return { ...basis, backgroundColor: papier, border: `1px dashed ${alpha(t.palette.text.secondary, 0.7)}`, color: t.palette.text.secondary };
+    case 'buchung': return { ...basis, backgroundColor: papier, border: `1px dashed ${s.frei.main}` };
     default: return basis;
   }
 }
@@ -88,11 +88,11 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   const mittel = !kompakt && hoehe < 74;
   const zeilen = kachelZeilen(k, typ);
   const raeume = kopfRaeume(k, typ);
-  const pl = plaketten(k, typ);
+  const pl = plaketten(k, typ).filter(p => KACHEL_PLAKETTEN.has(p.text));
   const info = infoText(k);
   const online = istOnline(k, typ);
   const durch = entfall ? 'line-through' : 'none';
-  const titel = k.fach ? (k.fachAlt && !entfall ? <><Box component="s" sx={{ color: 'text.disabled', fontWeight: 400, mr: 0.5 }}>{k.fachAlt}</Box><Box component="span" sx={{ color: 'status.aenderung.main', textDecoration: 'underline', textDecorationThickness: '1px', textUnderlineOffset: '3px' }}>{k.fach}</Box></> : k.fach) : (k.text || k.art || '—');
+  const titel = k.fach ? (k.fachAlt && !entfall ? <Box component="span" sx={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}><Kuerzel art="alt" title={`bisher ${k.fachAlt}`}>{k.fachAlt}</Kuerzel><Kuerzel art="neu" title={`${k.fach} statt ${k.fachAlt}`}>{k.fach}</Kuerzel></Box> : k.fach) : (k.text || k.art || '—');
   const abw = abwesendSet(k);
   const symbole = (
     <>
@@ -117,7 +117,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   );
   const hatSymbole = online || k.hausaufgabeFaellig || info.length > 0;
   const tasten = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(k); } };
-  const hover = art === 'entfall' ? {} : { backgroundColor: t.palette.background.default };
+  const hover = art === 'entfall' ? {} : { backgroundColor: t.palette.kachel.hover };
   return (
     <Tooltip title={<KachelInfo k={k} typ={typ} />} placement="right-start" enterDelay={450} enterNextDelay={300} disableInteractive
       slotProps={{ tooltip: { sx: { bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', boxShadow: '0 8px 24px rgba(21,26,33,.14)', p: 1.5, maxWidth: 360 } }, arrow: { sx: { color: 'background.paper', '&:before': { border: 1, borderColor: 'divider' } } } }}>
@@ -134,12 +134,13 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
           <Typography component="span" noWrap sx={{ fontWeight: 600, fontSize: gross ? 14 : 13, lineHeight: '17px', color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, minWidth: 0, flex: '0 1 auto' }}>{titel}</Typography>
           {kompakt && zeilen[0] && (
             <Typography component="span" noWrap sx={{ fontSize: 12, color: 'text.secondary', textDecoration: durch, minWidth: 0 }}>
-              <WerteListe werte={zeilen[0].werte} entfall={entfall} mitAlt={false} abwesend={zeilen[0].art === 'klassen' ? abw : undefined} />
+              <WerteListe werte={zeilen[0].werte} entfall={entfall} mitAlt={false} abwesend={zeilen[0].art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && zeilen[0].art === 'lehrer'} />
             </Typography>
           )}
           {raeume.length > 0 && (
             <Typography component="span" noWrap sx={{ ml: 'auto', fontSize: 12, fontWeight: 500, color: 'text.secondary', textDecoration: durch, flex: 'none', maxWidth: '55%', textAlign: 'right' }}>
-              <WerteListe werte={raeume} entfall={entfall} mitAlt={!kompakt} />
+              {!entfall && raeume.every(w => !w.alt && !w.neu) ? <Box component="span" sx={{ display: 'inline-flex', gap: '3px' }}>{raeume.map((w, i) => <Kuerzel key={i}>{w.k}</Kuerzel>)}</Box>
+                : <WerteListe werte={raeume} entfall={entfall} mitAlt={!kompakt} trenner=" " />}
             </Typography>
           )}
         </Stack>
@@ -147,7 +148,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
           <Box sx={{ flex: '0 1 auto', minHeight: 0, overflow: 'hidden', pl: k.fach ? '14px' : 0 }}>
             {(mittel ? zeilen.slice(0, 1) : zeilen).map((z, i) => (
               <Typography key={i} component="div" noWrap sx={{ fontSize: 12, lineHeight: '16px', color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: durch }}>
-                <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} />
+                <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && z.art === 'lehrer'} />
               </Typography>
             ))}
           </Box>

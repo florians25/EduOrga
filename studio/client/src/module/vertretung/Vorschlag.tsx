@@ -22,7 +22,6 @@ const useStile = makeStyles({
   kopfZeile: { display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 },
   kopfText: { fontWeight: tokens.fontWeightSemibold, fontSize: tokens.fontSizeBase400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   mehr: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, whiteSpace: 'nowrap' },
-  klapp: { justifyContent: 'flex-start', fontWeight: tokens.fontWeightSemibold, padding: '2px 4px', minWidth: 0 },
   detailKnopf: { marginLeft: 'auto', minWidth: 0, flexShrink: 0 },
   details: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground2, padding: '2px 0 2px 0' },
   reiterZeile: { display: 'flex', alignItems: 'center', gap: '8px', padding: '0 8px', borderBottom: `1px solid ${tokens.colorNeutralStroke3}` },

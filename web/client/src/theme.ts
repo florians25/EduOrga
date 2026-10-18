@@ -15,14 +15,18 @@ export const farben = {
 } as const;
 
 export interface StatusFarbe { main: string; flaeche: string }
+/** Flächen des Stundenplans: Kachel, kräftigere Kachellinie, Kopf/Zeitspalte, Überfahren, Pausenband. */
+export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string }
 declare module '@mui/material/styles' {
   interface Palette {
     status: { entfall: StatusFarbe; aenderung: StatusFarbe; pruefung: StatusFarbe; termin: StatusFarbe; frei: StatusFarbe; ok: StatusFarbe };
     marine: typeof farben.marine;
+    kachel: KachelFarben;
   }
   interface PaletteOptions {
     status?: Palette['status'];
     marine?: typeof farben.marine;
+    kachel?: KachelFarben;
   }
 }
 
@@ -48,11 +52,12 @@ export const theme = createTheme({
         warning: { main: farben.pruefung },
         success: { main: farben.ok },
         info: { main: farben.frei },
-        background: { default: farben.schiefer[50], paper: '#ffffff' },
+        background: { default: '#eef1f4', paper: '#ffffff' },
         text: { primary: farben.schiefer[800], secondary: farben.schiefer[600], disabled: farben.schiefer[400] },
         divider: farben.schiefer[200],
         action: { hover: alpha(farben.schiefer[500], 0.08), selected: farben.marine[50] },
         status: status(false),
+        kachel: { flaeche: '#f6f8fa', rand: '#c9d1db', kopf: '#f6f8fa', hover: '#edf0f4', pause: '#eef1f4' },
         marine: farben.marine,
       },
     },
@@ -69,6 +74,7 @@ export const theme = createTheme({
         divider: '#2a323d',
         action: { hover: 'rgba(255,255,255,.06)', selected: '#17243a' },
         status: status(true),
+        kachel: { flaeche: '#1b212a', rand: '#3a4452', kopf: '#1a2028', hover: '#232a35', pause: '#11161c' },
         marine: farben.marine,
       },
     },
