@@ -12,3 +12,4 @@ web/src/UntPlanWeb/daten/
 *.db
 *.db-shm
 *.db-wal
+node_modules/

@@ -1,0 +1,31 @@
+{
+  "name": "untplanweb-client",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "UntPlan Web – Oberfläche (React, TypeScript, MUI). Build nach ../src/UntPlanWeb/wwwroot",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/icons-material": "7.3.11",
+    "@mui/material": "7.3.11",
+    "@mui/x-date-pickers": "7.29.4",
+    "dayjs": "1.11.13",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "18.3.23",
+    "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "4.7.0",
+    "typescript": "5.9.3",
+    "vite": "6.4.4"
+  }
+}

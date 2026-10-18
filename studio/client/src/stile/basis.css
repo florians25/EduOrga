@@ -1,0 +1,18 @@
+/* Grundstile außerhalb der Fluent-Komponenten. Farben und Schrift kommen aus design/tokens.css bzw. dem Fluent-Thema. */
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font-family: var(--up-schrift);
+  font-size: 14px;
+  color: var(--up-text);
+  background: var(--up-hintergrund);
+  -webkit-font-smoothing: antialiased;
+}
+#app { min-height: 100%; }
+* { box-sizing: border-box; }
+button, input, select, textarea { font-family: inherit; }
+.zahl, td.zahl, .tabular { font-variant-numeric: tabular-nums; }
+::selection { background: var(--up-marine-100); }
+:root[data-thema="dunkel"] ::selection { background: #2a4370; }
+@media print {
+  header[role="banner"], nav[aria-label="Arbeitsbereiche"] { display: none !important; }
+}
