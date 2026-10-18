@@ -21,6 +21,88 @@ enum ApiFehler: LocalizedError {
     }
 }
 
+/// Geprüfte UntPlan-Installation einer Schule (Ergebnis der Ersteinrichtung).
+struct ServerInfo: Equatable, Sendable {
+    /// Normalisierte Adresse, z. B. „https://plan.meine-schule.de“
+    var adresse: String
+    /// Name der Schule (leer, wenn der Server noch keinen liefert)
+    var schulname: String = ""
+
+    /// Adresse ohne Schema, z. B. „plan.meine-schule.de“ (mit Unterpfad, falls vorhanden).
+    var kurz: String {
+        var s = adresse
+        for schema in ["https://", "http://"] where s.lowercased().hasPrefix(schema) {
+            s = String(s.dropFirst(schema.count))
+        }
+        return s
+    }
+
+    /// Verbindung über HTTPS?
+    var verschluesselt: Bool { adresse.lowercased().hasPrefix("https://") }
+}
+
+/// Fehler bei der Prüfung der Server-Adresse (Ersteinrichtung) mit verständlichen Hinweisen.
+enum Serverpruefung: LocalizedError {
+    case leer
+    case ungueltig
+    case nichtGefunden
+    case keinNetz
+    case zeitueberschreitung
+    case unverschluesselt
+    case zertifikat
+    case nichtErreichbar(String)
+    case serverfehler(Int)
+    case keinUntPlan
+    case nichtEingerichtet
+
+    var errorDescription: String? {
+        switch self {
+        case .leer:
+            return "Bitte die Adresse von UntPlan Ihrer Schule eingeben."
+        case .ungueltig:
+            return "Das ist keine gültige Adresse. Beispiel: plan.meine-schule.de"
+        case .nichtGefunden:
+            return "Unter dieser Adresse wurde kein Server gefunden. Bitte die Schreibweise prüfen."
+        case .keinNetz:
+            return "Keine Internetverbindung. Bitte die Verbindung prüfen und erneut versuchen."
+        case .zeitueberschreitung:
+            return "Der Server antwortet nicht. Bitte später erneut versuchen."
+        case .unverschluesselt:
+            return "Der Server ist nur unverschlüsselt (http) erreichbar. Aus Sicherheitsgründen verbindet sich die App nur über HTTPS – bitte wenden Sie sich an Ihre Schule."
+        case .zertifikat:
+            return "Die sichere Verbindung (HTTPS) ist fehlgeschlagen: Das Zertifikat des Servers ist ungültig oder abgelaufen."
+        case .nichtErreichbar(let grund):
+            return "Der Server ist nicht erreichbar. \(grund)"
+        case .serverfehler(let code):
+            return "Der Server meldet einen Fehler (\(code)). Bitte später erneut versuchen."
+        case .keinUntPlan:
+            return "Unter dieser Adresse läuft kein UntPlan. Bitte die Adresse prüfen – sie steht z. B. im Elternbrief oder auf der Website Ihrer Schule."
+        case .nichtEingerichtet:
+            return "UntPlan ist auf diesem Server noch nicht eingerichtet. Bitte wenden Sie sich an Ihre Schule."
+        }
+    }
+
+    /// Netzwerkfehler in einen verständlichen Hinweis übersetzen.
+    static func aus(_ fehler: URLError) -> Serverpruefung {
+        switch fehler.code {
+        case .cannotFindHost, .dnsLookupFailed, .badURL, .unsupportedURL:
+            return .nichtGefunden
+        case .notConnectedToInternet, .dataNotAllowed, .internationalRoamingOff:
+            return .keinNetz
+        case .timedOut:
+            return .zeitueberschreitung
+        case .appTransportSecurityRequiresSecureConnection:
+            return .unverschluesselt
+        case .secureConnectionFailed, .serverCertificateUntrusted, .serverCertificateHasBadDate,
+             .serverCertificateNotYetValid, .serverCertificateHasUnknownRoot, .clientCertificateRejected,
+             .clientCertificateRequired:
+            return .zertifikat
+        default:
+            return .nichtErreichbar(fehler.localizedDescription)
+        }
+    }
+}
+
 /// Zugriff auf die JSON-API von UntPlanWeb (Präfix /api/app). Die Sitzung läuft über das Anmelde-Cookie.
 final class ApiClient: @unchecked Sendable {
     static let shared = ApiClient()
@@ -58,6 +140,78 @@ final class ApiClient: @unchecked Sendable {
         if !klein.hasPrefix("http://") && !klein.hasPrefix("https://") { s = "https://" + s }
         while s.hasSuffix("/") { s.removeLast() }
         return s
+    }
+
+    // MARK: - Ersteinrichtung: Server prüfen
+
+    /// Prüft, ob unter der eingegebenen Adresse ein UntPlan-Server läuft (öffentlicher Endpunkt `/api/app/sitzung`, der
+    /// auch ohne Anmeldung `eingerichtet` und den Schulnamen liefert). Nutzt eine eigene, flüchtige Verbindung – die
+    /// Sitzung des angemeldeten Kontos und die gespeicherte Server-Adresse bleiben unberührt. Enthält die Eingabe einen
+    /// Pfad (z. B. eine kopierte Adresse „…/login“) und antwortet dort kein UntPlan, wird zusätzlich die reine Domain
+    /// geprüft.
+    static func serverPruefen(_ eingabe: String) async throws -> ServerInfo {
+        let adresse = adresseNormalisieren(eingabe)
+        guard !adresse.isEmpty else { throw Serverpruefung.leer }
+        guard let teile = URLComponents(string: adresse), let host = teile.host, !host.isEmpty,
+              !host.contains(" ") else { throw Serverpruefung.ungueltig }
+        var kandidaten = [adresse]
+        if !teile.path.isEmpty && teile.path != "/" {
+            var wurzel = URLComponents()
+            wurzel.scheme = teile.scheme
+            wurzel.host = host
+            wurzel.port = teile.port
+            if let w = wurzel.string, w != adresse { kandidaten.append(w) }
+        }
+        var ersterFehler: Error? = nil
+        for k in kandidaten {
+            do {
+                return try await serverAbfragen(k)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                if ersterFehler == nil { ersterFehler = error }
+            }
+        }
+        throw ersterFehler ?? Serverpruefung.keinUntPlan
+    }
+
+    private static func serverAbfragen(_ adresse: String) async throws -> ServerInfo {
+        guard let url = URL(string: adresse + "/api/app/sitzung") else { throw Serverpruefung.ungueltig }
+        let konfig = URLSessionConfiguration.ephemeral
+        konfig.timeoutIntervalForRequest = 12
+        konfig.requestCachePolicy = .reloadIgnoringLocalCacheData
+        let verbindung = URLSession(configuration: konfig)
+        defer { verbindung.finishTasksAndInvalidate() }
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.setValue("1", forHTTPHeaderField: "X-UntPlanWeb")
+        let ergebnis: (Data, URLResponse)
+        do {
+            ergebnis = try await verbindung.data(for: req)
+        } catch let fehler as URLError {
+            if fehler.code == .cancelled { throw CancellationError() }
+            throw Serverpruefung.aus(fehler)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw Serverpruefung.nichtErreichbar(error.localizedDescription)
+        }
+        guard let http = ergebnis.1 as? HTTPURLResponse else { throw Serverpruefung.keinUntPlan }
+        if http.statusCode >= 500 { throw Serverpruefung.serverfehler(http.statusCode) }
+        guard (200..<300).contains(http.statusCode),
+              let objekt = try? JSONSerialization.jsonObject(with: ergebnis.0) as? [String: Any],
+              objekt["eingerichtet"] != nil, objekt.keys.contains("schule") else { throw Serverpruefung.keinUntPlan }
+        let eingerichtet = (objekt["eingerichtet"] as? Bool) ?? (objekt["eingerichtet"] as? NSNumber)?.boolValue ?? true
+        guard eingerichtet else { throw Serverpruefung.nichtEingerichtet }
+        let schule = objekt["schule"] as? [String: Any]
+        let name = ((schule?["name"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        // Endgültige Adresse nach Weiterleitungen (z. B. http → https), ohne den API-Pfad
+        var endgueltig = adresse
+        if let ziel = http.url?.absoluteString, ziel.hasSuffix("/api/app/sitzung") {
+            endgueltig = adresseNormalisieren(String(ziel.dropLast("/api/app/sitzung".count)))
+        }
+        return ServerInfo(adresse: endgueltig, schulname: name)
     }
 
     // MARK: - Endpunkte

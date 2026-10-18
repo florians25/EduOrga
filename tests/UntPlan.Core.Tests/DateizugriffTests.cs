@@ -42,6 +42,33 @@ public sealed class DateizugriffTests : IDisposable
     // ------------------------------------------------------------------------------------------
 
     [Fact]
+    public void Speichern_Und_Laden_Ohne_Datei_Entspricht_Der_Datei()
+    {
+        var pfad = Path.Combine(_ordner, "bytes.up");
+        var doc = new Dokument(Demo.Beispielschule());
+        doc.Speichern(pfad);
+        byte[]? inhalt = null;
+        doc.Aendern("Test", AenderungsArt.Einstellungen, d => d.Einstellungen.Schulname = "Bytes-Schule");
+        Assert.Throws<IOException>(() => doc.Speichern(_ => throw new IOException("Datenbank weg")));
+        Assert.True(doc.IstGeaendert);
+        doc.Speichern(b => inhalt = b);
+        Assert.False(doc.IstGeaendert);
+        Assert.Equal(pfad, doc.Pfad);
+        doc.Speichern(pfad);
+        Assert.Equal(File.ReadAllBytes(pfad), inhalt);
+        Assert.Equal(inhalt, doc.Inhalt());
+
+        var mitBom = new byte[] { 0xEF, 0xBB, 0xBF }.Concat(inhalt!).ToArray();
+        var geladen = Dokument.Laden(mitBom);
+        Assert.Null(geladen.Pfad);
+        Assert.Equal("Bytes-Schule", geladen.Daten.Einstellungen.Schulname);
+        Assert.Equal(inhalt, geladen.Inhalt());
+        var neuer = JsonNode.Parse(inhalt)!.AsObject();
+        neuer["Version"] = Schuldatei.AktuelleVersion + 1;
+        Assert.Throws<InvalidDataException>(() => Dokument.DatenLesen(JsonSerializer.SerializeToUtf8Bytes(neuer)));
+    }
+
+    [Fact]
     public void Ansicht_Speichern_Laden_Rundreise()
     {
         var e = new TestEinstellungen { Vertretungsansicht = "Lehrer - Standard", UnterrichtZeigen = true, ZuletztGeoeffnet = { "lokal.up" } };

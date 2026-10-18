@@ -29,7 +29,7 @@ public sealed class UpwAuftrag
     public string? Danach { get; set; }
 }
 
-/// <summary>Einstellungen für den automatischen Abgleich eines Dokuments mit UntPlanWeb (Studio-Datenordner, nicht in der Schuldatei).</summary>
+/// <summary>Einstellungen für den automatischen Abgleich eines Dokuments mit UntPlanWeb (Studio-Datenbank, nicht in der Schuldatei).</summary>
 public sealed class UpwAbgleich
 {
     public bool Aktiv { get; set; }
@@ -55,16 +55,15 @@ public sealed class UntPlanWebDienst
     public const string Studenten = "studenten";
     public const string Kurse = "kurse";
 
-    private static readonly JsonSerializerOptions JsonOpt = new() { WriteIndented = true };
     private readonly ConcurrentDictionary<string, UpwAuftrag> _auftraege = new();
     private readonly ConcurrentDictionary<string, List<WebRueckmeldung>> _rueckmeldungen = new();
-    private readonly string _ordner;
+    private readonly StudioDatenbank _db;
     private readonly ILogger<UntPlanWebDienst> _log;
     private readonly object _sperre = new();
 
-    public UntPlanWebDienst(StudioKonfiguration k, ILogger<UntPlanWebDienst> log)
+    public UntPlanWebDienst(StudioDatenbank db, ILogger<UntPlanWebDienst> log)
     {
-        _ordner = Path.Combine(k.Datenordner, "untplanweb");
+        _db = db;
         _log = log;
     }
 
@@ -275,29 +274,21 @@ public sealed class UntPlanWebDienst
 
     // ---------------------------------------------------------------------------------------------- automatischer Abgleich
 
-    private string AbgleichPfad(string dokId) => Path.Combine(_ordner, dokId + ".json");
-
     public UpwAbgleich Abgleich(string dokId)
     {
         if (!Dokumentdienst.IdGueltig(dokId)) return new();
-        try { return File.Exists(AbgleichPfad(dokId)) ? JsonSerializer.Deserialize<UpwAbgleich>(File.ReadAllText(AbgleichPfad(dokId))) ?? new() : new(); }
-        catch (Exception ex) when (ex is IOException or JsonException) { return new(); }
+        try { return _db.AblageLesen(Ablagebereiche.UntPlanWeb, dokId) is { } inhalt ? JsonSerializer.Deserialize<UpwAbgleich>(inhalt) ?? new() : new(); }
+        catch (JsonException) { return new(); }
     }
 
     public void AbgleichSpeichern(string dokId, UpwAbgleich a)
     {
         if (!Dokumentdienst.IdGueltig(dokId)) throw StudioFehler.Ungueltig("Ungültige Dokument-Id.");
         a.Minuten = Math.Clamp(a.Minuten, 5, 24 * 60);
-        lock (_sperre)
-        {
-            Directory.CreateDirectory(_ordner);
-            File.WriteAllText(AbgleichPfad(dokId) + ".tmp", JsonSerializer.Serialize(a, JsonOpt));
-            File.Move(AbgleichPfad(dokId) + ".tmp", AbgleichPfad(dokId), true);
-        }
+        _db.AblageSchreiben(Ablagebereiche.UntPlanWeb, dokId, JsonSerializer.Serialize(a));
     }
 
-    public IEnumerable<string> AbgleichDokumente() =>
-        Directory.Exists(_ordner) ? Directory.EnumerateFiles(_ordner, "*.json").Select(Path.GetFileNameWithoutExtension).OfType<string>().Where(Dokumentdienst.IdGueltig) : Array.Empty<string>();
+    public IEnumerable<string> AbgleichDokumente() => _db.AblageSchluessel(Ablagebereiche.UntPlanWeb).Where(Dokumentdienst.IdGueltig);
 
     /// <summary>
     /// Ein Abgleich: Rückmeldungen übernehmen (gleiche Core-Logik wie der Absenzen-Import, inkl. Buchungen/Prüfungen/Stornos, die
@@ -366,7 +357,8 @@ public sealed class UpwAbgleichDienst : BackgroundService
                     _log.LogWarning("Automatischer UntPlanWeb-Abgleich {Id}: {Fehler}", id, ex.Message);
                 }
                 e.Zuletzt = DateTime.Now;
-                try { _upw.AbgleichSpeichern(id, e); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+                try { _upw.AbgleichSpeichern(id, e); }
+                catch (Microsoft.Data.Sqlite.SqliteException ex) { _log.LogWarning("Automatischer UntPlanWeb-Abgleich {Id}: Ergebnis nicht gespeichert ({Fehler})", id, ex.Message); }
             }
             try { await Task.Delay(TimeSpan.FromSeconds(30), ct); } catch (OperationCanceledException) { return; }
         }

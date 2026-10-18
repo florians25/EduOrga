@@ -16,7 +16,7 @@ public sealed class MuZuordnung
     public string Abteilung { get; set; } = "";
 }
 
-/// <summary>Gespeicherte MultiUser-Konfiguration des Studios (Datei <c>multiuser.json</c> im Datenordner).</summary>
+/// <summary>Gespeicherte MultiUser-Konfiguration des Studios (Datenbank, <see cref="Ablagebereiche.MultiUser"/>).</summary>
 public sealed class MuKonfiguration
 {
     public List<Gruppe> Gruppen { get; set; } = new();
@@ -38,11 +38,13 @@ public sealed record MuNachricht(int Id, string Von, string? An, DateTime Zeit, 
 /// </summary>
 public sealed class MultiUserDienst
 {
-    private static readonly JsonSerializerOptions JsonOpt = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
+    /// <summary>Schlüssel der Konfiguration im Bereich <see cref="Ablagebereiche.MultiUser"/>.</summary>
+    public const string Konfigurationsschluessel = "konfiguration";
+    private static readonly JsonSerializerOptions JsonOpt = new() { Converters = { new JsonStringEnumConverter() } };
     /// <summary>Wie lange ein Benutzer ohne Lebenszeichen als aktiv gilt (Core: <see cref="MultiUserDb.SitzungsTimeout"/>).</summary>
     public static readonly TimeSpan AktivTimeout = TimeSpan.FromMinutes(2);
 
-    private readonly string _datei;
+    private readonly StudioDatenbank _db;
     private readonly Benutzerdienst _benutzer;
     private readonly object _sperre = new();
     private MuKonfiguration _k;
@@ -52,9 +54,9 @@ public sealed class MultiUserDienst
     private readonly ConcurrentDictionary<string, List<MuNachricht>> _nachrichten = new();
     private int _nachrichtId;
 
-    public MultiUserDienst(StudioKonfiguration k, Benutzerdienst benutzer)
+    public MultiUserDienst(StudioDatenbank db, Benutzerdienst benutzer)
     {
-        _datei = Path.Combine(k.Datenordner, "multiuser.json");
+        _db = db;
         _benutzer = benutzer;
         _k = Laden();
     }
@@ -65,9 +67,9 @@ public sealed class MultiUserDienst
     {
         try
         {
-            if (File.Exists(_datei))
+            if (_db.AblageLesen(Ablagebereiche.MultiUser, Konfigurationsschluessel) is { } inhalt)
             {
-                var k = JsonSerializer.Deserialize<MuKonfiguration>(File.ReadAllText(_datei), JsonOpt);
+                var k = JsonSerializer.Deserialize<MuKonfiguration>(inhalt, JsonOpt);
                 if (k is { Gruppen.Count: > 0 })
                 {
                     k.Zuordnung = new Dictionary<string, MuZuordnung>(k.Zuordnung, StringComparer.OrdinalIgnoreCase);
@@ -75,7 +77,7 @@ public sealed class MultiUserDienst
                 }
             }
         }
-        catch (Exception ex) when (ex is IOException or JsonException) { }
+        catch (JsonException) { }
         return new MuKonfiguration { Gruppen = StandardGruppen() };
     }
 
@@ -93,11 +95,7 @@ public sealed class MultiUserDienst
         return new() { admin, sp, vp, info };
     }
 
-    private void Schreiben()
-    {
-        File.WriteAllText(_datei + ".tmp", JsonSerializer.Serialize(_k, JsonOpt));
-        File.Move(_datei + ".tmp", _datei, true);
-    }
+    private void Schreiben() => _db.AblageSchreiben(Ablagebereiche.MultiUser, Konfigurationsschluessel, JsonSerializer.Serialize(_k, JsonOpt));
 
     public MuKonfiguration Konfiguration()
     {

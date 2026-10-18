@@ -32,21 +32,20 @@ public sealed class StudioBenutzer
 }
 
 /// <summary>
-/// Einfache Benutzerverwaltung (Datei <c>benutzer.json</c> im Datenordner, Passwort-Hash nach ASP.NET Core Identity / PBKDF2).
+/// Einfache Benutzerverwaltung (Datenbank, <see cref="Ablagebereiche.Benutzer"/>; Passwort-Hash nach ASP.NET Core Identity / PBKDF2).
 /// Beim ersten Start wird das Admin-Konto aus STUDIO_ADMIN_BENUTZER/STUDIO_ADMIN_PASSWORT angelegt. Später: MultiUser-Anbindung.
 /// </summary>
 public sealed class Benutzerdienst
 {
-    private static readonly JsonSerializerOptions Optionen = new() { WriteIndented = true };
     private readonly PasswordHasher<string> _hasher = new();
-    private readonly string _datei;
+    private readonly StudioDatenbank _db;
     private readonly object _sperre = new();
-    private List<StudioBenutzer> _benutzer;
+    private readonly List<StudioBenutzer> _benutzer;
 
-    public Benutzerdienst(StudioKonfiguration k, ILogger<Benutzerdienst> log)
+    public Benutzerdienst(StudioKonfiguration k, StudioDatenbank db, ILogger<Benutzerdienst> log)
     {
-        _datei = Path.Combine(k.Datenordner, "benutzer.json");
-        _benutzer = File.Exists(_datei) ? JsonSerializer.Deserialize<List<StudioBenutzer>>(File.ReadAllText(_datei)) ?? new() : new();
+        _db = db;
+        _benutzer = db.AblageListe(Ablagebereiche.Benutzer).Select(e => JsonSerializer.Deserialize<StudioBenutzer>(e.Inhalt)).OfType<StudioBenutzer>().ToList();
         if (_benutzer.Count == 0)
         {
             var passwort = k.AdminPasswort;
@@ -55,8 +54,9 @@ public sealed class Benutzerdienst
                 passwort = Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant();
                 log.LogWarning("UntPlan Studio: Admin-Konto \"{Benutzer}\" mit erzeugtem Passwort {Passwort} angelegt (STUDIO_ADMIN_PASSWORT setzen, um es vorzugeben).", k.AdminBenutzer, passwort);
             }
-            _benutzer.Add(new StudioBenutzer { Name = k.AdminBenutzer, Anzeigename = "Administrator", Rolle = Rollen.Admin, Hash = _hasher.HashPassword(k.AdminBenutzer, passwort) });
-            Schreiben();
+            var admin = new StudioBenutzer { Name = k.AdminBenutzer, Anzeigename = "Administrator", Rolle = Rollen.Admin, Hash = _hasher.HashPassword(k.AdminBenutzer, passwort) };
+            _benutzer.Add(admin);
+            Schreiben(admin);
         }
     }
 
@@ -81,7 +81,7 @@ public sealed class Benutzerdienst
             if (erg == PasswordVerificationResult.Failed) return null;
             if (erg == PasswordVerificationResult.SuccessRehashNeeded) b.Hash = _hasher.HashPassword(b.Name, passwort);
             b.LetzteAnmeldung = DateTime.Now;
-            Schreiben();
+            Schreiben(b);
             return b;
         }
     }
@@ -99,7 +99,7 @@ public sealed class Benutzerdienst
                 throw StudioFehler.Ungueltig($"Den Benutzer \"{name}\" gibt es bereits.");
             var neu = new StudioBenutzer { Name = name, Anzeigename = string.IsNullOrWhiteSpace(anzeigename) ? name : anzeigename.Trim(), Rolle = rolle, Hash = _hasher.HashPassword(name, passwort) };
             _benutzer.Add(neu);
-            Schreiben();
+            Schreiben(neu);
             return neu;
         }
     }
@@ -111,7 +111,7 @@ public sealed class Benutzerdienst
         {
             var b = _benutzer.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? throw StudioFehler.NichtGefunden("Der Benutzer");
             b.Hash = _hasher.HashPassword(b.Name, passwort);
-            Schreiben();
+            Schreiben(b);
         }
     }
 
@@ -122,8 +122,8 @@ public sealed class Benutzerdienst
             var b = _benutzer.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? throw StudioFehler.NichtGefunden("Der Benutzer");
             if (b.Rolle == Rollen.Admin && _benutzer.Count(x => x.Rolle == Rollen.Admin) == 1)
                 throw StudioFehler.Ungueltig("Der letzte Administrator kann nicht gelöscht werden.");
+            _db.AblageLoeschen(Ablagebereiche.Benutzer, Schluessel(b.Name));
             _benutzer.Remove(b);
-            Schreiben();
         }
     }
 
@@ -132,10 +132,7 @@ public sealed class Benutzerdienst
         if (string.IsNullOrEmpty(passwort) || passwort.Length < 6) throw StudioFehler.Ungueltig("Das Passwort muss mindestens 6 Zeichen lang sein.");
     }
 
-    private void Schreiben()
-    {
-        var tmp = _datei + ".tmp";
-        File.WriteAllText(tmp, JsonSerializer.Serialize(_benutzer, Optionen));
-        File.Move(tmp, _datei, true);
-    }
+    private static string Schluessel(string name) => name.ToLowerInvariant();
+
+    private void Schreiben(StudioBenutzer b) => _db.AblageSchreiben(Ablagebereiche.Benutzer, Schluessel(b.Name), JsonSerializer.Serialize(b));
 }

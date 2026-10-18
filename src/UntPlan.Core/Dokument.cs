@@ -79,6 +79,39 @@ public sealed class Dokument
         return new Dokument(daten, pfad);
     }
 
+    /// <summary>
+    /// Lädt eine Schuldatei aus dem Inhalt einer *.up-Datei (UTF-8-JSON, z. B. aus einer Datenbank statt aus einer Datei).
+    /// <paramref name="pfad"/> wird nur als <see cref="Pfad"/> vermerkt (nicht gelesen).
+    /// </summary>
+    public static Dokument Laden(ReadOnlySpan<byte> inhalt, string? pfad = null) => new(DatenLesen(inhalt), pfad);
+
+    /// <summary>Liest den Inhalt einer *.up-Datei (UTF-8-JSON, optional mit BOM) ohne ihn zu normalisieren.</summary>
+    public static Schuldatei DatenLesen(ReadOnlySpan<byte> inhalt)
+    {
+        if (inhalt.StartsWith(new byte[] { 0xEF, 0xBB, 0xBF })) inhalt = inhalt[3..];
+        var daten = JsonSerializer.Deserialize<Schuldatei>(inhalt, JsonOptionen) ?? throw new InvalidDataException("Leere Datei");
+        if (daten.Version > Schuldatei.AktuelleVersion)
+            throw new InvalidDataException("Die Datei wurde mit einer neueren UntPlan-Version erstellt.");
+        return daten;
+    }
+
+    /// <summary>Inhalt der Schuldatei genau so, wie <see cref="Speichern(string?)"/> ihn in die *.up-Datei schreibt.</summary>
+    public byte[] Inhalt() => JsonSerializer.SerializeToUtf8Bytes(Daten, JsonOptionen);
+
+    /// <summary>
+    /// Speichern ohne Datei (z. B. in eine Datenbank): übernimmt die Ansichtseinstellungen wie <see cref="Speichern(string?)"/>,
+    /// übergibt den Inhalt der *.up-Datei an <paramref name="schreiben"/> und gilt erst danach als gespeichert
+    /// (wirft <paramref name="schreiben"/> eine Ausnahme, bleibt das Dokument „geändert“). <see cref="Pfad"/> bleibt unverändert.
+    /// </summary>
+    public void Speichern(Action<byte[]> schreiben)
+    {
+        ArgumentNullException.ThrowIfNull(schreiben);
+        if (AnsichtLiefern?.Invoke() is { } ansicht) Daten.Ansichtseinstellungen = ansicht;
+        schreiben(Inhalt());
+        IstGeaendert = false;
+        Geaendert?.Invoke(AenderungsArt.Einstellungen);
+    }
+
     public void Speichern(string? pfad = null)
     {
         pfad ??= Pfad ?? throw new InvalidOperationException("Kein Dateiname");

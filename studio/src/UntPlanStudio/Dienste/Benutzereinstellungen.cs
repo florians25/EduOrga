@@ -6,27 +6,26 @@ namespace UntPlanStudio.Dienste;
 
 /// <summary>
 /// Einstellungen je Benutzer (z. B. Fensteranordnungen, Tabellenspalten, zuletzt verwendete Dokumente) als JSON-Werte
-/// unter frei wählbaren Schlüsseln. Datei <c>benutzer/&lt;name&gt;.json</c> im Datenordner.
+/// unter frei wählbaren Schlüsseln. Ablage in der Datenbank (<see cref="Ablagebereiche.Einstellungen"/>, ein JSON-Objekt je Benutzer).
 /// Module verwenden Schlüssel mit eigenem Präfix, z. B. <c>vertretung.ansicht</c>.
 /// </summary>
 public sealed class Benutzereinstellungen
 {
     public const string SchluesselZuletzt = "zuletzt";
-    private static readonly JsonSerializerOptions Optionen = new() { WriteIndented = true };
-    private readonly StudioKonfiguration _k;
+    private readonly StudioDatenbank _db;
     private readonly object _sperre = new();
 
-    public Benutzereinstellungen(StudioKonfiguration k) => _k = k;
+    public Benutzereinstellungen(StudioDatenbank db) => _db = db;
 
     public static bool SchluesselGueltig(string s) => s.Length is > 0 and <= 80 && s.All(c => char.IsLetterOrDigit(c) || c is '.' or '-' or '_');
 
-    private string Datei(string benutzer) => Path.Combine(_k.Benutzerordner, Uri.EscapeDataString(benutzer.ToLowerInvariant()) + ".json");
+    private static string Schluessel(string benutzer) => benutzer.ToLowerInvariant();
 
     private JsonObject Laden(string benutzer)
     {
-        var datei = Datei(benutzer);
-        if (!File.Exists(datei)) return new JsonObject();
-        try { return JsonNode.Parse(File.ReadAllText(datei)) as JsonObject ?? new JsonObject(); }
+        var inhalt = _db.AblageLesen(Ablagebereiche.Einstellungen, Schluessel(benutzer));
+        if (inhalt is null) return new JsonObject();
+        try { return JsonNode.Parse(inhalt) as JsonObject ?? new JsonObject(); }
         catch (JsonException) { return new JsonObject(); }
     }
 
@@ -43,9 +42,7 @@ public sealed class Benutzereinstellungen
             var alle = Laden(benutzer);
             if (wert is null) alle.Remove(schluessel);
             else alle[schluessel] = wert.DeepClone();
-            var datei = Datei(benutzer);
-            File.WriteAllText(datei + ".tmp", alle.ToJsonString(Optionen));
-            File.Move(datei + ".tmp", datei, true);
+            _db.AblageSchreiben(Ablagebereiche.Einstellungen, Schluessel(benutzer), alle.ToJsonString());
         }
     }
 
