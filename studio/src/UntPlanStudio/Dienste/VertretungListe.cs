@@ -52,7 +52,7 @@ public sealed class VertretungListe
         new("Raum", "(Raum)", "statt Raum", 54, true, true, true), new("NRaum", "Raum", "Raum", 58, false, true, true),
         new("Von", "Vertr. von", "Verlegung", 76, true, true, false), new("Nach", "(Le.) nach", "Wegverlegung", 76, true, true, false),
         new("Text", "Text", "Vertretungs-Text", 220, false, true, false), new("Kz", "Statistik", "Statistik-Kennzeichen", 60, false, true, false),
-        new("SG", "Schülergruppe", "Schülergruppe", 110, false, true, false), new("Grund", "Absenzgrund", "Absenzgrund", 86, true, false, true),
+        new("SG", "Schülergruppe", "Schülergruppe", 110, false, true, false), new("Grund", "Abwesenheitsgrund", "Abwesenheitsgrund", 86, true, false, true),
         new("UText", "Unt.-Text", "Unterrichts-Text", 90, true, false, false), new("UZText", "Unt.-Zeilentext", "Unterrichts-Zeilentext", 100, true, false, false),
         new("Beschr", "Beschr.", "Beschr.", 76, false, false, false), new("Entf", "Entfall", "Entfall", 50, true, false, false),
         new("Mitb", "Mitbetr.", "Mitbetreuung", 56, true, false, false), new("Kopp", "Vtr-Kopplung", "Vertretungs-Kopplung", 60, false, false, false),

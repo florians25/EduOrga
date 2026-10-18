@@ -115,7 +115,7 @@ function austauschFenster(f) {
         h('div', { class: 'ax-reihe' },
           aktion('export', 'GPU-Dateien (ZIP)', 'GPU001–GPU006 im Latin-1-Format', () => dateiHerunterladen(api.dok('/austausch/gpu'), 'GPU.zip')),
           aktion('export', 'Unterrichtsverteilung (CSV)', 'Alle Unterrichte mit Kopplungszeilen als CSV', () => dateiHerunterladen(api.dok('/austausch/unterricht.csv'), 'Unterrichtsverteilung.csv')),
-          aktion('web', 'Info-Stundenplan (HTML, ZIP)', 'Statische HTML-Seiten aller Pläne', () => dateiHerunterladen(api.dok('/austausch/infostundenplan.zip'), 'Info-Stundenplan.zip')),
+          aktion('web', 'Aushang (HTML, ZIP)', 'Statische HTML-Seiten aller Pläne', () => dateiHerunterladen(api.dok('/austausch/infostundenplan.zip'), 'Aushang.zip')),
           aktion('web', 'UntPlanWeb-Paket (JSON)', 'Paket im Schema untplanweb/1 als Datei (z. B. für einen manuellen Upload)', () => dateiHerunterladen(api.dok('/austausch/untplanweb.json'), 'untplanweb.json'))),
         h('div', { class: 'ax-reihe ax-ical' }, h('span', null, 'Lehrer-Kalender (iCal):'), lehrerWahl, h('span', null, 'von'), von, h('span', null, 'bis'), bis,
           aktion('kalender', 'Herunterladen', 'Stundenplan der Lehrkraft als iCalendar-Datei (.ics)', () => {
@@ -165,7 +165,7 @@ export default {
   },
   ribbon: [
     {
-      id: 'eingabe.importexport', reiter: 'Dateneingabe', gruppe: 'Hilfsmittel', text: 'Import/Export', symbol: 'import', braucht: 'dokument', hinweis: 'Import und Export (CSV, GPU, iCal, Info-Stundenplan, Abteilungsdatei …)',
+      id: 'eingabe.importexport', reiter: 'Dateneingabe', gruppe: 'Hilfsmittel', text: 'Import/Export', symbol: 'import', braucht: 'dokument', hinweis: 'Import und Export (CSV, GPU, iCal, Aushang (HTML), Abteilungsdatei …)',
       menue: [
         { text: 'Import/Export …', symbol: 'import', befehl: 'austausch.oeffnen' },
         null,

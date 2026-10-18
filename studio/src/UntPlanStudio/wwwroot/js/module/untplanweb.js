@@ -51,8 +51,8 @@ async function einstellungenDialog() {
     ignoriert: option('Ignorierten Unterricht übertragen', e.ignoriertenUnterricht),
     ferien: option('Ferien nicht als Stammdaten exportieren', e.ferienNichtExportieren),
     email: option('E-Mail-Adressen der Lehrkräfte übertragen', e.lehrerEmail),
-    absenzen: option('Lehrer-Absenzen übertragen (ohne Grund)', e.lehrerAbsenzen),
-    gruende: option('Absenzgründe übertragen (außer vertrauliche)', e.absenzgruende),
+    absenzen: option('Lehrer-Abwesenheiten übertragen (ohne Grund)', e.lehrerAbsenzen),
+    gruende: option('Abwesenheitsgründe übertragen (außer vertrauliche)', e.absenzgruende),
     schueler: option('Schülerliste übertragen (Klassenbuch, Fehlzeiten)', e.schueler),
   };
   const ergebnis = h('div', { class: 'upw-pruefung leise' });

@@ -39,10 +39,14 @@ public static class Export
 
     private static string H(string? s) => WebUtility.HtmlEncode(s ?? "");
 
-    private const string Stil = "<style>body{font-family:Segoe UI,Arial,sans-serif;font-size:12px;margin:12px;color:#111}h1{font-size:18px;margin:4px 0}h2{font-size:15px}" +
-        "table{border-collapse:collapse;margin-bottom:14px}th,td{border:1px solid #9aa4b2;padding:3px 5px;vertical-align:top}th{background:#dfe6f0}" +
-        ".tt td{width:120px;height:44px}.f{font-weight:bold}.k{font-size:11px;color:#333}.e{color:#b00;font-weight:bold}.sub{color:#555}" +
-        "nav a{margin-right:8px}@media print{nav{display:none}.pg{page-break-after:always}}</style>";
+    // Gestaltung nach dem UntPlan-Designsystem (design/DESIGN.md): Schiefer-Neutraltöne, Marine als Akzent, Fachfarbe als Tönung.
+    private const string Stil = "<style>body{font-family:'IBM Plex Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;margin:20px;color:#232a33;background:#fff}" +
+        "h1{font-size:20px;font-weight:600;margin:4px 0 2px}h2{font-size:15px;font-weight:600;margin:18px 0 6px}a{color:#234f96}" +
+        "table{border-collapse:collapse;margin:12px 0 18px;font-variant-numeric:tabular-nums}th,td{border:1px solid #dce1e7;padding:5px 8px;vertical-align:top;text-align:left}" +
+        "th{background:#fafbfc;color:#4d5866;font-weight:500;font-size:12px}" +
+        ".tt td{width:130px;height:48px;padding:3px}.tt .st{display:block;border-radius:4px;padding:4px 6px;margin-bottom:2px;border:1px solid rgba(0,0,0,.08)}" +
+        ".f{font-weight:600}.k{font-size:11.5px;color:#4d5866}.e{color:#b42318;font-weight:600}.sub{color:#6b7684;font-size:12px}" +
+        "nav{margin-bottom:12px}nav a{margin-right:12px;text-decoration:none;font-weight:500}@media print{nav{display:none}.pg{page-break-after:always}body{margin:0}}</style>";
 
     public static string Seite(string titel, string body) =>
         $"<!doctype html><html lang=\"de\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{H(titel)}</title>{Stil}</head><body>{body}</body></html>";
@@ -69,14 +73,14 @@ public static class Export
                 {
                     var u = ix.Unterrichte[p.UnterrichtId];
                     var f = u.HauptfachId is int fid ? ix.Faecher.GetValueOrDefault(fid) : null;
-                    var farbe = f is { Hintergrund: not 0 } ? $"#{f.Hintergrund & 0xFFFFFF:X6}" : "#eef";
+                    var farbe = f is { Hintergrund: not 0 } ? $"color-mix(in srgb, #{f.Hintergrund & 0xFFFFFF:X6} 16%, white)" : "#f4f6f8";
                     var info = typ switch
                     {
                         ElementTyp.Klasse => $"{string.Join(",", u.LehrerIds.Select(ix.KLehrer))} {string.Join(",", p.Raeume.Where(r => r.HasValue).Select(r => ix.KRaum(r)))}",
                         ElementTyp.Lehrer => $"{ix.KKlassen(u.KlassenIds)} {string.Join(",", p.Raeume.Where(r => r.HasValue).Select(r => ix.KRaum(r)))}",
                         _ => $"{ix.KKlassen(u.KlassenIds)} {string.Join(",", u.LehrerIds.Select(ix.KLehrer))}",
                     };
-                    sb.Append($"<div style=\"background:{farbe};padding:2px\"><span class=\"f\">{H(f?.Kurzname)}</span> <span class=\"k\">{H(info)}</span></div>");
+                    sb.Append($"<div class=\"st\" style=\"background:{farbe}\"><span class=\"f\">{H(f?.Kurzname)}</span> <span class=\"k\">{H(info)}</span></div>");
                 }
                 sb.Append("</td>");
             }
@@ -116,7 +120,7 @@ public static class Export
     {
         var ix = new DatenIndex(d);
         var sb = new StringBuilder();
-        if (monitor) sb.Append("<meta http-equiv=\"refresh\" content=\"60\"><style>body{background:#0b1a33;color:#fff;font-size:20px}th{background:#1d3a66;color:#fff}td{border-color:#2c4a7a}.e{color:#ff9a9a}</style>");
+        if (monitor) sb.Append("<meta http-equiv=\"refresh\" content=\"60\"><style>body{background:#11264a;color:#fff;font-size:20px}h1{font-size:28px}.sub{color:#b6cbec}th{background:#173261;color:#dce6f6;border-color:#1c3f7a}td{border-color:#1c3f7a}.e{color:#f6a39b}</style>");
         foreach (var datum in tage)
         {
             sb.Append($"<div class=\"pg\"><h1>{H(d.Einstellungen.Vertretungsplantitel)} – {Planungsdienst.TageLang[((int)datum.DayOfWeek + 6) % 7]}, {Format.Datum(datum)}</h1>");

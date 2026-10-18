@@ -299,7 +299,7 @@ public sealed class DruckApi : IStudioModul
                     await using var s = zip.CreateEntry(name, CompressionLevel.Optimal).Open();
                     await s.WriteAsync(Encoding.UTF8.GetBytes(inhalt));
                 }
-            return Datei(ctx, ms.ToArray(), "application/zip", $"Info-Stundenplan {schule}.zip", true);
+            return Datei(ctx, ms.ToArray(), "application/zip", $"Aushang {schule}.zip", true);
         });
 
         // ---- iCalendar ----

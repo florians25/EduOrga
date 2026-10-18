@@ -176,9 +176,9 @@ function planFenster(f, p) {
       liste.push({ text: 'Vertretungsvorschlag', symbol: 'vertretung', aktion: () => { auswahlMelden({ id: e.vtr, ids: [e.vtr], zeile: { v: e.vtr }, quelle: f.id }); fensterverwaltung.oeffnen('vertretung.vorschlag', {}); } });
       liste.push({ text: 'Änderungen rückgängig', symbol: 'rueckgaengig', deaktiviert: !schreiben, aktion: () => api.post(vpfad('/plan/aenderungenrueckgaengig'), { ids: [e.vtr] }, { quelle: f.id }).then(laden) });
     }
-    if (typ === 'lehrer' && element) liste.push({ text: `Absenz für ${plan.element.kurz} am ${t.text} …`, symbol: 'abwesenheit', deaktiviert: !schreiben, aktion: async () => {
+    if (typ === 'lehrer' && element) liste.push({ text: `Abwesenheit für ${plan.element.kurz} am ${t.text} …`, symbol: 'abwesenheit', deaktiviert: !schreiben, aktion: async () => {
       const { absenzenSpeichern } = await import('./absenzen.js');
-      await absenzenSpeichern('lehrer', [{ id: 0, element: plan.element.kurz, von: t.datum, bis: t.datum, sv: 1, sb: 99 }], [], f.id, 'Absenz eingeben');
+      await absenzenSpeichern('lehrer', [{ id: 0, element: plan.element.kurz, von: t.datum, bis: t.datum, sv: 1, sb: 99 }], [], f.id, 'Abwesenheit eingeben');
       await laden();
     } });
     menue(ev.clientX, ev.clientY, liste.filter((x, i, a) => !(x === null && (i === a.length - 1 || a[i + 1] === null))));

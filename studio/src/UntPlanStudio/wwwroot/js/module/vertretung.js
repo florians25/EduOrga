@@ -102,9 +102,9 @@ export default {
       { text: 'Vorheriger Unterrichtstag', symbol: 'pfeil_runter', befehl: 'vertretung.vorheriger', taste: 'Strg+Bild↑' },
     ] },
     { id: 'vertretung.datum', reiter: R, gruppe: 'Kalender', text: 'Datum', gross: true, element: datumsElement },
-    { id: 'vertretung.absenzen', reiter: R, gruppe: 'Vertretungsplanung', text: 'Absenzen', symbol: 'abwesenheit', gross: true, braucht: D, befehl: 'vertretung.absenzen', taste: 'Strg+M', menue: [
-      { text: 'Absenzen', symbol: 'abwesenheit', befehl: 'vertretung.absenzen', taste: 'Strg+M' },
-      { text: 'Absenzgründe', symbol: 'abwesenheit', befehl: 'stammdaten.oeffnen', args: { typ: 'abwesenheitsgrund' } },
+    { id: 'vertretung.absenzen', reiter: R, gruppe: 'Vertretungsplanung', text: 'Abwesenheiten', symbol: 'abwesenheit', gross: true, braucht: D, befehl: 'vertretung.absenzen', taste: 'Strg+M', menue: [
+      { text: 'Abwesenheiten', symbol: 'abwesenheit', befehl: 'vertretung.absenzen', taste: 'Strg+M' },
+      { text: 'Abwesenheitsgründe', symbol: 'abwesenheit', befehl: 'stammdaten.oeffnen', args: { typ: 'abwesenheitsgrund' } },
     ] },
     { id: 'vertretung.vertretungen', reiter: R, gruppe: 'Vertretungsplanung', text: 'Vertretungen', symbol: 'vertretung', gross: true, braucht: D, befehl: 'vertretung.liste', taste: 'Strg+T', menue: [
       { text: 'Vertretungen', symbol: 'vertretung', befehl: 'vertretung.liste', taste: 'Strg+T' },

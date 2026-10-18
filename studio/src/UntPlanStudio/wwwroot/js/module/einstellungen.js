@@ -84,7 +84,7 @@ function schuldatenFenster(f, p) {
       return [
         h('h3', null, 'Werte'),
         h('div', { class: 'formular' },
-          zeile('Tagesgenaue Wertrechnung', feld('tagesgenaueWertrechnung', haken(daten.tagesgenaueWertrechnung), 'bool')),
+          zeile('Tagesgenaue Soll/Ist-Rechnung', feld('tagesgenaueWertrechnung', haken(daten.tagesgenaueWertrechnung), 'bool')),
           zeile('Mehrarbeit vergütungsfähig ab mehr als … Std./Monat', feld('mehrarbeitsgrenze', zahlfeld(daten.mehrarbeitsgrenze, 0, 40), 'zahl'), 'NRW')),
         h('p', { class: 'leise' }, `Pflichtstunden der Schulform: ${daten.pflichtstunden} Std. (Voreinstellung für neue Lehrkräfte).`),
       ];

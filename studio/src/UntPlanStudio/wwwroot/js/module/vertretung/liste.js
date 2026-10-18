@@ -244,7 +244,7 @@ function vertretungenFenster(f, p) {
     if (!ids.length) return;
     const abgeleitet = tabelle.ausgewaehlte().filter((z) => z.m.abgeleitet).length;
     if (abgeleitet === tabelle.ausgewaehlte().length) {
-      await meldung('Vertretungen, die aus einer Absenz oder Veranstaltung entstehen, können nicht gelöscht werden.\n\nMit „Entfall“ entfällt die Stunde, mit „Zurücksetzen“ wird sie wieder offen. Soll sie ganz verschwinden, die Absenz ändern.', 'Vertretung löschen');
+      await meldung('Vertretungen, die aus einer Abwesenheit oder Veranstaltung entstehen, können nicht gelöscht werden.\n\nMit „Entfall“ entfällt die Stunde, mit „Zurücksetzen“ wird sie wieder offen. Soll sie ganz verschwinden, die Abwesenheit ändern.', 'Vertretung löschen');
       return;
     }
     if (!(await frage(`${tabelle.ausgewaehlte().length - abgeleitet} Vertretung(en) löschen?${abgeleitet ? `\n\n${abgeleitet} Zeile(n) aus Absenzen/Veranstaltungen bleiben erhalten.` : ''}`, { gefahr: true, ja: 'Löschen', nein: 'Abbrechen' }))) return;
@@ -401,7 +401,7 @@ function vertretungenFenster(f, p) {
     f.werkzeug({ text: 'Nicht drucken', symbol: 'drucken', nurSymbol: true, titel: 'Nicht drucken (N) ein/aus', aktion: () => kennzeichen('nd') });
     f.trenner();
     f.werkzeug({ text: 'Automatik', symbol: 'optimierung', nurSymbol: true, titel: 'Vertretungs-Automatik', aktion: () => import('./weitere.js').then((w) => w.automatikDialog(zr.von, zr.bis)) });
-    f.werkzeug({ text: 'Neu berechnen', symbol: 'wiederholen', nurSymbol: true, titel: 'Neu berechnen (Absenzen, Veranstaltungen, Klausuren)', aktion: neuBerechnen });
+    f.werkzeug({ text: 'Neu berechnen', symbol: 'wiederholen', nurSymbol: true, titel: 'Neu berechnen (Abwesenheiten, Veranstaltungen, Klausuren)', aktion: neuBerechnen });
   }
   f.werkzeug({ text: 'Nachrichten zum Tag', symbol: 'info', nurSymbol: true, titel: 'Nachrichten zum Tag', aktion: () => fensterverwaltung.oeffnen('vertretung.kalender', { reiter: 0 }) });
   const einst = f.werkzeug({ text: 'Einstellungen', symbol: 'einstellungen', nurSymbol: true, titel: 'Einstellungen', aktion: () => {

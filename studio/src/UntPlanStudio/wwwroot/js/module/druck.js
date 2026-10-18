@@ -259,7 +259,7 @@ function vertretungsausgabeFenster(f, p) {
       h('div', { class: 'dr-schalterliste' },
         schalter('querformat', 'Querformat'), schalter('raster', 'Raster'), schalter('nachrichten', 'Nachrichten zum Tag'),
         schalter('blockierteRaeume', 'Blockierte Räume'), schalter('abwesendeKlassen', 'Abwesende Klassen'), schalter('abwesendeLehrer', 'Abwesende Lehrer (Lehrerversion)'),
-        schalter('lehrerMitAbsenzgrund', 'Lehrer mit Absenzgrund'), schalter('ueberschriftJeElement', 'Überschrift je Element'), schalter('eineSeiteJeElement', 'Eine Seite je Element'),
+        schalter('lehrerMitAbsenzgrund', 'Lehrer mit Abwesenheitsgrund'), schalter('ueberschriftJeElement', 'Überschrift je Element'), schalter('eineSeiteJeElement', 'Eine Seite je Element'),
         schalter('elementueberschriftKomprimiert', 'Elementüberschrift komprimiert'), schalter('ersteBeschriftungJedeSeite', 'Element oben auf jeder Seite'),
         schalter('entfallslehrerDurchstreichen', 'Entfallslehrer durchstreichen'), schalter('kombinierteKlassen', 'Komb. Klassen (2a,2b → 2ab)'),
         schalter('stundenbezeichnung', 'Stundenbezeichnung'), schalter('blockvertretungenZusammenfassen', 'Blockvertretungen zusammenfassen'),
@@ -302,7 +302,7 @@ function vertretungsausgabeFenster(f, p) {
 
 async function infoStundenplan() {
   const ok = await dialog({
-    titel: 'Info-Stundenplan (HTML)',
+    titel: 'Aushang (HTML)',
     inhalt: h('div', null,
       h('p', null, 'HTML-Stundenpläne aller Klassen, Lehrkräfte und Räume mit Übersichtsseite – zum Ansehen im Browser oder als ZIP zum Veröffentlichen auf einem Webserver.')),
     knoepfe: [{ text: 'Im Browser ansehen', wert: 'ansehen', primaer: true }, { text: 'ZIP herunterladen', wert: 'zip' }, { text: 'Abbrechen', wert: null }],
@@ -354,7 +354,7 @@ export default {
     'druck.vorschau': mitDok(({ url, titel }) => vorschau(url, titel)),
   },
   ribbon: [
-    e('start.infostundenplan', 'Start', 'Module', 'Info-Stundenplan', 'web', 'druck.info'),
+    e('start.infostundenplan', 'Start', 'Module', 'Aushang (HTML)', 'web', 'druck.info'),
     e('start.berichte', 'Start', 'Werkzeuge', 'Berichte', 'drucken', null, false, undefined, { menue: [
       { text: 'Stundenpläne drucken …', symbol: 'drucken', befehl: 'druck.stundenplaene', args: { typ: 'klasse' } },
       { text: 'Lehrerpläne drucken …', symbol: 'drucken', befehl: 'druck.stundenplaene', args: { typ: 'lehrer' } },
@@ -364,7 +364,7 @@ export default {
       { text: 'Berichte (Listen, Statistik) …', symbol: 'statistik', befehl: 'druck.berichte' },
     ] }),
     e('stundenplaene.drucken', 'Stundenpläne', 'Ausgabe', 'Drucken', 'drucken', 'druck.stundenplaene', true, { typ: 'klasse' }, { taste: 'Strg+P' }),
-    e('stundenplaene.html', 'Stundenpläne', 'Ausgabe', 'Info-Stundenplan', 'web', 'druck.info', true),
+    e('stundenplaene.html', 'Stundenpläne', 'Ausgabe', 'Aushang (HTML)', 'web', 'druck.info', true),
     e('stundenplaene.ical', 'Stundenpläne', 'Ausgabe', 'iCalendar', 'kalender', 'druck.ical', true),
     e('stundenplaene.berichte', 'Stundenpläne', 'Ausgabe', 'Berichte', 'statistik', 'druck.berichte', true),
     e('vertretung.ausgabe', 'Vertretungsplanung', 'Vertretungsplanung', 'Ausgabe', 'drucken', 'druck.vertretung', true, undefined, { hinweis: 'Vertretungsplan drucken (PDF), HTML und Monitor; Seitenlayout' }),

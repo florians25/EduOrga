@@ -50,8 +50,8 @@ function vorschlagFenster(f) {
   const L = (el, text, titel, cls = '') => h('label', { title: titel, class: cls }, el, ` ${text}`);
   const optionen = h('div', { class: 'vt-optionen' },
     L(opt.block, 'Stundenblock', 'Vorschlag für alle Stunden des Blocks (Doppelstunde)'),
-    L(opt.disloz, 'Dislozierungen ignorieren', 'Auch Lehrkräfte vorschlagen, deren angrenzender Unterricht in einem anderen Gebäude liegt'),
-    L(opt.dauer, 'Dauervertretung', 'Vertreter für alle Stunden dieses Unterrichts während der Absenz übernehmen'),
+    L(opt.disloz, 'Wegzeiten ignorieren', 'Auch Lehrkräfte vorschlagen, deren angrenzender Unterricht in einem anderen Gebäude liegt'),
+    L(opt.dauer, 'Dauervertretung', 'Vertreter für alle Stunden dieses Unterrichts während der Abwesenheit übernehmen'),
     L(opt.nahe, 'Nur in der Nähe', 'Nur gekoppelte Lehrkräfte, gleicher Gang oder gleiches Stockwerk', 'nur-1'),
     L(opt.besetzt, 'Auch besetzte Räume anzeigen', '', 'nur-2'), L(opt.zusatz, 'Zusätzlichen Raum zuordnen', 'Den gewählten Raum zusätzlich zum bestehenden Raum zuordnen', 'nur-2'));
   const tabs = reiter(['Vertretungsvorschläge (0)', 'Betreuungen (0)', 'Räume (0)'], (i) => zeigen(i));

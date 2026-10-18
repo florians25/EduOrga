@@ -197,9 +197,9 @@ public static class PortalServer
 
     private static string Seite(string titel, string body) =>
         "<!doctype html><html lang=\"de\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
-        $"<title>{H(titel)}</title><style>body{{font-family:Segoe UI,Arial,sans-serif;margin:16px;color:#222}}h1{{color:#2b579a;font-size:22px}}" +
-        "table{border-collapse:collapse;margin:8px 0 18px;width:100%;max-width:1000px}th{background:#2b579a;color:#fff;text-align:left}th,td{border:1px solid #c8d1e0;padding:4px 8px}" +
-        "tr:nth-child(even) td{background:#f3f6fb}.e{color:#c00}label{display:block;margin:8px 0}input,select{margin-left:6px}.ok{color:#080}nav a{margin-right:8px}</style></head>" +
+        $"<title>{H(titel)}</title><style>body{{font-family:'IBM Plex Sans',-apple-system,'Segoe UI',Arial,sans-serif;margin:20px;color:#232a33}}h1{{color:#232a33;font-size:22px;font-weight:600}}" +
+        "table{border-collapse:collapse;margin:8px 0 18px;width:100%;max-width:1000px}th{background:#fafbfc;color:#4d5866;font-weight:500;text-align:left}th,td{border:1px solid #dce1e7;padding:6px 10px}" +
+        "a{color:#234f96}.e{color:#b42318}label{display:block;margin:8px 0}input,select{margin-left:6px}.ok{color:#1d7a46}nav a{margin-right:8px}</style></head>" +
         $"<body>{body}</body></html>";
 
     private static string PlanHtml(SchulKonfiguration s, JsonObject? snap, string? klasse)

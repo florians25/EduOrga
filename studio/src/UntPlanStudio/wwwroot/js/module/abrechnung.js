@@ -19,7 +19,7 @@ function reiterLeiste(f, aktiv, wechseln) {
 }
 
 function wertrechnungFenster(f, p) {
-  f.titel('Unterrichtsplanung / Wertrechnung');
+  f.titel('Soll und Ist');
   const schreiben = darfSchreiben();
   let reiter = p.tab || 'werte';
   let matrixArt = 2;
@@ -178,7 +178,7 @@ export default {
   id: 'abrechnung',
   css: ['css/module/abrechnung.css'],
   fenster: {
-    'abrechnung.wertrechnung': { titel: 'Unterrichtsplanung / Wertrechnung', symbol: 'statistik', breite: 1060, hoehe: 560, einzig: () => 'wert', erneutGeoeffnet: (fe, p) => fe.parameterSetzen(p), erstellen: wertrechnungFenster },
+    'abrechnung.wertrechnung': { titel: 'Soll und Ist', symbol: 'statistik', breite: 1060, hoehe: 560, einzig: () => 'wert', erneutGeoeffnet: (fe, p) => fe.parameterSetzen(p), erstellen: wertrechnungFenster },
     'abrechnung.statistik': { titel: 'Vertretungsstatistik', symbol: 'statistik', breite: 1040, hoehe: 560, einzig: () => 'stat', erstellen: statistikFenster },
   },
   befehle: {
@@ -188,12 +188,12 @@ export default {
     'abrechnung.statistik': () => { if (zustand.dokument) fensterverwaltung.oeffnen('abrechnung.statistik', {}); },
   },
   ribbon: [
-    { id: 'start.wertrechnung', reiter: 'Start', gruppe: 'Module', text: 'Unterrichtsplanung', symbol: 'statistik', befehl: 'abrechnung.werte', braucht: 'dokument', hinweis: 'Unterrichtsplanung und Wertrechnung (Soll/Ist, Matrix, Stundentafel)' },
+    { id: 'start.wertrechnung', reiter: 'Start', gruppe: 'Module', text: 'Unterrichtsplanung', symbol: 'statistik', befehl: 'abrechnung.werte', braucht: 'dokument', hinweis: 'Soll und Ist (Soll/Ist, Matrix, Stundentafel)' },
     { id: 'eingabe.stundentafel', reiter: 'Dateneingabe', gruppe: 'Spezielle Daten', text: 'Stundentafel', symbol: 'statistik', befehl: 'abrechnung.stundentafel', braucht: 'dokument' },
     { id: 'vertretung.statistik', reiter: 'Vertretungsplanung', gruppe: 'Vertretungsplanung', text: 'Vertretungs-statistik', symbol: 'statistik', gross: true, befehl: 'abrechnung.statistik', braucht: 'dokument', hinweis: 'Vertretungsabrechnung, Zähler, Mehrarbeit NRW, Berichte' },
-    { id: 'module.sollist', reiter: 'Module', gruppe: 'Unterrichtsplanung und Wertrechnung', text: 'Lehrer Soll/Ist', symbol: 'statistik', gross: true, befehl: 'abrechnung.werte', braucht: 'dokument' },
-    { id: 'module.matrix', reiter: 'Module', gruppe: 'Unterrichtsplanung und Wertrechnung', text: 'Unterrichts-Matrix', symbol: 'uebersicht', gross: true, befehl: 'abrechnung.matrix', braucht: 'dokument' },
-    { id: 'module.stundentafel', reiter: 'Module', gruppe: 'Unterrichtsplanung und Wertrechnung', text: 'Stundentafel', symbol: 'unterricht', gross: true, befehl: 'abrechnung.stundentafel', braucht: 'dokument' },
-    { id: 'module.statistik', reiter: 'Module', gruppe: 'Unterrichtsplanung und Wertrechnung', text: 'Vertretungs-statistik', symbol: 'statistik', gross: true, befehl: 'abrechnung.statistik', braucht: 'dokument' },
+    { id: 'module.sollist', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Lehrer Soll/Ist', symbol: 'statistik', gross: true, befehl: 'abrechnung.werte', braucht: 'dokument' },
+    { id: 'module.matrix', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Unterrichts-Matrix', symbol: 'uebersicht', gross: true, befehl: 'abrechnung.matrix', braucht: 'dokument' },
+    { id: 'module.stundentafel', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Stundentafel', symbol: 'unterricht', gross: true, befehl: 'abrechnung.stundentafel', braucht: 'dokument' },
+    { id: 'module.statistik', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Vertretungs-statistik', symbol: 'statistik', gross: true, befehl: 'abrechnung.statistik', braucht: 'dokument' },
   ],
 };

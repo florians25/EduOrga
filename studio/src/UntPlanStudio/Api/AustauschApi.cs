@@ -161,7 +161,7 @@ public sealed class AustauschApi : IStudioModul
         }));
 
         g.MapGet("/infostundenplan.zip", (Arbeitsdokument a) => a.LesenAsync(doc =>
-            Zip(Export.InfoStundenplan(doc.Daten).Select(kv => (kv.Key, Encoding.UTF8.GetBytes(kv.Value))), $"Info-Stundenplan_{Schulname(doc.Daten)}.zip")));
+            Zip(Export.InfoStundenplan(doc.Daten).Select(kv => (kv.Key, Encoding.UTF8.GetBytes(kv.Value))), $"Aushang_{Schulname(doc.Daten)}.zip")));
 
         g.MapGet("/ical/{lehrer:int}", (Arbeitsdokument a, int lehrer, DateOnly? von, DateOnly? bis) => a.LesenAsync(doc =>
         {

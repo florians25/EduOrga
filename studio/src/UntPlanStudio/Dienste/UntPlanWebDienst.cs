@@ -86,7 +86,7 @@ public sealed class UntPlanWebDienst
     public static string TeilName(string teil) => teil switch
     {
         WebTeile.Stammdaten => "Stammdaten", WebTeile.Unterricht => "Unterricht/Stundenplan", WebTeile.Vertretungen => "Vertretungen", "" => "Alle Daten",
-        Absenzen => "Absenzen", Studenten => "Studenten", Kurse => "Kurse", _ => teil,
+        Absenzen => "Abwesenheiten", Studenten => "Studenten", Kurse => "Kurse", _ => teil,
     };
 
     /// <summary>Kopie der Verbindungsdaten (für Arbeiten außerhalb der Dokumentsperre).</summary>
@@ -178,17 +178,17 @@ public sealed class UntPlanWebDienst
         var p = await VerbindungAsync(a);
         var start = await a.LesenAsync(doc => Start(doc.Daten.Einstellungen.Portal));
         var typen = new[] { WebRueckmeldungsTypen.Absenz, WebRueckmeldungsTypen.Nachricht };
-        Fortschritt(auftrag, 20, "Absenzen: Rückmeldungen werden abgeholt …");
+        Fortschritt(auftrag, 20, "Abwesenheiten: Rückmeldungen werden abgeholt …");
         var liste = (await UntPlanWebExport.RueckmeldungenAsync(p))
             .Where(m => typen.Contains(m.Typ) && (!DateOnly.TryParse(m.Bis ?? m.Von, out var bis) || bis >= start)).ToList();
         var jetzt = DateTime.Now;
         if (liste.Count == 0)
         {
-            await a.AendernAsync(benutzer, "UntPlanWeb-Absenzen", AenderungsArt.Einstellungen, d => d.Einstellungen.Portal.LetzteUebertragung[Absenzen] = jetzt);
-            Fortschritt(auftrag, 100, "Absenzen: keine neuen Absenzen oder Nachrichten.");
+            await a.AendernAsync(benutzer, "UntPlanWeb-Abwesenheiten", AenderungsArt.Einstellungen, d => d.Einstellungen.Portal.LetzteUebertragung[Absenzen] = jetzt);
+            Fortschritt(auftrag, 100, "Abwesenheiten: keine neuen Abwesenheiten oder Nachrichten.");
             return;
         }
-        Fortschritt(auftrag, 60, $"Absenzen: {liste.Count} Meldungen werden übernommen …");
+        Fortschritt(auftrag, 60, $"Abwesenheiten: {liste.Count} Meldungen werden übernommen …");
         List<string> ok = new(), nein = new();
         await a.AendernAsync(benutzer, "UntPlanWeb-Rückmeldungen", AenderungsArt.Vertretung, d =>
         {
@@ -198,8 +198,8 @@ public sealed class UntPlanWebDienst
             d.Einstellungen.Portal.LetzteUebertragung[Absenzen] = jetzt;
         });
         await UntPlanWebExport.QuittierenAsync(p, ok);
-        var text = $"{ok.Count} Absenzen oder Nachrichten übernommen{(nein.Count > 0 ? $", {nein.Count} abgelehnt (unbekannte Elemente oder kein Unterrichtstag)" : "")}.";
-        Fortschritt(auftrag, 100, "Absenzen: " + text);
+        var text = $"{ok.Count} Abwesenheiten oder Nachrichten übernommen{(nein.Count > 0 ? $", {nein.Count} abgelehnt (unbekannte Elemente oder kein Unterrichtstag)" : "")}.";
+        Fortschritt(auftrag, 100, "Abwesenheiten: " + text);
         auftrag.Ergebnis = text;
     }
 

@@ -38,7 +38,7 @@ const REITER = {
     ['kombinierteKlassen', 'Komb. Klassen (2a,2b → 2ab)', 'bool'], ['alleKlassenEinFeld', 'Alle Klassen in einem Feld', 'bool'],
     ['kopplungenMitPunkt', 'Kopplungen mit Punkt', 'bool'], ['fixierungMitStern', 'Fixierung mit Stern', 'bool'], ['kollisionTrennen', 'Kollisionen trennen', 'bool'],
     ['stundenfelderSortieren', 'Stundenfelder sortieren', 'bool'], ['elementeVerbinden', 'Elemente verbinden', 'bool'],
-    ['absenzenAnzeigen', 'Absenzen anzeigen', 'bool'], ['keinAbsenzgrund', 'Kein Absenzgrund', 'bool'], ['nurTagesabsenzen', 'Nur Tagesabsenzen', 'bool'],
+    ['absenzenAnzeigen', 'Abwesenheiten anzeigen', 'bool'], ['keinAbsenzgrund', 'Kein Abwesenheitsgrund', 'bool'], ['nurTagesabsenzen', 'Nur Tagesabsenzen', 'bool'],
     ['nurVertretungsstunden', 'Nur Vertretungsstunden', 'bool'], ['entfaelleDurchstreichen', 'Entfälle durchstreichen', 'bool'], ['mitVertretungen', 'Mit Vertretungen', 'bool'],
     ['dragDropZeitwunschFarben', 'DragDrop: Farben laut Zeitwünsche', 'bool'], ['dragDropMehrereUnterrichte', 'DragDrop: mehrere Unterrichte', 'bool'], ['dragDropTauschketten', 'DragDrop: Tauschketten', 'bool'],
     ['leereZeilenNichtDrucken', 'Leere Zeilen nicht drucken', 'bool'], ['leereSpalteNichtDrucken', 'Leere Spalte nicht drucken', 'bool'],

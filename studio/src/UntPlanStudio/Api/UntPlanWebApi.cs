@@ -100,9 +100,9 @@ public sealed class UntPlanWebApi : IStudioModul
             {
                 Zeile("Stammdaten", WebTeile.Stammdaten, true, "Schule, Zeitraster, Klassen, Lehrkräfte, Räume, Fächer, Gänge, Ferien (und Schüler, falls freigegeben)"),
                 Zeile("Stundenplan*", WebTeile.Unterricht, true, "Perioden mit Unterricht und Stundenplan sowie Pausenaufsichten – Stundenplanänderungen gehen nur hiermit an UntPlanWeb"),
-                Zeile("Vertretungen*", WebTeile.Vertretungen, true, "Vertretungen, Absenzen, Termine und Tagestexte – nur die geänderten Stunden, ohne Stundenplanänderungen"),
+                Zeile("Vertretungen*", WebTeile.Vertretungen, true, "Vertretungen, Abwesenheiten, Termine und Tagestexte – nur die geänderten Stunden, ohne Stundenplanänderungen"),
                 Zeile("Stpl.-Änderungen*", UntPlanWebDienst.Stpl, false, "Raumänderungen, Buchungen (zusätzliche Unterrichte) und Prüfungen aus UntPlanWeb"),
-                Zeile("Absenzen*", UntPlanWebDienst.Absenzen, false, "Krankmeldungen bzw. Abwesenheitsmeldungen der Lehrkräfte und Nachrichten aus UntPlanWeb"),
+                Zeile("Abwesenheiten*", UntPlanWebDienst.Absenzen, false, "Krankmeldungen bzw. Abwesenheitsmeldungen der Lehrkräfte und Nachrichten aus UntPlanWeb"),
                 Zeile("Studenten*", UntPlanWebDienst.Studenten, false, "Im Klassenbuch von UntPlanWeb erfasste Fehlzeiten der Schülerinnen und Schüler als Schülerabwesenheiten übernehmen"),
                 Zeile("Kurse", UntPlanWebDienst.Kurse, false, "Klassenbuch je Unterricht (Lehrstoff, Hausaufgaben) aus UntPlanWeb übernehmen"),
             },

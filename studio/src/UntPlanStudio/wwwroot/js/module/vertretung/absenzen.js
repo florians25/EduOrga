@@ -16,7 +16,7 @@ const ARTEN = [{ art: 'lehrer', titel: 'Lehrer', typ: 'lehrer' }, { art: 'klasse
 /** Absenzen speichern und die Rückfragen stellen (Vertreter abwesend, Veranstaltung, Verlegungen, Sondereinsätze). */
 export async function absenzenSpeichern(art, neu, alt, quelle, text) {
   const r = await api.post(vpfad('/absenzen/speichern'), { art, neu, alt, text }, { quelle });
-  if (r.doppelt) hinweis('Diese Absenz ist bereits vorhanden.', 'warnung');
+  if (r.doppelt) hinweis('Diese Abwesenheit ist bereits vorhanden.', 'warnung');
   if (r.betroffen?.length) {
     await meldung(`Achtung: Folgende Vertretungen waren bereits mit einer Lehrkraft geplant, die nun abwesend ist. Sie sind wieder offen und müssen neu vertreten werden:\n\n${r.betroffen.join('\n')}`, 'Vertreter abwesend');
   }
@@ -41,7 +41,7 @@ function absenzFenster(f, p) {
     await entwurfUebernehmen();
     artIndex = i;
     f.parameterSetzen({ art: art().art });
-    f.titel(`Absenzen / ${art().titel === 'Lehrer' ? 'Lehrer' : art().titel === 'Klassen' ? 'Klasse' : 'Raum'}`);
+    f.titel(`Abwesenheiten / ${art().titel === 'Lehrer' ? 'Lehrer' : art().titel === 'Klassen' ? 'Klasse' : 'Raum'}`);
     spalten();
     laden();
   }, artIndex);
@@ -52,8 +52,8 @@ function absenzFenster(f, p) {
   const tabelle = new Tabelle(f.inhalt, {
     spalten: [],
     sortierbar: false,
-    leerText: 'Keine Absenzen',
-    neuText: schreiben ? 'Neue Absenz …' : undefined,
+    leerText: 'Keine Abwesenheiten',
+    neuText: schreiben ? 'Neue Abwesenheit …' : undefined,
     neu: schreiben ? async (s, wert) => {
       await entwurfUebernehmen();
       const z = { id: `neu${Date.now()}`, nr: 'neu *', element: '', vonIso: zr.von, bisIso: zr.von, sv: '1', sb: String(letzte()), grund: '', text: '', begleit: '', offen: '', entwurf: true };
@@ -71,11 +71,11 @@ function absenzFenster(f, p) {
     beiAuswahl: (_, aktiv) => { if (entwurf && aktiv?.id !== entwurf.id) entwurfUebernehmen(); },
     beiDoppelklick: (z) => (z.va ? fensterverwaltung.oeffnen('veranstaltungen.liste', {}) : bearbeiten()),
     kontextmenue: () => [
-      { text: 'Neue Absenz …', symbol: 'neu', deaktiviert: !schreiben, aktion: neuDialog },
+      { text: 'Neue Abwesenheit …', symbol: 'neu', deaktiviert: !schreiben, aktion: neuDialog },
       { text: 'Bearbeiten …', symbol: 'einstellungen', deaktiviert: !schreiben, aktion: bearbeiten },
-      { text: 'Absenz teilen …', symbol: 'tausch', deaktiviert: !schreiben, aktion: teilen },
-      { text: 'Absenz kopieren …', symbol: 'kopieren', deaktiviert: !schreiben, aktion: kopieren },
-      { text: 'Absenzen zusammenfassen', deaktiviert: !schreiben, aktion: zusammenfassen },
+      { text: 'Abwesenheit teilen …', symbol: 'tausch', deaktiviert: !schreiben, aktion: teilen },
+      { text: 'Abwesenheit kopieren …', symbol: 'kopieren', deaktiviert: !schreiben, aktion: kopieren },
+      { text: 'Abwesenheiten zusammenfassen', deaktiviert: !schreiben, aktion: zusammenfassen },
       null,
       { text: 'Löschen', symbol: 'loeschen', deaktiviert: !schreiben, aktion: loeschen },
     ],
@@ -125,13 +125,13 @@ function absenzFenster(f, p) {
     entwurf = null;
     const z = e.zeile;
     if (!z.element) {
-      if (!e.neu) hinweis('Ohne Element kann die Absenz nicht gespeichert werden – die Änderung wurde verworfen.', 'warnung');
+      if (!e.neu) hinweis('Ohne Element kann die Abwesenheit nicht gespeichert werden – die Änderung wurde verworfen.', 'warnung');
       await laden();
       return;
     }
     try {
       await absenzenSpeichern(art().art, [{ id: e.neu ? 0 : Number(String(z.nr).replace(' *', '')), element: z.element, von: z.vonIso, bis: z.bisIso, sv: Number(z.sv), sb: Number(z.sb), grund: z.grund, text: z.text, begleit: z.begleit }],
-        e.neu ? [] : [Number(String(z.nr).replace(' *', ''))], f.id, e.neu ? 'Absenz eingeben' : 'Absenz geändert');
+        e.neu ? [] : [Number(String(z.nr).replace(' *', ''))], f.id, e.neu ? 'Abwesenheit eingeben' : 'Abwesenheit geändert');
     } catch (x) { fehlerMelden(x); }
     await laden();
   }
@@ -156,22 +156,22 @@ function absenzFenster(f, p) {
   }
   async function neuDialog() {
     await entwurfUebernehmen();
-    const a = await formularAbsenz('Neue Absenz');
-    if (a) { await absenzenSpeichern(art().art, [{ id: 0, ...a }], [], f.id, 'Absenz eingeben'); await laden(); }
+    const a = await formularAbsenz('Neue Abwesenheit');
+    if (a) { await absenzenSpeichern(art().art, [{ id: 0, ...a }], [], f.id, 'Abwesenheit eingeben'); await laden(); }
   }
   async function bearbeiten() {
     await entwurfUebernehmen();
     const z = tabelle.aktiveZeile();
     if (!z || z.va) return;
-    const a = await formularAbsenz(`Absenz ${z.nr} bearbeiten`, z);
-    if (a) { await absenzenSpeichern(art().art, [{ id: Number(z.nr), ...a }], [Number(z.nr)], f.id, 'Absenz geändert'); await laden(); }
+    const a = await formularAbsenz(`Abwesenheit ${z.nr} bearbeiten`, z);
+    if (a) { await absenzenSpeichern(art().art, [{ id: Number(z.nr), ...a }], [Number(z.nr)], f.id, 'Abwesenheit geändert'); await laden(); }
   }
   async function teilen() {
     await entwurfUebernehmen();
     const z = tabelle.aktiveZeile();
     if (!z || z.va) return;
-    if (z.vonIso === z.bisIso) { hinweis('Eine eintägige Absenz kann nicht geteilt werden.', 'warnung'); return; }
-    const w = await formular('Absenz teilen', [{ name: 'ab', titel: 'Zweiter Teil beginnt am', wert: datumText(z.vonIso === z.bisIso ? z.vonIso : (await import('./kern.js')).plusTage(z.vonIso, 1)), pflicht: true }]);
+    if (z.vonIso === z.bisIso) { hinweis('Eine eintägige Abwesenheit kann nicht geteilt werden.', 'warnung'); return; }
+    const w = await formular('Abwesenheit teilen', [{ name: 'ab', titel: 'Zweiter Teil beginnt am', wert: datumText(z.vonIso === z.bisIso ? z.vonIso : (await import('./kern.js')).plusTage(z.vonIso, 1)), pflicht: true }]);
     if (!w) return;
     await api.post(vpfad('/absenzen/teilen'), { id: Number(z.nr), ab: datumLesen(w.ab, z.vonIso) }, { quelle: f.id });
     await laden();
@@ -180,7 +180,7 @@ function absenzFenster(f, p) {
     await entwurfUebernehmen();
     const z = tabelle.aktiveZeile();
     if (!z || z.va) return;
-    const w = await formular('Absenz für weitere Elemente übernehmen', [{ name: 'elemente', titel: art().titel, pflicht: true, hinweis: 'Kurznamen, mehrere mit Komma.' }]);
+    const w = await formular('Abwesenheit für weitere Elemente übernehmen', [{ name: 'elemente', titel: art().titel, pflicht: true, hinweis: 'Kurznamen, mehrere mit Komma.' }]);
     if (!w) return;
     await api.post(vpfad('/absenzen/kopieren'), { id: Number(z.nr), elemente: w.elemente }, { quelle: f.id });
     await laden();
@@ -193,18 +193,18 @@ function absenzFenster(f, p) {
   async function loeschen() {
     await entwurfUebernehmen();
     const ids = markierte();
-    if (!ids.length || !(await frage(`${ids.length} Absenz(en) löschen? Daraus entstandene Vertretungen werden entfernt.`, { gefahr: true, ja: 'Löschen', nein: 'Abbrechen' }))) return;
+    if (!ids.length || !(await frage(`${ids.length} Abwesenheit(en) löschen? Daraus entstandene Vertretungen werden entfernt.`, { gefahr: true, ja: 'Löschen', nein: 'Abbrechen' }))) return;
     await api.post(vpfad('/absenzen/loeschen'), { ids }, { quelle: f.id });
     await laden();
   }
 
   if (schreiben) {
-    f.werkzeug({ text: 'Neu', symbol: 'neu', titel: 'Neue Absenz (Dialog)', aktion: neuDialog });
+    f.werkzeug({ text: 'Neu', symbol: 'neu', titel: 'Neue Abwesenheit (Dialog)', aktion: neuDialog });
     f.werkzeug({ text: 'Löschen', symbol: 'loeschen', nurSymbol: true, titel: 'Löschen (Strg+Entf)', aktion: loeschen });
     f.trenner();
     f.werkzeug({ text: 'Bearbeiten', symbol: 'einstellungen', nurSymbol: true, titel: 'Bearbeiten', aktion: bearbeiten });
-    f.werkzeug({ text: 'Teilen', symbol: 'tausch', nurSymbol: true, titel: 'Absenz teilen', aktion: teilen });
-    f.werkzeug({ text: 'Kopieren', symbol: 'kopieren', nurSymbol: true, titel: 'Absenz kopieren (andere Elemente)', aktion: kopieren });
+    f.werkzeug({ text: 'Teilen', symbol: 'tausch', nurSymbol: true, titel: 'Abwesenheit teilen', aktion: teilen });
+    f.werkzeug({ text: 'Kopieren', symbol: 'kopieren', nurSymbol: true, titel: 'Abwesenheit kopieren (andere Elemente)', aktion: kopieren });
     f.trenner();
   }
   f.werkzeug({ text: 'Veranstaltungen', symbol: 'veranstaltung', nurSymbol: true, titel: 'Veranstaltungen', aktion: () => fensterverwaltung.oeffnen('veranstaltungen.liste', {}) });
@@ -234,7 +234,7 @@ function absenzFenster(f, p) {
     for (const v of d.veranstaltungen) zeilen.push({ id: v.id, va: v.nr, nr: `VA ${v.nr}`, element: '', vonIso: v.von, bisIso: v.bis, sv: String(v.sv), sb: String(v.sb), grund: v.grund, text: `Veranstaltung: ${v.elemente} ${v.text}`.trim(), begleit: '', offen: '' });
     tabelle.daten(zeilen);
     tabs.texte([`Lehrer (${d.anzahl.lehrer})`, `Klassen (${d.anzahl.klasse})`, `Räume (${d.anzahl.raum})`]);
-    f.fuss.replaceChildren(h('span', null, `${d.zeilen.length} Absenz(en)`), h('span', null, `${d.zeilen.reduce((a, z) => a + z.offen, 0)} offene Vertretungen`),
+    f.fuss.replaceChildren(h('span', null, `${d.zeilen.length} Abwesenheit(en)`), h('span', null, `${d.zeilen.reduce((a, z) => a + z.offen, 0)} offene Vertretungen`),
       h('span', { class: 'rechts leise' }, 'Zeile verlassen speichert · Strg+Enter sofort · Esc verwirft'));
   }
   const entprelltLaden = entprellen(() => laden().catch(() => {}), 150);
@@ -260,10 +260,10 @@ function absenzFenster(f, p) {
 
   spalten();
   einstellungLesen('vertretung.absenzen.va').then((w) => { vaZeigen = !!w; }).finally(() => laden().catch(fehlerMelden));
-  f.titel(`Absenzen / ${art().titel === 'Lehrer' ? 'Lehrer' : art().titel === 'Klassen' ? 'Klasse' : 'Raum'}`);
+  f.titel(`Abwesenheiten / ${art().titel === 'Lehrer' ? 'Lehrer' : art().titel === 'Klassen' ? 'Klasse' : 'Raum'}`);
   void planungsdatum;
 }
 
 export const fenster = {
-  'vertretung.absenzen': { titel: 'Absenzen', symbol: 'abwesenheit', breite: 820, hoehe: 340, einzig: () => 'absenzen', erstellen: absenzFenster },
+  'vertretung.absenzen': { titel: 'Abwesenheiten', symbol: 'abwesenheit', breite: 820, hoehe: 340, einzig: () => 'absenzen', erstellen: absenzFenster },
 };

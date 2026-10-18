@@ -184,7 +184,7 @@ public sealed class AbrechnungApi : IStudioModul
                 foreach (var e in liste.OrderBy(e => e.Lehrer.Kurzname).ThenBy(e => e.Datum))
                     zeilen.Add(new(new[] { e.Lehrer.Kurzname, e.Lehrer.VollerName, Tag(e.Datum), e.Stunden.ToString(), e.Grund }, e.Lehrer.Id, null));
                 return Fertig(new[] { "Lehrer", "Name", "Datum", "Stunden", "Grund" }, new[] { 60, 160, 100, 60, 150 },
-                    $"{liste.Count} Entfalltage (Tage, an denen wegen einer Absenz der gesamte Unterricht des Lehrers entfiel), {liste.Select(e => e.Lehrer.Id).Distinct().Count()} Lehrer.");
+                    $"{liste.Count} Entfalltage (Tage, an denen wegen einer Abwesenheit der gesamte Unterricht des Lehrers entfiel), {liste.Select(e => e.Lehrer.Id).Distinct().Count()} Lehrer.");
             }
             case 5:
             {

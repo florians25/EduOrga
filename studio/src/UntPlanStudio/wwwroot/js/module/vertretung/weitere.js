@@ -115,7 +115,7 @@ export async function einstellungenDialog(seite = 0) {
   klasseSel.addEventListener('change', rasterZeichnen);
   rasterZeichnen();
   seiten.push(h('div', null, h('div', { class: 'vt-zeile' }, h('label', null, 'Zeitraster für: '), klasseSel), raster,
-    h('p', { class: 'leise' }, 'Klick wechselt: leer = vertreten · E = Unterricht entfällt bei Absenz der Lehrkraft · EVA = eigenverantwortliches Arbeiten. Ein Klassenzeitraster hat Vorrang vor dem Zeitraster der Schule.')));
+    h('p', { class: 'leise' }, 'Klick wechselt: leer = vertreten · E = Unterricht entfällt bei Abwesenheit der Lehrkraft · EVA = eigenverantwortliches Arbeiten. Ein Klassenzeitraster hat Vorrang vor dem Zeitraster der Schule.')));
   // --- Vertretungszähler ---
   const z = e.zaehler;
   const cb = (obj, k, text) => { const i = h('input', { type: 'checkbox', checked: !!obj[k] }); i.addEventListener('change', () => { obj[k] = i.checked; }); return h('label', { class: 'voll' }, i, ` ${text}`); };
@@ -125,7 +125,7 @@ export async function einstellungenDialog(seite = 0) {
   seiten.push(h('div', { class: 'formular' },
     cb(z, 'vertretungenZaehlen', 'Vertretungen zählen (+)'), cb(z, 'sondereinsaetzeZaehlen', 'Sondereinsätze zählen (+)'), cb(z, 'entfaelleZaehlen', 'Entfälle zählen (–)'),
     cb(z, 'freisetzungenZaehlen', 'Freisetzungen zählen (–)'), cb(z, 'pausenaufsichtenZaehlen', 'Pausenaufsicht-Vertretungen zählen'), cb(z, 'betreuungenHalb', 'Betreuungen zählen halb'),
-    cb(z, 'entfallNurMitGrund', 'Entfälle nur zählen, wenn der Absenzgrund „Entfall zählen“ gesetzt ist'), cb(z, 'stattVertretungNeutral', 'Statt-Vertretungen neutral (zählen nicht)'),
+    cb(z, 'entfallNurMitGrund', 'Entfälle nur zählen, wenn der Abwesenheitsgrund „Entfall zählen“ gesetzt ist'), cb(z, 'stattVertretungNeutral', 'Statt-Vertretungen neutral (zählen nicht)'),
     cb(z, 'klausurenNeutral', 'Klausuraufsichten neutral'),
     h('label', null, 'Durchrechnungszeitraum'), sel(z, 'zeitraum', [['Woche', 'Woche'], ['Monat', 'Monat'], ['Halbjahr', 'Halbjahr'], ['Schuljahr', 'Schuljahr'], ['Benutzerdefiniert', 'benutzerdefiniert']]),
     h('label', null, 'Wie zählen'), sel(z, 'wieZaehlen', [['Anzahl', 'Anzahl der Stunden'], ['Werte', 'Werte (Faktor des Unterrichts)']]),

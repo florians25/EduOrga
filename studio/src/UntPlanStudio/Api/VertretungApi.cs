@@ -253,7 +253,7 @@ public sealed class VertretungApi : IStudioModul
                     var alt = d.Abwesenheiten.FirstOrDefault(x => x.Id == e.Id);
                     var x = new Abwesenheit
                     {
-                        Id = e.Id, Art = ar, ElementId = ElementId(d, TypVon(ar), e.Element) ?? throw StudioFehler.Ungueltig("Für eine Absenz muss ein Element gewählt sein."),
+                        Id = e.Id, Art = ar, ElementId = ElementId(d, TypVon(ar), e.Element) ?? throw StudioFehler.Ungueltig("Für eine Abwesenheit muss ein Element gewählt sein."),
                         Von = e.Von, Bis = e.Bis ?? e.Von, StundeVon = e.Sv ?? 1, StundeBis = e.Sb ?? 99,
                         GrundId = string.IsNullOrWhiteSpace(e.Grund) ? null : ElementId(d, ElementTyp.Abwesenheitsgrund, e.Grund),
                         Text = e.Text ?? "", BegleitLehrerIds = ElementIds(d, ElementTyp.Lehrer, e.Begleit),
@@ -266,7 +266,7 @@ public sealed class VertretungApi : IStudioModul
                     .Select(v => $"Vtr-Nr. {v.Id}: {VertretungPlan.TagKurz(v.Datum)} {Format.Datum(v.Datum)}, {v.Stunde}. Std., {ix.KKlassen(v.NeueKlassenIds)} {ix.KFach(v.FachId)} – Vertreter {ix.KLehrer(v.VertreterId)}").ToList();
                 return true;
             });
-            var text = s.Text ?? (altIds.Count == 0 ? "Absenz eingeben" : neu.Count == 0 ? "Absenz löschen" : "Absenz geändert");
+            var text = s.Text ?? (altIds.Count == 0 ? "Abwesenheit eingeben" : neu.Count == 0 ? "Abwesenheit löschen" : "Abwesenheit geändert");
             return await a.AendernAsync(B(p), text, V, d =>
             {
                 var alt = d.Abwesenheiten.Where(x => altIds.Contains(x.Id)).ToList();
@@ -287,10 +287,10 @@ public sealed class VertretungApi : IStudioModul
                     var name = doc.Index.KLehrer(x.ElementId);
                     var verl = Verlegungsaufhebung.VerlegungenImZeitraum(d, x);
                     if (verl.Count > 0)
-                        nachfragen.Add(new { art = "verlegung", text = Verlegungsaufhebung.FrageText(d, $"{name} hat im Absenzzeitraum verlegte Stunden:", verl, "Soll die Verlegung rückgängig gemacht werden?"), ids = verl.Select(v => v.Id).ToList() });
+                        nachfragen.Add(new { art = "verlegung", text = Verlegungsaufhebung.FrageText(d, $"{name} hat im Abwesenheitszeitraum verlegte Stunden:", verl, "Soll die Verlegung rückgängig gemacht werden?"), ids = verl.Select(v => v.Id).ToList() });
                     var se = Verlegungsaufhebung.SondereinsaetzeImZeitraum(d, x);
                     if (se.Count > 0)
-                        nachfragen.Add(new { art = "sondereinsatz", text = Verlegungsaufhebung.FrageText(d, $"{name} hat im Absenzzeitraum Sondereinsätze:", se, "Sollen die Sondereinsätze gelöscht werden?"), ids = se.Select(v => v.Id).ToList() });
+                        nachfragen.Add(new { art = "sondereinsatz", text = Verlegungsaufhebung.FrageText(d, $"{name} hat im Abwesenheitszeitraum Sondereinsätze:", se, "Sollen die Sondereinsätze gelöscht werden?"), ids = se.Select(v => v.Id).ToList() });
                 }
                 return new { gespeichert = neu.Select(x => x.Id).ToList(), doppelt = s.Neu.Count > 0 && neu.Count == 0 && altIds.Count == 0, betroffen, nachfragen };
             });
@@ -308,15 +308,15 @@ public sealed class VertretungApi : IStudioModul
         });
 
         g.MapPost("/absenzen/loeschen", (Arbeitsdokument a, IdsAnfrage i, ClaimsPrincipal p) =>
-            a.AendernAsync(B(p), i.Ids.Count > 1 ? $"Absenzen löschen ({i.Ids.Count})" : "Absenz löschen", V, d =>
+            a.AendernAsync(B(p), i.Ids.Count > 1 ? $"Abwesenheiten löschen ({i.Ids.Count})" : "Abwesenheit löschen", V, d =>
                 AbsenzVerwaltung.Loeschen(d, d.Abwesenheiten.Where(x => i.Ids.Contains(x.Id)).ToList()), _ => new { ok = true }));
 
         g.MapPost("/absenzen/teilen", (Arbeitsdokument a, AbsenzTeilen t, ClaimsPrincipal p) =>
-            a.AendernAsync(B(p), "Absenz teilen", V, d =>
+            a.AendernAsync(B(p), "Abwesenheit teilen", V, d =>
             {
-                var alt = d.Abwesenheiten.FirstOrDefault(x => x.Id == t.Id) ?? throw StudioFehler.NichtGefunden($"Die Absenz Nr. {t.Id}");
-                if (alt.Von == alt.Bis) throw StudioFehler.Ungueltig("Eine eintägige Absenz kann nicht geteilt werden.");
-                if (t.Ab <= alt.Von || t.Ab > alt.Bis) throw StudioFehler.Ungueltig("Der zweite Teil muss nach dem ersten Tag und spätestens am letzten Tag der Absenz beginnen.");
+                var alt = d.Abwesenheiten.FirstOrDefault(x => x.Id == t.Id) ?? throw StudioFehler.NichtGefunden($"Die Abwesenheit Nr. {t.Id}");
+                if (alt.Von == alt.Bis) throw StudioFehler.Ungueltig("Eine eintägige Abwesenheit kann nicht geteilt werden.");
+                if (t.Ab <= alt.Von || t.Ab > alt.Bis) throw StudioFehler.Ungueltig("Der zweite Teil muss nach dem ersten Tag und spätestens am letzten Tag der Abwesenheit beginnen.");
                 var a1 = Kopie(alt);
                 a1.Bis = t.Ab.AddDays(-1);
                 a1.StundeBis = 99;
@@ -328,19 +328,19 @@ public sealed class VertretungApi : IStudioModul
             }, _ => new { ok = true }));
 
         g.MapPost("/absenzen/kopieren", (Arbeitsdokument a, AbsenzKopieren k, ClaimsPrincipal p) =>
-            a.AendernAsync(B(p), "Absenz kopieren", V, d =>
+            a.AendernAsync(B(p), "Abwesenheit kopieren", V, d =>
             {
-                var alt = d.Abwesenheiten.FirstOrDefault(x => x.Id == k.Id) ?? throw StudioFehler.NichtGefunden($"Die Absenz Nr. {k.Id}");
+                var alt = d.Abwesenheiten.FirstOrDefault(x => x.Id == k.Id) ?? throw StudioFehler.NichtGefunden($"Die Abwesenheit Nr. {k.Id}");
                 var neu = ElementIds(d, TypVon(alt.Art), k.Elemente).Where(e => e != alt.ElementId)
                     .Select(e => { var x = Kopie(alt); x.Id = 0; x.ElementId = e; x.Erstellt = DateTime.Now; return x; }).ToList();
                 AbsenzVerwaltung.Speichern(d, neu, Array.Empty<Abwesenheit>());
             }, _ => new { ok = true }));
 
         g.MapPost("/absenzen/zusammenfassen", (Arbeitsdokument a, IdsAnfrage i, ClaimsPrincipal p) =>
-            a.AendernAsync(B(p), "Absenzen zusammenfassen", V, d =>
+            a.AendernAsync(B(p), "Abwesenheiten zusammenfassen", V, d =>
             {
                 var m = d.Abwesenheiten.Where(x => i.Ids.Contains(x.Id)).OrderBy(x => x.Von).ToList();
-                if (m.Count < 2 || m.Select(x => (x.Art, x.ElementId)).Distinct().Count() > 1) throw StudioFehler.Ungueltig("Bitte mindestens zwei Absenzen desselben Elements markieren.");
+                if (m.Count < 2 || m.Select(x => (x.Art, x.ElementId)).Distinct().Count() > 1) throw StudioFehler.Ungueltig("Bitte mindestens zwei Abwesenheiten desselben Elements markieren.");
                 var x = Kopie(m[0]);
                 x.Bis = m.Max(y => y.Bis);
                 x.StundeBis = m.First(y => y.Bis == x.Bis).StundeBis;
@@ -499,7 +499,7 @@ public sealed class VertretungApi : IStudioModul
                 return (object)new
                 {
                     ok = false, anzahl = 0,
-                    hinweis = abgeleitet > 0 ? "Vertretungen, die aus einer Absenz oder Veranstaltung entstehen, können nicht gelöscht werden.\n\nMit „Entfall“ entfällt die Stunde, mit „Zurücksetzen“ wird sie wieder offen. Soll sie ganz verschwinden, die Absenz ändern." : null,
+                    hinweis = abgeleitet > 0 ? "Vertretungen, die aus einer Abwesenheit oder Veranstaltung entstehen, können nicht gelöscht werden.\n\nMit „Entfall“ entfällt die Stunde, mit „Zurücksetzen“ wird sie wieder offen. Soll sie ganz verschwinden, die Abwesenheit ändern." : null,
                 };
             return await a.AendernAsync(B(p), "Vertretungen löschen", V, d =>
             {
