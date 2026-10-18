@@ -1,10 +1,12 @@
-// Heute – Startseite (UW-05): Seitenkopf mit Datum, letzte Anmeldung und Planaktualisierung als Zeile darunter, „Nachrichten zum Tag“
-// (formatierte Tagestexte, sicher bereinigt; RSS-Feed und Bearbeiten als Textlinks) und „Mein nächster Unterricht“ als Tabelle
-// (nl-tabelle): Uhrzeit, Stunde, Fach, Klasse, Raum, ggf. Lehrkraft, Status und Klassenbuch-Stand. Entfall durchgestrichen,
-// Vertretungen hervorgehoben wie auf den Stundenkacheln.
-import { e, holen, WOCHENTAGE, lehrkraftLabel } from '../ui.js';
+// Heute – Startseite wie im Original (UW-05): „Heute 15.10.2026“, letzte Anmeldung und Planaktualisierung, „Nachrichten“ mit
+// RSS-Symbol und Stift (formatierte Tagestexte, sicher bereinigt) und „Mein nächster Unterricht“ im neuen Listen-Design
+// (nl-tabelle): Uhrzeit, Stunde, Fach, Klasse, Raum, ggf. Lehrkraft, Status-Labels und Klassenbuch-Stand. Entfall grau
+// durchgestrichen, Vertretungen mit grünen Labels wie auf den Plankarten.
+import { e, icon, holen, WOCHENTAGE, lehrkraftLabel } from '../ui.js';
+import { RSS } from '../symbole.js';
 import { karteDialog } from '../plangitter.js';
 
+const L = '/img/wu/legacy/';
 
 /** „2026-10-14 17:50:10“ → „Mittwoch, 14.10.2026 17:50:10“ */
 function zeitstempel(s) {
@@ -45,7 +47,7 @@ function htmlBereinigt(n) {
   return div.innerHTML;
 }
 
-/** Werte (Klassen, Lehrkräfte, Räume) wie auf den Stundenkacheln: geänderter Wert hervorgehoben, offene Vertretung durchgestrichen. */
+/** Werte (Klassen, Lehrkräfte, Räume) wie auf den Plankarten: geänderter Wert als grünes Label, offene Vertretung durchgestrichen im Label. */
 const wert = (l, entfall = false, max = 4, trenn = '→') => {
   const teile = (l || []).map(w => entfall ? e(w.alt || w.k) : lehrkraftLabel(w, undefined, trenn)).filter(Boolean);
   return teile.length > max ? `${teile.slice(0, max - 1).join(', ')} <span class="nl-unter" data-hover="${e((l || []).map(w => w.k || w.alt).join(', '))}" data-hover-art="dunkel">+${teile.length - max + 1}</span>` : teile.join(', ');
@@ -70,8 +72,8 @@ function statusLabels(s) {
 
 export async function zeigen(seite, kontext) {
   const ich = kontext.ich;
+  kontext.titel('');
   const d = await holen('/api/app/start');
-  kontext.titel(`Heute, ${WOCHENTAGE[(new Date(d.datum + 'T12:00').getDay() + 6) % 7]} ${datumDe(d.datum)}`);
   const nachrichten = d.nachrichten.length
     ? d.nachrichten.map(n => !n.betreff ? `<div class="heute-nachricht">${tagestextHtml(n)}</div>`
       : n.aufgefaechert ? `<div class="heute-nachricht"><b class="betreff">${e(n.betreff)}</b>${tagestextHtml(n)}</div>`
@@ -80,7 +82,7 @@ export async function zeigen(seite, kontext) {
 
   // nach Stunde sortiert (der Server liefert Karten gruppiert, z. B. Veranstaltungen zuerst); Entfall vor der Ersatzstunde
   const stunden = (d.stunden ?? []).slice().sort((a, b) => a.stunde - b.stunde || (a.status === 'entfall' ? 0 : 1) - (b.status === 'entfall' ? 0 : 1));
-  // Schüler*innen und Erziehungsberechtigte: nur Anmeldung, Planaktualisierung und Nachrichten
+  // Schüler*innen und Erziehungsberechtigte: nur Anmeldung, Planaktualisierung und Nachrichten (wie im Original)
   const mitStunden = !kontext.familie && !d.keinPlan && (stunden.length || ich.kollegium);
   const anderTag = d.tag && d.tag !== d.datum;
   // Lehrkraft-Spalte nur, wenn sie etwas aussagt (Vertretung, Kopplung, Schüler*innen-Ansicht)
@@ -91,11 +93,11 @@ export async function zeigen(seite, kontext) {
     const mitKb = ich.kollegium && s.unterricht && !entfall && s.status !== 'abwesend';
     const fach = s.fachAlt && !entfall ? lehrkraftLabel({ k: s.fach, alt: s.fachAlt }, undefined, '→') : e(s.fach || s.text || s.art || '–');
     const kb = [
-      mitKb ? (s.geprueft ? '<span class="nl-chip gruen" data-hover="Abwesenheiten kontrolliert" data-hover-art="dunkel">Anwesenheit</span>'
+      mitKb ? (s.geprueft ? '<span class="nl-chip gruen" data-hover="Abwesenheiten kontrolliert" data-hover-art="dunkel"><i class="bi bi-check2" aria-hidden="true"></i>Anwesenheit</span>'
         : '<span class="nl-chip grau" data-hover="Abwesenheiten noch nicht kontrolliert" data-hover-art="dunkel">Anwesenheit offen</span>') : '',
-      s.unterricht && !entfall && s.status !== 'abwesend' && s.lehrstoff ? `<span class="hu-stoff" data-hover="${e(s.lehrstoff)}" data-hover-art="dunkel">${e(s.lehrstoff)}</span>`
+      s.unterricht && !entfall && s.status !== 'abwesend' && s.lehrstoff ? `<span class="hu-stoff" data-hover="${e(s.lehrstoff)}" data-hover-art="dunkel"><i class="bi bi-card-text" aria-hidden="true"></i>${e(s.lehrstoff)}</span>`
         : mitKb ? '<span class="nl-chip gelb">Kein Lehrstoff</span>' : '',
-      s.hausaufgabe ? `<span class="nl-chip grau" data-hover="${e(s.hausaufgabe)}" data-hover-art="dunkel">Hausaufgabe</span>` : '',
+      s.hausaufgabe ? `<span class="nl-chip grau" data-hover="${e(s.hausaufgabe)}" data-hover-art="dunkel"><i class="bi bi-house" aria-hidden="true"></i>Hausaufgabe</span>` : '',
       s.hausaufgabeFaellig ? '<span class="nl-chip lila" data-hover="Zu dieser Stunde ist eine Hausaufgabe fällig" data-hover-art="dunkel">HA fällig</span>' : '',
     ].filter(Boolean).join('');
     return `<tr class="${entfall ? 'entfall' : ''}" data-i="${i}" tabindex="0">
@@ -107,19 +109,23 @@ export async function zeigen(seite, kontext) {
       ${mitLehrkraft ? `<td class="hu-wert">${wert(s.lehrer, entfall, 4, '|') || '–'}</td>` : ''}
       <td><span class="nl-chips">${statusLabels(s)}</span></td>
       ${ich.kollegium ? `<td><span class="nl-chips hu-kb">${kb}</span></td>` : ''}
-      <td class="hu-info">${info ? `<i class="bi bi-info-circle hu-info-sym" data-hover="${e(info)}" data-hover-art="dunkel" aria-label="Info"></i>` : ''}</td></tr>`;
+      <td class="hu-info">${info ? `<i class="bi bi-info-circle" data-hover="${e(info)}" data-hover-art="dunkel" aria-label="Info"></i>` : ''}</td></tr>`;
   };
   seite.innerHTML = `
+    <h1 class="heute-titel">Heute <span>${datumDe(d.datum)}</span></h1>
     <div class="heute">
-      <p class="heute-anmeldung">Letzte Anmeldung: ${e(zeitstempel(d.letzteAnmeldung))}<span class="trenn">·</span>Planstand aus UntPlan: ${e(zeitstempel(d.planAktualisiert))}</p>
+      <section class="heute-karte heute-anmeldung">
+        <div>Letzte Anmeldung: ${e(zeitstempel(d.letzteAnmeldung))}</div>
+        <div>Letzte Planaktualisierung aus UntPlan: ${e(zeitstempel(d.planAktualisiert))}</div>
+      </section>
       <section class="heute-karte">
-        <header>Nachrichten zum Tag
-          <span class="heute-links">${d.rss ? '<a href="/rss/nachrichten.xml" target="_blank" rel="noopener">RSS-Feed</a>' : ''}${ich.nachrichten ? '<a href="#/admin/nachrichten">Bearbeiten</a>' : ''}</span></header>
+        <header>Nachrichten ${d.rss ? `<a href="/rss/nachrichten.xml" target="_blank" rel="noopener" title="RSS-Feed der Nachrichten zum Tag" class="ms-0">${RSS}</a>` : RSS}
+          ${ich.nachrichten ? `<a href="#/admin/nachrichten" class="h-stift" title="Nachrichten zum Tag bearbeiten" aria-label="Nachrichten zum Tag bearbeiten"><img src="${L}absence-edit.png" alt=""></a>` : ''}</header>
         <div class="heute-nachrichten">${nachrichten}</div>
       </section>
-      ${ich.kollegium && d.offeneStunden ? `<section class="heute-karte heute-hinweis">
+      ${ich.kollegium && d.offeneStunden ? `<section class="heute-karte heute-hinweis">${icon('offen')}
         <span>${d.offeneStunden} ${d.offeneStunden === 1 ? 'Stunde' : 'Stunden'} der letzten zwei Wochen ohne Lehrstoff.</span>
-        <a class="ms-auto" href="#/offen">Unbearbeitete Stunden anzeigen</a></section>` : ''}
+        <a class="ms-auto fw-bold" href="#/offen">Offene Stunden</a></section>` : ''}
       ${mitStunden ? `<section class="heute-karte">
         <header>${ich.kollegium ? 'Mein nächster Unterricht' : 'Nächster Unterricht'}${anderTag ? ` <span class="h-tag">${e(WOCHENTAGE[(new Date(d.tag + 'T12:00').getDay() + 6) % 7])}, ${datumDe(d.tag)}</span>` : ''}</header>
         ${stunden.length ? `<div class="nl-tabelle heute-unterricht"><table><thead><tr>
@@ -127,7 +133,7 @@ export async function zeigen(seite, kontext) {
             ${stunden.map(zeile).join('')}</tbody></table></div>`
           : `<div class="heute-nachrichten"><div class="leer">${d.frei ? `Heute ist unterrichtsfrei (${e(d.frei)}).` : 'In den nächsten Tagen ist kein Unterricht eingetragen.'}</div></div>`}
       </section>` : ''}
-      ${d.keinPlan && ich.admin ? `<section class="heute-karte heute-hinweis"><span>Diesem Administrationskonto ist kein eigener Stundenplan zugewiesen.</span></section>` : ''}
+      ${d.keinPlan && ich.admin ? `<section class="heute-karte heute-hinweis">${icon('info')}<span>Diesem Administrationskonto ist kein eigener Stundenplan zugewiesen.</span></section>` : ''}
     </div>`;
 
   // Hinweis „Sprechtag“ (Einladungs- bzw. Anmeldezeitraum) nach der letzten Anmeldung

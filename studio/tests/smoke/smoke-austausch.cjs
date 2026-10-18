@@ -132,7 +132,7 @@ function attrappe(rueckmeldungen) {
     // ---- Import/Export ----
     await reiter('Dateneingabe');
     await eintrag(page, 'eingabe.importexport');
-    await page.click('.menue .m-eintrag:has-text("Import/Export …")');
+    await page.click('.menue .m-eintrag:has-text("Import und Export …")');
     await page.waitForSelector('.fenster[data-typ=austausch] .ax-karte');
     await foto('06-import-export.png');
     await allesZu();

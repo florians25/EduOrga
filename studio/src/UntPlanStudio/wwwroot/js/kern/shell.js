@@ -21,7 +21,7 @@ export function anmelden() {
     const pw = h('input', { class: 'eingabe', name: 'passwort', type: 'password', autocomplete: 'current-password', required: true });
     const knopf = h('button', { class: 'knopf primaer gross', type: 'submit' }, 'Anmelden');
     const form = h('form', { class: 'anm-formular' },
-      h('div', { class: 'anm-marke' }, h('b', null, 'UntPlan'), ' Studio'),
+      h('div', { class: 'anm-marke' }, symbol('logo'), h('span', null, h('b', null, 'UntPlan'), ' Studio')),
       h('h1', null, 'Anmelden'),
       h('label', null, h('span', null, 'Benutzername'), name), h('label', null, h('span', null, 'Passwort'), pw), fehler, knopf);
     const ueberlagerung = h('div', { class: 'anmeldung' },

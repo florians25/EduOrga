@@ -1,5 +1,5 @@
-/* UntPlan Web – Überblick (alle Rollen). Wird von js/ansichten/uebersicht.js geladen.
-   Ruhig und gleichmäßig: neutrale Kartenköpfe (Titel, Link rechts), einheitliche Zeilenhöhe 40px,
+/* UntPlanWeb – Übersicht (alle Rollen) im nl-design. Wird von js/ansichten/uebersicht.js geladen.
+   Ruhig und gleichmäßig: neutrale Kartenköpfe (dunkelgrauer Titel, Akzent nur als Symbol/Link), einheitliche Zeilenhöhe 40px,
    zwei gleich breite Spalten mit gleich hohen Zeilen (Karten einer Zeile enden bündig), Schrift nur Regular (400) und Medium (500). */
 
 .ub { max-width: 1320px; container-type: inline-size; color: var(--u-text); }
@@ -7,33 +7,33 @@
 /* Kopf: Begrüßung und Tageszeile */
 .ub-kopf { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; margin: 0 0 16px; }
 .ub-gruss { flex: 1 1 420px; min-width: 0; }
-.ub-gruss h1 { margin: 0; font-size: var(--up-gr-xl); line-height: 1.3; font-weight: 600; color: var(--u-titel); }
+.ub-gruss h1 { margin: 0; font-size: 1.3rem; line-height: 1.3; font-weight: 500; color: var(--u-titel); }
 .ub-tageszeile { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 26px; margin: 4px 0 0; font-size: .9rem; line-height: 1.3; color: var(--u-grau); }
 .ub-tageszeile b { font-weight: 500; color: var(--u-titel); }
-.ub-sep { color: var(--up-schiefer-400); }
-.ub-ferien { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--up-primaer-flaeche); color: var(--up-primaer); font-size: .8rem; white-space: nowrap; }
+.ub-sep { color: #c2c9cf; }
+.ub-ferien { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: #e8f1f8; color: #2d5f86; font-size: .8rem; white-space: nowrap; }
 .ub-kind { display: flex; align-items: center; gap: 12px; }
 .ub-kind .fm-wahl { margin: 0; }
 
 /* Kennzahlen: eine schmale Leiste, gleich breite Felder; nur Werte > 0 hervorgehoben */
-.ub-zahlen { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); margin: 0 0 16px; background: var(--up-flaeche); border-radius: 6px;
-  border: 1px solid var(--up-rand); overflow: hidden; }
-.ub-kz { display: flex; align-items: center; gap: 12px; min-width: 0; height: 44px; padding: 0 14px; border-left: 1px solid var(--up-linie); color: var(--up-text-3); text-decoration: none; }
+.ub-zahlen { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); margin: 0 0 16px; background: #fff; border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 5, 10, .08), 0 3px 10px rgba(0, 5, 10, .05); overflow: hidden; }
+.ub-kz { display: flex; align-items: center; gap: 12px; min-width: 0; height: 60px; padding: 0 18px; border-left: 1px solid #edf0f2; color: #8a96a1; text-decoration: none; }
 .ub-kz:first-child { border-left: 0; }
-.ub-kz b { flex: none; min-width: 1.4ch; font-size: var(--up-gr-l); line-height: 1; font-weight: 500; color: var(--up-schiefer-400); font-variant-numeric: tabular-nums; }
+.ub-kz b { flex: none; min-width: 1.4ch; font-size: 1.45rem; line-height: 1; font-weight: 500; color: #b8c1c8; font-variant-numeric: tabular-nums; }
 .ub-kz span { min-width: 0; font-size: .85rem; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .ub-kz.an b { color: var(--u-akzent-dunkel); }
 .ub-kz.an span { color: var(--u-titel); }
-.ub-kz:hover { background: var(--up-flaeche-hover); color: var(--u-titel); }
+.ub-kz:hover { background: #f7f9fa; color: var(--u-titel); }
 .ub-kz:focus-visible { outline: 2px solid var(--u-akzent); outline-offset: -2px; }
 
 /* Raster: zwei Spalten, Karten einer Zeile gleich hoch; ungerade Anzahl – letzte Karte über beide Spalten */
 .ub-raster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .ub-raster.ungerade > .ub-karte:last-child { grid-column: 1 / -1; }
-.ub-karte { display: flex; flex-direction: column; min-width: 0; background: var(--up-flaeche); border-radius: 6px; border: 1px solid var(--up-rand); }
-.ub-karte > header { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--up-linie); flex: none; }
-.ub-karte > header > .bi { display: none; }
-.ub-karte > header h2 { margin: 0; font-size: var(--up-gr-n); line-height: 1.2; font-weight: 600; color: var(--u-titel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ub-karte { display: flex; flex-direction: column; min-width: 0; background: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 5, 10, .08), 0 3px 10px rgba(0, 5, 10, .05); }
+.ub-karte > header { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 16px 0 18px; border-bottom: 1px solid #edf0f2; flex: none; }
+.ub-karte > header > .bi { font-size: 1.05rem; line-height: 1; color: var(--u-akzent); }
+.ub-karte > header h2 { margin: 0; font-size: 1rem; line-height: 1.2; font-weight: 500; color: var(--u-titel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ub-link { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-size: .82rem; color: var(--u-akzent-dunkel); text-decoration: none; white-space: nowrap; }
 .ub-link .bi { font-size: .7rem; }
 .ub-link:hover { color: var(--u-akzent); text-decoration: none; }
@@ -41,20 +41,20 @@
 
 /* Gruppen mit Überschrift (Titel, Anzahl, „Alle anzeigen“) */
 .ub-gruppe + .ub-gruppe { margin-top: 10px; }
-.ub-gruppe h3 { display: flex; align-items: center; gap: 8px; height: 36px; margin: 0; border-bottom: 1px solid var(--up-linie); font-size: .8rem; font-weight: 500; color: var(--u-grau); }
+.ub-gruppe h3 { display: flex; align-items: center; gap: 8px; height: 36px; margin: 0; border-bottom: 1px solid #edf0f2; font-size: .8rem; font-weight: 500; color: var(--u-grau); }
 .ub-gruppe h3 a { color: inherit; text-decoration: none; }
 .ub-gruppe h3 > a:first-child:hover { color: var(--u-titel); text-decoration: none; }
-.ub-anz { min-width: 20px; height: 18px; padding: 0 6px; border-radius: 9px; background: var(--up-schiefer-100); color: var(--u-dunkel-2); font-size: .72rem; display: inline-grid; place-content: center; }
+.ub-anz { min-width: 20px; height: 18px; padding: 0 6px; border-radius: 9px; background: #eef1f4; color: var(--u-dunkel-2); font-size: .72rem; display: inline-grid; place-content: center; }
 .ub-alle { margin-left: auto; font-weight: 400; color: var(--u-akzent-dunkel) !important; }
 .ub-alle span { color: var(--u-grau); }
 .ub-alle:hover { color: var(--u-akzent) !important; text-decoration: none; }
 
 /* Zeilen: immer eine Zeile, gleiche Höhe */
 .ub-liste { list-style: none; margin: 0; padding: 0; }
-.ub-z { display: flex; align-items: center; gap: 12px; height: 40px; min-width: 0; border-bottom: 1px solid var(--up-flaeche-hover); font-size: .875rem; }
+.ub-z { display: flex; align-items: center; gap: 12px; height: 40px; min-width: 0; border-bottom: 1px solid #f1f3f5; font-size: .875rem; }
 .ub-z:last-child { border-bottom: 0; }
 .ub-z-links { flex: 0 0 64px; color: var(--u-grau); font-size: .82rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.ub-z-fach { flex: none; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--fach, var(--up-rand-stark)); }
+.ub-z-fach { flex: none; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--fach, #c9d0d6); }
 .ub-z-haupt { flex: 1; display: flex; align-items: baseline; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; }
 .ub-z-titel { flex: 0 0 auto; max-width: 70%; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--u-titel); }
 .ub-z-titel a { color: inherit; text-decoration: none; }
@@ -65,16 +65,16 @@
 .ub-z.bald .ub-z-links { color: var(--u-akzent-dunkel); }
 .ub-neu { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--u-akzent); vertical-align: 1px; }
 .ub-stunde { cursor: pointer; margin: 0 -8px; padding: 0 8px; border-radius: 4px; }
-.ub-stunde:hover { background: var(--up-flaeche-hover); }
+.ub-stunde:hover { background: #f7f9fa; }
 .ub-stunde:focus-visible { outline: 2px solid var(--u-akzent); outline-offset: -2px; }
 .ub-stunde.entfall .ub-z-titel, .ub-stunde.entfall .ub-z-neben { color: var(--u-grau); text-decoration: line-through; text-decoration-thickness: .75px; }
-.ub-stunde.vorbei .ub-z-links, .ub-stunde.vorbei .ub-z-titel, .ub-stunde.vorbei .ub-z-neben { color: var(--up-text-3); }
+.ub-stunde.vorbei .ub-z-links, .ub-stunde.vorbei .ub-z-titel, .ub-stunde.vorbei .ub-z-neben { color: #9aa4ad; }
 
 /* Ruhige Sammelzeile für Leeres, Ferienhinweis */
 .ub-ruhig, .ub-hinweis { display: flex; align-items: center; gap: 8px; min-height: 40px; margin: 0; font-size: .85rem; color: var(--u-grau); }
-.ub-ruhig .bi { color: var(--up-schiefer-400); }
-.ub-gruppe ~ .ub-ruhig, .ub-hinweis + .ub-ruhig { margin-top: 6px; border-top: 1px solid var(--up-linie); }
-.ub-hinweis { margin-top: 10px; min-height: 36px; padding: 0 10px; border-radius: 4px; background: var(--up-primaer-flaeche); color: var(--up-primaer); }
+.ub-ruhig .bi { color: #a9b4bd; }
+.ub-gruppe ~ .ub-ruhig, .ub-hinweis + .ub-ruhig { margin-top: 6px; border-top: 1px solid #edf0f2; }
+.ub-hinweis { margin-top: 10px; min-height: 36px; padding: 0 10px; border-radius: 4px; background: #f1f6fa; color: #2d5f86; }
 .ub-koerper > .ub-hinweis:first-child { margin-top: 8px; }
 .ub-hinweis + .ub-gruppe { margin-top: 6px; }
 
@@ -82,7 +82,7 @@
 @container (max-width: 760px) {
   .ub-raster { grid-template-columns: minmax(0, 1fr); }
   .ub-zahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ub-kz { height: 56px; padding: 0 14px; border-left: 1px solid var(--up-linie); border-top: 1px solid var(--up-linie); }
+  .ub-kz { height: 56px; padding: 0 14px; border-left: 1px solid #edf0f2; border-top: 1px solid #edf0f2; }
   .ub-kz:nth-child(odd) { border-left: 0; }
   .ub-kz:nth-child(-n+2) { border-top: 0; }
   .ub-kz:last-child:nth-child(odd) { grid-column: 1 / -1; }

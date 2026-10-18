@@ -1,54 +1,127 @@
-/* Modul Planung: Raum zuordnen / löschen, Tauschvorschläge, Rückfragen; gemeinsame Tabellen (.pl-tabelle) der Planungsmodule. */
+/* Modul Planung: Raum zuordnen, Tauschvorschläge, Rückfragen – und gemeinsame Bausteine der Planungsansichten
+   (Stammdaten, Unterricht, Stundenplan, Zeitwünsche, Übersichten, Kursplanung, Optimierung): Filterleiste in der
+   Werkzeugleiste, Elementwahl mit Blättern, Schalter, Formular mit Abschnitten, Tabellen (.pl-tabelle), leere Zustände. */
 
-.pl-leise { color: var(--text-leise); font-size: 11.5px; margin: 6px 0 0; }
-.pl-markiert { color: var(--akzent); font-weight: var(--mittel); }
-.pl-frage pre, pre.pl-frage { white-space: pre-wrap; font: inherit; margin: 0 0 8px; max-height: 50vh; overflow: auto; }
-.pl-option { display: block; padding: 2px 0; }
+/* ---------- Werkzeugleiste als Filterleiste ---------- */
+.pl-feld { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.pl-feld-titel { font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
 
-.pl-tabelle { border-collapse: collapse; width: 100%; font-size: 12.5px; background: #fff; }
-.pl-tabelle th {
-  position: sticky; top: 0; z-index: 1; background: var(--up-schiefer-25); text-align: left; font-weight: var(--mittel); font-size: 12px; padding: 8px;
-  border-bottom: 1px solid var(--rand); white-space: nowrap; color: var(--text-2);
+/* Elementwahl: [‹][Auswahl][›] als zusammenhängende Gruppe */
+.pl-elementwahl { display: inline-flex; align-items: stretch; flex: none; }
+.fenster-werkzeuge .pl-elementwahl > .wz-knopf.nur-symbol { width: 28px; color: var(--text-2); }
+.fenster-werkzeuge .pl-elementwahl > .wz-knopf:first-child { border-radius: 4px 0 0 4px; }
+.fenster-werkzeuge .pl-elementwahl > .wz-knopf:last-child { border-radius: 0 4px 4px 0; }
+.fenster-werkzeuge .pl-elementwahl > select { border-radius: 0; margin: 0 -1px; position: relative; min-width: 170px; max-width: 280px; }
+.fenster-werkzeuge .pl-elementwahl > select:hover, .fenster-werkzeuge .pl-elementwahl > select:focus { z-index: 1; }
+.flaeche.mehrere .fenster-werkzeuge .pl-elementwahl > select { min-width: 140px; }
+.flaeche.mehrere .fenster-werkzeuge .pl-feld:has(> .pl-elementwahl) > .pl-feld-titel { display: none; }
+
+/* Schalter mit Text (Kontrollkästchen) */
+.pl-schalter { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; color: var(--text-2); white-space: nowrap; user-select: none; flex: none; }
+.pl-schalter input {
+  appearance: none; -webkit-appearance: none; position: relative; flex: none; width: 28px; height: 16px; margin: 0; border-radius: 8px;
+  background: var(--up-schiefer-300); cursor: pointer; transition: background-color var(--up-dauer);
 }
-.pl-tabelle td { padding: 6px 8px; border-bottom: 1px solid var(--rand-leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+.pl-schalter input::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--up-flaeche);
+  box-shadow: var(--up-schatten-1); transition: transform var(--up-dauer);
+}
+.pl-schalter input:checked { background: var(--akzent); }
+.pl-schalter input:checked::after { transform: translateX(12px); }
+.pl-schalter input:focus-visible { outline: 2px solid var(--up-fokus); outline-offset: 2px; }
+.pl-schalter:has(input:disabled) { opacity: .5; cursor: default; }
+.pl-schalter:hover input:not(:checked):not(:disabled) { background: var(--up-schiefer-400); }
+
+/* Knopf „Weitere Aktionen“ */
+.fenster-werkzeuge .wz-knopf.pl-mehr { gap: 4px; padding-right: 7px; }
+.pl-mehr-pfeil { display: inline-flex; color: var(--text-leise); }
+.fenster-werkzeuge .pl-mehr-pfeil svg { width: 14px; height: 14px; }
+
+.pl-hinweis-leiste { font-size: 12px; color: var(--text-leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 0; }
+
+/* ---------- Formular mit Abschnitten (Dialoge) ---------- */
+.pl-formular { display: grid; grid-template-columns: minmax(170px, max-content) minmax(0, 1fr); gap: 10px 20px; align-items: center; }
+.pl-formular > h3 { grid-column: 1 / -1; margin: 8px 0 0; padding-top: 16px; border-top: 1px solid var(--rand-leise); font-size: 13px; font-weight: var(--fett); }
+.pl-formular > h3:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.pl-formular > label, .pl-formular > .pl-beschriftung { font-size: 12.5px; color: var(--text-2); }
+.pl-formular > .pl-wert { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pl-formular > .pl-voll { grid-column: 2; }
+.pl-formular .pl-zahl { width: 72px; flex: none; }
+.pl-formular .pl-feldhinweis { font-size: 12px; color: var(--text-leise); }
+.pl-formular label.kontrolle { font-size: 12.5px; color: var(--text); }
+.pl-formular .pl-aus { opacity: .5; }
+
+/* ---------- Texte, Abschnitte, leere Zustände ---------- */
+.pl-leise { color: var(--text-leise); font-size: 12px; margin: 6px 0 0; }
+.pl-markiert { color: var(--akzent); font-weight: var(--mittel); }
+.pl-leer { padding: 40px 16px; text-align: center; color: var(--text-leise); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.pl-abschnitt-kopf { display: flex; align-items: center; gap: 8px; min-height: 30px; margin-bottom: 6px; }
+.pl-abschnitt-kopf h3 { flex: 1; margin: 0; font-size: 13px; font-weight: var(--fett); }
+.pl-frage pre, pre.pl-frage { white-space: pre-wrap; font: inherit; margin: 0 0 8px; max-height: 50vh; overflow: auto; }
+.pl-optionen { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+/* ---------- Tabellen ---------- */
+.pl-tabelle { border-collapse: collapse; width: 100%; font-size: 12.5px; background: var(--flaeche); font-variant-numeric: tabular-nums; }
+.pl-tabelle th {
+  position: sticky; top: 0; z-index: 1; height: 32px; padding: 0 10px; background: var(--up-schiefer-25); text-align: left; font-weight: var(--mittel);
+  font-size: 12px; color: var(--text-2); border-bottom: 1px solid var(--rand); white-space: nowrap;
+}
+.pl-tabelle th.z { text-align: right; }
+.pl-tabelle th.m { text-align: center; }
+.pl-tabelle td { height: 30px; padding: 0 10px; border-bottom: 1px solid var(--rand-leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
 .pl-tabelle tbody tr { cursor: default; }
 .pl-tabelle tbody tr:hover { background: var(--up-schiefer-25); }
 .pl-tabelle tbody tr.gewaehlt, .pl-tabelle tbody tr.gewaehlt:hover { background: var(--auswahl); }
-.pl-tabelle td.z { text-align: right; font-variant-numeric: tabular-nums; }
-.pl-tabelle td.m { text-align: center; color: var(--up-marine-600); }
-.pl-tabelle td.m.ok { color: var(--ok); }
+.pl-tabelle td.z { text-align: right; }
+.pl-tabelle td.m { text-align: center; color: var(--text-2); }
+.pl-tabelle td.m svg { width: 14px; height: 14px; vertical-align: middle; }
 .pl-tabelle td.rot { color: var(--gefahr); }
 .pl-tabelle td.gruen { color: var(--ok); }
-.pl-rollen { overflow: auto; border: 1px solid var(--rand); border-radius: var(--radius); min-height: 0; }
+.pl-tabelle td.pl-leer-zelle { height: 64px; text-align: center; color: var(--text-leise); white-space: normal; }
+.pl-rollen { overflow: auto; border: 1px solid var(--rand); border-radius: 6px; min-height: 0; background: var(--flaeche); }
 
-/* Raum zuordnen */
-.pl-raum { display: flex; flex-direction: column; gap: 10px; height: min(600px, calc(100vh - 170px)); }
-.pl-kopf { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
-.pl-info { flex: 1 1 320px; min-height: 58px; padding: 6px 8px; border: 1px solid var(--rand); border-radius: var(--radius); background: #fff; font-size: 12.5px; line-height: 1.45; }
-.pl-umfang { border: 1px solid var(--rand); border-radius: var(--radius); padding: 4px 10px 6px; margin: 0; }
-.pl-umfang legend { font-size: 11.5px; color: var(--text-leise); padding: 0 4px; }
-.pl-umfang label { display: block; padding: 1px 0; white-space: nowrap; }
-.pl-filter { display: grid; gap: 2px; font-size: 12.5px; }
-.pl-filter .eingabe { margin-top: 4px; width: 200px; }
-.pl-mitte { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 5fr) auto minmax(360px, 7fr); gap: 8px; }
+/* ---------- Raum zuordnen ---------- */
+.pl-raum { display: flex; flex-direction: column; gap: 14px; height: min(620px, calc(100vh - 170px)); }
+.pl-info { display: flex; flex-wrap: wrap; gap: 6px 28px; font-size: 12.5px; }
+.pl-info > div { display: flex; gap: 8px; min-width: 0; }
+.pl-info .t { color: var(--text-2); }
+.pl-info .w { font-weight: var(--mittel); }
+.pl-filterleiste { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 10px 0; border-top: 1px solid var(--rand-leise); border-bottom: 1px solid var(--rand-leise); }
+.pl-filterleiste .eingabe { height: 30px; min-height: 30px; padding: 0 10px; font-size: 12.5px; width: 150px; }
+.pl-filterleiste .segment > button { height: 26px; font-size: 12.5px; padding: 0 10px; }
+.pl-mitte { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 4fr) minmax(420px, 8fr); gap: 20px; }
 .pl-links, .pl-rechts { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.pl-titel { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
 .pl-links .pl-rollen, .pl-rechts .pl-rollen { flex: 1; }
-.pl-pfeile { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
-.pl-pfeile .knopf { width: 36px; height: 34px; padding: 0; font-size: 16px; }
-.pl-pfeile .knopf svg { width: 16px; height: 16px; }
-.pl-unr { background: var(--up-schiefer-50); }
 .pl-raeume tr.wunsch td { background: var(--up-ok-flaeche); }
 .pl-raeume tr.besetzt td { background: var(--up-entfall-flaeche); }
-.pl-raeume tr.gesperrt td { background: var(--up-schiefer-100); color: var(--text-leise); }
+.pl-raeume tr.gesperrt td { background: var(--up-schiefer-50); color: var(--text-leise); }
 .pl-raeume tr.gewaehlt td { background: var(--auswahl); }
 .pl-raeume:focus { outline: none; }
+.pl-raeume:focus-visible tr.gewaehlt td { box-shadow: inset 0 1px 0 var(--akzent), inset 0 -1px 0 var(--akzent); }
+.pl-legende { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: var(--text-leise); }
+.pl-legende span { display: inline-flex; align-items: center; gap: 6px; }
+.pl-legende i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--rand); }
+.pl-legende i.wunsch { background: var(--up-ok-flaeche); }
+.pl-legende i.besetzt { background: var(--up-entfall-flaeche); }
+.pl-legende i.gesperrt { background: var(--up-schiefer-50); }
 
-/* Tauschvorschläge */
+/* ---------- Tauschvorschläge ---------- */
 .pl-tausch .pl-rollen { max-height: min(420px, 60vh); }
+.pl-tausch td:last-child { white-space: normal; }
+
+/* ---------- Nicht verplante Stunden (unter dem Stundenplan) ---------- */
+.nicht-verplant.pl-nv { gap: 6px; padding: 8px 12px; background: var(--up-schiefer-25); }
+.nicht-verplant.pl-nv .pl-nv-titel { font-size: 12px; font-weight: var(--mittel); color: var(--text-2); margin-right: 6px; white-space: nowrap; }
+.nicht-verplant.pl-nv .nv { height: 26px; gap: 6px; padding: 0 8px; border: 1px dashed var(--rand-stark); border-radius: 4px; background: var(--flaeche); font-size: 12px; }
+.nicht-verplant.pl-nv .nv[draggable="true"] { cursor: grab; }
+.nicht-verplant.pl-nv .nv:not([draggable="true"]) { cursor: default; }
+.nicht-verplant.pl-nv .nv:hover { border-color: var(--akzent); }
+.nicht-verplant.pl-nv .nv .anzahl { color: var(--akzent); font-weight: var(--fett); font-variant-numeric: tabular-nums; }
+.nicht-verplant.pl-nv .nv .laenge { color: var(--text-leise); }
 
 @media (max-width: 760px) {
-  .pl-mitte { grid-template-columns: 1fr; grid-template-rows: minmax(90px, 1fr) auto minmax(160px, 2fr); }
-  .pl-pfeile { flex-direction: row; }
+  .pl-mitte { grid-template-columns: 1fr; grid-template-rows: minmax(90px, 1fr) minmax(160px, 2fr); }
   .pl-raum { height: calc(100vh - 150px); }
+  .pl-formular { grid-template-columns: 1fr; gap: 6px; }
+  .pl-formular > .pl-voll { grid-column: 1; }
 }

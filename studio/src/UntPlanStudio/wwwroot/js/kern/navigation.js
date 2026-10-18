@@ -185,7 +185,7 @@ export class Navigation {
     this.liste = h('nav', { class: 'nav-liste', 'aria-label': 'Arbeitsbereiche' });
     this.fuss = h('div', { class: 'nav-fuss' });
     this.el = h('aside', { class: 'navigation' },
-      h('div', { class: 'nav-kopf' }, h('span', { class: 'nav-marke' }, h('b', null, 'UntPlan'), h('span', null, 'Studio'))),
+      h('div', { class: 'nav-kopf' }, h('span', { class: 'nav-zeichen' }, symbol('logo')), h('span', { class: 'nav-marke' }, h('b', null, 'UntPlan'), h('span', null, 'Studio'))),
       this.liste, this.fuss);
     eltern.append(this.el);
     for (const name of ['stand', 'dokument', 'benutzer']) an(name, () => this.aktualisieren());

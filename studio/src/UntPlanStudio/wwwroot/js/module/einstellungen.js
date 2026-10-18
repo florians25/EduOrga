@@ -1,4 +1,4 @@
-// Modul „Einstellungen“: Einstellungen der Schuldatei – Schuldaten (Allgemein, Werte, Vertretungsplanung, Diverses),
+// Modul „Einstellungen“: Einstellungen der Schuldatei – Schuldaten (Allgemein, Werte, Vertretungsplanung, Weiteres),
 // Zeitraster (Zeiten, Vormittag/Nachmittag/leer, Pausen, Mittagspause), Kalender/Ferien (Jahreskalender, NRW-Vorschlag,
 // Unterrichtsfrei/Feiertag je Tag), Perioden (Tochterperioden, aktive Periode, Fixierung) und Unterrichtsgruppen (Mehrwochen).
 // Server: Api/EinstellungenSchuleApi.cs (/api/dokumente/{dok}/schule/…).
@@ -33,6 +33,8 @@ const textfeld = (wert, breite) => h('input', { class: 'eingabe', type: 'text', 
 const zahlfeld = (wert, min, max) => h('input', { class: 'eingabe', type: 'number', value: wert ?? 0, min, max, style: { width: '80px' } });
 const datumfeld = (wert) => h('input', { class: 'eingabe', type: 'date', value: wert ?? '' });
 const haken = (wert) => h('input', { type: 'checkbox', checked: !!wert });
+/** Kontrollkästchen mit Text in der rechten Spalte einer Formularzeile. */
+const schalterZeile = (text, el, hinweisText) => [h('span'), h('label', { class: 'kontrolle' }, el, text), hinweisText ? h('div', { class: 'hinweis' }, hinweisText) : null];
 const auswahl = (wert, optionen) => h('select', { class: 'eingabe' }, optionen.map((o) => h('option', { value: o.wert, selected: String(o.wert) === String(wert) }, o.text)));
 
 function nurLesen(f) {
@@ -47,12 +49,15 @@ function schuldatenFenster(f, p) {
   let daten = null;
   let seite = p.seite || 'Allgemein';
   const lesen = nurLesen(f);
-  const baum = h('nav', { class: 'es-baum' });
+  if (seite === 'Diverses') seite = 'Weiteres';
+  const baum = h('nav', { class: 'es-abschnitte', 'aria-label': 'Abschnitte' });
   const rechts = h('div', { class: 'es-seite' });
   f.inhalt.append(h('div', { class: 'es-zweispaltig' }, baum, rechts));
   const status = h('span', { class: 'leise' });
-  const ueb = f.werkzeug({ text: 'Übernehmen', symbol: 'speichern', aktion: () => speichern() });
+  const ueb = f.werkzeug({ text: 'Übernehmen', aktion: () => speichern() });
   ueb.disabled = lesen;
+  const verw = f.werkzeug({ text: 'Verwerfen', aktion: () => { for (const k of Object.keys(werte)) delete werte[k]; geaendert = false; status.textContent = ''; zeichnen(); } });
+  verw.disabled = lesen;
   f.fuss.replaceChildren(status);
   const werte = {};
   let geaendert = false;
@@ -62,31 +67,30 @@ function schuldatenFenster(f, p) {
     Allgemein() {
       const formen = daten.schulformen.map((s) => ({ wert: s.wert, text: `${s.text} (${s.wert})` }));
       return [
-        h('h3', null, 'Schuldaten'),
+        h('h3', null, 'Schule'),
         h('div', { class: 'formular' },
           zeile('Schulbezeichnung', feld('schulname', textfeld(daten.schulname))),
           zeile('Zusatz / Ort', feld('schulname2', textfeld(daten.schulname2))),
           zeile('Adresse', feld('adresse', textfeld(daten.adresse))),
-          zeile('Schulnummer', feld('schulnummer', textfeld(daten.schulnummer, '120px')), 'NRW: 6-stellig'),
+          zeile('Schulnummer', feld('schulnummer', textfeld(daten.schulnummer, '120px')), 'In NRW sechsstellig'),
           zeile('Land', feld('land', textfeld(daten.land))),
-          zeile('Region / Bundesland', feld('region', textfeld(daten.region))),
+          zeile('Bundesland', feld('region', textfeld(daten.region))),
           zeile('Schulform', feld('schulform', auswahl(daten.schulform, formen)))),
         h('h3', null, 'Schuljahr'),
-        h('p', { class: 'leise' }, 'Die Sommerferien sollen im Schuljahr nicht enthalten sein.'),
         h('div', { class: 'formular' },
-          zeile('von', feld('schuljahrVon', datumfeld(daten.schuljahrVon))),
-          zeile('bis', feld('schuljahrBis', datumfeld(daten.schuljahrBis))),
-          zeile('Wochenperiodizität', feld('wochenperiodizitaet', zahlfeld(daten.wochenperiodizitaet, 1, 16), 'zahl'), '1 = jede Woche gleich, 2 = A/B-Wochen …'),
-          zeile('Erste Schulwoche', feld('ersteSchulwoche', textfeld(daten.ersteSchulwoche, '60px')), 'Wochenbuchstabe der ersten Schulwoche (A, B, …)')),
+          zeile('Beginn', feld('schuljahrVon', datumfeld(daten.schuljahrVon))),
+          zeile('Ende', feld('schuljahrBis', datumfeld(daten.schuljahrBis)), 'Die Sommerferien gehören nicht zum Schuljahr.'),
+          zeile('Wochenperiodizität', feld('wochenperiodizitaet', zahlfeld(daten.wochenperiodizitaet, 1, 16), 'zahl'), '1 = jede Woche gleich, 2 = A/B-Wochen usw.'),
+          zeile('Erste Schulwoche', feld('ersteSchulwoche', textfeld(daten.ersteSchulwoche, '60px')), 'Wochenbuchstabe der ersten Schulwoche (A, B …)')),
       ];
     },
     Werte() {
       return [
-        h('h3', null, 'Werte'),
+        h('h3', null, 'Soll und Ist'),
         h('div', { class: 'formular' },
-          zeile('Tagesgenaue Soll/Ist-Rechnung', feld('tagesgenaueWertrechnung', haken(daten.tagesgenaueWertrechnung), 'bool')),
-          zeile('Mehrarbeit vergütungsfähig ab mehr als … Std./Monat', feld('mehrarbeitsgrenze', zahlfeld(daten.mehrarbeitsgrenze, 0, 40), 'zahl'), 'NRW')),
-        h('p', { class: 'leise' }, `Pflichtstunden der Schulform: ${daten.pflichtstunden} Std. (Voreinstellung für neue Lehrkräfte).`),
+          schalterZeile('Soll und Ist tagesgenau rechnen', feld('tagesgenaueWertrechnung', haken(daten.tagesgenaueWertrechnung), 'bool')),
+          zeile('Mehrarbeit vergütet ab', h('span', { class: 'es-einheit' }, feld('mehrarbeitsgrenze', zahlfeld(daten.mehrarbeitsgrenze, 0, 40), 'zahl'), 'Std. je Monat'), 'Vergütet wird Mehrarbeit oberhalb dieses Werts (Regelung NRW).'),
+          zeile('Pflichtstunden', h('span', { class: 'es-wertanzeige' }, `${daten.pflichtstunden} Std.`), 'Vorgabe der Schulform für neue Lehrkräfte')),
       ];
     },
     Vertretungsplanung() {
@@ -97,9 +101,9 @@ function schuldatenFenster(f, p) {
         h('div', { class: 'formular' },
           zeile('Titel des Vertretungsplans', feld('vertretungsplantitel', textfeld(daten.vertretungsplantitel))),
           zeile('Entfall in Randstunden ab Jahrgang', feld('entfallAbJahrgang', auswahl(daten.entfallAbJahrgang, jg))),
-          zeile('Bereitschaften nur als Doppelstunden', feld('bereitschaftNurDoppelstunden', haken(daten.bereitschaftNurDoppelstunden), 'bool'))),
-        h('h3', null, 'Vertretungsgewichtung'),
-        h('p', { class: 'leise' }, 'Kriterien für den Vertretungsvorschlag: 0 = unwichtig … 5 = sehr wichtig.'),
+          schalterZeile('Bereitschaften nur als Doppelstunden', feld('bereitschaftNurDoppelstunden', haken(daten.bereitschaftNurDoppelstunden), 'bool'))),
+        h('h3', null, 'Gewichtung für den Vertretungsvorschlag'),
+        h('p', { class: 'leise' }, '0 = ohne Bedeutung, 5 = sehr wichtig.'),
         h('div', { class: 'es-gewichtung' }, daten.kriterien.map((k) => {
           const w = h('span', { class: 'es-wert' }, String(daten.vertretungsgewichtung[k.schluessel] ?? k.standard));
           const r = h('input', { type: 'range', min: 0, max: 5, step: 1, value: daten.vertretungsgewichtung[k.schluessel] ?? k.standard, disabled: lesen });
@@ -112,28 +116,27 @@ function schuldatenFenster(f, p) {
         })),
       ];
     },
-    Diverses() {
+    Weiteres() {
+      const verweise = [
+        ['Zeitraster', 'Stundenzeiten, Vormittag und Nachmittag, Pausen', () => fensterverwaltung.oeffnen('einstellungen.zeitraster')],
+        ['Kalender und Ferien', 'Ferien, Feiertage und unterrichtsfreie Tage', () => fensterverwaltung.oeffnen('einstellungen.ferien')],
+        ['Perioden', 'Zeitabschnitte mit eigenem Unterricht und Stundenplan', () => fensterverwaltung.oeffnen('einstellungen.perioden')],
+        ['Unterrichtsgruppen', 'Unterricht in einzelnen Wochen oder Zeiträumen', () => fensterverwaltung.oeffnen('einstellungen.ugruppen')],
+        zustand.benutzer?.rolle === 'Admin' && befehlVorhanden('datei.backstage')
+          ? ['Benutzerverwaltung', 'Benutzer, Rollen und Passwörter', () => befehl('datei.backstage', { seite: 'benutzer' })] : null,
+      ].filter(Boolean);
       return [
-        h('h3', null, 'Diverses'),
+        h('h3', null, 'Weitere Angaben'),
         h('div', { class: 'formular' },
-          zeile('Unterrichtsänderungen in Folgeperioden übernehmen', feld('unterrichtInFolgeperioden', haken(daten.unterrichtInFolgeperioden), 'bool')),
-          zeile('Farbschema (Druck)', feld('farbschema', auswahl(daten.farbschema, ['Blau', 'Grün', 'Grau', 'Dunkel'].map((x) => ({ wert: x, text: x })))))),
-        h('h3', null, 'Weitere Einstellungen'),
-        h('div', { class: 'es-knoepfe' },
-          knopf('Zeitraster …', 'stundenplan', () => fensterverwaltung.oeffnen('einstellungen.zeitraster')),
-          knopf('Kalender / Ferien …', 'kalender', () => fensterverwaltung.oeffnen('einstellungen.ferien')),
-          knopf('Perioden …', 'perioden', () => fensterverwaltung.oeffnen('einstellungen.perioden')),
-          knopf('Unterrichtsgruppen …', 'perioden', () => fensterverwaltung.oeffnen('einstellungen.ugruppen')),
-          zustand.benutzer?.rolle === 'Admin' && befehlVorhanden('datei.backstage')
-            ? knopf('Benutzerverwaltung …', 'benutzer', () => befehl('datei.backstage', { seite: 'benutzer' })) : null),
-        h('p', { class: 'leise' }, 'Persönliche Einstellungen (Fensteranordnungen, Spalten) speichert das Studio je Benutzer automatisch.'),
+          schalterZeile('Unterrichtsänderungen in Folgeperioden übernehmen', feld('unterrichtInFolgeperioden', haken(daten.unterrichtInFolgeperioden), 'bool')),
+          zeile('Farbschema im Druck', feld('farbschema', auswahl(daten.farbschema, ['Blau', 'Grün', 'Grau', 'Dunkel'].map((x) => ({ wert: x, text: x })))))),
+        h('h3', null, 'Verwandte Einstellungen'),
+        h('div', { class: 'es-verweise' }, verweise.map(([titel, text, aktion]) =>
+          h('button', { type: 'button', class: 'es-verweis', onclick: () => Promise.resolve().then(aktion).catch(fehlerMelden) }, h('span', null, titel), h('span', { class: 'leise' }, text)))),
+        h('p', { class: 'leise' }, 'Persönliche Einstellungen wie Seitenaufteilung und Spaltenbreiten speichert das Studio je Benutzer automatisch.'),
       ];
     },
   };
-
-  function knopf(text, sym, aktion) {
-    return h('button', { class: 'knopf', type: 'button', onclick: () => Promise.resolve().then(aktion).catch(fehlerMelden) }, text);
-  }
 
   function feld(name, el, art) {
     el.disabled = lesen;
@@ -147,10 +150,9 @@ function schuldatenFenster(f, p) {
 
   function zeichnen() {
     leeren(baum);
-    for (const [gruppe, kinder] of [['Schuldaten', ['Allgemein', 'Werte']], ['Vertretungsplanung', []], ['Diverses', []]]) {
-      const ziel = kinder.length ? kinder[0] : gruppe;
-      baum.append(h('button', { type: 'button', class: `es-knoten${seite === gruppe ? ' aktiv' : ''}`, onclick: () => { seite = ziel; f.parameterSetzen({ seite }); zeichnen(); } }, gruppe));
-      for (const k of kinder) baum.append(h('button', { type: 'button', class: `es-knoten kind${seite === k ? ' aktiv' : ''}`, onclick: () => { seite = k; f.parameterSetzen({ seite }); zeichnen(); } }, k));
+    for (const [k, titel] of [['Allgemein', 'Allgemein'], ['Werte', 'Soll und Ist'], ['Vertretungsplanung', 'Vertretungsplanung'], ['Weiteres', 'Weiteres']]) {
+      baum.append(h('button', { type: 'button', class: `es-knoten${seite === k ? ' aktiv' : ''}`, 'aria-current': seite === k ? 'true' : null, dataset: { seite: k },
+        onclick: () => { seite = k; f.parameterSetzen({ seite }); zeichnen(); } }, titel));
     }
     rechts.replaceChildren(...(SEITEN[seite] || SEITEN.Allgemein)().flat(3).filter(Boolean));
   }
@@ -187,9 +189,9 @@ function zeitrasterFenster(f) {
   f.beimSchliessen(() => document.removeEventListener('pointerup', loslassen));
   const status = h('span', { class: 'leise' });
   f.fuss.replaceChildren(status);
-  const ueb = f.werkzeug({ text: 'Übernehmen', symbol: 'speichern', aktion: () => speichern() });
+  const ueb = f.werkzeug({ text: 'Übernehmen', aktion: () => speichern() });
   ueb.disabled = lesen;
-  f.werkzeug({ text: 'Verwerfen', symbol: 'rueckgaengig', aktion: () => laden_() });
+  f.werkzeug({ text: 'Verwerfen', aktion: () => laden_() });
   const reiterleiste = h('div', { class: 'es-reiter' });
   const koerper = h('div', { class: 'es-seite' });
   f.inhalt.append(reiterleiste, koerper);
@@ -237,16 +239,20 @@ function zeitrasterFenster(f) {
     nummer.addEventListener('change', () => { z.ersteStundennummer = Number(nummer.value); merken(); zeichnen(); });
     const kopf = h('div', { class: 'es-zr-kopf' },
       h('div', { class: 'formular' },
-        zahl('Anzahl Tage (1-7)', 'tageProWoche', 1, 7, () => anpassen()),
-        zahl('Maximale Stundenzahl pro Tag (1-16)', 'stundenProTag', 1, 16, () => anpassen()),
+        zahl('Schultage je Woche', 'tageProWoche', 1, 7, () => anpassen()),
+        zahl('Stunden je Tag (höchstens)', 'stundenProTag', 1, 16, () => anpassen()),
         zahl('Letzte Vormittagsstunde', 'letzteVormittagsstunde', 1, 16, (alt) => {
           for (const t of z.belegung) t.forEach((w, i) => { const st = i + 1; const vorher = st <= alt ? 'V' : 'N'; if (w === vorher) t[i] = standard(st); });
         }),
-        zahl('Max. Nachmittagsstunden', 'maxNachmittagsstunden', 0, 16),
-        zahl('Normalstunde (Minuten)', 'normalstundeMinuten', 10, 120)),
-      h('div', { class: 'formular' }, zeile('Erster Schultag der Woche', erster), zeile('Stundennummer der ersten Stunde', nummer)),
-      h('fieldset', { class: 'es-eintragung' }, h('legend', null, 'Eintragung'),
-        ['V', '', 'N'].map((w) => h('button', { type: 'button', class: `knopf klein es-zr-${w || 'L'}`, disabled: lesen, onclick: () => markieren(w) }, w === 'V' ? 'Vormittag' : w === 'N' ? 'Nachmittag' : 'leer'))));
+        zahl('Nachmittagsstunden (höchstens)', 'maxNachmittagsstunden', 0, 16)),
+      h('div', { class: 'formular' },
+        zeile('Erster Schultag der Woche', erster),
+        zeile('Nummer der ersten Stunde', nummer),
+        zahl('Dauer einer Stunde (Minuten)', 'normalstundeMinuten', 10, 120)));
+    const eintragung = h('div', { class: 'es-eintragung' },
+      h('span', { class: 'leise' }, 'Markierte Zellen:'),
+      h('div', { class: 'segment' }, ['V', 'N', ''].map((w) => h('button', { type: 'button', disabled: lesen, onclick: () => markieren(w) }, w === 'V' ? 'Vormittag' : w === 'N' ? 'Nachmittag' : 'Leer'))),
+      h('span', { class: 'leise es-zr-tipp' }, 'Zellen durch Ziehen oder mit Strg+Klick markieren.'));
 
     const tab = h('table', { class: 'es-zr' });
     const label = (s) => String(s - 1 + z.ersteStundennummer);
@@ -291,8 +297,8 @@ function zeitrasterFenster(f) {
         return td;
       })));
     }
-    return [kopf, h('div', { class: 'es-zr-rahmen' }, tab),
-      h('p', { class: 'leise' }, 'Zellen markieren (ziehen, Strg+Klick) und mit „Vormittag“, „leer“ oder „Nachmittag“ belegen. In den ersten beiden Zeilen stehen Beginn und Ende der Stunden.')];
+    return [h('h3', null, 'Woche und Stunden'), kopf, h('h3', null, 'Stundenzeiten und Belegung'), eintragung, h('div', { class: 'es-zr-rahmen' }, tab),
+      h('p', { class: 'leise' }, 'Die ersten beiden Zeilen enthalten Beginn und Ende der Stunden; eine geänderte Beginnzeit verschiebt das Ende um die bisherige Dauer.')];
   }
 
   function markierungZeigen() {
@@ -307,7 +313,7 @@ function zeitrasterFenster(f) {
 
   function pausen() {
     const tab = h('table', { class: 'es-liste' });
-    tab.append(h('tr', null, ['Nach Stunde', 'Bezeichnung', 'Dauer (Min.)', 'Pausenaufsicht', ''].map((t) => h('th', null, t))));
+    tab.append(h('tr', null, [['Nach Stunde', 'zahl'], ['Bezeichnung'], ['Dauer (Min.)', 'zahl'], ['Aufsicht', 'mitte'], ['']].map(([t, k]) => h('th', { class: k }, t))));
     z.pausen.sort((a, b) => a.nachStunde - b.nachStunde).forEach((pa, i) => {
       const nach = zahlfeld(pa.nachStunde, 0, z.stundenProTag);
       const bez = textfeld(pa.bezeichnung);
@@ -320,9 +326,10 @@ function zeitrasterFenster(f) {
           merken();
         });
       }
-      tab.append(h('tr', null, h('td', null, nach), h('td', null, bez), h('td', null, dauer), h('td', { class: 'mitte' }, auf),
-        h('td', null, h('button', { class: 'knopf klein gefahr', type: 'button', disabled: lesen, onclick: () => { z.pausen.splice(i, 1); merken(); zeichnen(); } }, 'Entfernen'))));
+      tab.append(h('tr', null, h('td', { class: 'zahl' }, nach), h('td', null, bez), h('td', { class: 'zahl' }, dauer), h('td', { class: 'mitte' }, auf),
+        h('td', { class: 'aktion' }, h('button', { class: 'knopf klein still', type: 'button', disabled: lesen, onclick: () => { z.pausen.splice(i, 1); merken(); zeichnen(); } }, 'Entfernen'))));
     });
+    if (!z.pausen.length) tab.append(h('tr', null, h('td', { colspan: 5, class: 'es-leer' }, 'Keine Pausen eingetragen.')));
     const neu = h('button', { class: 'knopf klein', type: 'button', disabled: lesen, onclick: () => {
       const frei = Array.from({ length: z.stundenProTag }, (_, i) => i + 1).find((s) => !z.pausen.some((x) => x.nachStunde === s)) ?? 0;
       z.pausen.push({ nachStunde: frei, bezeichnung: '', dauerMinuten: 15, aufsicht: true });
@@ -330,12 +337,14 @@ function zeitrasterFenster(f) {
       zeichnen();
     } }, 'Pause hinzufügen');
     return [
+      h('h3', null, 'Pausen'), tab, h('div', { class: 'es-knoepfe' }, neu),
+      h('p', { class: 'leise' }, '„Nach Stunde 0“ steht für die Frühaufsicht.'),
+      h('h3', null, 'Mittagspause'),
       h('div', { class: 'formular' },
-        zahl('Mittagspause von Stunde (0 = keine)', 'mittagspauseVon', 0, 16),
-        zahl('Mittagspause bis Stunde', 'mittagspauseBis', 0, 16),
-        zahl('Max. Klassenzahl mit gleichzeitiger Mittagspause', 'maxKlassenGleicheMittagspause', 0, 500)),
-      h('h3', null, 'Pausen'), tab, neu,
-      h('p', { class: 'leise' }, 'Nach Stunde 0 = Frühaufsicht. Die Mittagspause wird automatisch in die letzten Vormittags- bzw. ersten Nachmittagsstunden gelegt; die Länge legen Sie bei den Klassen fest.'),
+        zahl('Frühestens ab Stunde', 'mittagspauseVon', 0, 16),
+        zahl('Spätestens bis Stunde', 'mittagspauseBis', 0, 16),
+        zahl('Klassen mit gleichzeitiger Mittagspause (höchstens)', 'maxKlassenGleicheMittagspause', 0, 500)),
+      h('p', { class: 'leise' }, '0 bei „Frühestens ab Stunde“ bedeutet keine Mittagspause. Die Planung legt sie in die letzten Vormittags- bzw. ersten Nachmittagsstunden; die Länge legen Sie bei den Klassen fest.'),
     ];
   }
 
@@ -385,13 +394,14 @@ function ferienFenster(f) {
   const info = h('div', { class: 'es-tag' });
   const jahr = h('div', { class: 'es-jahresdaten' });
   f.inhalt.append(h('div', { class: 'es-ferien' }, h('div', { class: 'es-ferien-links' }, liste, jahr), h('div', { class: 'es-ferien-rechts' }, info, kalender)));
-  const k1 = f.werkzeug({ text: 'Neu …', symbol: 'plus', aktion: () => neu() });
-  const k2 = f.werkzeug({ text: 'Löschen', symbol: 'loeschen', aktion: () => loeschen() });
+  const k1 = f.werkzeug({ text: 'Neue Ferien …', aktion: () => neu() });
+  const k2 = f.werkzeug({ text: 'Löschen', aktion: () => loeschen() });
   f.trenner();
-  const k3 = f.werkzeug({ text: 'Ferien NRW eintragen', symbol: 'kalender', aktion: () => nrw() });
+  const k3 = f.werkzeug({ text: 'Ferien und Feiertage NRW eintragen …', aktion: () => nrw() });
   for (const k of [k1, k2, k3]) k.disabled = lesen;
   f.fuss.replaceChildren(h('span', { class: 'es-legende' },
-    h('i', { class: 'ferien' }), 'Ferien', h('i', { class: 'feiertag' }), 'Feiertag', h('i', { class: 'schultag' }), 'Schultag', h('i', { class: 'auswahl' }), 'Auswahl (Umschalt+Klick: Zeitraum)'));
+    h('i', { class: 'schultag' }), 'Schultag', h('i', { class: 'ferien' }), 'Ferien', h('i', { class: 'feiertag' }), 'Feiertag', h('i', { class: 'auswahl' }), 'Auswahl'),
+    h('span', { class: 'rechts leise' }, 'Umschalt+Klick wählt einen Zeitraum, Doppelklick legt Ferien an.'));
 
   const ferienAm = (t) => d.ferien.filter((x) => t >= x.von && t <= x.bis).sort((a, b) => a.tage - b.tage)[0];
 
@@ -403,7 +413,8 @@ function ferienFenster(f) {
 
   function zeichneListe() {
     const tab = h('table', { class: 'es-liste' });
-    tab.append(h('tr', null, ['Name', 'Langname', 'von', 'bis', 'Tage', 'Woche danach', 'Wo-Nr.', 'Feiertag'].map((t) => h('th', null, t))));
+    tab.append(h('tr', null, [['Kurzname'], ['Bezeichnung'], ['Von'], ['Bis'], ['Tage', 'zahl'], ['Woche danach', '', 'Wochenbuchstabe der ersten Woche nach den Ferien'], ['Wochen zählen', 'mitte', 'Wochen während der Ferien mitzählen'], ['Feiertag', 'mitte']]
+      .map(([t, k, titel]) => h('th', { class: k, title: titel }, t))));
     for (const fe of d.ferien) {
       const tr = h('tr', { class: markiert.has(fe.id) ? 'gewaehlt' : '' });
       tr.addEventListener('click', (ev) => {
@@ -420,13 +431,14 @@ function ferienFenster(f) {
         txt('wocheDanach', fe.wocheDanach, '40px'), bool('wochennummerierung', fe.wochennummerierung), bool('feiertag', fe.feiertag));
       tab.append(tr);
     }
-    if (!d.ferien.length) tab.append(h('tr', null, h('td', { colspan: 8, class: 'leise' }, 'Keine Ferien eingetragen – „Ferien NRW eintragen“ oder „Neu …“.')));
+    if (!d.ferien.length) tab.append(h('tr', null, h('td', { colspan: 8, class: 'es-leer' }, 'Noch keine Ferien eingetragen.')));
     liste.replaceChildren(tab);
     const j = d.jahresdaten;
-    jahr.replaceChildren(
-      h('fieldset', null, h('legend', null, 'Schuljahr'), h('div', null, `${de(d.schuljahrVon)} – ${de(d.schuljahrBis)}`), h('div', null, `Anzahl Tage: ${j.schuljahrTage}`), h('div', null, `Anzahl Wochen: ${j.schuljahrWochen}`),
-        h('div', null, `Anzahl Ferien: ${j.anzahlFerien}`), h('div', null, `Anzahl Feiertage: ${j.anzahlFeiertage}`)),
-      h('fieldset', null, h('legend', null, 'Unterricht'), h('div', null, `Anzahl Tage: ${j.unterrichtTage}`), h('div', null, `Anzahl Wochen: ${j.unterrichtWochen}`), h('div', null, `Anzahl Ferientage: ${j.ferientage}`)));
+    const paar = (k, v) => [h('dt', null, k), h('dd', null, v)];
+    jahr.replaceChildren(h('dl', null,
+      paar('Schuljahr', `${de(d.schuljahrVon)} – ${de(d.schuljahrBis)}`), paar('Kalendertage', j.schuljahrTage), paar('Wochen', j.schuljahrWochen),
+      paar('Ferienabschnitte', j.anzahlFerien), paar('Feiertage', j.anzahlFeiertage),
+      paar('Unterrichtstage', j.unterrichtTage), paar('Unterrichtswochen', j.unterrichtWochen), paar('Ferientage', j.ferientage)));
   }
 
   function bereich() {
@@ -471,7 +483,7 @@ function ferienFenster(f) {
     }
     kalender.replaceChildren(...monate);
     // Tagesinfo
-    if (!gewaehlt) { info.replaceChildren(h('span', { class: 'leise' }, 'Tag im Kalender wählen (Umschalt+Klick wählt einen Zeitraum, Doppelklick legt Ferien an).')); return; }
+    if (!gewaehlt) { info.replaceChildren(h('span', { class: 'leise' }, 'Tag im Kalender wählen.')); return; }
     const dt = datum(gewaehlt);
     const fe = ferienAm(gewaehlt);
     const frei = haken(!!fe);
@@ -483,9 +495,9 @@ function ferienFenster(f) {
     info.replaceChildren(...[
       h('b', null, bv !== bb ? `Zeitraum ${de(bv)} – ${de(bb)}` : `${TAGE_KURZ[(dt.getDay() + 6) % 7]} ${dt.getDate()}.${dt.getMonth() + 1}.${dt.getFullYear()}`),
       h('span', { class: 'leise' }, `Kalenderwoche ${kw(dt)}`),
-      h('label', null, frei, ' Unterrichtsfrei'), h('label', null, feier, ' Feiertag'),
-      fe ? h('span', null, fe.langname || fe.kurzname) : null,
-      bv !== bb && !lesen ? h('button', { class: 'knopf klein primaer', type: 'button', onclick: () => neu() }, 'Ferien für den Zeitraum …') : null].filter(Boolean));
+      h('label', { class: 'kontrolle' }, frei, 'Unterrichtsfrei'), h('label', { class: 'kontrolle' }, feier, 'Feiertag'),
+      fe ? h('span', { class: 'es-tag-name' }, fe.langname || fe.kurzname) : null,
+      bv !== bb && !lesen ? h('button', { class: 'knopf klein', type: 'button', onclick: () => neu() }, 'Ferien für den Zeitraum anlegen …') : null].filter(Boolean));
   }
 
   function zeichnen() { zeichneListe(); zeichneKalender(); }
@@ -493,10 +505,10 @@ function ferienFenster(f) {
   async function neu() {
     const [v, b] = bereich() || [d.schuljahrVon, d.schuljahrVon];
     const w = await formular('Neue Ferien', [
-      { name: 'kurzname', titel: 'Name', wert: v === b ? `${Number(v.slice(8))}.${Number(v.slice(5, 7))}` : 'Ferien', pflicht: true },
-      { name: 'langname', titel: 'Langname', wert: v === b ? de(v) : `Ferien ${de(v)} – ${de(b)}` },
-      { name: 'von', titel: 'von (TT.MM.JJJJ)', wert: de(v), pflicht: true },
-      { name: 'bis', titel: 'bis (TT.MM.JJJJ)', wert: de(b), pflicht: true },
+      { name: 'kurzname', titel: 'Kurzname', wert: v === b ? `${Number(v.slice(8))}.${Number(v.slice(5, 7))}` : 'Ferien', pflicht: true },
+      { name: 'langname', titel: 'Bezeichnung', wert: v === b ? de(v) : `Ferien ${de(v)} – ${de(b)}` },
+      { name: 'von', titel: 'Von (TT.MM.JJJJ)', wert: de(v), pflicht: true },
+      { name: 'bis', titel: 'Bis (TT.MM.JJJJ)', wert: de(b), pflicht: true },
       { name: 'feiertag', titel: 'Feiertag', art: 'bool', wert: false },
     ], { okText: 'Anlegen' });
     if (!w) return;
@@ -509,7 +521,7 @@ function ferienFenster(f) {
   async function loeschen() {
     const ids = [...markiert];
     if (!ids.length) { hinweis('Bitte zuerst Ferien in der Liste oder im Kalender wählen.', 'warnung'); return; }
-    if (!(await frage(`${ids.length} Ferieneintrag/-einträge löschen?`))) return;
+    if (!(await frage(ids.length === 1 ? 'Den gewählten Ferieneintrag löschen?' : `${ids.length} Ferieneinträge löschen?`, { ja: 'Löschen', gefahr: true }))) return;
     markiert = new Set();
     await senden(api.post(pfad('/ferien/loeschen'), { ids }, { quelle: f.id }));
   }
@@ -543,18 +555,21 @@ function periodenFenster(f) {
   function zeichnen() {
     if (!d.perioden.some((p) => p.id === gewaehlt)) gewaehlt = d.aktiv;
     const tab = h('table', { class: 'es-liste' });
-    tab.append(h('tr', null, ['Name', 'Langname', 'Von', 'Bis', 'Schultage', 'Mutter', 'Fix'].map((t) => h('th', null, t))));
+    tab.append(h('tr', null, [['Name'], ['Bezeichnung'], ['Von'], ['Bis'], ['Schultage', 'zahl'], ['Übergeordnet'], ['Status']].map(([t, k]) => h('th', { class: k }, t))));
     for (const p of d.perioden) {
-      tab.append(h('tr', { class: `${p.id === gewaehlt ? 'gewaehlt' : ''}${p.aktiv ? ' aktiv' : ''}`, onclick: () => { gewaehlt = p.id; zeichnen(); } },
-        h('td', { style: { paddingLeft: `${6 + p.ebene * 14}px` } }, p.aktiv ? h('b', null, `${p.name} ●`) : p.name), h('td', null, p.langname),
-        h('td', null, de(p.von)), h('td', null, p.bis ? de(p.bis) : h('span', { class: 'leise' }, de(p.ende))), h('td', { class: 'zahl' }, p.schultage),
-        h('td', null, p.mutter || ''), h('td', { class: 'mitte' }, p.fixiert ? '✓' : '')));
+      tab.append(h('tr', { class: `${p.id === gewaehlt ? 'gewaehlt' : ''}${p.aktiv ? ' aktiv' : ''}`, tabindex: 0, onclick: () => { gewaehlt = p.id; zeichnen(); },
+        onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); gewaehlt = p.id; zeichnen(); } } },
+        h('td', { style: { paddingLeft: `${8 + p.ebene * 16}px` } }, p.aktiv ? h('b', null, p.name) : p.name), h('td', null, p.langname),
+        h('td', { class: 'datum' }, de(p.von)), h('td', { class: 'datum' }, p.bis ? de(p.bis) : h('span', { class: 'leise' }, de(p.ende))), h('td', { class: 'zahl' }, p.schultage),
+        h('td', null, p.mutter || ''),
+        h('td', null, p.aktiv ? h('span', { class: 'plakette es-aktiv' }, 'Aktiv') : null, p.fixiert ? h('span', { class: 'plakette' }, 'Fixiert') : null)));
     }
     const folge = haken(d.unterrichtInFolgeperioden);
     folge.disabled = lesen;
     folge.addEventListener('change', () => senden(api.put(pfad('/perioden/folgeperioden'), { wert: folge.checked }, { quelle: f.id })).catch(fehlerMelden));
-    links.replaceChildren(tab, h('label', { class: 'es-zeile' }, folge, ' Unterrichtsänderungen in Folgeperioden übernehmen'),
-      h('p', { class: 'leise' }, 'Eine Tochterperiode übernimmt Unterricht, Stundenplan und Pausenaufsichten der Mutterperiode. An jedem Tag gilt die innerste (zuletzt beginnende) Periode. ● = aktive Periode (wird in allen Fenstern bearbeitet).'));
+    links.replaceChildren(tab, h('div', { class: 'es-unter' },
+      h('label', { class: 'kontrolle' }, folge, 'Unterrichtsänderungen in Folgeperioden übernehmen'),
+      h('p', { class: 'leise' }, 'Eine untergeordnete Periode übernimmt Unterricht, Stundenplan und Pausenaufsichten der übergeordneten. An jedem Tag gilt die zuletzt beginnende Periode. Die aktive Periode wird in allen Ansichten bearbeitet.')));
 
     const p = d.perioden.find((x) => x.id === gewaehlt);
     if (!p) { rechts.replaceChildren(); return; }
@@ -566,17 +581,18 @@ function periodenFenster(f) {
     for (const el of [name, lang, von, bis, fix]) el.disabled = lesen;
     rechts.replaceChildren(
       h('h3', null, /^periode/i.test(p.name) ? p.name : `Periode ${p.name}`),
-      h('div', { class: 'formular' }, zeile('Name', name), zeile('Langname', lang), zeile('Von', von), zeile('Bis', bis, `leer = bis ${de(p.ende)}`), zeile('Fixiert', fix, 'Unterricht und Stundenplan können nicht geändert werden')),
       h('p', { class: 'leise' }, `${p.unterrichte} Unterrichte, ${p.planstunden} verplante Stunden, ${p.schultage} Schultage`),
+      h('div', { class: 'formular' }, zeile('Name', name), zeile('Bezeichnung', lang), zeile('Von', von), zeile('Bis', bis, `Leer bedeutet bis ${de(p.ende)}.`),
+        schalterZeile('Fixiert', fix, 'Unterricht und Stundenplan sind dann gegen Änderungen gesperrt.')),
       h('div', { class: 'es-knoepfe' },
         h('button', { class: 'knopf primaer', type: 'button', disabled: lesen, onclick: () => senden(api.put(pfad(`/perioden/${p.id}`), { name: name.value, langname: lang.value, von: von.value, bis: bis.value || null, fixiert: fix.checked }, { quelle: f.id }), 'Periode geändert.').catch(fehlerMelden) }, 'Übernehmen'),
-        h('button', { class: 'knopf', type: 'button', disabled: lesen || p.aktiv, onclick: () => senden(api.post(pfad(`/perioden/${p.id}/aktiv`), {}, { quelle: f.id }), `${p.name} ist jetzt die aktive Periode.`).catch(fehlerMelden) }, 'Als aktive Periode'),
-        h('button', { class: 'knopf', type: 'button', disabled: lesen, onclick: () => neu(p).catch(fehlerMelden) }, 'Neue Periode zu dieser Mutterperiode …'),
+        h('button', { class: 'knopf', type: 'button', disabled: lesen || p.aktiv, onclick: () => senden(api.post(pfad(`/perioden/${p.id}/aktiv`), {}, { quelle: f.id }), `${p.name} ist jetzt die aktive Periode.`).catch(fehlerMelden) }, 'Als aktive Periode setzen'),
+        h('button', { class: 'knopf', type: 'button', disabled: lesen, onclick: () => neu(p).catch(fehlerMelden) }, 'Untergeordnete Periode …'),
         h('button', { class: 'knopf gefahr', type: 'button', disabled: lesen || d.perioden.length <= 1, onclick: () => loeschen(p).catch(fehlerMelden) }, 'Löschen')));
   }
 
   async function neu(mutter) {
-    const w = await formular(`Neue Periode zu ${mutter.name}`, [
+    const w = await formular(`Neue Periode unter ${mutter.name}`, [
       { name: 'name', titel: 'Name', wert: `Periode${d.perioden.length + 1}`, pflicht: true },
       { name: 'von', titel: 'Von (TT.MM.JJJJ)', wert: de(mutter.von), pflicht: true },
       { name: 'bis', titel: 'Bis (leer = offen)', wert: '' },
@@ -589,7 +605,7 @@ function periodenFenster(f) {
   }
 
   async function loeschen(p) {
-    if (!(await frage(`Periode ${p.name} mit Unterricht und Stundenplan löschen? Tochterperioden hängen danach an der Mutterperiode.`, { gefahr: true, ja: 'Löschen' }))) return;
+    if (!(await frage(`Periode ${p.name} mit Unterricht und Stundenplan löschen? Untergeordnete Perioden gehören danach zur nächsthöheren Periode.`, { gefahr: true, ja: 'Löschen' }))) return;
     await senden(api.loeschen(pfad(`/perioden/${p.id}`), { quelle: f.id }), 'Periode gelöscht.');
   }
 
@@ -606,9 +622,8 @@ function periodenFenster(f) {
 function ugruppenFenster(f) {
   let d = null;
   const lesen = nurLesen(f);
-  const k = f.werkzeug({ text: 'Wochenperiodizität …', symbol: 'einstellungen', aktion: () => periodizitaet() });
+  const k = f.werkzeug({ text: 'Wochenperiodizität …', aktion: () => periodizitaet() });
   k.disabled = lesen;
-  f.werkzeuge.append(h('span', { class: 'leise es-wz-text' }, 'Unterbrechungen: z. B. „01.12.-15.12.; 10.03.-20.03.“'));
 
   async function senden(pr) { d = await pr; zeichnen(); }
 
@@ -631,27 +646,31 @@ function ugruppenFenster(f) {
         senden(g ? api.put(pfad(`/ugruppen/${g.id}`), werte(), { quelle: f.id }) : api.post(pfad('/ugruppen'), werte(), { quelle: f.id })).catch((e) => { fehlerMelden(e); zeichnen(); });
       });
     }
+    if (!g) name.placeholder = 'Neue Gruppe';
+    unt.placeholder = 'z. B. 01.12.-15.12.; 10.03.-20.03.';
     return h('tr', { class: g ? '' : 'neu' }, h('td', null, name), h('td', null, lang), h('td', null, von), h('td', null, bis), wochen.map((w) => h('td', { class: 'mitte' }, w)),
       h('td', { class: 'zahl' }, g?.faktor ?? ''), h('td', { class: 'mitte' }, fix), h('td', { class: 'mitte' }, ign), h('td', null, unt), h('td', { class: 'zahl' }, g?.unterrichte ?? ''),
-      h('td', null, g ? h('button', { class: 'knopf klein gefahr', type: 'button', disabled: lesen, onclick: () => loeschen(g).catch(fehlerMelden) }, 'Löschen') : null));
+      h('td', { class: 'aktion' }, g ? h('button', { class: 'knopf klein still', type: 'button', disabled: lesen, onclick: () => loeschen(g).catch(fehlerMelden) }, 'Löschen') : null));
   }
 
   function zeichnen() {
     const tab = h('table', { class: 'es-liste' });
-    tab.append(h('tr', null, ['Name', 'Langname', 'von', 'bis', ...d.wochen, 'Faktor', 'Fix', 'Ignore', 'Unterbrechungen', 'Unterrichte', ''].map((t) => h('th', null, t))));
+    tab.append(h('tr', null, [['Kurzname'], ['Bezeichnung'], ['Von'], ['Bis'], ...d.wochen.map((w) => [`Woche ${w}`, 'mitte']), ['Faktor', 'zahl', 'Anteil der Schultage, an denen die Gruppe gilt'],
+      ['Fixiert', 'mitte'], ['Ignorieren', 'mitte', 'Gruppe bei der Planung nicht berücksichtigen'], ['Unterbrechungen'], ['Unterrichte', 'zahl'], ['']].map(([t, k, titel]) => h('th', { class: k, title: titel }, t))));
     for (const g of d.gruppen) tab.append(zeile_(g));
     if (!lesen) tab.append(zeile_(null));
+    else if (!d.gruppen.length) tab.append(h('tr', null, h('td', { colspan: 10 + d.wochen.length, class: 'es-leer' }, 'Keine Unterrichtsgruppen angelegt.')));
     f.inhalt.replaceChildren(h('div', { class: 'es-seite' }, tab,
-      h('p', { class: 'leise' }, `Wochenperiodizität ${d.wochenperiodizitaet} (${d.wochen.join(', ')}). Faktor = Anteil der Schultage, an denen die Gruppe aktiv ist. Unterricht ordnen Sie im Unterrichtsfenster einer Gruppe zu. In der letzten Zeile neue Gruppe eintragen.`)));
+      h('p', { class: 'leise' }, `Wochenperiodizität ${d.wochenperiodizitaet} (${d.wochen.join(', ')}). Eine neue Gruppe tragen Sie in der letzten Zeile ein; Unterricht ordnen Sie in der Unterrichtsansicht einer Gruppe zu.`)));
   }
 
   async function loeschen(g) {
-    if (!(await frage(`Unterrichtsgruppe ${g.kurzname} löschen? Zugeordneter Unterricht findet danach jede Woche statt.`))) return;
+    if (!(await frage(`Unterrichtsgruppe ${g.kurzname} löschen? Zugeordneter Unterricht findet danach jede Woche statt.`, { ja: 'Löschen', gefahr: true }))) return;
     await senden(api.post(pfad('/ugruppen/loeschen'), { ids: [g.id] }, { quelle: f.id }));
   }
 
   async function periodizitaet() {
-    const w = await formular('Wochenperiodizität', [{ name: 'wert', titel: 'Wochen (1 = jede Woche gleich, 2 = A/B, … 16)', art: 'zahl', wert: d.wochenperiodizitaet, pflicht: true }]);
+    const w = await formular('Wochenperiodizität', [{ name: 'wert', titel: 'Anzahl Wochen', art: 'zahl', wert: d.wochenperiodizitaet, pflicht: true, hinweis: '1 = jede Woche gleich, 2 = A/B-Wochen, höchstens 16' }]);
     if (!w) return;
     await senden(api.put(pfad('/wochenperiodizitaet'), { wert: Number(w.wert) }, { quelle: f.id }));
   }
@@ -675,7 +694,7 @@ export default {
   fenster: {
     'einstellungen.schule': { titel: 'Einstellungen', symbol: 'einstellungen', breite: 820, hoehe: 560, einzig: () => true, erstellen: schuldatenFenster },
     'einstellungen.zeitraster': { titel: 'Zeitraster', symbol: 'stundenplan', breite: 900, hoehe: 600, einzig: () => true, erstellen: zeitrasterFenster },
-    'einstellungen.ferien': { titel: 'Kalender / Ferien', symbol: 'kalender', breite: 1180, hoehe: 640, einzig: () => true, erstellen: ferienFenster },
+    'einstellungen.ferien': { titel: 'Kalender und Ferien', symbol: 'kalender', breite: 1180, hoehe: 640, einzig: () => true, erstellen: ferienFenster },
     'einstellungen.perioden': { titel: 'Perioden', symbol: 'perioden', breite: 1000, hoehe: 480, einzig: () => true, erstellen: periodenFenster },
     'einstellungen.ugruppen': { titel: 'Unterrichtsgruppen', symbol: 'perioden', breite: 1000, hoehe: 380, einzig: () => true, erstellen: ugruppenFenster },
   },
@@ -689,13 +708,13 @@ export default {
   ribbon: [
     eintrag('start.perioden', 'Start', 'Planungswerkzeuge', 'Perioden', 'perioden', 'einstellungen.perioden', true),
     eintrag('start.einstellungen', 'Start', 'Schule', 'Einstellungen', 'einstellungen', 'einstellungen.schule', true),
-    eintrag('start.ferien', 'Start', 'Module', 'Kalender / Ferien', 'kalender', 'einstellungen.ferien'),
+    eintrag('start.ferien', 'Start', 'Module', 'Kalender und Ferien', 'kalender', 'einstellungen.ferien'),
     eintrag('eingabe.ugruppen', 'Dateneingabe', 'Spezielle Daten', 'Unterrichtsgruppen', 'perioden', 'einstellungen.ugruppen'),
     eintrag('eingabe.zeitraster', 'Dateneingabe', 'Zeit', 'Zeitraster', 'stundenplan', 'einstellungen.zeitraster'),
     eintrag('eingabe.ferien', 'Dateneingabe', 'Zeit', 'Ferien', 'kalender', 'einstellungen.ferien'),
     eintrag('eingabe.schuljahr', 'Dateneingabe', 'Zeit', 'Schuljahr', 'kalender', 'einstellungen.schule', false, { seite: 'Allgemein' }),
-    eintrag('module.perioden', 'Module', 'Weitere Module', 'Mehrwochen / Perioden', 'perioden', 'einstellungen.perioden', true),
-    eintrag('module.ugruppen', 'Module', 'Weitere Module', 'Unterrichts-gruppen', 'perioden', 'einstellungen.ugruppen', true),
+    eintrag('module.perioden', 'Module', 'Weitere Module', 'Perioden', 'perioden', 'einstellungen.perioden', true),
+    eintrag('module.ugruppen', 'Module', 'Weitere Module', 'Unterrichtsgruppen', 'perioden', 'einstellungen.ugruppen', true),
   ],
 };
 

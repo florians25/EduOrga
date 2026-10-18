@@ -1,27 +1,57 @@
 /* Modul Druck (Druckauswahl, Vorschau, Berichte, Vertretungsplan-Ausgabe). Präfix dr-. */
-.dr-vorschau { flex: 1; width: 100%; min-height: 0; border: 0; background: #fff; }
+.dr-vorschau { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--up-schiefer-100); }
+
+/* Druckauswahl */
 .dr-auswahl { display: flex; flex: 1; min-height: 0; }
-.dr-optionen { flex: 0 0 380px; overflow: auto; padding: 8px 14px; border-right: 1px solid var(--rand-leise); }
-.dr-optionen h3, .dr-layout h3, .dr-berichtliste h3 { font-size: 13px; font-weight: var(--mittel); color: var(--akzent); margin: 12px 0 6px; }
-.dr-optionen h3:first-child, .dr-berichtliste h3:first-child { margin-top: 2px; }
-.dr-typen, .dr-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.dr-optionen { flex: 0 0 360px; overflow: auto; padding: 18px 20px 24px; border-right: 1px solid var(--rand); }
+.dr-optionen h3, .dr-layout h3 { font-size: 13px; font-weight: var(--fett); color: var(--text); margin: 24px 0 10px; }
+.dr-optionen h3:first-child, .dr-layout h3:first-child { margin-top: 0; }
+.dr-optionen .formular { min-width: 0; grid-template-columns: max-content minmax(0, 1fr); }
+.dr-optionen > p { margin: 16px 0 0; font-size: 12.5px; }
+.dr-typen { display: flex; width: 100%; }
+.dr-typen > button { flex: 1; padding: 0 8px; }
+.dr-link { margin: 10px 0 0 -9px; color: var(--akzent-titel); }
 .dr-elemente { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.dr-listenkopf { flex: none; display: flex; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--rand-leise); background: var(--leiste); }
-.dr-listenkopf input { flex: 1; }
-.dr-liste { flex: 1; overflow: auto; padding: 4px 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); align-content: start; gap: 0 10px; }
-.dr-element { display: flex; gap: 6px; align-items: center; padding: 2px 0; white-space: nowrap; overflow: hidden; }
-.dr-element b { font-weight: var(--mittel); min-width: 36px; }
+.dr-listenkopf { flex: none; display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--rand-leise); }
+.dr-listenkopf .ax-feld { flex: 1; min-width: 0; }
+.dr-listenkopf input { flex: 1; min-width: 0; width: 100%; max-width: 320px; height: 30px; min-height: 30px; }
+.dr-liste { flex: 1; overflow: auto; padding: 8px 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); align-content: start; gap: 0 16px; }
+.dr-element { display: flex; gap: 8px; align-items: center; height: 30px; white-space: nowrap; overflow: hidden; cursor: pointer; }
+.dr-element b { font-weight: var(--mittel); min-width: 40px; }
 .dr-element .leise { overflow: hidden; text-overflow: ellipsis; }
+.dr-leer { grid-column: 1 / -1; padding: 40px 0; text-align: center; color: var(--text-leise); }
+
+/* Berichte */
 .dr-berichte { display: flex; flex: 1; min-height: 0; }
-.dr-berichtliste { flex: 0 0 250px; overflow: auto; padding: 8px 10px; border-right: 1px solid var(--rand-leise); background: var(--up-schiefer-25); }
-.dr-bericht { display: block; width: 100%; text-align: left; border: 0; background: none; font: inherit; padding: 7px 10px; border-radius: var(--radius); cursor: pointer; color: var(--text); }
-.dr-bericht:hover { background: var(--hover); }
-.dr-bericht.aktiv { background: #fff; font-weight: var(--mittel); box-shadow: 0 0 0 1px var(--rand), var(--up-schatten-1); }
+.dr-berichtliste { flex: 0 0 260px; overflow: auto; padding: 12px 0 16px; border-right: 1px solid var(--rand); }
+.dr-gruppe + .dr-gruppe { margin-top: 14px; }
+.dr-gruppentitel { padding: 0 16px 4px; font-size: 12px; font-weight: var(--fett); color: var(--text-leise); }
+.dr-bericht { position: relative; display: block; width: 100%; min-height: 30px; text-align: left; border: 0; background: none; font: inherit; padding: 5px 16px; cursor: pointer; color: var(--text-2); }
+.dr-bericht:hover { background: var(--up-schiefer-25); color: var(--text); }
+.dr-bericht:focus-visible { outline: 2px solid var(--up-fokus); outline-offset: -2px; }
+.dr-bericht.aktiv { color: var(--akzent-titel); font-weight: var(--mittel); }
+.dr-bericht.aktiv::before { content: ""; position: absolute; left: 0; top: 5px; bottom: 5px; width: 2px; background: var(--akzent); }
 .dr-berichtvorschau { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.dr-berichtkopf { flex: none; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--rand-leise); }
-.dr-zeitraum { display: flex; gap: 6px; align-items: center; }
+.dr-berichtkopf { flex: none; display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--rand); }
+.dr-berichttitel { min-width: 0; }
+.dr-berichttitel b { font-weight: var(--fett); }
+.dr-zeitraum { display: flex; gap: 12px; align-items: center; }
+.dr-zeitraum .eingabe { height: 30px; min-height: 30px; }
+
+/* Vertretungsplan ausgeben */
+.dr-filter { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 16px; border-bottom: 1px solid var(--rand); }
+.dr-filter .eingabe { height: 30px; min-height: 30px; }
 .dr-aushang { display: flex; flex: 1; min-height: 0; }
-.dr-layout { flex: 0 0 470px; overflow: auto; padding: 8px 12px; border-right: 1px solid var(--rand-leise); }
-.dr-schalterliste { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; margin: 8px 0; font-size: 12.5px; }
-.dr-schalter { display: flex; gap: 4px; align-items: center; }
-.dr-felder .eingabe { width: 140px; }
+.dr-layout { flex: 0 0 500px; overflow: auto; padding: 18px 20px 24px; border-right: 1px solid var(--rand); }
+.dr-layout .formular { min-width: 0; }
+.dr-layout > p { margin: 12px 0 0; font-size: 12.5px; }
+.dr-schalterliste { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.dr-schalter { white-space: normal; align-items: flex-start; line-height: 1.3; }
+.dr-schalter input { margin-top: 1px; }
+.dr-felder { width: 100%; }
+.dr-felder .eingabe { width: 100%; min-width: 110px; }
+.dr-felder td.dr-breite { white-space: nowrap; }
+.dr-felder td.dr-breite .eingabe { width: 56px; min-width: 0; margin-right: 4px; }
+.dr-hoch { width: 28px; padding: 0; color: var(--text-2); }
+.dr-hoch svg { transform: rotate(180deg); }
+.dr-dialoghinweis { margin-top: 14px !important; }

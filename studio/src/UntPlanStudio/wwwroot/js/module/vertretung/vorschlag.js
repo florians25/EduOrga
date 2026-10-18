@@ -1,26 +1,27 @@
-// Fenster „Vertretungsvorschlag“: folgt der markierten Vertretung. Kopf „30.8. Mo-1 Se/Mu/05D“ (aufklappbar),
-// Optionen (Stundenblock, Dislozierungen ignorieren, Dauervertretung …), Reiter Vertretungsvorschläge / Betreuungen / Räume mit
-// Anzahlen, unten aufklappbar die Vorziehungen. Übernehmen per Doppelklick, Enter oder Knopf; „Weiter zur nächsten offenen“.
+// Ansicht „Vertretungsvorschlag“: folgt der markierten Vertretung. Kopf „30.8. Mo-1 Se/Mu/05D“ (aufklappbar),
+// Optionen (Stundenblock, Wegzeiten ignorieren, Dauervertretung …), Reiter Lehrkräfte / Betreuungen / Räume mit Anzahlen,
+// unten aufklappbar die Vorziehungen. Übernehmen per Doppelklick, Enter oder Knopf; danach wahlweise zur nächsten offenen.
 import { h, leeren } from '../../kern/dom.js';
+import { symbol } from '../../kern/symbole.js';
 import { api } from '../../kern/api.js';
 import { darfSchreiben } from '../../kern/zustand.js';
 import { betrifft, melden } from '../../kern/ereignisse.js';
 import { hinweis, fehlerMelden } from '../../kern/dialog.js';
 import { vpfad, mitRueckfragen, aktuelleAuswahl } from './kern.js';
-import { reiter, listenTabelle } from './steuer.js';
+import { reiter, listenTabelle, schalter, werkzeugSchalter } from './steuer.js';
 
-/** Merker zur Stunde wie im Vorbild: 0–3 weiß, 4–8 zunehmend rosa, 9 rot; Bereitschaft (Fachkürzel) grün. */
-function merkerFarbe(m) {
+/** Belastung zur Stunde: 0–3 unauffällig, 4–6 leicht, 7–8 deutlich, ab 9 hoch; Bereitschaft (Fachkürzel) als verfügbar. */
+function belastungKlasse(m) {
   if (!m || m === 'x') return null;
   const n = Number(m);
-  if (Number.isNaN(n)) return '#c8ebc8';
-  if (n >= 9) return '#ff3737';
-  if (n < 4) return null;
-  const g = 217 - (n - 4) * 17;
-  return `rgb(255,${g},${g})`;
+  if (Number.isNaN(n)) return 'vt-m-bereit';
+  if (n >= 9) return 'vt-m-hoch';
+  if (n >= 7) return 'vt-m-mittel';
+  if (n >= 4) return 'vt-m-leicht';
+  return null;
 }
 
-/** Spalte „Stundenplan“: drei Stunden, die Vertretungsstunde gestrichelt markiert, Entfall rot durchgestrichen. */
+/** Spalte „Stundenplan“: Stunde davor, Vertretungsstunde (umrandet), Stunde danach; Entfall durchgestrichen. */
 function stundenplanSpalten() {
   return [0, 1, 2].map((i) => ({
     titel: i === 0 ? 'Stundenplan' : '', breite: 50, klasse: 'vt-mini',
@@ -28,15 +29,15 @@ function stundenplanSpalten() {
     zelle: (k, td) => {
       const z = k.s?.[i];
       if (!z) return;
-      if (z.farbe && !z.entfallen) td.style.background = z.farbe;
-      if (z.schrift) td.style.color = z.schrift;
+      if (z.farbe && !z.entfallen) td.style.background = `color-mix(in srgb, ${z.farbe} 20%, var(--flaeche))`;
       td.classList.toggle('entfallen', z.entfallen);
       td.classList.toggle('ziel', z.ziel);
     },
   }));
 }
 
-const zaehlerZelle = (k, td) => { td.style.background = Number(k.zaehlerWert) > 0 ? '#ff8080' : '#fcfc81'; };
+const zaehlerZelle = (k, td) => { td.classList.toggle('vt-warn', Number(k.zaehlerWert) > 0); };
+const haken = (ja) => (ja ? symbol('haken') : '');
 
 function vorschlagFenster(f) {
   const schreiben = darfSchreiben();
@@ -44,70 +45,74 @@ function vorschlagFenster(f) {
   let daten = null;
   let weiter = true;
   let alle = false;
-  const kopf = h('button', { type: 'button', class: 'vt-klapp' }, h('span', { class: 'pfeil' }, '▼'), h('span', { class: 'text' }, 'Keine Vertretung markiert'));
+  const klapp = (text, klasse = '') => h('button', { type: 'button', class: `vt-klapp${klasse}`, 'aria-expanded': 'false' }, h('span', { class: 'pfeil' }, symbol('pfeil_rechts')), h('span', { class: 'text' }, text));
+  const kopf = klapp('Keine Vertretung markiert');
   const details = h('div', { class: 'vt-details', hidden: true });
-  const opt = { block: h('input', { type: 'checkbox' }), disloz: h('input', { type: 'checkbox' }), dauer: h('input', { type: 'checkbox' }), nahe: h('input', { type: 'checkbox' }), besetzt: h('input', { type: 'checkbox' }), zusatz: h('input', { type: 'checkbox' }) };
-  const L = (el, text, titel, cls = '') => h('label', { title: titel, class: cls }, el, ` ${text}`);
-  const optionen = h('div', { class: 'vt-optionen' },
-    L(opt.block, 'Stundenblock', 'Vorschlag für alle Stunden des Blocks (Doppelstunde)'),
-    L(opt.disloz, 'Wegzeiten ignorieren', 'Auch Lehrkräfte vorschlagen, deren angrenzender Unterricht in einem anderen Gebäude liegt'),
-    L(opt.dauer, 'Dauervertretung', 'Vertreter für alle Stunden dieses Unterrichts während der Abwesenheit übernehmen'),
-    L(opt.nahe, 'Nur in der Nähe', 'Nur gekoppelte Lehrkräfte, gleicher Gang oder gleiches Stockwerk', 'nur-1'),
-    L(opt.besetzt, 'Auch besetzte Räume anzeigen', '', 'nur-2'), L(opt.zusatz, 'Zusätzlichen Raum zuordnen', 'Den gewählten Raum zusätzlich zum bestehenden Raum zuordnen', 'nur-2'));
-  const tabs = reiter(['Vertretungsvorschläge (0)', 'Betreuungen (0)', 'Räume (0)'], (i) => zeigen(i));
+  const S = {
+    block: schalter('Stundenblock', { titel: 'Vorschlag für alle Stunden des Blocks (Doppelstunde)' }),
+    disloz: schalter('Wegzeiten ignorieren', { titel: 'Auch Lehrkräfte vorschlagen, deren angrenzender Unterricht in einem anderen Gebäude liegt' }),
+    dauer: schalter('Dauervertretung', { titel: 'Vertretung für alle Stunden dieses Unterrichts während der Abwesenheit übernehmen' }),
+    nahe: schalter('Nur in der Nähe', { titel: 'Nur gekoppelte Lehrkräfte, gleicher Gang oder gleiches Stockwerk', klasse: 'nur-1' }),
+    besetzt: schalter('Auch belegte Räume', { klasse: 'nur-2' }),
+    zusatz: schalter('Zusätzlich zum bisherigen Raum', { titel: 'Den gewählten Raum zusätzlich zum bestehenden Raum zuordnen', klasse: 'nur-2' }),
+  };
+  const opt = Object.fromEntries(Object.entries(S).map(([k, l]) => [k, l.eingabe]));
+  const optionen = h('div', { class: 'vt-optionen' }, ...Object.values(S));
+  const tabs = reiter(['Lehrkräfte (0)', 'Betreuungen (0)', 'Räume (0)'], (i) => zeigen(i));
   const flaeche = h('div', { class: 'vt-vorschlag-flaeche' });
-  const vorzKopf = h('button', { type: 'button', class: 'vt-klapp unten' }, h('span', { class: 'pfeil' }, '▲'), h('span', { class: 'text' }, 'Vorziehungen (0)'));
+  const vorzKopf = klapp('Vorziehungen (0)', ' unten');
   const vorzFlaeche = h('div', { class: 'vt-vorz', hidden: true });
-  f.inhalt.append(h('div', { class: 'vt-vorschlag' }, kopf, details, optionen, tabs.el, flaeche, vorzKopf, vorzFlaeche));
-  kopf.addEventListener('click', () => { details.hidden = !details.hidden; kopf.firstChild.textContent = details.hidden ? '▼' : '▲'; });
-  vorzKopf.addEventListener('click', () => { vorzFlaeche.hidden = !vorzFlaeche.hidden; vorzKopf.firstChild.textContent = vorzFlaeche.hidden ? '▲' : '▼'; });
+  f.inhalt.append(h('div', { class: 'vt-vorschlag' }, h('div', { class: 'vt-vs-kopf' }, kopf, details, optionen), tabs.el, flaeche, h('div', { class: 'vt-vs-fuss' }, vorzKopf, vorzFlaeche)));
+  const umschalten = (knopf, bereich) => { bereich.hidden = !bereich.hidden; knopf.setAttribute('aria-expanded', String(!bereich.hidden)); knopf.classList.toggle('offen', !bereich.hidden); };
+  kopf.addEventListener('click', () => umschalten(kopf, details));
+  vorzKopf.addEventListener('click', () => umschalten(vorzKopf, vorzFlaeche));
   for (const k of ['block', 'disloz', 'nahe', 'besetzt']) opt[k].addEventListener('change', () => laden());
 
   const kandidaten = listenTabelle(flaeche, {
-    leerText: 'Keine Vorschläge',
+    leerText: 'Für diese Stunde gibt es keinen Vorschlag.',
     spalten: [
       { titel: 'Name', breite: 76, wert: (k) => k.name, zelle: (k, td) => { td.title = k.lang + (k.lage ? ` – ${k.lage}` : ''); td.classList.toggle('vt-rot', k.rot); td.classList.toggle('fett', k.benachrichtigen); } },
       ...stundenplanSpalten(),
-      { titel: 'Merker zur Stunde', breite: 70, wert: (k) => k.merker, zelle: (k, td) => { const c = merkerFarbe(k.merker); if (c) td.style.background = c; } },
-      { titel: 'Vertr.', breite: 52, klasse: 'rechts', wert: (k) => k.vertr }, { titel: 'Entfall', breite: 52, klasse: 'rechts', wert: (k) => k.entf },
-      { titel: 'Zähler', breite: 52, klasse: 'rechts', wert: (k) => k.zaehler, zelle: zaehlerZelle },
-      { titel: 'Zeitwunsch', breite: 40, klasse: 'mitte', wert: (k) => k.zw }, { titel: 'Jahressaldo', breite: 56, klasse: 'rechts', wert: (k) => k.jahr },
-      { titel: 'Kennzeichen', breite: 40, klasse: 'mitte', wert: (k) => (k.kennz ? 'K' : ''), zelle: (k, td) => { if (k.kennz) { td.title = k.kennzText; td.classList.add('vt-kennz'); } } },
-      { titel: 'reg. Bereitschaft', breite: 40, klasse: 'mitte', wert: (k) => k.regB }, { titel: 'Dep.', breite: 56, klasse: 'rechts', wert: (k) => k.dep },
-      { titel: 'Fach', breite: 38, klasse: 'mitte vt-haken', wert: (k) => (k.fach ? '✔' : '') }, { titel: 'Klasse', breite: 44, klasse: 'mitte vt-haken', wert: (k) => k.klasse },
-      { titel: 'Std./Tag', breite: 48, klasse: 'mitte', wert: (k) => k.stdTag }, { titel: 'Woche', breite: 46, klasse: 'mitte', wert: (k) => k.woche },
-      { titel: 'Monat', breite: 46, klasse: 'mitte', wert: (k) => k.monat }, { titel: 'Pkt.', breite: 40, klasse: 'rechts', wert: (k) => k.punkte },
+      { titel: 'Belastung', breite: 72, hinweis: 'Belastung zur Stunde (0 günstig bis 9 ungünstig) bzw. Bereitschaft', wert: (k) => k.merker, zelle: (k, td) => { const c = belastungKlasse(k.merker); if (c) td.classList.add(c); } },
+      { titel: 'Vertr.', breite: 56, klasse: 'rechts', hinweis: 'Vertretungen im Durchrechnungszeitraum', wert: (k) => k.vertr }, { titel: 'Entfall', breite: 56, klasse: 'rechts', wert: (k) => k.entf },
+      { titel: 'Zähler', breite: 56, klasse: 'rechts', hinweis: 'Vertretungszähler', wert: (k) => k.zaehler, zelle: zaehlerZelle },
+      { titel: 'Zeitwunsch', breite: 76, klasse: 'mitte', wert: (k) => k.zw }, { titel: 'Jahressaldo', breite: 80, klasse: 'rechts', wert: (k) => k.jahr },
+      { titel: 'Kennz.', breite: 52, klasse: 'mitte', hinweis: 'Kennzeichen der Lehrkraft', wert: (k) => (k.kennz ? 'K' : ''), zelle: (k, td) => { if (k.kennz) { td.title = k.kennzText; td.classList.add('vt-kennz'); } } },
+      { titel: 'Bereitschaft', breite: 82, klasse: 'mitte', hinweis: 'Regelmäßige Bereitschaft', wert: (k) => k.regB }, { titel: 'Konto', breite: 60, klasse: 'rechts', hinweis: 'Stundenkonto', wert: (k) => k.dep },
+      { titel: 'Fach', breite: 44, klasse: 'mitte vt-haken', hinweis: 'Lehrkraft unterrichtet das Fach', wert: (k) => haken(k.fach) }, { titel: 'Klasse', breite: 52, klasse: 'mitte vt-haken', hinweis: 'Lehrkraft unterrichtet die Klasse', wert: (k) => k.klasse },
+      { titel: 'Std./Tag', breite: 60, klasse: 'rechts', wert: (k) => k.stdTag }, { titel: 'Woche', breite: 52, klasse: 'rechts', wert: (k) => k.woche },
+      { titel: 'Monat', breite: 52, klasse: 'rechts', wert: (k) => k.monat }, { titel: 'Punkte', breite: 56, klasse: 'rechts', wert: (k) => k.punkte },
       { titel: 'Kriterien', wert: (k) => k.kriterien },
     ],
     beiDoppelklick: () => uebernehmen(),
   });
   const betreuungen = listenTabelle(flaeche, {
-    leerText: 'Keine Betreuungen möglich',
+    leerText: 'Für diese Stunde ist keine Betreuung möglich.',
     spalten: [
       { titel: 'Name', breite: 76, wert: (k) => k.name, zelle: (k, td) => { td.title = k.lang; } }, ...stundenplanSpalten(),
-      { titel: 'Raum', breite: 50, wert: (k) => k.raum }, { titel: 'Klasse', breite: 56, wert: (k) => k.klasse }, { titel: 'Fach', breite: 46, wert: (k) => k.fach },
-      { titel: 'Zähler', breite: 52, klasse: 'rechts', wert: (k) => k.zaehler, zelle: zaehlerZelle }, { titel: 'Zeitwunsch', breite: 40, klasse: 'mitte', wert: (k) => k.zw },
-      { titel: 'Jahressaldo', breite: 56, klasse: 'rechts', wert: (k) => k.jahr }, { titel: 'Kennzeichen', breite: 40, klasse: 'mitte', wert: (k) => (k.kennz ? 'K' : '') },
-      { titel: 'Kopplung', breite: 50, klasse: 'mitte vt-haken', wert: (k) => (k.kopplung ? '✔' : '') }, { titel: 'Nähe', breite: 110, wert: (k) => k.naehe },
-      { titel: 'Betr. heute', breite: 60, klasse: 'mitte', wert: (k) => k.heute },
+      { titel: 'Raum', breite: 60, wert: (k) => k.raum }, { titel: 'Klasse', breite: 60, wert: (k) => k.klasse }, { titel: 'Fach', breite: 52, wert: (k) => k.fach },
+      { titel: 'Zähler', breite: 56, klasse: 'rechts', wert: (k) => k.zaehler, zelle: zaehlerZelle }, { titel: 'Zeitwunsch', breite: 76, klasse: 'mitte', wert: (k) => k.zw },
+      { titel: 'Jahressaldo', breite: 80, klasse: 'rechts', wert: (k) => k.jahr }, { titel: 'Kennz.', breite: 52, klasse: 'mitte', wert: (k) => (k.kennz ? 'K' : '') },
+      { titel: 'Gekoppelt', breite: 70, klasse: 'mitte vt-haken', wert: (k) => haken(k.kopplung) }, { titel: 'Nähe', breite: 110, wert: (k) => k.naehe },
+      { titel: 'Heute', breite: 52, klasse: 'rechts', hinweis: 'Betreuungen heute', wert: (k) => k.heute },
     ],
     beiDoppelklick: () => betreuung(),
   });
   const raeume = listenTabelle(flaeche, {
-    leerText: 'Keine Räume',
+    leerText: 'Kein passender Raum frei.',
     zeilenKlasse: (r) => (r.besetzt ? 'vt-besetzt' : r.ar || r.sr ? 'vt-ausweich' : ''),
     spalten: [
-      { titel: 'Rm', breite: 70, wert: (r) => r.name, zelle: (r, td) => { td.title = r.lang; } }, { titel: 'Kap', breite: 44, klasse: 'rechts', wert: (r) => r.kap },
-      { titel: 'Ausw-Rm.', breite: 56, klasse: 'mitte vt-haken', wert: (r) => (r.ar ? '✔' : '') }, { titel: 'Ausw-Sr.', breite: 56, klasse: 'mitte vt-haken', wert: (r) => (r.sr ? '✔' : '') },
-      { titel: 'Besetzt', breite: 56, klasse: 'mitte', wert: (r) => (r.gesperrt ? 'gesperrt' : r.besetzt ? 'X' : '') }, { titel: 'Raumgruppen', breite: 90, wert: (r) => r.rg },
-      { titel: 'Gang', breite: 60, wert: (r) => r.gang }, { titel: 'Belegung', wert: (r) => r.belegung },
+      { titel: 'Raum', breite: 70, wert: (r) => r.name, zelle: (r, td) => { td.title = r.lang; } }, { titel: 'Plätze', breite: 56, klasse: 'rechts', wert: (r) => r.kap },
+      { titel: 'Ausweichraum', breite: 96, klasse: 'mitte vt-haken', wert: (r) => haken(r.ar) }, { titel: 'Ausweich-Fachraum', breite: 120, klasse: 'mitte vt-haken', wert: (r) => haken(r.sr) },
+      { titel: 'Belegt', breite: 64, klasse: 'mitte', wert: (r) => (r.gesperrt ? 'gesperrt' : r.besetzt ? 'belegt' : '') }, { titel: 'Raumgruppen', breite: 96, wert: (r) => r.rg },
+      { titel: 'Bereich', breite: 70, wert: (r) => r.gang }, { titel: 'Belegung', wert: (r) => r.belegung },
     ],
     beiDoppelklick: () => raum(),
   });
   const vorziehungen = listenTabelle(vorzFlaeche, {
-    leerText: 'Keine Vorziehungen möglich',
+    leerText: 'Keine Vorziehung möglich.',
     spalten: [
-      { titel: 'Name', breite: 70, wert: (v) => v.lehrer }, { titel: 'Tag', breite: 76, wert: (v) => v.tag }, { titel: 'Std.', breite: 40, klasse: 'mitte', wert: (v) => String(v.stunde) },
+      { titel: 'Lehrkraft', breite: 76, wert: (v) => v.lehrer }, { titel: 'Tag', breite: 80, wert: (v) => v.tag }, { titel: 'Std.', breite: 44, klasse: 'rechts', wert: (v) => String(v.stunde) },
       { titel: 'Klasse', breite: 60, wert: (v) => v.klassen }, { titel: 'Fach', breite: 56, wert: (v) => v.fach }, { titel: 'Raum', breite: 50, wert: (v) => v.raum },
       { titel: 'Art', wert: (v) => v.art, zelle: (v, td) => { td.title = v.beschreibung; } },
     ],
@@ -158,15 +163,14 @@ function vorschlagFenster(f) {
   }
 
   if (schreiben) {
-    f.werkzeug({ text: 'Übernehmen', symbol: 'beispiel', titel: 'Vertreter übernehmen (Doppelklick, Enter)', aktion: () => [uebernehmen, betreuung, raum][tabs.index]() });
-    f.werkzeug({ text: 'Entfall', symbol: 'loeschen', titel: 'Entfall', aktion: async () => { if (!auswahl) return; await mitRueckfragen(vpfad('/entfall'), { ids: ids() }, { quelle: f.id }); await nachAktion(true); } });
-    f.werkzeug({ text: 'Vertr. o. Lehrkr.', symbol: 'plus', titel: 'Vertretung ohne Lehrkraft', aktion: async () => { if (!auswahl) return; await api.post(vpfad('/ohnelehrer'), { ids: ids() }, { quelle: f.id }); await nachAktion(true); } });
+    f.werkzeug({ text: 'Übernehmen', titel: 'Gewählte Lehrkraft bzw. gewählten Raum übernehmen (Doppelklick, Enter)', aktion: () => [uebernehmen, betreuung, raum][tabs.index]() });
+    f.werkzeug({ text: 'Entfall', titel: 'Unterricht entfällt', aktion: async () => { if (!auswahl) return; await mitRueckfragen(vpfad('/entfall'), { ids: ids() }, { quelle: f.id }); await nachAktion(true); } });
+    f.werkzeug({ text: 'Ohne Lehrkraft', titel: 'Stunde findet ohne Lehrkraft statt', aktion: async () => { if (!auswahl) return; await api.post(vpfad('/ohnelehrer'), { ids: ids() }, { quelle: f.id }); await nachAktion(true); } });
     f.trenner();
   }
-  const wk = f.werkzeug({ text: 'Weiter zur nächsten offenen', symbol: 'pfeil_runter', nurSymbol: true, titel: 'Nach dem Zuweisen automatisch die nächste offene Vertretung wählen', aktion: () => { weiter = !weiter; wk.classList.toggle('gedrueckt', weiter); } });
-  wk.classList.add('gedrueckt');
-  const ak = f.werkzeug({ text: 'Alle Lehrer', symbol: 'lehrer', titel: 'Auch gesperrte und weit entfernte Lehrer anzeigen', aktion: () => { alle = !alle; ak.classList.toggle('gedrueckt', alle); laden(); } });
-  f.werkzeug({ text: 'Einstellungen', symbol: 'einstellungen', nurSymbol: true, titel: 'Einstellungen Vertretungsvorschlag', aktion: () => import('./weitere.js').then((w) => w.einstellungenDialog(2)).then(() => laden()) });
+  werkzeugSchalter(f, 'Danach nächste offene', { checked: true, titel: 'Nach dem Zuweisen automatisch die nächste offene Vertretung wählen', beiAenderung: (w) => { weiter = w; } });
+  werkzeugSchalter(f, 'Alle Lehrkräfte', { titel: 'Auch gesperrte und weit entfernte Lehrkräfte anzeigen', beiAenderung: (w) => { alle = w; laden(); } });
+  f.werkzeug({ text: 'Einstellungen', titel: 'Einstellungen des Vertretungsvorschlags', aktion: () => import('./weitere.js').then((w) => w.einstellungenDialog(2)).then(() => laden()) }).classList.add('rechts');
 
   let ladeNr = 0;
   async function laden() {
@@ -174,7 +178,7 @@ function vorschlagFenster(f) {
     if (!auswahl?.id) {
       daten = null;
       kopf.lastChild.textContent = 'Keine Vertretung markiert';
-      details.textContent = 'Bitte im Vertretungsfenster oder im tagesaktuellen Stundenplan eine Vertretung markieren.';
+      details.textContent = 'In der Vertretungsliste oder in einem Tagesplan eine Vertretung markieren.';
       tabellen.forEach((t) => t.setzen([]));
       vorziehungen.setzen([]);
       zaehlen();
@@ -185,7 +189,7 @@ function vorschlagFenster(f) {
     try { d = await api.get(vpfad(`/vorschlag/${auswahl.id}?${q}`)); } catch (e) { if (e.status === 404) { auswahl = null; return laden(); } throw e; }
     if (n !== ladeNr) return undefined;
     daten = d;
-    const mehr = auswahl.ids?.length > 1 ? `   (+${auswahl.ids.length - 1} weitere markiert)` : '';
+    const mehr = auswahl.ids?.length > 1 ? ` · ${auswahl.ids.length - 1} weitere markiert` : '';
     kopf.lastChild.textContent = d.kopf + mehr;
     leeren(details).append(...d.details.split('\n').map((z) => h('div', null, z)));
     opt.block.disabled = !d.optionen.block;
@@ -199,7 +203,7 @@ function vorschlagFenster(f) {
     return undefined;
   }
   function zaehlen() {
-    tabs.texte([`Vertretungsvorschläge (${kandidaten.zeilen.length})`, `Betreuungen (${betreuungen.zeilen.length})`, `Räume (${raeume.zeilen.length})`]);
+    tabs.texte([`Lehrkräfte (${kandidaten.zeilen.length})`, `Betreuungen (${betreuungen.zeilen.length})`, `Räume (${raeume.zeilen.length})`]);
     vorzKopf.lastChild.textContent = `Vorziehungen (${vorziehungen.zeilen.length})`;
   }
   f.an('vertretung.auswahl', (a) => { auswahl = a; laden().catch(fehlerMelden); });

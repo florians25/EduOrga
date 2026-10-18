@@ -16,7 +16,9 @@ html.nav-eingeklappt .navigation { visibility: hidden; }
   grid-area: nav; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
   background: var(--up-schiefer-25); border-right: 1px solid var(--rand); user-select: none;
 }
-.nav-kopf { height: 56px; flex: none; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--rand); }
+.nav-kopf { height: 56px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 18px; border-bottom: 1px solid var(--rand); }
+.nav-zeichen { display: inline-flex; flex: none; }
+.nav-zeichen svg { width: 26px; height: 26px; }
 .nav-marke { display: flex; align-items: baseline; gap: 6px; font-size: 17px; letter-spacing: -.01em; white-space: nowrap; color: var(--up-marine-900); }
 .nav-marke b { font-weight: var(--fett); }
 .nav-marke span { color: var(--text-leise); font-weight: var(--normal); }
@@ -184,7 +186,8 @@ html.nav-eingeklappt .navigation { visibility: hidden; }
 .anmeldung { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--up-hintergrund); }
 .anm-flaeche { width: 100%; max-width: 400px; background: #fff; border: 1px solid var(--rand); border-radius: 8px; padding: 36px 36px 32px; }
 .anm-formular { display: flex; flex-direction: column; gap: 14px; }
-.anm-marke { font-size: 18px; color: var(--text-leise); margin-bottom: 18px; letter-spacing: -.01em; }
+.anm-marke { display: flex; align-items: center; gap: 10px; font-size: 18px; color: var(--text-leise); margin-bottom: 18px; letter-spacing: -.01em; }
+.anm-marke svg { width: 32px; height: 32px; }
 .anm-marke b { color: var(--up-marine-900); font-weight: var(--fett); }
 .anm-formular h1 { font-size: 20px; margin: 0 0 4px; }
 .anm-formular label { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: var(--mittel); color: var(--text-2); }

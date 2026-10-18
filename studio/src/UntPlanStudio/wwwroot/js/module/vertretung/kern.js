@@ -109,7 +109,7 @@ export async function rueckfrage(f) {
   const knoepfe = f.optionen.map((o, i) => ({ text: o, wert: i, primaer: i === 0 }));
   if (f.optionen.length > 2) knoepfe.push({ text: 'Abbrechen', wert: null });
   const inhalt = h('div', { class: 'vt-frage' }, f.text.split('\n').map((z) => (z ? h('p', null, z) : h('br'))));
-  return dialog({ titel: 'UntPlan - Frage', inhalt, knoepfe, breite: f.optionen.some((o) => o.length > 20) ? '560px' : undefined });
+  return dialog({ titel: 'Rückfrage', inhalt, knoepfe, breite: f.optionen.some((o) => o.length > 20) ? '560px' : undefined });
 }
 
 /** POST mit Rückfragen; liefert die Antwort oder null (abgebrochen). */

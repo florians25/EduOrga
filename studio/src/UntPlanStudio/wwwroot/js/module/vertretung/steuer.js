@@ -1,8 +1,10 @@
-// Steuerelemente der Vertretungsplanung: Zeitraum (Tag / Woche / Von-Bis wie die Zeitraumauswahl), Reiter mit
-// Anzahlen, einfache Listen-Tabelle für Fenster mit eigener Darstellung (Vorschlag, Bereitschaften, Kalender).
+// Steuerelemente der Vertretungsplanung: Zeitraum (Tag / Woche / frei), Filterleiste (Beschriftung + Feld, Schalter),
+// Menüknopf „Weitere Aktionen“, Textreiter mit Anzahlen, einfache Listen-Tabelle für Ansichten mit eigener Darstellung
+// (Vorschlag, Bereitschaften, Kalender).
 import { h, leeren } from '../../kern/dom.js';
 import { symbol } from '../../kern/symbole.js';
 import { an } from '../../kern/ereignisse.js';
+import { menue } from '../../kern/dialog.js';
 import { planungsdatum, montag, plusTage, datumSetzen } from './kern.js';
 
 /**
@@ -10,13 +12,13 @@ import { planungsdatum, montag, plusTage, datumSetzen } from './kern.js';
  * beiAenderung(von, bis, art) wird bei jeder Änderung gerufen. Liefert { el, von, bis, art, setzen(von,bis,art) }.
  */
 export function zeitraumAuswahl(f, { art = 'tag', beiAenderung, tageProWoche = 5 }) {
-  const wahl = h('select', { class: 'eingabe', title: 'Zeitraum' },
-    h('option', { value: 'tag' }, 'Tag'), h('option', { value: 'woche' }, 'Woche'), h('option', { value: 'vonbis' }, 'Von-Bis'));
+  const wahl = h('select', { class: 'eingabe vt-zr-art', title: 'Zeitraum' },
+    h('option', { value: 'tag' }, 'Tag'), h('option', { value: 'woche' }, 'Woche'), h('option', { value: 'vonbis' }, 'Zeitraum'));
   const von = h('input', { class: 'eingabe', type: 'date', title: 'Von' });
-  const bis = h('input', { class: 'eingabe', type: 'date', title: 'Bis' });
-  const zurueck = h('button', { class: 'wz-knopf nur-symbol', type: 'button', title: 'Zurück' }, symbol('pfeil_links'));
-  const vor = h('button', { class: 'wz-knopf nur-symbol', type: 'button', title: 'Weiter' }, symbol('pfeil_rechts'));
-  const el = h('span', { class: 'vt-zeitraum' }, wahl, zurueck, von, vor, h('span', { class: 'vt-bis' }, '–'), bis);
+  const bis = h('input', { class: 'eingabe vt-zr-bis', type: 'date', title: 'Bis' });
+  const zurueck = h('button', { class: 'vt-pfeil', type: 'button', title: 'Zurück' }, symbol('pfeil_links'));
+  const vor = h('button', { class: 'vt-pfeil', type: 'button', title: 'Weiter' }, symbol('pfeil_rechts'));
+  const el = h('span', { class: 'vt-zeitraum' }, wahl, h('span', { class: 'vt-zr-datum' }, zurueck, von, vor), h('span', { class: 'vt-bis' }, 'bis'), bis);
   const z = { el, von: null, bis: null, art };
   const anwenden = (melden = true) => {
     wahl.value = z.art;
@@ -50,7 +52,44 @@ export function zeitraumAuswahl(f, { art = 'tag', beiAenderung, tageProWoche = 5
   return z;
 }
 
-/** Reiterleiste (wie die Reiter der Desktop-Fenster). texte: Array; beiWahl(index). */
+/** Filterleiste über einer Liste: Gruppen aus Beschriftung und Feld(ern) in einer Zeile. */
+export function filterleiste(...gruppen) { return h('div', { class: 'vt-kopf' }, ...gruppen); }
+
+/** Gruppe der Filterleiste: Beschriftung links, Felder rechts daneben. */
+export function filterGruppe(titel, ...felder) {
+  return h('span', { class: 'vt-gruppe' }, titel ? h('span', { class: 'vt-gtitel' }, titel) : null, ...felder);
+}
+
+/** Kontrollkästchen als Schalter mit Text. Liefert das Label; das Eingabefeld hängt als .eingabe daran. */
+export function schalter(text, { checked = false, titel, disabled = false, klasse = '' } = {}) {
+  const input = h('input', { type: 'checkbox', role: 'switch', checked, disabled });
+  const el = h('label', { class: `vt-schalter${klasse ? ` ${klasse}` : ''}`, title: titel || null }, input, h('span', null, text));
+  el.eingabe = input;
+  return el;
+}
+
+/** Textknopf der Werkzeugleiste, der ein Menü öffnet (z. B. „Weitere Aktionen“). eintraege: Array oder Funktion. */
+export function menueKnopf(f, text, eintraege, titel) {
+  const k = f.werkzeug({ text, titel: titel || text, aktion: async () => {
+    const r = k.getBoundingClientRect();
+    const liste = typeof eintraege === 'function' ? await eintraege() : eintraege;
+    menue(r.left, r.bottom + 4, liste.map((e) => (e && e.symbol ? { ...e, symbol: undefined } : e)));
+  } });
+  k.classList.add('vt-menueknopf');
+  k.setAttribute('aria-haspopup', 'menu');
+  k.append(h('span', { class: 'vt-chevron' }, symbol('pfeil_runter')));
+  return k;
+}
+
+/** Schalter in der Werkzeugleiste (statt eines gedrückten Symbolknopfs). beiAenderung(wert). */
+export function werkzeugSchalter(f, text, { checked = false, titel, beiAenderung } = {}) {
+  const s = schalter(text, { checked, titel, klasse: 'vt-wz-schalter' });
+  s.eingabe.addEventListener('change', () => beiAenderung?.(s.eingabe.checked));
+  f.werkzeuge.append(s);
+  return s;
+}
+
+/** Textreiter mit 2-px-Unterstrich. texte: Array; beiWahl(index). */
 export function reiter(texte, beiWahl, aktiv = 0) {
   const el = h('div', { class: 'vt-reiter', role: 'tablist' });
   let index = aktiv;
@@ -78,7 +117,8 @@ export function reiter(texte, beiWahl, aktiv = 0) {
  * spalten: [{ titel, breite, klasse, wert(z) → string|Node, zelle(z, td) }].
  */
 export function listenTabelle(eltern, { spalten, beiWahl, beiDoppelklick, kontextmenue, leerText = 'Keine Einträge', zeilenKlasse }) {
-  const kopf = h('tr', null, spalten.map((s) => h('th', { style: s.breite ? { width: `${s.breite}px` } : null, title: s.hinweis || s.titel }, s.titel)));
+  const zahl = (s) => /(^|\s)rechts(\s|$)/.test(s.klasse || '');
+  const kopf = h('tr', null, spalten.map((s) => h('th', { class: zahl(s) ? 'rechts' : /mitte/.test(s.klasse || '') ? 'mitte' : null, style: s.breite ? { width: `${s.breite}px` } : null, title: s.hinweis || s.titel }, s.titel)));
   const koerper = h('tbody');
   const leer = h('div', { class: 'vt-leer' });
   const el = h('div', { class: 'vt-tabelle', tabindex: '0' }, h('table', null, h('thead', null, kopf), koerper), leer);

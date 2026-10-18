@@ -1,7 +1,7 @@
-// Stundenpläne im Vertretungsmodus (tagesaktuell): Woche des Planungsdatums für Klasse, Lehrkraft, Raum oder Fach mit allen Vertretungen –
-// Änderungen rot, Entfälle durchgestrichen, offene Stunden „???“. Drag & Drop: Verlegen, Tauschen („Was wollen Sie …
-// machen?“), Verdrängen; Vormerkungen in den Plan ziehen. Kontextmenü: Stunde entfallen lassen, Entfall rückgängig (auch Block),
-// neben den Plan legen (Vormerkung), Text, Änderungen rückgängig, Vertretungsvorschlag, Sondereinsatz.
+// Tagespläne im Vertretungsmodus: Woche des Planungsdatums für Klasse, Lehrkraft, Raum oder Fach mit allen Vertretungen –
+// Änderungen hervorgehoben, Entfälle durchgestrichen, offene Stunden „???“. Drag & Drop: Verlegen, Tauschen (mit Rückfrage),
+// Verdrängen; Vormerkungen in den Plan ziehen. Kontextmenü: Stunde entfallen lassen, Entfall aufheben (auch Block),
+// als Vormerkung beiseitelegen, Text, Änderungen zurücknehmen, Vertretungsvorschlag, Sondereinsatz.
 import { h, leeren } from '../../kern/dom.js';
 import { api } from '../../kern/api.js';
 import { zustand, darfSchreiben } from '../../kern/zustand.js';
@@ -10,6 +10,7 @@ import { menue, hinweis, fehlerMelden, laden as ladeAnzeige, formular } from '..
 import { fensterverwaltung } from '../../kern/fenster.js';
 import { elementAuswahl } from '../unterricht.js';
 import { vpfad, planungsdatum, mitRueckfragen, auswahlMelden } from './kern.js';
+import { menueKnopf } from './steuer.js';
 
 export const TYP_VORMERKUNG = 'application/x-untplan-vormerkung';
 const TYP_TAGESSTUNDE = 'application/x-untplan-tagesstunde';
@@ -158,30 +159,30 @@ function planFenster(f, p) {
     const kandidaten = [];
     for (const x of [e, ...(zelle?.eintraege || [])]) for (const a of x?.aufhebbar || []) if (!kandidaten.some((k) => k.a.u === a.u && k.a.zeile === a.zeile)) kandidaten.push({ x, a });
     for (const { x, a } of kandidaten) {
-      const name = kandidaten.length > 1 ? `Entfall rückgängig: ${x.fach} ${x.lehrerAlt || x.lehrer} ${x.klassen}` : 'Entfall rückgängig';
+      const name = kandidaten.length > 1 ? `Entfall aufheben: ${x.fach} ${x.lehrerAlt || x.lehrer} ${x.klassen}` : 'Entfall aufheben';
       const p2 = { datum: t.datum, stunde, unterricht: a.u, zeile: a.zeile };
       if (a.block.length > 1) {
         liste.push({ text: `${name} (Block ${a.block[0]}.–${a.block[a.block.length - 1]}. Stunde)`, symbol: 'rueckgaengig', deaktiviert: !schreiben, aktion: () => aendern('/plan/entfallrueckgaengig', { ...p2, block: true }) });
         liste.push({ text: `${name} (nur ${stunde}. Stunde)`, deaktiviert: !schreiben, aktion: () => aendern('/plan/entfallrueckgaengig', p2) });
       } else liste.push({ text: name, symbol: 'rueckgaengig', deaktiviert: !schreiben, aktion: () => aendern('/plan/entfallrueckgaengig', p2) });
     }
-    liste.push({ text: findet && e?.u ? 'Sondereinsatz …' : 'Sondereinsatz …', symbol: 'neu', deaktiviert: !schreiben, aktion: () => import('./weitere.js').then((w) => w.sondereinsatzDialog({ datum: t.datum, stunde, klassen: typ === 'klasse' ? plan.element.kurz : '', lehrer: typ === 'lehrer' ? plan.element.kurz : '' })) });
+    liste.push({ text: 'Sondereinsatz …', deaktiviert: !schreiben, aktion: () => import('./weitere.js').then((w) => w.sondereinsatzDialog({ datum: t.datum, stunde, klassen: typ === 'klasse' ? plan.element.kurz : '', lehrer: typ === 'lehrer' ? plan.element.kurz : '' })) });
     liste.push({ text: 'Text …', deaktiviert: !schreiben || !findet || !e?.u, aktion: async () => {
-      const w = await formular('Text zur Stunde', [{ name: 'text', titel: 'Text', wert: e.text || '', hinweis: 'Wird im Stundenplan und im Vertretungsplan ausgegeben.' }]);
+      const w = await formular('Text zur Stunde', [{ name: 'text', titel: 'Text', wert: e.text || '', hinweis: 'Wird im Stundenplan und im Vertretungsplan ausgegeben.' }], { okText: 'Speichern' });
       if (w) await aendern('/plan/text', { ...pos, text: w.text });
     } });
     liste.push(null);
-    if (findet && e?.u) liste.push({ text: 'Neben den Plan legen (Vormerkung)', symbol: 'rueckgaengig', deaktiviert: !schreiben, aktion: () => aendern('/plan/vormerken', pos) });
+    if (findet && e?.u) liste.push({ text: 'Als Vormerkung beiseitelegen', deaktiviert: !schreiben, aktion: () => aendern('/plan/vormerken', pos) });
     if (e?.vtr) {
-      liste.push({ text: 'Vertretungsvorschlag', symbol: 'vertretung', aktion: () => { auswahlMelden({ id: e.vtr, ids: [e.vtr], zeile: { v: e.vtr }, quelle: f.id }); fensterverwaltung.oeffnen('vertretung.vorschlag', {}); } });
-      liste.push({ text: 'Änderungen rückgängig', symbol: 'rueckgaengig', deaktiviert: !schreiben, aktion: () => api.post(vpfad('/plan/aenderungenrueckgaengig'), { ids: [e.vtr] }, { quelle: f.id }).then(laden) });
+      liste.push({ text: 'Vertretungsvorschlag', aktion: () => { auswahlMelden({ id: e.vtr, ids: [e.vtr], zeile: { v: e.vtr }, quelle: f.id }); fensterverwaltung.oeffnen('vertretung.vorschlag', {}); } });
+      liste.push({ text: 'Änderungen zurücknehmen', deaktiviert: !schreiben, aktion: () => api.post(vpfad('/plan/aenderungenrueckgaengig'), { ids: [e.vtr] }, { quelle: f.id }).then(laden) });
     }
-    if (typ === 'lehrer' && element) liste.push({ text: `Abwesenheit für ${plan.element.kurz} am ${t.text} …`, symbol: 'abwesenheit', deaktiviert: !schreiben, aktion: async () => {
+    if (typ === 'lehrer' && element) liste.push({ text: `${plan.element.kurz} am ${t.text} abwesend melden`, deaktiviert: !schreiben, aktion: async () => {
       const { absenzenSpeichern } = await import('./absenzen.js');
       await absenzenSpeichern('lehrer', [{ id: 0, element: plan.element.kurz, von: t.datum, bis: t.datum, sv: 1, sb: 99 }], [], f.id, 'Abwesenheit eingeben');
       await laden();
     } });
-    menue(ev.clientX, ev.clientY, liste.filter((x, i, a) => !(x === null && (i === a.length - 1 || a[i + 1] === null))));
+    menue(ev.clientX, ev.clientY, liste.filter((x, i, a) => !(x === null && (i === a.length - 1 || a[i + 1] === null))).map((x) => (x?.symbol ? { ...x, symbol: undefined } : x)));
   }
   async function aendern(pfad, daten, rueckfragen = false) {
     if (rueckfragen) await mitRueckfragen(vpfad(pfad), daten, { quelle: f.id });
@@ -189,12 +190,23 @@ function planFenster(f, p) {
     await laden();
   }
 
-  // ---- Werkzeugleiste ----
-  const vk = f.werkzeug({ text: '', symbol: 'verknuepfen', nurSymbol: true, titel: 'Fensterverknüpfung: folgt der gewählten Vertretung bzw. dem gewählten Element', aktion: () => { verknuepft = !verknuepft; vk.classList.toggle('gedrueckt', verknuepft); f.parameterSetzen({ verknuepft }); } });
-  vk.classList.toggle('gedrueckt', verknuepft);
-  const kp = f.werkzeug({ text: '', symbol: 'untereinander', nurSymbol: true, titel: 'Kleiner Plan (kompakt)', aktion: () => { kompakt = !kompakt; flaeche.classList.toggle('kompakt', kompakt); kp.classList.toggle('gedrueckt', kompakt); f.parameterSetzen({ kompakt }); zeichnen(); } });
-  kp.classList.toggle('gedrueckt', kompakt);
-  f.werkzeug({ text: 'Vormerkungen', symbol: 'info', nurSymbol: true, titel: 'Vormerkungen (in den Plan ziehen)', aktion: () => fensterverwaltung.oeffnen('vertretung.vormerkungen', {}) });
+  // ---- Werkzeugleiste: Element (vorn), Optionen ----
+  menueKnopf(f, 'Optionen', () => [
+    { text: 'Folgt der gewählten Vertretung', haken: verknuepft, aktion: () => { verknuepft = !verknuepft; f.parameterSetzen({ verknuepft }); legende(); } },
+    { text: 'Kompakt', haken: kompakt, aktion: () => { kompakt = !kompakt; flaeche.classList.toggle('kompakt', kompakt); f.parameterSetzen({ kompakt }); zeichnen(); } },
+    null,
+    { text: 'Vormerkungen …', aktion: () => fensterverwaltung.oeffnen('vertretung.vormerkungen', {}) },
+  ], 'Verknüpfung mit der Auswahl, kompakte Darstellung, Vormerkungen');
+
+  /** Kopfzeile: Woche, Legende der Statusfarben, Hinweis auf Vormerkungen. */
+  function legende() {
+    if (!plan) { kopf.replaceChildren(); return; }
+    const lg = (k, t) => h('span', { class: `vt-lg ${k}` }, h('i'), t);
+    kopf.replaceChildren(h('span', { class: 'vt-pi-woche' }, `Woche ${plan.woche}`),
+      lg('vt-lg-aenderung', 'Vertretung'), lg('vt-lg-entfall', 'Entfall'), lg('vt-lg-offen', 'Offen'),
+      plan.vormerkungen ? h('span', { class: 'vt-pi-vm' }, `${plan.vormerkungen} offene Vormerkung${plan.vormerkungen === 1 ? '' : 'en'}`) : null,
+      verknuepft ? null : h('span', { class: 'vt-pi-vm', title: 'Der Plan folgt nicht der gewählten Vertretung' }, 'nicht verknüpft'));
+  }
 
   let ladeNr = 0;
   async function laden() {
@@ -205,12 +217,12 @@ function planFenster(f, p) {
       const d = await api.get(vpfad(`/plan/${typ}/${element}?datum=${planungsdatum()}`));
       if (n !== ladeNr) return;
       plan = d;
-      f.titel(`${TYPEN[typ][0]} ${d.element.kurz}${d.element.lang ? ` (${d.element.lang})` : ''} / Stundenplan (tagesaktuell)`);
-      kopf.textContent = `Woche ${d.woche} · Tagesaktueller Stundenplan: Änderungen rot, Entfälle durchgestrichen${d.vormerkungen ? ` · ${d.vormerkungen} offene Vormerkung(en)` : ''}`;
+      f.titel(`Tagesplan ${TYPEN[typ][0]} ${d.element.kurz}${d.element.lang ? ` – ${d.element.lang}` : ''}`);
+      legende();
       zeichnen();
       const offen = d.zellen.reduce((a, z) => a + z.eintraege.filter((e) => e.offen && !e.durch).length, 0);
       const entfall = d.zellen.reduce((a, z) => a + z.eintraege.filter((e) => e.status === 'Entfall').length, 0);
-      f.fuss.replaceChildren(h('span', null, `${offen} offen`), h('span', null, `${entfall} Entfall`), h('span', { class: 'rechts' }, d.zeitraster ? '' : ''));
+      f.fuss.replaceChildren(h('span', null, `${offen} offen`), h('span', null, `${entfall} ${entfall === 1 ? 'Entfall' : 'Entfälle'}`));
     } finally { weg(); }
   }
 
@@ -237,7 +249,7 @@ function planFenster(f, p) {
 
 export const fenster = {
   'vertretung.plan': {
-    titel: 'Stundenplan (tagesaktuell)', symbol: 'stundenplan', breite: 720, hoehe: 520,
+    titel: 'Tagesplan', symbol: 'stundenplan', breite: 720, hoehe: 520,
     symbolFuer: (p) => TYPEN[p.typ]?.[1] || 'stundenplan',
     erstellen: planFenster,
   },

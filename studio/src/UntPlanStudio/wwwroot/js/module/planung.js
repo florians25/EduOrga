@@ -1,7 +1,7 @@
-// Modul „Planung“: manuelles Planen im Stundenplanfenster – Blöcke/Doppelstunden verschieben und setzen
-// (mit „Soll behindernder Unterricht entplant werden?“), Mehrfachauswahl (entplanen, fixieren), Kontextmenüs, Raum zuordnen /
-// löschen (Raumliste), Tauschvorschläge, alle Stunden entplanen bzw. fixieren.
-// Das Stundenplanfenster (stundenplan.js) nutzt die hier exportierten Funktionen; die Menüband-Einträge planung.* stehen unten.
+// Modul „Planung“: manuelles Planen im Stundenplan – Blöcke/Doppelstunden verschieben und setzen (mit Rückfrage, ob
+// behindernder Unterricht entplant werden soll), Mehrfachauswahl (entplanen, fixieren), Kontextmenüs, Raum zuordnen bzw.
+// entfernen (Raumliste), Tauschvorschläge, alle Stunden entplanen bzw. fixieren.
+// Die Stundenplanansicht (stundenplan.js) nutzt die hier exportierten Funktionen; die Befehle planung.* stehen unten.
 import { h, leeren } from '../kern/dom.js';
 import { api } from '../kern/api.js';
 import { zustand, darfSchreiben } from '../kern/zustand.js';
@@ -9,6 +9,7 @@ import { dialog, frage, hinweis, fehlerMelden, laden, meldung } from '../kern/di
 import { fensterverwaltung } from '../kern/fenster.js';
 import { befehl } from '../kern/modulsystem.js';
 import { symbol } from '../kern/symbole.js';
+import { schalter } from './unterricht.js';
 
 // ---------------------------------------------------------------------------------------------
 // Hilfen
@@ -28,11 +29,11 @@ export async function mitRueckfrage(pfad, daten, quelle) {
   let antwort = await api.post(api.dok(pfad), daten, { quelle });
   if (antwort?.ok === false && antwort.frage) {
     const wahl = await dialog({
-      titel: 'Behindernder Unterricht',
+      titel: 'Stunde ist belegt',
       inhalt: h('div', { class: 'pl-frage' }, h('pre', null, antwort.frage),
-        h('p', { class: 'pl-leise' }, 'Ja: behindernden Unterricht entplanen (er erscheint unter „nicht verplant“) · Nein: trotzdem ausführen – die Kollision bleibt bestehen')),
-      knoepfe: [{ text: 'Ja', wert: 'entplanen', primaer: true }, { text: 'Nein', wert: 'kollision' }, { text: 'Abbrechen', wert: null }],
-      breite: '560px',
+        h('p', { class: 'pl-leise' }, 'Entplanen: Der behindernde Unterricht wird entfernt und erscheint unter „Nicht verplant“. Trotzdem ausführen: Die Kollision bleibt bestehen.')),
+      knoepfe: [{ text: 'Behindernden Unterricht entplanen', wert: 'entplanen', primaer: true }, { text: 'Trotzdem ausführen', wert: 'kollision' }, { text: 'Abbrechen', wert: null }],
+      breite: '600px',
     });
     if (!wahl) return null;
     antwort = await api.post(api.dok(pfad), { ...daten, aktion: wahl }, { quelle });
@@ -82,7 +83,7 @@ export async function fixieren(stunden, quelle) {
 
 const ref = (s) => ({ unterricht: s.u, tag: s.tag, stunde: s.stunde });
 
-/** Stundenplanfenster, auf das sich Menüband-Befehle beziehen: das aktive, sonst das zuletzt benutzte. */
+/** Stundenplanansicht, auf die sich die Befehle beziehen: die aktive, sonst die zuletzt benutzte. */
 export function planFenster() {
   const aktiv = fensterverwaltung.aktiv();
   if (aktiv?.typ === 'stundenplan' && aktiv.planung) return aktiv;
@@ -102,13 +103,13 @@ function gewaehlteStunde(hinweisText = 'Bitte zuerst eine Stunde im Stundenplan 
 }
 
 // ---------------------------------------------------------------------------------------------
-// Raum zuordnen / löschen
+// Raum zuordnen / entfernen
 
-const UMFANG = ['Unterrichtsstunde', 'Stundenblock', 'Alle Stunden eines Unterr.'];
+const UMFANG = ['Diese Stunde', 'Ganzer Block', 'Alle Stunden des Unterrichts'];
 let umfangMerken = 1;
 let nurFreiMerken = false;
 
-/** Dialog „Raum zuordnen / löschen“ für eine verplante Stunde { u, tag, stunde }. Liefert true, wenn etwas geändert wurde. */
+/** Dialog „Raum zuordnen“ für eine verplante Stunde { u, tag, stunde }. Liefert true, wenn etwas geändert wurde. */
 export async function raumDialog(stunde, quelle) {
   let daten = null;
   let zeile = 0;
@@ -118,41 +119,48 @@ export async function raumDialog(stunde, quelle) {
   const schreiben = darfSchreiben();
 
   const info = h('div', { class: 'pl-info' });
-  const radios = UMFANG.map((t, i) => h('label', null, h('input', { type: 'radio', name: 'pl-umfang', value: i, checked: i === umfang }), ` ${t}`));
-  const lang = h('input', { type: 'checkbox' });
-  const nurFrei = h('input', { type: 'checkbox', checked: nurFreiMerken });
-  const nurWunsch = h('input', { type: 'checkbox' });
-  const nurKap = h('input', { type: 'checkbox' });
-  const suche = h('input', { class: 'eingabe', type: 'search', placeholder: 'Raum suchen …' });
+  const umfangKnoepfe = UMFANG.map((t, i) => h('button', { type: 'button', class: i === umfang ? 'aktiv' : '', 'aria-pressed': String(i === umfang), onclick: () => {
+    umfang = umfangMerken = i;
+    for (const [j, k] of umfangKnoepfe.entries()) { k.classList.toggle('aktiv', j === i); k.setAttribute('aria-pressed', String(j === i)); }
+    neu().catch(fehlerMelden);
+  } }, t));
+  const lang = schalter('Langnamen', false, () => zeichnen());
+  const nurFrei = schalter('Nur freie Räume', nurFreiMerken, (an) => { nurFreiMerken = an; zeichnen(); });
+  const nurWunsch = schalter('Nur Wunschräume', false, () => zeichnen(), 'Nur Wunschraum bzw. Räume der gewünschten Raumgruppe');
+  const nurKap = schalter('Nur mit genug Plätzen', false, () => zeichnen());
+  const suche = h('input', { class: 'eingabe', type: 'search', placeholder: 'Raum suchen', 'aria-label': 'Raum suchen' });
   const links = h('tbody');
   const rechts = h('tbody');
-  const zuordnenKnopf = h('button', { class: 'knopf', type: 'button', title: 'Markierten Raum zuordnen (Doppelklick, Enter)', disabled: !schreiben }, '←');
-  const loeschenKnopf = h('button', { class: 'knopf', type: 'button', title: 'Raum der markierten Kopplungszeile löschen (Entf)', disabled: !schreiben }, symbol('loeschen'));
+  const zuordnenKnopf = h('button', { class: 'knopf klein primaer', type: 'button', title: 'Markierten Raum zuordnen (Doppelklick, Enter)', disabled: !schreiben }, 'Zuordnen');
+  const loeschenKnopf = h('button', { class: 'knopf klein', type: 'button', title: 'Raum der markierten Kopplungszeile entfernen (Entf)', disabled: !schreiben }, 'Raum entfernen');
   const rechtsTabelle = h('table', { class: 'pl-tabelle pl-raeume', tabindex: '0' },
-    h('thead', null, h('tr', null, ['Rm.', 'Kap.', 'Ausw.-Rm.', 'Stammr.', 'Besetzt', 'Besetzt durch', 'Raumgruppe', 'Gang', 'Wo.-Bel.', 'Std.frei', 'Kap.Diff.'].map((t) => h('th', null, t)))),
+    h('thead', null, h('tr', null, [['Raum'], ['Plätze', 'z'], ['Ausweichraum', 'm'], ['Stammraum', 'm'], ['Belegt', 'm'], ['Belegt durch'], ['Raumgruppe'], ['Gang'], ['Wochenbelegung', 'z', 'Verplante Stunden des Raums in der Woche'], ['Frei', 'z', 'Freie Stunden von den betroffenen Stunden'], ['Plätze ±', 'z', 'Plätze minus Schülerzahl']]
+      .map(([t, k, titel]) => h('th', { class: k || null, title: titel || null }, t)))),
     rechts);
   const inhalt = h('div', { class: 'pl-raum' },
-    h('div', { class: 'pl-kopf' }, info,
-      h('fieldset', { class: 'pl-umfang' }, h('legend', null, 'Anwenden auf'), radios),
-      h('div', { class: 'pl-filter' },
-        h('label', null, lang, ' Langname anzeigen'), h('label', null, nurFrei, ' Nur freie Räume'),
-        h('label', null, nurWunsch, ' Nur Wunschräume / Raumgruppe'), h('label', null, nurKap, ' Nur ausreichende Kapazität'), suche)),
+    info,
+    h('div', { class: 'pl-filterleiste' },
+      h('span', { class: 'pl-feld' }, h('span', { class: 'pl-feld-titel' }, 'Anwenden auf'), h('div', { class: 'segment', role: 'group', 'aria-label': 'Anwenden auf' }, umfangKnoepfe)),
+      suche, nurFrei, nurWunsch, nurKap, lang),
     h('div', { class: 'pl-mitte' },
-      h('div', { class: 'pl-links' }, h('div', { class: 'pl-titel' }, 'Auswahl derzeitiger Unterricht:'),
+      h('div', { class: 'pl-links' }, h('div', { class: 'pl-abschnitt-kopf' }, h('h3', null, 'Kopplungszeilen'), loeschenKnopf),
         h('div', { class: 'pl-rollen' }, h('table', { class: 'pl-tabelle', tabindex: '0' },
-          h('thead', null, h('tr', null, ['Unt.', 'Lehrer', 'Fach', 'Raum', 'Klasse(n)', 'Wunschraum', 'U-Gruppe'].map((t) => h('th', null, t)))), links))),
-      h('div', { class: 'pl-pfeile' }, zuordnenKnopf, loeschenKnopf),
-      h('div', { class: 'pl-rechts' }, h('div', { class: 'pl-titel' }, 'Mögliche Räume:'), h('div', { class: 'pl-rollen' }, rechtsTabelle))),
-    h('div', { class: 'pl-leise' }, 'grün = Wunschraum bzw. Raumgruppe · rot = besetzt (in mindestens einer Stunde) · grau = gesperrt · Std.frei = freie Stunden von den betroffenen Stunden'));
+          h('thead', null, h('tr', null, ['Nr.', 'Lehrkraft', 'Fach', 'Raum', 'Klassen', 'Wunschraum', 'Unterrichtsgruppe'].map((t) => h('th', null, t)))), links))),
+      h('div', { class: 'pl-rechts' }, h('div', { class: 'pl-abschnitt-kopf' }, h('h3', null, 'Räume'), zuordnenKnopf), h('div', { class: 'pl-rollen' }, rechtsTabelle))),
+    h('div', { class: 'pl-legende' },
+      h('span', null, h('i', { class: 'wunsch' }), 'Wunschraum bzw. Raumgruppe'), h('span', null, h('i', { class: 'besetzt' }), 'In mindestens einer Stunde belegt'),
+      h('span', null, h('i', { class: 'gesperrt' }), 'Gesperrt'), h('span', null, 'Doppelklick oder Enter ordnet zu, Entf entfernt den Raum')));
 
-  const name = (r) => (lang.checked && r.lang ? r.lang : r.kurz);
+  const name = (r) => (lang.input.checked && r.lang ? r.lang : r.kurz);
+  const haken = (an) => (an ? symbol('haken') : '');
 
   function zeichnen() {
     const d = daten;
+    const feld = (t, w) => h('div', null, h('span', { class: 't' }, t), h('span', { class: 'w' }, w));
     info.replaceChildren(
-      h('div', null, h('b', null, `Unterricht: ${d.unterricht.id}`), `: ${d.unterricht.text}`),
-      h('div', null, `Stunden: ${d.stunden.length}  ${d.stunden.map((s) => s.text).join(', ')}`),
-      h('div', null, `Raum: ${[...new Set(d.stunden.map((s) => s.raum).filter(Boolean))].join(', ') || '—'}`));
+      feld('Unterricht', `Nr. ${d.unterricht.id} · ${d.unterricht.text}`),
+      feld(d.stunden.length === 1 ? 'Stunde' : `${d.stunden.length} Stunden`, d.stunden.map((s) => s.text).join(', ')),
+      feld('Raum', [...new Set(d.stunden.map((s) => s.raum).filter(Boolean))].join(', ') || 'Kein Raum'));
     leeren(links);
     d.zeilen.forEach((z) => {
       const tr = h('tr', { class: z.nr === zeile ? 'gewaehlt' : '', onclick: () => { zeile = z.nr; neu(); } },
@@ -163,14 +171,14 @@ export async function raumDialog(stunde, quelle) {
     leeren(rechts);
     const f = suche.value.trim().toLowerCase();
     for (const r of d.raeume) {
-      if (nurFrei.checked && r.frei < r.gesamt) continue;
-      if (nurWunsch.checked && !r.wunsch) continue;
-      if (nurKap.checked && r.kapDiff !== null && r.kapDiff < 0) continue;
+      if (nurFrei.input.checked && r.frei < r.gesamt) continue;
+      if (nurWunsch.input.checked && !r.wunsch) continue;
+      if (nurKap.input.checked && r.kapDiff !== null && r.kapDiff < 0) continue;
       if (f && !`${r.kurz} ${r.lang} ${r.raumgruppen}`.toLowerCase().includes(f)) continue;
       const kl = r.gesperrt > 0 && r.frei === 0 ? 'gesperrt' : r.besetzt ? 'besetzt' : r.wunsch ? 'wunsch' : '';
       const tr = h('tr', { class: `${kl}${raumAuswahl === r.id ? ' gewaehlt' : ''}`, dataset: { id: r.id } },
-        h('td', null, name(r)), h('td', { class: 'z' }, r.kap > 0 ? String(r.kap) : ''), h('td', { class: 'm' }, r.ausweich ? '✓' : ''), h('td', { class: 'm' }, r.stamm ? '✓' : ''),
-        h('td', { class: 'm ok' }, r.besetzt ? '✓' : ''), h('td', null, r.besetztDurch), h('td', null, r.raumgruppen), h('td', null, r.gang),
+        h('td', null, name(r)), h('td', { class: 'z' }, r.kap > 0 ? String(r.kap) : ''), h('td', { class: 'm' }, haken(r.ausweich)), h('td', { class: 'm' }, haken(r.stamm)),
+        h('td', { class: 'm' }, haken(r.besetzt)), h('td', null, r.besetztDurch), h('td', null, r.raumgruppen), h('td', null, r.gang),
         h('td', { class: 'z' }, String(r.wochenbelegung)), h('td', { class: `z${r.frei < r.gesamt ? ' rot' : ''}` }, String(r.frei)),
         h('td', { class: `z${r.kapDiff !== null && r.kapDiff < 0 ? ' rot' : ''}` }, r.kapDiff === null ? '' : (r.kapDiff > 0 ? `+${r.kapDiff}` : String(r.kapDiff))));
       tr.addEventListener('click', () => { raumAuswahl = r.id; for (const x of rechts.children) x.classList.toggle('gewaehlt', x === tr); });
@@ -193,10 +201,10 @@ export async function raumDialog(stunde, quelle) {
         antwort = await api.post(api.dok('/planung/raum'), { unterricht: stunde.u, tag: stunde.tag, stunde: stunde.stunde, zeile, umfang, raum, ...extra, trotzGesperrt: true }, { quelle });
         if (antwort?.ok === false && antwort.art === 'belegt') return senden(raum, { ...extra, trotzGesperrt: true });
       } else {
-        const opt = antwort.optionen.map((o, i) => h('label', { class: 'pl-option' }, h('input', { type: 'radio', name: 'pl-loesung', value: o.wert, checked: i === 0 }), ` ${o.text}`));
+        const opt = antwort.optionen.map((o, i) => h('label', { class: 'kontrolle' }, h('input', { type: 'radio', name: 'pl-loesung', value: o.wert, checked: i === 0 }), o.text));
         const ok = await dialog({
-          titel: 'Raum nicht frei',
-          inhalt: h('div', null, h('pre', { class: 'pl-frage' }, antwort.frage), h('fieldset', { class: 'pl-umfang' }, h('legend', null, 'Optionen'), opt)),
+          titel: 'Raum ist belegt',
+          inhalt: h('div', null, h('pre', { class: 'pl-frage' }, antwort.frage), h('div', { class: 'pl-optionen', role: 'radiogroup', 'aria-label': 'Vorgehen' }, opt)),
           knoepfe: [{ text: 'OK', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }],
         });
         if (!ok) return;
@@ -215,9 +223,6 @@ export async function raumDialog(stunde, quelle) {
 
   zuordnenKnopf.addEventListener('click', () => zuordnen().catch(fehlerMelden));
   loeschenKnopf.addEventListener('click', () => senden(null).catch(fehlerMelden));
-  radios.forEach((l) => l.querySelector('input').addEventListener('change', (e) => { umfang = umfangMerken = Number(e.target.value); neu().catch(fehlerMelden); }));
-  for (const c of [lang, nurWunsch, nurKap]) c.addEventListener('change', zeichnen);
-  nurFrei.addEventListener('change', () => { nurFreiMerken = nurFrei.checked; zeichnen(); });
   suche.addEventListener('input', zeichnen);
   rechtsTabelle.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); zuordnen().catch(fehlerMelden); }
@@ -232,7 +237,7 @@ export async function raumDialog(stunde, quelle) {
   inhalt.addEventListener('keydown', (e) => { if (e.key === 'Delete' && e.target.tagName !== 'INPUT') { e.preventDefault(); senden(null).catch(fehlerMelden); } });
 
   await neu();
-  await breit(dialog({ titel: 'Raum zuordnen / löschen', inhalt, knoepfe: [{ text: 'Schließen', wert: true, primaer: true }] }), 'min(1180px, 96vw)');
+  await breit(dialog({ titel: 'Raum zuordnen', inhalt, knoepfe: [{ text: 'Schließen', wert: true, primaer: true }] }), 'min(1180px, 96vw)');
   return geaendert;
 }
 
@@ -243,8 +248,8 @@ export async function raumDialog(stunde, quelle) {
 export async function tauschDialog(stunde, quelle) {
   const liste = h('tbody');
   const inhalt = h('div', { class: 'pl-tausch' },
-    h('div', { class: 'pl-rollen' }, h('table', { class: 'pl-tabelle' }, h('thead', null, h('tr', null, h('th', null, 'Gewinn'), h('th', null, 'Tausch'))), liste)),
-    h('div', { class: 'pl-leise' }, 'Gewinn = Verbesserung der Bewertungszahl (positiv = besser). Angeboten werden nur Täusche, die keine neuen Kollisionen erzeugen.'));
+    h('div', { class: 'pl-rollen' }, h('table', { class: 'pl-tabelle' }, h('thead', null, h('tr', null, h('th', { class: 'z' }, 'Verbesserung'), h('th', null, 'Tausch'))), liste)),
+    h('p', { class: 'pl-leise' }, 'Verbesserung der Bewertungszahl des Plans (positiv ist besser). Angeboten werden nur Tauschmöglichkeiten ohne neue Kollisionen. Doppelklick tauscht sofort.'));
   let gewaehlt = null;
   let vorschlaege = [];
   const p = breit(dialog({
@@ -256,7 +261,7 @@ export async function tauschDialog(stunde, quelle) {
   try {
     vorschlaege = await api.get(api.dok(`/planung/tausch?unterricht=${stunde.u}&tag=${stunde.tag}&stunde=${stunde.stunde}`));
   } catch (e) { fehlerMelden(e); } finally { weg(); }
-  if (!vorschlaege.length) liste.append(h('tr', null, h('td', { colspan: 2, class: 'pl-leise' }, 'Für diese Stunde wurden keine Tauschmöglichkeiten gefunden.')));
+  if (!vorschlaege.length) liste.append(h('tr', null, h('td', { colspan: 2, class: 'pl-leer-zelle' }, 'Für diese Stunde gibt es keine Tauschmöglichkeit.')));
   for (const v of vorschlaege) {
     const tr = h('tr', null, h('td', { class: `z ${v.gewinn > 0 ? 'gruen' : v.gewinn < 0 ? 'rot' : ''}` }, v.gewinn > 0 ? `+${v.gewinn}` : String(v.gewinn)), h('td', null, v.beschreibung));
     tr.addEventListener('click', () => { gewaehlt = v; for (const x of liste.children) x.classList.toggle('gewaehlt', x === tr); });
@@ -282,24 +287,24 @@ export function kontextEintraege(ctx, e, tag, stunde) {
   const { raster, schreiben } = ctx;
   const markiert = raster.markierte();
   const mehrere = raster.markiert.size > 1;
-  const eintraege = [{ titel: `U-Nr. ${e.u} · ${e.fach} ${e.klassen}` }];
+  const eintraege = [{ titel: `Unterricht Nr. ${e.u} · ${e.fach} ${e.klassen}` }];
   if (mehrere) {
     eintraege.push(
-      { text: `${markiert.length} markierte Stunden entplanen`, symbol: 'loeschen', taste: 'Entf', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => entplanen(markiert, ctx.f.id)) },
-      { text: 'Markierte Stunden fixieren / lösen', symbol: 'fixieren', taste: 'F', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => fixieren(markiert, ctx.f.id)) },
+      { text: `${markiert.length} markierte Stunden entplanen`, taste: 'Entf', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => entplanen(markiert, ctx.f.id)) },
+      { text: 'Markierte Stunden fixieren / lösen', taste: 'F', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => fixieren(markiert, ctx.f.id)) },
       { text: 'Markierung aufheben', taste: 'Esc', aktion: () => raster.markierungAufheben() },
       null);
   }
   const a = raster.auswahl() || { u: e.u, tag, stunde, e };
   eintraege.push(
-    { text: 'Unterricht bearbeiten …', symbol: 'unterricht', aktion: () => befehl('unterricht.oeffnen', { sicht: ctx.typ === 'raum' || ctx.typ === 'fach' ? 'alle' : ctx.typ, element: ctx.typ === 'raum' || ctx.typ === 'fach' ? undefined : ctx.element() }) },
+    { text: 'Unterricht bearbeiten …', aktion: () => befehl('unterricht.oeffnen', { sicht: ctx.typ === 'raum' || ctx.typ === 'fach' ? 'alle' : ctx.typ, element: ctx.typ === 'raum' || ctx.typ === 'fach' ? undefined : ctx.element() }) },
     { text: 'Ganzen Block markieren', aktion: () => blockMarkieren(ctx, a) },
     { text: 'Alle Stunden des Unterrichts markieren', aktion: () => raster.alleMarkieren((x) => x.u === e.u) },
-    { text: e.fix ? 'Fixierung lösen' : 'Unterr.-Std. fixieren', symbol: 'fixieren', taste: 'F', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => fixieren(mehrere ? markiert : [{ ...a, e }], ctx.f.id)) },
-    { text: 'Raum zuordnen / löschen …', symbol: 'raeume', aktion: () => aktion(ctx, () => raumDialog(a, ctx.f.id)) },
-    { text: 'Tauschvorschläge …', symbol: 'tausch', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => tauschDialog(a, ctx.f.id)) },
-    { text: 'Stunde vom Unterricht entplanen', symbol: 'loeschen', taste: mehrere ? undefined : 'Entf', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => entplanen([{ u: a.u, tag: a.tag, stunde: a.stunde, e }], ctx.f.id)) },
-    { text: 'Zeitwünsche des Unterrichts', symbol: 'zeitwunsch', aktion: () => befehl('zeitwuensche.oeffnen', { typ: 'unterricht', element: e.u }) },
+    { text: e.fix ? 'Fixierung lösen' : 'Stunde fixieren', taste: 'F', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => fixieren(mehrere ? markiert : [{ ...a, e }], ctx.f.id)) },
+    { text: 'Raum zuordnen …', aktion: () => aktion(ctx, () => raumDialog(a, ctx.f.id)) },
+    { text: 'Tauschvorschläge …', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => tauschDialog(a, ctx.f.id)) },
+    { text: 'Stunde entplanen', taste: mehrere ? undefined : 'Entf', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => entplanen([{ u: a.u, tag: a.tag, stunde: a.stunde, e }], ctx.f.id)) },
+    { text: 'Zeitwünsche des Unterrichts', aktion: () => befehl('zeitwuensche.oeffnen', { typ: 'unterricht', element: e.u }) },
     null,
     { text: 'Alle Stunden markieren', taste: 'Strg+A', aktion: () => raster.alleMarkieren() },
   );
@@ -311,12 +316,12 @@ export function feldEintraege(ctx) {
   const { raster, schreiben } = ctx;
   const markiert = raster.markierte();
   return [
-    raster.markiert.size ? { text: `${markiert.length} markierte Stunden entplanen`, symbol: 'loeschen', deaktiviert: !schreiben, aktion: () => aktion(ctx, () => entplanen(markiert, ctx.f.id)) } : null,
+    raster.markiert.size ? { text: `${markiert.length} markierte Stunden entplanen`, deaktiviert: !schreiben, aktion: () => aktion(ctx, () => entplanen(markiert, ctx.f.id)) } : null,
     raster.markiert.size ? { text: 'Markierung aufheben', aktion: () => raster.markierungAufheben() } : null,
     { text: 'Alle Stunden markieren', taste: 'Strg+A', aktion: () => raster.alleMarkieren() },
     null,
-    { text: 'Diagnose', symbol: 'diagnose', aktion: () => befehl('optimierung.diagnose') },
-    { text: 'Zeitwünsche', symbol: 'zeitwunsch', aktion: () => befehl('zeitwuensche.oeffnen', { typ: ctx.typ, element: ctx.element() }) },
+    { text: 'Diagnose', aktion: () => befehl('optimierung.diagnose') },
+    { text: 'Zeitwünsche', aktion: () => befehl('zeitwuensche.oeffnen', { typ: ctx.typ, element: ctx.element() }) },
   ].filter((x, i, l) => x !== null || (i > 0 && l[i - 1] !== null));
 }
 
@@ -355,7 +360,7 @@ export function taste(ctx, ev) {
 // Menüband-Befehle
 
 async function befehlTausch() {
-  const g = gewaehlteStunde('Tauschvorschläge erhalten Sie im Stundenplanfenster: bitte zuerst eine Stunde anklicken.');
+  const g = gewaehlteStunde('Tauschvorschläge gibt es für eine Stunde im Stundenplan: bitte zuerst eine Stunde anklicken.');
   if (g && (await tauschDialog(g.a, g.f.id))) await g.f.planung.neuLaden();
 }
 
@@ -386,8 +391,8 @@ export default {
     'planung.alleFixieren': befehlAlleFixieren,
   },
   ribbon: [
-    { id: 'planung.tausch', reiter: 'Planung', gruppe: 'Manuelles Planen', text: 'Tauschvorschläge', symbol: 'tausch', gross: true, befehl: 'planung.tausch', braucht: 'schreiben', hinweis: 'Tauschvorschläge für die gewählte Stunde im Stundenplanfenster' },
-    { id: 'planung.raum', reiter: 'Planung', gruppe: 'Manuelles Planen', text: 'Raum zuordnen', symbol: 'raeume', gross: true, befehl: 'planung.raum', braucht: 'dokument', hinweis: 'Raum der gewählten Stunde zuordnen bzw. löschen' },
+    { id: 'planung.tausch', reiter: 'Planung', gruppe: 'Manuelles Planen', text: 'Tauschvorschläge', symbol: 'tausch', gross: true, befehl: 'planung.tausch', braucht: 'schreiben', hinweis: 'Tauschvorschläge für die gewählte Stunde im Stundenplan' },
+    { id: 'planung.raum', reiter: 'Planung', gruppe: 'Manuelles Planen', text: 'Raum zuordnen', symbol: 'raeume', gross: true, befehl: 'planung.raum', braucht: 'dokument', hinweis: 'Raum der gewählten Stunde zuordnen oder entfernen' },
     { id: 'planung.entplanen', reiter: 'Planung', gruppe: 'Werkzeuge', text: 'Alle Stunden entplanen', symbol: 'loeschen', befehl: 'planung.alleEntplanen', braucht: 'schreiben' },
     { id: 'planung.fixieren', reiter: 'Planung', gruppe: 'Werkzeuge', text: 'Fixierungen', symbol: 'fixieren', braucht: 'schreiben',
       menue: [
@@ -396,7 +401,7 @@ export default {
       ] },
     { id: 'start.planen', reiter: 'Start', gruppe: 'Planungswerkzeuge', text: 'Planen', symbol: 'stundenplan', gross: true, braucht: 'dokument',
       menue: [
-        { text: 'Stunden mit der Hand verplanen', symbol: 'stundenplan', befehl: 'stundenplan.oeffnen', args: { typ: 'klasse' } },
+        { text: 'Stunden manuell verplanen', symbol: 'stundenplan', befehl: 'stundenplan.oeffnen', args: { typ: 'klasse' } },
         { text: 'Alle Stunden entplanen', symbol: 'loeschen', befehl: 'planung.alleEntplanen', braucht: 'schreiben' },
         { text: 'Alle Stunden fixieren', symbol: 'fixieren', befehl: 'planung.alleFixieren', args: { fixieren: true }, braucht: 'schreiben' },
         { text: 'Alle Fixierungen aufheben', symbol: 'fixieren', befehl: 'planung.alleFixieren', args: { fixieren: false }, braucht: 'schreiben' },

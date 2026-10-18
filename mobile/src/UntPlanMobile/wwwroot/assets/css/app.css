@@ -1290,7 +1290,7 @@ body.show-card-times .card__times{ display:flex; }
 .screen--msg.is-lesen .msgtitel, .screen--msg.is-lesen .msgtabs{ display:none; }
 .screen--msg.is-lesen .kopf{ background:var(--up-flaeche); border-bottom-color:var(--up-rand); }
 .screen--msg.is-lesen .kopf__titel{ opacity:0; }
-.screen--msg.is-lesen .seite__inhalt{ padding-top:16px; }
+.screen--msg.is-lesen .seite__inhalt{ padding-top:16px; padding-bottom:80px; }
 .msgread{
   padding:16px;
   background:var(--up-flaeche);
@@ -1322,7 +1322,8 @@ body.show-card-times .card__times{ display:flex; }
 .msgfile span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .msgfile__ico{ width:18px; height:18px; color:var(--up-text-2); }
 .werkzeugleiste{
-  position:sticky; bottom:0; z-index:5;
+  position:fixed; left:0; right:0; z-index:30;
+  bottom:calc(var(--tabbar-h) + var(--sab));
   display:flex; gap:8px; justify-content:flex-end;
   padding:10px 16px;
   background:var(--up-flaeche);

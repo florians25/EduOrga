@@ -36,6 +36,7 @@ const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'A
 const datumVoll = iso => { const d = ausIso(iso); return `${wtLang(iso)}, ${d.getDate()}. ${MONATE[d.getMonth()]} ${d.getFullYear()}`; };
 const chipFarbe = k => ENTFALL.includes(k.status) ? 'rot' : k.status === 'klausur' || k.status === 'offen' || k.vertretungOffen ? 'gelb' : k.status === 'veranstaltung' || k.status === 'buchung' ? 'grau' : 'lila';
 const anzahl = n => n > 99 ? '99+' : String(n);
+const gruss = () => { const h = new Date().getHours(); return h < 11 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend'; };
 
 /** Einheitliche Listenzeile (immer eine Zeile, gleiche Höhe): links Zeit/Datum, Titel (Medium), Zusatz (grau), rechts Angaben. */
 function zeile({ links = '', titel = '', neben = '', rechts = '', klasse = '', attr = '', stil = '', punkt = false }) {
@@ -176,9 +177,9 @@ export async function zeigen(seite, kontext) {
     }
   }
   const ferienPille = ferien && (ferien.laeuft || ferien.von <= plusTage(heute, 14))
-    ? `<span class="ub-ferien">${e(ferien.text)}</span>` : '';
+    ? `<span class="ub-ferien"><i class="bi bi-sun" aria-hidden="true"></i>${e(ferien.text)}</span>` : '';
   const kopf = `<header class="ub-kopf">
-      <div class="ub-gruss"><h1>Überblick</h1>
+      <div class="ub-gruss"><h1>${e(gruss())}${name ? `, ${e(name)}` : ''}</h1>
         <p class="ub-tageszeile">${tagesteile.join('<span class="ub-sep" aria-hidden="true">·</span>')}${ferienPille}</p></div>
       ${familie && kindListe.length > 1 ? `<div class="ub-kind">${kindWahl(kindListe, kind)}</div>` : ''}
     </header>`;
@@ -218,7 +219,7 @@ export async function zeigen(seite, kontext) {
     gruppen.push(gruppe({ titel: 'Weitere Änderungen', zeilen: weitere.map(k => stundeZeile(k, true)), href: kollegium ? '#/vertretungen' : '#/plan/mein', leer: '' }));
     if (!unterrichtstage.length) gruppen.unshift({ leer: gesperrt ? 'Die Anzeige des Stundenplans ist beschränkt' : ferien?.laeuft ? '' : 'Kein Unterricht in den nächsten Tagen' });
     // Ferienhinweis in der Karte nur, wenn er nicht schon in der Tageszeile steht
-    const ferienZeile = ferien && (!ferienPille || !unterrichtstage.length || unterrichtstage[0] > ferien.bis) ? `<p class="ub-hinweis"><span>${e(ferien.text)}</span></p>` : '';
+    const ferienZeile = ferien && (!ferienPille || !unterrichtstage.length || unterrichtstage[0] > ferien.bis) ? `<p class="ub-hinweis"><i class="bi bi-sun" aria-hidden="true"></i><span>${e(ferien.text)}</span></p>` : '';
     karten.push(karte({ klasse: 'ub-heute', symbol: 'calendar3', titel: 'Heute & nächste Tage', href: '#/plan/mein', linkText: 'Stundenplan', gruppen, zusatz: ferienZeile, zusatzVorne: !!ferien && (!unterrichtstage.length || unterrichtstage[0] > ferien.bis), leerSymbol: gesperrt ? 'lock' : 'calendar-x' }));
   }
 

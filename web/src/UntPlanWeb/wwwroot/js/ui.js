@@ -1,13 +1,33 @@
-// Gemeinsame Hilfen: Schnittstelle, Escaping, Symbole, Meldungen und Dialoge, Datumsfunktionen.
+// Gemeinsame Hilfen: Schnittstelle, Escaping, Symbole (Bootstrap Icons, Linienstil), Meldungen und Dialoge, Datumsfunktionen.
 
 import { symbol, LOGO as BILDMARKE } from './symbole.js';
 
-/** Bildmarke (Signet) von UntPlan. */
+/** Bildmarke von UntPlanWeb (eigenes Zifferblatt-Symbol). */
 export const LOGO = BILDMARKE;
 
-/** Symbol: fachlicher Name (symbole.js) oder allgemeiner Symbolname (z. B. „file-earmark-pdf“, css/symbole.css). */
+const SYMBOLE = {
+  heute: 'house', plan: 'calendar3-week', tag: 'grid-3x3', vertretung: 'arrow-left-right', mitteilung: 'envelope',
+  klassenbuch: 'journal-text', melden: 'clipboard-plus', admin: 'gear', profil: 'person-circle', abmelden: 'box-arrow-right',
+  menue: 'list', links: 'chevron-left', rechts: 'chevron-right', unten: 'chevron-down', drucken: 'printer', plus: 'plus-lg',
+  loeschen: 'trash', haken: 'check-lg', x: 'x-lg', monitor: 'display', schluessel: 'key', hochladen: 'upload',
+  herunterladen: 'download', info: 'info-circle', warnung: 'exclamation-triangle', benutzer: 'people', uhr: 'clock',
+  raum: 'door-open', klausur: 'file-earmark-check', senden: 'send', suchen: 'search', aktualisieren: 'arrow-repeat',
+  abwesend: 'person-x', hausaufgabe: 'pencil-square', kopieren: 'clipboard', kalender: 'calendar-event', stift: 'pencil',
+  augen: 'eye', protokoll: 'list-ul', plaene: 'calendar-week', klasse: 'people', lehrkraft: 'person-workspace',
+  tagklassen: 'calendar-range', taglehrer: 'person-lines-fill', tagraeume: 'building', schloss: 'lock-fill',
+  // Ersatz aus Bootstrap Icons, falls symbole.js kein Original-Icon zuordnet
+  dashboard: 'grid', uebersicht: 'card-list', mitteilungen: 'chat-square-text', posteingang: 'inbox', gesendet: 'send',
+  stundenplan: 'calendar3', meinplan: 'calendar2-week', raumplan: 'door-closed', unterricht: 'easel', meineunterrichte: 'easel2',
+  offen: 'hourglass-split', pruefung: 'file-earmark-text', klassenbuchnav: 'journal-bookmark', eintraege: 'journal-text',
+  hausaufgaben: 'pencil', abwesenheiten: 'person-x', fehlzeiten: 'clock-history', berichte: 'file-earmark-bar-graph',
+  meldenbuchen: 'clipboard-plus', verwaltung: 'gear', nachrichten: 'megaphone', zurueck: 'arrow-left', einklappen: 'chevron-double-left',
+  csv: 'filetype-csv', filter: 'funnel', woche: 'calendar-week', vertretungen: 'arrow-left-right', synchron: 'arrow-repeat',
+  aufsicht: 'eye', ruckmeldung: 'inbox',
+};
+
+/** Symbol: Original-Icons (symbole.js, img/wu), sonst Bootstrap Icons für kleine Bedienelemente. */
 export function icon(name, klasse = '') {
-  return symbol(name, klasse) ?? `<i class="bi bi-${name} ${klasse === 'icon-klein' ? '' : klasse}" aria-hidden="true"></i>`;
+  return symbol(name, klasse) ?? `<i class="bi bi-${SYMBOLE[name] ?? name} ${klasse === 'icon-klein' ? '' : klasse}" aria-hidden="true"></i>`;
 }
 
 export function e(wert) {
@@ -15,7 +35,7 @@ export function e(wert) {
 }
 
 /** Leerzustand (mit Symbol), Ladeanzeige und Hinweisbox. */
-export const leer = (text, symbol = 'inbox') => `<div class="u-leer">${icon(symbol)}<span>${e(text)}</span></div>`;
+export const leer = (text, symbol = 'inbox') => `<div class="u-leer"><i class="bi bi-${SYMBOLE[symbol] ?? symbol}" aria-hidden="true"></i>${e(text)}</div>`;
 /** Einklappbarer Hinweis als (i)-Knopf in einer Filterzeile (statt eines breiten Hinweistexts); html: vertrauenswürdiger, fester Text. */
 export const infoHinweis = (html, titel = 'Hinweis') => `<details class="nl-info"><summary title="${e(titel)}" aria-label="${e(titel)} anzeigen"><i class="bi bi-info-circle" aria-hidden="true"></i></summary><div class="nl-info-text" role="note">${html}</div></details>`;
 // aufgeklappter (i)-Hinweis bleibt im Fenster (rechts am Rand nach links versetzt)
@@ -247,7 +267,7 @@ export function suchfeldMitFilterBinden(wurzel, { beiSuche, beiFilter, beiChipWe
     if (chips.length && beiChipWeg) { ev.preventDefault(); beiChipWeg(chips[chips.length - 1].dataset.chipWeg); }
     else if (filterX.length) { ev.preventDefault(); filterX[filterX.length - 1].click(); input.focus(); }
   });
-  feld.addEventListener('click', ev => { if (ev.target === feld || ev.target.matches('.bi-search, .sym, .u-sym, .u-trenn')) input?.focus(); });
+  feld.addEventListener('click', ev => { if (ev.target === feld || ev.target.matches('.bi-search, .u-sym, .u-trenn')) input?.focus(); });
   return {
     feld, input,
     wert: name => feld.querySelector(`select[data-sf="${name}"]`)?.value ?? '',
@@ -449,29 +469,4 @@ export async function druckenMitAusrichtung(vorgabe = 'quer', schluessel = 'druc
   window.print();
   setTimeout(weg, 1500);
   return true;
-}
-
-// ------------------------------------------------------------------ Symbole nur funktional
-
-/**
- * Knöpfe, Links, Überschriften, Karten- und Abschnittsköpfe mit Text tragen keine Symbole (design/DESIGN.md Abschnitt 4). Die Ansichten
- * zeichnen ihre Knöpfe teils mit einem Symbol vor dem Text; dieses wird hier zentral ausgeblendet (Klasse „sym-aus“). Funktionale
- * Symbole bleiben: Pfeile und Chevrons, Schließen, Suchen, Kalender, Haken und Statushinweise; Knöpfe ohne Text behalten ihr Symbol.
- */
-const FUNKTIONAL = /\b(?:bi|sym)-(?:chevron|caret|arrow-(?:left|right|up|down)(?!-right)|chevrons|x\b|x-lg|search|calendar\b|calendar-days|check\b|check-lg|check2\b|three-dots|ellipsis)/;
-const MIT_TEXT = 'button, a, label.btn, summary, .nav-link, .dropdown-item, h1, h2, h3, h4, h5, h6, .card-header, .u-panel > header, .sd-abschnitt-kopf, .sd-detail, .u-kennzahl, .fm-uebersicht > header, .heute-karte > header, .br-gruppe h3, .u-menue > *, .nl-kopf, .modal-title';
-function symboleBereinigen(wurzel) {
-  if (!wurzel?.querySelectorAll) return;
-  for (const s of wurzel.querySelectorAll('i.bi, i.sym, .u-sym, .kb-icon, .fm-sym')) {
-    if (s.classList.contains('sym-aus') || FUNKTIONAL.test(s.className) || s.closest('.u-leer, .ic-leer, .sd-statusbild, .std, .u-suchfilter, .u-suchfeld, .nl-suche, .au-suchfeld, .u-suche, .u-suche-feld, .lg-auge, .haken, kbd')) continue;
-    const eltern = s.parentElement?.closest(MIT_TEXT);
-    if (!eltern) continue;
-    const text = [...eltern.childNodes].filter(n => n !== s && !(n.nodeType === 1 && n.matches?.('i.bi, i.sym, .u-sym, .kb-icon'))).map(n => n.textContent).join('').trim();
-    if (text) s.classList.add('sym-aus');
-  }
-}
-if (typeof document !== 'undefined' && typeof MutationObserver === 'function') {
-  let wartet = false;
-  const lauf = () => { wartet = false; symboleBereinigen(document.body); };
-  new MutationObserver(() => { if (!wartet) { wartet = true; requestAnimationFrame(lauf); } }).observe(document.documentElement, { childList: true, subtree: true });
 }

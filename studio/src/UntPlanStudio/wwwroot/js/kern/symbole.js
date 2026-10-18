@@ -93,8 +93,8 @@ const SYMBOLE = {
 
 const NEUTRAL = '<rect width="14" height="14" x="5" y="5" rx="2"/>';
 
-/** Signet (Raster). */
-const SIGNET = '<svg class="sym signet" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--signet-grund, #1c3f7a)"/><g fill="var(--signet-vorn, #fff)"><rect x="14" y="14" width="10" height="10" rx="2"/><rect x="27" y="14" width="10" height="10" rx="2" fill-opacity=".32"/><rect x="40" y="14" width="10" height="10" rx="2" fill-opacity=".32"/><rect x="14" y="27" width="10" height="10" rx="2" fill-opacity=".32"/><rect x="27" y="27" width="23" height="10" rx="2"/><rect x="14" y="40" width="10" height="10" rx="2" fill-opacity=".32"/><rect x="27" y="40" width="10" height="10" rx="2" fill-opacity=".32"/></g><rect x="40" y="40" width="10" height="10" rx="2" fill="#8fb4ea"/></svg>';
+/** Markenzeichen „UP“ (design/logo/monogramm.svg). */
+const SIGNET = '<svg class="sym signet" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="12" fill="var(--signet-grund, #11264a)"/><g fill="none" stroke="var(--signet-vorn, #fff)" stroke-width="6" stroke-linecap="square"><path d="M14 16v18a10 10 0 0 0 20 0V16"/><path d="M34 16h8a8 8 0 0 1 0 16h-8M34 34v16"/></g></svg>';
 
 /** SVG-Symbol als Markup-Text (für innerHTML eigener Elemente). */
 export function symbolSvg(name, klasse = '') {

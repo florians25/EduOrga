@@ -1,5 +1,5 @@
-// Infocenter: Glocke in der Kopfleiste (mit Zahl ungelesener Einträge), öffnet ein Panel mit Infos der Schule und
-// Neuigkeiten zu UntPlan als Liste (Kategorie, Datum, Titel, Text, Punkt für ungelesen). Gibt es Neues, erscheint kurz ein
+// Infocenter: runder Knopf unten rechts (Glocke mit Zahl ungelesener Einträge, nur auf der Startseite „Heute“), öffnet ein Panel mit Infos der Schule und
+// Neuigkeiten zu UntPlanWeb als Karten (Kategorie, Datum, Titel, Text, Punkt für ungelesen). Gibt es Neues, erscheint kurz ein
 // Hinweis am Knopf. Gelesen wird je Benutzer auf dem Server vermerkt (GET/POST /api/app/infocenter …).
 import { e, holen, senden, fehler, suchfeldMitFilter, suchfeldMitFilterBinden } from './ui.js';
 
@@ -50,7 +50,7 @@ export function mehrBinden(wurzel) {
   });
 }
 
-export function zahlSetzen() {
+function zahlSetzen() {
   const n = zustand.ungelesen;
   const z = document.querySelector('[data-ic-zahl]');
   if (z) { z.textContent = n > 9 ? '9+' : String(n); z.hidden = n <= 0; }
@@ -139,11 +139,13 @@ function oeffnen(auf) {
   if (offen) { listeZeichnen(); mehrBinden(p.querySelector('[data-ic-liste]')); p.querySelector('.ic-panel-kopf button')?.focus(); }
 }
 
-/** Der kurze Hinweis auf neue Einträge erscheint nur auf der Startseite (Heute); beim Seitenwechsel schließen Panel und Hinweis. */
+/** Der Glocken-Knopf erscheint nur auf der Startseite (Heute); sonst bleibt das Infocenter über „Neuigkeiten“ erreichbar.
+ *  Ein- und Ausblenden übernimmt das CSS (nach der tatsächlich gezeigten Ansicht); hier werden Panel und Hinweis geschlossen. */
 const aufStartseite = () => ['', 'heute'].includes(location.hash.replace(/^#\/?/, '').split(/[/?]/)[0]);
 function sichtbarkeit() {
+  if (aufStartseite()) return;
   oeffnen(false);
-  if (!aufStartseite()) document.querySelector('[data-ic-hinweis]')?.remove();
+  document.querySelector('[data-ic-hinweis]')?.remove();
 }
 
 /** Kurzer Hinweis am Knopf, wenn seit dem letzten Besuch etwas Neues dazugekommen ist. */
@@ -168,15 +170,15 @@ function hinweisZeigen() {
   setTimeout(() => h.remove(), 12000);
 }
 
-/** Knopf und Panel anlegen (bei jedem Aufbau der Hülle, z. B. nach Kontowechsel); platz: Stelle in der Kopfleiste. */
-export async function starten(kontext, platz = null) {
+/** Knopf und Panel anlegen (bei jedem Aufbau der Hülle, z. B. nach Kontowechsel). */
+export async function starten(kontext) {
   login = kontext.ich?.login ?? null;
   document.querySelectorAll('[data-ic-wurzel], [data-ic-hinweis]').forEach(x => x.remove());
   const w = document.createElement('div');
   w.className = 'ic-wurzel nicht-drucken';
   w.dataset.icWurzel = '';
-  w.innerHTML = `<button type="button" class="ic-knopf u-kopfknopf" data-ic-knopf aria-haspopup="dialog" aria-expanded="false" aria-controls="ic-panel" title="Infocenter">
-      <span>Infos</span><span class="ic-zahl" data-ic-zahl hidden></span></button>
+  w.innerHTML = `<button type="button" class="ic-knopf" data-ic-knopf aria-haspopup="dialog" aria-expanded="false" aria-controls="ic-panel" title="Infocenter">
+      <i class="bi bi-bell" aria-hidden="true"></i><span class="ic-zahl" data-ic-zahl hidden></span></button>
     <section class="ic-panel" id="ic-panel" data-ic-panel role="dialog" aria-label="Infocenter" hidden>
       <header class="ic-panel-kopf"><h2>Infocenter</h2>
         <button type="button" class="ic-link" data-ic-alle disabled>Alle als gelesen markieren</button>
@@ -187,7 +189,7 @@ export async function starten(kontext, platz = null) {
       <footer class="ic-panel-fuss"><a href="#/neuigkeiten" data-ic-seite>Alle Neuigkeiten</a><a href="#/neuigkeiten/verwalten" data-ic-verwalten hidden>Infos verwalten</a></footer>
     </section>
     <div class="ic-schleier" data-ic-schleier aria-hidden="true"></div>`;
-  (platz ?? document.body).append(w);
+  document.body.append(w);
   sichtbarkeit();
   w.querySelector('[data-ic-knopf]').onclick = ev => { ev.stopPropagation(); oeffnen(); };
   w.querySelector('[data-ic-zu]').onclick = () => oeffnen(false);

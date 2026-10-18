@@ -5,9 +5,9 @@ Aufruf (im Ordner ios/):
     python3 Gestaltung/appicon_rendern.py UntPlanMobile/Assets.xcassets/AppIcon.appiconset [/pfad/vorschau.png]
 Benötigt nur Pillow.
 
-Geometrie wie design/logo/monogramm.svg (64er-Raster): weißes „U“ mit 6er-Strich auf Marine-900 (#11264a) – zwei
-senkrechte Schenkel bei x = 18 und x = 46 von y = 14 bis y = 36, unten ein Halbkreis mit Radius 14 um (32, 36). Flächig,
-ohne eigene Eckrundung (iOS legt die Maske selbst darüber), ohne Verläufe und Schatten.
+Geometrie wie design/logo/monogramm.svg (64er-Raster): weißes „UP“ mit 6er-Strich auf Marine-900 (#11264a) – U und P
+teilen sich den Strich bei x = 34. Flächig, ohne eigene Eckrundung (iOS legt die Maske selbst darüber), ohne Verläufe
+und Schatten.
 """
 import os
 import sys
@@ -33,20 +33,38 @@ VARIANTEN = {
 
 
 def maske_u():
-    """Das U als Graustufenmaske in Überabtastung."""
+    """Das Zeichen „UP“ (U und P teilen sich den mittleren Strich) als Graustufenmaske in Überabtastung."""
     n = GROESSE * UEBERABTASTUNG
     s = n / RASTER
     m = Image.new("L", (n, n), 0)
     d = ImageDraw.Draw(m)
     h = STRICH / 2
-    # Schenkel (flache Enden oben wie im SVG)
-    for x in (18, 46):
-        d.rectangle([(x - h) * s, 14 * s, (x + h) * s, 36 * s], fill=255)
-    # Bogen unten: Kreisring um (32, 36), Radius 14 ± 3, untere Hälfte
-    aussen, innen = (14 + h) * s, (14 - h) * s
-    cx, cy = 32 * s, 36 * s
-    d.pieslice([cx - aussen, cy - aussen, cx + aussen, cy + aussen], 0, 180, fill=255)
-    d.pieslice([cx - innen, cy - innen, cx + innen, cy + innen], 0, 180, fill=0)
+
+    def senkrecht(x, y1, y2):
+        """Senkrechter Strich; oben eckiges Ende (wie stroke-linecap: square), unten bündig."""
+        d.rectangle([(x - h) * s, (y1 - h) * s, (x + h) * s, y2 * s], fill=255)
+
+    def waagerecht(y, x1, x2):
+        """Waagerechter Strich von x1 (eckiges Ende) bis x2 (bündig an den Bogen)."""
+        d.rectangle([(x1 - h) * s, (y - h) * s, x2 * s, (y + h) * s], fill=255)
+
+    def bogen(cx, cy, r, start, ende):
+        a, i = (r + h) * s, (r - h) * s
+        ring = Image.new("L", (n, n), 0)
+        rd = ImageDraw.Draw(ring)
+        rd.pieslice([cx * s - a, cy * s - a, cx * s + a, cy * s + a], start, ende, fill=255)
+        rd.pieslice([cx * s - i, cy * s - i, cx * s + i, cy * s + i], start, ende, fill=0)
+        m.paste(255, (0, 0), ring)
+
+    # U: Schenkel bei x = 14 und x = 34 von y = 16 bis 34, Bogen Radius 10 um (24, 34)
+    senkrecht(14, 16, 34)
+    senkrecht(34, 16, 34)
+    bogen(24, 34, 10, 0, 180)
+    # P: Bogen Radius 8 um (42, 24) zwischen den Querstrichen y = 16 und y = 32, Schaft x = 34 bis y = 50
+    waagerecht(16, 34, 42)
+    waagerecht(32, 34, 42)
+    bogen(42, 24, 8, 270, 450)
+    d.rectangle([(34 - h) * s, 34 * s, (34 + h) * s, (50 + h) * s], fill=255)
     return m
 
 

@@ -1,24 +1,44 @@
-// Fenster „Vertretungen“: Ansichten (Klasse/Lehrer – Standard, Druck – Klasse/Lehrer, Pausenaufsichten), Element-Auswahl,
-// Zeitraum, Filter „Offene Vertretungen“, „Kollisionen“, „Veranstaltungen zusammenfassen“, alle Felder der Ansicht, Vtr-Nr.,
-// direkte Eingabe (Vertreter mit „+“ = Vertr. o. Lehrkr., „-“ = Entfall, Fach, Raum, Text …) für die bearbeitete bzw. alle markierten Zeilen.
+// Ansicht „Vertretungen“: Listenansichten (Klassen, Lehrkräfte, Druckansichten, Pausenaufsichten), Filterleiste (Ansicht,
+// Klasse bzw. Lehrkraft, Zeitraum, Schalter „Nur offene“, „Nur Kollisionen“, „Veranstaltungen zusammenfassen“), wählbare Spalten,
+// Sprung zur Nummer, direkte Eingabe (Vertretung mit „+“ = ohne Lehrkraft, „-“ = Entfall, Fach, Raum, Text …) für die bearbeitete
+// bzw. alle markierten Zeilen. Häufige Aktionen als Textknöpfe, seltene unter „Weitere Aktionen“.
 import { h, leeren, entprellen } from '../../kern/dom.js';
 import { api, einstellungLesen, einstellungSchreiben } from '../../kern/api.js';
 import { zustand, elemente, darfSchreiben } from '../../kern/zustand.js';
 import { betrifft } from '../../kern/ereignisse.js';
 import { Tabelle } from '../../kern/tabelle.js';
-import { frage, meldung, hinweis, fehlerMelden, formular, menue, dialog } from '../../kern/dialog.js';
+import { frage, meldung, hinweis, fehlerMelden, formular, dialog } from '../../kern/dialog.js';
 import { fensterverwaltung } from '../../kern/fenster.js';
 import { symbol } from '../../kern/symbole.js';
 import { vpfad, mitRueckfragen, auswahlMelden, aktuelleAuswahl, planungsdatum, tageswechsel, status } from './kern.js';
-import { zeitraumAuswahl } from './steuer.js';
+import { zeitraumAuswahl, filterleiste, filterGruppe, schalter, menueKnopf } from './steuer.js';
 
+/** Interne Schlüssel der Listenansichten (Server, gespeicherte Einstellungen) und ihre Anzeigenamen. */
 export const ANSICHTEN = ['Klasse - Standard', 'Lehrer - Standard', 'Druck - Klasse', 'Druck - Lehrer', 'Pausenaufsichten'];
+const ANSICHT_TEXT = { 'Klasse - Standard': 'Klassen', 'Lehrer - Standard': 'Lehrkräfte', 'Druck - Klasse': 'Druckansicht Klassen', 'Druck - Lehrer': 'Druckansicht Lehrkräfte', Pausenaufsichten: 'Pausenaufsichten' };
+export const ansichtText = (a) => ANSICHT_TEXT[a] || a;
+
+/** Spaltenbezeichnungen der Oberfläche (Titel, Beschreibung) und Mindestbreiten; Schlüssel wie vom Server. */
+const TITEL = {
+  Nr: ['Nr.', 'Nummer der Vertretung'], Art: ['Art', 'Art der Vertretung'], Std: ['Std.', 'Stunde'], Zeit: ['Zeit', 'Beginn und Ende'],
+  Fach: ['Fach bisher', 'Fach laut Stundenplan'], NFach: ['Fach', 'Fach der Vertretung'], Lehrer: ['Lehrkraft', 'Lehrkraft laut Stundenplan'],
+  Vertreter: ['Vertretung', 'Vertretende Lehrkraft'], AKlassen: ['Klassen bisher', 'Klassen laut Stundenplan'], Klassen: ['Klassen', 'Klassen der Vertretung'],
+  Raum: ['Raum bisher', 'Raum laut Stundenplan'], NRaum: ['Raum', 'Raum der Vertretung'], Von: ['Verlegt von', 'Herkunft einer Verlegung'],
+  Nach: ['Verlegt nach', 'Ziel einer Verlegung'], Text: ['Text', 'Text zur Vertretung'], Kz: ['Statistik', 'Statistikkennzeichen'], Grund: ['Grund', 'Abwesenheitsgrund'],
+  UText: ['Unterrichtstext', 'Text des Unterrichts'], UZText: ['Zeilentext', 'Zeilentext des Unterrichts'], Beschr: ['Beschreibung', 'Beschreibung'],
+  Entf: ['Entfall', 'Entfall'], Mitb: ['Mitbetreuung', 'Mitbetreuung'], Kopp: ['Kopplung', 'Gekoppelte Vertretungen'], Neu: ['Neu', 'Neue Vertretung'],
+  Fix: ['Fixiert', 'Fixiert – wird nicht automatisch geändert'], ND: ['Nicht drucken', 'Wird nicht ausgegeben'], Text2: ['Text 2', 'Zweiter Text'],
+  Ben: ['Benachrichtigen', 'Lehrkraft benachrichtigen'], Zaehler: ['Zähler', 'Vertretungszähler'], Wert: ['Wert', 'Wert bzw. Faktor'], Mehr: ['Mehrarbeit', 'Mehrarbeit'],
+};
+const BREITE = { Nr: 56, Art: 100, Datum: 62, Std: 46, Fach: 84, NFach: 60, Lehrer: 76, Vertreter: 86, AKlassen: 100, Klassen: 76, Raum: 86, NRaum: 64, Von: 92, Nach: 92, Fix: 60, ND: 96 };
+const spaltenTitel = (s) => TITEL[s.schluessel]?.[0] || s.titel;
+const spaltenFeld = (s) => TITEL[s.schluessel]?.[1] || s.feld;
 const FELDER = 'vertretung.felder';
 const ARTEN_AUS = 'vertretung.artenAus';
 const EDITIERBAR = new Set(['NFach', 'Vertreter', 'NRaum', 'Text', 'Kz', 'SG', 'Beschr', 'Kopp', 'Text2', 'Wert']);
 const ELEMENT = { NFach: 'fach', Vertreter: 'lehrer', NRaum: 'raum' };
 
-/** Gespeicherte „Felder der Ansicht“: Spalte → Kennzeichen („a“ aktiv, „d“ drucken, „L“ Langname); fehlt = Standard. */
+/** Gespeicherte Spaltenauswahl: Spalte → Kennzeichen („a“ aktiv, „d“ drucken, „L“ Langname); fehlt = Standard. */
 export async function feldEinstellungen(ansicht, spalten) {
   const alle = (await einstellungLesen(FELDER)) || {};
   const f = { ...(alle[ansicht] || {}) };
@@ -27,18 +47,19 @@ export async function feldEinstellungen(ansicht, spalten) {
   return f;
 }
 
-/** Dialog „Felder der Ansicht“: Feld / aktiv / drucken / Anzeige von (Kurzname, Langname). */
+/** Dialog „Spalten“: Spalte / anzeigen / drucken / Name (Kurzname, Langname). */
 export async function felderDialog(ansicht, spalten) {
   const f = await feldEinstellungen(ansicht, spalten);
   const zeilen = spalten.map((s) => {
     const a = h('input', { type: 'checkbox', checked: f[s.schluessel].includes('a'), disabled: s.schluessel === 'Nr' });
     const d = h('input', { type: 'checkbox', checked: f[s.schluessel].includes('d') });
     const l = s.lang ? h('select', { class: 'eingabe' }, h('option', { value: '' }, 'Kurzname'), h('option', { value: 'L', selected: f[s.schluessel].includes('L') }, 'Langname')) : h('span');
-    return { s, a, d, l, tr: h('tr', null, h('td', { class: s.standard ? 'fett' : '' }, s.feld), h('td', { class: 'mitte' }, a), h('td', { class: 'mitte' }, d), h('td', null, l)) };
+    return { s, a, d, l, tr: h('tr', null, h('td', { class: s.standard ? 'fett' : '', title: s.feld || '' }, spaltenFeld(s) || s.feld), h('td', { class: 'mitte' }, a), h('td', { class: 'mitte' }, d), h('td', null, l)) };
   });
-  const inhalt = h('div', { class: 'vt-felder' }, h('table', null, h('thead', null, h('tr', null, h('th', null, 'Feld'), h('th', null, 'aktiv'), h('th', null, 'drucken'), h('th', null, 'Anzeige von'))),
-    h('tbody', null, zeilen.map((z) => z.tr))));
-  const ok = await dialog({ titel: `Felder der Ansicht – ${ansicht.replace(' - ', ' – ')}`, inhalt, breite: '420px', knoepfe: [{ text: 'OK', wert: true, primaer: true }, { text: 'Standard', wert: 'std' }, { text: 'Abbrechen', wert: null }] });
+  const inhalt = h('div', { class: 'vt-felder' }, h('p', { class: 'leise' }, 'Fett gesetzte Spalten gehören zur Grundeinstellung.'),
+    h('div', { class: 'vt-tabwrap' }, h('table', { class: 'vt-dtabelle' }, h('thead', null, h('tr', null, h('th', null, 'Spalte'), h('th', { class: 'mitte' }, 'Anzeigen'), h('th', { class: 'mitte' }, 'Drucken'), h('th', null, 'Name'))),
+      h('tbody', null, zeilen.map((z) => z.tr)))));
+  const ok = await dialog({ titel: `Spalten – ${ansichtText(ansicht)}`, inhalt, breite: '480px', knoepfe: [{ text: 'Übernehmen', wert: true, primaer: true }, { text: 'Grundeinstellung', wert: 'std' }, { text: 'Abbrechen', wert: null }] });
   if (!ok) return false;
   const alle = (await einstellungLesen(FELDER)) || {};
   if (ok === 'std') delete alle[ansicht];
@@ -47,7 +68,7 @@ export async function felderDialog(ansicht, spalten) {
   return true;
 }
 
-/** Einstellungen des Vertretungsfensters: angezeigte Vertretungsarten je Ansicht und regulären Unterricht anzeigen. */
+/** Angezeigte Vertretungsarten je Listenansicht und regulären Unterricht anzeigen. */
 async function artenDialog(ansicht) {
   const ein = await api.get(vpfad('/einstellungen'));
   const alle = (await einstellungLesen(ARTEN_AUS)) || {};
@@ -55,34 +76,35 @@ async function artenDialog(ansicht) {
   const unterricht = !!alle.__unterricht;
   const arten = ein.arten.slice().sort((a, b) => (a.text || a.standard).localeCompare(b.text || b.standard, 'de'));
   const boxen = arten.map((a) => ({ a, el: h('input', { type: 'checkbox', checked: a.art === 'Unterricht' ? unterricht : !aus.has(a.art) }) }));
-  const inhalt = h('div', { class: 'vt-arten' }, h('p', null, 'Diese Vertretungsarten werden angezeigt:'),
-    h('div', { class: 'vt-artenliste' }, boxen.map((b) => h('label', null, b.el, ` ${b.a.text || b.a.standard}`))),
-    h('p', { class: 'leise' }, '„Unterricht“ blendet auch den regulär stattfindenden Unterricht ein. Bezeichnung und Farbe der Vertretungsarten: Einstellungen › Farben und Bezeichnungen.'));
-  if (!(await dialog({ titel: `Einstellungen – Vertretungen / ${ansicht.replace(' - ', ' – ')}`, inhalt, breite: '400px', knoepfe: [{ text: 'OK', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] }))) return false;
+  const inhalt = h('div', { class: 'vt-arten' }, h('p', null, `Diese Vertretungsarten zeigt die Ansicht „${ansichtText(ansicht)}“:`),
+    h('div', { class: 'vt-artenliste' }, boxen.map((b) => h('label', { class: 'kontrolle' }, b.el, b.a.text || b.a.standard))),
+    h('p', { class: 'leise' }, '„Unterricht“ blendet auch den regulär stattfindenden Unterricht ein. Bezeichnung und Farbe der Vertretungsarten stehen in den Einstellungen unter „Arten und Farben“.'));
+  if (!(await dialog({ titel: 'Angezeigte Vertretungsarten', inhalt, breite: '460px', knoepfe: [{ text: 'Übernehmen', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] }))) return false;
   alle[ansicht] = boxen.filter((b) => b.a.art !== 'Unterricht' && !b.el.checked).map((b) => b.a.art);
   alle.__unterricht = boxen.find((b) => b.a.art === 'Unterricht')?.el.checked || false;
   await einstellungSchreiben(ARTEN_AUS, alle);
   return true;
 }
 
-/** Dialog „Raum zuordnen / löschen“ einer Vertretung (mögliche Räume wie im Vorschlag, Reiter Räume). */
+/** Dialog „Raum zuordnen“ einer Vertretung (mögliche Räume wie im Vorschlag, Reiter Räume); Raum entfernen. */
 export async function raumDialog(id, ids, quelle) {
   let besetzt = false;
   let daten = await api.get(vpfad(`/vorschlag/${id}?besetzt=false`));
-  const zusatz = h('input', { type: 'checkbox' });
-  const auchBesetzt = h('input', { type: 'checkbox' });
+  const zusatzS = schalter('Zusätzlich zum bisherigen Raum zuordnen');
+  const besetztS = schalter('Auch belegte Räume anzeigen');
+  const zusatz = zusatzS.eingabe;
+  const auchBesetzt = besetztS.eingabe;
   const sel = h('select', { class: 'eingabe vt-raumliste', size: 12 });
   const fuellen = () => {
     leeren(sel).append(...daten.raeume.map((r) => h('option', { value: r.raum, class: r.besetzt ? 'besetzt' : r.ar || r.sr ? 'ausweich' : '' },
-      `${r.name}${r.kap ? `  (Kap. ${r.kap})` : ''}${r.ar ? '  Ausw-Rm.' : ''}${r.sr ? '  Ausw-Sr.' : ''}${r.besetzt ? `  – ${r.gesperrt ? 'gesperrt' : r.belegung}` : ''}`)));
+      `${r.name}${r.kap ? ` · ${r.kap} Plätze` : ''}${r.ar ? ' · Ausweichraum' : ''}${r.sr ? ' · Ausweich-Fachraum' : ''}${r.besetzt ? ` · ${r.gesperrt ? 'gesperrt' : `belegt: ${r.belegung}`}` : ''}`)));
     if (sel.options.length) sel.selectedIndex = 0;
   };
   auchBesetzt.addEventListener('change', async () => { besetzt = auchBesetzt.checked; daten = await api.get(vpfad(`/vorschlag/${id}?besetzt=${besetzt}`)); fuellen(); });
   fuellen();
-  const inhalt = h('div', { class: 'vt-raumdialog' }, h('p', null, daten.kopf), sel,
-    h('label', null, auchBesetzt, ' Auch besetzte Räume anzeigen'), h('label', null, zusatz, ' Zusätzlichen Raum zuordnen'));
+  const inhalt = h('div', { class: 'vt-raumdialog' }, h('p', { class: 'vt-dkopf' }, daten.kopf), sel, h('div', { class: 'vt-schalterreihe' }, besetztS, zusatzS));
   sel.addEventListener('dblclick', () => inhalt.closest('.dialog')?.querySelector('.knopf.primaer')?.click());
-  const w = await dialog({ titel: 'Raum zuordnen / löschen', inhalt, breite: '460px', knoepfe: [{ text: 'Zuordnen', wert: 'zu', primaer: true }, { text: 'Raum löschen', wert: 'weg' }, { text: 'Abbrechen', wert: null }] });
+  const w = await dialog({ titel: 'Raum zuordnen', inhalt, breite: '480px', knoepfe: [{ text: 'Zuordnen', wert: 'zu', primaer: true }, { text: 'Raum entfernen', wert: 'weg' }, { text: 'Abbrechen', wert: null }] });
   if (!w) return;
   const raum = w === 'weg' ? null : Number(sel.value);
   if (w === 'zu' && !raum) return;
@@ -103,21 +125,23 @@ function vertretungenFenster(f, p) {
   const lehrerSicht = () => ansicht.startsWith('Lehrer') || ansicht === 'Druck - Lehrer';
   const FA = () => behalten.size > 0 || filter.offen || filter.kollisionen || element != null || ansicht.startsWith('Druck');
 
-  // ---- Kopf: Element, Zeitraum, Ansicht einschränken ----
-  const elSel = h('select', { class: 'eingabe', title: 'Element' });
-  const elGruppe = h('span', { class: 'vt-gruppe' }, h('span', { class: 'vt-gtitel' }, 'Klasse(n)'), elSel);
-  const offen = h('input', { type: 'checkbox', checked: filter.offen });
-  const koll = h('input', { type: 'checkbox' });
-  const sammeln = h('input', { type: 'checkbox', checked: filter.sammeln });
+  // ---- Filterleiste: Ansicht, Element, Zeitraum, Schalter ----
+  const ansichtSel = h('select', { class: 'eingabe', title: 'Listenansicht' }, ANSICHTEN.map((a) => h('option', { value: a, selected: a === ansicht }, ansichtText(a))));
+  const elSel = h('select', { class: 'eingabe', title: 'Nur Vertretungen dieser Klasse bzw. Lehrkraft' });
+  const elGruppe = filterGruppe('Klasse', elSel);
+  const offenS = schalter('Nur offene', { checked: filter.offen, titel: 'Nur Vertretungen ohne Lehrkraft oder ohne Raum zeigen' });
+  const kollS = schalter('Nur Kollisionen', { titel: 'Nur Vertretungen mit Doppelbelegung von Lehrkraft oder Raum zeigen' });
+  const sammelnS = schalter('Veranstaltungen zusammenfassen', { checked: filter.sammeln, titel: 'Entfälle und Freistellungen einer Veranstaltung je Tag in einer Zeile zeigen (alle Klassen, Stunden 1–6)' });
+  const offen = offenS.eingabe;
+  const koll = kollS.eingabe;
+  const sammeln = sammelnS.eingabe;
   const zr = zeitraumAuswahl(f, { art: p.zeitraum || 'tag', tageProWoche: zustand.grunddaten?.zeitraster?.tage?.length || 5, beiAenderung: (von, bis) => {
     f.parameterSetzen({ zeitraum: zr.art });
     if (bis !== von && schreiben) tageswechsel(von, bis).then(() => laden());
     else laden();
   } });
-  const kopf = h('div', { class: 'vt-kopf' }, elGruppe, h('span', { class: 'vt-gruppe' }, h('span', { class: 'vt-gtitel' }, 'Von-Bis'), zr.el),
-    h('span', { class: 'vt-gruppe' }, h('span', { class: 'vt-gtitel' }, 'Ansicht einschränken auf …'),
-      h('label', null, offen, ' Offene Vertretungen'), h('label', null, koll, ' Kollisionen'),
-      h('label', { title: 'Entfälle und Freisetzungen einer Veranstaltung je Tag in einer Zeile zeigen – „Alle Klassen“, Stunde „1-6“' }, sammeln, ' Veranstaltungen zusammenfassen')));
+  const kopf = filterleiste(filterGruppe('Ansicht', ansichtSel), elGruppe, filterGruppe('Zeitraum', zr.el),
+    h('span', { class: 'vt-gruppe vt-schalterreihe' }, offenS, kollS, sammelnS));
   f.inhalt.append(kopf);
   offen.addEventListener('change', () => { filter.offen = offen.checked; behalten.clear(); laden(); });
   koll.addEventListener('change', () => { filter.kollisionen = koll.checked; behalten.clear(); laden(); });
@@ -130,14 +154,15 @@ function vertretungenFenster(f, p) {
     leeren(elSel).append(h('option', { value: '' }, '(alle)'), ...liste.map((e) => h('option', { value: e.id }, e.k)));
     element = liste.some((e) => e.id === alt) ? alt : null;
     elSel.value = element ?? '';
-    elGruppe.firstChild.textContent = lehrerSicht() ? 'Vertreter' : 'Klasse(n)';
+    elGruppe.firstChild.textContent = lehrerSicht() ? 'Lehrkraft' : 'Klasse';
   }
 
   // ---- Tabelle ----
   const tabelle = new Tabelle(f.inhalt, {
     spalten: [],
     sortierbar: true,
-    leerText: 'Keine Vertretungen im gewählten Zeitraum',
+    leerText: 'Im gewählten Zeitraum gibt es keine Vertretungen.',
+    zeilenHoehe: 30,
     zeilenKlasse: (z) => [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.has(z.m.v) ? 'vt-behalten' : ''].filter(Boolean).join(' '),
     aendern: schreiben ? (z, s, wert) => eingeben(z, s.schluessel, wert) : undefined,
     optionen: (s) => optionen(s.schluessel),
@@ -152,7 +177,7 @@ function vertretungenFenster(f, p) {
 
   function spaltenAufbauen() {
     const neu = daten.spalten.map((s) => ({
-      schluessel: s.schluessel, titel: s.titel, hinweis: s.feld, breite: s.breite,
+      schluessel: s.schluessel, titel: spaltenTitel(s), hinweis: spaltenFeld(s), breite: Math.max(s.breite, BREITE[s.schluessel] || 0),
       art: s.schluessel in ELEMENT ? 'Element' : s.nurLesen ? 'NurLesen' : 'Text', refTyp: ELEMENT[s.schluessel],
       editierbar: EDITIERBAR.has(s.schluessel) && schreiben,
       editierbarFuer: (z) => editierbar(z, s.schluessel),
@@ -171,12 +196,12 @@ function vertretungenFenster(f, p) {
   const istVerlegungsArt = (a) => a === 'Tausch' || a === 'Verlegung' || a === 'Verlegt';
   function farbe(z, s) {
     const m = z.m;
-    if (s === 'Art' && m.farbe) return m.farbe;
-    if (m.koll && ((s === 'Vertreter' && m.kollL) || (s === 'NRaum' && m.kollR))) return '#fff500';
-    if (s === 'Vertreter' && m.pause) return '#a0ecf6';
-    if (istVerlegungsArt(m.art) && ['Klassen', 'Vertreter', 'NRaum', 'NFach', 'Text'].includes(s)) return '#ff80ff';
-    if (s === 'UText' || s === 'UZText') return '#e1e1e1';
-    if (m.unterricht && s !== 'Art') return '#f2f2f2';
+    if (s === 'Art' && m.farbe) return `color-mix(in srgb, ${m.farbe} 24%, var(--zelle))`;
+    if (m.koll && ((s === 'Vertreter' && m.kollL) || (s === 'NRaum' && m.kollR))) return 'var(--up-entfall-flaeche)';
+    if (s === 'Vertreter' && m.pause) return 'var(--up-frei-flaeche)';
+    if (istVerlegungsArt(m.art) && ['Klassen', 'Vertreter', 'NRaum', 'NFach', 'Text'].includes(s)) return 'var(--up-aenderung-flaeche)';
+    if (s === 'UText' || s === 'UZText') return 'var(--up-schiefer-50)';
+    if (m.unterricht && s !== 'Art') return 'var(--up-schiefer-25)';
     return null;
   }
   function zellKlasse(z, s) {
@@ -189,7 +214,7 @@ function vertretungenFenster(f, p) {
   function editierbar(z, s) {
     const m = z.m;
     if (!schreiben || !m.v || m.unterricht || !EDITIERBAR.has(s)) return false;
-    if (m.fix) { status(statusEl, `Vertretung ${m.v} ist fixiert (X) – zum Ändern zuerst lösen.`, 'warnung'); return false; }
+    if (m.fix) { status(statusEl, `Vertretung ${m.v} ist fixiert – zum Ändern zuerst die Fixierung lösen.`, 'warnung'); return false; }
     if (m.veranstaltung && s !== 'Vertreter' && s !== 'Text') return false;
     if (m.sammel && !['Text', 'Text2', 'Kz'].includes(s)) return false;
     if (m.freisetzung && ['Vertreter', 'NFach', 'NRaum'].includes(s)) return false;
@@ -247,14 +272,14 @@ function vertretungenFenster(f, p) {
       await meldung('Vertretungen, die aus einer Abwesenheit oder Veranstaltung entstehen, können nicht gelöscht werden.\n\nMit „Entfall“ entfällt die Stunde, mit „Zurücksetzen“ wird sie wieder offen. Soll sie ganz verschwinden, die Abwesenheit ändern.', 'Vertretung löschen');
       return;
     }
-    if (!(await frage(`${tabelle.ausgewaehlte().length - abgeleitet} Vertretung(en) löschen?${abgeleitet ? `\n\n${abgeleitet} Zeile(n) aus Absenzen/Veranstaltungen bleiben erhalten.` : ''}`, { gefahr: true, ja: 'Löschen', nein: 'Abbrechen' }))) return;
+    if (!(await frage(`${tabelle.ausgewaehlte().length - abgeleitet} Vertretung(en) löschen?${abgeleitet ? `\n\n${abgeleitet} Zeile(n) aus Abwesenheiten oder Veranstaltungen bleiben erhalten.` : ''}`, { gefahr: true, ja: 'Löschen', nein: 'Abbrechen' }))) return;
     await api.post(vpfad('/loeschen'), { ids }, { quelle: f.id });
     await laden();
   }
   async function teilen() {
     const z = tabelle.aktiveZeile();
     if (!z?.m.v) return;
-    const w = await formular('Vertretung teilen', [{ name: 'klassen', titel: 'Klassen der neuen Teilvertretung', hinweis: 'Kurznamen; die übrigen bleiben in der bisherigen Zeile (leer = gleiche Klassen).' }]);
+    const w = await formular('Vertretung teilen', [{ name: 'klassen', titel: 'Klassen der neuen Zeile', hinweis: 'Kurznamen; die übrigen bleiben in der bisherigen Zeile (leer = gleiche Klassen).' }], { okText: 'Teilen' });
     if (!w) return;
     await api.post(vpfad('/teilen'), { id: z.m.v, klassen: w.klassen }, { quelle: f.id });
     await laden();
@@ -262,7 +287,7 @@ function vertretungenFenster(f, p) {
   async function lehrkraftHinzufuegen() {
     const z = tabelle.ausgewaehlte().find((x) => x.m.veranstaltung);
     if (!z) { hinweis('Bitte die Zeile einer Veranstaltung markieren.', 'warnung'); return; }
-    const w = await formular(`Lehrkraft zur Veranstaltung hinzufügen (${z.Datum})`, [{ name: 'lehrer', titel: 'Zusätzliche Lehrkraft', pflicht: true, hinweis: 'Kurzname, mehrere mit Komma.' }]);
+    const w = await formular(`Lehrkraft zur Veranstaltung hinzufügen (${z.Datum})`, [{ name: 'lehrer', titel: 'Zusätzliche Lehrkraft', pflicht: true, hinweis: 'Kurzname, mehrere mit Komma.' }], { okText: 'Hinzufügen' });
     if (!w) return;
     const bisher = String(z.Vertreter || '').split(',').filter((x) => x && x !== '?');
     await aktion('/veranstaltungslehrer', { id: z.m.v, wert: [...bisher, w.lehrer].join(',') }, [z.m.v]).catch(fehlerMelden);
@@ -277,7 +302,7 @@ function vertretungenFenster(f, p) {
   async function neuBerechnen() {
     const r = await api.post(vpfad('/neuberechnen'), { von: zr.von, bis: zr.bis }, { quelle: f.id });
     await laden();
-    if (r.uebertragen || r.hinweise?.length) meldung(`${r.uebertragen} Vertretung(en) umgeplanter Stunden übertragen.${r.hinweise?.length ? `\n\n${r.hinweise.join('\n')}` : ''}`, 'Stundenplanänderungen nacherfasst');
+    if (r.uebertragen || r.hinweise?.length) meldung(`${r.uebertragen} Vertretung(en) umgeplanter Stunden übertragen.${r.hinweise?.length ? `\n\n${r.hinweise.join('\n')}` : ''}`, 'Änderungen des Stundenplans übernommen');
     else hinweis('Vertretungen neu berechnet.', 'ok', 2000);
   }
 
@@ -336,15 +361,15 @@ function vertretungenFenster(f, p) {
     const anzahl = markierteIds().length;
     if (liste.length) {
       const z = liste[0];
-      e.push({ text: 'Vertretungsvorschlag …', symbol: 'vertretung', aktion: vorschlagOeffnen });
+      e.push({ text: 'Vertretungsvorschlag', aktion: vorschlagOeffnen, taste: 'Enter' });
       if (!z.m.pause) {
         const unter = [{ text: 'wird berechnet …', deaktiviert: true }];
-        e.push({ text: 'Vertreter (bester Vorschlag)', symbol: 'lehrer', menue: unter });
+        e.push({ text: 'Vertretung zuweisen', menue: unter });
         if (!vorschlagCache.has(z.m.v)) vorschlagCache.set(z.m.v, api.get(vpfad(`/vorschlag/${z.m.v}`)).catch(() => null));
         const ids = markierteIds();
         vorschlagCache.get(z.m.v).then((v) => {
           const k8 = (v?.kandidaten || []).slice(0, 8).map((k) => ({
-            text: `${k.name}  (${k.lage || k.kriterien || '–'}, Zähler ${k.zaehler || '0'})`, deaktiviert: !schreiben,
+            text: `${k.name} · ${k.lage || k.kriterien || '–'} · Zähler ${k.zaehler || '0'}`, deaktiviert: !schreiben,
             aktion: async () => { if (FA()) ids.forEach((i) => behalten.add(i)); await mitRueckfragen(vpfad(`/vorschlag/${z.m.v}/uebernehmen`), { lehrer: k.lehrer, ids }, { quelle: f.id }); await laden(); },
           }));
           unter.splice(0, unter.length, ...(k8.length ? k8 : [{ text: 'Kein Vorschlag', deaktiviert: true }]));
@@ -352,73 +377,73 @@ function vertretungenFenster(f, p) {
       }
       e.push(null);
       const alleEntfall = liste.every((x) => x.m.entfall && !x.m.freisetzung);
-      e.push(alleEntfall ? { text: 'Entfall rückgängig machen', symbol: 'rueckgaengig', deaktiviert: !schreiben, aktion: entfall }
-        : { text: `Entfall${anzahl > 1 ? ` (${anzahl} Stunden)` : ''}`, symbol: 'loeschen', deaktiviert: !schreiben, aktion: entfall });
-      e.push({ text: `Vertr. o. Lehrkr.${anzahl > 1 ? ` (${anzahl} Stunden)` : ''}`, symbol: 'plus', deaktiviert: !schreiben, aktion: ohneLehrer });
-      if (liste.some((x) => x.m.veranstaltung)) e.push({ text: 'Lehrkraft zur Veranstaltung hinzufügen …', symbol: 'lehrer', deaktiviert: !schreiben, aktion: lehrkraftHinzufuegen });
-      e.push({ text: 'Vertretung teilen', symbol: 'tausch', deaktiviert: !schreiben, aktion: teilen });
-      e.push({ text: 'Raum zuordnen / löschen …', symbol: 'raeume', deaktiviert: !schreiben || z.m.pause, aktion: raumZuordnen });
-      e.push({ text: 'Als Vormerkung beiseitelegen', symbol: 'rueckgaengig', deaktiviert: !schreiben, aktion: vormerken });
+      e.push(alleEntfall ? { text: 'Entfall aufheben', deaktiviert: !schreiben, aktion: entfall }
+        : { text: `Entfall${anzahl > 1 ? ` (${anzahl} Stunden)` : ''}`, taste: '-', deaktiviert: !schreiben, aktion: entfall });
+      e.push({ text: `Ohne Lehrkraft${anzahl > 1 ? ` (${anzahl} Stunden)` : ''}`, taste: '+', deaktiviert: !schreiben, aktion: ohneLehrer });
+      if (liste.some((x) => x.m.veranstaltung)) e.push({ text: 'Lehrkraft zur Veranstaltung hinzufügen …', deaktiviert: !schreiben, aktion: lehrkraftHinzufuegen });
+      e.push({ text: 'Vertretung teilen …', deaktiviert: !schreiben, aktion: teilen });
+      e.push({ text: 'Raum zuordnen …', deaktiviert: !schreiben || z.m.pause, aktion: raumZuordnen });
+      e.push({ text: 'Als Vormerkung beiseitelegen', deaktiviert: !schreiben, aktion: vormerken });
       e.push({ text: 'Nicht drucken', haken: liste.every((x) => x.m.nd), deaktiviert: !schreiben, aktion: () => kennzeichen('nd') });
-      e.push({ text: '(X) Fixieren', haken: liste.every((x) => x.m.fix), deaktiviert: !schreiben, aktion: () => kennzeichen('fix') });
+      e.push({ text: 'Fixiert', haken: liste.every((x) => x.m.fix), deaktiviert: !schreiben, aktion: () => kennzeichen('fix') });
       e.push(null);
-      if (z.m.vertreter) e.push({ text: `Lehrerplan ${z.Vertreter} (tagesaktuell)`, symbol: 'stundenplan', aktion: () => fensterverwaltung.oeffnen('vertretung.plan', { typ: 'lehrer', element: z.m.vertreter }) });
-      if (z.m.lehrer && z.m.lehrer !== z.m.vertreter) e.push({ text: `Lehrerplan ${String(z.Lehrer).replace('*', '')} (tagesaktuell)`, symbol: 'stundenplan', aktion: () => fensterverwaltung.oeffnen('vertretung.plan', { typ: 'lehrer', element: z.m.lehrer }) });
-      if (z.m.klasse) e.push({ text: `Klassenplan ${String(z.Klassen).replace(/[()]/g, '').split(',')[0]} (tagesaktuell)`, symbol: 'stundenplan', aktion: () => fensterverwaltung.oeffnen('vertretung.plan', { typ: 'klasse', element: z.m.klasse }) });
+      if (z.m.vertreter) e.push({ text: `Tagesplan Lehrkraft ${z.Vertreter}`, aktion: () => fensterverwaltung.oeffnen('vertretung.plan', { typ: 'lehrer', element: z.m.vertreter }) });
+      if (z.m.lehrer && z.m.lehrer !== z.m.vertreter) e.push({ text: `Tagesplan Lehrkraft ${String(z.Lehrer).replace('*', '')}`, aktion: () => fensterverwaltung.oeffnen('vertretung.plan', { typ: 'lehrer', element: z.m.lehrer }) });
+      if (z.m.klasse) e.push({ text: `Tagesplan Klasse ${String(z.Klassen).replace(/[()]/g, '').split(',')[0]}`, aktion: () => fensterverwaltung.oeffnen('vertretung.plan', { typ: 'klasse', element: z.m.klasse }) });
       e.push(null);
-      e.push({ text: 'Zurücksetzen (wieder offen)', symbol: 'rueckgaengig', deaktiviert: !schreiben, aktion: zuruecksetzen });
-      e.push({ text: 'Löschen', symbol: 'loeschen', deaktiviert: !schreiben, aktion: loeschen });
+      e.push({ text: 'Zurücksetzen (wieder offen)', taste: 'Entf', deaktiviert: !schreiben, aktion: zuruecksetzen });
+      e.push({ text: 'Löschen', deaktiviert: !schreiben, aktion: loeschen });
       e.push(null);
     }
-    e.push({ text: 'Sondereinsatz …', symbol: 'neu', deaktiviert: !schreiben, aktion: () => import('./weitere.js').then((w) => w.sondereinsatzDialog({ stunde: liste[0]?.m.stunde, klassen: liste[0]?.Klassen?.replace(/[()]/g, '') })) });
-    e.push({ text: 'Nachrichten zum Tag …', symbol: 'info', aktion: () => fensterverwaltung.oeffnen('vertretung.kalender', { reiter: 0 }) });
+    e.push({ text: 'Sondereinsatz …', deaktiviert: !schreiben, aktion: () => import('./weitere.js').then((w) => w.sondereinsatzDialog({ stunde: liste[0]?.m.stunde, klassen: liste[0]?.Klassen?.replace(/[()]/g, '') })) });
+    e.push({ text: 'Tagestexte …', aktion: () => fensterverwaltung.oeffnen('vertretung.kalender', { reiter: 0 }) });
     return e;
   }
 
-  // ---- Werkzeugleiste ----
-  f.werkzeug({ text: 'Felder der Ansicht', symbol: 'spalten', nurSymbol: true, titel: 'Felder der Ansicht', aktion: async () => { if (await felderDialog(ansicht, daten.spalten)) { felder = await feldEinstellungen(ansicht, daten.spalten); spaltenAufbauen(); tabelle._neuZeichnen(); } } });
-  f.werkzeug({ text: 'Vorschlag', symbol: 'vertretung', titel: 'Vertretungsvorschlag (Enter, Doppelklick)', aktion: vorschlagOeffnen });
-  f.werkzeug({ text: 'Nächste offene', symbol: 'pfeil_runter', titel: 'Zur nächsten offenen Vertretung springen (F3, Umschalt+F3 rückwärts)', aktion: () => { if (!naechsteOffene()) hinweis('Keine offene Vertretung.', 'info', 2000); } });
-  f.trenner();
+  // ---- Werkzeugleiste: häufige Aktionen als Textknöpfe, seltene unter „Weitere Aktionen“ ----
+  const spaltenWaehlen = async () => { if (await felderDialog(ansicht, daten.spalten)) { felder = await feldEinstellungen(ansicht, daten.spalten); spaltenAufbauen(); tabelle._neuZeichnen(); } };
+  f.werkzeug({ text: 'Vorschlag', titel: 'Vertretungsvorschlag für die markierte Stunde (Enter, Doppelklick)', aktion: vorschlagOeffnen });
+  f.werkzeug({ text: 'Nächste offene', titel: 'Zur nächsten offenen Vertretung springen (F3, Umschalt+F3 rückwärts)', aktion: () => { if (!naechsteOffene()) hinweis('Keine offene Vertretung.', 'info', 2000); } });
   if (schreiben) {
-    f.werkzeug({ text: 'Entfall', symbol: 'loeschen', nurSymbol: true, titel: 'Entfall – Unterricht entfällt (Taste - beim Vertreter); erneut klicken macht wieder eine offene Vertretung daraus', aktion: entfall });
-    f.werkzeug({ text: '+', symbol: 'plus', nurSymbol: true, titel: 'Vertr. o. Lehrkr. (+)', aktion: ohneLehrer });
-    f.werkzeug({ text: 'Teilen', symbol: 'tausch', nurSymbol: true, titel: 'Vertretung teilen', aktion: teilen });
-    f.werkzeug({ text: 'Lehrkraft zur Veranstaltung', symbol: 'lehrer', nurSymbol: true, titel: 'Lehrkraft zur Veranstaltung hinzufügen', aktion: lehrkraftHinzufuegen });
-    f.werkzeug({ text: 'Raum', symbol: 'raeume', nurSymbol: true, titel: 'Raum zuordnen / löschen', aktion: raumZuordnen });
-    f.werkzeug({ text: 'Sondereinsatz', symbol: 'neu', nurSymbol: true, titel: 'Sondereinsatz', aktion: () => import('./weitere.js').then((w) => w.sondereinsatzDialog({ stunde: tabelle.aktiveZeile()?.m.stunde })) });
-    f.werkzeug({ text: 'Vormerkung', symbol: 'rueckgaengig', nurSymbol: true, titel: 'Als Vormerkung beiseitelegen', aktion: vormerken });
-    f.werkzeug({ text: 'Zurücksetzen', symbol: 'wiederholen', nurSymbol: true, titel: 'Zurücksetzen (wieder offen) – Entf', aktion: zuruecksetzen });
-    f.werkzeug({ text: 'Löschen', symbol: 'schliessen', nurSymbol: true, titel: 'Löschen (nur Sondereinsätze, Verlegungen …)', aktion: loeschen });
     f.trenner();
+    f.werkzeug({ text: 'Entfall', titel: 'Unterricht entfällt (Taste -); erneut ausgeführt wird daraus wieder eine offene Vertretung', aktion: entfall });
+    f.werkzeug({ text: 'Ohne Lehrkraft', titel: 'Stunde findet ohne Lehrkraft statt (Taste +)', aktion: ohneLehrer });
+    f.werkzeug({ text: 'Zurücksetzen', titel: 'Wieder zur offenen Vertretung machen (Entf)', aktion: zuruecksetzen });
   }
-  const inhaltKnopf = f.werkzeug({ text: 'Felder mit Inhalt', symbol: 'uebersicht', nurSymbol: true, titel: 'Felder mit Inhalt: alle Spalten mit einer Eingabe zeigen – erneuter Klick stellt die ursprünglichen Spalten wieder her', aktion: () => {
-    felderMitInhalt(!vorInhalt);
-    inhaltKnopf.classList.toggle('gedrueckt', !!vorInhalt);
-  } });
-  if (schreiben) {
-    f.werkzeug({ text: 'Fixieren', symbol: 'fixieren', nurSymbol: true, titel: 'Vertretung fixieren (X) / lösen', aktion: () => kennzeichen('fix') });
-    f.werkzeug({ text: 'Nicht drucken', symbol: 'drucken', nurSymbol: true, titel: 'Nicht drucken (N) ein/aus', aktion: () => kennzeichen('nd') });
-    f.trenner();
-    f.werkzeug({ text: 'Automatik', symbol: 'optimierung', nurSymbol: true, titel: 'Vertretungs-Automatik', aktion: () => import('./weitere.js').then((w) => w.automatikDialog(zr.von, zr.bis)) });
-    f.werkzeug({ text: 'Neu berechnen', symbol: 'wiederholen', nurSymbol: true, titel: 'Neu berechnen (Abwesenheiten, Veranstaltungen, Klausuren)', aktion: neuBerechnen });
-  }
-  f.werkzeug({ text: 'Nachrichten zum Tag', symbol: 'info', nurSymbol: true, titel: 'Nachrichten zum Tag', aktion: () => fensterverwaltung.oeffnen('vertretung.kalender', { reiter: 0 }) });
-  const einst = f.werkzeug({ text: 'Einstellungen', symbol: 'einstellungen', nurSymbol: true, titel: 'Einstellungen', aktion: () => {
-    const r = einst.getBoundingClientRect();
-    menue(r.left, r.bottom + 2, [
-      { text: 'Einstellungen Vertretungsfenster (Vertretungsarten anzeigen) …', aktion: async () => { if (await artenDialog(ansicht)) laden(); } },
-      { text: 'Felder der Ansicht …', symbol: 'spalten', aktion: async () => { if (await felderDialog(ansicht, daten.spalten)) { felder = await feldEinstellungen(ansicht, daten.spalten); spaltenAufbauen(); tabelle._neuZeichnen(); } } },
-      { text: 'Vertretungsplanung: Farben und Bezeichnungen, Zähler, Vorschlag …', symbol: 'einstellungen', aktion: () => import('./weitere.js').then((w) => w.einstellungenDialog(0)) },
-    ]);
-  } });
+  menueKnopf(f, 'Weitere Aktionen', () => {
+    const liste = tabelle.ausgewaehlte().filter((z) => z.m.v);
+    const keine = !liste.length;
+    return [
+      { text: 'Raum zuordnen …', deaktiviert: !schreiben || keine, aktion: raumZuordnen },
+      { text: 'Vertretung teilen …', deaktiviert: !schreiben || keine, aktion: teilen },
+      { text: 'Lehrkraft zur Veranstaltung hinzufügen …', deaktiviert: !schreiben || !liste.some((x) => x.m.veranstaltung), aktion: lehrkraftHinzufuegen },
+      { text: 'Als Vormerkung beiseitelegen', deaktiviert: !schreiben || keine, aktion: vormerken },
+      { text: 'Sondereinsatz …', deaktiviert: !schreiben, aktion: () => import('./weitere.js').then((w) => w.sondereinsatzDialog({ stunde: tabelle.aktiveZeile()?.m.stunde })) },
+      null,
+      { text: 'Fixiert', haken: !keine && liste.every((x) => x.m.fix), deaktiviert: !schreiben || keine, aktion: () => kennzeichen('fix') },
+      { text: 'Nicht drucken', haken: !keine && liste.every((x) => x.m.nd), deaktiviert: !schreiben || keine, aktion: () => kennzeichen('nd') },
+      null,
+      { text: 'Automatische Vertretung …', deaktiviert: !schreiben, aktion: () => import('./weitere.js').then((w) => w.automatikDialog(zr.von, zr.bis)) },
+      { text: 'Neu berechnen', deaktiviert: !schreiben, aktion: neuBerechnen },
+      { text: 'Tagestexte …', aktion: () => fensterverwaltung.oeffnen('vertretung.kalender', { reiter: 0 }) },
+      null,
+      { text: 'Löschen …', deaktiviert: !schreiben || keine, aktion: loeschen },
+    ];
+  }, 'Weitere Aktionen für die markierten Vertretungen');
+  const darstellung = menueKnopf(f, 'Darstellung', () => [
+    { text: 'Spalten …', aktion: spaltenWaehlen },
+    { text: 'Nur Spalten mit Inhalt', haken: !!vorInhalt, aktion: () => felderMitInhalt(!vorInhalt) },
+    { text: 'Angezeigte Vertretungsarten …', aktion: async () => { if (await artenDialog(ansicht)) laden(); } },
+    null,
+    { text: 'Einstellungen der Vertretungsplanung …', aktion: () => import('./weitere.js').then((w) => w.einstellungenDialog(0)) },
+  ], 'Spalten, angezeigte Vertretungsarten und Einstellungen');
+  darstellung.classList.add('rechts');
 
-  // ---- Fuß: Vtr-Nr., Status, Ansicht ----
-  const nr = h('input', { class: 'eingabe vt-nr', title: 'Vtr-Nr. eingeben und Enter: zur Vertretung springen' });
+  // ---- Fuß: Nummer, Status, Anzahl ----
+  const nr = h('input', { class: 'eingabe vt-nr', inputmode: 'numeric', title: 'Nummer eingeben und Enter: zur Vertretung springen' });
   const statusEl = h('span', { class: 'vt-status' });
-  const zaehler = h('span', { class: 'leise' });
-  const ansichtSel = h('select', { class: 'eingabe' }, ANSICHTEN.map((a) => h('option', { value: a, selected: a === ansicht }, a.replace(' - ', ' – '))));
-  f.fuss.append(h('span', null, 'Vtr-Nr.: '), nr, statusEl, zaehler, h('span', { class: 'rechts' }, 'Ansicht: ', ansichtSel));
+  const zaehler = h('span', { class: 'rechts' });
+  f.fuss.append(h('label', { class: 'vt-fussfeld' }, 'Nr.', nr), statusEl, zaehler);
   nr.addEventListener('keydown', async (e) => {
     if (e.key !== 'Enter') return;
     const n = Number(nr.value);
@@ -437,8 +462,8 @@ function vertretungenFenster(f, p) {
     ansicht = a;
     ansichtSel.value = a;
     f.parameterSetzen({ ansicht });
-    f.titel(`Vertretungen / ${ansicht.replace(' - ', ' – ')}`);
-    if (vorInhalt) { vorInhalt = null; inhaltKnopf.classList.remove('gedrueckt'); }
+    f.titel(`Vertretungen – ${ansichtText(ansicht)}`);
+    if (vorInhalt) vorInhalt = null;
     behalten.clear();
     await elementeFuellen();
     felder = daten ? await feldEinstellungen(ansicht, daten.spalten) : {};
@@ -486,18 +511,18 @@ function vertretungenFenster(f, p) {
     if (ersterAufbau) felder = await feldEinstellungen(ansicht, d.spalten);
     spaltenAufbauen();
     tabelle.daten(d.zeilen);
-    zaehler.textContent = `${d.zeilen.length} Zeilen · ${d.offen} offen`;
+    zaehler.textContent = `${d.zeilen.length} ${d.zeilen.length === 1 ? 'Zeile' : 'Zeilen'} · ${d.offen} offen`;
     if (ersterAufbau && d.zeilen.length && !tabelle.aktiveZeile()) tabelle.waehle(d.zeilen[0].id);
   }
   const entprelltLaden = entprellen(() => laden().catch(() => {}), 150);
 
   f.an('daten', (e) => { if (betrifft(e, 'Vertretung', 'Stundenplan', 'Unterricht', 'Stammdaten', 'Einstellungen')) entprelltLaden(); });
   f.an('vertretung.ansicht', (a) => { if (ANSICHTEN.includes(a)) ansichtSetzen(a); });
-  f.titel(`Vertretungen / ${ansicht.replace(' - ', ' – ')}`);
+  f.titel(`Vertretungen – ${ansichtText(ansicht)}`);
   elementeFuellen().then(() => laden()).catch(fehlerMelden);
   // Selbsttest/Smoke: Zugriff auf die Tabelle
   f.el.vtTabelle = tabelle;
-  void aktuelleAuswahl; void symbol; void planungsdatum;
+  void aktuelleAuswahl; void symbol; void planungsdatum; void felderMitInhalt;
 }
 
 export const fenster = {

@@ -1,6 +1,7 @@
-// Fenster „Kalender“: Kalenderwoche und Datum, Woche mit Kennzahlen (Offen, Abw. Kl., Freis., Bl. Räume, Raum-V.,
-// Tagestexte, Koll. Lehrer/Räume – Klick wählt den Tag), Reiter Tagestexte (direkte Eingabe) und Kalendertag (Normaler Schultag,
-// Feiertag, Unterrichtsfrei mit Grund, Nur diese Stunden unterrichtsfrei, Notiz). Dazu die Datumsauswahl im Menüband.
+// Ansicht „Kalender“: Kalenderwoche und Datum, Woche mit Kennzahlen (offene Vertretungen, abwesende Klassen, Freistellungen,
+// gesperrte Räume, Raumvertretungen, Tagestexte, Kollisionen – Klick wählt den Tag), Reiter Tagestexte (direkte Eingabe) und
+// Kalendertag (Schultag, Feiertag, unterrichtsfrei mit Grund, einzelne Stunden unterrichtsfrei, Notiz). Dazu die Datumsauswahl
+// in der Kopfleiste.
 import { h, leeren } from '../../kern/dom.js';
 import { api } from '../../kern/api.js';
 import { an } from '../../kern/ereignisse.js';
@@ -9,9 +10,9 @@ import { betrifft } from '../../kern/ereignisse.js';
 import { fehlerMelden, hinweis } from '../../kern/dialog.js';
 import { symbol } from '../../kern/symbole.js';
 import { vpfad, planungsdatum, datumSetzen, blaettern, tagKurz, datumText, datumLesen, montag, plusTage } from './kern.js';
-import { reiter, listenTabelle } from './steuer.js';
+import { reiter, listenTabelle, filterleiste, filterGruppe } from './steuer.js';
 
-/** Datumsauswahl in der Kopfleiste: « ‹ [Mo 02.11.2026] › » – Strg+Bild↑ / Strg+Bild↓ blättern. */
+/** Datumsauswahl in der Kopfleiste: Woche zurück, Tag zurück, [Mo 02.11.2026], Tag vor, Woche vor – Strg+Bild↑ / Strg+Bild↓ blättern. */
 export function datumsElement() {
   const text = h('span', { class: 'vt-rb-text' });
   const eingabe = h('input', { type: 'date', class: 'vt-rb-datum', title: 'Planungsdatum wählen' });
@@ -36,14 +37,15 @@ export function datumsElement() {
 }
 
 const TAGESTEXT_ARTEN = ['Alle', 'Klassen', 'Lehrer', 'Nur Lehrer'];
+const TAGESTEXT_ART_TEXT = { Alle: 'Alle', Klassen: 'Klassen', Lehrer: 'Lehrkräfte', 'Nur Lehrer': 'Nur Lehrkräfte' };
 
 function kalenderFenster(f, p) {
   const schreiben = darfSchreiben();
   let daten = null;
   const kw = h('input', { class: 'eingabe vt-kw', type: 'number', min: 1, max: 53, title: 'Kalenderwoche' });
   const datum = h('input', { class: 'eingabe', type: 'date', title: 'Datum' });
-  const typ = h('span', { class: 'leise' });
-  f.inhalt.append(h('div', { class: 'vt-kopf' }, h('label', null, 'Kalenderwoche '), kw, datum, typ));
+  const typ = h('span', { class: 'leise vt-kw-typ' });
+  f.inhalt.append(filterleiste(filterGruppe('Kalenderwoche', kw), filterGruppe('Datum', datum), typ));
   kw.addEventListener('change', () => {
     const d = planungsdatum();
     if (!d || !kw.value) return;
@@ -59,12 +61,16 @@ function kalenderFenster(f, p) {
   const rot = (k) => (w, td) => { if (w[k] > 0) td.classList.add('vt-rot'); };
   const woche = listenTabelle(oben, {
     spalten: [
-      { titel: 'Datum', breite: 54, wert: (w) => w.text }, { titel: 'Tag', breite: 34, wert: (w) => w.tag },
-      { titel: 'Offen', breite: 46, klasse: 'rechts', wert: zahl('offen'), zelle: rot('offen') }, { titel: 'Abw.Kl.', breite: 50, klasse: 'rechts', wert: zahl('abwKl') },
-      { titel: 'Freis.', breite: 46, klasse: 'rechts', wert: zahl('freis') }, { titel: 'Bl.Räume', breite: 58, klasse: 'rechts', wert: zahl('blRaeume') },
-      { titel: 'Raum-V.', breite: 52, klasse: 'rechts', wert: zahl('raumV') }, { titel: 'Tagestexte', breite: 66, klasse: 'rechts', wert: zahl('tagestexte') },
-      { titel: 'Koll. Lehrer', breite: 72, klasse: 'rechts', wert: zahl('kollL'), zelle: rot('kollL') }, { titel: 'Koll. Räume', breite: 72, klasse: 'rechts', wert: zahl('kollR'), zelle: rot('kollR') },
-      { titel: '', wert: (w) => w.frei },
+      { titel: 'Datum', breite: 56, wert: (w) => w.text }, { titel: 'Tag', breite: 40, wert: (w) => w.tag },
+      { titel: 'Offen', breite: 52, klasse: 'rechts', hinweis: 'Offene Vertretungen', wert: zahl('offen'), zelle: rot('offen') },
+      { titel: 'Kl. abw.', breite: 60, klasse: 'rechts', hinweis: 'Abwesende Klassen', wert: zahl('abwKl') },
+      { titel: 'Freigest.', breite: 66, klasse: 'rechts', hinweis: 'Freigestellte Lehrkräfte (Klasse abwesend)', wert: zahl('freis') },
+      { titel: 'Gesperrt', breite: 64, klasse: 'rechts', hinweis: 'Gesperrte Räume', wert: zahl('blRaeume') },
+      { titel: 'Raumvertr.', breite: 76, klasse: 'rechts', hinweis: 'Raumvertretungen', wert: zahl('raumV') },
+      { titel: 'Texte', breite: 52, klasse: 'rechts', hinweis: 'Tagestexte', wert: zahl('tagestexte') },
+      { titel: 'Koll. L.', breite: 60, klasse: 'rechts', hinweis: 'Kollisionen von Lehrkräften', wert: zahl('kollL'), zelle: rot('kollL') },
+      { titel: 'Koll. R.', breite: 60, klasse: 'rechts', hinweis: 'Kollisionen von Räumen', wert: zahl('kollR'), zelle: rot('kollR') },
+      { titel: 'Hinweis', wert: (w) => w.frei },
     ],
     zeilenKlasse: (w) => `${w.unterrichtstag ? '' : 'vt-frei'} ${w.datum === planungsdatum() ? 'vt-heute' : ''}`,
     beiWahl: (w) => { if (w.datum !== planungsdatum()) datumSetzen(w.datum); },
@@ -82,9 +88,9 @@ function kalenderFenster(f, p) {
     const bis = h('input', { class: 'eingabe', value: t ? datumText(t.bis) : '', placeholder: datumText(planungsdatum()), title: 'Gültig bis', disabled: !schreiben });
     const text = h('input', { class: 'eingabe', value: t?.text || '', placeholder: t ? '' : 'Neuer Tagestext …', title: t?.formatiert ? 'Formatierter Tagestext (Formatierung bleibt erhalten, solange der Text nicht geändert wird)' : 'Tagestext', disabled: !schreiben });
     const portal = h('input', { type: 'checkbox', checked: t ? t.portal : true, title: 'In UntPlan Web anzeigen', disabled: !schreiben });
-    const art = h('select', { class: 'eingabe', disabled: !schreiben }, TAGESTEXT_ARTEN.map((a) => h('option', { value: a, selected: a === (t?.art || 'Alle') }, a)));
-    const elem = h('input', { class: 'eingabe', value: t?.elemente || '', title: 'Elemente (Klassen bzw. Lehrkräfte, Kurznamen)', disabled: !schreiben });
-    const loeschen = h('button', { type: 'button', class: 'wz-knopf', title: 'Tagestext löschen', disabled: !schreiben || !t }, symbol('loeschen'));
+    const art = h('select', { class: 'eingabe', disabled: !schreiben, title: 'Für wen der Text gilt' }, TAGESTEXT_ARTEN.map((a) => h('option', { value: a, selected: a === (t?.art || 'Alle') }, TAGESTEXT_ART_TEXT[a])));
+    const elem = h('input', { class: 'eingabe', value: t?.elemente || '', title: 'Klassen bzw. Lehrkräfte (Kurznamen)', placeholder: t ? '' : 'alle', disabled: !schreiben });
+    const loeschen = h('button', { type: 'button', class: 'vt-symbolknopf', title: 'Tagestext löschen', 'aria-label': 'Tagestext löschen', disabled: !schreiben || !t }, symbol('loeschen'));
     const tr = h('tr', { class: t?.formatiert ? 'fett' : '' }, h('td', null, bis), h('td', null, text), h('td', { class: 'mitte' }, portal), h('td', null, art), h('td', null, elem), h('td', null, loeschen));
     tr.dataset.start = t?.start || '';
     for (const x of [bis, text, elem]) x.addEventListener('change', () => texteSpeichern());
@@ -94,7 +100,9 @@ function kalenderFenster(f, p) {
     return tr;
   }
   const texteKoerper = h('tbody');
-  texteFlaeche.append(h('table', { class: 'vt-eingabetabelle' }, h('thead', null, h('tr', null, ['Gültig bis', 'Tagestext', 'Web', 'Art', 'Elemente', ''].map((t) => h('th', null, t)))), texteKoerper));
+  texteFlaeche.append(h('table', { class: 'vt-eingabetabelle vt-tagestexte' },
+    h('colgroup', null, h('col', { style: { width: '104px' } }), h('col'), h('col', { style: { width: '56px' } }), h('col', { style: { width: '128px' } }), h('col', { style: { width: '120px' } }), h('col', { style: { width: '36px' } })),
+    h('thead', null, h('tr', null, h('th', null, 'Gültig bis'), h('th', null, 'Text'), h('th', { class: 'mitte', title: 'In UntPlan Web anzeigen' }, 'Web'), h('th', null, 'Für'), h('th', null, 'Elemente'), h('th'))), texteKoerper));
   let speichertTexte = false;
   async function texteSpeichern() {
     if (speichertTexte) return;
@@ -107,16 +115,20 @@ function kalenderFenster(f, p) {
   }
 
   // ---- Kalendertag ----
-  const radio = (wert, text) => h('label', { class: 'vt-radio' }, h('input', { type: 'radio', name: `kt-${f.id}`, value: wert, disabled: !schreiben }), ` ${text}`);
+  const radio = (wert, text) => h('label', { class: 'vt-radio kontrolle' }, h('input', { type: 'radio', name: `kt-${f.id}`, value: wert, disabled: !schreiben }), text);
   const rNormal = radio('normal', 'Normaler Schultag');
   const rFeiertag = radio('feiertag', 'Feiertag');
   const rFrei = radio('frei', 'Unterrichtsfrei');
-  const rStunden = radio('stunden', 'Nur diese Stunden unterrichtsfrei');
-  const grund = h('select', { class: 'eingabe', disabled: !schreiben });
-  const stunden = h('input', { class: 'eingabe', placeholder: 'z. B. 6-8 oder 1,5', disabled: !schreiben });
-  const notiz = h('input', { class: 'eingabe', placeholder: 'Notiz des Vertretungsplaners (wird nicht gedruckt)', disabled: !schreiben });
-  const titel = h('div', { class: 'vt-kaltitel' });
-  tagFlaeche.append(h('div', { class: 'vt-kalrahmen' }, titel, rNormal, rFeiertag, h('div', { class: 'vt-zeile' }, rFrei, grund), h('div', { class: 'vt-zeile' }, rStunden, stunden), h('div', { class: 'vt-zeile' }, h('label', null, 'Notiz'), notiz)));
+  const rStunden = radio('stunden', 'Nur einzelne Stunden unterrichtsfrei');
+  const grund = h('select', { class: 'eingabe', disabled: !schreiben, id: `kt-grund-${f.id}` });
+  const stunden = h('input', { class: 'eingabe', placeholder: 'z. B. 6-8 oder 1,5', disabled: !schreiben, id: `kt-stunden-${f.id}` });
+  const notiz = h('input', { class: 'eingabe', placeholder: 'Nur für die Planung, wird nicht ausgegeben', disabled: !schreiben, id: `kt-notiz-${f.id}` });
+  const titel = h('h3', { class: 'vt-kaltitel' });
+  tagFlaeche.append(h('div', { class: 'vt-kalform' }, titel, h('div', { class: 'formular' },
+    h('span', { class: 'vt-flabel' }, 'Art des Tages'), h('div', { class: 'vt-radios', role: 'radiogroup' }, rNormal, rFeiertag, rFrei, rStunden),
+    h('label', { for: grund.id }, 'Grund'), grund,
+    h('label', { for: stunden.id }, 'Freie Stunden'), stunden,
+    h('label', { for: notiz.id }, 'Notiz'), notiz)));
   const artWert = () => tagFlaeche.querySelector(`input[name="kt-${f.id}"]:checked`)?.value || 'normal';
   async function kalendertagSpeichern() {
     daten = await api.post(vpfad('/kalendertag'), { datum: planungsdatum(), art: artWert(), grund: grund.value, stunden: stunden.value, notiz: notiz.value }, { quelle: f.id });
@@ -133,6 +145,7 @@ function kalenderFenster(f, p) {
     kw.value = daten.kw;
     datum.value = daten.datum;
     typ.textContent = `${daten.wochentyp}-Woche${daten.unterrichtstag ? '' : ' · kein Unterrichtstag'}`;
+    typ.classList.toggle('vt-frei-text', !daten.unterrichtstag);
     woche.setzen(daten.woche);
     const i = daten.woche.findIndex((w) => w.datum === daten.datum);
     if (i >= 0) woche._markieren?.();
@@ -140,7 +153,7 @@ function kalenderFenster(f, p) {
     tabs.texte([`Tagestexte (${daten.tagestexte.length})`, 'Kalendertag']);
     titel.textContent = daten.titel;
     const gruende = await elemente('abwesenheitsgrund');
-    leeren(grund).append(h('option', { value: '' }, 'Kein Grund'), ...gruende.map((g) => h('option', { value: g.k, selected: g.k === daten.kalendertag.grund }, g.l ? `${g.k} – ${g.l}` : g.k)));
+    leeren(grund).append(h('option', { value: '' }, 'Ohne Grund'), ...gruende.map((g) => h('option', { value: g.k, selected: g.k === daten.kalendertag.grund }, g.l ? `${g.k} – ${g.l}` : g.k)));
     for (const r of [rNormal, rFeiertag, rFrei, rStunden]) r.firstChild.checked = r.firstChild.value === daten.kalendertag.art;
     stunden.value = daten.kalendertag.stunden;
     notiz.value = daten.kalendertag.notiz;
@@ -154,8 +167,9 @@ function kalenderFenster(f, p) {
   }
   f.an('vertretung.datum', () => laden().catch(fehlerMelden));
   f.an('daten', (e) => { if (betrifft(e, 'Vertretung', 'Einstellungen') && !f.el.contains(document.activeElement)) laden().catch(() => {}); });
-  f.werkzeug({ text: 'Heute', symbol: 'kalender', titel: 'Heute', aktion: () => import('./kern.js').then((k) => k.datumSetzen(k.isoAus(new Date()))) });
-  f.werkzeug({ text: '', symbol: 'pfeil_runter', nurSymbol: true, titel: 'Nächster Unterrichtstag', aktion: () => blaettern(1) });
+  f.werkzeug({ text: '', symbol: 'pfeil_links', nurSymbol: true, titel: 'Vorheriger Unterrichtstag (Strg+Bild↑)', aktion: () => blaettern(-1) });
+  f.werkzeug({ text: 'Heute', titel: 'Zum heutigen Tag', aktion: () => import('./kern.js').then((k) => k.datumSetzen(k.isoAus(new Date()))) });
+  f.werkzeug({ text: '', symbol: 'pfeil_rechts', nurSymbol: true, titel: 'Nächster Unterrichtstag (Strg+Bild↓)', aktion: () => blaettern(1) });
   laden().catch(fehlerMelden);
 }
 

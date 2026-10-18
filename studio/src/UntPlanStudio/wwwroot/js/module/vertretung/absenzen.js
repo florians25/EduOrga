@@ -1,29 +1,29 @@
-// Fenster „Absenzen“: Reiter Lehrer / Klassen / Räume mit Anzahl, Zeitraum, direkte Eingabe in der Liste
-// (AbsNr., Element, Von, ab St., Bis, bis St., Grund, Text, Begleitlehrer, offen). Änderungen einer Zeile werden erst beim Verlassen
-// der Zeile übernommen (Zeilen-Commit, Strg+Enter sofort, Esc verwirft); neue Absenzen: Planungsdatum, 1. bis letzte Stunde.
+// Ansicht „Abwesenheiten“: Reiter Lehrkräfte / Klassen / Räume mit Anzahl, Zeitraum, direkte Eingabe in der Liste
+// (Nr., Element, Von, ab Std., Bis, bis Std., Grund, Text, Begleitung, offen). Änderungen einer Zeile werden erst beim Verlassen
+// der Zeile übernommen (Strg+Enter sofort, Esc verwirft); neue Abwesenheiten: Planungsdatum, 1. bis letzte Stunde.
 import { h, entprellen } from '../../kern/dom.js';
 import { api, einstellungLesen, einstellungSchreiben } from '../../kern/api.js';
 import { elemente, darfSchreiben } from '../../kern/zustand.js';
 import { betrifft } from '../../kern/ereignisse.js';
 import { Tabelle } from '../../kern/tabelle.js';
-import { frage, meldung, hinweis, fehlerMelden, formular, menue } from '../../kern/dialog.js';
+import { frage, meldung, hinweis, fehlerMelden, formular } from '../../kern/dialog.js';
 import { fensterverwaltung } from '../../kern/fenster.js';
 import { vpfad, tagText, datumLesen, planungsdatum, datumText } from './kern.js';
-import { zeitraumAuswahl, reiter } from './steuer.js';
+import { zeitraumAuswahl, reiter, filterleiste, filterGruppe, menueKnopf, werkzeugSchalter } from './steuer.js';
 
-const ARTEN = [{ art: 'lehrer', titel: 'Lehrer', typ: 'lehrer' }, { art: 'klasse', titel: 'Klassen', typ: 'klasse' }, { art: 'raum', titel: 'Räume', typ: 'raum' }];
+const ARTEN = [{ art: 'lehrer', titel: 'Lehrkräfte', einzel: 'Lehrkraft', typ: 'lehrer' }, { art: 'klasse', titel: 'Klassen', einzel: 'Klasse', typ: 'klasse' }, { art: 'raum', titel: 'Räume', einzel: 'Raum', typ: 'raum' }];
 
-/** Absenzen speichern und die Rückfragen stellen (Vertreter abwesend, Veranstaltung, Verlegungen, Sondereinsätze). */
+/** Abwesenheiten speichern und die Rückfragen stellen (Vertretung abwesend, Veranstaltung, Verlegungen, Sondereinsätze). */
 export async function absenzenSpeichern(art, neu, alt, quelle, text) {
   const r = await api.post(vpfad('/absenzen/speichern'), { art, neu, alt, text }, { quelle });
   if (r.doppelt) hinweis('Diese Abwesenheit ist bereits vorhanden.', 'warnung');
   if (r.betroffen?.length) {
-    await meldung(`Achtung: Folgende Vertretungen waren bereits mit einer Lehrkraft geplant, die nun abwesend ist. Sie sind wieder offen und müssen neu vertreten werden:\n\n${r.betroffen.join('\n')}`, 'Vertreter abwesend');
+    await meldung(`Folgende Vertretungen waren mit einer Lehrkraft geplant, die nun abwesend ist. Sie sind wieder offen und müssen neu besetzt werden:\n\n${r.betroffen.join('\n')}`, 'Vertretende Lehrkraft abwesend');
   }
   for (const n of r.nachfragen || []) {
-    if (!(await frage(n.text, { titel: 'UntPlan - Frage' }))) continue;
+    if (!(await frage(n.text, { titel: 'Rückfrage' }))) continue;
     await api.post(vpfad('/absenzen/nachfrage'), n, { quelle });
-    if (n.art === 'veranstaltung' && n.hinweis) await meldung(n.hinweis, 'UntPlan - Hinweis');
+    if (n.art === 'veranstaltung' && n.hinweis) await meldung(n.hinweis, 'Hinweis');
   }
   return r;
 }
@@ -41,18 +41,19 @@ function absenzFenster(f, p) {
     await entwurfUebernehmen();
     artIndex = i;
     f.parameterSetzen({ art: art().art });
-    f.titel(`Abwesenheiten / ${art().titel === 'Lehrer' ? 'Lehrer' : art().titel === 'Klassen' ? 'Klasse' : 'Raum'}`);
+    f.titel(`Abwesenheiten – ${art().titel}`);
     spalten();
     laden();
   }, artIndex);
   const zr = zeitraumAuswahl(f, { art: p.zeitraum || 'tag', beiAenderung: async () => { await entwurfUebernehmen(); f.parameterSetzen({ zeitraum: zr.art }); laden(); } });
-  f.inhalt.append(h('div', { class: 'vt-kopf' }, h('span', { class: 'vt-gruppe' }, h('span', { class: 'vt-gtitel' }, 'Von-Bis'), zr.el)), tabs.el);
+  f.inhalt.append(tabs.el, filterleiste(filterGruppe('Zeitraum', zr.el)));
 
   const letzte = () => daten?.letzteStunde || 8;
   const tabelle = new Tabelle(f.inhalt, {
     spalten: [],
     sortierbar: false,
-    leerText: 'Keine Abwesenheiten',
+    leerText: 'Im gewählten Zeitraum ist niemand abwesend.',
+    zeilenHoehe: 30,
     neuText: schreiben ? 'Neue Abwesenheit …' : undefined,
     neu: schreiben ? async (s, wert) => {
       await entwurfUebernehmen();
@@ -71,13 +72,11 @@ function absenzFenster(f, p) {
     beiAuswahl: (_, aktiv) => { if (entwurf && aktiv?.id !== entwurf.id) entwurfUebernehmen(); },
     beiDoppelklick: (z) => (z.va ? fensterverwaltung.oeffnen('veranstaltungen.liste', {}) : bearbeiten()),
     kontextmenue: () => [
-      { text: 'Neue Abwesenheit …', symbol: 'neu', deaktiviert: !schreiben, aktion: neuDialog },
-      { text: 'Bearbeiten …', symbol: 'einstellungen', deaktiviert: !schreiben, aktion: bearbeiten },
-      { text: 'Abwesenheit teilen …', symbol: 'tausch', deaktiviert: !schreiben, aktion: teilen },
-      { text: 'Abwesenheit kopieren …', symbol: 'kopieren', deaktiviert: !schreiben, aktion: kopieren },
-      { text: 'Abwesenheiten zusammenfassen', deaktiviert: !schreiben, aktion: zusammenfassen },
+      { text: 'Neue Abwesenheit …', taste: 'Einfg', deaktiviert: !schreiben, aktion: neuDialog },
+      { text: 'Bearbeiten …', deaktiviert: !schreiben, aktion: bearbeiten },
+      ...weitereEintraege(),
       null,
-      { text: 'Löschen', symbol: 'loeschen', deaktiviert: !schreiben, aktion: loeschen },
+      { text: 'Löschen', taste: 'Strg+Entf', deaktiviert: !schreiben, aktion: loeschen },
     ],
     beiEntf: () => loeschen(),
   });
@@ -85,16 +84,16 @@ function absenzFenster(f, p) {
   function spalten() {
     const t = art();
     tabelle.spaltenSetzen([
-      { schluessel: 'nr', titel: 'AbsNr.', breite: 60, art: 'NurLesen' },
-      { schluessel: 'element', titel: t.titel === 'Lehrer' ? 'Lehrer' : t.titel === 'Klassen' ? 'Klasse' : 'Raum', breite: 80, art: 'Element', refTyp: t.typ, editierbarFuer: (z) => !z.va },
-      { schluessel: 'von', titel: 'Von TT.MM.', breite: 104, editierbarFuer: (z) => !z.va, wert: (z) => tagText(z.vonIso) },
-      { schluessel: 'sv', titel: 'ab St.', breite: 50, art: 'Ganzzahl', editierbarFuer: (z) => !z.va },
-      { schluessel: 'bis', titel: 'Bis TT.MM.', breite: 104, editierbarFuer: (z) => !z.va, wert: (z) => tagText(z.bisIso) },
-      { schluessel: 'sb', titel: 'bis St.', breite: 50, art: 'Ganzzahl', editierbarFuer: (z) => !z.va },
-      { schluessel: 'grund', titel: 'Grund', breite: 70, art: 'Element', refTyp: 'abwesenheitsgrund', editierbarFuer: (z) => !z.va },
+      { schluessel: 'nr', titel: 'Nr.', breite: 60, art: 'NurLesen', ausrichtung: 'rechts' },
+      { schluessel: 'element', titel: t.einzel, breite: 84, art: 'Element', refTyp: t.typ, editierbarFuer: (z) => !z.va },
+      { schluessel: 'von', titel: 'Von', breite: 104, editierbarFuer: (z) => !z.va, wert: (z) => tagText(z.vonIso) },
+      { schluessel: 'sv', titel: 'ab Std.', breite: 60, art: 'Ganzzahl', ausrichtung: 'rechts', editierbarFuer: (z) => !z.va },
+      { schluessel: 'bis', titel: 'Bis', breite: 104, editierbarFuer: (z) => !z.va, wert: (z) => tagText(z.bisIso) },
+      { schluessel: 'sb', titel: 'bis Std.', breite: 64, art: 'Ganzzahl', ausrichtung: 'rechts', editierbarFuer: (z) => !z.va },
+      { schluessel: 'grund', titel: 'Grund', breite: 76, art: 'Element', refTyp: 'abwesenheitsgrund', editierbarFuer: (z) => !z.va },
       { schluessel: 'text', titel: 'Text', breite: 240, editierbarFuer: (z) => !z.va },
-      ...(t.art === 'klasse' ? [{ schluessel: 'begleit', titel: 'Begleitlehrer', breite: 110, art: 'ElementListe', refTyp: 'lehrer', editierbarFuer: (z) => !z.va }] : []),
-      { schluessel: 'offen', titel: 'offen', breite: 50, art: 'NurLesen', ausrichtung: 'rechts', klasse: (z) => (Number(z.offen) > 0 ? 'vt-rot' : null) },
+      ...(t.art === 'klasse' ? [{ schluessel: 'begleit', titel: 'Begleitung', breite: 110, hinweis: 'Begleitende Lehrkräfte (gelten ebenfalls als abwesend)', art: 'ElementListe', refTyp: 'lehrer', editierbarFuer: (z) => !z.va }] : []),
+      { schluessel: 'offen', titel: 'Offen', breite: 56, hinweis: 'Offene Vertretungen', art: 'NurLesen', ausrichtung: 'rechts', klasse: (z) => (Number(z.offen) > 0 ? 'vt-rot' : null) },
     ]);
   }
 
@@ -141,15 +140,15 @@ function absenzFenster(f, p) {
   async function formularAbsenz(titel, z) {
     const gruende = await elemente('abwesenheitsgrund');
     const w = await formular(titel, [
-      { name: 'element', titel: art().titel === 'Lehrer' ? 'Lehrkraft' : art().titel === 'Klassen' ? 'Klasse' : 'Raum', wert: z?.element || '', pflicht: true },
-      { name: 'von', titel: 'Von (TT.MM.JJJJ)', wert: datumText(z?.vonIso || zr.von) },
-      { name: 'sv', titel: 'ab Stunde', art: 'zahl', wert: z?.sv || 1 },
-      { name: 'bis', titel: 'Bis (TT.MM.JJJJ)', wert: datumText(z?.bisIso || zr.von) },
-      { name: 'sb', titel: 'bis Stunde', art: 'zahl', wert: z?.sb || letzte() },
+      { name: 'element', titel: art().einzel, wert: z?.element || '', pflicht: true },
+      { name: 'von', titel: 'Von', wert: datumText(z?.vonIso || zr.von), hinweis: 'TT.MM.JJJJ' },
+      { name: 'sv', titel: 'Ab Stunde', art: 'zahl', wert: z?.sv || 1 },
+      { name: 'bis', titel: 'Bis', wert: datumText(z?.bisIso || zr.von), hinweis: 'TT.MM.JJJJ' },
+      { name: 'sb', titel: 'Bis Stunde', art: 'zahl', wert: z?.sb || letzte() },
       { name: 'grund', titel: 'Grund', art: 'auswahl', wert: z?.grund || '', optionen: [{ wert: '', text: '' }, ...gruende.map((g) => ({ wert: g.k, text: g.l ? `${g.k} – ${g.l}` : g.k }))] },
       { name: 'text', titel: 'Text', wert: z?.text || '' },
-      ...(art().art === 'klasse' ? [{ name: 'begleit', titel: 'Begleitlehrer', wert: z?.begleit || '', hinweis: 'Kurznamen, gelten ebenfalls als abwesend (z. B. Klassenfahrt).' }] : []),
-    ]);
+      ...(art().art === 'klasse' ? [{ name: 'begleit', titel: 'Begleitung', wert: z?.begleit || '', hinweis: 'Kurznamen der Lehrkräfte; gelten ebenfalls als abwesend (z. B. Klassenfahrt).' }] : []),
+    ], { okText: 'Speichern', breite: '480px' });
     if (!w) return null;
     const von = datumLesen(w.von, zr.von);
     return { element: w.element.trim(), von, bis: datumLesen(w.bis, von), sv: Number(w.sv) || 1, sb: Number(w.sb) || letzte(), grund: w.grund, text: w.text, begleit: w.begleit || '' };
@@ -171,7 +170,7 @@ function absenzFenster(f, p) {
     const z = tabelle.aktiveZeile();
     if (!z || z.va) return;
     if (z.vonIso === z.bisIso) { hinweis('Eine eintägige Abwesenheit kann nicht geteilt werden.', 'warnung'); return; }
-    const w = await formular('Abwesenheit teilen', [{ name: 'ab', titel: 'Zweiter Teil beginnt am', wert: datumText(z.vonIso === z.bisIso ? z.vonIso : (await import('./kern.js')).plusTage(z.vonIso, 1)), pflicht: true }]);
+    const w = await formular('Abwesenheit teilen', [{ name: 'ab', titel: 'Zweiter Teil beginnt am', wert: datumText(z.vonIso === z.bisIso ? z.vonIso : (await import('./kern.js')).plusTage(z.vonIso, 1)), pflicht: true }], { okText: 'Teilen' });
     if (!w) return;
     await api.post(vpfad('/absenzen/teilen'), { id: Number(z.nr), ab: datumLesen(w.ab, z.vonIso) }, { quelle: f.id });
     await laden();
@@ -180,7 +179,7 @@ function absenzFenster(f, p) {
     await entwurfUebernehmen();
     const z = tabelle.aktiveZeile();
     if (!z || z.va) return;
-    const w = await formular('Abwesenheit für weitere Elemente übernehmen', [{ name: 'elemente', titel: art().titel, pflicht: true, hinweis: 'Kurznamen, mehrere mit Komma.' }]);
+    const w = await formular('Abwesenheit übertragen', [{ name: 'elemente', titel: art().titel, pflicht: true, hinweis: 'Kurznamen, mehrere mit Komma. Zeitraum und Grund werden übernommen.' }], { okText: 'Übertragen' });
     if (!w) return;
     await api.post(vpfad('/absenzen/kopieren'), { id: Number(z.nr), elemente: w.elemente }, { quelle: f.id });
     await laden();
@@ -198,20 +197,25 @@ function absenzFenster(f, p) {
     await laden();
   }
 
-  if (schreiben) {
-    f.werkzeug({ text: 'Neu', symbol: 'neu', titel: 'Neue Abwesenheit (Dialog)', aktion: neuDialog });
-    f.werkzeug({ text: 'Löschen', symbol: 'loeschen', nurSymbol: true, titel: 'Löschen (Strg+Entf)', aktion: loeschen });
-    f.trenner();
-    f.werkzeug({ text: 'Bearbeiten', symbol: 'einstellungen', nurSymbol: true, titel: 'Bearbeiten', aktion: bearbeiten });
-    f.werkzeug({ text: 'Teilen', symbol: 'tausch', nurSymbol: true, titel: 'Abwesenheit teilen', aktion: teilen });
-    f.werkzeug({ text: 'Kopieren', symbol: 'kopieren', nurSymbol: true, titel: 'Abwesenheit kopieren (andere Elemente)', aktion: kopieren });
-    f.trenner();
+  function weitereEintraege() {
+    return [
+      { text: 'Abwesenheit teilen …', deaktiviert: !schreiben, aktion: teilen },
+      { text: 'Auf weitere übertragen …', deaktiviert: !schreiben, aktion: kopieren },
+      { text: 'Abwesenheiten zusammenfassen', deaktiviert: !schreiben, aktion: zusammenfassen },
+    ];
   }
-  f.werkzeug({ text: 'Veranstaltungen', symbol: 'veranstaltung', nurSymbol: true, titel: 'Veranstaltungen', aktion: () => fensterverwaltung.oeffnen('veranstaltungen.liste', {}) });
-  const einst = f.werkzeug({ text: 'Einstellungen', symbol: 'einstellungen', nurSymbol: true, titel: 'Einstellungen', aktion: () => {
-    const r = einst.getBoundingClientRect();
-    menue(r.left, r.bottom + 2, [{ text: 'Veranstaltungen anzeigen', haken: vaZeigen, aktion: async () => { vaZeigen = !vaZeigen; await einstellungSchreiben('vertretung.absenzen.va', vaZeigen); laden(); } }]);
-  } });
+  if (schreiben) {
+    f.werkzeug({ text: 'Neu', titel: 'Neue Abwesenheit (Einfg)', aktion: neuDialog });
+    f.werkzeug({ text: 'Bearbeiten', titel: 'Markierte Abwesenheit bearbeiten', aktion: bearbeiten });
+    f.werkzeug({ text: 'Löschen', titel: 'Markierte Abwesenheiten löschen (Strg+Entf)', aktion: loeschen });
+  }
+  menueKnopf(f, 'Weitere Aktionen', () => [
+    ...weitereEintraege(),
+    null,
+    { text: 'Veranstaltungen …', aktion: () => fensterverwaltung.oeffnen('veranstaltungen.liste', {}) },
+  ]);
+  const vaSchalter = werkzeugSchalter(f, 'Veranstaltungen zeigen', { titel: 'Veranstaltungen des Zeitraums in der Liste mit anzeigen', beiAenderung: async (w) => { vaZeigen = w; await einstellungSchreiben('vertretung.absenzen.va', vaZeigen); laden(); } });
+  vaSchalter.classList.add('rechts');
 
   tabelle.el.addEventListener('keydown', (e) => {
     if (tabelle.editor) return;
@@ -233,13 +237,13 @@ function absenzFenster(f, p) {
     const zeilen = d.zeilen.map((z) => ({ ...z, vonIso: z.von, bisIso: z.bis, sv: String(z.sv), sb: String(z.sb), offen: z.offen ? String(z.offen) : '', nr: String(z.nr) }));
     for (const v of d.veranstaltungen) zeilen.push({ id: v.id, va: v.nr, nr: `VA ${v.nr}`, element: '', vonIso: v.von, bisIso: v.bis, sv: String(v.sv), sb: String(v.sb), grund: v.grund, text: `Veranstaltung: ${v.elemente} ${v.text}`.trim(), begleit: '', offen: '' });
     tabelle.daten(zeilen);
-    tabs.texte([`Lehrer (${d.anzahl.lehrer})`, `Klassen (${d.anzahl.klasse})`, `Räume (${d.anzahl.raum})`]);
-    f.fuss.replaceChildren(h('span', null, `${d.zeilen.length} Abwesenheit(en)`), h('span', null, `${d.zeilen.reduce((a, z) => a + z.offen, 0)} offene Vertretungen`),
+    tabs.texte([`Lehrkräfte (${d.anzahl.lehrer})`, `Klassen (${d.anzahl.klasse})`, `Räume (${d.anzahl.raum})`]);
+    f.fuss.replaceChildren(h('span', null, `${d.zeilen.length} ${d.zeilen.length === 1 ? 'Abwesenheit' : 'Abwesenheiten'}`), h('span', null, `${d.zeilen.reduce((a, z) => a + z.offen, 0)} offene Vertretungen`),
       h('span', { class: 'rechts leise' }, 'Zeile verlassen speichert · Strg+Enter sofort · Esc verwirft'));
   }
   const entprelltLaden = entprellen(() => laden().catch(() => {}), 150);
 
-  // Fensterverknüpfung: Absenzen der gewählten Lehrkraft (Klasse, Raum) hervorheben
+  // Verknüpfung mit der Auswahl: Abwesenheiten der gewählten Lehrkraft (Klasse, Raum) hervorheben
   function markieren(typ, id) {
     if (entwurf || tabelle.editor) return;
     markiert = { typ, id };
@@ -259,8 +263,8 @@ function absenzFenster(f, p) {
   f.an('vertretung.datum', () => { if (entwurf) entwurfUebernehmen(); });
 
   spalten();
-  einstellungLesen('vertretung.absenzen.va').then((w) => { vaZeigen = !!w; }).finally(() => laden().catch(fehlerMelden));
-  f.titel(`Abwesenheiten / ${art().titel === 'Lehrer' ? 'Lehrer' : art().titel === 'Klassen' ? 'Klasse' : 'Raum'}`);
+  einstellungLesen('vertretung.absenzen.va').then((w) => { vaZeigen = !!w; vaSchalter.eingabe.checked = vaZeigen; }).finally(() => laden().catch(fehlerMelden));
+  f.titel(`Abwesenheiten – ${art().titel}`);
   void planungsdatum;
 }
 
