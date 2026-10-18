@@ -91,7 +91,7 @@ iOS verwendet die Systemschrift (SF Pro) – das ist dort der Standard und wirkt
 | Produkt | Navigation |
 |---|---|
 | **Studio** | Seitenbasierte Web-Anwendung (eine Seite je Aufgabe, Adresse in der URL, Zurück-Taste funktioniert). Helle Seitenleiste nur mit Text (Bereiche und Seiten), Kopfleiste mit Wortmarke, Schuldatei, Modus, Suche, Konto. Jede Seite: Seitenkopf (Titel 20 px, Untertitel, Aktionen rechts als Textknöpfe), Filterleiste, Inhalt; Details in einem Seitenbereich rechts; Bearbeiten in Dialogen. Arbeitsplätze, die mehrere Inhalte gleichzeitig brauchen (Vertretungsplanung, manuelles Planen), sind fest gestaltete Seiten mit Haupt- und Nebenbereich – keine frei schwebenden oder frei teilbaren Fenster, keine Reiterleisten mit Fenstern. |
-| **Web** | Kopfleiste weiß mit Wortmarke und Schulname, Hauptbereichen als Textnavigation, Suche und Konto rechts. Darunter je Bereich eine Unternavigation als Textreiter. Telefon: untere Leiste mit vier Hauptpunkten + „Mehr“. Keine Symbole in der Navigation. |
+| **Web** | Bedienelemente (Knöpfe, Felder, Listen, Dialoge) und Seitenaufbau bleiben wie bisher, nur in den Farben dieses Designsystems. Neu gestaltet sind die Seitenleiste (eigenständig, Text, nur funktionale Symbole), der Stundenplan (Abschnitt 5) und die Klassenbuch-Seiten. Keine Symbole oder Grafiken anderer Produkte. |
 | **Mobile (PWA)** | Untere Leiste *Heute · Plan · Postfach · Mehr* (Linien-Symbol + Beschriftung, das ist auf Telefonen Standard), große Seitentitel, Listen statt Karten-Kacheln, keine Logo-Kachel. |
 | **iOS** | `TabView` *Heute · Plan · Postfach · Mehr* mit SF Symbols, `NavigationStack` mit großen Titeln, Akzentfarbe Marine. |
 
