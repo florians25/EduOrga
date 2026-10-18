@@ -102,4 +102,4 @@ iOS verwendet die Systemschrift (SF Pro) – das ist dort der Standard und wirkt
 * Produktname „UntPlan“, Bereiche „Studio“, „Web“, „Mobile“. Keine Namen, Logos, Symbole, Schriften oder
   wörtlich übernommenen Bezeichnungen anderer Hersteller.
 * Dateiformate anderer Programme (z. B. GPU-Textdateien) werden nur als **Import/Export-Format** neutral benannt.
-* Keine Formulierungen wie „wie im Original“, „Vorbild“, „vertraute Optik“ in Oberfläche, Code-Kommentaren oder Doku.
+* Keine Formulierungen wie „wie im Original“, „Vorbild“ (für fremde Produkte), „vertraute Optik“ in Oberfläche, Code-Kommentaren oder Doku.

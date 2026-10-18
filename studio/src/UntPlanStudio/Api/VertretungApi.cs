@@ -693,7 +693,7 @@ public sealed class VertretungApi : IStudioModul
     private static object Zellen(List<StundenplanZelle> z) =>
         z.Select(x => new { stunde = x.Stunde, text = x.Text, entfallen = x.Entfallen, ziel = x.Ziel, farbe = StammdatenApi.Farbe(x.Hintergrund), schrift = StammdatenApi.Farbe(x.Vordergrund) }).ToList();
 
-    /// <summary>Kopf wie im Vorbild: „30.8. Mo-1 Se/Mu/05D“.</summary>
+    /// <summary>Kopf: „30.8. Mo-1 Se/Mu/05D“.</summary>
     private static string KopfText(DatenIndex ix, Vertretung v)
     {
         var teile = new[] { ix.KLehrer(v.LehrerId), v.Art == VertretungsArt.Pausenaufsicht ? ix.K(ElementTyp.Gang, v.GangId) : ix.KFach(v.FachId), ix.KKlassen(v.NeueKlassenIds) };

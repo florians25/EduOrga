@@ -9,7 +9,7 @@ namespace UntPlan.Portal;
 
 public sealed class PortalOptionen
 {
-    public string Name { get; set; } = "UntPlan WebPortal";
+    public string Name { get; set; } = "UntPlan Portal";
     public string Datenordner { get; set; } = "daten";
     public List<SchulKonfiguration> Schulen { get; set; } = new();
 }
