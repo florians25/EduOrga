@@ -1,6 +1,6 @@
-# XcodeGen-Beschreibung von UntPlanMobile (Alternative zum mitgelieferten Xcode-Projekt).
-# Erzeugen: im Ordner ios/ "xcodegen generate" ausführen.
-name: UntPlanMobile
+# XcodeGen-Beschreibung von UntPlan Next (Alternative zum mitgelieferten Xcode-Projekt, das Ordner synchronisiert).
+# Erzeugen: im Ordner ios/UntPlanNext/ "xcodegen generate" ausführen (überschreibt UntPlanNext.xcodeproj).
+name: UntPlanNext
 options:
   bundleIdPrefix: de.untplan
   deploymentTarget:
@@ -12,20 +12,17 @@ settings:
     SWIFT_VERSION: "5.0"
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
 targets:
-  UntPlanMobile:
+  UntPlanNext:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      # Der ganze Ordner, also auch Ansichten/PlanAuswahlView.swift, Ansichten/MehrView.swift, Dienste/Favoriten.swift
-      # und Dienste/Planmitteilungen.swift (Info.plist wird nicht als Ressource kopiert, sondern über INFOPLIST_FILE eingebunden)
-      - path: UntPlanMobile
-        excludes:
-          - Info.plist
+      # Der ganze Ordner (Swift-Dateien und Assets.xcassets); Info.plist liegt daneben und wird über INFOPLIST_FILE eingebunden
+      - path: UntPlanNext
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: de.untplan.mobile
-        PRODUCT_NAME: UntPlanMobile
+        PRODUCT_BUNDLE_IDENTIFIER: de.untplan.next
+        PRODUCT_NAME: UntPlanNext
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -35,10 +32,10 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: YES
-        # Ergänzt die generierte Info.plist: Hintergrund-Aktualisierung (UIBackgroundModes fetch) und
-        # BGTaskSchedulerPermittedIdentifiers für die Mitteilungen bei Planänderungen
-        INFOPLIST_FILE: UntPlanMobile/Info.plist
-        INFOPLIST_KEY_CFBundleDisplayName: UntPlan
+        # Ergänzt die generierte Info.plist: URL-Schema „untplannext“, Hintergrund-Aktualisierung (fetch,
+        # remote-notification), BGTaskSchedulerPermittedIdentifiers (de.untplan.next.planpruefung), Kamera
+        INFOPLIST_FILE: Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: UntPlan Next
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
