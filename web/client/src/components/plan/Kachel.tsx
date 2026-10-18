@@ -125,7 +125,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
         sx={{
           position: 'relative', ...kachelStil(k, typ, t), borderRadius: '3px', px: 1, py: sehrKlein ? 0 : kompakt ? 0.375 : 0.625, overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default',
           display: 'flex', flexDirection: 'column', gap: '1px', fontSize: 12, lineHeight: 1.25, color: entfall ? undefined : 'text.primary', fontVariantNumeric: 'tabular-nums',
-          opacity: gedimmt ? 0.3 : vorbei ? 0.6 : 1, transition: 'opacity .12s, background-color .12s, border-color .12s',
+          opacity: gedimmt ? 0.3 : vorbei ? 0.72 : 1, containerType: 'inline-size', transition: 'opacity .12s, background-color .12s, border-color .12s',
           '&:hover': { ...hover, zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
           ...style,
         }}>
@@ -138,7 +138,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
             </Typography>
           )}
           {raeume.length > 0 && (
-            <Typography component="span" noWrap sx={{ ml: 'auto', fontSize: 12, fontWeight: 500, color: 'text.secondary', textDecoration: durch, flex: 'none', maxWidth: '55%', textAlign: 'right' }}>
+            <Typography component="span" noWrap sx={{ ml: 'auto', fontSize: 12, fontWeight: 500, color: 'text.secondary', textDecoration: durch, flex: 'none', maxWidth: '55%', textAlign: 'right', '@container (max-width: 76px)': { display: 'none' } }}>
               {!entfall && raeume.every(w => !w.alt && !w.neu) ? <Box component="span" sx={{ display: 'inline-flex', gap: '3px' }}>{raeume.map((w, i) => <Kuerzel key={i}>{w.k}</Kuerzel>)}</Box>
                 : <WerteListe werte={raeume} entfall={entfall} mitAlt={!kompakt} trenner=" " />}
             </Typography>
