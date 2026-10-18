@@ -1,0 +1,98 @@
+using System.Text.Json;
+using UntPlanWeb.Daten;
+
+namespace UntPlanWeb.Dienste;
+
+/// <summary>
+/// Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten): schulweit gültig für Wochenraster, Tagesansicht,
+/// Tagesseiten, Startseite und Stundendetails. Gespeichert als JSON in der Tabelle einstellungen (Schlüssel
+/// <see cref="Kartendarstellungen.Schluessel"/>); fehlende Angaben erhalten ihren Standard – der Standard entspricht der bisherigen
+/// Darstellung (Fachfarbe als 8-px-Quadrat, neutrale Fläche, feine Linie, Radius 3 px). Die Statusdarstellung (Linie, Schraffur,
+/// Durchstreichung, Kürzel-Plaketten) bleibt unverändert; optional stehen zusätzlich die Statuswörter auf den Kacheln.
+/// </summary>
+public sealed record Kartendarstellung
+{
+    /// <summary>Fachfarbe: quadrat | balken-links | balken-oben | flaeche | keine.</summary>
+    public string Fachfarbe { get; init; } = "quadrat";
+    /// <summary>Breite des Fachfarbbalkens in px (2–6).</summary>
+    public int Balkenbreite { get; init; } = 3;
+    /// <summary>Deckkraft der Fachfarb-Tönung in Prozent (6–30), nur bei <see cref="Fachfarbe"/> = flaeche.</summary>
+    public int Deckkraft { get; init; } = 12;
+    /// <summary>Kartenfläche: neutral (#f6f8fa) | weiss | getoent (leichte Marine-Tönung).</summary>
+    public string Flaeche { get; init; } = "neutral";
+    /// <summary>Rahmen: fein | kraeftig | keiner.</summary>
+    public string Rahmen { get; init; } = "fein";
+    /// <summary>Eckenradius in px (0–8).</summary>
+    public int Eckenradius { get; init; } = 3;
+    /// <summary>Dichte: kompakt | normal | grosszuegig (Innenabstand, Schriftgrößen).</summary>
+    public string Dichte { get; init; } = "normal";
+    /// <summary>Zeile 1: Fach als kuerzel | name.</summary>
+    public string Fach { get; init; } = "kuerzel";
+    /// <summary>Raum rechts in Zeile 1 anzeigen.</summary>
+    public bool Raum { get; init; } = true;
+    /// <summary>Zeile 2 (Lehrkraft bzw. Klasse) anzeigen.</summary>
+    public bool Zeile2 { get; init; } = true;
+    /// <summary>Zeile 2 als kuerzel | name.</summary>
+    public string Zeile2Text { get; init; } = "kuerzel";
+    /// <summary>Unveränderte Kürzel als Plakette: gefuellt | umrandet | text.</summary>
+    public string Kuerzel { get; init; } = "umrandet";
+    /// <summary>Statuswörter (Entfall, Offen, Vertreten …) zusätzlich auf den Kacheln anzeigen.</summary>
+    public bool Statuswoerter { get; init; }
+}
+
+/// <summary>Laden, Prüfen und Speichern der <see cref="Kartendarstellung"/>.</summary>
+public static class Kartendarstellungen
+{
+    public const string Schluessel = "einstellung:kartendarstellung";
+    public static readonly string[] Fachfarben = { "quadrat", "balken-links", "balken-oben", "flaeche", "keine" };
+    public static readonly string[] Flaechen = { "neutral", "weiss", "getoent" };
+    public static readonly string[] Rahmenarten = { "fein", "kraeftig", "keiner" };
+    public static readonly string[] Dichten = { "kompakt", "normal", "grosszuegig" };
+    public static readonly string[] Texte = { "kuerzel", "name" };
+    public static readonly string[] Kuerzelstile = { "gefuellt", "umrandet", "text" };
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    /// <summary>Gespeicherte Darstellung; fehlende Felder erhalten ihren Standard, ungültige Angaben ergeben den Standard insgesamt.</summary>
+    public static Kartendarstellung Laden(Db db)
+    {
+        var json = new Einstellungen(db).Lesen(Schluessel);
+        if (string.IsNullOrEmpty(json)) return new Kartendarstellung();
+        try { return Pruefen(JsonSerializer.Deserialize<Kartendarstellung>(json, Json) ?? new Kartendarstellung()); }
+        catch (Exception e) when (e is JsonException or ArgumentException) { return new Kartendarstellung(); }
+    }
+
+    public static Kartendarstellung Speichern(Db db, Kartendarstellung d)
+    {
+        var p = Pruefen(d);
+        new Einstellungen(db).Schreiben(Schluessel, JsonSerializer.Serialize(p, Json));
+        return p;
+    }
+
+    /// <summary>Zurück zum Standard (gespeicherter Wert wird entfernt).</summary>
+    public static Kartendarstellung Zuruecksetzen(Db db)
+    {
+        db.Ausfuehren("DELETE FROM einstellungen WHERE schluessel = @s", Db.P("@s", Schluessel));
+        return new Kartendarstellung();
+    }
+
+    private static string Wahl(string? wert, string feld, string[] erlaubt) =>
+        erlaubt.Contains(wert ?? "") ? wert! : throw new ArgumentException($"Ungültiger Wert bei „{feld}“: erlaubt sind {string.Join(", ", erlaubt)}.");
+
+    private static int Bereich(int wert, int min, int max, string feld) =>
+        wert >= min && wert <= max ? wert : throw new ArgumentException($"„{feld}“ muss zwischen {min} und {max} liegen.");
+
+    /// <summary>Prüft alle Angaben (ArgumentException bei ungültigen Werten).</summary>
+    public static Kartendarstellung Pruefen(Kartendarstellung d) => d with
+    {
+        Fachfarbe = Wahl(d.Fachfarbe, "Fachfarbe", Fachfarben),
+        Balkenbreite = Bereich(d.Balkenbreite, 2, 6, "Balkenbreite"),
+        Deckkraft = Bereich(d.Deckkraft, 6, 30, "Deckkraft der Fachfarbe"),
+        Flaeche = Wahl(d.Flaeche, "Kartenfläche", Flaechen),
+        Rahmen = Wahl(d.Rahmen, "Rahmen", Rahmenarten),
+        Eckenradius = Bereich(d.Eckenradius, 0, 8, "Eckenradius"),
+        Dichte = Wahl(d.Dichte, "Dichte", Dichten),
+        Fach = Wahl(d.Fach, "Fach", Texte),
+        Zeile2Text = Wahl(d.Zeile2Text, "Zeile 2", Texte),
+        Kuerzel = Wahl(d.Kuerzel, "Kürzel", Kuerzelstile),
+    };
+}

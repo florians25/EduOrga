@@ -1,8 +1,9 @@
-// Sitzung (angemeldete Person, Schule, Schuljahr, Ansichtseinstellungen) und Stammdaten als gemeinsamer Kontext aller Seiten.
+// Sitzung (angemeldete Person, Schule, Schuljahr, Ansichtseinstellungen, Darstellung der Stundenkarten) und Stammdaten als gemeinsamer Kontext aller Seiten.
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { holen } from '../api/client';
 import type { Benutzer, Elemente, Sitzung } from '../api/types';
 import { lesen, schreiben } from '../lib/speicher';
+import { DarstellungsAnbieter, namenAus } from '../components/plan/darstellung';
 
 export interface Schuljahr { von: string; bis: string; text: string; aktuell: boolean }
 
@@ -72,5 +73,10 @@ export function SitzungsAnbieter({ sitzung, setSitzung, children }: { sitzung: S
     };
   }, [sitzung, schuljahre, jahrVon, elemente, neuLaden, setSitzung]);
 
-  return <Kontext.Provider value={wert}>{children}</Kontext.Provider>;
+  const namenLaden = useCallback(() => elemente().then(namenAus), [elemente]);
+  return (
+    <Kontext.Provider value={wert}>
+      <DarstellungsAnbieter wert={sitzung.darstellung} namenLaden={namenLaden}>{children}</DarstellungsAnbieter>
+    </Kontext.Provider>
+  );
 }

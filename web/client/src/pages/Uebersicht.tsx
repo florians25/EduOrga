@@ -19,6 +19,7 @@ import { Geladen, Seite } from '../components/Seite';
 import { Plakette, type Ton } from '../components/Bausteine';
 import { Stundendetails } from '../components/plan/Stundendetails';
 import { gueltigeFarbe, statusText } from '../components/plan/logik';
+import { FachMarke } from '../components/plan/darstellung';
 import { ausIso, datumKurz, heuteIso, jetztMinuten, minuten, montag, MONATE, plusTage, WOCHENTAGE, wochentagKurz } from '../lib/datum';
 import { useLaden } from '../lib/useLaden';
 import { KindWahl, kinderLaden, OHNE_ZUORDNUNG, type Kind } from './familie/kinder';
@@ -53,7 +54,7 @@ function Zeile({ z }: { z: ZeileDaten }) {
   const inhalt = (
     <Stack direction="row" alignItems="center" gap={1.25} sx={{ width: '100%', minHeight: 34, px: 1, borderRadius: '4px', opacity: z.blass ? 0.55 : 1 }}>
       <Typography variant="body2" color="text.secondary" sx={{ width: 78, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }} noWrap>{z.links}</Typography>
-      {z.farbe !== undefined && <Box aria-hidden sx={{ width: 8, height: 8, borderRadius: '1px', bgcolor: z.farbe ?? 'transparent', border: z.farbe ? 0 : 1, borderColor: 'text.disabled', flexShrink: 0 }} />}
+      {z.farbe !== undefined && <FachMarke farbe={z.farbe} />}
       <Box sx={{ minWidth: 0, flex: 1, display: 'flex', gap: 1, alignItems: 'baseline' }}>
         <Typography noWrap sx={{ fontSize: 14, fontWeight: z.fett ? 600 : 500, textDecoration: z.durch ? 'line-through' : 'none', flexShrink: 0, maxWidth: '60%' }}>{z.titel}</Typography>
         {z.neben && <Typography noWrap variant="body2" color="text.secondary" sx={{ minWidth: 0 }}>{z.neben}</Typography>}

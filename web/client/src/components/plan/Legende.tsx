@@ -1,7 +1,9 @@
 // Legende und Filter: Arten der Stunden mit Anzahl in dieser Woche; Klick hebt eine Art hervor (die übrigen treten zurück).
-import { alpha, Box, ButtonBase, Stack, Tooltip, useTheme } from '@mui/material';
+import { Box, ButtonBase, Stack, Tooltip, useTheme } from '@mui/material';
 import type { Karte } from '../../api/types';
 import { artVon, type Art, type Typ } from './logik';
+import { useDarstellung, type Kartendarstellung } from './darstellung';
+import { mischen } from './Kachel';
 
 export const ARTEN: { art: Art; text: string; hinweis: string }[] = [
   { art: 'aenderung', text: 'Änderung', hinweis: 'Vertretung, Raum- oder Fachwechsel, Zusatzstunde – Linie in Petrol, neues Kürzel als petrolfarbene Plakette, das bisherige grau durchgestrichen davor, offene Vertretung als „?“' },
@@ -12,18 +14,33 @@ export const ARTEN: { art: Art; text: string; hinweis: string }[] = [
   { art: 'buchung', text: 'Buchung', hinweis: 'Raumbuchung bzw. vorgemerkte Meldung' },
 ];
 
-/** Kleines Muster einer Kachelart (Legende, Hilfe): weiße Fläche mit der Linie bzw. Schraffur der Art. */
+/** Beschreibung der regulären Kachel nach der Kartendarstellung (Hilfe). */
+export function unterrichtHinweis(d: Kartendarstellung) {
+  const flaeche = d.flaeche === 'neutral' ? 'helle Kachel' : d.flaeche === 'getoent' ? 'leicht getönte Kachel' : 'weiße Kachel';
+  const fach = {
+    quadrat: 'die Fachfarbe steht als kleines Quadrat vor dem Fachkürzel', 'balken-links': 'die Fachfarbe steht als Balken am linken Rand',
+    'balken-oben': 'die Fachfarbe steht als Balken am oberen Rand', flaeche: 'die Kachel ist leicht in der Fachfarbe getönt', keine: 'ohne Fachfarbe',
+  }[d.fachfarbe];
+  return `${flaeche}, ${fach}`;
+}
+
+/** Kleines Muster einer Kachelart (Legende, Hilfe): weiße Fläche mit der Linie bzw. Schraffur der Art; „Unterricht“ nach der Kartendarstellung. */
 export function Muster({ art, gross = false }: { art: Art | 'regulaer'; gross?: boolean }) {
   const t = useTheme();
-  const s = t.palette.status;
-  const papier = t.palette.background.paper;
+  const { d } = useDarstellung();
+  const pal = (t.vars ?? t).palette;
+  const alpha = mischen;
+  const s = pal.status;
+  const papier = pal.background.paper;
   const stil: Record<string, object> = {
-    regulaer: { background: t.palette.kachel.flaeche, border: `1px solid ${t.palette.kachel.rand}` },
+    regulaer: { background: d.flaeche === 'neutral' ? pal.kachel.flaeche : papier, border: `1px solid ${d.rahmen === 'keiner' ? alpha(pal.text.primary, 0.12) : d.rahmen === 'kraeftig' ? alpha(pal.text.primary, 0.42) : pal.kachel.rand}`,
+      ...(d.fachfarbe === 'balken-links' ? { boxShadow: `inset ${Math.min(3, d.balkenbreite)}px 0 0 ${pal.primary.main}` } : d.fachfarbe === 'balken-oben' ? { boxShadow: `inset 0 ${Math.min(3, d.balkenbreite)}px 0 ${pal.primary.main}` }
+        : d.fachfarbe === 'flaeche' ? { background: alpha(pal.primary.main, d.deckkraft / 100) } : {}) },
     aenderung: { background: papier, border: `1px solid ${s.aenderung.main}` },
     entfall: { background: `repeating-linear-gradient(135deg, ${alpha(s.entfall.main, 0.45)} 0 1px, transparent 1px 3px), ${papier}`, border: `1px solid ${alpha(s.entfall.main, 0.7)}` },
     pruefung: { background: papier, border: `1px solid ${s.pruefung.main}` },
-    termin: { background: papier, border: `1px dashed ${t.palette.text.secondary}` },
-    abwesend: { background: papier, border: `1px dashed ${t.palette.text.secondary}` },
+    termin: { background: papier, border: `1px dashed ${pal.text.secondary}` },
+    abwesend: { background: papier, border: `1px dashed ${pal.text.secondary}` },
     buchung: { background: papier, border: `1px dashed ${s.frei.main}` },
   };
   return <Box component="span" aria-hidden sx={{ display: 'inline-block', width: gross ? 20 : 10, height: gross ? 14 : 10, borderRadius: '1px', flex: 'none', ...stil[art] }} />;

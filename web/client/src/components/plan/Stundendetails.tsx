@@ -43,7 +43,8 @@ import {
   EinstellungenPanel, SitzplanAnordnung, SitzplanEditor, darfIrgendwas, kbEinstellungen, kbEinstellungenSpeichern, kontextVon, nameZeilen, schulVorgabeSetzen, sortieren, stundeLaden,
   avatarFarbe, initialenVon, type SitzDaten, type Schueler,
 } from '../klassenbuch/sitzplan';
-import { FachQuadrat, PlaketteChip } from './Kachel';
+import { PlaketteChip } from './Kachel';
+import { FachMarke, fachMarkeEinzug, useDarstellung } from './darstellung';
 import LinkRounded from '@mui/icons-material/LinkRounded';
 import { istEntfall as entfallVon, KEIN_ELEMENT, kuerzel, sichererLink, statusText, verlegungsText, verlegungsRichtung, istVerlegung, type Typ } from './logik';
 
@@ -97,6 +98,7 @@ const Hinweis = ({ children }: { children: ReactNode }) => <Typography variant="
 
 export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaendert }: { karte: Karte; liste?: Karte[]; typ: Typ; onClose: () => void; onGeaendert?: () => void }) {
   const t = useTheme();
+  const { d: darstellung } = useDarstellung();
   const mobil = useMediaQuery(t.breakpoints.down('sm'));
   const s = useSitzung();
   const { ich } = s;
@@ -281,15 +283,15 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
       <Stack direction="row" alignItems="flex-start" gap={1}>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Stack direction="row" alignItems="center" gap={1.25} sx={{ minWidth: 0 }}>
-            {k.fach && <FachQuadrat farbe={k.farbe} groesse={10} />}
+            {k.fach && <FachMarke farbe={k.farbe} groesse={10} />}
             <Typography variant="h2" component="h2" sx={{ fontSize: 20, lineHeight: 1.3, fontWeight: 600, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: entfall ? 'line-through' : 'none', textDecorationThickness: 1, minWidth: 0 }}>
               {fachTeil}
               {k.gruppe && <Box component="span" sx={{ ml: 1, fontWeight: 400, color: 'text.secondary' }}>{k.gruppe}</Box>}
             </Typography>
           </Stack>
-          {k.fachName && k.fachName !== k.fach && <Typography variant="body2" color="text.secondary" sx={{ pl: k.fach ? '22px' : 0 }}>{k.fachName}</Typography>}
+          {k.fachName && k.fachName !== k.fach && <Typography variant="body2" color="text.secondary" sx={{ pl: k.fach ? `${fachMarkeEinzug(darstellung, 10, 10)}px` : 0 }}>{k.fachName}</Typography>}
           {(plaketten.length > 0 || online || einzel) && (
-            <Stack direction="row" columnGap={1.5} rowGap={0.5} flexWrap="wrap" alignItems="center" sx={{ mt: 0.75, pl: k.fach ? '22px' : 0 }}>
+            <Stack direction="row" columnGap={1.5} rowGap={0.5} flexWrap="wrap" alignItems="center" sx={{ mt: 0.75, pl: k.fach ? `${fachMarkeEinzug(darstellung, 10, 10)}px` : 0 }}>
               {plaketten.map((p, i) => <PlaketteChip key={i} p={{ text: p.text, ton: p.ton, hinweis: p.hinweis }} />)}
               {online && <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: 'primary.main', fontSize: 10.5, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}><LinkRounded sx={{ fontSize: 13 }} />Online</Box>}
               {einzel && <PlaketteChip p={{ text: `${einzel}. Stunde`, ton: 'neutral' }} />}

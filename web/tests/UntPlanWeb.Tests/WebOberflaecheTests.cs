@@ -91,7 +91,10 @@ public class WebOberflaecheTests
         Assert.Contains("FachQuadrat", kachel);
         Assert.Contains("kachel.flaeche", kachel);
         Assert.Contains("KACHEL_PLAKETTEN", kachel);
-        Assert.DoesNotContain("alpha(fach", kachel);
+        // Fachfarbe als Fläche gibt es nur als ausdrückliche Wahl der Administration (Darstellung der Stundenkarten); Standard bleibt das Quadrat
+        Assert.Contains("d.fachfarbe === 'flaeche'", kachel);
+        var darstellung = Lesen("src", "components", "plan", "darstellung.tsx");
+        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'quadrat',[^}]*flaeche: 'neutral', rahmen: 'fein', eckenradius: 3,[^}]*statuswoerter: false", darstellung);
         var logik = Lesen("src", "components", "plan", "logik.ts");
         var erlaubt = Regex.Match(logik, @"KACHEL_PLAKETTEN = new Set\(\[([^\]]*)\]").Groups[1].Value;
         Assert.NotEmpty(erlaubt);
@@ -116,5 +119,20 @@ public class WebOberflaecheTests
             Assert.False(Regex.IsMatch(inhalt, @"\borange\b", RegexOptions.IgnoreCase), pfad);
         }
         Assert.Contains("#234f96", Lesen("src", "theme.ts"));
+    }
+    [Fact]
+    public void Darstellung_der_Stundenkarten_mit_Editor_und_Live_Vorschau()
+    {
+        // Einstellung kommt mit der Sitzung und wirkt über den Kontext auf Kachel, Legende, Listen und Stundendetails
+        Assert.Contains("DarstellungsAnbieter", Lesen("src", "app", "sitzung.tsx"));
+        Assert.Contains("useDarstellung", Lesen("src", "components", "plan", "Kachel.tsx"));
+        Assert.Contains("FachMarke", Lesen("src", "components", "plan", "Stundendetails.tsx"));
+        Assert.Contains("FachMarke", Lesen("src", "pages", "Heute.tsx"));
+        Assert.Contains("FachMarke", Lesen("src", "pages", "Uebersicht.tsx"));
+        // Editor unter Administration: Vorlagen, Live-Vorschau mit dem echten Wochenraster, Speichern/Abbrechen/Zurücksetzen
+        var editor = Lesen("src", "pages", "admin", "Stundenkarten.tsx");
+        foreach (var x in new[] { "<Wochenraster", "VORLAGEN", "Speichern", "Abbrechen", "Zurücksetzen auf Standard", "/api/app/darstellung", "aria-label" }) Assert.Contains(x, editor);
+        Assert.Contains("#/admin/stundenkarten", Lesen("src", "app", "menue.tsx"));
+        Assert.Contains("'stundenkarten'", Lesen("src", "pages", "admin", "Admin.tsx"));
     }
 }

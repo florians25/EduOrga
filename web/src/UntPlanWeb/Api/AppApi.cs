@@ -133,7 +133,7 @@ public static class AppApi
 
         // ---------------------------------------------------------------- Sitzung und Einrichtung
 
-        api.MapGet("/sitzung", (HttpContext c, Einstellungen e, Benutzerdienst bd, Paketdienst p, Mitteilungsdienst m, Verwaltungsdienst vw, Entschuldigungsdienst ed) =>
+        api.MapGet("/sitzung", (HttpContext c, Daten.Db db, Einstellungen e, Benutzerdienst bd, Paketdienst p, Mitteilungsdienst m, Verwaltungsdienst vw, Entschuldigungsdienst ed) =>
         {
             var b = c.Ich();
             return Results.Json(new
@@ -163,6 +163,8 @@ public static class AppApi
                 ungelesen = b is null ? 0 : m.Ungelesen(b.Id),
                 // Ansichtseinstellungen der Administration (Wochenende, Uhrzeiten auf Karten, Startseite)
                 ansicht = b is null ? null : vw.Einstellung("ansicht"),
+                // Darstellung der Stundenkarten (Administration, schulweit)
+                darstellung = b is null ? null : Kartendarstellungen.Laden(db),
             });
         });
 

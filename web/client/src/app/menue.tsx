@@ -144,6 +144,7 @@ export function menue(b: Benutzer): Bereich[] {
       { nav: 'admin-sperren', href: '#/admin/sperren', text: 'Prüfungssperren' },
       { nav: 'admin-verspaetung', href: '#/admin/verspaetung', text: 'Verspätungen & Fehlzeiten' },
       { nav: 'admin-ansicht', href: '#/admin/ansicht', text: 'Ansichtseinstellungen' },
+      { nav: 'admin-stundenkarten', href: '#/admin/stundenkarten', text: 'Darstellung der Stundenkarten' },
       { nav: 'admin-monitore', href: '#/admin/monitore', text: 'Monitoransichten' },
       { nav: 'admin-protokoll', href: '#/admin/protokoll', text: 'Protokoll' },
     ] });

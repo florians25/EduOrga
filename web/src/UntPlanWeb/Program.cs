@@ -192,6 +192,7 @@ public class Program
         SchuelerImportApi.Abbilden(app);
         PushApi.Abbilden(app);
         KlassenbuchEinstellungenApi.Abbilden(app);
+        DarstellungApi.Abbilden(app);
         EntschuldigungApi.Abbilden(app);
         UnterrichtKlassenApi.Abbilden(app);
         WartungApi.Abbilden(app);

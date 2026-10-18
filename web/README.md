@@ -103,7 +103,7 @@ Seiten (je nach Rolle):
 | **Melden & Buchen** | Abwesenheit melden, Raum buchen, Prüfung eintragen, Meine Meldungen |
 | **Unterricht** (Schülerverwaltung) | *Schüler\*in*: anzeigen, anlegen, bearbeiten, löschen je nach Rolle (siehe Rollen) |
 | **Stammdaten** (Administration) | Klassen, Lehrkräfte, Fächer, Räume, Schüler*innen (aus UntPlan, lesend), Abwesenheitsgründe, Klassendienste, Versionen (Übertragungsverlauf) |
-| **Administration** | Übersicht & Synchronisation, Nachrichten zum Tag, Freie Tage & Ferien, Import, Export, Aktive Benutzer, Rechte und Rollen, Benutzer, Zuordnungsgruppen, Rückmeldungen, Prüfungssperren, Ansichtseinstellungen, Monitore, Protokoll |
+| **Administration** | Übersicht & Synchronisation, Nachrichten zum Tag, Freie Tage & Ferien, Import, Export, Aktive Benutzer, Rechte und Rollen, Benutzer, Zuordnungsgruppen, Rückmeldungen, Prüfungssperren, Ansichtseinstellungen, Darstellung der Stundenkarten, Monitore, Protokoll |
 
 Im Einzelnen:
 
@@ -168,6 +168,16 @@ Im Einzelnen:
   CSV-Import mit Vorschau, Sammelaktionen Sperren/Entsperren/Löschen/E-Mail übernehmen/Inaktive sperren, Bericht), Freie Tage,
   Export (CSV), Aktive Benutzer, Passwortregeln, Zuordnung der Schulleitung, Prüfungssperren, Ansichtseinstellungen (Startseite, RSS),
   Rückmeldungen, Nachrichten zum Tag, Monitore, Protokoll.
+- **Darstellung der Stundenkarten** (Administration, `#/admin/stundenkarten`): schulweit festlegen, wie Stunden in Wochen- und
+  Tagesansicht (auch mobil), auf den Tagesseiten, der Startseite, der Übersicht und im Kopf der Stundendetails erscheinen –
+  Fachfarbe als Quadrat (Standard), Akzentbalken links bzw. oben (2–6 px), leichte Tönung der Fläche (6–30 %) oder keine;
+  Kartenfläche neutral/weiß/getönt, Rahmen fein/kräftig/keiner, Eckenradius 0–8 px, Dichte kompakt/normal/großzügig; Inhalt:
+  Fach als Kürzel oder ausgeschrieben, Raum an/aus, Zeile 2 (Lehrkraft bzw. Klasse) an/aus als Kürzel oder Name, unveränderte
+  Kürzel gefüllt/umrandet/als Text, optional Statuswörter auf den Kacheln. Vorlagen „Sachlich (Standard)“, „Akzentbalken“,
+  „Farbfläche“ und „Minimal“; rechts eine Live-Vorschau mit der echten Kachel (Woche/Tag, Vertretung, Raumänderung, Entfall,
+  offene Vertretung, Prüfung, Termin, Online, Doppelstunde). *Speichern* gilt für alle Konten (mit der nächsten Sitzung),
+  *Zurücksetzen auf Standard* stellt die Grunddarstellung wieder her. Die Statusdarstellung (Linie, Schraffur, Durchstreichung,
+  Kürzel-Plaketten) bleibt in jeder Variante erhalten; ausgeblendete Räume bzw. Lehrkräfte erscheinen bei Änderungen trotzdem.
 - **Mobil-App:** [UntPlanMobile](../mobile/README.md) bringt Stundenplan, Klassenbuch und Mitteilungen als installierbare
   App aufs Telefon. Sie läuft als eigener Container (Port 8081) und holt ihre Daten über die JSON-API von UntPlanWeb.
 
@@ -201,6 +211,7 @@ Zusätzlich zu Plan, Vertretungen, Klassenbuch und Mitteilungen (alle unter `/ap
 | `GET /api/app/klassenbuch/offen?tage=` | eigene Stunden ohne Lehrstoff (Standard 14 Tage) |
 | `GET/POST /api/app/klassenbuch/hausaufgabenliste`, `PUT/DELETE …/{id}` | Hausaufgaben einer Stunde (Text, Fälligkeit, Bemerkung, erledigt) und die in der Stunde fälligen |
 | `POST /api/app/klassenbuch/abwesenheit/verlaengern` | Abwesenheiten aus der Vorstunde bis Stundenende bzw. bis zum Tagesbeginn verlängern |
+| `GET /api/app/darstellung`, `PUT …` (Administration), `DELETE …` (Administration: Standard) | Darstellung der Stundenkarten (auch in `GET /api/app/sitzung` als `darstellung`); gespeichert in `einstellungen` (`einstellung:kartendarstellung`), ungültige Werte → 400 |
 | `GET /api/app/start` | Daten der Startseite *Heute* (Nachrichten mit `textHtml`, nächster Unterricht) |
 | `GET/POST /api/app/schueler`, `PUT/DELETE …/{id}` | Schülerverwaltung (Rechte siehe Rollen) |
 | `POST /api/app/meldungen/raumaenderung` | Raum einer Stunde ersetzen, löschen oder zusätzlichen Raum buchen (`raeume` = neue Raumliste) |

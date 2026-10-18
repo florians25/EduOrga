@@ -17,7 +17,8 @@ import { useSitzung } from '../../app/sitzung';
 import { ElementWahl, ZeitNavi } from '../../components/Auswahl';
 import { Fehler, Laden, Seite } from '../../components/Seite';
 import { Wochenraster, type Aufsichtsmodus } from '../../components/plan/Wochenraster';
-import { Legende, Muster, ARTEN } from '../../components/plan/Legende';
+import { Legende, Muster, ARTEN, unterrichtHinweis } from '../../components/plan/Legende';
+import { useDarstellung } from '../../components/plan/darstellung';
 import { Stundendetails } from '../../components/plan/Stundendetails';
 import type { Art } from '../../components/plan/logik';
 import { heuteIso, istIsoDatum, kalenderwoche, montag, wochenText, wochentagKurz, datumKurz } from '../../lib/datum';
@@ -50,6 +51,7 @@ function langname(plan: Wochenplan) {
 }
 
 export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
+  const { d } = useDarstellung();
   return (
     <Dialog open={offen} onClose={zu} maxWidth="md" fullWidth>
       <DialogTitle>Hilfe zum Stundenplan</DialogTitle>
@@ -58,7 +60,7 @@ export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h4" sx={{ mb: 1.5 }}>Darstellung</Typography>
             <Stack gap={1.25}>
-              <Stack direction="row" gap={1.5} alignItems="center"><Muster art="regulaer" gross /><Typography variant="body2"><b>Unterricht</b> – weiße Kachel, die Fachfarbe steht als kleines Quadrat vor dem Fachkürzel</Typography></Stack>
+              <Stack direction="row" gap={1.5} alignItems="center"><Muster art="regulaer" gross /><Typography variant="body2"><b>Unterricht</b> – {unterrichtHinweis(d)}</Typography></Stack>
               {ARTEN.map(a => <Stack key={a.art} direction="row" gap={1.5} alignItems="center"><Muster art={a.art} gross /><Typography variant="body2"><b>{a.text}</b> – {a.hinweis}</Typography></Stack>)}
               <Typography variant="body2" color="text.secondary">Geänderte Kürzel stehen als petrolfarbene Plakette, das bisherige grau durchgestrichen davor (z. B. <s>HOF</s> <b>BEC</b>); eine offene Vertretung zeigt „?“. Die Kurzinfo beim Überfahren nennt die Art der Änderung. „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext.</Typography>
             </Stack>

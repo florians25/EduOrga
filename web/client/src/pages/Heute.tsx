@@ -18,7 +18,7 @@ import { Abschnitt, Geladen, Leer, Seite } from '../components/Seite';
 import { Plakette } from '../components/Bausteine';
 import { WerteListe } from '../components/plan/Werte';
 import { Stundendetails } from '../components/plan/Stundendetails';
-import { FachQuadrat } from '../components/plan/Kachel';
+import { FachMarke } from '../components/plan/darstellung';
 import { gueltigeFarbe } from '../components/plan/logik';
 import { datumDe, datumText, heuteIso, jetztMinuten, minuten, wochentag, zeitstempel } from '../lib/datum';
 import { htmlBereinigt } from '../lib/html';
@@ -115,7 +115,7 @@ export default function Heute() {
                               </Box>
                               <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                                  <FachQuadrat farbe={entfall ? null : farbe} />
+                                  <FachMarke farbe={entfall ? null : farbe} />
                                   <Typography sx={{ fontWeight: 600, fontSize: 14, lineHeight: '20px', color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: entfall ? 'line-through' : 'none' }}>
                                     {s.fachAlt && !entfall ? <><s style={{ opacity: 0.6 }}>{s.fachAlt}</s> → {s.fach}</> : s.fach || s.text || s.art || '–'}
                                   </Typography>

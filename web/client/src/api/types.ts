@@ -35,6 +35,8 @@ export interface Sitzung {
   benutzer: Benutzer | null;
   ungelesen: number;
   ansicht: Ansicht;
+  /** Darstellung der Stundenkarten (Administration, schulweit); fehlt bei älteren Servern. */
+  darstellung?: Partial<import('../components/plan/darstellung').Kartendarstellung> | null;
 }
 
 export interface Ansicht {

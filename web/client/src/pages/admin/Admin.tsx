@@ -1,6 +1,7 @@
 // Administration: Übersicht & Synchronisation (Verbindung mit UntPlan, Datenstand, Schule, Version & Updates), Nachrichten zum Tag,
 // Freie Tage & Ferien, Import, Export, Aktive Benutzer, Zugriff ent-/sperren, Über UntPlan, Rechte und Rollen, Benutzer, Personen & Konten,
-// Zuordnungsgruppen, Rückmeldungen, Prüfungssperren, Verspätungen & Fehlzeiten, Ansichtseinstellungen, Monitoransichten, Protokoll.
+// Zuordnungsgruppen, Rückmeldungen, Prüfungssperren, Verspätungen & Fehlzeiten, Ansichtseinstellungen, Darstellung der Stundenkarten,
+// Monitoransichten, Protokoll.
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import {
   Alert, Box, Button, Checkbox, FormControlLabel, IconButton, InputAdornment, Link, MenuItem, Paper, Stack, Switch, TextField, Tooltip, Typography,
@@ -34,6 +35,7 @@ const Rechte = lazy(() => import('./Rechte'));
 const SchuelerImport = lazy(() => import('./Import').then(m => ({ default: m.SchuelerImport })));
 const QuelleKarte = lazy(() => import('./Import').then(m => ({ default: m.QuelleKarte })));
 const Wartung = lazy(() => import('./Wartung'));
+const Stundenkarten = lazy(() => import('./Stundenkarten'));
 
 const BEREICHE: { id: string; text: string; admin: boolean; recht?: string }[] = [
   { id: 'sync', text: 'Übersicht & Synchronisation', admin: true }, { id: 'nachrichten', text: 'Nachrichten zum Tag', admin: false },
@@ -44,6 +46,7 @@ const BEREICHE: { id: string; text: string; admin: boolean; recht?: string }[] =
   { id: 'personen', text: 'Personen & Konten', admin: true, recht: 'admin.benutzer' }, { id: 'zuordnung', text: 'Zuordnungsgruppen', admin: true },
   { id: 'rueckmeldungen', text: 'Rückmeldungen', admin: true }, { id: 'sperren', text: 'Prüfungssperren', admin: true },
   { id: 'verspaetung', text: 'Verspätungen & Fehlzeiten', admin: true }, { id: 'ansicht', text: 'Ansichtseinstellungen', admin: true },
+  { id: 'stundenkarten', text: 'Darstellung der Stundenkarten', admin: true },
   { id: 'monitore', text: 'Monitoransichten', admin: true }, { id: 'protokoll', text: 'Protokoll', admin: true },
 ];
 export const ROLLEN: Record<string, string> = { admin: 'Administration', leitung: 'Schulleitung', lehrer: 'Lehrkraft', schueler: 'Schüler*in / Klasse', eltern: 'Erziehungsberechtigte*r' };
@@ -102,6 +105,7 @@ export default function Admin({ teile }: SeitenProps) {
         { name: 'startseite', typ: 'wahl', label: 'Startseite nach der Anmeldung', optionen: [['heute', 'Heute'], ['stundenplan', 'Mein Stundenplan']] }]} />
       <QuelleKarte />
     </Stack>,
+    stundenkarten: () => <Stundenkarten />,
     monitore: () => <Monitore />, protokoll: () => <Protokoll />,
   };
   return (
