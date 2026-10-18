@@ -2,7 +2,7 @@
 // Drag & Drop (ein gemeinsamer Kontext, damit zwischen Bereichen gezogen werden kann), Tastenkürzel und die zuletzt
 // gezeigte Seite je Schuldatei.
 import { makeStyles, tokens } from '@fluentui/react-components';
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { einstellungLesen, einstellungSchreiben } from '@/api/client';
 import { adresseVon } from '@/kern/ansichten';
@@ -80,7 +80,7 @@ export function Shell() {
         <NavLeiste />
         <main className={s.inhalt}>
           <ZiehKontext>
-            <Outlet />
+            <Suspense fallback={null}><Outlet /></Suspense>
           </ZiehKontext>
         </main>
       </div>

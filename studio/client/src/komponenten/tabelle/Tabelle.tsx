@@ -11,7 +11,7 @@ import {
   getCoreRowModel, useReactTable, type ColumnDef, type ColumnOrderState, type ColumnSizingState, type VisibilityState,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ArrowSortDown16Regular, ArrowSortUp16Regular } from '@fluentui/react-icons';
+import { ArrowSortDown16Regular, ArrowSortUp16Regular, Checkmark16Regular } from '@fluentui/react-icons';
 import {
   forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,
   type ClipboardEvent, type KeyboardEvent, type MouseEvent as RMouseEvent, type ReactElement, type Ref,
@@ -24,7 +24,7 @@ import { menue, type MenueListe } from '../menue';
 import { Vorschlagsliste, type VorschlagslisteApi } from './vorschlagsliste';
 import './tabelle.css';
 
-export type Spaltenart = 'Text' | 'Ganzzahl' | 'Dezimal' | 'Bool' | 'Bereich' | 'Element' | 'ElementListe' | 'Farbe' | 'Auswahl' | 'Datum' | 'NurLesen';
+export type Spaltenart = 'Text' | 'Ganzzahl' | 'Dezimal' | 'Bool' | 'Bereich' | 'Element' | 'ElementListe' | 'Farbe' | 'Auswahl' | 'Datum' | 'NurLesen' | 'Haken';
 
 export interface Spalte<Z> {
   schluessel: string;
@@ -291,7 +291,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   const vorschlag = useRef<VorschlagslisteApi>(null);
 
   const editierbar = (s: Spalte<Z> | undefined, z: Z | undefined): boolean => {
-    if (!s || !z || s.art === 'NurLesen' || s.editierbar === false) return false;
+    if (!s || !z || s.art === 'NurLesen' || s.art === 'Haken' || s.editierbar === false) return false;
     if (istNeu(z)) return !!propsRef.current.neu;
     if (typeof s.editierbarFuer === 'function') return s.editierbarFuer(z);
     return !!(propsRef.current.aendern || s.aendern);
@@ -608,16 +608,17 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
                 {sichtbar.map(({ c, s }, ci) => {
                   const t = neu ? (ci === neuSpalte ? (props.neuText || 'Neu …') : '') : text(z, s);
                   const zk = ['tb-zelle'];
-                  if (s.art === 'Bool') zk.push('mitte');
+                  if (s.art === 'Bool' || s.art === 'Haken') zk.push('mitte');
                   else if (s.ausrichtung === 'rechts' || s.art === 'Ganzzahl' || s.art === 'Dezimal') zk.push('rechts');
                   else if (s.ausrichtung === 'mitte') zk.push('mitte');
-                  if (!neu && (s.art === 'NurLesen' || s.editierbar === false)) zk.push('nurlesen');
+                  if (!neu && (s.art === 'NurLesen' || s.art === 'Haken' || s.editierbar === false)) zk.push('nurlesen');
                   if (r === akt.r && ci === akt.c) zk.push('aktiv');
                   const extra = !neu ? s.klasse?.(z) : null;
                   if (extra) zk.push(extra);
                   const farbe = !neu ? s.farbe?.(z) : null;
                   let inhalt: ReactElement;
                   if (!neu && s.art === 'Bool') inhalt = <span className={`tb-haken${t === 'X' || t === 'true' ? ' an' : ''}`} />;
+                  else if (!neu && s.art === 'Haken') inhalt = t && t !== 'false' ? <Checkmark16Regular /> : <span />;
                   else if (!neu && s.art === 'Farbe' && t) inhalt = <><span className="tb-farbpunkt" style={{ background: t }} /><span className="t">{t}</span></>;
                   else inhalt = <span className="t" title={t.length > 12 ? t : undefined}>{t}</span>;
                   return (

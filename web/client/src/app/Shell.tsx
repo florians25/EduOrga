@@ -208,7 +208,7 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
       <Divider />
       <Konto schmal={schmal} abmelden={abmelden} neuStarten={neuStarten} schliessen={schliessen} />
       {!mobil && (
-        <ListItemButton onClick={() => einklappen(!schmal)} sx={{ mx: 1, mb: 1, minHeight: 36, justifyContent: schmal ? 'center' : 'flex-start', color: 'text.secondary' }}
+        <ListItemButton onClick={() => einklappen(!schmal)} sx={{ flex: 'none', mx: 1, mb: 1, minHeight: 36, justifyContent: schmal ? 'center' : 'flex-start', color: 'text.secondary' }}
           aria-label="Navigation ein- oder ausklappen" title="Navigation ein- oder ausklappen">
           {schmal ? <KeyboardDoubleArrowRightRounded fontSize="small" /> : <><KeyboardDoubleArrowLeftRounded fontSize="small" /><Typography variant="caption" sx={{ ml: 1 }}>Navigation einklappen</Typography></>}
         </ListItemButton>
@@ -237,7 +237,7 @@ function Konto({ schmal, abmelden, neuStarten, schliessen }: { schmal: boolean; 
   const andere = (konten ?? []).filter(k => !k.aktuell);
   return (
     <>
-      <ListItemButton onClick={e => oeffnen(e.currentTarget)} aria-haspopup="menu" sx={{ m: 1, mb: 0.5, py: 1, px: schmal ? 0 : 1.25, justifyContent: schmal ? 'center' : 'flex-start', gap: 1.25 }}>
+      <ListItemButton onClick={e => oeffnen(e.currentTarget)} aria-haspopup="menu" sx={{ flex: 'none', m: 1, mb: 0.5, py: 1, px: schmal ? 0 : 1.25, justifyContent: schmal ? 'center' : 'flex-start', gap: 1.25 }}>
         <Badge variant="dot" color="error" invisible={!ic.ungelesen || !schmal} overlap="circular">
           <Avatar sx={{ width: 34, height: 34, fontSize: 13, fontWeight: 600, bgcolor: 'primary.main' }}>{initialen(ich.anzeigename || ich.login)}</Avatar>
         </Badge>

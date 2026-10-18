@@ -1,0 +1,1 @@
+import{j as e,A as r}from"./mui-DUv506LQ.js";import{S as i}from"./index-L5HfPx62.js";import"./datum-Dn5NLYHl.js";function n({nav:t}){return e.jsx(i,{titel:"In Arbeit",children:e.jsxs(r,{severity:"info",children:["Diese Seite (",t,") wird gerade auf die neue Oberfläche umgestellt."]})})}export{n as default};

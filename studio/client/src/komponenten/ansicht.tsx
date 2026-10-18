@@ -106,7 +106,7 @@ export function AnsichtRahmen({ titel, aktionen, werkzeuge, filter, fuss, childr
 export function Werkzeug({ text, titel, aktion, icon, deaktiviert, gedrueckt }: { text?: string; titel?: string; aktion: () => unknown; icon?: JSX.Element; deaktiviert?: boolean; gedrueckt?: boolean }) {
   const knopf = (
     <ToolbarButton icon={icon} disabled={deaktiviert} aria-pressed={gedrueckt === undefined ? undefined : gedrueckt}
-      appearance={gedrueckt ? 'primary' : 'subtle'} aria-label={text ? undefined : titel}
+      appearance={gedrueckt ? 'primary' : 'subtle'} aria-label={text ? undefined : titel} style={{ minWidth: 0 }}
       onClick={() => { Promise.resolve().then(aktion).catch(fehlerMelden); }}>{text}</ToolbarButton>
   );
   return titel && titel !== text ? <Tooltip content={titel} relationship={text ? 'description' : 'label'}>{knopf}</Tooltip> : knopf;

@@ -80,6 +80,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   const entfall = istEntfall(k, typ);
   const kompakt = hoehe < 46;
   const sehrKlein = hoehe < 30;
+  const mittel = !kompakt && hoehe < 74 && !gross;
   const zeilen = kachelZeilen(k, typ);
   const raeume = kopfRaeume(k, typ);
   const pl = plaketten(k, typ);
@@ -120,7 +121,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
           '&:hover': { boxShadow: '0 4px 14px rgba(21,26,33,.14)', zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
           ...style,
         }}>
-        <Stack direction="row" alignItems="baseline" gap={0.75} sx={{ minWidth: 0 }}>
+        <Stack direction="row" alignItems="baseline" gap={0.75} sx={{ minWidth: 0, flex: 'none' }}>
           <Typography component="span" noWrap sx={{ fontWeight: 600, fontSize: gross ? 14.5 : 13, textDecoration: entfall ? 'line-through' : 'none', minWidth: 0, flex: '0 1 auto' }}>{titel}</Typography>
           {kompakt && zeilen[0] && (
             <Typography component="span" noWrap sx={{ fontSize: 11.5, color: 'text.secondary', textDecoration: entfall ? 'line-through' : 'none', minWidth: 0 }}>
@@ -133,16 +134,22 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
             </Typography>
           )}
         </Stack>
-        {!kompakt && zeilen.map((z, i) => (
-          <Typography key={i} component="div" noWrap sx={{ fontSize: 12, color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: entfall ? 'line-through' : 'none' }}>
-            <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} />
-          </Typography>
-        ))}
+        {!kompakt && zeilen.length > 0 && (
+          <Box sx={{ flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+            {(mittel ? zeilen.slice(0, 1) : zeilen).map((z, i) => (
+              <Typography key={i} component="div" noWrap sx={{ fontSize: 12, lineHeight: '15px', color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: entfall ? 'line-through' : 'none' }}>
+                <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} />
+              </Typography>
+            ))}
+          </Box>
+        )}
         {!kompakt && (pl.length > 0 || hatSymbole || zeit) && (
-          <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 'auto', pt: 0.25, minWidth: 0, flexWrap: 'nowrap', overflow: 'hidden' }}>
-            {pl.slice(0, hoehe >= 74 || gross ? 3 : 2).map((p, i) => <PlaketteChip key={i} p={p} klein={!gross} />)}
+          <Stack direction="row" alignItems="center" gap={0.5} sx={mittel
+            ? { position: 'absolute', right: 4, bottom: 3, maxWidth: 'calc(100% - 8px)', overflow: 'hidden', justifyContent: 'flex-end' }
+            : { mt: 'auto', pt: 0.25, minWidth: 0, flex: 'none', flexWrap: 'nowrap', overflow: 'hidden' }}>
+            {pl.slice(0, mittel ? 1 : 3).map((p, i) => <PlaketteChip key={i} p={p} klein={!gross} />)}
             {zeit && <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary' }}>{zeit}</Typography>}
-            <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.4 }}>{symbole}</Box>
+            <Box sx={{ ml: mittel ? 0 : 'auto', display: 'flex', alignItems: 'center', gap: 0.4 }}>{symbole}</Box>
           </Stack>
         )}
         {kompakt && !sehrKlein && pl[0] && <Box sx={{ position: 'absolute', right: 3, bottom: 2 }}><PlaketteChip p={pl[0]} klein /></Box>}

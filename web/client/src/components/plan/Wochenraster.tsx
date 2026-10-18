@@ -114,7 +114,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
         <Box />
         {tage.map(({ tag, i }) => {
           const heute = tag.datum === jetzt.tag;
-          const ganz = tag.ereignisse.filter(x => x.ganztaegig);
+          const ganz = tag.ereignisse.filter(x => x.ganztaegig && !plan.karten.some(k => k.datum === tag.datum && k.text === x.titel));
           const hinweise = tagHinweise(tag.hinweise);
           return (
             <Box key={tag.datum} sx={{ px: 1, pt: 1.25, pb: 1, borderLeft: 1, borderColor: dunkelLinie, minWidth: 0, bgcolor: heute ? alpha(t.palette.primary.main, 0.045) : undefined }}>

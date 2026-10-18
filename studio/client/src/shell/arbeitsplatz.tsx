@@ -2,9 +2,9 @@
 // Bereiche sind Ansichten mit eigener Kopfzeile; die Aufteilung lässt sich mit den Trennern ändern (wird gemerkt).
 // Öffnet eine Ansicht eine verwandte Ansicht, zeigt sie ein passender Bereich (gleicher Typ) – sonst erscheint sie in
 // einem Seitenbereich rechts (nicht modal, der Arbeitsplatz bleibt bedienbar).
-import { DrawerBody, OverlayDrawer, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { DrawerBody, OverlayDrawer, Spinner, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import {
-  Children, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as RPointerEvent,
+  Children, Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as RPointerEvent,
 } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adresseVon, ansichtDef } from '@/kern/ansichten';
@@ -86,7 +86,7 @@ export function ArbeitsplatzSeite() {
           <div className={s.pfad}>{bereichVon({ arbeitsplatz: name, p: {} }, modus) || ''}</div>
           <h1 className={s.titel}>{def.titel}</h1>
         </header>
-        <div className={s.flaeche}>{dokument ? <K key={dokument} /> : <KeinDokument />}</div>
+        <div className={s.flaeche}>{dokument ? <Suspense fallback={<Spinner size="small" />}><K key={dokument} /></Suspense> : <KeinDokument />}</div>
       </div>
       <OverlayDrawer open={!!seitlich} position="end" size="large" modalType="non-modal" onOpenChange={(_, d) => { if (!d.open) setSeitlich(null); }}>
         <DrawerBody className={s.drawerBody}>

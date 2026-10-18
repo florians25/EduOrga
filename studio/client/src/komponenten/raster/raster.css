@@ -1,7 +1,7 @@
 /* Stundenplan-Raster (design/DESIGN.md, Abschnitt 5). */
 .ra { position: relative; flex: 1; min-height: 0; overflow: auto; outline: none; background: var(--colorNeutralBackground1); }
 .ra-gitter {
-  display: grid; min-width: 560px; grid-template-columns: 64px repeat(var(--tage), minmax(0, 1fr)); font-size: 13px;
+  display: grid; min-width: 560px; grid-template-columns: 78px repeat(var(--tage), minmax(0, 1fr)); font-size: 13px;
   color: var(--colorNeutralForeground1); position: relative;
 }
 .ra.kompakt .ra-gitter { grid-template-columns: 40px repeat(var(--tage), minmax(0, 1fr)); font-size: 12px; min-width: 360px; }

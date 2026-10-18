@@ -112,12 +112,12 @@ export default function Unterricht({ p }: AnsichtProps) {
 
   const wst = unterrichte.reduce((x, u) => x + u.wst, 0), nv = unterrichte.reduce((x, u) => x + u.nvpl, 0);
   const spaltenMenue = () => tabelle.current?.spaltenMenue(window.innerWidth / 2 - 100, 180);
-  const titel = daten?.titel ? (sicht === 'alle' ? 'Alle Unterrichte' : `${daten.titel} – Unterricht`) : 'Unterricht';
+  const titel = daten?.titel ? (sicht === 'alle' ? 'Alle Unterrichte' : `${daten.titel.replace(/^(\S+) (\S+) \(\1 \2\)/, '$1 $2')} – Unterricht`) : 'Unterricht';
 
   return (
     <AnsichtRahmen titel={titel} laden={laedt && !daten}
       werkzeuge={<>
-        {sicht !== 'alle' ? <><ElementAuswahl typ={sicht} liste={liste} wert={element} beiWahl={(id) => a.parameterSetzen({ element: id })} /><Trenner /></> : null}
+        {sicht !== 'alle' ? <><ElementAuswahl typ={sicht} liste={liste} wert={element} beiWahl={(id) => { a.parameterSetzen({ element: id }); melden('element', { typ: sicht, id, quelle: a.id }); }} /><Trenner /></> : null}
         {schreiben ? <>
           <Werkzeug text="Neu" titel="Neuer Unterricht" aktion={() => { tabelle.current?.waehle('__neu', 'Fach'); tabelle.current?.fokus(); tabelle.current?.bearbeiten(); }} />
           <Werkzeug text="Kopplungszeile" titel="Kopplungszeile hinzufügen (weitere Lehrkraft bzw. Gruppe)" aktion={zeileNeu} />
