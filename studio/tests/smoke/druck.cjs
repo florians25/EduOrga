@@ -1,184 +1,116 @@
-// Oberflächen-Smoke-Test der Module Einstellungen, Druck, Übersichtspläne und Stundenplanformate (Playwright, Chromium).
+// Oberflächentest der Module Einstellungen, Gesamtübersichten, Druck und Planformate (Playwright, Chromium).
 //
-//   NODE_PATH=$(npm root -g) STUDIO_URL=http://127.0.0.1:5513 STUDIO_PASSWORT=… node studio/tests/smoke/druck.cjs
+//   NODE_PATH=$(npm root -g) STUDIO_URL=http://127.0.0.1:5501 STUDIO_PASSWORT=geheim123 node studio/tests/smoke/druck.cjs
 //
-// Ablauf: Anmelden → Beispielschule (mit Stundenplan) öffnen → Einstellungen, Zeitraster, Kalender und Ferien, Perioden,
-// Unterrichtsgruppen → Lehrer-Übersicht → Druckauswahl mit Vorschau → Berichte → Planformate → Vertretungsplan-Ausgabe.
-// Bildschirmfotos nach STUDIO_SCREENSHOTS.
-const { chromium } = require('playwright');
-
-// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
-async function eintrag(page, id) {
-  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
-  if (await k.count() && await k.first().isVisible()) return k.first().click();
-  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
-}
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-
-const URL = process.env.STUDIO_URL || 'http://127.0.0.1:5501';
-const BENUTZER = process.env.STUDIO_BENUTZER || 'admin';
-const PASSWORT = process.env.STUDIO_PASSWORT || 'geheim123';
-const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-shots-druck');
+// Ablauf: Beispielschule → Einstellungen (Schuldaten ändern und übernehmen) → Zeitraster (Zellen markieren, Pausen) →
+// Kalender und Ferien → Perioden → Unterrichtsgruppe anlegen → Gesamtübersichten → Druckauswahl mit Seitenansicht (PDF) und
+// HTML-Ausgabe → Berichte → Planformat aus Vorlage mit Feld-Editor → Vertretungsplan-Ausgabe. Umgebungsvariablen: hilfe.cjs.
+const h = require('./hilfe.cjs');
 
 (async () => {
-  fs.mkdirSync(BILDER, { recursive: true });
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1600, height: 950 } });
-  const fehler = [];
-  page.on('pageerror', (e) => fehler.push(String(e)));
-  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) fehler.push(m.text()); });
-  const foto = (name) => page.screenshot({ path: path.join(BILDER, `${name}.png`) });
-  const reiter = async (name) => {}; // Reiter gibt es nicht mehr – Navigation ist immer sichtbar
-  const knopf = (id) => eintrag(page, id);
-  const alleZu = () => page.evaluate(async () => (await import('/js/kern/fenster.js')).fensterverwaltung.alleSchliessen());
-  const ansichtZu = (typ) => page.evaluate(async (typ) => (await import('/js/kern/fenster.js')).fensterverwaltung.alle().find((f) => f.typ === typ)?.schliessen(), typ);
+  const cookie = await h.apiAnmelden();
+  await h.beispielschule(cookie); // wird „zuletzt geöffnet“
+  const t = await h.starten('studio-shots-druck');
+  const { page, foto } = t;
 
-  try {
-    await page.goto(URL);
-    await page.fill('input[name=benutzer]', BENUTZER);
-    await page.fill('input[name=passwort]', PASSWORT);
-    await page.click('button[type=submit]');
-    await page.waitForSelector('.navigation .nav-punkt');
-    // Beispielschule mit Stundenplan über die API anlegen und öffnen
-    await page.evaluate(async () => {
-      const r = await fetch('/api/dokumente/beispiel', { method: 'POST', headers: { 'X-UntPlan-Studio': '1', 'Content-Type': 'application/json' }, body: '{}' });
-      const stand = await r.json();
-      const { dokumentOeffnen } = await import('/js/kern/dokument.js');
-      await dokumentOeffnen(stand.id);
-    });
-    await page.waitForFunction(() => document.title.includes('Beispiel'), null, { timeout: 20000 });
-    await page.waitForTimeout(500);
-    await page.keyboard.press('Escape');
+  await h.abschliessen('Oberflächentest Druck und Einstellungen', t, async () => {
+    await h.anmelden(page);
+    await h.dokumentOffen(page);
 
-    // Einstellungen (Schuldaten) – Seite Vertretungsplanung
-    await reiter('Start');
-    await knopf('start.einstellungen');
-    await page.waitForSelector('.fenster[data-typ="einstellungen.schule"] .es-seite input');
-    await page.click('.fenster[data-typ="einstellungen.schule"] .es-knoten:text-is("Vertretungsplanung")');
-    await page.waitForSelector('.es-gewichtung');
+    // Einstellungen (Schuldaten): Abschnitt Vertretungsplanung, dann Schulbezeichnung ändern und übernehmen
+    await h.eintrag(page, 'start.einstellungen');
+    await page.waitForSelector('[data-ansicht="einstellungen.schule"] .es-formular input');
+    await page.click('.es-knoten[data-seite=Vertretungsplanung]');
+    await page.waitForSelector('.es-gewichtung [role=slider], .es-gewichtung input[type=range]');
     await foto('01-einstellungen');
-    await page.click('.fenster[data-typ="einstellungen.schule"] .es-knoten:text-is("Allgemein")');
-    const name = page.locator('.fenster[data-typ="einstellungen.schule"] .es-seite input').first();
+    await page.click('.es-knoten[data-seite=Allgemein]');
+    const name = page.locator('[data-ansicht="einstellungen.schule"] .es-formular input').first();
     await name.fill('Städtisches Beispiel-Gymnasium Smoke');
-    await page.click('.fenster[data-typ="einstellungen.schule"] .wz-knopf:has-text("Übernehmen")');
-    await page.waitForFunction(() => document.title.includes('Smoke') || document.querySelector('.kl-status')?.textContent.includes('übernommen'), null, { timeout: 5000 }).catch(() => {});
-    await alleZu();
+    await h.werkzeug(page, 'einstellungen.schule', 'Übernehmen');
+    await page.waitForSelector('[data-ansicht="einstellungen.schule"] footer:has-text("Übernommen")');
 
-    // Zeitraster
-    await reiter('Dateneingabe');
-    await knopf('eingabe.zeitraster');
+    // Zeitraster: letzte Zelle markieren und leeren, Reiter Pausen
+    await h.eintrag(page, 'eingabe.zeitraster');
     await page.waitForSelector('.es-zr .es-zr-zelle');
-    await page.locator('.es-zr .es-zr-zelle').last().click();
-    await page.click('.es-eintragung button:has-text("leer")');
+    await page.locator('.es-zr .es-zr-zelle').last().dispatchEvent('pointerdown');
+    await page.click('.es-eintragung button:has-text("Leer")');
+    await page.waitForSelector('[data-ansicht="einstellungen.zeitraster"] footer:has-text("Geändert")');
     await foto('02-zeitraster');
-    await page.click('.fenster[data-typ="einstellungen.zeitraster"] .es-reiterknopf:text-is("Pausen")');
-    await page.waitForSelector('.fenster[data-typ="einstellungen.zeitraster"] .es-liste');
+    await page.getByRole('tab', { name: 'Pausen' }).click();
+    await page.waitForSelector('[data-ansicht="einstellungen.zeitraster"] .es-liste');
     await foto('03-zeitraster-pausen');
-    await alleZu();
+    await h.werkzeug(page, 'einstellungen.zeitraster', 'Verwerfen');
 
-    // Kalender / Ferien
-    await reiter('Dateneingabe');
-    await knopf('eingabe.ferien');
+    // Kalender und Ferien: Tag wählen
+    await h.eintrag(page, 'eingabe.ferien');
     await page.waitForSelector('.es-monat td.tag');
-    await page.click('.es-monat td.schultag >> nth=20');
+    await page.locator('.es-monat td.schultag').nth(20).click();
     await page.waitForSelector('.es-tag b');
     await foto('04-kalender-ferien');
-    await alleZu();
 
     // Perioden und Unterrichtsgruppen
-    await reiter('Start');
-    await knopf('start.perioden');
+    await h.eintrag(page, 'start.perioden');
     await page.waitForSelector('.es-perioden-liste tr.gewaehlt');
     await foto('05-perioden');
-    await alleZu();
-    await reiter('Dateneingabe');
-    await knopf('eingabe.ugruppen');
-    await page.waitForSelector('.fenster[data-typ="einstellungen.ugruppen"] .es-liste');
-    await page.locator('.fenster[data-typ="einstellungen.ugruppen"] tr.neu input').first().fill('A-Wo');
-    await page.locator('.fenster[data-typ="einstellungen.ugruppen"] tr.neu input').first().press('Tab');
-    await page.waitForFunction(() => [...document.querySelectorAll('.fenster[data-typ="einstellungen.ugruppen"] tr:not(.neu) input')].some((i) => i.value === 'A-Wo'));
+    await h.eintrag(page, 'eingabe.ugruppen');
+    await page.waitForSelector('[data-ansicht="einstellungen.ugruppen"] .es-liste');
+    const neu = page.locator('[data-ansicht="einstellungen.ugruppen"] input[placeholder="Neue Gruppe"]');
+    await neu.fill('A-Wo');
+    await neu.press('Tab');
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-ansicht="einstellungen.ugruppen"] input')].some((i) => i.value === 'A-Wo' && i.placeholder !== 'Neue Gruppe'));
     await foto('06-unterrichtsgruppen');
-    await alleZu();
 
-    // Übersichtspläne
-    await reiter('Stundenpläne');
-    await knopf('stundenplaene.uebersicht.lehrer');
-    await page.waitForSelector('.fenster[data-typ=uebersicht] .ue-zelle');
-    await page.waitForTimeout(300);
+    // Gesamtübersichten
+    await h.eintrag(page, 'stundenplaene.uebersicht.lehrer');
+    await page.waitForSelector('[data-ansicht=uebersicht] .ue-zelle');
     await foto('07-lehrer-uebersicht');
-    await alleZu();
-    await reiter('Stundenpläne');
-    await knopf('stundenplaene.uebersicht.raum');
-    await page.waitForSelector('.fenster[data-typ=uebersicht] .ue-zelle');
+    await h.eintrag(page, 'stundenplaene.uebersicht.raum');
+    await page.waitForFunction(() => document.querySelector('[data-ansicht=uebersicht] .ue-ecke')?.textContent === 'Räume');
+    await page.waitForSelector('[data-ansicht=uebersicht] .ue-zelle');
     await foto('08-raum-uebersicht');
-    await alleZu();
 
-    // Druckauswahl → Seitenansicht (PDF)
-    await reiter('Stundenpläne');
-    await knopf('stundenplaene.drucken');
+    // Druckauswahl → Seitenansicht (PDF) und HTML-Ausgabe
+    await h.eintrag(page, 'stundenplaene.drucken');
     await page.waitForSelector('.dr-element');
     await foto('09-druckauswahl');
     const [antwort] = await Promise.all([
       page.waitForResponse((r) => r.url().includes('/druck/stundenplaene') && r.status() === 200),
-      page.click('.fenster[data-typ="druck.auswahl"] button:has-text("Seitenansicht")'),
+      h.werkzeug(page, 'druck.auswahl', 'Seitenansicht'),
     ]);
     if (!(antwort.headers()['content-type'] || '').includes('application/pdf')) throw new Error('Keine PDF-Antwort');
-    await page.waitForSelector('.fenster[data-typ="druck.vorschau"] iframe');
-    await page.waitForTimeout(1200);
+    await page.waitForSelector('[data-ansicht="druck.vorschau"] iframe');
     await foto('10-druckvorschau');
-    // HTML-Ausgabe (wird auch im kopflosen Browser angezeigt)
-    await ansichtZu('druck.vorschau');
-    await page.click('.fenster[data-typ="druck.auswahl"] button:has-text("HTML-Ausgabe")');
-    await page.waitForSelector('.fenster[data-typ="druck.vorschau"] iframe');
-    await page.waitForTimeout(1200);
+    await page.goBack();
+    await page.waitForSelector('.dr-element');
+    await h.werkzeug(page, 'druck.auswahl', 'HTML-Ausgabe');
+    await page.waitForSelector('[data-ansicht="druck.vorschau"] iframe');
+    await page.waitForTimeout(1000);
     await foto('10b-html-ausgabe');
-    await alleZu();
 
     // Berichte
-    await reiter('Stundenpläne');
-    await knopf('stundenplaene.berichte');
+    await h.eintrag(page, 'stundenplaene.berichte');
     await page.waitForSelector('.dr-bericht.aktiv');
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(600);
     await foto('11-berichte');
-    await alleZu();
 
-    // Stundenplanformate: Format aus Vorlage anlegen, Feld-Editor
-    await reiter('Stundenpläne');
-    await knopf('stundenplaene.formate');
+    // Planformate: Format aus Vorlage anlegen, zwei Felder im Feld-Editor, speichern
+    await h.eintrag(page, 'stundenplaene.formate');
     await page.waitForSelector('.fm-liste');
-    await page.click('.fenster[data-typ="formate.editor"] .wz-knopf:has-text("Neu")');
-    await page.fill('.dialog input[name=neu]', 'Klasse Smoke');
-    await page.click('.dialog button:has-text("Anlegen")');
+    await h.werkzeug(page, 'formate.editor', 'Neues Format');
+    await page.fill('[role=dialog] input[name=neu]', 'Klasse Smoke');
+    await h.dialogKnopf(page, 'Anlegen');
     await page.waitForSelector('.fm-eintrag.aktiv:has-text("Klasse Smoke")');
-    await page.click('.es-reiterknopf:text-is("Stundenfeld")');
+    await page.getByRole('tab', { name: 'Stundenfeld' }).click();
     await page.click('button:has-text("Feld hinzufügen")');
     await page.click('button:has-text("Feld hinzufügen")');
-    await page.click('.fenster[data-typ="formate.editor"] .wz-knopf:has-text("Speichern")');
-    await page.waitForTimeout(500);
-    await foto('12-stundenplanformate');
-    await alleZu();
+    await h.werkzeug(page, 'formate.editor', 'Speichern');
+    await page.waitForSelector('[data-ansicht="formate.editor"] footer:has-text("Gespeichert")');
+    await foto('12-planformate');
 
-    // Vertretungsplan-Ausgabe im Vertretungsmodus
-    await reiter('Start');
-    await knopf('start.vertretungsmodus');
-    await reiter('Vertretungsplanung');
-    await knopf('vertretung.ausgabe');
+    // Vertretungsplan-Ausgabe
+    await h.eintrag(page, 'vertretung.ausgabe');
     await page.waitForSelector('.dr-felder');
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(800);
     await foto('13-vertretungsplan-ausgabe');
-    await reiter('Vertretungsplanung');
-    await knopf('vertretung.modus');
-  } catch (e) {
-    await foto('fehler').catch(() => {});
-    console.error('Seitenfehler:', fehler.join('\n'));
-    throw e;
-  }
-  await browser.close();
-  if (fehler.length) {
-    console.error('Fehler in der Seite:\n' + fehler.join('\n'));
-    process.exit(1);
-  }
-  console.log(`Smoke-Test Druck/Einstellungen bestanden. Bildschirmfotos: ${BILDER}`);
+  });
 })().catch((e) => { console.error(e); process.exit(1); });

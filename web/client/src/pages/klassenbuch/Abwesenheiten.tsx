@@ -12,7 +12,7 @@ import type { Elemente } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
 import { DatumKachel, FormDialog, NamensAvatar, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
-import { DatumFeld } from '../../components/Auswahl';
+import { DatumFeld, ZeitFeld } from '../../components/Auswahl';
 import { Tabelle } from '../../components/Tabelle';
 import { abwZeitraum, DetailFelder, detailsVon, DetailSymbole, NACHWEISE, StatusLabel, STATUS_TEXT, type Details } from '../../components/klassenbuch/fehlzeiten';
 import { bestaetigen, toast } from '../../lib/meldungen';
@@ -72,8 +72,8 @@ function AbwesenheitFormular({ z, el, gruende, texte, klasseVorgabe, onClose, fe
           </Stack>
         )}
         <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
-          <Stack direction="row" gap={1}><DatumFeld label="Von" wert={vd} onWert={d => d && setVd(d)} pflicht /><TextField type="time" label="Uhrzeit" value={ganz ? tagesbeginn : vz} onChange={e => setVz(e.target.value)} disabled={ganz} sx={{ width: 120 }} /></Stack>
-          <Stack direction="row" gap={1}><DatumFeld label="Bis" wert={bd} onWert={d => d && setBd(d)} pflicht /><TextField type="time" label="Uhrzeit" value={ganz ? tagesende : bz} onChange={e => setBz(e.target.value)} disabled={ganz} sx={{ width: 120 }} /></Stack>
+          <Stack direction="row" gap={1}><DatumFeld label="Von" wert={vd} onWert={d => d && setVd(d)} pflicht /><ZeitFeld label="Uhrzeit" wert={ganz ? tagesbeginn : vz ?? ''} onWert={v => setVz(v)} deaktiviert={ganz} /></Stack>
+          <Stack direction="row" gap={1}><DatumFeld label="Bis" wert={bd} onWert={d => d && setBd(d)} pflicht /><ZeitFeld label="Uhrzeit" wert={ganz ? tagesende : bz ?? ''} onWert={v => setBz(v)} deaktiviert={ganz} /></Stack>
         </Stack>
         <Typography variant="caption" color="text.secondary">Minutengenau: angebrochene Stunden werden als Verspätung bzw. vorzeitiges Gehen gezählt.</Typography>
         <FormControlLabel control={<Switch checked={ganz} onChange={e => setGanz(e.target.checked)} />} label="Ganztägig – alle Unterrichtsstunden der gewählten Tage" />

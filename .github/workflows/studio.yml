@@ -35,7 +35,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Tests (API, JS-Syntax)
+          cache: npm
+          cache-dependency-path: studio/client/package-lock.json
+      - name: Oberfläche bauen (Typprüfung + Vite)
+        working-directory: studio/client
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+      - name: Tests (API, Oberfläche)
         run: dotnet test studio/tests/UntPlanStudio.Tests -c Release
 
   oberflaeche:
@@ -49,8 +56,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: studio/client/package-lock.json
       - name: Studio starten
         run: |
+          (cd studio/client && npm ci --no-audit --no-fund && npm run build)
           dotnet publish studio/src/UntPlanStudio -c Release -o studio-publish -p:UseAppHost=false
           mkdir -p studio-daten
           (cd studio-publish && STUDIO_DATEN=$GITHUB_WORKSPACE/studio-daten STUDIO_ADMIN_PASSWORT=geheim123 ASPNETCORE_URLS=http://127.0.0.1:5501 nohup dotnet UntPlanStudio.dll > ../studio.log 2>&1 &)

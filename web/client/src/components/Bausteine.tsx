@@ -87,9 +87,9 @@ export function Kennzahl({ wert, text, ton = 'primaer', onClick, unter }: { wert
   const t = useTheme();
   const farbe = ton === 'neutral' ? t.palette.text.primary : ton === 'primaer' ? t.palette.primary.main : ton === 'warnung' ? t.palette.status.pruefung.main : t.palette.status[ton].main;
   return (
-    <Paper variant="outlined" onClick={onClick} sx={{ p: 2, borderRadius: 3.5, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s', '&:hover': onClick ? { boxShadow: '0 4px 14px rgba(21,26,33,.08)' } : {} }}>
+    <Paper variant="outlined" onClick={onClick} sx={{ p: 2, minWidth: 0, borderRadius: 3.5, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s', '&:hover': onClick ? { boxShadow: '0 4px 14px rgba(21,26,33,.08)' } : {} }}>
       <Typography sx={{ fontSize: 28, fontWeight: 600, color: farbe, lineHeight: 1.1 }}>{wert}</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{text}</Typography>
+      <Typography variant="body2" color="text.secondary" noWrap title={text} sx={{ mt: 0.5 }}>{text}</Typography>
       {unter}
     </Paper>
   );

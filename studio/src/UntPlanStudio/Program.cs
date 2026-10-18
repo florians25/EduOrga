@@ -155,8 +155,10 @@ public partial class Program
         app.UseDefaultFiles();
         app.UseStaticFiles(new StaticFileOptions
         {
-            // kein Build-Schritt: Skripte und Stile immer neu prüfen (ETag), damit Updates sofort ankommen
-            OnPrepareResponse = c => c.Context.Response.Headers.CacheControl = "no-cache",
+            // Oberfläche aus studio/client (Vite): Dateien unter /assets/ tragen einen Inhalts-Hash im Namen und ändern sich nie;
+            // alles andere (index.html, Schriften, Symbol) immer neu prüfen (ETag), damit Updates sofort ankommen
+            OnPrepareResponse = c => c.Context.Response.Headers.CacheControl =
+                c.Context.Request.Path.StartsWithSegments("/assets") ? "public, max-age=31536000, immutable" : "no-cache",
         });
         app.UseAuthentication();
         app.UseAuthorization();
@@ -201,7 +203,8 @@ public partial class Program
         var sicherungen = api.MapGroup("/sicherungen").RequireAuthorization(p => p.RequireRole(Rollen.Admin));
         sicherungen.MapGet("", (StudioDatenbank db) => db.Sicherungen().Select(s => new { s.Datei, s.Groesse, s.Zeit }));
         sicherungen.MapPost("", (StudioDatenbank db) => { var s = db.Sichern(); return new { s.Datei, s.Groesse, s.Zeit }; });
-        app.MapFallbackToFile("index.html");
+        // Adressen der Oberfläche (z. B. /stundenplan?typ=klasse) liefern die Startseite; das Routing übernimmt der Browser
+        app.MapFallbackToFile("index.html", new StaticFileOptions { OnPrepareResponse = c => c.Context.Response.Headers.CacheControl = "no-cache" });
     }
 
     /// <summary>Ändernde Anfragen, die auch Nur-Lesen-Konten stellen dürfen (Abmelden, eigenes Passwort, eigene Einstellungen).</summary>

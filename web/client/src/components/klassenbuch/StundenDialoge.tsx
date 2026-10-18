@@ -7,7 +7,7 @@ import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
 import { holen, senden } from '../../api/client';
 import type { Karte, Zeit } from '../../api/types';
 import { FormDialog } from '../Bausteine';
-import { DatumFeld } from '../Auswahl';
+import { DatumFeld, ZeitFeld } from '../Auswahl';
 import { RaumFeld } from '../RaumListe';
 import { bestaetigen, toast } from '../../lib/meldungen';
 import { datumDe, heuteIso, hhmm, jetztMinuten, minuten, wochentagKurz, zeitstempel } from '../../lib/datum';
@@ -160,11 +160,11 @@ export function AbwesenheitDialog({ k, ids, f, a, gruende, zeiten, bereich, eb, 
         <Typography><Typography component="span" color="text.secondary">Schüler*in: </Typography><b>{namen.length > 3 ? `${namen.slice(0, 3).join(', ')} und ${namen.length - 3} weitere` : namen.join(', ')}</b></Typography>
         <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
           <DatumFeld label="Von" wert={vd} onWert={d => d && setVd(d)} deaktiviert={!verwalten} pflicht />
-          <TextField type="time" label="Uhrzeit" value={ganz ? tagesbeginn : vz} onChange={e => setVz(e.target.value)} disabled={ganz} sx={{ width: 130 }} />
+          <ZeitFeld label="Uhrzeit" wert={ganz ? tagesbeginn : vz} onWert={v => setVz(v)} deaktiviert={ganz} />
         </Stack>
         <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
           <DatumFeld label="Bis" wert={bd} onWert={d => d && setBd(d)} deaktiviert={!verwalten} pflicht />
-          <TextField type="time" label="Uhrzeit" value={ganz ? tagesende : bz} onChange={e => setBz(e.target.value)} disabled={ganz} sx={{ width: 130 }} />
+          <ZeitFeld label="Uhrzeit" wert={ganz ? tagesende : bz} onWert={v => setBz(v)} deaktiviert={ganz} />
         </Stack>
         <FormControlLabel control={<Checkbox checked={ganz} onChange={e => setGanz(e.target.checked)} />} label={<>Ganztägig <Typography component="span" variant="caption" color="text.secondary">alle Unterrichtsstunden {verwalten ? 'der gewählten Tage' : 'des Tages'}</Typography></>} />
         <Stack direction="row" gap={1} flexWrap="wrap">

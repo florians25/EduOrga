@@ -1,0 +1,35 @@
+/* Modul Druck (Präfix dr-): Vorschau, Druckauswahl, Berichte, Vertretungsplan-Ausgabe. */
+.dr-vorschau { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--colorNeutralBackground3); }
+.dr-teilung { display: flex; flex: 1; min-height: 0; }
+.dr-optionen { flex: 0 0 340px; overflow: auto; padding: 16px 20px 24px; border-right: 1px solid var(--colorNeutralStroke2); display: flex; flex-direction: column; gap: 12px; }
+.dr-optionen h3, .dr-layout h3 { font-size: 13px; font-weight: 600; margin: 12px 0 0; }
+.dr-optionen h3:first-child, .dr-layout h3:first-child { margin-top: 0; }
+.dr-leise { color: var(--colorNeutralForeground3); font-size: 12.5px; margin: 0; }
+.dr-elemente { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dr-listenkopf { flex: none; display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.dr-liste { flex: 1; overflow: auto; padding: 8px 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); align-content: start; gap: 0 16px; }
+.dr-element { display: flex; gap: 6px; align-items: center; height: 32px; white-space: nowrap; overflow: hidden; }
+.dr-element b { font-weight: 500; min-width: 40px; }
+.dr-element .dr-lang { overflow: hidden; text-overflow: ellipsis; color: var(--colorNeutralForeground3); }
+.dr-leer { grid-column: 1 / -1; padding: 40px 0; text-align: center; color: var(--colorNeutralForeground3); }
+
+.dr-berichtliste { flex: 0 0 260px; overflow: auto; padding: 12px 0 16px; border-right: 1px solid var(--colorNeutralStroke2); }
+.dr-gruppe + .dr-gruppe { margin-top: 14px; }
+.dr-gruppentitel { padding: 0 16px 4px; font-size: 12px; font-weight: 600; color: var(--colorNeutralForeground3); }
+.dr-bericht { position: relative; display: block; width: 100%; min-height: 30px; text-align: left; border: 0; background: none; font: inherit; padding: 5px 16px; cursor: pointer; color: var(--colorNeutralForeground2); }
+.dr-bericht:hover { background: var(--colorNeutralBackground1Hover); color: var(--colorNeutralForeground1); }
+.dr-bericht:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.dr-bericht.aktiv { color: var(--colorBrandForeground1); font-weight: 500; }
+.dr-bericht.aktiv::before { content: ""; position: absolute; left: 0; top: 5px; bottom: 5px; width: 2px; background: var(--colorBrandStroke1); }
+.dr-berichtvorschau { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dr-berichtkopf { flex: none; display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--colorNeutralStroke2); }
+.dr-zeitraum { display: flex; gap: 12px; align-items: center; }
+
+.dr-layout { flex: 0 0 520px; overflow: auto; padding: 16px 20px 24px; border-right: 1px solid var(--colorNeutralStroke2); display: flex; flex-direction: column; gap: 10px; }
+.dr-formular { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 12px; align-items: center; }
+.dr-schalterliste { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.dr-felder { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.dr-felder th { text-align: left; font-weight: 500; color: var(--colorNeutralForeground2); padding: 4px 6px; border-bottom: 1px solid var(--colorNeutralStroke2); }
+.dr-felder td { padding: 3px 6px; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.dr-felder .mitte { text-align: center; }
+.dr-felder .zahl { white-space: nowrap; }

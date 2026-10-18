@@ -407,7 +407,7 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
         <Button size="small" variant="outlined" startIcon={<PrintOutlined />} onClick={() => sitzplanPdf({ ...planDaten(), titel, vornameZuerst: w.namen === 'vorname', kurz: w.namen === 'kurz', klasseZeigen: w.klasseZeigen })}>Drucken</Button>
       </Stack>
       <Divider />
-      <DialogContent sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 280px' }, gap: 2, p: 2, bgcolor: 'background.default' }}>
+      <DialogContent sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1fr) 280px' }, gap: 2, p: 2, bgcolor: 'background.default' }}>
         <Box sx={{ overflow: 'auto', p: 1 }}>
           {!hinten && pult}
           <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${st.spalten}, minmax(120px, 1fr))`, gap: 1 }}>{zellen}</Box>

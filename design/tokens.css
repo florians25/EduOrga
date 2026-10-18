@@ -1,7 +1,7 @@
 /* UntPlan Designsystem – Grundwerte (Design Tokens).
-   Diese Datei ist die einzige Quelle für Farben, Schrift, Abstände und Radien. Jede Oberfläche (Studio, Web, Mobile)
-   bindet eine Kopie ein (ohne Build-Schritt); Änderungen hier und in den Kopien gleich halten:
-     studio/src/UntPlanStudio/wwwroot/css/tokens.css
+   Diese Datei ist die einzige Quelle für Farben, Schrift, Abstände und Radien. UntPlan Studio bindet sie direkt ein
+   (studio/client/src/main.tsx, Schriften unter studio/client/public/fonts); die übrigen Oberflächen binden eine Kopie ein,
+   Änderungen hier und in den Kopien gleich halten:
      web/src/UntPlanWeb/wwwroot/css/tokens.css
      mobile/src/UntPlanMobile/wwwroot/assets/css/tokens.css
    Die Schriftdateien liegen relativ zur Kopie unter ../fonts/ (Mobile: ../fonts/). */

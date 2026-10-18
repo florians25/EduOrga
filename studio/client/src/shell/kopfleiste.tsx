@@ -27,22 +27,23 @@ const useStile = makeStyles({
   },
   marke: { display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '8px', userSelect: 'none' },
   logo: { width: '28px', height: '28px', display: 'block' },
-  wortmarke: { fontSize: '16px', whiteSpace: 'nowrap' },
+  wortmarke: { fontSize: '16px', whiteSpace: 'nowrap', '@media (max-width: 1440px)': { display: 'none' } },
   wortmarkeFett: { fontWeight: tokens.fontWeightSemibold },
   zusatz: { color: tokens.colorNeutralForeground3, marginLeft: '4px' },
   trenner: { width: '1px', height: '24px', backgroundColor: tokens.colorNeutralStroke2, margin: '0 4px' },
-  dokKnopf: { maxWidth: '280px', minWidth: '140px', flexShrink: 1, justifyContent: 'flex-start', padding: '2px 8px', height: '40px' },
-  dokTexte: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0, textAlign: 'left' },
-  dokName: { fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '260px', lineHeight: '18px' },
-  dokInfo: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '260px', lineHeight: '16px' },
-  mitte: { flex: 1, display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' },
+  dokKnopf: { maxWidth: '280px', minWidth: '120px', flexShrink: 1, overflow: 'hidden', justifyContent: 'flex-start', padding: '2px 8px', height: '40px' },
+  dokTexte: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0, flex: '1 1 auto', overflow: 'hidden', textAlign: 'left' },
+  dokName: { fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%', lineHeight: '18px' },
+  dokInfo: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%', lineHeight: '16px' },
+  mitte: { flex: '1 0 auto', display: 'flex', alignItems: 'center', gap: '8px' },
   gruppe: { display: 'flex', alignItems: 'center', gap: '2px' },
   status: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3, whiteSpace: 'nowrap', maxWidth: '180px', flexShrink: 1, overflow: 'hidden', textOverflow: 'ellipsis' },
   ungespeichert: { color: tokens.colorPaletteMarigoldForeground2 },
   getrennt: { color: tokens.colorPaletteRedForeground1 },
   meldung: { color: tokens.colorNeutralForeground2 },
+  sucheText: { display: 'contents', '@media (max-width: 1280px)': { display: 'none' } },
   suche: {
-    minWidth: '150px', flexShrink: 0, justifyContent: 'flex-start', color: tokens.colorNeutralForeground3, fontWeight: tokens.fontWeightRegular,
+    minWidth: '150px', flexShrink: 0, '@media (max-width: 1280px)': { minWidth: 0 }, justifyContent: 'flex-start', color: tokens.colorNeutralForeground3, fontWeight: tokens.fontWeightRegular,
     border: `1px solid ${tokens.colorNeutralStroke1}`, backgroundColor: tokens.colorNeutralBackground2,
   },
   taste: {
@@ -217,8 +218,8 @@ export function Kopfleiste() {
       </div>
       {d ? <Text className={mergeClasses(s.status, statusKlasse)} title={statusTitel} data-testid="speicherstand">{statusText}</Text> : null}
       {elemente.filter((e) => e.ort === 'rechts' && sichtbar(e)).map((e) => <e.komponente key={e.id} />)}
-      <Button className={s.suche} appearance="secondary" icon={<Search20Regular />} onClick={befehlssucheOeffnen} data-testid="suche">
-        Suchen<span className={s.taste}>{mac ? '⌘K' : 'Strg+K'}</span>
+      <Button className={s.suche} appearance="secondary" icon={<Search20Regular />} onClick={befehlssucheOeffnen} data-testid="suche" aria-label="Suchen (Strg+K)">
+        <span className={s.sucheText}>Suchen<span className={s.taste}>{mac ? '⌘K' : 'Strg+K'}</span></span>
       </Button>
       <KontoMenue />
     </header>

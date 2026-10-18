@@ -6,6 +6,8 @@ import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { TimeField } from '@mui/x-date-pickers/TimeField';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { Element } from '../api/types';
 import { datumDe, heuteIso, kalenderwoche, montag, plusTage, wochenText, wochentagKurz } from '../lib/datum';
@@ -73,5 +75,23 @@ export function DatumFeld({ label, wert, onWert, min, max, breite = 170, deaktiv
     <DatePicker label={label} value={wert ? dayjs(wert) : null} onChange={(v: Dayjs | null) => onWert(v && v.isValid() ? v.format('YYYY-MM-DD') : null)}
       minDate={min ? dayjs(min) : undefined} maxDate={max ? dayjs(max) : undefined} disabled={deaktiviert}
       slotProps={{ textField: { size: 'small', sx: { width: breite }, required: pflicht }, field: { clearable: !pflicht } }} />
+  );
+}
+
+/** Uhrzeit (HH:mm, 24 Stunden) unabhängig von der Sprache des Browsers. */
+export function ZeitFeld({ label, wert, onWert, breite = 130, deaktiviert }: { label: string; wert: string; onWert: (z: string) => void; breite?: number | string; deaktiviert?: boolean }) {
+  const v = /^\d{1,2}:\d{2}$/.test(wert) ? dayjs(`2000-01-01T${wert.padStart(5, '0')}`) : null;
+  return (
+    <TimeField label={label} value={v} onChange={(x: Dayjs | null) => x && x.isValid() && onWert(x.format('HH:mm'))} ampm={false} disabled={deaktiviert} format="HH:mm"
+      slotProps={{ textField: { size: 'small', sx: { width: breite } } }} />
+  );
+}
+
+/** Datum mit Uhrzeit (Wert „YYYY-MM-DDTHH:mm“ wie bei datetime-local). */
+export function DatumZeitFeld({ label, wert, onWert, breite = 220, hilfe }: { label: string; wert: string; onWert: (z: string) => void; breite?: number | string; hilfe?: string }) {
+  const v = wert && dayjs(wert).isValid() ? dayjs(wert) : null;
+  return (
+    <DateTimePicker label={label} value={v} onChange={(x: Dayjs | null) => onWert(x && x.isValid() ? x.format('YYYY-MM-DDTHH:mm') : '')} ampm={false}
+      slotProps={{ textField: { size: 'small', sx: { width: breite }, helperText: hilfe }, field: { clearable: true } }} />
   );
 }

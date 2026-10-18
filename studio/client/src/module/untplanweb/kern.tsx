@@ -88,7 +88,7 @@ function EinstellungenInhalt({ e, schliessen }: { e: Einstellungen; schliessen: 
         </Field>
         <div className={s.zeile}>
           <Button size="small" onClick={() => void pruefen()}>Verbindung prüfen</Button>
-          {pruefung ? <span className={pruefung.ok === true ? s.ok : pruefung.ok === false ? s.fehler : s.leise}>{pruefung.text}</span> : null}
+          {pruefung ? <span className={pruefung.ok === true ? s.ok : pruefung.ok === false ? s.fehler : s.leise} data-pruefung={pruefung.ok === true ? 'ok' : pruefung.ok === false ? 'fehler' : 'laeuft'}>{pruefung.text}</span> : null}
         </div>
       </div>
       <h3 className={s.h3}>Übertragung</h3>

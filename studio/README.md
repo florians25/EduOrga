@@ -13,26 +13,42 @@ Berechnungen laufen auf dem Server mit der Fachlogik aus `src/UntPlan.Core`.
 
 ## Oberfläche
 
+Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/client`; sie wird mit Vite nach
+`src/UntPlanStudio/wwwroot` gebaut – automatisch beim Bauen des Projekts (siehe „Lokal starten“).
+
 * **Seiten statt Fenster:** Jede Aufgabe ist eine Seite mit eigener Adresse (Lesezeichen, Zurück-Taste des Browsers).
   Aufgaben, die mehrere Inhalte gleichzeitig brauchen, sind feste **Arbeitsplätze** – *Manuell planen* (Unterricht und
   Klassenplan), *Tagesplanung* der Vertretung (Kalender, Abwesenheiten, Vertretungen, Vorschlag, Tagespläne),
   *Verlegen und Tauschen*. Inhalte, die aus einer Seite heraus geöffnet werden (z. B. der Unterricht zu einem Plan),
   erscheinen rechts daneben; „Öffnen“ macht daraus eine eigene Seite.
-* **Navigation** links, nur Text: *Stammdaten, Unterricht, Planung, Stundenpläne, Oberstufe, Auswertung, Ausgabe,
+* **Navigation** links (in schmalen Fenstern über den Menüknopf): *Stammdaten, Unterricht, Planung, Stundenpläne, Oberstufe, Auswertung, Ausgabe,
   Datenaustausch, Schule* – im Vertretungsmodus *Vertretungsplanung, Ereignisse, Tagespläne, Auswertung und Ausgabe*.
   Strg+B blendet sie aus.
 * **Kopfleiste:** Schuldatei (zuletzt verwendet, alle Dateien, neu, hochladen), Modus *Stundenplanung /
   Vertretungsplanung*, im Vertretungsmodus das Planungsdatum, Rückgängig/Wiederholen/Speichern mit Speicherstand,
   aktive Benutzer, Suche (Strg+K – findet jede Funktion) und Konto.
 * **Übersicht:** Kennzahlen der Schuldatei, Planqualität und häufige Aufgaben.
+* **Darstellung:** hell, dunkel oder wie das System (Kontomenü); Schrift IBM Plex Sans, Markenfarbe Marine.
 
 ## Lokal starten
 
-Voraussetzung: .NET 8 SDK.
+Voraussetzung: .NET 8 SDK und Node.js 22 (für die Oberfläche).
 
 ```bash
 cd studio/src/UntPlanStudio
 STUDIO_ADMIN_PASSWORT=geheim123 ASPNETCORE_URLS=http://127.0.0.1:5501 dotnet run
+```
+
+`dotnet build`/`run`/`publish`/`test` bauen die Oberfläche mit (`npm ci` beim ersten Mal, danach `npm run build`, nur wenn
+sich `studio/client` geändert hat; abschalten mit `-p:StudioOberflaecheBauen=false`). Beim Entwickeln der Oberfläche mit
+sofortiger Aktualisierung:
+
+```bash
+cd studio/client
+npm ci
+npm run dev          # Vite auf http://127.0.0.1:5173, leitet /api an STUDIO_URL (Standard http://127.0.0.1:5501) weiter
+npm run typecheck    # tsc --noEmit (strikt)
+npm run build        # Typprüfung + Build nach ../src/UntPlanStudio/wwwroot
 ```
 
 Dann <http://127.0.0.1:5501> öffnen und mit `admin` / `geheim123` anmelden. Die Daten liegen in der Datenbank
@@ -42,10 +58,13 @@ erzeugt und im Protokoll ausgegeben.
 Tests:
 
 ```bash
-dotnet test studio/tests/UntPlanStudio.Tests -c Release      # API-Tests, Syntaxprüfung aller JS-Module (Node), Verweise
-# Oberflächen-Smoke-Test (Server muss laufen, Playwright + Chromium nötig):
-NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke.cjs
-NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/druck.cjs   # Einstellungen, Druck, Übersicht, Formate
+dotnet test studio/tests/UntPlanStudio.Tests -c Release      # API-Tests, Modulregister, Startseite, Typprüfung (Node)
+# Oberflächentests (Server muss laufen, Playwright + Chromium nötig; STUDIO_URL Standard http://127.0.0.1:5501):
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke.cjs            # Rundgang über alle Seiten
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/planung.cjs          # Planen, Ziehen, Optimierung
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs       # Vertretungsplanung
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/druck.cjs            # Einstellungen, Druck, Formate
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke-austausch.cjs  # UntPlan Web, Module, MultiUser
 ```
 
 ## Container
@@ -144,9 +163,9 @@ Anmeldungen bleiben gültig. Den Ordner `alt-dateien-…` kann man löschen, sob
 * **Tabellen**: Enter/F2 oder Tippen bearbeitet, Tab/Pfeile wechseln die Zelle, Entf leert, Leertaste setzt Haken,
   Strg+C/Strg+V kopiert/fügt ein (auch aus Tabellenkalkulationen), Umschalt/Strg+Klick markiert mehrere Zeilen,
   Rechtsklick auf die Kopfzeile blendet Spalten ein/aus, Kopfzeile ziehen verschiebt Spalten.
-* **Stundenplan**: Stunden per Drag & Drop verschieben oder tauschen; nicht verplante Stunden unten in den Plan ziehen.
-  Ziel grün = frei, rot = Vorgabe verletzt, violett = kein Raum frei, Rahmen = Tausch möglich. Rechtsklick: fixieren,
-  entplanen, Raum zuordnen, Tauschvorschläge.
+* **Stundenplan**: Stunden per Drag & Drop verschieben oder tauschen; nicht verplante Stunden in den Plan ziehen.
+  Beim Ziehen zeigt jedes Feld seinen Status (frei, Tausch möglich, Vorgabe verletzt, belegt), der Grund steht am
+  Mauszeiger. Rechtsklick: fixieren, entplanen, Raum zuordnen, Tauschvorschläge.
 * **Tastatur**: Strg+K Befehlssuche, Strg+S Speichern, Strg+Z/Strg+Y Rückgängig/Wiederholen, Strg+Umschalt+V Modus
   wechseln, Strg+B Seitenleiste, Strg+Bild↑/↓ Planungsdatum (Vertretungsmodus).
 

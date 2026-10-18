@@ -18,4 +18,30 @@
   <ItemGroup>
     <InternalsVisibleTo Include="UntPlanStudio.Tests" />
   </ItemGroup>
+  <!--
+    Oberfläche (React + Fluent UI, Quelle in studio/client) mit Vite nach wwwroot bauen. wwwroot ist reine Build-Ausgabe
+    und nicht eingecheckt. Der Schritt läuft nur, wenn sich Dateien in studio/client geändert haben (Inputs/Outputs).
+    Abschalten mit -p:StudioOberflaecheBauen=false (z. B. im Dockerfile, das die Oberfläche in einer eigenen Stufe baut).
+  -->
+  <PropertyGroup>
+    <StudioClient>$(MSBuildProjectDirectory)/../../client</StudioClient>
+    <StudioOberflaecheBauen Condition="'$(StudioOberflaecheBauen)' == ''">true</StudioOberflaecheBauen>
+  </PropertyGroup>
+  <Target Name="StudioOberflaecheBauen" BeforeTargets="BeforeBuild" Condition="'$(StudioOberflaecheBauen)' == 'true' And Exists('$(StudioClient)/package.json')"
+          Inputs="@(StudioClientQuelle)" Outputs="$(MSBuildProjectDirectory)/wwwroot/index.html" DependsOnTargets="StudioClientQuellenSammeln">
+    <Exec Command="npm --version" StandardOutputImportance="low" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="StudioNpmCode" />
+    </Exec>
+    <Error Condition="'$(StudioNpmCode)' != '0'" Text="Für die Oberfläche des Studios wird Node.js 22 (npm) benötigt: studio/client mit „npm ci &amp;&amp; npm run build“ bauen oder Node.js installieren." />
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(StudioClient)" Condition="!Exists('$(StudioClient)/node_modules')" />
+    <Exec Command="npm run build" WorkingDirectory="$(StudioClient)" />
+    <ItemGroup>
+      <Content Include="wwwroot/**" Exclude="@(Content)" />
+    </ItemGroup>
+  </Target>
+  <Target Name="StudioClientQuellenSammeln">
+    <ItemGroup>
+      <StudioClientQuelle Include="$(StudioClient)/src/**;$(StudioClient)/public/**;$(StudioClient)/index.html;$(StudioClient)/package.json;$(StudioClient)/vite.config.ts;$(StudioClient)/tsconfig.json;$(MSBuildProjectDirectory)/../../../design/tokens.css" />
+    </ItemGroup>
+  </Target>
 </Project>

@@ -11,8 +11,7 @@ const p = (f: () => Promise<{ default: ComponentType<SeitenProps> }>) => lazy(f)
 export const SEITEN: Record<string, Seite> = {
   heute: p(() => import('./Heute')),
   plan: p(() => import('./plan/PlanSeite')),
-  // Platzhalter bis zur Portierung (siehe PORTIERUNG.md)
-  uebersicht: p(() => import('./Platzhalter')),
+  uebersicht: p(() => import('./Uebersicht')),
   tag: p(() => import('./TagSeite')),
   vertretungen: p(() => import('./Vertretungen')),
   mitteilungen: p(() => import('./mitteilungen/Mitteilungen')),
@@ -31,16 +30,16 @@ export const SEITEN: Record<string, Seite> = {
   entschuldigen: p(() => import('./klassenbuch/Entschuldigen')),
   befreiungen: p(() => import('./klassenbuch/Befreiungen')),
   berichte: p(() => import('./klassenbuch/Berichte')),
-  sitzplan: p(() => import('./Platzhalter')),
-  melden: p(() => import('./Platzhalter')),
-  buchen: p(() => import('./Platzhalter')),
-  stammdaten: p(() => import('./Platzhalter')),
-  admin: p(() => import('./Platzhalter')),
+  sitzplan: p(() => import('./klassenbuch/Sitzplan')),
+  melden: p(() => import('./melden/Melden')),
+  buchen: p(() => import('./buchen/Buchen')),
+  stammdaten: p(() => import('./admin/Stammdaten')),
+  admin: p(() => import('./admin/Admin')),
   profil: p(() => import('./konto/Profil')),
   neuigkeiten: p(() => import('./konto/Neuigkeiten')),
-  sprechtag: p(() => import('./Platzhalter')),
+  sprechtag: p(() => import('./sprechtag/Sprechtag')),
   hinweise: p(() => import('./konto/Hinweise')),
-  kbeinstellungen: p(() => import('./Platzhalter')),
+  kbeinstellungen: p(() => import('./klassenbuch/KbEinstellungen')),
 };
 
 /** Darf die Seite aufgerufen werden? (wie die Navigation; Profil und Neuigkeiten immer, Sprechtag auch für Schüler*innen) */

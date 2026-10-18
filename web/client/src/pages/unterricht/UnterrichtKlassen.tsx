@@ -284,7 +284,7 @@ function Unterrichtswechsel({ klassen, vorgabe, onClose, fertig }: { klassen: El
               <Button size="small" onClick={() => setSchueler(s => new Set([...s, ...gefiltert.map(x => x.id)]))}>Alle angezeigten wählen</Button>
               <Button size="small" onClick={() => setSchueler(new Set())}>Auswahl leeren</Button>
             </Stack>
-            <Box sx={{ maxHeight: 320, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            <Box sx={{ maxHeight: 320, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 2, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' } }}>
               {gefiltert.map(x => (
                 <Stack key={x.id} component="label" direction="row" alignItems="center" sx={{ px: 1, cursor: 'pointer', bgcolor: schueler.has(x.id) ? 'action.selected' : undefined }}>
                   <Checkbox size="small" checked={schueler.has(x.id)} onChange={e => setSchueler(s => umschalten(s, x.id, e.target.checked))} />

@@ -10,7 +10,7 @@ import type { Elemente } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Seite } from '../../components/Seite';
 import { FormDialog, SuchFeld, Wahl } from '../../components/Bausteine';
-import { DatumFeld } from '../../components/Auswahl';
+import { DatumFeld, ZeitFeld } from '../../components/Auswahl';
 import { Tabelle } from '../../components/Tabelle';
 import { bestaetigen, toast } from '../../lib/meldungen';
 import { datumDe, heuteIso, istIsoDatum, plusTage, WOCHENTAGE } from '../../lib/datum';
@@ -43,8 +43,8 @@ function Formular({ b, el, gruende, klasseVorgabe, onClose, fertig }: { b: Befre
         </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
           <TextField select label="Fach" value={w.fach} onChange={e => setW({ ...w, fach: e.target.value })} sx={{ flex: 1 }}><MenuItem value="">alle Fächer</MenuItem>{el.faecher.map(f => <MenuItem key={f.kurz} value={f.kurz}>{f.kurz} – {f.name}</MenuItem>)}</TextField>
-          <TextField type="time" label="Beginnzeit" value={w.beginn} onChange={e => setW({ ...w, beginn: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} sx={{ width: 140 }} />
-          <TextField type="time" label="Endzeit" value={w.ende} onChange={e => setW({ ...w, ende: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} sx={{ width: 140 }} />
+          <ZeitFeld label="Beginnzeit" wert={w.beginn ?? ''} onWert={v => setW({ ...w, beginn: v })} />
+          <ZeitFeld label="Endzeit" wert={w.ende ?? ''} onWert={v => setW({ ...w, ende: v })} />
         </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
           <TextField select label="Befreiungsgrund" value={w.grund} onChange={e => setW({ ...w, grund: e.target.value })} sx={{ flex: 1 }}>{gruende.map(g => <MenuItem key={g.kurz} value={g.kurz}>{g.name}</MenuItem>)}</TextField>

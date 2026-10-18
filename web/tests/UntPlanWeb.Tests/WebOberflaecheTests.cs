@@ -60,7 +60,8 @@ public class WebOberflaecheTests
         Assert.Contains("Online-Unterricht beitreten", details);
         Assert.Contains("UntPlan Studio", details);          // Hinweis: festgelegt wird es im Studio
         Assert.DoesNotContain("role=\"switch\"", details);
-        foreach (var (pfad, inhalt) in Quellen())
+        // Sprechtag hat eigene Online-Gespräche (Einstellung der Lehrkraft) – das ist kein Online-Unterricht.
+        foreach (var (pfad, inhalt) in Quellen().Where(q => !q.Pfad.Contains($"{Path.DirectorySeparatorChar}sprechtag{Path.DirectorySeparatorChar}")))
         {
             Assert.False(Regex.IsMatch(inhalt, @"senden\([^)]*online", RegexOptions.IgnoreCase), pfad);
             Assert.False(Regex.IsMatch(inhalt, @"<Switch[^>]*online", RegexOptions.IgnoreCase), pfad);

@@ -1,177 +1,134 @@
-// Oberflächen-Smoke-Test des Vertretungsmodus (Playwright, Chromium).
+// Oberflächentest der Vertretungsplanung (Playwright, Chromium).
 //
-//   NODE_PATH=$(npm root -g) STUDIO_URL=http://127.0.0.1:5511 STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs
+//   NODE_PATH=$(npm root -g) STUDIO_URL=http://127.0.0.1:5501 STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs
 //
-// Ablauf: Anmelden → Beispielschule → Vertretungsmodus → Absenz in der Liste eingeben (Zeilen-Commit) → Vertretungen (offene ???) →
-// Vertretungsvorschlag übernehmen → Entfall mit „-“ → Kalender, tagesaktueller Lehrerplan, Veranstaltung mit allen Lehrkräften →
-// Tagesplanung → Tag blättern (Strg+Bild↓). Bildschirmfotos nach STUDIO_SCREENSHOTS.
-const { chromium } = require('playwright');
-
-// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
-async function eintrag(page, id) {
-  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
-  if (await k.count() && await k.first().isVisible()) return k.first().click();
-  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
-}
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-
-const URL = process.env.STUDIO_URL || 'http://127.0.0.1:5501';
-const BENUTZER = process.env.STUDIO_BENUTZER || 'admin';
-const PASSWORT = process.env.STUDIO_PASSWORT || 'geheim123';
-const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-shots-vertretung');
+// Ablauf: Beispielschule → Vertretungsmodus mit Planungsdatum → Abwesenheit direkt in der Liste erfassen (Entwurf, Strg+Enter)
+// → Vertretungen mit offenen Stunden (???) → Vorschlag (Enter) und ersten Kandidaten übernehmen → Entfall mit „-“ →
+// Kontextmenü → Kalender → Arbeitsplatz „Verlegen und Tauschen“ → Veranstaltung „Alle Lehrkräfte“ → Arbeitsplatz
+// Tagesplanung → Tag blättern (Strg+Bild↓) → Einstellungen. Umgebungsvariablen: hilfe.cjs.
+const h = require('./hilfe.cjs');
 
 (async () => {
-  fs.mkdirSync(BILDER, { recursive: true });
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1680, height: 980 } });
-  const fehler = [];
-  page.on('pageerror', (e) => fehler.push(String(e)));
-  if (process.env.DEBUG) page.on('request', (r) => { if (r.method() !== 'GET') console.log('>>', r.method(), r.url().replace(/.*dokumente\/[0-9a-f]+/, ''), r.postData()?.slice(0, 200)); });
-  page.on('console', (m) => { if (m.type() === 'error' && !/status of 4\d\d/.test(m.text())) fehler.push(m.text()); });
-  const foto = (name) => page.screenshot({ path: path.join(BILDER, name) });
-  const schritt = (t) => console.log(`· ${t}`);
-  try {
-    await page.goto(URL);
-    await page.fill('input[name=benutzer]', BENUTZER);
-    await page.fill('input[name=passwort]', PASSWORT);
-    await page.click('button[type=submit]');
-    await page.waitForSelector('.navigation .nav-punkt');
-    const kopf = { 'X-UntPlan-Studio': '1' };
-    const stand = await (await page.request.post(`${URL}/api/dokumente/beispiel`, { headers: kopf, data: {} })).json();
-    const dok = `${URL}/api/dokumente/${stand.id}`;
-    await page.evaluate((id) => sessionStorage.setItem('studio.dokument', id), stand.id);
-    await page.reload();
-    await page.waitForFunction(() => document.title.includes('Beispiel'), null, { timeout: 20000 });
-    schritt('Beispielschule geöffnet');
+  const cookie = await h.apiAnmelden();
+  const stand = await h.beispielschule(cookie);
+  const dok = `/api/dokumente/${stand.id}`;
+  const holen = async (p) => (await h.api(dok + p, { headers: { cookie } })).json();
+  // Lehrkraft mit mindestens drei Stunden am Planungsdatum
+  const datum = (await holen('/vertretung/start')).datum;
+  const lehrer = (await holen('/elemente?typen=lehrer')).lehrer;
+  let kurz = null;
+  for (const l of lehrer) {
+    const plan = await holen(`/vertretung/plan/lehrer/${l.id}?datum=${datum}`);
+    if (plan.zellen.filter((z) => z.datum === datum).length >= 3) { kurz = l.k; break; }
+  }
+  if (!kurz) throw new Error('keine Lehrkraft mit Unterricht');
 
-    // Lehrkraft mit Unterricht am Planungsdatum
-    const datum = (await (await page.request.get(`${dok}/vertretung/start`)).json()).datum;
-    const lehrer = (await (await page.request.get(`${dok}/elemente?typen=lehrer`)).json()).lehrer;
-    let kurz = null;
-    for (const l of lehrer) {
-      const plan = await (await page.request.get(`${dok}/vertretung/plan/lehrer/${l.id}?datum=${datum}`)).json();
-      if (plan.zellen.filter((z) => z.datum === datum).length >= 3) { kurz = l.k; break; }
-    }
-    if (!kurz) throw new Error('keine Lehrkraft mit Unterricht');
+  const t = await h.starten('studio-shots-vertretung');
+  const { page, foto } = t;
+  const schritt = (s) => console.log(`✓ ${s}`);
+  const datumImKopf = () => page.inputValue('[data-testid=planungsdatum] input[type=date]');
 
-    // Vertretungsmodus
-    await eintrag(page, 'start.vertretungsmodus');
-    await page.waitForSelector('html[data-modus=vertretung]');
-    await page.waitForFunction((d) => document.querySelector('.vt-rb-datum')?.value === d, datum);
-    await foto('01-vertretungsmodus.png');
+  await h.abschliessen('Oberflächentest Vertretungsplanung', t, async () => {
+    await h.anmelden(page);
+    await h.dokumentOffen(page);
+
+    // Vertretungsmodus mit Planungsdatum
+    await h.modus(page, 'vertretung');
+    await page.waitForFunction((d) => document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value === d, datum, { timeout: 15000 });
+    await foto('01-vertretungsmodus');
     schritt(`Vertretungsmodus, Datum ${datum}, Lehrkraft ${kurz}`);
 
-    // Absenz direkt in der Liste eingeben (neue Zeile, Element, Zeile verlassen = speichern)
-    await eintrag(page, 'vertretung.absenzen');
-    await page.waitForSelector('.fenster[data-typ="vertretung.absenzen"] .t-zeile.t-neu');
-    await page.click('.fenster[data-typ="vertretung.absenzen"] .t-zeile.t-neu .t-zelle >> nth=1');
+    // Abwesenheit direkt in der Liste: neue Zeile, Element eingeben, Strg+Enter speichert den Entwurf
+    await h.eintrag(page, 'vertretung.absenzen');
+    const abs = '[data-ansicht="vertretung.absenzen"]';
+    await page.waitForSelector(`${abs} .tb-zeile.tb-neu`);
+    await page.locator(`${abs} .tb-zeile.tb-neu .tb-zelle`).nth(1).click();
     await page.keyboard.type(kurz);
     await page.keyboard.press('Tab');
-    await page.waitForSelector('.fenster[data-typ="vertretung.absenzen"] .t-zeile.vt-entwurf');
+    await page.waitForSelector(`${abs} .tb-zeile.vt-entwurf`);
     await page.keyboard.press('Control+Enter');
-    await page.waitForFunction((k) => [...document.querySelectorAll('.fenster[data-typ="vertretung.absenzen"] .t-zeile:not(.vt-entwurf):not(.t-neu)')].some((z) => z.textContent.includes(k)), kurz, { timeout: 15000 });
+    await page.waitForFunction(([s, k]) => [...document.querySelectorAll(`${s} .tb-zeile:not(.vt-entwurf):not(.tb-neu)`)].some((z) => z.textContent.includes(k)), [abs, kurz], { timeout: 15000 });
     await page.waitForTimeout(600);
-    if (await page.locator('.hinweise :text("bereits vorhanden")').count()) throw new Error('Absenz wurde doppelt gespeichert');
-    await foto('02-absenzen.png');
-    schritt('Absenz gespeichert');
+    if (await page.locator('text=bereits vorhanden').count()) throw new Error('Abwesenheit wurde doppelt gespeichert');
+    await foto('02-abwesenheiten');
+    schritt('Abwesenheit gespeichert');
 
     // Vertretungen mit offenen Stunden
-    await eintrag(page, 'vertretung.vertretungen');
-    const liste = '.fenster[data-typ="vertretung.liste"]';
-    await page.waitForFunction((s) => [...document.querySelectorAll(`${s} .t-zelle.vt-rot`)].some((z) => z.textContent === '???'), liste, { timeout: 15000 });
-    await foto('03-vertretungen-offen.png');
+    await h.eintrag(page, 'vertretung.vertretungen');
+    const liste = '[data-ansicht="vertretung.liste"]';
+    await page.waitForFunction((s) => [...document.querySelectorAll(`${s} .tb-zelle.vt-rot`)].some((z) => z.textContent === '???'), liste, { timeout: 15000 });
+    await foto('03-vertretungen-offen');
     schritt('Vertretungen mit ??? angezeigt');
 
-    // erste offene Zeile wählen, Vorschlag öffnen und den ersten Kandidaten übernehmen
     const offeneZeile = () => page.evaluate((s) => {
-      const z = [...document.querySelectorAll(`${s} .t-zeile`)].find((x) => [...x.querySelectorAll('.t-zelle.vt-rot')].some((c) => c.textContent === '???'));
+      const z = [...document.querySelectorAll(`${s} .tb-zeile`)].find((x) => [...x.querySelectorAll('.tb-zelle.vt-rot')].some((c) => c.textContent === '???'));
       return z ? { r: z.dataset.r, nr: z.children[0].textContent.trim() } : null;
     }, liste);
+    // erste offene Zeile: Vorschlag (Enter) und ersten Kandidaten übernehmen (Doppelklick)
     const o1 = await offeneZeile();
-    const nr = o1.nr;
-    await page.click(`${liste} .t-zeile[data-r="${o1.r}"] .t-zelle >> nth=0`);
+    await page.locator(`${liste} .tb-zeile[data-r="${o1.r}"] .tb-zelle`).first().click();
     await page.keyboard.press('Enter');
-    const vorschlag = '.fenster[data-typ="vertretung.vorschlag"]';
-    await page.waitForSelector(`${vorschlag} .vt-tabelle tbody tr`, { timeout: 15000 });
-    await page.waitForFunction((s) => document.querySelector(`${s} .vt-klapp .text`)?.textContent.length > 5, vorschlag);
-    await foto('04-vertretungsvorschlag.png');
-    const kandidat = (await page.locator(`${vorschlag} .vt-tabelle:not([hidden]) tbody tr`).first().locator('td').first().textContent()).trim();
-    await page.locator(`${vorschlag} .vt-tabelle:not([hidden]) tbody tr`).first().dblclick();
-    await page.waitForFunction(([s, n, k]) => [...document.querySelectorAll(`${s} .t-zeile`)].some((z) => z.children[0]?.textContent.trim() === n && z.textContent.includes(k)), [liste, nr, kandidat], { timeout: 15000 });
-    schritt(`Vorschlag übernommen: Vtr-Nr. ${nr} → ${kandidat}`);
-    await foto('05-vorschlag-uebernommen.png');
+    const vorschlag = '[data-ansicht="vertretung.vorschlag"]';
+    await page.waitForSelector(`${vorschlag} [data-tabelle="vorschlag-0"] .tb-zeile`, { timeout: 15000 });
+    await foto('04-vertretungsvorschlag');
+    const erste = page.locator(`${vorschlag} [data-tabelle="vorschlag-0"] .tb-zeile`).first();
+    const kandidat = (await erste.locator('.tb-zelle').first().textContent()).trim();
+    await erste.dblclick();
+    await page.waitForFunction(([s, n, k]) => [...document.querySelectorAll(`${s} .tb-zeile`)].some((z) => z.children[0]?.textContent.trim() === n && z.textContent.includes(k)), [liste, o1.nr, kandidat], { timeout: 15000 });
+    await foto('05-vorschlag-uebernommen');
+    schritt(`Vorschlag übernommen: Nr. ${o1.nr} → ${kandidat}`);
 
     // Entfall mit „-“ auf der nächsten offenen Zeile
-    await page.click(`${liste} .fenster-fuss`);
     const o2 = await offeneZeile();
     if (o2) {
-      const nr2 = o2.nr;
-      await page.click(`${liste} .t-zeile[data-r="${o2.r}"] .t-zelle >> nth=0`);
+      await page.locator(`${liste} .tb-zeile[data-r="${o2.r}"] .tb-zelle`).first().click();
       await page.keyboard.press('-');
-      await page.waitForFunction(([s, n]) => [...document.querySelectorAll(`${s} .t-zeile`)].some((z) => z.children[0]?.textContent.trim() === n && z.textContent.includes('---')), [liste, nr2], { timeout: 15000 });
-      schritt(`Entfall Vtr-Nr. ${nr2}`);
+      await page.waitForFunction(([s, n]) => [...document.querySelectorAll(`${s} .tb-zeile`)].some((z) => z.children[0]?.textContent.trim() === n && z.textContent.includes('---')), [liste, o2.nr], { timeout: 15000 });
+      schritt(`Entfall Nr. ${o2.nr}`);
     }
     // Kontextmenü
-    await page.locator(`${liste} .t-zeile`).first().locator('.t-zelle').nth(2).click({ button: 'right' });
-    await page.waitForSelector('.menue .m-eintrag');
-    await foto('06-kontextmenue.png');
+    await page.locator(`${liste} .tb-zeile`).first().locator('.tb-zelle').nth(2).click({ button: 'right' });
+    await page.waitForSelector('[role=menu] [role=menuitem]');
+    await foto('06-kontextmenue');
     await page.keyboard.press('Escape');
 
-    // Kalender, tagesaktueller Lehrerplan, Bereitschaften, Vormerkungen
-    await eintrag(page, 'vertretung.kalender');
-    await page.waitForSelector('.fenster[data-typ="vertretung.kalender"] .vt-tabelle tbody tr');
-    await eintrag(page, 'vertretung.planungsdialog');
-    await page.waitForSelector('.fenster[data-typ="vertretung.plan"] .r-eintrag', { timeout: 15000 });
-    await foto('07-planungsdialog-tagesaktuell.png');
-    schritt('Planungsdialog (Klassen- und Lehrerplan tagesaktuell)');
+    // Kalender und Arbeitsplatz „Verlegen und Tauschen“ (Tagespläne)
+    await h.eintrag(page, 'vertretung.kalender');
+    await page.waitForSelector('[data-ansicht="vertretung.kalender"] .tb-zeile');
+    await h.eintrag(page, 'vertretung.planungsdialog');
+    await page.waitForSelector('[data-arbeitsplatz=verlegen] [data-ansicht="vertretung.plan"] .ra-eintrag', { timeout: 15000 });
+    await foto('07-verlegen-und-tauschen');
+    schritt('Verlegen und Tauschen (Tagespläne)');
 
-    // Veranstaltung mit allen Lehrkräften und Klassen
-    await eintrag(page, 'vertretung.veranstaltungen');
-    const va = '.fenster[data-typ="veranstaltungen.liste"]';
-    await page.waitForSelector(`${va} .t-zeile.t-neu`);
-    await page.click(`${va} .t-zeile.t-neu .t-zelle >> nth=3`);
-    await page.keyboard.type('Alle');
-    await page.keyboard.press('Escape').catch(() => {});
+    // Veranstaltung mit allen Lehrkräften
+    await h.eintrag(page, 'vertretung.veranstaltungen');
+    const va = '[data-ansicht="veranstaltungen.liste"]';
+    await page.waitForSelector(`${va} .tb-zeile.tb-neu`);
+    await page.locator(`${va} .tb-zeile.tb-neu .tb-zelle`).nth(3).click();
+    await page.keyboard.type('Alle Lehrkräfte');
     await page.keyboard.press('Enter');
-    await page.waitForFunction((s) => [...document.querySelectorAll(`${s} .t-zelle`)].some((z) => z.textContent === 'Alle Lehrkräfte'), va, { timeout: 15000 });
+    await page.waitForFunction((s) => [...document.querySelectorAll(`${s} .tb-zelle`)].some((z) => z.textContent.includes('Alle Lehrkräfte')), va, { timeout: 15000 });
+    await foto('08-veranstaltung-alle');
     schritt('Veranstaltung „Alle Lehrkräfte“ angelegt');
-    await foto('08-veranstaltung-alle.png');
 
-    // Arbeitsplatz Tagesplanung (über die Listenansichten)
-    await eintrag(page, 'vertretung.formate');
-    await page.click('.menue .m-eintrag:has-text("Tagesplanung")');
-    await page.waitForSelector(`${liste} .t-zeile`, { timeout: 15000 });
-    await page.waitForSelector('.fenster[data-typ="vertretung.plan"] .r-eintrag', { timeout: 15000 });
-    await page.waitForTimeout(800);
-    await foto('09-standardanordnung.png');
+    // Arbeitsplatz Tagesplanung
+    await page.click('[data-nav="nav:Tagesplanung"]');
+    await page.waitForSelector('[data-arbeitsplatz=tagesplanung] [data-ansicht="vertretung.liste"] .tb-zeile', { timeout: 15000 });
+    await page.waitForSelector('[data-arbeitsplatz=tagesplanung] [data-ansicht="vertretung.plan"] .ra-eintrag', { timeout: 15000 });
+    await foto('09-tagesplanung');
 
     // Tag blättern mit Strg+Bild↓
-    await page.locator(`${liste} .t-zeile`).first().click().catch(() => {});
+    await page.locator('[data-arbeitsplatz=tagesplanung] [data-ansicht="vertretung.liste"] .tb-zeile').first().click().catch(() => {});
     await page.keyboard.press('Control+PageDown');
-    await page.waitForFunction((d) => document.querySelector('.vt-rb-datum')?.value > d, datum, { timeout: 10000 });
-    await page.waitForTimeout(800);
-    await foto('10-naechster-tag.png');
-    schritt(`Tag gewechselt: ${await page.inputValue('.vt-rb-datum')}`);
+    await page.waitForFunction((d) => (document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value || '') > d, datum, { timeout: 10000 });
+    await page.waitForTimeout(600);
+    await foto('10-naechster-tag');
+    schritt(`Tag gewechselt: ${await datumImKopf()}`);
 
-    // Einstellungen-Dialog
-    await eintrag(page, 'vertretung.einstellungen');
-    await page.click('.menue .m-eintrag:has-text("Vertretungsvorschlag")');
-    await page.waitForSelector('.vt-einstellungen');
-    await foto('11-einstellungen.png');
+    // Einstellungen der Vertretungsplanung (Dialog, Seite Vertretungsvorschlag)
+    await page.evaluate(() => { void window.studioTest.befehl('vertretung.einstellungen', { seite: 2 }); });
+    await page.waitForSelector('[role=dialog]');
+    await foto('11-einstellungen');
     await page.keyboard.press('Escape');
-  } catch (e) {
-    await page.screenshot({ path: path.join(BILDER, 'fehler.png') }).catch(() => {});
-    console.error('Smoke-Test fehlgeschlagen:', e);
-    if (fehler.length) console.error('Seitenfehler:', fehler.join('\n'));
-    await browser.close();
-    process.exit(1);
-  }
-  await browser.close();
-  if (fehler.length) {
-    console.error(`Fehler in der Seite:\n${fehler.join('\n')}`);
-    process.exit(1);
-  }
-  console.log(`Smoke-Test Vertretungsmodus erfolgreich, Bilder in ${BILDER}`);
-})();
+  });
+})().catch((e) => { console.error(e); process.exit(1); });

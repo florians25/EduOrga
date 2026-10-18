@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Benutzer, DokumentListe, SystemInfo } from '@/api/typen';
-import { befehl } from '@/kern/befehle';
+import { befehl, eintrag, eintragAusfuehren } from '@/kern/befehle';
 import { dokumentOeffnen } from '@/kern/dokument';
 import { an } from '@/kern/ereignisse';
 import { moduleLaden } from '@/kern/modulsystem';
@@ -50,6 +50,17 @@ function useSystemDunkel() {
 
 // Module sofort registrieren (Ansichten, Befehle), damit Router und Navigation sie beim ersten Zeichnen kennen
 moduleLaden(module);
+
+// Schnittstelle für die Oberflächentests (studio/tests/smoke): einen Befehlseintrag wie über Navigation oder Befehlssuche
+// ausführen. Gibt nichts preis, was nicht auch über die Oberfläche erreichbar ist.
+(window as unknown as { studioTest: unknown }).studioTest = {
+  eintrag: async (id: string) => {
+    const e = eintrag(id);
+    if (!e) throw new Error(`Eintrag ${id} fehlt`);
+    await eintragAusfuehren(e);
+  },
+  befehl: (name: string, args?: unknown) => befehl(name, args),
+};
 
 let gestartet = false;
 async function dokumentWiederOeffnen() {

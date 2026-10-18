@@ -1,15 +1,15 @@
 # UntPlan Studio – Architektur
 
 UntPlan Studio ist die Planungsanwendung von UntPlan im Browser. Die **gesamte Fachlogik liegt in `src/UntPlan.Core`** –
-das Studio ist eine dünne Server-Schicht (ASP.NET Core 8, REST/JSON) plus eine Oberfläche aus Vanilla-JS-ES-Modulen ohne
-Build-Schritt. Schuldateien (`.up`) sind JSON-Dateien und lassen sich jederzeit herunterladen und wieder hochladen.
+das Studio ist eine dünne Server-Schicht (ASP.NET Core 8, REST/JSON) plus eine Oberfläche in React 18 + TypeScript (strikt)
+mit Fluent UI v9 (Quelle `studio/client`, mit Vite nach `wwwroot` gebaut). Schuldateien (`.up`) sind JSON-Dateien und lassen sich jederzeit herunterladen und wieder hochladen.
 
 ```
-Browser (wwwroot)                                  Server (UntPlanStudio)                         UntPlan.Core
+Browser (studio/client → wwwroot)                  Server (UntPlanStudio)                         UntPlan.Core
 ┌───────────────────────────────┐   REST/JSON    ┌───────────────────────────────────────┐      ┌──────────────────┐
 │ Shell: Navigation, Kopfleiste,│ ─────────────▶ │ Api/<Modul>Api.cs  (IStudioModul)      │ ───▶ │ Dokument, Model, │
 │ Seiten und Arbeitsplätze      │                │   └─ Arbeitsdokument (Sperre, Undo)    │      │ Stammdaten,      │
-│ Module: js/module/<modul>.js  │ ◀───────────── │ Dokumentdienst (Ablage, Autosave)      │      │ Planung, …       │
+│ Module: src/module/<modul>/   │ ◀───────────── │ Dokumentdienst (Ablage, Autosave)      │      │ Planung, …       │
 │ Komponenten: Tabelle, Raster  │  SSE-Ereignisse│ Benutzerdienst, Benutzereinstellungen  │      └──────────────────┘
 └───────────────────────────────┘                │ StudioDatenbank (SQLite, studio.db)    │
                                                  └───────────────────────────────────────┘
@@ -36,17 +36,21 @@ studio/
       Modulregister.cs         ◀ EINZIGE Registrierungsstelle der Server-Module
       AnmeldungApi.cs, BenutzerApi.cs, EinstellungenApi.cs, DokumenteApi.cs     Fundament
       StammdatenApi.cs, UnterrichtApi.cs, StundenplanApi.cs                     erste Fachmodule
-    wwwroot/
-      index.html, favicon.svg
-      css/basis.css shell.css fenster.css tabelle.css raster.css dialog.css     Kern-Stile
-      css/module/<modul>.css                                                    Stile je Modul (optional)
-      js/app.js                Start: Anmeldung → Shell → Module → letztes Dokument
-      js/kern/                 api, zustand, ereignisse, dokument, dom, symbole, dialog, auswahl,
-                               tabelle, raster, fenster, ribbon, modulsystem, shell
-      js/module/register.js    ◀ EINZIGE Registrierungsstelle der Oberflächen-Module
-      js/module/<modul>.js     datei, start, stammdaten, unterricht, stundenplan
-  tests/UntPlanStudio.Tests/   xUnit + WebApplicationFactory (API, JS-Syntax per Node, Verweise)
-  tests/smoke/smoke.cjs        Playwright-Smoke (Anmelden, Datei öffnen, Fenster, Bildschirmfotos)
+    wwwroot/                   Build-Ausgabe von studio/client (nicht eingecheckt; entsteht beim Bauen des Projekts)
+  client/                      Oberfläche: Vite + React 18 + TypeScript (strict) + Fluent UI v9
+    package.json, vite.config.ts, tsconfig.json, index.html, public/ (Symbol, Schriften)
+    PORTIERUNG.md              Stand der Portierung je Modul der früheren Oberfläche
+    src/main.tsx, App.tsx      Start: Thema, Anmeldung → Shell → Module → letztes Dokument; Router
+    src/theme.ts               Marken-Rampe Marine (#234f96) → hell/dunkel, IBM Plex Sans
+    src/api/                   client.ts (typisierte REST-Aufrufe), typen.ts
+    src/kern/                  befehle, ansichten, modulsystem, ereignisse, zustand, dokument, laden, hilfen
+    src/komponenten/           ansicht (Seitenrahmen, Werkzeuge), tabelle/ (TanStack), raster/ (Stundenpläne, dnd-kit),
+                               dialoge, menue, hinweise, ziehen (Drag & Drop), symbole
+    src/shell/                 Kopfleiste, Seitenleiste (Fluent Nav), Befehlssuche, Seite, Arbeitsplatz, Anmeldung, Startseite
+    src/module/register.ts     ◀ EINZIGE Registrierungsstelle der Oberflächen-Module
+    src/module/<modul>/        index.ts (Ansichten, Befehle, Einträge) + Ansichten (*.tsx), optional <modul>.css
+  tests/UntPlanStudio.Tests/   xUnit + WebApplicationFactory (API, Modulregister, Startseite, Typprüfung per Node)
+  tests/smoke/*.cjs            Playwright-Tests der Oberfläche (hilfe.cjs: gemeinsame Hilfen; Bildschirmfotos)
 ```
 
 ## Server
@@ -184,47 +188,54 @@ Logik in `UntPlan.Core.Vertretungsplanung.OnlineUnterricht`):
 
 ## Oberfläche
 
-* **Kein Build-Schritt**, keine CDN-Abhängigkeit: ES-Module direkt aus `wwwroot`. Gestaltung nach dem Designsystem
-  (`design/DESIGN.md`): Grundwerte in `css/tokens.css` (Kopie von `design/tokens.css`), auf die Namen der Oberfläche
-  abgebildet in `css/basis.css`. Schrift IBM Plex Sans (lokal in `fonts/`). `html[data-modus="vertretung"]` schaltet den
-  Akzent von Marine auf Petrol.
-* **Aufbau:** Navigation (`kern/navigation.js`, nur Text), Kopfleiste (`kern/shell.js`), darunter die **Seite**
-  (`kern/fenster.js`): Seitenkopf (Bereich + Titel) und eine Ansicht bzw. bei Arbeitsplätzen mehrere fest angeordnete
-  Bereiche. Aufrufe aus Navigation, Suche und Übersicht beginnen eine neue Seite (`fensterverwaltung.naechsterAufrufNeueSeite()`),
-  Aufrufe aus einer Ansicht öffnen einen Nebenbereich rechts, Aufrufe mit `lage` bauen Arbeitsplätze
-  (`fensterverwaltung.arbeitsplatz(titel, aufbauen)`). Die Adresse (`#/<ansicht>?<parameter>`) und die Zurück-Taste
-  des Browsers werden unterstützt. Es gibt keine schwebenden Fenster, Reiter oder frei teilbaren Bereiche.
-* `js/kern/` – wiederverwendbare Bausteine (bitte nutzen statt eigene zu bauen):
-  * `api.js` – `api.get/post/put/patch/loeschen/hochladen`, `api.dok('/pfad')`, `einstellungLesen/einstellungSchreiben`.
-    Option `{ quelle: fenster.id }` bei Änderungen, damit die auslösende Ansicht ihr eigenes `daten`-Ereignis überspringen kann.
-  * `ereignisse.js` – `an(name, f)`, `melden(name, daten)`, `betrifft(ereignis, 'Stammdaten', …)`. Wichtige Ereignisse:
-    `dokument`, `stand`, `daten`, `modus`, `element` (Verknüpfung von Ansichten), `meldung`, `grunddaten`, `fenster-aktiv`, `arbeitsbereich`.
-  * `zustand.js` – `zustand` (Benutzer, Dokument, Grunddaten, Modus), `elemente(typ)` (gecachte Auswahllisten), `darfSchreiben()`.
-  * `dokument.js` – Öffnen/Schließen, Speichern, Rückgängig/Wiederholen, Ereignisverbindung.
-  * `fenster.js` – Seitenverwaltung. Ansichtstyp (historisch „Fenster“): `{ titel, symbol, symbolFuer(p), einzig(p), erstellen(f, p) }`.
-    In der Ansicht: `f.titel()`, `f.werkzeug({text, aktion})` (Textknopf; `nurSymbol` + `symbol` für Pfeile u. ä.),
-    `f.trenner()`, `f.werkzeuge`, `f.inhalt`, `f.fuss`, `f.an(ereignis, f)` (wird beim Schließen abgemeldet),
-    `f.parameterSetzen({...})` (fließt in Adresse und gespeicherte Arbeitsplätze), `f.beimSchliessen()`.
-    Öffnen mit `fensterverwaltung.oeffnen(typ, parameter, lage)`; `lage.andock` (`links`, `rechts`, `lo`, `lu`, `ro`, `ru`)
-    bzw. `x/y/b/h` bestimmen Spalte und Zeile im Arbeitsplatz. Die zuletzt gezeigte Seite wird je Dokument gespeichert.
-  * `navigation.js` – `NAVIGATION`: fachliche Gliederung der Seitenleiste. Einträge verweisen per `ref` auf die id eines
-    Modul-Eintrags (Befehl, Untermenü, Rechte werden übernommen). Die Befehlssuche findet zusätzlich jeden Eintrag und
-    Untermenüpunkt aller Module.
-  * `tabelle.js` – virtualisierte Tabelle (tausende Zeilen): Spalten sortieren/ein-/ausblenden/verschieben/Breite
-    (gespeichert über `zustandSchluessel`), Inline-Bearbeitung mit Auswahllisten (Kurz-/Langname), Mehrfachauswahl,
-    Tastaturbedienung, Kopieren/Einfügen als Tabulator-Text, Neuanlage-Zeile, gruppierte Zeilen (Kopplungen).
-  * `raster.js` – Stundenplan-Raster (Blöcke, Kopplungen nebeneinander, gesperrte Zeiten, Drag & Drop mit Zielstatus).
-    Kacheln mit Fachfarbe als Tönung (`--fachfarbe`).
-  * `dialog.js` – `dialog`, `meldung`, `frage`, `formular`, `dateiWaehlen`, `menue` (Kontextmenü), `hinweis`, `fehlerMelden`, `laden`.
-  * `auswahl.js` – Vorschlagsliste für Eingabefelder (auch Listen „5a,5b“).
-  * `symbole.js` – Linien-Symbole (Lucide, ISC) unter fachlichen Namen; nur für Funktionen (Pfeile, Schließen, Suchen,
-    Mehr) verwenden – Navigation, Menüs, Überschriften und Textknöpfe haben keine Symbole.
-* Ein Oberflächen-Modul exportiert `{ id, css, fenster, befehle, ribbon, start }` (siehe Kopf von `js/kern/modulsystem.js`).
-  Die Liste `ribbon` heißt aus historischen Gründen so; sie enthält die **Befehlseinträge** des Moduls:
-  `{ id, reiter, gruppe, text, symbol, befehl, args, menue, hinweis, taste, braucht: 'dokument'|'schreiben'|'admin', gedrueckt }`.
-  Eigenes Steuerelement in der Kopfleiste: `element: () => HTMLElement` (z. B. Datumsauswahl der Vertretungsplanung; mit
-  `reiter: 'Vertretungsplanung'` nur im Vertretungsmodus). **Gleiche `id` ersetzt einen früheren Eintrag.**
-  Damit ein neuer Eintrag in der Seitenleiste erscheint, in `NAVIGATION` einen Verweis `{ ref: '<id>', text, symbol }` ergänzen.
+* **Technik:** React 18, TypeScript (strict), Fluent UI v9 (`@fluentui/react-components`, Symbole aus
+  `@fluentui/react-icons`), TanStack Table + Virtual (Tabellen), dnd-kit (Ziehen und Ablegen), React Router (Adressen),
+  zustand (gemeinsamer Zustand). Quelle in `studio/client`, Build mit Vite nach `src/UntPlanStudio/wwwroot`
+  (`npm run build` = `tsc --noEmit` + `vite build`). Das Ziel `StudioOberflaecheBauen` in `UntPlanStudio.csproj` baut die
+  Oberfläche bei `dotnet build/publish/test` automatisch, sobald sich `studio/client` geändert hat (Node.js 22 nötig;
+  abschaltbar mit `-p:StudioOberflaecheBauen=false`, das Dockerfile baut sie in einer eigenen Node-Stufe). Keine CDN-Quellen.
+* **Gestaltung** nach `design/DESIGN.md`: Fluent-Thema aus der Marken-Rampe Marine `#234f96` (`src/theme.ts`,
+  `createLightTheme/createDarkTheme`), Schrift IBM Plex Sans (lokal, `public/fonts`), Grundwerte aus `design/tokens.css`
+  (Fachfarben, Statusflächen `--up-…`). Hell/Dunkel/Automatisch im Kontomenü. Keine Verläufe, keine Symbolkacheln.
+* **Shell:** Kopfleiste (Schuldatei-Menü, Modus Stundenplanung/Vertretungsplanung, Steuerelemente der Module wie Planungsdatum
+  und aktive Benutzer, Rückgängig/Wiederholen, Speichern, Befehlssuche Strg+K, Konto), Seitenleiste (Fluent `NavDrawer`,
+  fachliche Gruppen aus `src/shell/navigation.ts`; in schmalen Fenstern überlagernd) und darunter die **Seite**.
+* **Seiten und Adressen:** Jede Ansicht hat eine Adresse `/<pfad>?<parameter>` (z. B. `/stundenplan?typ=klasse&element=3`);
+  Zurück/Vor des Browsers und Neuladen funktionieren (der Server liefert für alle Oberflächen-Adressen `index.html`).
+  Öffnet eine Ansicht eine verwandte Ansicht, erscheint sie als **Nebenbereich** rechts (`?n=<typ>&n.<parameter>=…`).
+  **Arbeitsplätze** (`/arbeitsplatz/<name>`, z. B. „Manuell planen“, „Tagesplanung“) zeigen mehrere Bereiche mit
+  verschiebbaren Trennern; Ansichten darin sind verknüpft (Ereignis `element`, `vertretung.auswahl`). Gehört eine Seite zu
+  einem Modus (`modus` der Ansicht), wird er beim Öffnen eingestellt; ein Moduswechsel führt zur Übersicht.
+* `src/kern/` – Grundlagen (bitte nutzen statt eigene zu bauen):
+  * `api/client.ts` – `api.get/post/put/patch/loeschen/hochladen`, `api.dok('/pfad')`, `einstellungLesen/einstellungSchreiben`,
+    `dateiHerunterladen`. Option `{ quelle: ansicht.id }` bei Änderungen, damit die auslösende Ansicht ihr eigenes
+    `daten`-Ereignis überspringt. Jede Antwort mit `X-Dokument-Version` löst `daten` aus (auch Änderungen anderer Benutzer per SSE).
+  * `ereignisse.ts` – typisierter Ereignisbus: `an`, `melden`, `useEreignis`, `betrifft(ereignis, 'Stammdaten', …)`.
+  * `zustand.ts` – `useStudio` (Benutzer, Dokument, Grunddaten, Modus, Thema), `elemente(typ)`, `useDarfSchreiben()`.
+  * `laden.ts` – `useDaten(laden, deps, { bereiche, quelle })`: lädt und lädt bei passenden Datenänderungen still nach.
+  * `ansichten.tsx` – Registry der Ansichten `{ titel, pfad, komponente (lazy), modus, schluessel(p), ohneDokument }` und
+    `useAnsicht()` → `{ id, typ, lage, p, parameterSetzen, oeffnen(typ, p), schliessen, alsSeite }`.
+  * `befehle.ts` – Befehle (`befehlRegistrieren`, `befehl`), **Befehlseinträge** (`{ id, text, gruppe, ansicht | arbeitsplatz |
+    befehl | aktion, menue, braucht: 'dokument'|'schreiben'|'admin', taste, modus }`), Tastenkürzel, `seiteOeffnen`.
+* `src/komponenten/` – `AnsichtRahmen` (Seitenkopf bzw. Bereichskopf, Werkzeugleiste, Filter, Fuß), `Werkzeug`, `Feld`,
+  `ElementAuswahl`; `Tabelle` (TanStack: virtualisiert, Sortieren, Spalten ein-/ausblenden/verschieben/Breite – gespeichert
+  über `zustandSchluessel`, Inline-Bearbeitung mit Vorschlagslisten, Mehrfachauswahl, Neuanlage-Zeile, Kopieren/Einfügen,
+  Tastatur); `Raster`/`Stundenplanraster` (Stundenpläne mit Blöcken und Kopplungen; Ziehen mit dnd-kit: Verplanen,
+  Verschieben, Tauschen, Zielstatus je Feld mit Begründung am Mauszeiger); `dialoge` (Promise-Dialoge `dialog`, `frage`,
+  `meldung`, `formular`, `dialogZeigen` mit `StandardDialog`), `menue` (Kontextmenüs, `MenueKnopf`), `hinweise`
+  (`hinweis`, `fehlerMelden`), `ziehen` (gemeinsamer `DndContext`, damit zwischen Bereichen gezogen werden kann).
+* Ein Oberflächen-Modul (`src/module/<modul>/index.ts`) exportiert ein `StudioModul`:
+  `{ id, ansichten, arbeitsplaetze, befehle, eintraege, start }`. Eigenes Steuerelement in der Kopfleiste:
+  `kopfleistenElement({ id, komponente, ort: 'mitte' | 'rechts', modus })`. **Gleiche `id` ersetzt einen früheren Eintrag.**
+  Damit ein Eintrag in der Seitenleiste erscheint, in `NAVIGATION` (`src/shell/navigation.ts`) einen Verweis
+  `{ ref: '<id>', text }` ergänzen; die Befehlssuche findet jeden Eintrag und Untermenüpunkt ohnehin.
+* **Online-Unterricht:** Unterricht hat „Findet online statt“ mit Link (Spalten Online/OnlineLink, Dialog „Online …“ in der
+  Unterrichtsansicht); einzelne Stunden lassen sich in den Tagesplänen der Vertretungsplanung abweichend online bzw. in
+  Präsenz schalten (Kontextmenü „Findet online statt …“, Kennzeichen an der Stunde, Ansicht „Online-Stunden“).
+* **Tests:** `OberflaecheTests` (Modulregister, Seitenpfade, Startseite ohne externe Quellen, `tsc --noEmit`) und die
+  Playwright-Tests in `tests/smoke` (`smoke.cjs` Rundgang über alle Seiten, `planung.cjs`, `vertretung.cjs`, `druck.cjs`,
+  `smoke-austausch.cjs`). Selektoren: `[data-ansicht="<typ>"]`, `[data-tabelle="<name>"] .tb-zeile`, `.ra-eintrag`,
+  `[data-nav="<id>"]`; `window.studioTest.eintrag(id)` führt einen Befehlseintrag aus.
 
 ## Neues Modul anlegen (konfliktarm)
 
@@ -244,10 +255,11 @@ Logik in `UntPlan.Core.Vertretungsplanung.OnlineUnterricht`):
    }
    ```
    Eigene Dienste/Hilfsklassen in `Dienste/<Modul>*.cs`. Eine Zeile in `Api/Modulregister.cs` (Erweiterungsstelle).
-2. Oberfläche: `wwwroot/js/module/<modul>.js` (Fenstertypen `'<modul>.<fenster>'`, Befehle `'<modul>.<befehl>'`,
-   Befehlseinträge; Verweis in `kern/navigation.js`), optional `wwwroot/css/module/<modul>.css` (Klassen mit Modulpräfix).
-   Zwei Zeilen in `wwwroot/js/module/register.js` (Import + Liste).
+2. Oberfläche: Ordner `studio/client/src/module/<modul>/` mit `index.ts` (Ansichten `'<modul>.<ansicht>'` mit eigenem
+   `pfad`, Befehle `'<modul>.<befehl>'`, Befehlseinträge; Verweis in `src/shell/navigation.ts`) und den Ansichten als
+   `*.tsx` (lazy geladen), optional `<modul>.css` (Klassen mit Modulpräfix). Zwei Zeilen in `src/module/register.ts`
+   (Import + Liste).
 3. Tests: `studio/tests/UntPlanStudio.Tests/<Modul>Tests.cs` (`IClassFixture<StudioFabrik>`, Hilfen in `StudioFabrik.cs`).
-   Die Syntax aller JS-Module und das Modulregister werden automatisch geprüft.
+   Modulregister, Seitenpfade und die Typprüfung der Oberfläche werden automatisch geprüft.
 4. Benutzereinstellungen mit Präfix `<modul>.`; CSS-Klassen mit Präfix; keine Änderungen an Kern-Dateien nötig –
    fehlt im Kern etwas Allgemeines, klein und rückwärtskompatibel ergänzen.

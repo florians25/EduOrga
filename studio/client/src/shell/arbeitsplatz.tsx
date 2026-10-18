@@ -10,7 +10,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { adresseVon, ansichtDef } from '@/kern/ansichten';
 import type { Params } from '@/kern/befehle';
 import { arbeitsplatzDef } from '@/kern/modulsystem';
-import { modusSetzen, useStudio } from '@/kern/zustand';
+import { useStudio } from '@/kern/zustand';
+import { useModusBindung } from './modusbindung';
 import { Leer } from '@/komponenten/ansicht';
 import { AnsichtHost, KeinDokument } from './ansichthost';
 import { bereichVon } from './navigation';
@@ -62,7 +63,7 @@ export function ArbeitsplatzSeite() {
   const [seitlich, setSeitlich] = useState<{ typ: string; p: Params } | null>(null);
 
   useEffect(() => { seitenortSetzen({ arbeitsplatz: name, p: {} }); }, [name]);
-  useEffect(() => { if (def?.modus && def.modus !== modus) modusSetzen(def.modus); }, [def, modus]);
+  useModusBindung(def?.modus, name);
   useEffect(() => { if (def) document.title = `${def.titel} – UntPlan Studio`; }, [def]);
 
   const kontext = useMemo<ArbeitsplatzKontextWert>(() => ({

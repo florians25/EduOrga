@@ -141,7 +141,7 @@ function Postfach({ ordner, verfassen, oeffnenId }: { ordner: Ordner; verfassen:
                           <ListItemButton onClick={() => oeffnen(m)} sx={{ gap: 1.5, py: 1.25, alignItems: 'center', position: 'relative', bgcolor: neu ? 'action.hover' : undefined }}>
                             {neu && <Box sx={{ position: 'absolute', left: 4, top: '50%', mt: '-4px', width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main' }} />}
                             <NamensAvatar name={ohneZusatz(kopfName(m) || 'E')} id={m.id} groesse={36} />
-                            <Box sx={{ minWidth: 0, flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(140px, 220px) 1fr' }, columnGap: 2, alignItems: 'baseline' }}>
+                            <Box sx={{ minWidth: 0, flex: 1, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(140px, 220px) minmax(0, 1fr)' }, columnGap: 2, alignItems: 'baseline' }}>
                               <Typography noWrap sx={{ fontWeight: neu ? 600 : 500, fontSize: 14 }} title={kopfName(m)}>{kopfName(m)}</Typography>
                               <Typography noWrap sx={{ fontSize: 14, color: 'text.secondary' }}>
                                 {m.wichtig && <Plakette ton="entfall" sx={{ mr: 0.75 }}>wichtig</Plakette>}

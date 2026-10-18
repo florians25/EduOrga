@@ -42,6 +42,7 @@ const useStile = makeStyles({
   fehler: { color: tokens.colorPaletteRedForeground1 },
   rollen: { overflowX: 'auto', border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium },
   z: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' },
+  kopf: { whiteSpace: 'normal', hyphens: 'auto', overflowWrap: 'break-word', lineHeight: '16px', verticalAlign: 'bottom', paddingTop: '6px', paddingBottom: '6px', '& > *': { whiteSpace: 'normal', overflow: 'visible', hyphens: 'auto', overflowWrap: 'break-word' } },
   gruen: { color: tokens.colorPaletteGreenForeground1, fontWeight: tokens.fontWeightSemibold },
   rot: { color: tokens.colorPaletteRedForeground1 },
   zeile: { cursor: 'pointer' },
@@ -176,8 +177,8 @@ export default function Lauf({ p }: AnsichtProps) {
               <Table size="small" aria-label="Ergebnisse">
                 <TableHeader><TableRow>
                   <TableHeaderCell>Plan</TableHeaderCell>
-                  {KENNZAHLEN.map(([k, t, ti]) => <TableHeaderCell key={k} className={s.z} title={ti}>{t}</TableHeaderCell>)}
-                  <TableHeaderCell className={s.z} title="Stunden an anderer Stelle als im aktuellen Plan">Abweichungen</TableHeaderCell><TableHeaderCell className={s.z}>Dauer</TableHeaderCell>
+                  {KENNZAHLEN.map(([k, t, ti]) => <TableHeaderCell key={k} className={mergeClasses(s.z, s.kopf)} title={ti}>{t}</TableHeaderCell>)}
+                  <TableHeaderCell className={mergeClasses(s.z, s.kopf)} title="Stunden an anderer Stelle als im aktuellen Plan">Abweichungen</TableHeaderCell><TableHeaderCell className={s.z}>Dauer</TableHeaderCell>
                 </TableRow></TableHeader>
                 <TableBody>
                   <TableRow className={s.aktuell}><TableCell>Aktueller Plan</TableCell>{KENNZAHLEN.map(([k]) => <TableCell key={k} className={s.z}>{zahl(x.aktuell?.[k])}</TableCell>)}<TableCell /><TableCell /></TableRow>

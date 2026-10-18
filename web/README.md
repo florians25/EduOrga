@@ -9,34 +9,29 @@ UntPlan beim nächsten Datenaustausch ab.
 
 ## Oberfläche
 
-Eigenständige Gestaltung nach dem UntPlan-Designsystem (`design/DESIGN.md`, Farben und Maße in `wwwroot/css/tokens.css`):
-Marine als Akzentfarbe, Schiefergrau für Flächen und Linien, Statusfarben für Entfall, Änderung, Prüfung und Termin. Schrift ist
-**IBM Plex Sans** (SIL Open Font License, lokal unter `wwwroot/fonts`); es werden keine Schriften oder Skripte aus dem Internet geladen.
-Symbole sind Linien-Symbole aus **Lucide** (ISC-Lizenz, `wwwroot/lib/lucide/LICENSE`), als Maske in `wwwroot/css/symbole.css`;
-`wwwroot/js/symbole.js` ordnet den fachlichen Namen ein Symbol zu. Marke: Zeichen „UP“ und Wortmarke „UntPlan“ als Text;
-Favicon und App-Symbole (`img/logo.svg`, `img/icon-*.png`, `img/maskable-*.png`, `img/apple-touch-icon.png`) aus dem Monogramm.
+Eigenständige Gestaltung nach dem UntPlan-Designsystem (`design/DESIGN.md`, Farben aus `design/tokens.css`): Marine (#234f96)
+als Akzentfarbe, Schiefergrau für Flächen und Linien, Statusfarben für Entfall, Änderung, Prüfung, Termin und Vertretung – ohne
+Orange. Aufgebaut als **React-18-Anwendung mit TypeScript (strict) und MUI v7** in `web/client`; der Build landet in
+`src/UntPlanWeb/wwwroot` und wird von ASP.NET Core als statische Dateien ausgeliefert (Hash-Routing, z. B. `#/plan/klasse/5a`).
+Schrift ist **IBM Plex Sans** (SIL Open Font License, lokal unter `wwwroot/fonts`); Symbole sind die mitgebündelten
+Material-Symbole von MUI. Es werden keine Schriften oder Skripte aus dem Internet geladen. Marke: Zeichen „UP“ und Wortmarke
+„UntPlan“ als Text; Favicon und App-Symbole (`img/…`) aus dem Monogramm.
 
-- **Seitenleiste links** (`css/seitenleiste.css`): helle Leiste mit Zeichen, Wortmarke, Schulname und Schuljahr-Auswahl. Die
-  Bereiche (*Heute*, *Übersicht*, *Mitteilungen*, *Stundenplan*, *Unterricht*, *Klassenbuch*, *Melden*, *Buchen*, *Sprechtag*,
-  *Stammdaten*, *Administration*) stehen mit eigenen Linien-Symbolen in abgerundeten Zeilen; Bereiche klappen an Ort und Stelle auf,
-  die Unterpunkte stehen eingerückt an einer feinen Linie. Es ist immer nur ein Bereich offen, der Bereich der aktuellen Seite
-  klappt von selbst auf; der aktive Punkt ist hell marineblau hinterlegt. Unten Konto (Profil, Konto wechseln, weiteres Konto),
-  *Neuigkeiten*, *Abmelden* und *Navigation einklappen* – eingeklappt bleibt eine schmale Leiste mit den Symbolen der Bereiche.
-  Auf Telefon und Tablet öffnet der Knopf *Menü* in der Kopfleiste die Leiste als Schublade.
-- **Stundenplan** (`js/plangitter.js`, `js/ansichten/plan.js`, `css/karten.css`): Werkzeugleiste über dem Raster mit Elementwahl,
-  Woche (KW und Datumsbereich, Kalender), *Heute*, Umschalter *Woche/Tag*, Statusfiltern (Entfall, Prüfung, Änderung – anklickbar
-  zum Ausblenden), Menü *Ansicht* (Symbole, Uhrzeiten, Abwesenheiten, Pausenaufsichten, Drucken, öffentlicher Link) und Hilfe.
-  Zeitspalte mit Stundennummer, Beginn und Ende; heutiger Tag hell hinterlegt, Jetzt-Linie. Kacheln in der Fachfarbe getönt,
-  Status als Schraffur (Entfall), Rahmen (Änderung) und Schild („Entfall“, „Prüfung“, „Zusatz“, „Termin“, „Verlegt“).
-- **Stundendetails** (`js/stundendetails.js`): Bereich rechts (420 px, für Klassenbuch, Raum und Prüfung breiter) mit Kopf in der
-  Fachfarbe, Reitern *Klassenbuch* und *Details*, Aktionen im Fuß.
-- **Klassenbuch-Seiten** (`css/klassenbuch-seiten.css`): Übersicht, Offene Stunden, Einträge, Hausaufgaben, Klassendienste,
-  Berichte, Wochenübersicht, Abwesenheiten, Fehlzeiten, Befreiungen, Sitzplan und Einstellungen als dichte Arbeitsansicht: weißer
-  Seitenkopf, Filterzeile aus rechteckigen Feldern, Tabellen mit grauer Kopfzeile und feinen Linien, Status als kleine Schilder.
-- **Übrige Seiten** (Heute, Übersicht, Mitteilungen, Unterricht, Melden, Buchen, Stammdaten, Administration, Profil, Sprechtag):
-  gemeinsame Bausteine aus `css/app.css`, `css/seitenlayout.css` und den Bereichsdateien in den Farben des Designsystems.
-- **Anmeldung:** zweigeteilt – links Marke, Schulname, Datum und öffentliche Hinweise der Schule, rechts das Formular.
-- **Monitor** (`monitor.html`, `css/monitor.css`): Vertretungsplan für Bildschirme im Schulhaus auf dunkler Marine-Fläche.
+- **Seitenleiste links** (`client/src/app`): Zeichen, Wortmarke, Schulname und Schuljahr-Auswahl; Bereiche (*Heute*, *Übersicht*,
+  *Mitteilungen*, *Stundenplan*, *Unterricht*, *Klassenbuch*, *Melden*, *Buchen*, *Sprechtag*, *Stammdaten*, *Administration*)
+  je nach Rolle und Rechten, Unterpunkte eingerückt; unten Konto (Profil, Konto wechseln, weiteres Konto, Abmelden) und
+  *Navigation einklappen*. Auf Telefon und Tablet als Schublade über die Kopfleiste.
+- **Stundenplan** (`client/src/components/plan`, `client/src/pages/plan`): eigenes Wochen-/Tagesraster mit Zeitachse, Jetzt-Linie,
+  Kacheln in der Fachfarbe, Status (Entfall, Änderung, Vertretung, Prüfung, Termin, Buchung) mit Legende, Stundendetails als
+  Seitenbereich. Online-Unterricht wird nur angezeigt (Schild und Link „Online-Unterricht beitreten“); umgeschaltet wird in
+  UntPlan Studio bzw. der App.
+- **Klassenbuch-Seiten**, **Übrige Seiten** (Heute, Übersicht, Mitteilungen, Unterricht, Melden, Buchen, Stammdaten,
+  Administration, Profil, Sprechtag): gemeinsame Bausteine (`client/src/components`: Seite, Tabelle, Auswahl, Formulardialoge).
+- **Anmeldung** und **Einrichtungsassistent:** zweigeteilt – links Marke, Schulname, Datum und Hinweise, rechts das Formular.
+- **Monitor** (`monitor.html`, `client/src/monitor`): Vertretungsplan für Bildschirme im Schulhaus auf dunkler Marine-Fläche.
+
+Ist die Oberfläche nicht gebaut (`wwwroot/index.html` fehlt), zeigt der Server eine kurze Hinweisseite. Docker-Image und CI bauen
+die Oberfläche selbst; `index.html`, `monitor.html` und `assets/` werden nicht eingecheckt.
 
 | Stundenplan | Stundendetails | Klassenbuch |
 |---|---|---|
@@ -458,6 +453,17 @@ Felder `online`/`onlineLink` von `PUT /api/app/klassenbuch/stunde` werden für �
 
 ## Entwicklung
 
+Oberfläche:
+
+```bash
+cd web/client
+npm ci
+npm run build                                # Typprüfung + Build nach src/UntPlanWeb/wwwroot
+UNTPLANWEB_BACKEND=http://127.0.0.1:5000 npm run dev   # Entwicklung auf http://localhost:5173, API an das Backend
+```
+
+Server und Tests:
+
 ```bash
 cd web
 dotnet run --project src/UntPlanWeb          # http://localhost:5000, Daten in ./daten
@@ -472,7 +478,8 @@ UNTPLANWEB_TEST_MYSQL="…" UNTPLANWEB_TEST_ALLE_MIT_MYSQL=1 dotnet test tests/U
 Aufbau:
 
 - `src/UntPlanWeb`: ASP.NET Core 8 (Minimal-APIs) mit SQLite (oder MySQL/MariaDB über `Daten/Dialekt.cs`) und eigenen Migrationen (`Daten/Db.cs`, nur anhängen).
-- `wwwroot`: Oberfläche ohne Build-Schritt (Bootstrap 5.3 mit den Grundwerten aus `css/tokens.css`, Linien-Symbole in `css/symbole.css` mit Zuordnung in `js/symbole.js`, IBM Plex Sans unter `fonts/`, keine CDN-Abhängigkeit), Vanilla-JS-Module je Seite unter `js/ansichten`.
+- `client`: Oberfläche (Vite, React 18, TypeScript strict, MUI v7); Seiten unter `src/pages` (Verzeichnis `src/pages/register.ts`), Portierungsstand in `client/PORTIERUNG.md`.
+- `src/UntPlanWeb/wwwroot`: feste Dateien (Schriften, Bilder, Manifest, `neuigkeiten.json`) plus Build-Ausgabe der Oberfläche.
 - `demo/beispiel-paket.json`: Beispielpaket, mit UntPlan.Core aus der Beispielschule erzeugt.
 
 UntPlanWeb gehört nicht zur Desktop-Solution `UntPlan.sln` und hat einen eigenen CI-Ablauf (`.github/workflows/web.yml`).

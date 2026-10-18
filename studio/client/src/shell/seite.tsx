@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { adresseVon, ansichtDef, ansichtNachPfad, paramsAusSuche, sucheAusParams } from '@/kern/ansichten';
 import type { Params } from '@/kern/befehle';
-import { modusSetzen, useStudio } from '@/kern/zustand';
+import { useModusBindung } from './modusbindung';
 import { Leer } from '@/komponenten/ansicht';
 import { AnsichtHost } from './ansichthost';
 import { seitenortSetzen } from './seitenort';
@@ -34,7 +34,6 @@ export function Seite() {
   const ort = useLocation();
   const navigate = useNavigate();
   const [suche, setSuche] = useSearchParams();
-  const modus = useStudio((x) => x.modus);
   const treffer = ansichtNachPfad(ort.pathname);
   const typ = treffer?.[0];
   const def = treffer?.[1];
@@ -47,7 +46,7 @@ export function Seite() {
   breiteRef.current = breite;
 
   useEffect(() => { if (typ) seitenortSetzen({ typ, p }); }, [typ, p]);
-  useEffect(() => { if (def?.modus && def.modus !== modus) modusSetzen(def.modus); }, [def, modus]);
+  useModusBindung(def?.modus, typ);
 
   const aktuelleSuche = () => new URLSearchParams(window.location.search);
 

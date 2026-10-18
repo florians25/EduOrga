@@ -45,7 +45,7 @@ function Rahmen({ sitzung, titel, untertitel, children }: { sitzung: Sitzung | n
       .then(r => (r.ok ? r.json() : [])).then(l => setHinweise(Array.isArray(l) ? l : [])).catch(() => undefined);
   }, []);
   return (
-    <Box sx={{ minHeight: '100dvh', display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(380px, 46%) 1fr' }, bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: '100dvh', display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(380px, 46%) minmax(0, 1fr)' }, bgcolor: 'background.default' }}>
       <Box component="section" aria-label={schule} sx={{
         display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 4, p: { md: 6, lg: 8 }, color: '#fff', position: 'relative', overflow: 'hidden',
         background: `radial-gradient(1200px 600px at -10% -10%, ${farben.marine[700]} 0%, ${farben.marine[900]} 55%, #0b1a35 100%)`,

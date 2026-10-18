@@ -17,11 +17,11 @@ export default function Praesenz() {
   const aktive = stand.aktive.filter((a) => a.aktiv);
   const andere = aktive.filter((a) => a.benutzer.toLowerCase() !== ich);
   const sperre = stand.exklusiv && !stand.exklusiv.eigen ? `exklusiv: ${stand.exklusiv.anzeigename}` : stand.sperren.length ? `${stand.sperren.length} ${stand.sperren.length === 1 ? 'Sperre' : 'Sperren'}` : '';
-  const titel = aktive.map((a) => `${a.anzeigename}${a.taetigkeit ? ` – ${a.taetigkeit}` : ''}`).join('\n') || 'Mehrbenutzerbetrieb';
+  const titel = (andere.length ? `${andere.length + 1} Benutzer aktiv:\n` : 'Nur Sie arbeiten gerade an dieser Datei.\n') + aktive.map((a) => `${a.anzeigename}${a.taetigkeit ? ` – ${a.taetigkeit}` : ''}`).join('\n') || 'Mehrbenutzerbetrieb';
   return (
-    <Button appearance="subtle" size="small" className={s.knopf} icon={<PeopleRegular />} title={titel} data-testid="multiuser-praesenz"
+    <Button appearance="subtle" size="small" className={s.knopf} icon={<PeopleRegular />} title={titel} aria-label={andere.length ? `${andere.length + 1} Benutzer aktiv` : 'Nur Sie sind aktiv'} data-testid="multiuser-praesenz"
       onClick={() => seiteOeffnen('multiuser')}>
-      {andere.length ? `${andere.length + 1} aktiv` : 'nur Sie'}
+      {andere.length ? String(andere.length + 1) : null}
       {sperre ? <span className={s.sperre}>{sperre}</span> : null}
     </Button>
   );

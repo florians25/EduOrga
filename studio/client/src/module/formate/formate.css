@@ -1,0 +1,27 @@
+/* Modul Planformate (Präfix fm-). */
+.fm-rahmen { display: flex; flex: 1; min-height: 0; }
+.fm-liste { flex: 0 0 240px; overflow: auto; padding: 10px 0 16px; border-right: 1px solid var(--colorNeutralStroke2); }
+.fm-gruppentitel { padding: 10px 16px 4px; font-size: 12px; font-weight: 600; color: var(--colorNeutralForeground3); }
+.fm-eintrag { position: relative; display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; border: 0; background: none; font: inherit; padding: 5px 16px; cursor: pointer; color: var(--colorNeutralForeground1); }
+.fm-eintrag:hover { background: var(--colorNeutralBackground1Hover); }
+.fm-eintrag span:last-child { font-size: 12px; color: var(--colorNeutralForeground3); }
+.fm-eintrag.aktiv { color: var(--colorBrandForeground1); }
+.fm-eintrag.aktiv::before { content: ""; position: absolute; left: 0; top: 5px; bottom: 5px; width: 2px; background: var(--colorBrandStroke1); }
+.fm-leer { color: var(--colorNeutralForeground3); padding: 4px 16px; margin: 0; font-size: 12.5px; }
+.fm-rechts { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.fm-seite { flex: 1; overflow: auto; padding: 16px 24px 28px; display: flex; flex-direction: column; gap: 10px; }
+.fm-seite h3 { font-size: 14px; font-weight: 600; margin: 10px 0 0; }
+.fm-seite h3:first-child { margin-top: 0; }
+.fm-formular { display: grid; grid-template-columns: 220px minmax(0, 320px); gap: 8px 16px; align-items: center; }
+.fm-formular > .fm-hinweis { grid-column: 2; margin-top: -4px; }
+.fm-hinweis { color: var(--colorNeutralForeground3); font-size: 12.5px; margin: 0; }
+.fm-schalter { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0 16px; }
+.fm-paar { display: flex; gap: 8px; }
+.fm-leerzustand { padding: 48px 24px; color: var(--colorNeutralForeground3); text-align: center; }
+.fm-zelle { position: relative; width: 320px; height: 160px; border: 1px solid var(--colorNeutralStroke1); background: var(--colorNeutralBackground1); user-select: none; touch-action: none; }
+.fm-feld { position: absolute; display: flex; align-items: center; padding: 0 4px; box-sizing: border-box; border: 1px dashed var(--colorBrandStroke1); background: var(--colorBrandBackground2); cursor: move; overflow: hidden; white-space: nowrap; }
+.fm-griff { position: absolute; right: 0; bottom: 0; width: 10px; height: 10px; background: var(--colorBrandStroke1); cursor: nwse-resize; }
+.fm-felder { border-collapse: collapse; font-size: 13px; }
+.fm-felder th { text-align: left; font-weight: 500; font-size: 12px; color: var(--colorNeutralForeground2); padding: 6px 8px; border-bottom: 1px solid var(--colorNeutralStroke2); }
+.fm-felder td { padding: 3px 8px; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.fm-felder .mitte { text-align: center; }

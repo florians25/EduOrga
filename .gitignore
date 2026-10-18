@@ -17,3 +17,5 @@ node_modules/
 web/src/UntPlanWeb/wwwroot/index.html
 web/src/UntPlanWeb/wwwroot/monitor.html
 web/src/UntPlanWeb/wwwroot/assets/
+# UntPlan Studio: Build-Ausgabe der Oberfläche (studio/client, npm run build bzw. dotnet build)
+studio/src/UntPlanStudio/wwwroot/

@@ -16,11 +16,30 @@ public sealed class AnmeldungTests : IClassFixture<StudioFabrik>
         Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/gesundheit")).StatusCode);
         var html = await c.GetStringAsync("/");
         Assert.Contains("<title>UntPlan Studio</title>", html);
-        Assert.Contains("js/app.js", html);
+        Assert.Matches(@"src=""/assets/index-[\w-]+\.js""", html);
         var system = await c.GetJsonAsync("/api/system");
         Assert.False(system["beta"]!.GetValue<bool>());
         var sitzung = await c.GetJsonAsync("/api/sitzung");
         Assert.Null(sitzung["benutzer"]);
+    }
+
+    [Fact]
+    public async Task AdressenDerOberflaecheLiefernDieStartseiteUndHashDateienDuerfenGecachtWerden()
+    {
+        var c = _f.Client();
+        // Seiten der Oberfläche (Routing im Browser) liefern index.html, ohne Zwischenspeicher
+        var seite = await c.GetAsync("/stundenplan?typ=klasse");
+        Assert.Equal(HttpStatusCode.OK, seite.StatusCode);
+        Assert.Contains("<title>UntPlan Studio</title>", await seite.Content.ReadAsStringAsync());
+        Assert.Equal("no-cache", seite.Headers.CacheControl?.ToString());
+        var start = await c.GetAsync("/");
+        Assert.Equal("no-cache", start.Headers.CacheControl?.ToString());
+        // Dateien mit Inhalts-Hash unter /assets/ sind unveränderlich
+        var html = await start.Content.ReadAsStringAsync();
+        var skript = System.Text.RegularExpressions.Regex.Match(html, @"src=""(/assets/[^""]+\.js)""").Groups[1].Value;
+        var datei = await c.GetAsync(skript);
+        Assert.Equal(HttpStatusCode.OK, datei.StatusCode);
+        Assert.Contains("immutable", datei.Headers.CacheControl?.ToString());
     }
 
     [Fact]

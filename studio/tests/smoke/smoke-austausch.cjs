@@ -1,34 +1,11 @@
-// Oberflächen-Smoke-Test der Module Import/Export, UntPlanWeb, Wertrechnung/Statistik, Pausenaufsichten, Kursplanung,
-// Kommentare und MultiUser (Playwright, Chromium). Ein gemockter UntPlanWeb-Server (Node http) nimmt den Export an und
-// liefert eine Prüfung als Stundenplanänderung.
+// Oberflächentest der Module UntPlan Web, Import/Export, Soll und Ist, Statistik, Pausenaufsichten, Kursplanung, Kommentare und
+// Mehrbenutzerbetrieb (Playwright, Chromium). UntPlan Web wird durch eine Attrappe (HTTP-Server in diesem Skript) ersetzt.
 //
-//   NODE_PATH=$(npm root -g) STUDIO_URL=http://127.0.0.1:5514 STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke-austausch.cjs
+//   NODE_PATH=$(npm root -g) STUDIO_URL=http://127.0.0.1:5501 STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke-austausch.cjs
 //
-// Umgebungsvariablen wie smoke.cjs (STUDIO_URL, STUDIO_BENUTZER, STUDIO_PASSWORT, STUDIO_SCREENSHOTS).
-const { chromium } = require('playwright');
-
-// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
-async function eintrag(page, id) {
-  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
-  if (await k.count() && await k.first().isVisible()) return k.first().click();
-  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
-}
+// Umgebungsvariablen: hilfe.cjs.
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-
-const URL = process.env.STUDIO_URL || 'http://127.0.0.1:5501';
-const BENUTZER = process.env.STUDIO_BENUTZER || 'admin';
-const PASSWORT = process.env.STUDIO_PASSWORT || 'geheim123';
-const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-shots-austausch');
-
-async function api(pfad, optionen = {}, cookie = '') {
-  const r = await fetch(URL + pfad, { ...optionen, headers: { 'X-UntPlan-Studio': '1', 'Content-Type': 'application/json', ...(cookie ? { cookie } : {}), ...(optionen.headers || {}) } });
-  if (!r.ok) throw new Error(`${pfad}: ${r.status} ${await r.text()}`);
-  return r;
-}
-const anmelden = async (b, p) => (await api('/api/anmeldung', { method: 'POST', body: JSON.stringify({ benutzer: b, passwort: p }) })).headers.get('set-cookie').split(';')[0];
+const h = require('./hilfe.cjs');
 
 /** Attrappe des UntPlanWeb-Servers. */
 function attrappe(rueckmeldungen) {
@@ -49,163 +26,134 @@ function attrappe(rueckmeldungen) {
 }
 
 (async () => {
-  fs.mkdirSync(BILDER, { recursive: true });
-  const cookie = await anmelden(BENUTZER, PASSWORT);
-  const stand = await (await api('/api/dokumente/beispiel', { method: 'POST', body: '{}' }, cookie)).json();
+  const cookie = await h.apiAnmelden();
+  const stand = await h.beispielschule(cookie);
   const dok = `/api/dokumente/${stand.id}`;
-  // Tag der Prüfung: nächster Werktag
+  const mit = (c, o = {}) => ({ ...o, headers: { cookie: c } });
+  // Tag der Prüfung: nächster Unterrichtstag
   const tag = new Date();
   let iso = '';
   for (let i = 0; i < 120; i++) {
     tag.setDate(tag.getDate() + 1);
     iso = tag.toISOString().slice(0, 10);
-    if ((await (await api(`${dok}/pausenaufsicht/vertretung/${iso}`, {}, cookie)).json()).unterrichtstag) break;
+    if ((await (await h.api(`${dok}/pausenaufsicht/vertretung/${iso}`, mit(cookie))).json()).unterrichtstag) break;
   }
-  const el = await (await api(`${dok}/elemente?typen=klasse,lehrer,raum`, {}, cookie)).json();
+  const el = await (await h.api(`${dok}/elemente?typen=klasse,lehrer,raum`, mit(cookie))).json();
   const web = await attrappe([{ id: 'klausur-1', typ: 'klausur', absender: 'MÜL', von: iso, stundeVon: 2, stundeBis: 3, titel: 'Mathe-Klausur', klassen: [el.klasse[0].k], lehrer: el.lehrer[0].k, raeume: [el.raum[0].k] }]);
-  await api(`${dok}/untplanweb/einstellungen`, { method: 'PUT', body: JSON.stringify({ schulId: '123456', server: '127.0.0.1', port: web.port, https: false, apiSchluessel: 'geheim' }) }, cookie);
-  // zweiter Benutzer für MultiUser
-  try { await api('/api/benutzer', { method: 'POST', body: JSON.stringify({ name: 'pia', anzeigename: 'Pia Planer', rolle: 'Planer', passwort: 'planer-pw' }) }, cookie); } catch { /* vorhanden */ }
-  const pia = await anmelden('pia', 'planer-pw');
-  await api(`${dok}/multiuser?taetigkeit=${encodeURIComponent('Vertretungen')}`, {}, pia);
-  await api(`${dok}/multiuser/sperren`, { method: 'POST', body: JSON.stringify({ bereich: 'Kursplanung' }) }, pia);
+  await h.api(`${dok}/untplanweb/einstellungen`, mit(cookie, { method: 'PUT', body: JSON.stringify({ schulId: '123456', server: '127.0.0.1', port: web.port, https: false, apiSchluessel: 'geheim' }) }));
+  // zweiter Benutzer für den Mehrbenutzerbetrieb: aktiv, sperrt die Kursplanung
+  try { await h.api('/api/benutzer', mit(cookie, { method: 'POST', body: JSON.stringify({ name: 'pia', anzeigename: 'Pia Planer', rolle: 'Planer', passwort: 'planer-pw' }) })); } catch { /* vorhanden */ }
+  const pia = await h.apiAnmelden('pia', 'planer-pw');
+  await h.api(`${dok}/multiuser?taetigkeit=${encodeURIComponent('Vertretungen')}`, mit(pia));
+  await h.api(`${dok}/multiuser/sperren`, mit(pia, { method: 'POST', body: JSON.stringify({ bereich: 'Kursplanung' }) })).catch(() => {});
   // Gang mit Aufsicht für die Pausenaufsichten
-  const gaenge = (await (await api(`${dok}/pausenaufsicht`, {}, cookie)).json()).gaenge;
-  if (!gaenge.length) await api(`${dok}/stammdaten/gang`, { method: 'POST', body: JSON.stringify({ kurzname: 'Hof' }) }, cookie);
+  const gaenge = (await (await h.api(`${dok}/pausenaufsicht`, mit(cookie))).json()).gaenge;
+  if (!gaenge.length) await h.api(`${dok}/stammdaten/gang`, mit(cookie, { method: 'POST', body: JSON.stringify({ kurzname: 'Hof' }) }));
 
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1600, height: 950 } });
-  const fehler = [];
-  page.on('pageerror', (e) => fehler.push(String(e)));
-  page.on('console', (m) => { if (m.type() === 'error' && !/423|Locked/.test(m.text())) fehler.push(m.text()); });
-  const foto = (name) => page.screenshot({ path: path.join(BILDER, name) });
-  const reiter = async (name) => {}; // Reiter gibt es nicht mehr – Navigation ist immer sichtbar
-  const ansichtZu = (typ) => page.evaluate(async (typ) => (await import('/js/kern/fenster.js')).fensterverwaltung.alle().find((f) => f.typ === typ)?.schliessen(), typ);
-  const allesZu = async () => { await page.evaluate(async () => (await import('/js/kern/fenster.js')).fensterverwaltung.alleSchliessen()); };
+  const t = await h.starten('studio-shots-austausch');
+  const { page, foto } = t;
+  // gesperrte Bereiche (423) sind hier erwartet
+  t.fehler.length = 0;
+  page.removeAllListeners('console');
+  page.on('console', (m) => { if (m.type() === 'error' && !/status of 4\d\d|423|Locked/.test(m.text())) t.fehler.push(m.text()); });
 
-  try {
-    await page.goto(URL);
-    await page.fill('input[name=benutzer]', BENUTZER);
-    await page.fill('input[name=passwort]', PASSWORT);
-    await page.click('button[type=submit]');
-    await page.waitForSelector('.navigation .nav-punkt');
-    await page.waitForFunction(() => document.title.includes(' – UntPlan'), null, { timeout: 15000 });
-    if (await page.isVisible('.backstage')) await page.keyboard.press('Escape');
+  await h.abschliessen('Oberflächentest Austausch und Module', t, async () => {
+    await h.anmelden(page);
+    await h.dokumentOffen(page);
 
-    // ---- UntPlanWeb ----
-    await reiter('Module');
-    await eintrag(page, 'module.untplanweb');
-    await page.waitForSelector('.fenster[data-typ=untplanweb] .upw-zeile-teil');
-    await page.click('.fenster[data-typ=untplanweb] button[data-teil=vertretungen]');
-    await page.waitForSelector('.dialog .d-inhalt:has-text("erfolgreich")', { timeout: 30000 });
-    await foto('01-untplanweb-export-erfolg.png');
-    await page.click('.dialog .knopf.primaer');
-    await page.waitForSelector('.fenster[data-typ=untplanweb] .upw-status .upw-statustext:has-text("übertragen")');
+    // ---- UntPlan Web: Vertretungen übertragen ----
+    await h.eintrag(page, 'start.untplanweb');
+    const upw = '[data-ansicht=untplanweb]';
+    await page.waitForSelector(`${upw} [data-teil=vertretungen] button`);
+    await page.click(`${upw} [data-teil=vertretungen] button`);
+    await page.waitForSelector('[role=dialog]:has-text("erfolgreich")', { timeout: 30000 });
+    await foto('01-untplanweb-export-erfolg');
+    await h.dialogKnopf(page, 'OK');
+    await page.waitForSelector(`${upw} :text("übertragen")`);
     if (!web.empfangen.length) throw new Error('Die Attrappe hat kein Paket erhalten.');
-    await foto('02-untplanweb-fenster.png');
+    await foto('02-untplanweb');
 
-    // Stundenplanänderungen
-    await page.click('.fenster[data-typ=untplanweb] button[data-teil=stpl-aenderungen]');
-    await page.waitForSelector('.fenster[data-typ="untplanweb.stpl"] .t-kopf');
-    await page.waitForTimeout(600);
-    await page.fill('.fenster[data-typ="untplanweb.stpl"] input[type=date] >> nth=1', iso);
-    await page.click('.fenster[data-typ="untplanweb.stpl"] button:text-is("Laden")');
-    await page.waitForSelector('.fenster[data-typ="untplanweb.stpl"] .t-zeile:has-text("Mathe-Klausur")', { timeout: 15000 });
-    await page.click('.fenster[data-typ="untplanweb.stpl"] .fenster-werkzeuge button:has-text("Prüfungen markieren")');
-    await foto('03-stundenplanaenderungen.png');
-    await page.click('.fenster[data-typ="untplanweb.stpl"] .fenster-werkzeuge button:has-text("Übernehmen")');
-    await page.waitForSelector('.fenster[data-typ="untplanweb.stpl"] .fenster-fuss:has-text("übernommen")');
-    await ansichtZu('untplanweb.stpl');
+    // Stundenplanänderungen: Zeitraum bis zum Prüfungstag, Prüfungen markieren und übernehmen
+    await page.click(`${upw} [data-teil=stpl-aenderungen] button`);
+    const stpl = '[data-ansicht="untplanweb.stpl"]';
+    await page.waitForSelector(`${stpl} [data-tabelle="upw-stpl"]`);
+    await page.locator(`${stpl} input[type=date]`).nth(1).fill(iso);
+    await page.locator(`${stpl} button`, { hasText: /^Laden$/ }).click();
+    await page.waitForSelector(`${stpl} .tb-zeile:has-text("Mathe-Klausur")`, { timeout: 15000 });
+    await h.werkzeug(page, 'untplanweb.stpl', 'Prüfungen markieren');
+    await foto('03-stundenplanaenderungen');
+    await h.werkzeug(page, 'untplanweb.stpl', 'Übernehmen');
+    await page.waitForSelector(`${stpl} footer:has-text("übernommen")`, { timeout: 15000 });
+
     // Klausuren
-    await page.click('.fenster[data-typ=untplanweb] .fenster-werkzeuge button:has-text("Klausuren")');
-    await page.waitForSelector('.fenster[data-typ="untplanweb.klausuren"] .t-zeile:has-text("Mathe-Klausur")');
-    await foto('04-klausuren.png');
-    await ansichtZu('untplanweb.klausuren');
-    // Einstellungen-Dialog
-    await page.click('.fenster[data-typ=untplanweb] .fenster-werkzeuge button:has-text("Einstellungen")');
-    await page.waitForSelector('.dialog .upw-einstellungen');
-    await page.click('.dialog button:has-text("Verbindung prüfen")');
-    await page.waitForSelector('.dialog .upw-pruefung.ok');
-    await foto('05-untplanweb-einstellungen.png');
-    await page.click('.dialog .knopf:text-is("Abbrechen")');
-    await allesZu();
+    await h.werkzeug(page, 'untplanweb', 'Klausuren');
+    await page.waitForSelector('[data-tabelle="upw-klausuren"] .tb-zeile:has-text("Mathe-Klausur")', { timeout: 15000 });
+    await foto('04-klausuren');
 
-    // ---- Import/Export ----
-    await reiter('Dateneingabe');
-    await eintrag(page, 'eingabe.importexport');
-    await page.click('.menue .m-eintrag:has-text("Import und Export …")');
-    await page.waitForSelector('.fenster[data-typ=austausch] .ax-karte');
-    await foto('06-import-export.png');
-    await allesZu();
+    // Einstellungen: Verbindung prüfen
+    await h.werkzeug(page, 'untplanweb', 'Einstellungen');
+    await page.waitForSelector('[role=dialog]:has-text("Einstellungen für UntPlan Web")');
+    await page.locator('[role=dialog] button', { hasText: 'Verbindung prüfen' }).click();
+    await page.waitForSelector('[role=dialog] [data-pruefung=ok]', { timeout: 15000 });
+    await foto('05-untplanweb-einstellungen');
+    await h.dialogKnopf(page, 'Abbrechen');
 
-    // ---- Wertrechnung / Statistik ----
-    await reiter('Module');
-    await eintrag(page, 'module.sollist');
-    await page.waitForSelector('.fenster[data-typ="abrechnung.wertrechnung"] .t-zeile');
-    await foto('07-wertrechnung-soll-ist.png');
-    await page.click('.fenster[data-typ="abrechnung.wertrechnung"] .abr-reiter button:text-is("Unterrichtsmatrix")');
-    await page.waitForSelector('.fenster[data-typ="abrechnung.wertrechnung"] .t-zeile');
-    await foto('08-unterrichtsmatrix.png');
-    await page.click('.fenster[data-typ="abrechnung.wertrechnung"] .abr-reiter button:text-is("Stundentafel")');
-    await page.click('.fenster[data-typ="abrechnung.wertrechnung"] button:text-is("NRW-Jahrgänge eintragen")');
-    await page.waitForSelector('.fenster[data-typ="abrechnung.wertrechnung"] .abr-links .t-zeile');
-    await foto('09-stundentafel.png');
-    await allesZu();
-    await eintrag(page, 'module.statistik');
-    await page.waitForSelector('.fenster[data-typ="abrechnung.statistik"] .abr-summe');
-    await foto('10-vertretungsstatistik.png');
-    await allesZu();
+    // ---- Import und Export ----
+    await h.eintrag(page, 'eingabe.importexport');
+    await page.waitForSelector('[data-ansicht=austausch] button');
+    await foto('06-import-export');
 
-    // ---- Pausenaufsichten ----
-    await reiter('Start');
-    await eintrag(page, 'start.pausenaufsichten');
-    await page.waitForSelector('.fenster[data-typ=pausenaufsicht] .pa-zelle');
-    await page.click('.fenster[data-typ=pausenaufsicht] .fenster-werkzeuge button:has-text("Automatisch einteilen")');
-    await page.click('.dialog .knopf.primaer');
+    // ---- Soll und Ist, Unterrichtsmatrix, Stundentafel, Statistik ----
+    await h.eintrag(page, 'module.sollist');
+    await page.waitForSelector('[data-ansicht="abrechnung.wertrechnung"] .tb-zeile');
+    await foto('07-soll-ist');
+    await page.locator('[data-ansicht="abrechnung.wertrechnung"] [role=tab]', { hasText: 'Unterrichtsmatrix' }).click();
+    await page.waitForSelector('[data-tabelle=matrix] .tb-zeile');
+    await foto('08-unterrichtsmatrix');
+    await page.locator('[data-ansicht="abrechnung.wertrechnung"] [role=tab]', { hasText: 'Stundentafel' }).click();
+    await page.locator('[data-ansicht="abrechnung.wertrechnung"] button', { hasText: 'NRW-Jahrgänge eintragen' }).click();
+    await page.waitForSelector('[data-tabelle=stundentafel] .tb-zeile', { timeout: 15000 });
+    await foto('09-stundentafel');
+    await h.eintrag(page, 'module.statistik');
+    await page.waitForSelector('[data-ansicht="abrechnung.statistik"] [data-tabelle=statistik]');
+    await foto('10-vertretungsstatistik');
+
+    // ---- Pausenaufsichten: automatisch einteilen, Vorschlag ----
+    await h.eintrag(page, 'start.pausenaufsichten');
+    await page.waitForSelector('[data-ansicht=pausenaufsicht] .pa-zelle');
+    await h.werkzeug(page, 'pausenaufsicht', 'Automatisch einteilen');
+    await h.dialogKnopf(page, 'Einteilen');
     await page.waitForTimeout(800);
-    await page.click('.fenster[data-typ=pausenaufsicht] .pa-zelle >> nth=0');
-    await page.click('.fenster[data-typ=pausenaufsicht] .fenster-werkzeuge button:has-text("Vorschlag")');
-    await page.waitForSelector('.dialog .pa-vorschlag .t-zeile');
-    await foto('11-pausenaufsicht-vorschlag.png');
-    await page.click('.dialog .knopf:text-is("Abbrechen")');
-    await foto('12-pausenaufsichten.png');
-    await allesZu();
+    await page.locator('[data-ansicht=pausenaufsicht] .pa-zelle').first().click();
+    await h.werkzeug(page, 'pausenaufsicht', 'Vorschlag');
+    await page.waitForSelector('[role=dialog] [data-tabelle=pa-vorschlag] .tb-zeile');
+    await foto('11-pausenaufsicht-vorschlag');
+    await h.dialogKnopf(page, 'Abbrechen');
+    await foto('12-pausenaufsichten');
 
     // ---- Kursplanung, Kommentare ----
-    await eintrag(page, 'start.kursplanung');
-    await page.waitForSelector('.fenster[data-typ=kursplanung] .kp-status');
-    await foto('13-kursplanung.png');
-    await allesZu();
-    await reiter('Dateneingabe');
-    await eintrag(page, 'eingabe.kommentare');
-    await page.waitForSelector('.fenster[data-typ=kommentare]');
-    await page.click('.fenster[data-typ=kommentare] .fenster-werkzeuge button:has-text("Neu")');
-    await page.waitForSelector('.dialog textarea');
-    await page.fill('.dialog textarea', 'Teilzeit ab Februar');
-    await page.click('.dialog .knopf.primaer');
-    await page.waitForSelector('.fenster[data-typ=kommentare] .t-zeile:has-text("Teilzeit")');
-    await foto('14-kommentare.png');
-    await allesZu();
+    await h.eintrag(page, 'kurs.kurse');
+    await page.waitForSelector('[data-ansicht=kursplanung]');
+    await page.waitForTimeout(600);
+    await foto('13-kursplanung');
+    await h.eintrag(page, 'eingabe.kommentare');
+    await page.waitForSelector('[data-ansicht=kommentare]');
+    await h.werkzeug(page, 'kommentare', 'Neu');
+    await page.waitForSelector('[role=dialog] textarea');
+    await page.fill('[role=dialog] textarea', 'Teilzeit ab Februar');
+    await page.locator('[role=dialog] button.fui-Button[class*=primary], [role=dialog] .fui-DialogActions button').first().click();
+    await page.waitForSelector('[data-tabelle=kommentare] .tb-zeile:has-text("Teilzeit")', { timeout: 15000 });
+    await foto('14-kommentare');
 
-    // ---- MultiUser ----
-    await page.click('.kl-praesenz .mu-feld');
-    await page.waitForSelector('.fenster[data-typ=multiuser] .mu-tabelle');
-    await page.waitForSelector('.fenster[data-typ=multiuser] td:has-text("Pia Planer")');
-    await foto('15-multiuser.png');
-    if (!(await page.textContent('.kl-praesenz .mu-feld')).includes('aktiv')) throw new Error('Anzeige der aktiven Benutzer in der Kopfleiste fehlt.');
-    await page.click('.fenster[data-typ=multiuser] .fenster-werkzeuge button:has-text("Gruppen und Rechte")');
-    await page.waitForSelector('.fenster[data-typ="multiuser.verwaltung"] .mu-tabelle');
-    await foto('16-multiuser-gruppen.png');
-
-    if (fehler.length) throw new Error('Fehler im Browser:\n' + fehler.join('\n'));
-    console.log(`Smoke Austausch OK – Bildschirmfotos in ${BILDER}`);
-  } catch (e) {
-    await foto('fehler.png').catch(() => {});
-    console.error(e);
-    process.exitCode = 1;
-  } finally {
-    await browser.close();
-    web.server.close();
-    await api(`${dok}/multiuser/abmelden`, { method: 'POST', body: '{}' }, pia).catch(() => {});
-  }
-})();
+    // ---- Mehrbenutzerbetrieb ----
+    await page.evaluate(() => window.studioTest.befehl('multiuser.aktualisieren'));
+    await page.waitForFunction(() => /2 Benutzer aktiv/.test(document.querySelector('[data-testid=multiuser-praesenz]')?.getAttribute('aria-label') || ''), null, { timeout: 15000 });
+    await page.click('[data-testid=multiuser-praesenz]');
+    await page.waitForSelector('[data-ansicht=multiuser] td:has-text("Pia Planer")');
+    await foto('15-multiuser');
+    await h.werkzeug(page, 'multiuser', 'Gruppen und Rechte');
+    await page.waitForSelector('[data-ansicht="multiuser.verwaltung"] table');
+    await foto('16-multiuser-gruppen');
+  });
+  web.server.close();
+})().catch((e) => { console.error(e); process.exit(1); });

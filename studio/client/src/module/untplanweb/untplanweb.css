@@ -1,0 +1,5 @@
+.tb-zeile.upw-datumzeile { background: var(--colorNeutralBackground3); font-weight: 500; }
+.tb-zeile.upw-erledigt .tb-zelle { color: var(--colorNeutralForeground3); }
+.tb-zeile.upw-aktivitaet .tb-zelle { color: var(--up-ok); }
+.tb-zeile.upw-fehlerzeile .tb-zelle { color: var(--colorPaletteRedForeground1); }
+.tb-zeile.upw-importiert .tb-zelle:first-child { box-shadow: inset 2px 0 0 var(--colorBrandStroke1); }

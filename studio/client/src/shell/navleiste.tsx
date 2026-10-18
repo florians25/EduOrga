@@ -2,10 +2,10 @@
 import {
   NavCategory, NavCategoryItem, NavDrawer, NavDrawerBody, NavDrawerFooter, NavItem, NavSubItem, NavSubItemGroup, makeStyles, tokens,
 } from '@fluentui/react-components';
-import { useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { einstellungLesen, einstellungSchreiben } from '@/api/client';
 import { eintragAusfuehren, verfuegbar } from '@/kern/befehle';
-import { useStudio } from '@/kern/zustand';
+import { setzen, useStudio } from '@/kern/zustand';
 import { menue } from '@/komponenten/menue';
 import { NAV_SYMBOLE } from '@/komponenten/symbole';
 import { NAVIGATION, aufloesen, passt, sichtbar, type NavPunkt } from './navigation';
@@ -17,6 +17,20 @@ const useStile = makeStyles({
   unter: { fontSize: tokens.fontSizeBase300 },
 });
 
+const SCHMAL = '(max-width: 900px)';
+
+/** Schmales Fenster (Telefon, geteilter Bildschirm): Navigation als überlagernde Leiste. */
+function useSchmal(): boolean {
+  const [schmal, setSchmal] = useState(() => typeof window !== 'undefined' && window.matchMedia(SCHMAL).matches);
+  useEffect(() => {
+    const m = window.matchMedia(SCHMAL);
+    const f = () => setSchmal(m.matches);
+    m.addEventListener('change', f);
+    return () => m.removeEventListener('change', f);
+  }, []);
+  return schmal;
+}
+
 export function NavLeiste() {
   const s = useStile();
   const modus = useStudio((x) => x.modus);
@@ -25,6 +39,13 @@ export function NavLeiste() {
   const benutzer = useStudio((x) => x.benutzer);
   const ort = useSeitenort();
   const [geschlossen, setGeschlossen] = useState<Record<string, boolean>>({});
+  const schmal = useSchmal();
+  const schmalVorher = useRef<boolean | null>(null);
+  // schmal: Navigation zunächst zu (öffnet über den Menüknopf); wieder breit: Navigation zeigen
+  useEffect(() => {
+    if (schmalVorher.current === null ? schmal : schmalVorher.current !== schmal) setzen({ navEingeklappt: schmal });
+    schmalVorher.current = schmal;
+  }, [schmal]);
 
   useEffect(() => {
     void einstellungLesen<Record<string, boolean>>('navigation.offen').then((o) => {
@@ -55,11 +76,12 @@ export function NavLeiste() {
       menue(r.right + 4, r.top, e.menue.map((m) => (m ? { text: m.text, deaktiviert: !verfuegbar({ braucht: e.braucht, ...m }), aktion: () => eintragAusfuehren(m) } : null)));
       return;
     }
+    if (schmal) setzen({ navEingeklappt: true });
     void eintragAusfuehren(e);
   };
 
   return (
-    <NavDrawer open={!eingeklappt} type="inline" className={s.nav} selectedValue={gewaehlt} selectedCategoryValue={gewaehlteGruppe}
+    <NavDrawer open={!eingeklappt} type={schmal ? 'overlay' : 'inline'} onOpenChange={(_, d) => { if (!d.open) setzen({ navEingeklappt: true }); }} className={s.nav} selectedValue={gewaehlt} selectedCategoryValue={gewaehlteGruppe}
       openCategories={offen} density="small" aria-label="Arbeitsbereiche"
       onNavCategoryItemToggle={(_, d) => {
         const id = String(d.value);
@@ -85,7 +107,7 @@ export function NavLeiste() {
         })}
       </NavDrawerBody>
       <NavDrawerFooter>
-        <NavItem value="nav:dateien" icon={<DateienSymbol />} onClick={() => void eintragAusfuehren({ befehl: 'datei.backstage', args: { seite: 'oeffnen' } })} data-nav="nav:dateien">Schuldateien</NavItem>
+        <NavItem value="nav:dateien" icon={<DateienSymbol />} onClick={() => { if (schmal) setzen({ navEingeklappt: true }); void eintragAusfuehren({ befehl: 'datei.backstage', args: { seite: 'oeffnen' } }); }} data-nav="nav:dateien">Schuldateien</NavItem>
       </NavDrawerFooter>
     </NavDrawer>
   );

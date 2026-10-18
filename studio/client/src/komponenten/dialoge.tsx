@@ -164,18 +164,18 @@ function FormularInhalt({ titel, felder, okText, breite, schliessen }: { titel: 
           const fehler = geprueft && fehlt(f) ? 'Bitte ausfüllen.' : undefined;
           const autofokus = i === 0;
           if (f.art === 'bool') {
-            return <Checkbox key={f.name} label={f.titel} checked={!!werte[f.name]} onChange={(_, d) => setzen(f.name, !!d.checked)} />;
+            return <Checkbox key={f.name} name={f.name} label={f.titel} checked={!!werte[f.name]} onChange={(_, d) => setzen(f.name, !!d.checked)} />;
           }
           return (
             <Field key={f.name} label={f.titel} required={f.pflicht} hint={f.hinweis} validationMessage={fehler}>
               {f.art === 'auswahl' ? (
-                <Select value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} autoFocus={autofokus}>
+                <Select name={f.name} value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} autoFocus={autofokus}>
                   {(f.optionen || []).map((o) => <option key={String(o.wert)} value={String(o.wert)}>{o.text}</option>)}
                 </Select>
               ) : f.art === 'textfeld' ? (
-                <Textarea value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} rows={4} autoFocus={autofokus} resize="vertical" />
+                <Textarea name={f.name} value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} rows={4} autoFocus={autofokus} resize="vertical" />
               ) : (
-                <Input value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} autoFocus={autofokus}
+                <Input name={f.name} value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} autoFocus={autofokus}
                   type={f.art === 'passwort' ? 'password' : f.art === 'zahl' ? 'number' : f.art === 'datum' ? 'date' : 'text'}
                   autoComplete={f.art === 'passwort' ? 'new-password' : 'off'} />
               )}

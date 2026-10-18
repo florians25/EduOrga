@@ -16,6 +16,12 @@ import kommentare from './kommentare';
 import kursplanung from './kursplanung';
 import multiuser from './multiuser';
 import pausenaufsicht from './pausenaufsicht';
+import untplanweb from './untplanweb';
+import druck from './druck';
+import einstellungen from './einstellungen';
+import formate from './formate';
+import uebersicht from './uebersicht';
+import veranstaltungen from './veranstaltungen';
 
 export const module: StudioModul[] = [
   datei,
@@ -33,4 +39,10 @@ export const module: StudioModul[] = [
   kursplanung,
   multiuser,
   pausenaufsicht,
+  untplanweb,
+  druck,
+  einstellungen,
+  formate,
+  uebersicht,
+  veranstaltungen,
 ];

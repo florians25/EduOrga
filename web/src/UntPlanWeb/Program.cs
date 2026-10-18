@@ -196,7 +196,7 @@ public class Program
         app.MapGet("/monitor/{token}", (string token, IWebHostEnvironment env) => env.WebRootFileProvider.GetFileInfo("monitor.html") is { Exists: true, PhysicalPath: { } pfad }
             ? Results.File(pfad, "text/html; charset=utf-8") : OhneOberflaeche());
         // Oberfläche (web/client, React) noch nicht gebaut: kurzer Hinweis statt 404 – sonst liefert UseDefaultFiles wwwroot/index.html
-        app.MapGet("/", OhneOberflaeche);
+        if (!app.Environment.WebRootFileProvider.GetFileInfo("index.html").Exists) app.MapGet("/", OhneOberflaeche);
         app.MapGet("/gesundheit", () => Results.Ok(new { ok = true }));
 
         Einrichten(app.Services, konfig);

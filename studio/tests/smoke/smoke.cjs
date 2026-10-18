@@ -2,112 +2,114 @@
 //
 //   NODE_PATH=$(npm root -g) node studio/tests/smoke/smoke.cjs
 //
-// Umgebungsvariablen: STUDIO_URL (Standard http://127.0.0.1:5501), STUDIO_BENUTZER (admin), STUDIO_PASSWORT,
-// STUDIO_SCREENSHOTS (Ordner für Bildschirmfotos), PLAYWRIGHT_BROWSERS_PATH (z. B. /opt/pw-browsers).
-// Ablauf: Anmelden → Beispiel-Schuldatei als .up hochladen (Datei → Öffnen) → Lehrkräfte öffnen und einen Wert in der Tabelle
-// ändern → Klassenplan, Unterricht, Arbeitsplatz „Manuell planen“ → Vertretungsmodus → Bildschirmfotos.
-const { chromium } = require('playwright');
-
-// Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
-async function eintrag(page, id) {
-  const k = page.locator(`.nav-punkt[data-id="${id}"]`);
-  if (await k.count() && await k.first().isVisible()) return k.first().click();
-  return page.evaluate(async (id) => { const m = await import('/js/kern/modulsystem.js'); const e = m.alleRibbonEintraege().find((x) => x.id === id); if (!e) throw new Error(`Eintrag ${id} fehlt`); return m.eintragAusfuehren(e); }, id);
-}
+// Ablauf: Anmelden → Beispiel-Schuldatei als .up hochladen (Seite „Schuldateien“) → Lehrkräfte: Wert in der Tabelle ändern →
+// Klassenplan, Unterricht, Arbeitsplatz „Manuell planen“ → Befehlssuche (Strg+K) → Vertretungsmodus → Rundgang über alle
+// weiteren Seiten (jede Seite muss ohne Fehler laden) → schmales Fenster. Umgebungsvariablen: siehe hilfe.cjs.
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
+const h = require('./hilfe.cjs');
 
-const URL = process.env.STUDIO_URL || 'http://127.0.0.1:5501';
-const BENUTZER = process.env.STUDIO_BENUTZER || 'admin';
-const PASSWORT = process.env.STUDIO_PASSWORT || 'geheim123';
-const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-shots');
-
-async function api(pfad, optionen = {}) {
-  const r = await fetch(URL + pfad, { ...optionen, headers: { 'X-UntPlan-Studio': '1', 'Content-Type': 'application/json', ...(optionen.headers || {}) } });
-  if (!r.ok) throw new Error(`${pfad}: ${r.status} ${await r.text()}`);
-  return r;
-}
+/** Seiten des Rundgangs: Adresse und ein Element, das nach dem Laden sichtbar sein muss. */
+const RUNDGANG = [
+  ['/uebersicht', '[data-ansicht="start.uebersicht"]'],
+  ['/stammdaten?typ=klasse', '[data-tabelle] .tb-zeile'],
+  ['/stammdaten?typ=raum', '[data-tabelle] .tb-zeile'],
+  ['/kommentare', '[data-ansicht=kommentare]'],
+  ['/zeitwuensche', '.zw-tabelle td[data-tag]'],
+  ['/diagnose', '[data-ansicht="optimierung.diagnose"] [role=option]'],
+  ['/optimierung', '[data-ansicht="optimierung.lauf"]'],
+  ['/gesamtuebersicht?typ=lehrer', '.ue-zelle'],
+  ['/druck?typ=klasse', '.dr-element'],
+  ['/berichte', '.dr-bericht.aktiv'],
+  ['/planformate', '.fm-liste'],
+  ['/einstellungen', '.es-formular'],
+  ['/zeitraster', '.es-zr-zelle'],
+  ['/ferien', '.es-monat td.tag'],
+  ['/perioden', '.es-perioden-liste tr.gewaehlt'],
+  ['/unterrichtsgruppen', '.es-liste'],
+  ['/pausenaufsichten', '[data-ansicht=pausenaufsicht]'],
+  ['/untplanweb', '[data-teil]'],
+  ['/klausuren', '[data-tabelle="upw-klausuren"]'],
+  ['/benutzer-aktiv', '[data-ansicht=multiuser] table'],
+  ['/gruppen-und-rechte', '[data-ansicht="multiuser.verwaltung"] table'],
+];
 
 (async () => {
-  fs.mkdirSync(BILDER, { recursive: true });
-  // Beispiel-Schuldatei (.up) über die API erzeugen und herunterladen
-  const anm = await api('/api/anmeldung', { method: 'POST', body: JSON.stringify({ benutzer: BENUTZER, passwort: PASSWORT }) });
-  const cookie = anm.headers.get('set-cookie').split(';')[0];
-  const stand = await (await api('/api/dokumente/beispiel', { method: 'POST', body: '{}', headers: { cookie } })).json();
-  const up = Buffer.from(await (await api(`/api/dokumente/${stand.id}/herunterladen`, { headers: { cookie } })).arrayBuffer());
-  await api(`/api/dokumente/${stand.id}`, { method: 'DELETE', headers: { cookie } });
-  const upDatei = path.join(BILDER, 'Beispielschule.up');
+  const cookie = await h.apiAnmelden();
+  // Beispiel-Schuldatei (.up) über die API erzeugen, herunterladen und wieder löschen
+  const stand = await h.beispielschule(cookie);
+  const up = Buffer.from(await (await h.api(`/api/dokumente/${stand.id}/herunterladen`, { headers: { cookie } })).arrayBuffer());
+  await h.api(`/api/dokumente/${stand.id}`, { method: 'DELETE', headers: { cookie } });
+
+  const t = await h.starten('studio-shots');
+  const { page, foto } = t;
+  const upDatei = path.join(t.bilder, 'Beispielschule.up');
   fs.writeFileSync(upDatei, up);
 
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1600, height: 950 } });
-  const fehler = [];
-  page.on('pageerror', (e) => fehler.push(String(e)));
-  page.on('console', (m) => { if (m.type() === 'error') fehler.push(m.text()); });
+  await h.abschliessen('Smoke-Test', t, async () => {
+    await h.anmelden(page);
+    await foto('01-start');
 
-  try {
-  await page.goto(URL);
-  await page.fill('input[name=benutzer]', BENUTZER);
-  await page.fill('input[name=passwort]', PASSWORT);
-  await page.click('button[type=submit]');
-  await page.waitForSelector('.navigation .nav-punkt');
-  await page.screenshot({ path: path.join(BILDER, '01-start.png') });
+    // Schuldateien → Datei hochladen
+    await page.click('[data-nav="nav:dateien"]');
+    await page.waitForSelector('[data-testid=ablage]');
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.locator('[data-testid=ablage] button').click()]);
+    await chooser.setFiles(upDatei);
+    await h.dokumentOffen(page, 'Beispielschule');
 
-  // Datei → Öffnen → Hochladen
-  // ohne zuletzt geöffnete Datei (frische Installation) ist die Dateiansicht schon offen
-  if (!(await page.isVisible('.backstage'))) await page.click('.nav-punkt[data-id="nav:dateien"]');
-  await page.click('.backstage nav button[data-seite=oeffnen]');
-  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('.backstage .ablage button')]);
-  await chooser.setFiles(upDatei);
-  await page.waitForFunction(() => document.title.startsWith('Beispielschule'), null, { timeout: 15000 });
-  await page.waitForSelector('.backstage', { state: 'detached' });
+    // Stammdaten → Lehrkräfte: Nachname der ersten Zeile ändern
+    await h.eintrag(page, 'eingabe.lehrer');
+    await page.waitForSelector('[data-ansicht=stammdaten] .tb-zeile[data-r="0"]');
+    const zelle = page.locator('[data-ansicht=stammdaten] .tb-zeile[data-r="0"] .tb-zelle').nth(1);
+    await zelle.dblclick();
+    await page.waitForSelector('.tb-editor');
+    await page.keyboard.press('Control+A');
+    await page.keyboard.type('Smoketest');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-ansicht=stammdaten] .tb-zelle')].some((z) => z.textContent === 'Smoketest'));
+    await foto('02-lehrkraefte');
 
-  // Dateneingabe → Lehrer
-  await eintrag(page, 'eingabe.lehrer');
-  await page.waitForSelector('.fenster[data-typ=stammdaten] .t-zeile');
-  // Wert ändern: erste Zeile, Spalte Nachname
-  const zelle = page.locator('.fenster[data-typ=stammdaten] .t-zeile[data-r="0"] .t-zelle').nth(1);
-  await zelle.dblclick();
-  await page.keyboard.press('Control+A');
-  await page.keyboard.type('Smoketest');
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => [...document.querySelectorAll('.fenster[data-typ=stammdaten] .t-zelle')].some((z) => z.textContent === 'Smoketest'));
+    // Stundenpläne → Klassen
+    await h.eintrag(page, 'stundenplaene.klasse');
+    await page.waitForSelector('[data-ansicht=stundenplan] .ra-eintrag');
+    await foto('03-stundenplan');
 
-  // Stundenpläne → Klassenplan (eigene Seite)
-  await eintrag(page, 'stundenplaene.klasse');
-  await page.waitForSelector('.fenster[data-typ=stundenplan] .r-eintrag');
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: path.join(BILDER, '02-stundenplan.png') });
+    // Unterricht nach Klassen
+    await h.eintrag(page, 'eingabe.unterricht.klassen');
+    await page.waitForSelector('[data-ansicht=unterricht] .tb-zeile');
+    await foto('04-unterricht');
 
-  // Unterricht der Klasse
-  await eintrag(page, 'eingabe.unterricht.klassen');
-  await page.waitForSelector('.fenster[data-typ=unterricht] .t-zeile');
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: path.join(BILDER, '03-unterricht.png') });
+    // Arbeitsplatz „Manuell planen“: Unterricht und Klassenplan nebeneinander
+    await h.eintrag(page, 'planung.manuell');
+    await page.waitForSelector('[data-arbeitsplatz=manuell] [data-ansicht=unterricht] .tb-zeile');
+    await page.waitForSelector('[data-arbeitsplatz=manuell] [data-ansicht=stundenplan] .ra-eintrag');
+    await foto('05-manuell-planen');
 
-  // Arbeitsplatz „Manuell planen“: Unterricht und Klassenplan nebeneinander
-  await page.evaluate(async () => { const m = await import('/js/kern/modulsystem.js'); await m.befehl('fenster.standard'); });
-  await page.waitForSelector('.fenster[data-typ=unterricht] .t-zeile');
-  await page.waitForSelector('.fenster[data-typ=stundenplan] .r-eintrag');
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: path.join(BILDER, '03b-manuell-planen.png') });
+    // Befehlssuche
+    await page.keyboard.press('Control+k');
+    await page.waitForSelector('[data-testid=befehlssuche]');
+    await page.keyboard.type('Räume');
+    await page.waitForTimeout(300);
+    await foto('06-befehlssuche');
+    await page.keyboard.press('Escape');
 
-  // Vertretungsmodus (grün)
-  await eintrag(page, 'start.vertretungsmodus');
-  await page.waitForTimeout(300);
-  await page.screenshot({ path: path.join(BILDER, '04-vertretungsmodus.png') });
-  await eintrag(page, 'vertretung.modus');
-  } catch (e) {
-    await page.screenshot({ path: path.join(BILDER, 'fehler.png') }).catch(() => {});
-    console.error('Seitenfehler:', fehler.join('\n'));
-    throw e;
-  }
+    // Vertretungsmodus
+    await h.modus(page, 'vertretung');
+    await page.waitForSelector('[data-testid=planungsdatum]');
+    await foto('07-vertretungsmodus');
+    await h.modus(page, 'stundenplan');
 
-  await browser.close();
-  if (fehler.length) {
-    console.error('Fehler in der Seite:\n' + fehler.join('\n'));
-    process.exit(1);
-  }
-  console.log(`Smoke-Test bestanden. Bildschirmfotos: ${BILDER}`);
+    // Rundgang: jede Seite lädt ohne Fehler
+    for (const [adresse, merkmal] of RUNDGANG) {
+      await h.seite(page, adresse);
+      await page.waitForSelector(merkmal, { timeout: 15000 }).catch((e) => { throw new Error(`${adresse}: ${e.message}`); });
+    }
+    await foto('08-rundgang-ende');
+
+    // Schmales Fenster (Telefon)
+    await page.setViewportSize({ width: 390, height: 844 });
+    await h.seite(page, '/stundenplan?typ=klasse');
+    await page.waitForSelector('[data-ansicht=stundenplan] .ra-eintrag');
+    await foto('09-schmal');
+  });
 })().catch((e) => { console.error(e); process.exit(1); });
