@@ -4,11 +4,11 @@ import type { Karte } from '../../api/types';
 import { artVon, type Art, type Typ } from './logik';
 
 export const ARTEN: { art: Art; text: string; hinweis: string }[] = [
-  { art: 'aenderung', text: 'Änderung', hinweis: 'Vertretung, Raum- oder Fachwechsel, Zusatzstunde – der neue Wert ist petrol unterstrichen, der alte durchgestrichen' },
+  { art: 'aenderung', text: 'Änderung', hinweis: 'Vertretung, Raum- oder Fachwechsel, Zusatzstunde – Linie in Petrol, neues Kürzel als petrolfarbene Plakette, das bisherige grau durchgestrichen davor, offene Vertretung als „?“' },
   { art: 'entfall', text: 'Entfall', hinweis: 'Die Stunde fällt aus (rot durchgestrichen, fein schraffiert)' },
   { art: 'pruefung', text: 'Prüfung', hinweis: 'Klausur, Klassenarbeit oder Test' },
   { art: 'termin', text: 'Termin', hinweis: 'Veranstaltung oder Aktivität' },
-  { art: 'abwesend', text: 'Vertreten', hinweis: 'Die Lehrkraft ist abwesend, andere halten die Stunde' },
+  { art: 'abwesend', text: 'Vertreten', hinweis: 'Die Lehrkraft ist abwesend, andere halten die Stunde (gestrichelte Linie)' },
   { art: 'buchung', text: 'Buchung', hinweis: 'Raumbuchung bzw. vorgemerkte Meldung' },
 ];
 
@@ -18,7 +18,7 @@ export function Muster({ art, gross = false }: { art: Art | 'regulaer'; gross?: 
   const s = t.palette.status;
   const papier = t.palette.background.paper;
   const stil: Record<string, object> = {
-    regulaer: { background: papier, border: `1px solid ${t.palette.text.disabled}` },
+    regulaer: { background: t.palette.kachel.flaeche, border: `1px solid ${t.palette.kachel.rand}` },
     aenderung: { background: papier, border: `1px solid ${s.aenderung.main}` },
     entfall: { background: `repeating-linear-gradient(135deg, ${alpha(s.entfall.main, 0.45)} 0 1px, transparent 1px 3px), ${papier}`, border: `1px solid ${alpha(s.entfall.main, 0.7)}` },
     pruefung: { background: papier, border: `1px solid ${s.pruefung.main}` },

@@ -110,7 +110,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
   return (
     <Box sx={{ position: 'relative' }}>
       {/* Tageskopf (bleibt beim Scrollen stehen) */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: spalten, position: 'sticky', top: oben, zIndex: 6, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', borderTopLeftRadius: 4, borderTopRightRadius: 4 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: spalten, position: 'sticky', top: oben, zIndex: 6, bgcolor: 'kachel.kopf', borderBottom: 1, borderColor: 'divider', borderTopLeftRadius: 4, borderTopRightRadius: 4 }}>
         <Box sx={{ borderRight: `1px solid ${linie}` }} />
         {tage.map(({ tag, i }) => {
           const heute = tag.datum === jetzt.tag;
@@ -118,7 +118,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
           const hinweise = tagHinweise(tag.hinweise);
           return (
             <Box key={tag.datum} aria-current={heute ? 'date' : undefined} sx={{ px: 1, pt: 1, pb: 0.875, borderLeft: i === tage[0]?.i ? 0 : `1px solid ${linie}`, minWidth: 0,
-              bgcolor: heute ? heuteTon : undefined, boxShadow: heute ? `inset 0 2px 0 ${t.palette.primary.main}` : undefined }}>
+              bgcolor: heute ? alpha(t.palette.primary.main, 0.06) : undefined, boxShadow: heute ? `inset 0 2px 0 ${t.palette.primary.main}` : undefined }}>
               <Stack direction="row" alignItems="baseline" gap={0.5} sx={{ minWidth: 0, fontSize: 13, lineHeight: '20px', color: heute ? 'primary.main' : 'text.primary' }}>
                 <Box component="span" sx={{ fontWeight: 600 }}>{wochentagKurz(tag.datum)}</Box>
                 <Box component="span" sx={{ fontWeight: 400, color: heute ? 'primary.main' : 'text.secondary' }}>{datumKurz(tag.datum)}</Box>
@@ -150,9 +150,9 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
       {/* Raster */}
       <Box sx={{ display: 'grid', gridTemplateColumns: spalten, position: 'relative' }}>
         {/* Zeitachse */}
-        <Box sx={{ position: 'relative', height: mass.hoehe + 8, borderRight: `1px solid ${linie}` }}>
+        <Box sx={{ position: 'relative', height: mass.hoehe + 8, borderRight: `1px solid ${linie}`, bgcolor: 'kachel.kopf' }}>
           {mass.abschnitte.map((a, j) => a.art === 'pause'
-            ? <Box key={`p${j}`} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, bgcolor: 'background.default' }} />
+            ? <Box key={`p${j}`} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, bgcolor: 'kachel.pause' }} />
             : (
               <Box key={a.nr} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, px: 1, pt: 0.75, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', borderBottom: `1px solid ${feineLinie}`, fontVariantNumeric: 'tabular-nums' }}>
                 <Typography sx={{ fontWeight: 600, fontSize: 13, lineHeight: '16px' }}>{a.z!.bezeichnung || a.nr}</Typography>
@@ -179,7 +179,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
             <Box key={tag.datum} sx={{ position: 'relative', height: mass.hoehe + 8, borderLeft: tag.datum === tage[0]?.tag.datum ? 0 : `1px solid ${linie}`, bgcolor: heute ? heuteTon : undefined }}>
               {/* Linien und Pausenbänder */}
               {mass.abschnitte.map((a, j) => a.art === 'pause'
-                ? <Box key={j} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, bgcolor: 'background.default' }} />
+                ? <Box key={j} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, bgcolor: 'kachel.pause' }} />
                 : <Box key={j} sx={{ position: 'absolute', top: a.y + a.h - 1, left: 0, right: 0, borderTop: `1px solid ${feineLinie}` }} />)}
               {/* eigene Abwesenheit */}
               {abw.map((a, j) => {

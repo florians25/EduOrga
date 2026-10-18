@@ -147,7 +147,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
         {!kompakt && zeilen.length > 0 && (
           <Box sx={{ flex: '0 1 auto', minHeight: 0, overflow: 'hidden', pl: k.fach ? '14px' : 0 }}>
             {(mittel ? zeilen.slice(0, 1) : zeilen).map((z, i) => (
-              <Typography key={i} component="div" noWrap sx={{ fontSize: 12, lineHeight: '16px', color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: durch }}>
+              <Typography key={i} component="div" noWrap sx={{ fontSize: 12, lineHeight: '18px', color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: durch }}>
                 <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && z.art === 'lehrer'} />
               </Typography>
             ))}
