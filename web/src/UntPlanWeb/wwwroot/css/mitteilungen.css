@@ -1,6 +1,6 @@
-/* Mitteilungen wie im Original: Untermenü in der Seitenleiste, Liste mit einer Zeile je Mitteilung, Lesen und Schreiben im großen Fenster. */
+/* Mitteilungen: Liste mit einer Zeile je Mitteilung, Lesen und Schreiben im großen Fenster. */
 
-/* Seite mittig wie im Original (Titel, „+ Neu“, Suche, Liste) */
+/* Seite mittig (Titel, „+ Neu“, Suche, Liste) */
 .u-app[data-ansicht="mitteilungen"] .u-inhalt > .u-seitenkopf, .u-app[data-ansicht="mitteilungen"] .u-inhalt > #seite { max-width: 1200px; margin-left: auto; margin-right: auto; }
 .u-app[data-ansicht="mitteilungen"] .u-seitenkopf h1 { font-size: 1.6rem; font-weight: 700; }
 .mt-neu { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 30px 0 26px; border-radius: 999px; font-size: 1rem; font-weight: 700; }
@@ -43,7 +43,7 @@
 .mt-blase:hover, .mt-blase:focus-visible { border-color: var(--u-akzent); outline: none; }
 .mt-blase.gross { height: 30px; margin: 0 4px; padding: 0 12px; font-size: .8rem; }
 
-/* Großes Fenster (Lesen, Schreiben) wie im Original */
+/* Großes Fenster (Lesen, Schreiben) */
 .mt-dialog .modal-dialog { max-width: min(1210px, calc(100% - 32px)); margin-top: 28px; }
 .mt-dialog .modal-content { border: 0; border-radius: 4px; box-shadow: 0 6px 30px rgba(0, 0, 0, .18); }
 .mt-dialog .modal-header { padding: 22px 24px 20px; border-bottom: 1px solid var(--up-linie); }
@@ -98,7 +98,7 @@
 .mt-lb-name small { color: var(--up-text-3); margin-left: 4px; }
 .mt-lb-zeit { flex: none; font-size: .75rem; color: var(--up-text-3); }
 
-/* Schreiben (wie im Original: An | Betreff | Text, Fuß: Speichern, Symbole, Abbrechen, Senden) */
+/* Schreiben (An | Betreff | Text, Fuß: Speichern, Symbole, Abbrechen, Senden) */
 .mt-schreiben { display: flex; flex-direction: column; }
 .mt-an-zeile, .mt-feld-zeile { position: relative; display: flex; align-items: center; gap: 12px; min-height: 55px; padding: 6px 24px; border-bottom: 1px solid var(--up-linie); }
 .mt-an-label { flex: none; min-width: 44px; margin: 0; font-size: .8125rem; font-weight: 600; color: var(--up-text-2); }
@@ -196,7 +196,7 @@
   body.mt-druck .mt-lesedialog .btn-close { display: none; }
 }
 
-/* ------------------------------------------------------------------ Dialog „Empfänger*innen“ (Personensuche wie im Original)
+/* ------------------------------------------------------------------ Dialog „Empfänger*innen“ (Personensuche)
 
    Titel ohne Trennlinie, großes graues Suchfeld mit Lupe, Filter-Pills (Ausgewählt, Liste, Klasse, Abteilung, Rolle, Gruppe), Zeilen mit
    rundem Auswahlkreis, weißem Avatar-Kreis (grauer Rand) und Kürzel, darunter Rollen-Pills; Trennlinien ab dem Text; Fuß rechtsbündig. */

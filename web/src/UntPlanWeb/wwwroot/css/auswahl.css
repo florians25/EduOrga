@@ -36,7 +36,7 @@
 .nl-pille .au-knopf.leer .au-wert-text, .nl-pille .au-platzhalter { color: var(--u-text, var(--up-text)); }
 .nl-pille .au-pfeil { color: var(--u-titel, var(--up-text)); }
 .nl-pille:has(.au.offen), .nl-pille:focus-within { border-color: var(--u-akzent, var(--up-primaer)); }
-.ab-formular .au-knopf { border: 1.5px solid var(--up-rand-stark); border-radius: 6px; min-height: 38px; font-size: .9rem; }
+
 td > .au.w-auto, td > .au.d-inline-block { vertical-align: middle; }
 @media (max-width: 767.98px) { .u-filter .au { min-width: 0; width: 100%; } }
 
@@ -80,11 +80,11 @@ td > .au.w-auto, td > .au.d-inline-block { vertical-align: middle; }
 .au-mehr { padding: 8px 10px 4px; font-size: .78rem; color: var(--u-grau-2, var(--up-text-3)); text-align: center; }
 
 /* Elementwahl (Planwahl): Schalter „Alle anzeigen“ und Pillenfeld neben dem Menü */
-.au-elementwahl .wahl-alle-schalter { margin: 0 -6px 4px; padding: 6px 14px 8px; }
+
 .au-elementwahl .au-haupt { font-weight: 600; }
 .au-pillen { position: absolute; top: 0; left: calc(100% + 8px); display: flex; flex-wrap: wrap; align-content: flex-start; gap: 2px 4px; max-height: 70vh; overflow: auto;
   padding: 10px 12px; background: var(--up-flaeche); border: 1px solid var(--up-rand); border-radius: 10px; box-shadow: 0 12px 32px rgba(36, 50, 61, .18); }
-.au-pillen .wahl-pille.aktiv { background: var(--u-akzent); color: var(--up-flaeche); }
+
 @media (max-width: 767.98px) { .au-pillen { display: none; } }
 
 /* Suchfelder: Lupe links, Löschen-X rechts */
@@ -103,4 +103,4 @@ td > .au.w-auto, td > .au.d-inline-block { vertical-align: middle; }
 .u-suche .au, .u-werkzeug .u-suche .au { display: inline-block; width: auto; flex: none; }
 .u-suche .au-knopf { min-height: 0; height: 32px; padding: 0 6px 0 4px; border: 0; background: transparent; box-shadow: none !important; font-size: .95rem; color: var(--u-titel); }
 .u-suche .au.offen .au-knopf, .u-suche .au-knopf:focus-visible { background: rgba(255, 255, 255, .7); border-radius: 999px; }
-.sd-raumsuche.au-mit-x { position: relative; padding-right: 40px; }
+

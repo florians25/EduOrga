@@ -202,10 +202,10 @@ function planFenster(f, p) {
   function legende() {
     if (!plan) { kopf.replaceChildren(); return; }
     const lg = (k, t) => h('span', { class: `vt-lg ${k}` }, h('i'), t);
-    kopf.replaceChildren(h('span', { class: 'vt-pi-woche' }, `Woche ${plan.woche}`),
-      lg('vt-lg-aenderung', 'Vertretung'), lg('vt-lg-entfall', 'Entfall'), lg('vt-lg-offen', 'Offen'),
+    kopf.replaceChildren(...[h('span', { class: 'vt-pi-woche' }, `Woche ${plan.woche}`),
+      h('span', { class: 'vt-pi-legende' }, lg('vt-lg-aenderung', 'Vertretung'), lg('vt-lg-entfall', 'Entfall'), lg('vt-lg-offen', 'Offen')),
       plan.vormerkungen ? h('span', { class: 'vt-pi-vm' }, `${plan.vormerkungen} offene Vormerkung${plan.vormerkungen === 1 ? '' : 'en'}`) : null,
-      verknuepft ? null : h('span', { class: 'vt-pi-vm', title: 'Der Plan folgt nicht der gewählten Vertretung' }, 'nicht verknüpft'));
+      verknuepft ? null : h('span', { class: 'vt-pi-vm', title: 'Der Plan folgt nicht der gewählten Vertretung' }, 'nicht verknüpft')].filter(Boolean));
   }
 
   let ladeNr = 0;
@@ -217,7 +217,8 @@ function planFenster(f, p) {
       const d = await api.get(vpfad(`/plan/${typ}/${element}?datum=${planungsdatum()}`));
       if (n !== ladeNr) return;
       plan = d;
-      f.titel(`Tagesplan ${TYPEN[typ][0]} ${d.element.kurz}${d.element.lang ? ` – ${d.element.lang}` : ''}`);
+      const lang = d.element.lang && !d.element.lang.includes(d.element.kurz) ? ` – ${d.element.lang}` : '';
+      f.titel(`Tagesplan ${TYPEN[typ][0]} ${d.element.kurz}${lang}`);
       legende();
       zeichnen();
       const offen = d.zellen.reduce((a, z) => a + z.eintraege.filter((e) => e.offen && !e.durch).length, 0);

@@ -109,7 +109,7 @@ export function shellAufbauen(wurzel) {
       pfad.textContent = haupt ? (bereich || (zustand.modus === 'vertretung' ? 'Vertretungsplanung' : 'Stundenplanung')) : '';
     });
   });
-  an('fenster-geschlossen', () => willkommenZeigen());
+  an('fenster-geschlossen', () => setTimeout(willkommenZeigen)); // erst nach einem Seitenwechsel prüfen
 
   // ---- Status (Speicherstand, Verbindung, Meldungen anderer Benutzer) ----
   let meldungZeit = 0, meldungAktiv = false;

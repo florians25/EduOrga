@@ -120,7 +120,7 @@ async function api(pfad, optionen = {}) {
     await knopf('planung.gewichtung');
     await page.waitForSelector('.op-gewichtung input[type=range]');
     await foto('08-gewichtung.png');
-    await page.click('.op-karten button:text("Gewichtungs-Verteilung")');
+    await page.click('.op-karten button:text-is("Verteilung")');
     await foto('08b-gewichtung-verteilung.png');
     await dialogZu();
 
@@ -128,6 +128,8 @@ async function api(pfad, optionen = {}) {
     await reiter('Dateneingabe');
     await knopf('eingabe.zeitwuensche');
     await page.waitForSelector('.zw-tabelle td[data-tag]');
+    // Beim Seitenwechsel liegt die Willkommensfläche kurz über dem Inhalt (bis die Shell die Änderung verarbeitet hat)
+    await page.waitForSelector('.willkommen', { state: 'hidden' });
     await page.click('.zw-wert[data-wert="-3"]');
     const a = await page.locator('.zw-tabelle td[data-tag="0"][data-spalte="5"]').boundingBox();
     const b = await page.locator('.zw-tabelle td[data-tag="0"][data-spalte="7"]').boundingBox();
@@ -158,7 +160,7 @@ async function api(pfad, optionen = {}) {
     await foto('12-optimierung-ergebnis.png');
     await page.click('.fenster[data-typ="optimierung.lauf"] .wz-knopf:has-text("Vergleich")');
     await page.waitForSelector('.op-plaene .r-eintrag', { timeout: 15000 });
-    await page.locator('.fenster[data-typ="optimierung.lauf"]').evaluate((el) => el.closest('.ws-bereich').querySelector('.ws-kopf').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })));
+    await page.locator('.op-vergleich').scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
     await foto('13-ergebnisvergleich.png');
     await page.click('.fenster[data-typ="optimierung.lauf"] .wz-knopf:has-text("Plan übernehmen")');

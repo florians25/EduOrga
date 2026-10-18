@@ -80,6 +80,7 @@ function attrappe(rueckmeldungen) {
   page.on('console', (m) => { if (m.type() === 'error' && !/423|Locked/.test(m.text())) fehler.push(m.text()); });
   const foto = (name) => page.screenshot({ path: path.join(BILDER, name) });
   const reiter = async (name) => {}; // Reiter gibt es nicht mehr – Navigation ist immer sichtbar
+  const ansichtZu = (typ) => page.evaluate(async (typ) => (await import('/js/kern/fenster.js')).fensterverwaltung.alle().find((f) => f.typ === typ)?.schliessen(), typ);
   const allesZu = async () => { await page.evaluate(async () => (await import('/js/kern/fenster.js')).fensterverwaltung.alleSchliessen()); };
 
   try {
@@ -110,18 +111,18 @@ function attrappe(rueckmeldungen) {
     await page.fill('.fenster[data-typ="untplanweb.stpl"] input[type=date] >> nth=1', iso);
     await page.click('.fenster[data-typ="untplanweb.stpl"] button:text-is("Laden")');
     await page.waitForSelector('.fenster[data-typ="untplanweb.stpl"] .t-zeile:has-text("Mathe-Klausur")', { timeout: 15000 });
-    await page.click('.fenster[data-typ="untplanweb.stpl"] button:text-is("Prüfungen markieren")');
+    await page.click('.fenster[data-typ="untplanweb.stpl"] .fenster-werkzeuge button:has-text("Prüfungen markieren")');
     await foto('03-stundenplanaenderungen.png');
-    await page.click('.fenster[data-typ="untplanweb.stpl"] button:text-is("Übernehmen")');
+    await page.click('.fenster[data-typ="untplanweb.stpl"] .fenster-werkzeuge button:has-text("Übernehmen")');
     await page.waitForSelector('.fenster[data-typ="untplanweb.stpl"] .fenster-fuss:has-text("übernommen")');
-    await page.click('.ws-tab[data-typ=\"untplanweb.stpl\"] .ws-tab-zu');
+    await ansichtZu('untplanweb.stpl');
     // Klausuren
     await page.click('.fenster[data-typ=untplanweb] .fenster-werkzeuge button:has-text("Klausuren")');
     await page.waitForSelector('.fenster[data-typ="untplanweb.klausuren"] .t-zeile:has-text("Mathe-Klausur")');
     await foto('04-klausuren.png');
-    await page.click('.ws-tab[data-typ=\"untplanweb.klausuren\"] .ws-tab-zu');
+    await ansichtZu('untplanweb.klausuren');
     // Einstellungen-Dialog
-    await page.click('.fenster[data-typ=untplanweb] button:text-is("Einstellungen")');
+    await page.click('.fenster[data-typ=untplanweb] .fenster-werkzeuge button:has-text("Einstellungen")');
     await page.waitForSelector('.dialog .upw-einstellungen');
     await page.click('.dialog button:has-text("Verbindung prüfen")');
     await page.waitForSelector('.dialog .upw-pruefung.ok');
@@ -142,7 +143,7 @@ function attrappe(rueckmeldungen) {
     await eintrag(page, 'module.sollist');
     await page.waitForSelector('.fenster[data-typ="abrechnung.wertrechnung"] .t-zeile');
     await foto('07-wertrechnung-soll-ist.png');
-    await page.click('.fenster[data-typ="abrechnung.wertrechnung"] .abr-reiter button:text-is("Unterrichts-Matrix")');
+    await page.click('.fenster[data-typ="abrechnung.wertrechnung"] .abr-reiter button:text-is("Unterrichtsmatrix")');
     await page.waitForSelector('.fenster[data-typ="abrechnung.wertrechnung"] .t-zeile');
     await foto('08-unterrichtsmatrix.png');
     await page.click('.fenster[data-typ="abrechnung.wertrechnung"] .abr-reiter button:text-is("Stundentafel")');

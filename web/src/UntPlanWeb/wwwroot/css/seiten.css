@@ -2,7 +2,7 @@
    Neuigkeiten, Anmeldung. Wird nach nl-design.css geladen. */
 
 :root {
-  --s-rand: 32px;            /* Seitenrand neben der Navigation (wie im Original) */
+  --s-rand: 32px;            /* Seitenrand neben der Navigation */
   --s-knopf: 40px;           /* einheitliche Knopfhöhe in Kopfzeilen und Dialogen */
   --s-karte-rand: var(--up-rand);
   --s-karte-radius: 10px;
@@ -20,7 +20,7 @@
 @media (min-width: 992px) {
   .u-app[data-ansicht="klassenbuch"] .u-inhalt { padding-right: var(--s-rand); }
 }
-/* Der Stundenplan nutzt (wie im Original) die volle Breite mit schmalem Rand – bewusst ausgenommen */
+/* Der Stundenplan nutzt die volle Breite mit schmalem Rand – bewusst ausgenommen */
 @media (min-width: 992px) {
   .u-app[data-ansicht="plan"] .u-inhalt, .u-app.u-mit-werkzeug[data-ansicht="plan"] .u-inhalt { padding-left: 13px; padding-right: 13px; }
 }
@@ -74,20 +74,6 @@
 /* Klassenbuch: Übersicht (Woche/Tag), Wochenraster und Offene Stunden stehen in klassenbuch.css */
 
 /* Abwesenheitsdialog: Status als Segment-Schalter (Klassenleitung), gesperrt mit Hinweis für andere */
-.ab-segment { display: flex; flex-wrap: wrap; gap: 6px 0; align-items: center; }
-.ab-segment .ab-radio { position: relative; margin: 0; gap: 0; }
-.ab-segment .ab-radio input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
-.ab-segment .ab-radio span { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1.5px solid var(--up-rand-stark); margin-left: -1.5px; background: var(--up-flaeche); font-weight: 600; font-size: .85rem; color: var(--up-text); cursor: pointer; transition: background .12s, color .12s; }
-.ab-segment .ab-radio:first-child span { border-radius: 999px 0 0 999px; margin-left: 0; }
-.ab-segment .ab-radio:nth-child(3) span { border-radius: 0 999px 999px 0; }
-.ab-segment .ab-radio span:hover { background: var(--up-hintergrund); }
-.ab-segment .ab-radio input:focus-visible + span { outline: 2px solid rgba(35, 79, 150, .55); outline-offset: 2px; position: relative; z-index: 1; }
-.ab-segment .ab-seg-entschuldigt input:checked + span { background: var(--up-ok); border-color: var(--up-ok); color: var(--up-flaeche); position: relative; z-index: 1; }
-.ab-segment .ab-seg-unentschuldigt input:checked + span { background: var(--up-entfall); border-color: var(--up-entfall); color: var(--up-flaeche); position: relative; z-index: 1; }
-.ab-segment .ab-seg-offen input:checked + span { background: var(--up-text-2); border-color: var(--up-text-2); color: var(--up-flaeche); position: relative; z-index: 1; }
-.ab-segment.gesperrt .ab-radio span { cursor: not-allowed; opacity: .55; }
-.ab-segment.gesperrt .ab-radio input:checked + span { opacity: .8; }
-.ab-segment .ab-hinweis { flex-basis: 100%; margin-top: 4px; }
 
 /* ------------------------------------------------------------------ Filterleiste (Klassendienste, Berichte) */
 
@@ -307,20 +293,15 @@ a.s-pille { text-decoration: none !important; }
 .lg-impressum { font-size: .75rem; color: var(--up-text-3); }
 
 /* Dialogknöpfe in den Stundendetails (Speichern | Abbrechen | Löschen) gleich groß */
-.ad-knoepfe > .sd-orange, .ad-knoepfe > .ad-pille:not(.klein), .ad-knoepfe > a.ad-pille {
-  display: inline-flex; align-items: center; justify-content: center; height: var(--s-knopf); min-width: 104px; padding: 0 20px; font-size: .9375rem; font-weight: 600; line-height: 1; box-shadow: none;
-}
 
 /* ------------------------------------------------------------------ Primäre (orange) Knöpfe einheitlich: etwas höher (42px), schmaler (16px seitlich) */
-.btn.btn-primary:not(.btn-sm):not(.btn-lg), .nl-hinzu:not(.bu-klein):not(.os-zeitwahl-fuss *), .sd-orange, .sd-pille.primaer, .sp-knopf.primaer,
-.ad-knoepfe > .sd-orange {
+.btn.btn-primary:not(.btn-sm):not(.btn-lg), .nl-hinzu:not(.bu-klein):not(.os-zeitwahl-fuss *), .sp-knopf.primaer {
   --bs-btn-padding-x: 16px; --bs-btn-padding-y: 0; padding-left: 16px; padding-right: 16px; height: 42px; min-height: 42px;
 }
-.sd-orange, .sd-pille.primaer { padding-top: 0; padding-bottom: 0; display: inline-flex; align-items: center; justify-content: center; }
-.ad-knoepfe > .sd-orange { min-width: 96px; }
+
 /* Nebenknöpfe in derselben Dialogzeile gleich hoch */
 .modal-footer .btn { height: 42px; min-height: 42px; }
-.ad-knoepfe > .ad-pille:not(.klein), .ad-knoepfe > a.ad-pille { height: 42px; }
+
 @media (max-width: 991.98px) {
   .u-aktionen .btn.btn-primary, .u-aktionen .nl-hinzu { height: 38px; min-height: 38px; padding-left: 14px; padding-right: 14px; }
 }
@@ -346,13 +327,13 @@ a.s-pille { text-decoration: none !important; }
 .nl-leiste .nl-zahlen.kompakt { margin: 0 0 0 4px; }
 .fz-kopfzeile { margin-bottom: 12px; }
 .fz-kopfzeile [data-klwahl] { padding-right: 8px; }
-.nl-pille .elementwahl .wahl-knopf { border: 0; height: auto; min-height: 0; padding: 0 0 0 4px; min-width: 0; background: transparent !important; box-shadow: none; }
+
 .abw-leiste .nl-suche { flex: 1 1 130px; min-width: 130px; }
 .abw-leiste .nl-pille input[type="date"] { width: 122px; }
 
 /* Sprint 20: Labels einen Tick eckiger (Radius 1px), Infomeldungen näher am unteren Rand */
-.std .lbl, .std-lbl, .sd-zeile .lbl, .std.lehrer-abwesend .lbl.weg, .aufsicht .lbl-auf, .vt-zeile .lbl-neu, .ecke .ecke-online, .v-lbl, .sd-lbl-weg, .lbl { border-radius: 1px; }
-.std .z1 .lbl, .std .lbl.weg { border-radius: 1px; }
+ .v-lbl { border-radius: 1px; }
+
 .u-toasts { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 
 /* Grauer Hover für abgeschnittene Inhalte (Plankarten, Veranstaltungstexte, gekürzte Zeilen und Labels in Listen) */
@@ -361,8 +342,6 @@ a.s-pille { text-decoration: none !important; }
   background: var(--up-schiefer-100); color: var(--up-text); border: 1px solid var(--up-rand); box-shadow: 0 3px 10px rgba(0, 5, 10, .12);
   font-family: var(--u-schrift); font-size: 12.5px; font-weight: 500; line-height: 1.35; white-space: pre-line; overflow-wrap: anywhere;
 }
-.u-hover-label.grau { background: var(--up-schiefer-100); color: var(--up-text); border: 1px solid var(--up-rand); box-shadow: 0 3px 10px rgba(0, 5, 10, .12); font-size: 12.5px; font-weight: 500; padding: 6px 10px; border-radius: 6px; }
-.std .mehr[data-hover] { cursor: default; }
 
 /* Auswahl Hoch-/Querformat vor dem Erstellen eines Formulars */
 .u-pdf-wahl { position: fixed; inset: 0; z-index: 2100; background: rgba(36, 50, 61, .35); display: flex; align-items: center; justify-content: center; padding: 16px; }

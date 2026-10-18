@@ -1,6 +1,6 @@
-// Modul „Unterrichtsplanung / Wertrechnung“ und „Vertretungsstatistik“ (Desktop: WertrechnungFenster mit Lehrer Soll/Ist,
-// Unterrichts-Matrix und Stundentafel; StatistikFenster mit Abrechnung, Einzelnachweis, Mehrarbeit NRW, Monatsabrechnung,
-// Entfalltage, Vertretungs-Übersicht und Wochenwerte – als Tabelle, HTML-Dokument und CSV).
+// Modul „Soll und Ist“ (Lehrkräfte Soll/Ist, Unterrichtsmatrix, Stundentafel) und „Vertretungsstatistik“ (Abrechnung,
+// Einzelnachweis, Mehrarbeit NRW, Monatsabrechnung, Entfalltage, Vertretungsübersicht und Wochenwerte – als Tabelle,
+// HTML-Dokument und CSV).
 import { h } from '../kern/dom.js';
 import { api } from '../kern/api.js';
 import { zustand, darfSchreiben } from '../kern/zustand.js';
@@ -8,12 +8,12 @@ import { betrifft } from '../kern/ereignisse.js';
 import { Tabelle } from '../kern/tabelle.js';
 import { formular, laden, fehlerMelden } from '../kern/dialog.js';
 import { fensterverwaltung } from '../kern/fenster.js';
-import { dateiHerunterladen } from './austausch.js';
+import { dateiHerunterladen, filterFeld, weitereAktionen } from './austausch.js';
 
-const REITER = [['werte', 'Lehrer: Soll / Ist'], ['matrix', 'Unterrichts-Matrix'], ['tafel', 'Stundentafel']];
+const REITER = [['werte', 'Lehrkräfte'], ['matrix', 'Unterrichtsmatrix'], ['tafel', 'Stundentafel']];
 
 function reiterLeiste(f, aktiv, wechseln) {
-  const leiste = h('div', { class: 'abr-reiter' }, REITER.map(([id, text]) => h('button', { type: 'button', class: id === aktiv ? 'aktiv' : '', onclick: () => wechseln(id) }, text)));
+  const leiste = h('div', { class: 'abr-reiter', role: 'tablist' }, REITER.map(([id, text]) => h('button', { type: 'button', role: 'tab', class: id === aktiv ? 'aktiv' : '', onclick: () => wechseln(id) }, text)));
   f.inhalt.append(leiste);
   return leiste;
 }
@@ -43,7 +43,7 @@ function wertrechnungFenster(f, p) {
         const edit = schreiben && (i === 2 || i === 6);
         return {
           schluessel, titel, breite: [65, 150, 80, 80, 60, 60, 90, 70, 50, 60, 200][i], art: edit ? 'Dezimal' : 'NurLesen', editierbar: edit, wert: (z) => z.werte[i],
-          farbe: i === 7 ? (z) => (z.differenz > 0.5 ? '#ffdcc8' : z.differenz < -0.5 ? '#dce6ff' : '#e1f5e1') : edit ? () => '#ffffee' : undefined,
+          farbe: i === 7 ? (z) => (z.differenz > 0.5 ? 'var(--up-pruefung-flaeche)' : z.differenz < -0.5 ? 'var(--up-frei-flaeche)' : 'var(--up-ok-flaeche)') : undefined,
         };
       }),
     });
@@ -55,7 +55,7 @@ function wertrechnungFenster(f, p) {
   async function matrix() {
     const art = h('select', { class: 'eingabe' }, ['Lehrer', 'Stunden', 'Lehrer + Stunden'].map((t, i) => h('option', { value: i, selected: i === matrixArt }, t)));
     art.addEventListener('change', () => { matrixArt = Number(art.value); aufbauen(); });
-    werkzeug.append(h('span', null, 'Anzeige:'), art, h('span', { class: 'leise' }, 'Doppelklick öffnet den Unterricht der Klasse.'));
+    werkzeug.append(filterFeld('Anzeige', art), h('span', { class: 'abr-tipp' }, 'Doppelklick öffnet den Unterricht der Klasse.'));
     const d = await api.get(api.dok(`/abrechnung/matrix?art=${matrixArt}`));
     const t = new Tabelle(flaeche, {
       beiDoppelklick: (z) => fensterverwaltung.oeffnen('unterricht', { sicht: 'klasse', element: z.id }),
@@ -69,19 +69,20 @@ function wertrechnungFenster(f, p) {
   async function tafel() {
     if (schreiben) {
       werkzeug.append(
-        h('button', { class: 'knopf', type: 'button', onclick: async () => {
-          const w = await formular('Stundentafel', [{ name: 'jahrgang', titel: 'Jahrgang (z. B. 5, 6, EF, Q1)', pflicht: true }]);
+        h('button', { class: 'knopf klein', type: 'button', onclick: async () => {
+          const w = await formular('Jahrgang hinzufügen', [{ name: 'jahrgang', titel: 'Jahrgang', pflicht: true, hinweis: 'z. B. 5, 6, EF, Q1' }]);
           if (w) { await api.post(api.dok('/abrechnung/stundentafel/jahrgang'), w, { quelle: f.id }).catch(fehlerMelden); aufbauen(); }
         } }, 'Jahrgang hinzufügen …'),
-        h('button', { class: 'knopf', type: 'button', onclick: async () => { await api.post(api.dok('/abrechnung/stundentafel/nrw'), {}, { quelle: f.id }).catch(fehlerMelden); aufbauen(); } }, 'NRW-Jahrgänge eintragen'));
+        h('button', { class: 'knopf klein', type: 'button', onclick: async () => { await api.post(api.dok('/abrechnung/stundentafel/nrw'), {}, { quelle: f.id }).catch(fehlerMelden); aufbauen(); } }, 'NRW-Jahrgänge eintragen'));
     }
-    werkzeug.append(h('span', { class: 'leise' }, 'Wochenstunden je Jahrgang und Fach. Rechts: Abweichungen zum eingegebenen Unterricht.'));
+    werkzeug.append(h('span', { class: 'abr-tipp' }, 'Wochenstunden je Jahrgang und Fach; rechts die Abweichungen zum eingegebenen Unterricht.'));
     const d = await api.get(api.dok('/abrechnung/stundentafel'));
     const links = h('div', { class: 'abr-links' });
-    const rechts = h('div', { class: 'abr-rechts' }, h('div', { class: 'abr-titel' }, 'Abgleich Stundentafel ↔ Unterricht'));
+    const rechts = h('div', { class: 'abr-rechts' }, h('div', { class: 'abr-titel' }, 'Abweichungen zum Unterricht'));
     flaeche.append(links, rechts);
     const t = new Tabelle(links, {
       id: (z) => z.jahrgang,
+      leerText: 'Noch keine Stundentafel. Jahrgänge über „Jahrgang hinzufügen“ oder „NRW-Jahrgänge eintragen“ anlegen.',
       aendern: schreiben ? async (z, s, wert) => { await api.put(api.dok('/abrechnung/stundentafel'), { jahrgang: z.jahrgang, fach: s.fach, wert }, { quelle: f.id }); aufbauen(); return null; } : undefined,
       spalten: [{ schluessel: 'jahrgang', titel: 'Jahrgang', breite: 70, art: 'NurLesen', editierbar: false },
         ...d.faecher.map((x, i) => ({ schluessel: `f${x.id}`, fach: x.id, titel: x.kurz, breite: 44, art: schreiben ? 'Dezimal' : 'NurLesen', editierbar: schreiben, wert: (z) => z.werte[i] })),
@@ -89,7 +90,7 @@ function wertrechnungFenster(f, p) {
     });
     t.daten(d.zeilen);
     const a = new Tabelle(rechts, {
-      id: (z) => `${z.klasse}|${z.fach}`, zeilenKlasse: (z) => (z.zuWenig ? 'abr-zuwenig' : 'abr-zuviel'),
+      id: (z) => `${z.klasse}|${z.fach}`, leerText: 'Keine Abweichungen.', zeilenKlasse: (z) => (z.zuWenig ? 'abr-zuwenig' : 'abr-zuviel'),
       spalten: [['klasse', 'Klasse', 70], ['fach', 'Fach', 70], ['soll', 'Soll', 55], ['ist', 'Ist', 55], ['differenz', 'Differenz', 70]].map(([schluessel, titel, breite]) => ({ schluessel, titel, breite, art: 'NurLesen', editierbar: false })),
     });
     a.daten(d.abgleich);
@@ -115,15 +116,14 @@ function statistikFenster(f) {
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const von = h('input', { class: 'eingabe', type: 'date', value: iso(new Date(jetzt.getFullYear(), jetzt.getMonth(), 1)) });
   const bis = h('input', { class: 'eingabe', type: 'date', value: iso(new Date(jetzt.getFullYear(), jetzt.getMonth() + 1, 0)) });
-  const bericht = h('select', { class: 'eingabe', style: { width: '250px' } });
-  const lehrer = h('select', { class: 'eingabe', style: { width: '100px' } });
-  const zeitraum = h('select', { class: 'eingabe', title: 'Zeitraum' }, ['Zeitraum …', 'Aktueller Monat', 'Vormonat', 'Aktuelle Woche', 'Schuljahr'].map((t, i) => h('option', { value: i }, t)));
-  f.werkzeuge.append(bericht, h('span', null, 'Lehrer'), lehrer, h('span', null, 'von'), von, h('span', null, 'bis'), bis, zeitraum);
-  f.trenner();
+  const bericht = h('select', { class: 'eingabe', style: { width: '260px' } });
+  const lehrer = h('select', { class: 'eingabe', style: { width: '110px' } });
+  const zeitraum = h('select', { class: 'eingabe', title: 'Zeitraum übernehmen' }, ['Zeitraum wählen', 'Aktueller Monat', 'Vormonat', 'Aktuelle Woche', 'Schuljahr'].map((t, i) => h('option', { value: i }, t)));
+  f.inhalt.append(h('div', { class: 'abr-filter' }, filterFeld('Auswertung', bericht), filterFeld('Lehrkraft', lehrer), filterFeld('Von', von), filterFeld('Bis', bis), zeitraum));
   const q = (alle = false) => `bericht=${bericht.value}&von=${von.value}&bis=${bis.value}${lehrer.value ? `&lehrer=${lehrer.value}` : ''}${alle ? '&alle=true' : ''}`;
-  f.werkzeug({ text: 'HTML für alle Lehrer', symbol: 'web', titel: 'Dokument (HTML), je Lehrkraft eine Seite', aktion: () => window.open(api.dok(`/abrechnung/statistik.html?${q(true)}`), '_blank') });
-  f.werkzeug({ text: 'HTML', symbol: 'web', titel: 'Dokument (HTML) zum Drucken', aktion: () => window.open(api.dok(`/abrechnung/statistik.html?${q()}`), '_blank') });
-  f.werkzeug({ text: 'CSV', symbol: 'export', titel: 'Export CSV', aktion: () => dateiHerunterladen(api.dok(`/abrechnung/statistik.csv?${q()}`), 'Statistik.csv') });
+  f.werkzeug({ text: 'Als HTML öffnen', titel: 'Dokument (HTML) zum Drucken', aktion: () => window.open(api.dok(`/abrechnung/statistik.html?${q()}`), '_blank') });
+  f.werkzeug({ text: 'CSV exportieren', titel: 'Tabelle als CSV-Datei herunterladen', aktion: () => dateiHerunterladen(api.dok(`/abrechnung/statistik.csv?${q()}`), 'Statistik.csv') });
+  weitereAktionen(f, [{ text: 'HTML für alle Lehrkräfte (je Lehrkraft eine Seite)', aktion: () => window.open(api.dok(`/abrechnung/statistik.html?${q(true)}`), '_blank') }]);
   const summe = h('div', { class: 'abr-summe gross' });
   let tabelle = null;
   let mitLehrer = [];
@@ -149,6 +149,7 @@ function statistikFenster(f) {
       summe.remove();
       tabelle = new Tabelle(f.inhalt, {
         id: (z) => z.i,
+        leerText: 'Keine Einträge im gewählten Zeitraum.',
         zeilenKlasse: (z) => (z.markierung ? `abr-${z.markierung}` : ''),
         beiDoppelklick: (z) => { if (b.nr === 0 && z.lehrer) { lehrer.value = z.lehrer; bericht.value = '1'; aufbauen(); } },
         spalten: b.kopf.map((titel, i) => ({ schluessel: `c${i}`, titel, breite: b.breiten[i], art: 'NurLesen', editierbar: false, wert: (z) => z.werte[i] })),
@@ -156,7 +157,6 @@ function statistikFenster(f) {
       tabelle.daten(b.zeilen.map((z, i) => ({ ...z, i })));
       summe.replaceChildren(...b.summe.split('\n').map((z) => h('div', null, z)));
       f.inhalt.append(summe);
-      f.titel(`Vertretungsstatistik – ${bericht.selectedOptions[0]?.textContent || ''}`);
     } catch (e) { fehlerMelden(e); } finally { weg(); }
   }
 
@@ -188,12 +188,12 @@ export default {
     'abrechnung.statistik': () => { if (zustand.dokument) fensterverwaltung.oeffnen('abrechnung.statistik', {}); },
   },
   ribbon: [
-    { id: 'start.wertrechnung', reiter: 'Start', gruppe: 'Module', text: 'Unterrichtsplanung', symbol: 'statistik', befehl: 'abrechnung.werte', braucht: 'dokument', hinweis: 'Soll und Ist (Soll/Ist, Matrix, Stundentafel)' },
+    { id: 'start.wertrechnung', reiter: 'Start', gruppe: 'Module', text: 'Soll und Ist', symbol: 'statistik', befehl: 'abrechnung.werte', braucht: 'dokument', hinweis: 'Soll und Ist der Lehrkräfte, Unterrichtsmatrix, Stundentafel' },
     { id: 'eingabe.stundentafel', reiter: 'Dateneingabe', gruppe: 'Spezielle Daten', text: 'Stundentafel', symbol: 'statistik', befehl: 'abrechnung.stundentafel', braucht: 'dokument' },
-    { id: 'vertretung.statistik', reiter: 'Vertretungsplanung', gruppe: 'Vertretungsplanung', text: 'Vertretungs-statistik', symbol: 'statistik', gross: true, befehl: 'abrechnung.statistik', braucht: 'dokument', hinweis: 'Vertretungsabrechnung, Zähler, Mehrarbeit NRW, Berichte' },
-    { id: 'module.sollist', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Lehrer Soll/Ist', symbol: 'statistik', gross: true, befehl: 'abrechnung.werte', braucht: 'dokument' },
-    { id: 'module.matrix', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Unterrichts-Matrix', symbol: 'uebersicht', gross: true, befehl: 'abrechnung.matrix', braucht: 'dokument' },
+    { id: 'vertretung.statistik', reiter: 'Vertretungsplanung', gruppe: 'Vertretungsplanung', text: 'Vertretungsstatistik', symbol: 'statistik', gross: true, befehl: 'abrechnung.statistik', braucht: 'dokument', hinweis: 'Vertretungsabrechnung, Zähler, Mehrarbeit NRW, Berichte' },
+    { id: 'module.sollist', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Soll und Ist der Lehrkräfte', symbol: 'statistik', gross: true, befehl: 'abrechnung.werte', braucht: 'dokument' },
+    { id: 'module.matrix', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Unterrichtsmatrix', symbol: 'uebersicht', gross: true, befehl: 'abrechnung.matrix', braucht: 'dokument' },
     { id: 'module.stundentafel', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Stundentafel', symbol: 'unterricht', gross: true, befehl: 'abrechnung.stundentafel', braucht: 'dokument' },
-    { id: 'module.statistik', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Vertretungs-statistik', symbol: 'statistik', gross: true, befehl: 'abrechnung.statistik', braucht: 'dokument' },
+    { id: 'module.statistik', reiter: 'Module', gruppe: 'Soll und Ist', text: 'Vertretungsstatistik', symbol: 'statistik', gross: true, befehl: 'abrechnung.statistik', braucht: 'dokument' },
   ],
 };

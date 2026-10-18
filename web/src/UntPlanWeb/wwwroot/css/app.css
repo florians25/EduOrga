@@ -1,4 +1,4 @@
-/* UntPlanWeb – Erscheinungsbild im Stil des Vorbilds (Original-Icons aus dem Paket des Kollegen unter img/wu, freie Schrift Nunito Sans, eigenes Logo).
+/* UntPlanWeb – Erscheinungsbild (Farben aus css/tokens.css, Schrift IBM Plex Sans, Linien-Symbole aus css/symbole.css).
    Aufbau: Farben & Maße · Grundlagen · Bootstrap-Bausteine · Hülle (Navigation, Konto) · Seitenaufbau & Werkzeugleiste · Heute ·
    Listen, Tabellen & Filter · Anmeldung · Stundenplan · Legende · Tagesübersicht · Vertretungsplan · Stundendetails · Mitteilungen ·
    Klassenbuch · Verwaltung · Monitor · Druck · Schmale Bildschirme */
@@ -7,7 +7,7 @@
 
 :root {
   --bs-body-font-weight: 400;
-  --u-verlauf: linear-gradient(165deg, var(--up-flaeche-2) 0%, var(--up-schiefer-100) 45%, var(--up-rand) 100%);
+  --u-verlauf: var(--up-hintergrund);
   --u-akzent: var(--up-primaer);
   --u-akzent-dunkel: var(--up-primaer-hover);
   --u-akzent-hell: var(--up-primaer-flaeche);
@@ -41,7 +41,7 @@
   --u-leiste-zu: 76px;
   --u-kopf: 56px;
   --u-zeile: 80px;
-  --u-schrift: "Avenir Next", "Nunito Sans", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --u-schrift: var(--up-schrift);
 
   /* Bootstrap auf die eigenen Farben stellen */
   --bs-primary: var(--u-akzent);
@@ -110,9 +110,9 @@ a:hover { text-decoration: underline; }
 .u-sym { width: 1.2em; height: 1.2em; flex: none; vertical-align: -.22em; }
 .btn .u-sym, .rundknopf .u-sym { width: 18px; height: 18px; }
 
-/* ------------------------------------------------------------------ Bootstrap-Bausteine im Portal-Stil */
+/* ------------------------------------------------------------------ Bootstrap-Bausteine */
 
-/* Knöpfe: Pillen mit 1,5-px-Rand und kräftiger Schrift; Hauptaktion orange, „Heute“ dunkelgrau */
+/* Knöpfe: Pillen mit 1,5-px-Rand und kräftiger Schrift; Hauptaktion marine, „Heute“ dunkelgrau */
 .btn {
   --bs-btn-font-weight: 600; --bs-btn-border-radius: 999px; --bs-btn-border-width: 1.5px;
   --bs-btn-padding-x: 1.05rem; --bs-btn-padding-y: .36rem; --bs-btn-font-size: .9375rem;
@@ -151,7 +151,7 @@ a:hover { text-decoration: underline; }
 }
 .btn-close { --bs-btn-close-focus-shadow: 0 0 0 .2rem rgba(35, 79, 150, .25); opacity: .55; }
 
-/* Eingabefelder (Rahmen grau, Fokus orange) */
+/* Eingabefelder (Rahmen grau, Fokus marine) */
 .form-control, .form-select {
   border-color: var(--u-grau-3); border-radius: var(--u-radius); color: var(--u-titel); min-height: 40px; font-size: .9375rem; background-color: var(--up-flaeche);
 }
@@ -179,7 +179,7 @@ input[type=search].form-control { padding-left: 2.1rem; background: var(--up-fla
 .card-header { font-weight: 600; font-size: 1rem; color: var(--u-titel); border-bottom: 1px solid var(--u-linie-2); }
 .card-footer { background: transparent; border-top: 1px solid var(--u-linie-2); }
 
-/* Tabellen wie im Original: kleine fette Spaltenköpfe, ruhige Zeilen mit feinen Linien */
+/* Tabellen: kleine fette Spaltenköpfe, ruhige Zeilen mit feinen Linien */
 .table { --bs-table-bg: transparent; --bs-table-border-color: var(--u-linie-2); --bs-table-hover-bg: var(--up-flaeche-hover); --bs-table-active-bg: var(--u-akzent-hell); font-size: .875rem; color: var(--u-text); margin-bottom: 0; }
 .table > thead th { font-weight: 600; color: var(--u-text); font-size: .75rem; white-space: nowrap; border-bottom-color: var(--u-linie); background: transparent; }
 .table > :not(caption) > * > * { padding: .62rem .65rem; }
@@ -208,7 +208,7 @@ tr[role=button] { cursor: pointer; }
 .alert-secondary, .alert-info { --bs-alert-bg: var(--up-flaeche); --bs-alert-color: var(--u-text); border-left-color: var(--u-grau-3); box-shadow: var(--u-schatten); }
 .alert-link { color: inherit; }
 
-/* Reiter: orange Unterstreichung wie im Original */
+/* Reiter: marine Unterstreichung */
 .nav-tabs, .nav-pills, .u-reiter {
   --bs-nav-link-color: var(--u-grau); --bs-nav-link-hover-color: var(--u-titel); --bs-nav-link-font-weight: 600;
   display: flex; flex-wrap: nowrap; gap: 2rem; border-bottom: 1px solid var(--u-linie); overflow-x: auto; scrollbar-width: none;
@@ -226,7 +226,7 @@ tr[role=button] { cursor: pointer; }
 .list-group { --bs-list-group-border-color: var(--u-linie-2); --bs-list-group-action-hover-bg: var(--up-flaeche-hover); --bs-list-group-active-bg: var(--u-akzent-hell); --bs-list-group-active-color: var(--u-titel); --bs-list-group-active-border-color: var(--u-linie-2); }
 .list-group-item.active { border-left: 3px solid var(--u-akzent); }
 
-/* Dialoge: großer Titel, Fuß mit Pillen (Abbrechen umrandet, Speichern orange) */
+/* Dialoge: großer Titel, Fuß mit Pillen (Abbrechen umrandet, Speichern marine) */
 .modal { --bs-modal-bg: var(--up-flaeche); --bs-modal-border-radius: 6px; --bs-modal-border-width: 0; --bs-modal-header-border-color: var(--u-linie-2); --bs-modal-footer-border-color: var(--u-linie-2); --bs-modal-padding: 1.5rem; --bs-modal-header-padding: 1.2rem 1.5rem; }
 .modal-content { box-shadow: var(--u-schatten-hoch); }
 .modal-title { font-weight: 600; font-size: 1.35rem; color: var(--u-titel); }
@@ -245,7 +245,7 @@ tr[role=button] { cursor: pointer; }
 .dropdown-menu { --bs-dropdown-border-color: var(--u-linie); --bs-dropdown-link-active-bg: var(--u-akzent); border-radius: 6px; box-shadow: var(--u-schatten-hoch); border: 0; }
 .spinner-border { color: var(--u-akzent) !important; }
 
-/* ------------------------------------------------------------------ Hülle: linke Navigationsleiste wie im Original */
+/* ------------------------------------------------------------------ Hülle: linke Navigationsleiste */
 
 .u-app { min-height: 100vh; }
 .u-leiste {
@@ -254,7 +254,7 @@ tr[role=button] { cursor: pointer; }
 }
 .u-haupt { margin-left: var(--u-leiste); min-width: 0; min-height: 100vh; transition: margin-left .18s ease; }
 
-/* Kopf: Bildmarke, Name, Schule */
+/* Kopf: Marke, Schule (Seitenleiste: css/seitenleiste.css) */
 .u-marke { display: flex; align-items: flex-start; gap: 11px; padding: 8px 14px 0 10px; color: var(--u-titel); text-decoration: none !important; }
 .u-marke .logo { width: 48px; height: 48px; margin-top: 1px; }
 .u-marke span { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; padding-top: 5px; }
@@ -282,7 +282,7 @@ tr[role=button] { cursor: pointer; }
 .u-jahr.mit-pfeil { background: var(--up-flaeche); border: 1.5px solid var(--u-grau-2); padding: 3px 14px; }
 .u-jahr .bi { font-size: .78rem; color: var(--u-text); -webkit-text-stroke: .4px; }
 
-/* Menüpunkte: Linien-Symbole, aktiver Punkt orange mit Balken links */
+/* Menüpunkte (Gestaltung: css/seitenleiste.css) */
 .u-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 0 1rem; scrollbar-width: thin; }
 .u-nav-punkt {
   position: relative; display: flex; align-items: center; gap: 20px; min-height: 50px; padding: 0 12px 0 19px;
@@ -381,7 +381,7 @@ body.gescrollt .u-werkzeug { box-shadow: 0 6px 10px -10px rgba(0, 5, 10, .35); }
 .u-pillenwahl select, .u-pillenwahl .knopf { appearance: none; border: 1.5px solid var(--u-grau-2); background: var(--up-flaeche) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23414d55' stroke-width='1.5'%3E%3Cpath d='m3 6 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center / 15px;
   border-radius: 999px; height: 32px; padding: 0 38px 0 16px; font-weight: 600; color: var(--u-titel); font-size: 1rem; cursor: pointer; outline: 0; }
 .u-pillenwahl select:hover { border-color: var(--u-text); }
-.u-hilfe-knopf { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--u-grau-2); background: var(--up-flaeche); color: var(--u-text); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+
 .u-mit-werkzeug .u-inhalt { padding-left: 96px; padding-top: 16px; }
 
 /* Bereich mit Kopf (eigene Panels) */
@@ -392,11 +392,11 @@ body.gescrollt .u-werkzeug { box-shadow: 0 6px 10px -10px rgba(0, 5, 10, .35); }
 .u-panel > header .u-mehr { margin-left: auto; font-size: .8125rem; font-weight: 600; }
 .u-panel-rumpf { padding: 1rem 1.1rem; }
 
-/* ------------------------------------------------------------------ Heute (Aufbau wie im Original) */
+/* ------------------------------------------------------------------ Heute (Aufbau) */
 
 .heute-titel { font-size: 1.07rem; margin: 6px 0 12px; font-weight: 400; color: var(--u-akzent); }
 .heute-titel span { color: var(--u-grau); margin-left: 3px; font-size: .95rem; }
-.heute { max-width: 992px; display: flex; flex-direction: column; gap: 16px; }
+#seite > .heute { max-width: 992px; display: flex; flex-direction: column; gap: 16px; }
 .heute-karte { background: var(--up-flaeche); box-shadow: 0 1px 3px rgba(0, 5, 10, .08), 0 3px 10px rgba(0, 5, 10, .05); border-radius: 2px; }
 .heute-anmeldung { padding: 12px 18px 12px; font-size: .8125rem; color: var(--u-titel); line-height: 1.5; }
 .heute-anmeldung div + div { margin-top: 10px; }
@@ -453,7 +453,7 @@ details.heute-nachricht > div { padding: 4px 0 0 13px; }
 .u-chip.rot { background: var(--u-rot-hell); color: var(--up-entfall); }
 .u-chip.gelb { background: var(--u-gelb-hell); color: #6e4005; }
 .u-chip.lila { background: var(--up-termin-flaeche); color: var(--up-termin); }
-/* Kennzahlen über der Abwesenheitsliste (neues Vorbild-Design: Kacheln als Schnellfilter) */
+/* Kennzahlen über der Abwesenheitsliste (Kacheln als Schnellfilter) */
 .abw-kennzahlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
 .abw-kz { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; border: 1px solid var(--u-linie, var(--up-rand)); border-left: 4px solid var(--up-marine-500);
   border-radius: 8px; background: var(--u-flaeche, var(--up-flaeche)); color: inherit; text-align: left; font: inherit; transition: box-shadow .15s, transform .15s; }
@@ -489,19 +489,11 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
 .u-kennzahl small { color: var(--u-grau); font-weight: 600; }
 
 /* Elementwahl (Suchliste) */
-.elementwahl .wahl-menue { display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 1000; width: 300px; border-radius: 6px !important; box-shadow: var(--u-schatten-hoch) !important; border: 0 !important; overflow: hidden; }
-.elementwahl .wahl-menue.show { display: block; }
-.elementwahl .liste { max-height: 360px; overflow-y: auto; padding: 4px; }
-.elementwahl .list-group-item { display: flex; gap: .75rem; font-size: .95rem; border-radius: 4px !important; padding: .45rem .75rem; }
-.elementwahl .list-group-item b { min-width: 3.2rem; font-weight: 600; color: var(--u-titel); }
-.elementwahl .list-group-item span { color: var(--u-grau); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
-.elementwahl .list-group-item.active { background: var(--up-linie); border-left: 0; }
-.elementwahl .wahl-knopf { min-width: 110px; justify-content: center; }
 
 /* ------------------------------------------------------------------ Anmeldung */
 
 .anmeldung { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem 1rem; }
-.anmeldung .karte { width: 100%; max-width: 420px; background: var(--up-flaeche); border-radius: 6px; box-shadow: 0 2px 6px rgba(0, 5, 10, .06), 0 16px 40px rgba(0, 5, 10, .12); padding: 2.2rem 2.2rem 1.8rem; }
+
 .anmeldung .kopf { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .45rem; margin-bottom: 1.6rem; }
 .anmeldung .kopf .logo { width: 64px; height: 64px; }
 .anmeldung .kopf b { font-size: 1.55rem; color: var(--u-titel); font-weight: 600; }
@@ -513,203 +505,48 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
 
 /* ------------------------------------------------------------------ Stundenplan: Kopfzeile (Element, Woche mittig, „Heute“) */
 
-.planleiste { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .75rem; margin: -14px 0 6px; min-height: 44px; }
-.planleiste .links { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; min-width: 0; }
-.planleiste .rechts { display: flex; justify-content: flex-end; align-items: center; gap: .5rem; }
-.planleiste .mitte { display: flex; align-items: center; gap: 24px; }
-.planleiste .zeitraum { font-weight: 600; font-size: .98rem; text-align: center; color: var(--u-titel); font-variant-numeric: tabular-nums; cursor: pointer; position: relative; margin: 0; white-space: nowrap; letter-spacing: .01em; }
-.planleiste .zeitraum small { font-weight: 600; font-size: .78rem; color: var(--u-grau-2); margin-left: .5rem; }
-.planleiste .zeitraum input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .rundknopf { width: 36px; height: 36px; border-radius: 50%; border: 0; background: transparent; color: var(--u-grau-2); display: inline-flex; align-items: center; justify-content: center; text-decoration: none !important; font-size: 1rem; }
 .rundknopf:hover { background: rgba(255, 255, 255, .8); color: var(--u-titel); }
 .rundknopf:disabled { opacity: .35; }
 .rundknopf.aktiv { color: var(--u-akzent); background: var(--u-akzent-hell); }
-.planleiste .rundknopf .bi { -webkit-text-stroke: .3px; }
-.heute-pill { border-radius: 999px; background: var(--u-dunkel); color: var(--up-flaeche); border: 0; padding: 0 22px; height: 34px; font-weight: 600; font-size: .9375rem; text-decoration: none !important; display: inline-flex; align-items: center; box-shadow: 0 1px 3px rgba(0, 5, 10, .12); }
-.heute-pill:hover { background: var(--u-dunkel-2); color: var(--up-flaeche); }
-.element-pill { display: inline-flex; align-items: center; min-width: 0; }
-.element-pill .elementwahl { min-width: 0; }
-.element-pill .wahl-knopf { background: var(--up-flaeche) !important; border: 1px solid var(--up-flaeche) !important; border-radius: 999px !important; height: 34px; padding: 0 16px !important; font-weight: 600; color: var(--u-titel) !important; box-shadow: 0 1px 3px rgba(0, 5, 10, .12) !important; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; gap: 8px; }
-.element-pill .wahl-knopf:hover { border-color: var(--u-titel) !important; }
-.element-pill .wahl-knopf::after { display: none; }
-.wahl-knopf .info { display: inline-flex; width: 15px; height: 15px; border-radius: 50%; background: var(--u-grau); color: var(--up-flaeche); font: italic 600 10px/15px Georgia, serif; align-items: center; justify-content: center; flex: none; }
-.u-plantitel { display: none; }
 
-/* ------------------------------------------------------------------ Stundenplan (Raster nach Unterrichtsstunden, Karten wie im Original) */
+/* ------------------------------------------------------------------ Stundenplan (Raster nach Unterrichtsstunden, Karten) */
 
-.tt { position: relative; display: grid; grid-template-columns: 54px repeat(var(--tage), minmax(0, 1fr)); column-gap: 16px; }
-.tt-ecke { }
-.tt-tag { padding: 0 .5rem 22px; text-align: center; color: var(--u-grau); font-size: 1.04rem; font-weight: 600; white-space: nowrap; }
-.tt-tag.heute { color: var(--u-titel); font-weight: 600; }
-.tt-leiste { padding: 0 1px 8px; display: flex; flex-direction: column; gap: 3px; }
-.tt-ereignis {
-  position: relative; background: var(--up-hintergrund); color: var(--tt-text); font-size: 14px; font-weight: 600; line-height: 30px;
-  padding: 0 8px 0 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.tt-ereignis::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; background: var(--up-termin); }
-.tt-ereignis.hinweis::before { background: var(--up-primaer); }
-.tt-ereignis.hinweis { color: var(--up-primaer); }
-.tt-achse { position: relative; }
-.tt-zeit { position: absolute; left: 4px; font-size: 14px; line-height: 14px; font-weight: 600; color: var(--u-grau-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tt-zeit.beginn { transform: translateY(1px); }
-.tt-zeit.ende { transform: translateY(-15px); }
-.tt-nr { position: absolute; left: 14px; font-size: 12px; font-weight: 600; color: var(--u-grau-2); transform: translateY(30px); }
-.tt-spalte { position: relative; }
-.tt-linie { position: absolute; left: -8px; right: -8px; border-top: 1px solid var(--tt-linie); }
-.tt-achse + .tt-spalte .tt-linie, .tt-achse + .tt-spalte .tt-jetzt:not(.heute) { left: -16px; }
-.tt-spalte.frei { background: repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(0, 5, 10, .025) 7px, rgba(0, 5, 10, .025) 14px); }
-.tt-spalte.frei.ferien, .tt-spalte.frei.feiertag, .tt-spalte.frei.frei { background: none; }
-.tt-ferien { position: absolute; inset: 0 3px; z-index: 3; background: var(--u-ferien); color: var(--up-text); pointer-events: none; }
-.tt-ferien .inhalt { position: absolute; left: 0; right: 0; top: 66%; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 .5rem; text-align: center; font-size: 14px; font-weight: 600; }
-.tt-ferien .art .bi { font-size: 11px; vertical-align: 1px; }
 /* Eigene Abwesenheit: graue Fläche HINTER den Stunden (Karten voll sichtbar darüber), Text dezent im freien Bereich */
-.tt-abw { position: absolute; left: -4px; width: calc(100% + 8px); border-radius: 4px; background: rgba(65, 77, 85, .13); }
-.tt-abw-text { position: absolute; left: 0; right: 0; transform: translateY(-50%); padding: 0 .5rem; text-align: center; font-size: 12px; font-weight: 500;
-  line-height: 16px; color: var(--up-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
-@media (max-width: 767.98px) { .tt-abw { left: 0; width: 100%; } }
-.tt.ohne-abwesenheiten .tt-abw { display: none; }
-@media print { .tt-abw { background: var(--up-linie); -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-.tt-frei { position: absolute; top: 30%; left: 0; right: 0; text-align: center; color: var(--u-grau); font-size: .9rem; font-weight: 600; padding: 0 .5rem; }
+
 /* Jetzt-Linie: dünn über alle Tage, am heutigen Tag kräftig, Uhrzeit links in dunkler Marke */
-.tt-jetzt { position: absolute; left: -8px; right: -8px; border-top: 1px solid var(--up-text); z-index: 6; pointer-events: none; }
-.tt-jetzt.heute { left: 0; right: 0; border-top-width: 3px; margin-top: -1px; }
-.tt-jetzt-zeit { position: absolute; left: -3px; z-index: 7; transform: translateY(-50%); background: var(--up-text); color: var(--up-flaeche); font-size: 14px; font-weight: 600; line-height: 25px; width: 52px; text-align: center; border-radius: 4px; font-variant-numeric: tabular-nums; }
 
 /* Stundenkarte */
-.std {
-  position: absolute; z-index: 2; overflow: hidden; cursor: pointer; background: var(--up-flaeche); color: var(--u-text);
-  padding: 8px 24px 8px 18px; text-align: left; border-radius: 4px;
-}
-.std::before { content: ""; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 4px; border-radius: 2px; background: var(--fach, var(--up-rand-stark)); }
-.std:focus-visible { z-index: 5; outline: 2px solid rgba(35, 79, 150, .55); outline-offset: 1px; }
+
 /* Beginn/Ende links in der Karte (Einstellung „Uhrzeiten auf den Karten“) */
-.std.mit-zeit { padding-left: 44px; }
-.std.mit-zeit::before { left: 34px; }
-.std .zt { position: absolute; left: 6px; font-size: 10px; line-height: 12px; font-weight: 600; color: var(--u-grau-2); font-variant-numeric: tabular-nums; }
-.std .zt.o { top: 8px; }
-.std .zt.u { bottom: 8px; }
-.std .z1 { font-size: 14px; font-weight: 600; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--up-text); }
-.std .z2 { font-size: 12px; font-weight: 600; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--up-text); }
-.std .z3 { font-size: 11.5px; line-height: 15px; color: var(--u-grau); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.std .lbl { display: inline-block; padding: 0 3px; background: var(--u-gruen-label); color: var(--up-flaeche); font-weight: 600; line-height: 15px; font-size: 12px; border-radius: 1px; }
-.z1 .lbl { font-size: 14px; line-height: 18px; }
-.std .lbl.offen { background: var(--u-rot); }
-.std .lbl.weg { text-decoration: line-through; text-decoration-thickness: 1px; }
-.std .mks { position: absolute; top: 9px; right: 9px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.std .info { position: absolute; right: 9px; bottom: 9px; width: 12px; height: 12px; border-radius: 50%; background: var(--u-grau-2); color: var(--up-flaeche); font: italic 600 9px/12px Georgia, serif; text-align: center; }
-.std.vergangen { background: var(--up-hintergrund); }
-.std.vergangen .z1, .std.vergangen .z2 { color: var(--up-text-2); }
 
 /* Marker (Karten und Legende) */
-.mk-quadrat, .mk-kreis, .mk-dreieck, .mk-plus { display: inline-block; width: 12px; height: 12px; flex: none; }
-.mk-quadrat { background: var(--u-gruen); border-radius: 2px; }
-.mk-plus { background: var(--u-gruen); border-radius: 2px; position: relative; }
-.mk-plus::before, .mk-plus::after { content: ""; position: absolute; background: var(--up-flaeche); left: 50%; top: 50%; transform: translate(-50%, -50%); }
-.mk-plus::before { width: 8px; height: 1.8px; }
-.mk-plus::after { width: 1.8px; height: 8px; }
-.mk-kreis { background: var(--u-gelb); border-radius: 50%; }
-.mk-dreieck { width: 13px; height: 12px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 24'%3E%3Cpath d='M13 3.5 23.5 21H2.5Z' fill='%23f03e3e' stroke='%23f03e3e' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; }
 
-/* Zustände (mit schwebendem Schatten wie im Original) */
-.std.geaendert, .std.offen, .std.buchung { background: var(--u-gruen-hell); box-shadow: var(--u-schatten-karte); }
-.std.entfall, .std.abwesend { background: var(--u-rot-hell); box-shadow: var(--u-schatten-karte); }
-.std.entfall .z1, .std.entfall .z2, .std.abwesend .z1, .std.abwesend .z2, .std.entfall .zt, .std.abwesend .zt { text-decoration: line-through; text-decoration-thickness: .75px; }
-.std.klausur { background: var(--u-gelb-hell); box-shadow: var(--u-schatten-karte); }
-.std.bereitschaft { background: var(--up-hintergrund); outline: 1px dashed var(--up-text-3); outline-offset: -1px; }
-.std.bereitschaft::before { background: var(--up-aenderung); }
-.std.veranstaltung { background: var(--u-gruen-hell); box-shadow: var(--u-schatten-karte); }
-.std.vorgemerkt { background: var(--up-flaeche); outline: 1px dashed var(--up-text-3); outline-offset: -1px; }
-.std.vorgemerkt::before { background: var(--up-text-3); }
+/* Zustände (mit schwebendem Schatten) */
+
 /* Legende: ausgeblendete Statusfarben zeigen die Karte wie eine normale Stunde */
-.tt.ohne-entfall .std.entfall, .tt.ohne-entfall .std.abwesend,
-.tt.ohne-pruefung .std.klausur,
-.tt.ohne-aenderung .std.geaendert, .tt.ohne-aenderung .std.offen, .tt.ohne-aenderung .std.buchung, .tt.ohne-aenderung .std.veranstaltung { background: var(--up-flaeche); box-shadow: none; }
-.tt.ohne-entfall .std.entfall .mk-dreieck, .tt.ohne-entfall .std.abwesend .mk-dreieck, .tt.ohne-pruefung .std.klausur .mk-kreis,
-.tt.ohne-aenderung .std .mk-quadrat, .tt.ohne-aenderung .std .mk-plus { visibility: hidden; }
 
 /* Pausenzeile mit Aufsichten (trennt Blöcke) */
-.tt-pause { position: absolute; left: 0; right: 0; background: transparent; border-top: 1px solid var(--tt-linie); }
-.aufsicht {
-  position: absolute; z-index: 4; display: flex; align-items: center; gap: 6px;
-  background: var(--up-flaeche); color: var(--tt-text); padding: 0 8px 0 18px; overflow: hidden; white-space: nowrap;
-  font-size: 12px; font-weight: 600;
-}
-.aufsicht span { overflow: hidden; text-overflow: ellipsis; }
-.aufsicht::before { content: ""; position: absolute; left: 8px; top: 5px; bottom: 5px; width: 4px; border-radius: 2px; background: var(--up-termin); }
+
 /* Vertretung: grün mit grünem Label; im Plan der abwesenden Lehrkraft grau gestrichelt (wie abwesende Stunden) */
-.aufsicht.vertreten { background: var(--up-flaeche-2); outline: 1px dashed var(--up-text-3); outline-offset: -1px; box-shadow: none; color: var(--up-text-2); }
-.aufsicht.vertreten::before { background: var(--up-schiefer-400); }
-.aufsicht.vertretung { background: var(--u-gruen-hell); }
-.aufsicht .lbl-auf { margin-left: auto; flex: none; font-size: 10.5px; line-height: 14px; font-weight: 600; color: var(--up-flaeche); background: var(--u-gruen-label); border-radius: 2px; padding: 0 4px; }
-.aufsicht .mk-plus { order: 2; margin-left: auto; }
 
 /* Tagesauswahl (Mobil) */
-.tt-tagwahl { display: none; gap: 4px; margin-bottom: .6rem; overflow-x: auto; }
-.tt-tagwahl button { flex: 1; border: 0; background: var(--up-flaeche); border-radius: 999px; padding: .3rem .4rem; font-weight: 600; font-size: .8125rem; color: var(--u-grau); box-shadow: var(--u-schatten); line-height: 1.15; }
-.tt-tagwahl button small { display: block; font-weight: 600; font-size: .7rem; }
-.tt-tagwahl button.aktiv { background: var(--u-dunkel); color: var(--up-flaeche); }
 
 /* Liste eines Tages */
-.tt-liste { display: flex; flex-direction: column; gap: 6px; }
-.tt-liste .eintrag { display: flex; gap: .75rem; align-items: stretch; }
-.tt-liste .zeit { width: 64px; flex: none; font-size: 12px; color: var(--u-grau-2); padding-top: 8px; line-height: 1.3; font-variant-numeric: tabular-nums; }
-.tt-liste .zeit b { display: block; color: var(--up-text); font-size: 13px; font-weight: 600; }
-.tt-liste .std { position: relative; flex: 1; min-width: 0; min-height: 52px; box-shadow: none; border: 1px solid var(--up-rand); }
-.tt-liste .std.geaendert, .tt-liste .std.offen, .tt-liste .std.entfall, .tt-liste .std.klausur, .tt-liste .std.veranstaltung, .tt-liste .std.abwesend { border-color: transparent; }
-.tt-liste .aufsicht { position: relative; left: auto; right: auto; flex: 1; height: 30px; font-size: 12px; box-shadow: none; border: 1px solid var(--up-rand); }
-.tt-liste .tt-ereignis { border: 1px solid var(--up-rand); line-height: 32px; }
-.tt-liste .eintrag.jetzt .zeit b { color: var(--u-akzent-dunkel); }
-.tt-liste .eintrag.jetzt .std { box-shadow: 0 0 0 2px rgba(35, 79, 150, .45); }
 
 /* ------------------------------------------------------------------ Legende unten mittig, Hilfe unten rechts */
 
-.u-legende-leiste {
-  position: fixed; bottom: 16px; left: calc(var(--u-leiste) + (100vw - var(--u-leiste)) / 2); transform: translateX(-50%); z-index: 30;
-  display: flex; align-items: center; gap: 8px; background: var(--up-flaeche); border-radius: 26px; padding: 7px 8px; box-shadow: 0 2px 6px rgba(0, 5, 10, .1), 0 8px 24px rgba(0, 5, 10, .12);
-}
-.u-app.zu .u-legende-leiste { left: calc(var(--u-leiste-zu) + (100vw - var(--u-leiste-zu)) / 2); }
-.u-legende-pille { display: inline-flex; align-items: center; gap: 9px; height: 34px; padding: 0 14px 0 10px; border-radius: 999px; border: 1.5px solid var(--u-dunkel); background: var(--u-dunkel); color: var(--up-flaeche); font-weight: 600; font-size: .95rem; }
-.u-legende-pille.aus { background: var(--up-flaeche); color: var(--u-text); border-color: var(--u-grau-3); }
-.u-legende-pille .lg-mk { width: 21px; height: 20px; flex: none; }
-.u-legende-mehr { width: 30px; height: 34px; border: 0; background: none; color: var(--u-grau); font-size: 1.15rem; border-radius: 50%; }
-.u-legende-mehr:hover { background: var(--u-hover); }
-.u-legende-menue { position: absolute; bottom: calc(100% + 10px); right: 0; width: 290px; background: var(--up-flaeche); border-radius: 8px; box-shadow: var(--u-schatten-hoch); padding: 8px 0; font-size: .875rem; }
-.u-legende-menue .eintrag { display: flex; align-items: center; gap: 10px; padding: 6px 16px; color: var(--u-text); }
-.u-legende-menue .eintrag i.feld { width: 22px; height: 16px; border-radius: 2px; display: inline-block; flex: none; }
-.u-legende-menue hr { margin: 6px 0; border-color: var(--u-linie-2); opacity: 1; }
-.u-legende-menue button.eintrag { width: 100%; border: 0; background: none; text-align: left; font-weight: 600; }
-.u-legende-menue button.eintrag:hover { background: var(--u-hover); }
-.std-lbl { display: inline-block; padding: 0 3px; background: var(--u-gruen-label); color: var(--up-flaeche); font-weight: 600; line-height: 15px; font-size: 11px; border-radius: 1px; }
-.std-lbl.weg { text-decoration: line-through; }
-.u-hilfe-rund { position: fixed; right: 22px; bottom: 16px; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--up-flaeche); color: var(--u-text); z-index: 30;
-  box-shadow: 0 2px 6px rgba(0, 5, 10, .12), 0 6px 18px rgba(0, 5, 10, .1); display: inline-flex; align-items: center; justify-content: center; }
-.u-hilfe-rund .u-sym { width: 30px; height: 30px; stroke-width: 1.3; }
-.u-hilfe-rund:hover { color: var(--u-akzent); }
-.u-legende { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; font-size: .78rem; color: var(--u-grau); margin-top: .75rem; align-items: center; }
-.u-legende span { display: inline-flex; align-items: center; gap: .4rem; }
-.u-legende i.feld { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
-
 /* ------------------------------------------------------------------ Tagesübersicht */
-
-.tagplan { overflow-x: auto; background: var(--up-flaeche); border-radius: 2px; box-shadow: var(--u-schatten); }
-.tagplan-gitter { display: grid; min-width: 900px; }
-.tagplan-kopf { border-bottom: 1px solid var(--tt-linie); border-left: 1px solid var(--tt-linie); padding: .45rem .3rem; font-size: 11px; text-align: center; color: var(--u-grau-2); background: var(--up-flaeche); }
-.tagplan-kopf b { display: block; font-size: 13px; color: var(--up-text); font-weight: 600; }
-.tagplan-element { padding: .5rem .75rem; border-bottom: 1px solid var(--tt-linie); font-weight: 600; font-size: 14px; color: var(--u-titel); position: sticky; left: 0; background: var(--up-flaeche); z-index: 3; }
-.tagplan-element small { display: block; font-weight: 400; color: var(--u-grau-2); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tagplan-zelle { border-bottom: 1px solid var(--tt-linie); border-left: 1px solid var(--tt-linie); padding: 3px; display: grid; gap: 3px; align-content: start; background: var(--up-hintergrund); }
-.tagplan .std { position: relative; min-height: 58px; }
 
 /* ------------------------------------------------------------------ Vertretungsplan */
 
 .vt-zeile.entfall td { color: var(--u-grau); }
 .vt-zeile.offen .vt-lehrer { color: var(--u-rot); font-weight: 600; }
-.vt-zeile .lbl-neu { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--u-gruen-label); color: var(--up-flaeche); font-weight: 600; font-size: .8125rem; line-height: 18px; }
-.vt-zeile .lbl-neu.weg { text-decoration: line-through; }
+
 .vt-tagkopf { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
 .vt-tagkopf b { font-size: 1.05rem; }
 
-/* ------------------------------------------------------------------ Stundendetails (Fläche rechts der Navigation wie im Original) */
+/* ------------------------------------------------------------------ Stundendetails (Fläche rechts der Navigation) */
 
 .fachpunkt { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .anw-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 12px; max-height: 360px; overflow-y: auto; }
@@ -718,92 +555,10 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
 .raum-wahl .btn.active { background: var(--u-akzent); border-color: var(--u-akzent); color: var(--up-flaeche); }
 .raum-wahl .btn.active small { color: rgba(255, 255, 255, .8) !important; }
 
-.stundendetails.modal { padding: 0 !important; }
-.stundendetails .modal-dialog { position: fixed; top: 0; bottom: 0; right: 0; left: var(--u-leiste); max-width: none; width: auto; margin: 0; height: 100%; transform: none !important; }
-.u-app.zu ~ .stundendetails .modal-dialog, body.leiste-zu .stundendetails .modal-dialog { left: var(--u-leiste-zu); }
-.stundendetails .modal-content { border: 0; border-radius: 0; height: 100%; max-height: none; box-shadow: -4px 0 18px rgba(0, 5, 10, .08); }
-.stundendetails.fade .modal-dialog { transition: opacity .15s ease; }
-.sd-kopf { display: flex; align-items: flex-start; gap: 1rem; padding: 18px 28px 6px 166px; }
-.sd-kopf.grau { background: var(--up-hintergrund); }
-.sd-kopf .sd-knoepfe { margin-left: auto; display: flex; gap: 22px; align-items: center; }
-.sd-kopf .sd-knoepfe button { border: 0; background: none; color: var(--u-grau-2); padding: 0; font-size: 1.35rem; line-height: 1; }
-.sd-kopf .sd-knoepfe button:hover { color: var(--u-titel); }
-.sd-titel h2 { font-size: 1.4rem; font-weight: 600; margin: 0 0 .35rem; color: var(--u-titel); display: flex; flex-wrap: wrap; align-items: center; gap: .1rem; }
-.sd-titel .trenn { color: var(--up-schiefer-300); font-weight: 400; margin: 0 .55rem; }
-.sd-zeile { font-size: .9375rem; color: var(--u-titel); }
-.sd-zeile .trenn { color: var(--up-schiefer-300); margin: 0 .55rem; }
-.sd-zeile .lbl { display: inline-block; padding: 0 4px; border-radius: 1px; background: var(--u-gruen-label); color: var(--up-flaeche); font-weight: 600; line-height: 18px; }
-.sd-badge { margin-left: .75rem; font-size: .68rem; font-weight: 600; letter-spacing: .04em; border: 1.5px solid var(--u-titel); border-radius: 999px; padding: .1rem .55rem; }
-.sd-leiste { background: var(--u-rot); color: var(--up-flaeche); font-weight: 600; font-size: .8rem; letter-spacing: .06em; padding: .3rem 166px; }
-.sd-leiste.gruen { background: var(--u-gruen); }
-.sd-reiter { gap: 1.8rem; padding: 0 0 0 150px; border-bottom: 1px solid var(--u-linie); flex-wrap: nowrap; }
-.sd-reiter button { border: 0; background: none; padding: .55rem 1rem .5rem; font-weight: 600; color: var(--u-titel); border-bottom: 3px solid transparent; margin-bottom: -1px; font-size: 1.02rem; }
-.sd-reiter button:hover { color: var(--u-akzent-dunkel); }
-.sd-reiter button.aktiv { color: var(--u-akzent-dunkel); border-bottom-color: var(--u-akzent); }
-.sd-rumpf { padding: 32px 100px 32px 100px; }
-.sd-abschnitt { margin-bottom: 2rem; max-width: 1420px; }
-.sd-abschnitt-kopf { display: flex; align-items: center; gap: .9rem; padding-bottom: .65rem; margin-bottom: 1rem; border-bottom: 1px solid var(--u-linie); font-weight: 600; color: var(--u-titel); font-size: .98rem; }
-.sd-abschnitt-kopf > .bi, .sd-abschnitt-kopf > .u-sym { font-size: 1.2rem; color: var(--u-grau-2); width: 26px; height: 26px; }
-.sd-zahl { background: var(--up-schiefer-100); border-radius: 999px; min-width: 26px; padding: 0 .45rem; text-align: center; font-size: .85rem; line-height: 26px; font-weight: 600; }
-.sd-text { margin: 0; white-space: pre-wrap; color: var(--u-text); }
-.sd-stift { border: 1.5px solid var(--up-text-3); border-radius: 50%; width: 32px; height: 32px; background: var(--up-flaeche); color: var(--up-text-2); display: inline-flex; align-items: center; justify-content: center; }
-.sd-stift:hover { border-color: var(--u-akzent); color: var(--u-akzent); }
-.sd-pille { border: 1.5px solid var(--u-grau-3); background: var(--up-flaeche); color: var(--u-text); border-radius: 999px; padding: .45rem 1.35rem; font-weight: 600; font-size: 1rem; display: inline-flex; align-items: center; gap: .5rem; }
-.sd-pille:hover:not(:disabled) { border-color: var(--u-grau-2); color: var(--u-titel); }
-.sd-pille:disabled { opacity: .45; }
-.sd-pille.klein { padding: .3rem 1rem; font-size: .9rem; }
-.sd-pille.grau { background: var(--up-schiefer-100); border-color: var(--up-schiefer-100); color: var(--up-text-3); }
-.sd-pille.grau:not(:disabled) { color: var(--u-titel); }
-.sd-pille.primaer { background: var(--u-akzent); border-color: var(--u-akzent); color: var(--up-flaeche); }
-.sd-pille.primaer:hover:not(:disabled) { background: var(--u-akzent-dunkel); border-color: var(--u-akzent-dunkel); color: var(--up-flaeche); }
-.sd-fuss { display: flex; flex-wrap: wrap; gap: .6rem; padding: 14px 100px; border-top: 1px solid var(--u-linie); }
-.sd-fuss.rechts { justify-content: flex-end; }
-.sd-kacheln { display: grid; grid-template-columns: repeat(auto-fill, 160px); gap: 4px; }
-.sd-kachel { position: relative; display: grid; grid-template-columns: 50px 1fr; grid-template-rows: auto auto; column-gap: .5rem; padding: .55rem .55rem .45rem; border: 1px solid var(--up-rand); border-radius: 1px; background: var(--up-flaeche); min-height: 84px; cursor: pointer; user-select: none; }
-.sd-kachel.weg, .sd-kachel.spaet { background: var(--up-flaeche); }
-.sd-kachel.da { background: var(--up-schiefer-50); }
-.sd-kachel.befreit { background: var(--up-flaeche); outline: 1px dashed var(--u-grau-3); outline-offset: -1px; }
-.sd-kachel.gewaehlt { outline: 2px solid var(--u-akzent); outline-offset: -2px; }
-.sd-kachel .sd-avatar { grid-row: 1 / 3; width: 44px; height: 44px; border-radius: 50%; background: var(--up-flaeche); border: 1px solid var(--up-rand); color: var(--up-text-3); display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 600; align-self: start; }
-.sd-kachel .sd-name { display: flex; flex-direction: column; font-size: .875rem; line-height: 1.2; color: var(--u-titel); min-width: 0; }
-.sd-kachel .sd-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sd-kachel .sd-statusbild.frueh { border-radius: 50%; background: var(--up-termin); color: var(--up-flaeche); display: flex; align-items: center; justify-content: center; font-size: 9px; }
-.sd-kachel .sd-minuten { position: absolute; top: 4px; right: 6px; font-size: 11px; font-weight: 600; color: var(--up-pruefung); background: var(--up-pruefung-flaeche); border-radius: 8px; padding: 0 6px; line-height: 16px; }
-.sd-kachel.frueh .sd-minuten { color: var(--up-termin); background: var(--up-termin-flaeche); }
-.sd-kachel .sd-minuten.gewertet { color: var(--up-flaeche); background: var(--up-entfall); }
-.sd-kachel.weg .sd-name { color: var(--up-text-3); }
-.sd-kachel.spaet .sd-name, .sd-kachel.frueh .sd-name { color: var(--up-text-2); }
-.sd-kachel.spaet { background: var(--up-pruefung-flaeche); border-color: #ecd3a6; }
-.sd-kachel.frueh { background: var(--up-termin-flaeche); border-color: #d6d1f0; }
 .vs-schnell { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 10px; }
-.ad-pille.klein { padding: 1px 10px; font-size: 11.5px; }
+
 .vs-vorschau { font-size: 12px; padding: 7px 10px; border-radius: 6px; background: var(--up-primaer-flaeche); color: var(--up-marine-800); margin-bottom: 10px; display: flex; gap: 8px; align-items: flex-start; }
 .vs-vorschau.warnung { background: var(--up-entfall-flaeche); color: var(--up-entfall); }
-.ad-check { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin: 2px 0 10px; }
-.sd-kachel .sd-status { position: absolute; top: 6px; left: 6px; width: 15px; height: 15px; border-radius: 50%; color: var(--up-flaeche); display: flex; align-items: center; justify-content: center; font-size: 9px; z-index: 1; }
-.sd-kachel.da .sd-status { background: var(--up-ok); }
-.sd-kachel.weg .sd-status { background: var(--u-rot); }
-.sd-kachel.spaet .sd-status { background: var(--up-pruefung); }
-.sd-umschalten { grid-column: 2; justify-self: start; border: 0; background: none; padding: 0; color: var(--u-grau-2); font-size: 1rem; line-height: 1; margin-top: .25rem; }
-.sd-umschalten:hover { color: var(--u-akzent); }
-.sd-tabelle { font-size: .82rem; }
-.sd-tabelle > thead th { font-size: .78rem; color: var(--u-titel); }
-.sd-kontrolle { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2rem; padding-top: .75rem; color: var(--u-grau-2); font-size: 1rem; }
-.sd-kontrolle .ok { color: var(--u-titel); }
-.sd-kontrolle .ok .bi { color: var(--up-ok); }
-.sd-detail { display: flex; gap: 1.2rem; padding: .9rem 0; }
-.sd-detail > .bi, .sd-detail > .u-sym { font-size: 1.2rem; color: var(--u-grau-2); width: 24px; height: 24px; text-align: center; flex: none; }
-.sd-detail-titel { font-weight: 600; color: var(--u-titel); margin-bottom: .3rem; font-size: .9rem; }
-.sd-wert { display: inline-block; background: var(--up-schiefer-100); border-radius: 999px; padding: .15rem .7rem; font-size: .85rem; margin-right: .3rem; margin-bottom: .3rem; }
-.sd-wert.neu { background: var(--u-gruen-hell); color: var(--up-ok); }
-.sd-plus { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--up-text-3); background: var(--up-flaeche); color: var(--up-text-2); display: inline-flex; align-items: center; justify-content: center; padding: 0; }
-.sd-plus:hover { border-color: var(--u-akzent); color: var(--u-akzent); }
-.sd-notiz { max-width: 1260px; }
-.sd-formular { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr); gap: 1rem 2rem; align-items: start; max-width: 860px; margin: 0 auto; }
-.sd-formular label { font-weight: 600; padding-top: .45rem; color: var(--u-titel); }
-.sd-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
-.sd-chip { border: 0; border-radius: 999px; background: var(--up-schiefer-100); color: var(--up-text-3); padding: .3rem .85rem; font-size: .875rem; font-weight: 600; }
-.sd-chip.an { color: var(--u-titel); background: var(--up-primaer-flaeche); }
 
 /* ------------------------------------------------------------------ Mitteilungen */
 
@@ -875,17 +630,17 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
 
 @media print {
   body { background: var(--up-flaeche); }
-  .u-leiste, .u-kopfleiste, .u-schleier, .nicht-drucken, .tt-tagwahl, .u-toasts, .u-aktionen, .u-filter .btn, .u-legende-leiste, .u-hilfe-rund, .u-werkzeug { display: none !important; }
+  .u-leiste, .u-kopfleiste, .u-schleier, .nicht-drucken, .u-toasts, .u-aktionen, .u-filter .btn, .u-werkzeug { display: none !important; }
   .u-haupt, .u-app.zu .u-haupt { margin-left: 0 !important; }
   .u-inhalt { padding: 0 !important; max-width: none; }
-  .card, .u-panel, .tagplan, .u-tabelle-karte, .br-vorschau, .heute-karte { box-shadow: none !important; border: 1px solid var(--up-rand); }
-  .std { box-shadow: none !important; border: 1px solid var(--up-rand-stark); }
-  .tt-jetzt, .tt-jetzt-zeit { display: none; }
-  .std, .tagplan-zelle, .card { break-inside: avoid; }
-  .tt { --tage: 5; }
-  .tt .tt-tag, .tt .tt-spalte, .tt .tt-leiste { display: block !important; }
-  .u-plantitel { display: flex; margin: 0 0 .5rem; }
-  .u-plantitel h2 { font-size: 1.1rem; }
+  .card, .u-panel, .u-tabelle-karte, .br-vorschau, .heute-karte { box-shadow: none !important; border: 1px solid var(--up-rand); }
+  
+  
+   .card { break-inside: avoid; }
+  
+  
+  
+  
   .br-druckkopf { display: block; margin-bottom: .5rem; }
   .br-seite { break-after: page; }
   body.mt-druck [data-listenspalte] { display: none !important; }
@@ -921,50 +676,45 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
   .u-seitenkopf h1 { font-size: 1.15rem; }
   .mt-raster { grid-template-columns: 1fr; }
   .mt-liste { max-height: none; }
-  .u-legende-leiste, .u-app.zu .u-legende-leiste { left: 50%; bottom: 12px; }
-  .u-hilfe-rund { display: none; }
-  .stundendetails .modal-dialog, .u-app.zu ~ .stundendetails .modal-dialog { left: 0; }
-  .sd-kopf { padding: 14px 16px 6px 16px; }
-  .sd-reiter { padding: 0 6px; }
-  .sd-leiste { padding-left: 16px; }
-  .sd-rumpf { padding: 18px 16px; }
-  .sd-fuss { padding: 10px 16px; }
+  
+  
+  
+  
+  
+  
+  
+  
   .u-werkzeug { padding: 12px 16px; min-height: 0; }
   .u-mit-werkzeug .u-inhalt { padding-left: 1rem; }
   .u-suche { min-width: 0; flex: 1 1 100%; }
   .u-zeitraum { margin-left: 0; flex-wrap: wrap; gap: 8px; }
 }
 
-@media (max-width: 1199.98px) {
-  .planleiste { grid-template-columns: auto 1fr auto; }
-  .planleiste .mitte { justify-content: center; gap: 4px; }
-}
-
 @media (max-width: 767.98px) {
-  .tt-tagwahl { display: flex; }
-  .tt { grid-template-columns: 58px 1fr; }
-  .tt .tt-tag:not(.gewaehlt), .tt .tt-spalte:not(.gewaehlt), .tt .tt-leiste:not(.gewaehlt) { display: none; }
-  .tt-tag { padding-bottom: 12px; }
-  .elementwahl .wahl-menue { width: calc(100vw - 2rem); }
+  
+  
+  
+  
+  
   .monitor { padding: .75rem 0; font-size: 1rem; }
-  .sd-formular { grid-template-columns: 1fr; gap: .4rem; }
+  
   .u-filter .form-control, .u-filter .form-select { min-width: 0; width: 100%; }
   .u-filter .u-feld { flex: 1 1 140px; }
   .u-filter .u-rechts { margin-left: 0; width: 100%; }
-  .planleiste { grid-template-columns: 1fr auto; margin: 0 0 8px; row-gap: 6px; }
-  .planleiste .links { grid-column: 1 / -1; order: 3; justify-content: center; }
-  .planleiste .mitte { justify-content: flex-start; }
-  .planleiste .zeitraum { font-size: .9rem; }
-  .planleiste .zeitraum small { display: none; }
-  .element-pill .wahl-knopf { max-width: 60vw; }
+  
+  
+  
+  
+  
+  
   .table-responsive-stapel thead { display: none; }
   .u-liste > li { padding: .75rem 1rem; gap: .75rem; }
   .card-header { padding-left: 1rem; padding-right: 1rem; }
   .table-card > :not(caption) > * > *:first-child { padding-left: 1rem; }
   .table-card > :not(caption) > * > *:last-child { padding-right: 1rem; }
-  .u-legende-pille { padding: 0 10px 0 8px; font-size: .85rem; gap: 6px; height: 32px; }
-  .u-legende-leiste { gap: 4px; padding: 5px 6px; }
-  .sd-kacheln { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  
+  
+  
   .u-tabelle { font-size: .875rem; }
   .u-statuspille { min-width: 0; height: 30px; padding: 0 11px; font-size: .85rem; }
 }
@@ -989,7 +739,6 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
 
 /* ------------------------------------------------------------------ Ergänzungen */
 
-.std .mehr { color: var(--u-grau); font-weight: 600; }
 .nav-tabs .nav-link .bi { font-size: 1rem; }
 .u-raster-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
 .u-einstellungen { max-width: 760px; }
@@ -1000,116 +749,43 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
 .u-rechte .nein { color: var(--u-grau-3); }
 .u-import-fehler td { background: var(--up-entfall-flaeche) !important; }
 
-/* ------------------------------------------------------------------ Feinabgleich nach den Portal-Screenshots (53–62) */
+/* ------------------------------------------------------------------ Feinabgleich */
 
-/* Original-Icons als Maske: grau, im aktiven Menüpunkt orange */
+/* Symbole als Maske in currentColor */
 .u-sym.wu { display: inline-block; background-color: currentColor; -webkit-mask: var(--wu) center / contain no-repeat; mask: var(--wu) center / contain no-repeat; }
 .u-rss { color: var(--u-akzent); font-size: 15px; line-height: 1; }
 
-/* Menü wie 55.png: aktiver Punkt hellorange hinterlegt (rechts abgerundet) mit orangem Balken links */
+/* Menü: frühere Hervorhebung, überschrieben in css/seitenleiste.css */
 .u-nav-punkt.aktiv, .u-nav-punkt.aktiv:hover { background: var(--up-primaer-flaeche); border-radius: 0 999px 999px 0; width: calc(100% - 14px); }
 .u-nav-punkt.aktiv::before { top: 0; bottom: 0; border-radius: 0; }
 .u-nav-punkt:hover { border-radius: 0 999px 999px 0; width: calc(100% - 14px); }
 
-/* Kopfzeile des Plans: weißer „Heute“-Knopf (54.png), Elementwahl- und Datums-Pille (57.png) */
-.heute-pill { background: var(--up-flaeche); color: var(--u-titel); box-shadow: 0 1px 3px rgba(0, 5, 10, .1), 0 2px 8px rgba(0, 5, 10, .05); padding: 0 32px; }
-.heute-pill:hover { background: var(--up-flaeche); color: var(--u-titel); box-shadow: 0 0 0 1.5px var(--u-grau-3); }
-.planleiste .zeitraum { border: 0; background: none; padding: 4px 6px; border-radius: 999px; }
-.planleiste .zeitraum.pille { border: 1.5px solid var(--u-grau-2); background: var(--up-flaeche); padding: 3px 14px; height: 32px; }
-.planleiste .zeitraum.pille:hover { border-color: var(--u-text); }
+/* Kopfzeile des Plans: weißer „Heute“-Knopf, Elementwahl- und Datums-Pille */
+
 /* Klassen-/Lehrkraft-/Raumwahl im Kopf des Stundenplans: rahmenlos, Rahmen nur beim Überfahren, bei Fokus und bei offener Liste */
-.element-pill .wahl-knopf { background: transparent !important; border: 1.5px solid transparent !important; box-shadow: none !important; height: 32px; min-width: 110px; padding: 0 14px !important; overflow: visible;
-  transition: border-color .15s ease, background-color .15s ease; }
-.element-pill .wahl-knopf:is(:hover, :focus-visible, [aria-expanded="true"]) { border-color: var(--u-text) !important; background: rgba(255, 255, 255, .55) !important; }
-.wahl-info { position: relative; display: inline-flex; width: 16px; height: 16px; flex: none; }
-.wahl-info img { width: 16px; height: 16px; opacity: .6; }
-.wahl-info::after { content: attr(data-tip); position: absolute; left: -48px; top: calc(100% + 12px); background: var(--up-text-2); color: var(--up-flaeche); font-size: 13px; font-weight: 600; white-space: nowrap; padding: 5px 9px; border-radius: 4px; display: none; z-index: 40; box-shadow: 0 2px 6px rgba(0, 5, 10, .15); }
-.wahl-info:hover::after, .wahl-knopf:focus-visible .wahl-info::after { display: block; }
-.wahl-info:hover img { opacity: 1; }
 
 /* Datumsbereich-Pille im Kopf des Stundenplans (öffnet den eigenen Kalender, js/kalender.js – Stile in kalender.css).
    Rahmenlos; der Rahmen erscheint erst beim Überfahren, bei Tastaturfokus und bei offenem Kalender. */
-.zeitraum.kal-pille, .planleiste .zeitraum.kal-pille { display: inline-flex; align-items: center; height: 32px; padding: 0 16px; border: 1px solid transparent; border-radius: 999px;
-  background: transparent; color: var(--u-titel); font-size: .875rem; font-weight: 500; letter-spacing: .02em; font-variant-numeric: tabular-nums; cursor: pointer;
-  transition: border-color .15s ease, background-color .15s ease; }
-.zeitraum.kal-pille:hover, .zeitraum.kal-pille[aria-expanded="true"] { border-color: var(--up-text-2); background: rgba(255, 255, 255, .55); }
-.zeitraum.kal-pille:focus-visible { border-color: var(--up-text-2); outline: 2px solid var(--u-akzent); outline-offset: 2px; }
 
-/* Stundenkarten: weiß, leicht abgerundet, keine Hover-Reaktion; Uhrzeiten klein links wie 57.png */
-.std, .tagplan .std, .tt-liste .std { border-radius: 4px; }
-.std.mit-zeit { padding-left: 46px; }
-.std.mit-zeit::before { left: 38px; }
-.std .zt { left: 7px; font-size: 10px; color: var(--up-text-3); }
-.std .z1 { font-weight: 600; color: var(--up-text); }
-.std .z2 { color: var(--up-text); }
+/* Stundenkarten: weiß, leicht abgerundet, keine Hover-Reaktion; Uhrzeiten klein links */
+
 /* Symbole unten rechts: fällige Hausaufgabe, Info (Notizen, Vertretungstext) */
-.std .ecke { position: absolute; right: 6px; bottom: 6px; display: flex; gap: 3px; z-index: 1; }
-.std .ecke img { width: 16px; height: 16px; display: block; }
-.tt.ohne-symbole .std .mks, .tt.ohne-symbole .std .ecke { display: none; }
-/* Lehrkraft abwesend (wie im Paket des Kollegen): gestrichelt, grau, ohne Schatten und ohne Entfall-Dreieck; eigenes Kürzel durchgestrichen */
-.std.lehrer-abwesend { background: var(--up-primaer-flaeche) !important; outline: 1px dashed var(--up-text-3); outline-offset: -1px; box-shadow: none !important; border-radius: 5px; }
-.std.lehrer-abwesend::before { background: var(--up-rand-stark); }
-.std.lehrer-abwesend .z1, .std.lehrer-abwesend .z2, .std.lehrer-abwesend .zt { text-decoration: none; }
-.std.lehrer-abwesend .z1 { color: var(--up-text); }
-.std.lehrer-abwesend .z2 { color: var(--up-text-2); }
-.std.lehrer-abwesend .zt { color: var(--u-grau-2); }
-.std.lehrer-abwesend .lbl.weg { background: var(--u-gruen-label); color: var(--up-flaeche); font-weight: 600; padding: 0 3px; border-radius: 2px; text-decoration: line-through; text-decoration-thickness: 1px; }
-.tt.ohne-abwesenheiten .std.lehrer-abwesend { display: none; }
-.tt.ohne-abwesenheiten .tt-ereignis.hinweis { display: none; }
+
+/* Lehrkraft abwesend: gestrichelt, grau, ohne Schatten und ohne Entfall-Dreieck; eigenes Kürzel durchgestrichen */
+
 .hilfe-gestrichelt { display: inline-block; width: 22px; height: 14px; background: var(--up-flaeche-2); outline: 1px dashed var(--up-text-3); outline-offset: -1px; border-radius: 3px; flex: none; }
 
-/* Legenden-Menü wie 56.png */
-.u-legende-menue { width: 300px; padding: 14px 0 10px; border-radius: 6px; }
-.u-legende-menue .kopf { font-size: 14px; font-weight: 600; color: var(--u-grau); padding: 8px 18px 6px; }
-.u-legende-menue button.eintrag { padding: 8px 18px; font-weight: 600; color: var(--u-titel); gap: 12px; font-size: 14px; }
-.u-legende-menue button.eintrag.ohne { padding-left: 24px; }
-.u-legende-menue .haken { color: var(--u-akzent); font-size: 20px; line-height: 1; -webkit-text-stroke: .3px; }
-.u-legende-menue .haken.leer { color: var(--u-grau-3); }
-.u-hilfe-rund .bi { font-size: 28px; line-height: 1; }
+/* Legenden-Menü */
 
 /* Stundendetails wie 59/62 */
-.sd-leiste.grau { background: var(--up-text-3); }
-.sd-rumpf { padding: 40px 120px 40px 166px; } /* linksbündig mit dem Reiter „Klassenbuch“ (Kopf 166px) */
-.sd-abschnitt { margin-bottom: 2.4rem; max-width: 1440px; }
-.sd-abschnitt-kopf { font-weight: 600; font-size: 15px; gap: 16px; padding-bottom: 14px; margin-bottom: 18px; }
-.sd-abschnitt-rumpf { padding-left: 42px; }
-.kb-icon { width: 26px; height: 26px; flex: none; object-fit: contain; color: var(--up-text-3); }
-.sd-detail > .kb-icon { width: 24px; height: 24px; }
-.sd-werkzeug { border: 0; background: none; color: var(--up-text-2); font-size: 22px; line-height: 1; padding: 0; }
-.sd-werkzeug:hover { color: var(--u-titel); }
-.sd-stift { width: 34px; height: 34px; border-color: var(--up-text-3); color: var(--up-text-2); }
-.sd-plus { width: 34px; height: 34px; font-size: 18px; border-color: var(--up-text-3); color: var(--up-text-2); }
-.sd-kacheln { grid-template-columns: repeat(auto-fill, 160px); gap: 4px; }
-.sd-kachel { grid-template-columns: 52px 1fr; padding: 8px 8px 6px; border: 1px solid var(--up-rand); min-height: 84px; }
-.sd-kachel.da { background: var(--up-schiefer-50); }
-.sd-kachel .sd-avatar { width: 48px; height: 48px; border: 0; background: var(--up-flaeche); overflow: hidden; }
-.sd-kachel .sd-avatar img { width: 100%; height: 100%; }
-.sd-kachel .sd-statusbild { position: absolute; top: 6px; left: 6px; width: 16px; height: 16px; z-index: 1; }
-.sd-kachel .sd-statusbild.spaet { border-radius: 50%; background: var(--up-pruefung); color: var(--up-flaeche); display: flex; align-items: center; justify-content: center; font-size: 9px; }
-.sd-kachel .sd-name { font-size: 14px; padding-top: 6px; }
-.sd-kachel.weg .sd-name { color: var(--up-text-3); }
-.sd-umschalten { font-size: 15px; margin-top: 2px; }
-.sd-pille.gross { font-size: 1.05rem; padding: .5rem 1.6rem; }
-.sd-fuss { padding: 14px 100px 14px 164px; }
-.sd-fuss.sd-status { justify-content: flex-end; gap: 2.4rem; padding-right: 60px; font-size: 1.1rem; color: var(--u-grau-2); }
-.sd-status .ok { color: var(--up-text-2); display: inline-flex; align-items: center; gap: .45rem; }
-.sd-status .ok .bi { color: var(--up-ok); font-size: 1.45rem; }
-.sd-statusknopf { border: 1.5px solid var(--u-akzent); background: var(--up-flaeche); color: var(--u-akzent-dunkel); border-radius: 999px; padding: .35rem 1.2rem; font-weight: 600; font-size: .95rem; }
-.sd-statusknopf:hover { background: var(--u-akzent-hell); }
-/* orange Pille wie im Vorbild („Lehrstoff eingeben“), daneben zweizeilig „Abwesenheitskontrolle ab:“ */
-.sd-orange { border: 0; background: var(--u-akzent); color: var(--up-flaeche); border-radius: 999px; padding: .62rem 1.15rem; font-weight: 600; font-size: .95rem; line-height: 1.2; box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
-.sd-orange:hover { background: var(--u-akzent-dunkel); }
-.sd-orange:disabled { opacity: .55; }
-.sd-kontrolle { display: inline-flex; flex-direction: column; align-items: flex-start; font-size: 1.05rem; color: var(--up-text-2); line-height: 1.55; }
-.sd-fuss.sd-status { align-items: center; }
-.sd-detail { gap: 1.4rem; padding: 1.1rem 0; max-width: 1360px; }
-.sd-detail-titel { font-size: .95rem; font-weight: 600; }
-.sd-notiz { min-height: 56px; }
-.sd-notiz-knoepfe { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .5rem; }
-.sd-leer { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: 3rem 1rem; color: var(--u-grau); }
-.sd-leer b { color: var(--u-titel); }
 
-/* Alte Listenelemente des Klassenbuchs (60/61.png): Zellen grau gestreift mit weißen Fugen */
+ /* linksbündig mit dem Reiter „Klassenbuch“ (Kopf 166px) */
+
+.kb-icon { width: 26px; height: 26px; flex: none; object-fit: contain; color: var(--up-text-3); }
+
+/* Hauptknopf („Lehrstoff eingeben“), daneben zweizeilig „Abwesenheitskontrolle ab:“ */
+
+/* Alte Listenelemente des Klassenbuchs: Zellen grau gestreift mit weißen Fugen */
 .alt-liste { border-collapse: separate; border-spacing: 2px; font-size: 12.5px; color: var(--up-text); }
 .alt-liste th { font-size: 11px; font-weight: 600; color: var(--up-text); padding: 2px 6px; vertical-align: bottom; white-space: nowrap; text-align: center; }
 .alt-liste td { padding: 3px 7px; white-space: nowrap; line-height: 16px; }
@@ -1137,9 +813,9 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
 .kb-hw-faellig { margin-top: .8rem; padding-top: .6rem; border-top: 1px dashed var(--u-linie); }
 
 @media (max-width: 991.98px) {
-  .sd-rumpf { padding: 18px 16px; }
-  .sd-abschnitt-rumpf { padding-left: 0; }
-  .sd-fuss, .sd-fuss.sd-status { padding: 10px 16px; gap: 1rem; font-size: .95rem; }
+  
+  
+  
   .kb-formular { grid-template-columns: 1fr; }
   .u-nav-punkt.aktiv, .u-nav-punkt:hover { width: 100%; }
 }
@@ -1149,165 +825,60 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
 /* UW-03: Die Navigation bleibt sichtbar und bedienbar – kein Overlay und kein Schatten über der Leiste.
    Stundendetails und Dialoge beginnen rechts der Navigation; der Dialoghintergrund lässt die Leiste frei. */
 @media (min-width: 992px) {
-  .stundendetails.modal { left: var(--u-leiste); width: auto; right: 0; }
-  body.leiste-zu .stundendetails.modal { left: var(--u-leiste-zu); }
-  .stundendetails .modal-dialog, body.leiste-zu .stundendetails .modal-dialog, .u-app.zu ~ .stundendetails .modal-dialog { left: 0; position: absolute; }
-  .modal:not(.stundendetails) { left: var(--u-leiste); width: auto; right: 0; }
-  body.leiste-zu .modal:not(.stundendetails) { left: var(--u-leiste-zu); }
+  
+  
+  
+  
+  
   .modal-backdrop { left: var(--u-leiste); width: auto; right: 0; }
   body.leiste-zu .modal-backdrop { left: var(--u-leiste-zu); }
 }
-.stundendetails .modal-content { box-shadow: none; border-left: 1px solid var(--up-rand); position: relative; }
+
 .u-leiste { box-shadow: 1px 0 0 var(--up-rand); }
 @media (max-width: 991.98px) {
   /* Telefon: Details unter der Kopfleiste, ausgeklapptes Menü liegt über den Details */
-  .stundendetails.modal, .stundendetails .modal-dialog { top: var(--u-kopf) !important; height: calc(100% - var(--u-kopf)) !important; }
+  
   .u-kopfleiste { z-index: 1056; }
   .u-app.offen .u-leiste { z-index: 1062; }
   .u-app.offen .u-schleier { z-index: 1061; }
 }
 
-/* UW-04: Schrift überall aus --u-schrift (AvenirNextPro, sonst Nunito Sans) – auch in Dialogen, Tabellen und Eingaben */
-button, input, select, textarea, .modal, .tooltip, .dropdown-menu, .u-hover-label { font-family: var(--u-schrift); }
+/* UW-04: Schrift überall aus --u-schrift (IBM Plex Sans) – auch in Dialogen, Tabellen und Eingaben */
+button, input, select, textarea, .modal, .tooltip, .dropdown-menu { font-family: var(--u-schrift); }
 
 /* UW-17: Hover nur auf Labels und Symbolen unten rechts – grünes Label „B070 → C197“ über dem geänderten Wert */
-.std .lbl[data-hover], .std .ecke [data-hover] { cursor: default; }
-.u-hover-label {
-  position: fixed; z-index: 2000; display: none; pointer-events: none; background: var(--up-aenderung); color: var(--up-flaeche); font-weight: 600; font-size: 15px; line-height: 1.2;
-  padding: 7px 12px; border-radius: 3px; box-shadow: 0 2px 8px rgba(0, 5, 10, .25); white-space: pre-line; max-width: 360px;
-}
-.u-hover-label.dunkel { background: var(--up-text-2); font-size: 13px; font-weight: 600; padding: 6px 10px; }
+
 /* Klassen einer Kopplung als Pillen über der Karte */
-.u-hover-label.pillen { background: none; box-shadow: none; padding: 0; display: flex; gap: 4px; flex-wrap: wrap; max-width: 420px; }
-.u-hover-label.pillen span { background: var(--up-text-2); color: var(--up-flaeche); font-size: 13px; font-weight: 600; padding: 5px 9px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 5, 10, .2); }
 
 /* UW-16: Ferien leicht abgerundet; Aufsichten ohne Trennlinie und ohne Aufschrift, Schrift wie der oberste Wert einer Karte */
-.tt-ferien { border-radius: 6px; inset: 1px 3px; }
-.tt-spalte.frei .tt-linie, .tt-spalte.frei .tt-pause { display: none; }
-.tt-pause { border-top: 0; }
-.aufsicht { font-size: 14px; font-weight: 600; color: var(--up-text); border-radius: 4px; }
-.tt-liste .aufsicht { font-size: 14px; }
 
 /* UW-11/12: Kopf der Stundendetails – Links auf die Stundenpläne, Änderungen ohne Label (alter Wert grau durchgestrichen) */
-.sd-link { color: inherit; text-decoration: none; }
-.sd-link:hover, .sd-link:focus-visible { text-decoration: none; color: var(--u-akzent-dunkel); }
-.sd-alt { color: var(--up-schiefer-400); text-decoration-color: var(--up-schiefer-400); }
-.sd-pfeil { color: var(--u-titel); margin: 0 .15rem; }
-.sd-zeile .lbl { background: none; color: inherit; padding: 0; font-weight: inherit; }
-.sd-badge { margin-left: 0; font-size: .64rem; padding: .12rem .6rem; align-self: center; letter-spacing: .03em; }
-.sd-badge.voll { background: var(--up-text-2); border-color: var(--up-text-2); color: var(--up-flaeche); }
 
 /* UW-13: Raumbuchung am Desktop – Raum-Chip mit Menü, Plus für einen weiteren Raum, Auswahlliste */
-.sd-raeume { align-items: center; }
-.sd-raumchip { position: relative; }
-.sd-chipknopf { border: 0; background: var(--up-schiefer-100); color: var(--u-titel); border-radius: 999px; min-width: 64px; height: 40px; padding: 0 18px; font-weight: 600; font-size: .95rem; }
-.sd-chipknopf:hover, .sd-chipknopf[aria-expanded=true] { background: var(--up-primaer-flaeche); }
-.sd-raum-plus { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--up-text-3); background: var(--up-flaeche); color: var(--up-text-2); display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; }
-.sd-raum-plus:hover { border-color: var(--u-akzent); color: var(--u-akzent); }
-.sd-raummenue { position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; min-width: 130px; background: var(--up-flaeche); border-radius: 4px; box-shadow: 0 4px 16px rgba(0, 5, 10, .18); padding: 4px 0; }
-.sd-raummenue button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 8px 16px; font-weight: 600; color: var(--u-titel); font-size: .95rem; }
-.sd-raummenue button:hover, .sd-raummenue button:focus-visible { background: var(--up-schiefer-100); }
-.sd-raumwahl { max-width: 900px; margin: 0 auto; }
-.sd-raumwahl h3 { font-size: 1.6rem; font-weight: 400; color: var(--u-text); margin: 0 0 1.4rem; }
-.sd-raumsuche { display: flex; align-items: center; gap: 10px; background: var(--up-hintergrund); border-radius: 999px; height: 38px; padding: 0 16px; margin-bottom: .7rem; }
-.sd-raumsuche .bi { color: var(--u-grau); }
-.sd-raumsuche input { border: 0; background: transparent; outline: 0; flex: 1; font-size: .9rem; color: var(--u-titel); }
-.sd-raumfilter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.2rem; }
-.sd-filterpille { border: 1.5px solid var(--up-text-3); background: var(--up-flaeche); color: var(--u-titel); border-radius: 999px; height: 30px; padding: 0 14px; font-size: .85rem; font-weight: 600; display: inline-flex; align-items: center; }
-.sd-filterpille.an { background: var(--up-text-2); border-color: var(--up-text-2); color: var(--up-flaeche); }
-.sd-filterpille.wahl { padding: 0; position: relative; }
-.sd-filterpille.wahl select { appearance: none; border: 0; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23414d55' stroke-width='1.5'%3E%3Cpath d='m3 6 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center / 13px; height: 100%; padding: 0 30px 0 14px; font-weight: 600; font-size: .85rem; color: inherit; border-radius: 999px; outline: 0; cursor: pointer; }
-.sd-filterpille.wahl.an select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='1.5'%3E%3Cpath d='m3 6 5 5 5-5'/%3E%3C/svg%3E"); }
-.sd-raumliste { list-style: none; margin: 0; padding: 0; }
-.sd-raumliste li { border-bottom: 1px solid var(--up-rand); }
-.sd-raumzeile { display: flex; align-items: center; gap: 18px; width: 100%; border: 0; background: none; padding: 14px 16px 14px 8px; text-align: left; color: var(--u-titel); font-size: .9rem; }
-.sd-raumzeile:hover, .sd-raumzeile.gewaehlt { background: var(--up-hintergrund); }
-.sd-raumzeile .u-sym { width: 22px; height: 22px; color: var(--up-text-3); }
-.sd-raumzeile .name { flex: 1; font-weight: 600; }
-.sd-raumzeile .name small { display: block; font-weight: 400; color: var(--u-grau-2); font-size: .78rem; }
-.sd-raumzeile .radio { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--up-text-3); flex: none; display: inline-flex; align-items: center; justify-content: center; }
-.sd-raumzeile.gewaehlt .radio { border-color: var(--u-akzent); }
-.sd-raumzeile.gewaehlt .radio::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--u-akzent); }
-.sd-raumleer { padding: 1.2rem .5rem; color: var(--u-grau); font-size: .9rem; }
 
 /* UW-10: Dialoge Lehrstoff, Abwesenheit, Klassenbucheintrag (alte Klassenbuch-Fenster über den abgedunkelten Details) */
-.sd-overlay { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(36, 50, 61, .45); display: flex; align-items: flex-start; justify-content: center; padding: 28px 12px; overflow-y: auto; }
-.sd-altdialog { background: var(--up-flaeche); border: 1px solid var(--up-marine-200); box-shadow: 0 6px 24px rgba(0, 5, 10, .3); font-size: 12px; color: var(--up-text); }
-.sd-altdialog-kopf { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(var(--up-marine-50), var(--up-marine-100)); border-bottom: 1px solid var(--up-marine-200); padding: 3px 8px 3px 8px; color: var(--up-marine-800); font-size: 12.5px; font-weight: 600; }
-.sd-altdialog-kopf button { border: 0; background: none; color: var(--up-marine-800); font-size: 17px; line-height: 1; padding: 0 2px; }
-.sd-altdialog-rumpf { padding: 10px 12px 10px; }
-.ad-kopf { display: grid; grid-template-columns: auto 1fr; gap: 1px 12px; margin: 0 0 10px; }
-.ad-kopf dt { font-weight: 600; }
-.ad-kopf dd { margin: 0; }
-.ad-feld { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; font-size: 11.5px; color: var(--up-text); flex: 1; min-width: 0; }
-.ad-feld input, .ad-feld select, .ad-feld textarea { font-size: 12px; border: 1px solid var(--up-schiefer-400); border-radius: 1px; padding: 2px 4px; min-height: 22px; color: var(--up-text); background: var(--up-flaeche); width: 100%; }
-.ad-feld textarea { resize: vertical; }
-.ad-feld input:focus, .ad-feld select:focus, .ad-feld textarea:focus { outline: 1px solid var(--up-marine-500); border-color: var(--up-marine-500); }
-.ad-feld input:disabled, .ad-feld input[readonly] { background: var(--up-hintergrund); color: var(--up-text-2); }
-.ad-feld select[multiple] { padding: 0; }
-.ad-reihe { display: flex; gap: 10px; }
-.ad-reihe .ad-feld.breit { flex: 1.6; }
-.ad-liste { width: 100%; border-collapse: separate; border-spacing: 1px; font-size: 11.5px; }
-.ad-liste td { padding: 1px 5px; white-space: nowrap; }
-.ad-liste tr:nth-child(odd) td { background: var(--up-primaer-flaeche); }
-.ad-liste td.text { max-width: 170px; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-.ad-liste td.leer { color: var(--up-text-2); background: none !important; }
-.ad-liste button { border: 0; background: none; padding: 0; line-height: 1; }
-.ad-liste img { width: 14px; height: 14px; }
-.ad-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11.5px; }
-.ad-info img { width: 18px; height: 14px; object-fit: contain; }
-.ad-zeichen { font-size: 11px; margin: -2px 0 8px; }
-.ad-zeichen input { width: 44px; font-size: 11px; border: 1px solid var(--up-schiefer-400); padding: 0 3px; }
-.ad-knoepfe { display: flex; gap: 6px; margin-top: 10px; }
-.ad-pille { border: 1.5px solid var(--up-text-3); background: var(--up-flaeche); color: var(--up-text); border-radius: 999px; padding: 3px 14px; font-size: 12px; font-weight: 600; }
-.ad-pille:hover { border-color: var(--up-marine-500); color: var(--up-marine-800); }
-.ad-fuss { margin-top: 10px; font-size: 10.5px; color: var(--up-text); line-height: 1.5; }
 
 /* Stundenplan: obere Leiste (Elementwahl, Zeitraum, Heute) und Tageskopf Mo–Fr bleiben beim Scrollen oben stehen, mit leichtem Schatten */
 [data-ansicht="plan"] { --plan-grund: var(--up-hintergrund); --plankopf: 58px; --plan-oben: 0px; }
-[data-ansicht="plan"] .planleiste { position: sticky; top: var(--plan-oben); z-index: 20; margin-top: -28px; padding-top: 14px; padding-bottom: 4px; }
+
 /* Hintergrund von Leiste und Tageskopf: derselbe fixierte Farbverlauf wie die Seite, durchgehend bis an die Ränder (auch über die Lücken) */
-[data-ansicht="plan"] .planleiste::before, [data-ansicht="plan"] .tt > .tt-tag::before, [data-ansicht="plan"] .tt > .tt-ecke:first-child::before {
-  content: ""; position: absolute; z-index: -1; inset: 0 calc(var(--tt-spalt) / -2); background: var(--u-verlauf) fixed; pointer-events: none;
-}
-[data-ansicht="plan"] .planleiste::before { inset: -20px -40px 0; }
-[data-ansicht="plan"] .tt > .tt-ecke:first-child::before { left: -40px; }
-[data-ansicht="plan"] .tt > .tt-tag.letzter::before { right: -40px; }
-[data-ansicht="plan"] .tt > .tt-tag, [data-ansicht="plan"] .tt > .tt-ecke:first-child {
-  position: sticky; top: calc(var(--plan-oben) + var(--plankopf)); z-index: 19; padding-top: 4px;
-}
+
 /* Schatten unter dem Tageskopf: ein durchgehendes Band über die ganze Breite, nur wenn gescrollt ist */
-[data-ansicht="plan"] .tt > .tt-tag::after, [data-ansicht="plan"] .tt > .tt-ecke:first-child::after {
-  content: ""; position: absolute; top: 100%; left: calc(var(--tt-spalt) / -2); right: calc(var(--tt-spalt) / -2); height: 10px;
-  background: linear-gradient(rgba(0, 5, 10, .14), rgba(0, 5, 10, 0)); opacity: 0; pointer-events: none;
-}
-[data-ansicht="plan"] .tt > .tt-tag.letzter::after { right: -40px; }
-[data-ansicht="plan"] .tt > .tt-ecke:first-child::after { left: -40px; }
-body.plan-gescrollt [data-ansicht="plan"] .tt > .tt-tag::after, body.plan-gescrollt [data-ansicht="plan"] .tt > .tt-ecke:first-child::after { opacity: 1; }
+
 /* Stundenraster breiter: weniger Rand links und rechts, schmalere Lücken zwischen den Tagen */
-.tt { --tt-spalt: 16px; }
+
 @media (min-width: 992px) {
   .u-app[data-ansicht="plan"] .u-inhalt { padding-left: 14px; padding-right: 14px; max-width: none; }
   .u-app.u-mit-werkzeug[data-ansicht="plan"] .u-inhalt { padding-left: 78px; }
-  [data-ansicht="plan"] .tt { --tt-spalt: 10px; column-gap: var(--tt-spalt); grid-template-columns: 50px repeat(var(--tage), minmax(0, 1fr)); }
+  
 }
-@media (max-width: 991.98px) { [data-ansicht="plan"] { --plan-oben: var(--u-kopf); } [data-ansicht="plan"] .planleiste { margin-top: -1rem; padding-top: .5rem; } }
-@media print { [data-ansicht="plan"] .planleiste, [data-ansicht="plan"] .tt > .tt-tag, [data-ansicht="plan"] .tt > .tt-ecke:first-child { position: static; box-shadow: none; } [data-ansicht="plan"] .tt > .tt-tag::after { display: none; } }
+@media (max-width: 991.98px) { [data-ansicht="plan"] { --plan-oben: var(--u-kopf); }  }
 
 /* Klasse abwesend: Klasse durchgestrichen mit Label, Karte grün; im eigenen Plan gestrichelt wie bei abwesender Lehrkraft */
-.std .lbl.abw { background: var(--up-text-3); }
-.std.klasse-abwesend { background: var(--u-gruen-hell); box-shadow: var(--u-schatten-karte); }
-.std.klasse-abwesend .kl-weg { text-decoration: line-through; text-decoration-thickness: 1px; }
-.std.lehrer-abwesend.klasse-abwesend { background: var(--up-flaeche-2) !important; }
-.std .abw-label { display: inline-block; font-size: 10.5px; line-height: 14px; font-weight: 600; color: var(--up-flaeche); background: var(--up-text-2); border-radius: 2px; padding: 0 4px; margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Offene Raumvertretung: wie offene Lehrervertretung (rotes Label „???“) */
-.std .lbl.offen-raum { background: var(--u-rot); }
 
 /* Pausenaufsichten halbiert (Legendenmenü) bzw. schmal neben einer durchgängigen Veranstaltung */
-.tt.aufsicht-schmal .aufsicht, .aufsicht.schmal { left: auto !important; right: 0 !important; width: 50% !important; font-size: 11px; padding-left: 14px; }
-.aufsicht.schmal::before { left: 5px; }
-.tt.aufsicht-aus .aufsicht { display: none; }
 
 /* UW-05: Startseite – „Mein nächster Unterricht“ als alte Liste (Entfall grau durchgestrichen, Änderung lila) */
 .heute-karte > header .h-stift img { width: 16px; height: 16px; }
@@ -1365,7 +936,7 @@ body.plan-gescrollt [data-ansicht="plan"] .tt > .tt-tag::after, body.plan-gescro
 .kb-abwpille b { font-weight: 600; }
 .kb-abwpille span { color: var(--u-grau-3); }
 
-/* Alte Listenansichten (Mein Unterricht, Klassendienste, Fehlzeiten): orange Überschrift, weiße Karte, grau gestreifte Liste */
+/* Alte Listenansichten (Mein Unterricht, Klassendienste, Fehlzeiten): marine Überschrift, weiße Karte, grau gestreifte Liste */
 .alt-seite { max-width: 1250px; }
 .alt-kopf { display: flex; align-items: center; justify-content: space-between; margin: 0 0 10px; }
 .alt-kopf h1 { font-size: 1rem; font-weight: 400; color: var(--u-akzent); margin: 0; }
@@ -1434,9 +1005,9 @@ body.plan-gescrollt [data-ansicht="plan"] .tt > .tt-tag::after, body.plan-gescro
 
 /* keine Lade- und Öffnungsanimationen */
 .u-laedt { min-height: 120px; }
-.stundendetails, .stundendetails .modal-dialog, .modal-backdrop { transition: none !important; animation: none !important; }
+ .modal-backdrop { transition: none !important; animation: none !important; }
 /* Durchstreichung überall etwas feiner */
-.alt, .std-lbl.weg, .vt-zeile .lbl-neu.weg, .std.lehrer-abwesend .lbl.weg, .heute-tabelle tr.entfall td, .heute-liste tr.entfall td, .kb-tagliste tr.entfall td, .wert-alt, s, del { text-decoration-thickness: .75px; }
+.alt, .heute-tabelle tr.entfall td, .heute-liste tr.entfall td, .kb-tagliste tr.entfall td, .wert-alt, s, del { text-decoration-thickness: .75px; }
 
 /* ---------------------------------------------------------------- Neue Listen (Abwesenheiten, Fehlzeiten): Suche, Filterpillen,
    runde Auswahl, Avatare mit Initialen, Chips – Grunddesign der neuen Oberfläche */
@@ -1502,19 +1073,8 @@ body.plan-gescrollt [data-ansicht="plan"] .tt > .tt-tag::after, body.plan-gescro
 .nw-datum { font-size: .85rem; color: var(--up-text-2); display: flex; align-items: center; gap: 8px; }
 .nw-neu { padding: 1px 8px; border-radius: 999px; background: var(--up-primaer-flaeche); color: var(--up-primaer); font-weight: 600; font-size: .75rem; }
 /* Elementwahl: „Alle anzeigen“ – Schalter oben, alle Elemente als Pillen in einem breiten Feld */
-.wahl-alle-schalter { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; margin: 0; border-bottom: 1px solid var(--up-linie); font-size: .92rem; cursor: pointer; }
-.wahl-alle-schalter input { appearance: none; -webkit-appearance: none; width: 40px; height: 22px; border-radius: 11px; background: var(--up-rand-stark); position: relative; cursor: pointer; }
-.wahl-alle-schalter input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--up-flaeche); box-shadow: 0 1px 2px rgba(0,0,0,.25); }
-.wahl-alle-schalter input:checked { background: var(--u-akzent); }
-.wahl-alle-schalter input:checked::after { left: 21px; }
-.elementwahl .wahl-alle { display: none; position: absolute; top: calc(100% + 6px); z-index: 1000; max-height: 70vh; overflow: auto; padding: 10px 12px;
-  background: rgba(244, 245, 247, .97); border-radius: 8px; box-shadow: var(--u-schatten-hoch); flex-wrap: wrap; gap: 6px 4px; align-content: flex-start; }
-.elementwahl .wahl-alle.show { display: flex; }
-.wahl-pille { border: 0; background: transparent; border-radius: 999px; padding: 3px 10px; font: inherit; font-size: .9rem; color: var(--u-text); }
-.wahl-pille:hover { background: var(--up-rand); }
-.wahl-pille.aktiv { background: var(--up-text); color: var(--up-flaeche); }
-@media (max-width: 767.98px) { .elementwahl .wahl-alle { display: none !important; } .wahl-alle-schalter { display: none; } }
-/* Administration und Stammdaten: Untermenü ohne Symbole, etwas schmaler; Hintergrund nur beim Überfahren, gewählter Punkt orange */
+
+/* Administration und Stammdaten: Untermenü ohne Symbole, etwas schmaler; Hintergrund nur beim Überfahren, gewählter Punkt marine */
 .u-nav-kompakt .u-nav-sym { display: none; }
 .u-nav-kompakt .u-nav-punkt { padding-top: 7px; padding-bottom: 7px; padding-left: 28px; font-size: .92rem; min-height: 0; width: calc(100% - 28px); }
 .u-nav-kompakt .u-nav-punkt:hover { background: var(--up-flaeche-hover); }
@@ -1542,58 +1102,36 @@ a.u-abmelden, a.u-abmelden:hover, a.u-abmelden:focus { text-decoration: none !im
 /* Seitenbreite ausnutzen (neben der Seitenleiste): Inhalt ohne feste Höchstbreite, Einstellungskarten über die volle Breite */
 .u-inhalt { max-width: none; }
 .u-einstellungen { max-width: none; }
-.heute { max-width: none; }
+#seite > .heute { max-width: none; }
 .kb-editor { max-width: none; }
 
-.sd-ursprung { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--up-ok-flaeche); color: var(--up-ok); font-size: .75rem; font-weight: 600; vertical-align: middle; }
-.sd-pille.rot { color: var(--up-entfall); border-color: #e3b4b0; } .sd-pille.rot:hover { background: var(--up-entfall-flaeche); }
+ 
 
-/* Schriftstärken und -größen wie in der Vorlage (Avenir: 400 = Regular, 500/600 = Medium – keine Demi-/Bold-Schnitte):
+/* Schriftstärken und -größen (400 = Regular, 500/600 = Medium bzw. SemiBold):
    Navigation kleiner und kräftiger, Kartenkopf Medium, Kartenzeilen Regular, Stundendetails-Kopf und Reiter Medium */
 .u-nav-punkt { font-size: .9rem; font-weight: 600; min-height: 50px; color: var(--up-text); }
 .u-nav-unter .u-nav-punkt { font-size: .875rem; }
 .u-nav-kompakt .u-nav-punkt { font-weight: 600; }
-.std .z1 { font-size: 13px; font-weight: 600; color: var(--up-text); }
-.std .z2 { font-size: 12px; font-weight: 400; color: var(--up-text); }
-.sd-titel h2 { font-size: 1.3rem; font-weight: 600; }
-.sd-zeile { font-size: .875rem; }
-.sd-reiter button { font-size: .95rem; font-weight: 600; }
-.sd-abschnitt-kopf { font-size: .875rem; font-weight: 600; }
+
 .u-benutzer b { font-size: 1rem; font-weight: 600; }
 .u-abmelden { font-size: .75rem; font-weight: 600; }
 
 /* Verlegung: eigenes Symbol (zwei Pfeile) – grün an der neuen Stelle, rot an der alten */
-.mks .mk-verlegung { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: var(--up-aenderung) center / 10px 10px no-repeat
-  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5h10M9 2l3 3-3 3M14 11H4M7 8l-3 3 3 3'/%3E%3C/svg%3E"); }
-.mks .mk-verlegung.weg { background-color: var(--up-entfall); }
-.tt.ohne-aenderung .std .mk-verlegung:not(.weg), .tt.ohne-entfall .std .mk-verlegung.weg { display: none; }
+
 /* vergangene Pausenaufsichten ausgegraut wie vergangene Stunden */
-.aufsicht.vergangen { opacity: .55; filter: grayscale(.6); }
+
 /* Ferien/freie Tage: kaum gerundet */
-.tt-ferien { border-radius: 2px; }
-/* Seitenleiste: weichere Schriftfarbe, Avenir sicher auch in Knöpfen */
+
+/* Seitenleiste: Schrift auch in Knöpfen */
 .u-leiste, .u-leiste button, .u-leiste a { font-family: var(--u-schrift); }
 .u-nav-punkt { color: var(--up-text); }
 .u-nav-punkt .u-nav-sym { color: var(--up-text-3); }
 .u-benutzer small { color: var(--up-text-3); }
 /* Stundendetails unten rechts: Lehrstoff/Abwesenheiten breiter und enger beieinander */
-.sd-fuss.sd-status { gap: .75rem; }
+
 /* „Lehrstoff eingeben“ / „Abwesenheiten kontrollieren“: schmaler, aber höher; „Abwesenheitskontrolle ab:“ direkt über dem Datum */
-.sd-fuss.sd-status .sd-orange { min-width: 0; height: 54px; min-height: 54px; padding: 0 22px; font-weight: 500; text-align: center; }
-.sd-fuss.sd-status .sd-kontrolle { gap: 0; padding-top: 0; line-height: 1.3; }
+
 /* Doppel-/Blockstunden: Auswahl „Ganzer Block“ / Einzelstunde (Pfeil-runter neben dem Schließen-Knopf) */
-.sd-blockwahl { position: relative; display: flex; }
-.sd-blockwahl-menue { position: absolute; top: calc(100% + 10px); right: -8px; z-index: 30; min-width: 250px; background: var(--up-flaeche); border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 5, 10, .18); padding: 6px 0; }
-.sd-kopf .sd-knoepfe .sd-blockwahl-menue button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 16px; font-size: .95rem; font-weight: 400; color: var(--u-titel); white-space: nowrap; }
-.sd-kopf .sd-knoepfe .sd-blockwahl-menue button:hover, .sd-kopf .sd-knoepfe .sd-blockwahl-menue button:focus-visible { background: var(--up-schiefer-100); }
-.sd-blockwahl-menue button .bi { visibility: hidden; color: var(--u-akzent); font-size: 1rem; }
-.sd-blockwahl-menue button.an { font-weight: 500; }
-.sd-blockwahl-menue button.an .bi { visibility: visible; }
-.sd-blockwahl-punkt { display: inline-block; width: 7px; height: 7px; margin-left: 8px; border-radius: 50%; background: var(--u-akzent); vertical-align: middle; }
-.sd-einzelpille { background: var(--u-akzent-hell); color: var(--u-akzent-dunkel); }
-.sd-ebene { color: var(--up-text-2); margin-top: 4px; }
-.sd-ebene-marke { display: inline-block; margin-right: 8px; padding: 0 8px; border-radius: 999px; background: var(--up-schiefer-100); color: var(--up-text-2); font-size: .75rem; font-weight: 500; line-height: 18px; vertical-align: 1px; }
-@media (max-width: 575.98px) { .sd-blockwahl-menue { min-width: 220px; } }
 
 .nl-hinweis { display: block; margin: 0 0 14px; padding: 10px 14px; border-radius: 8px; background: var(--up-flaeche-2); color: var(--up-text-2); font-size: .85rem; line-height: 1.45; }
 .nl-hinweis .bi { color: var(--up-text-3); margin-right: 6px; }
@@ -1613,15 +1151,14 @@ a.u-abmelden, a.u-abmelden:hover, a.u-abmelden:focus { text-decoration: none !im
 .u-inhalt .alt-seite .alt-liste th { background: none; padding: 12px; font-weight: 600; color: var(--up-text); border-bottom: 1px solid var(--up-rand); text-align: left; }
 .u-inhalt .alt-seite .alt-liste td { background: none !important; padding: 10px 12px; border-bottom: 1px solid var(--up-linie); }
 .u-inhalt .alt-seite .alt-liste tbody tr:hover td { background: var(--up-flaeche-hover) !important; }
-.u-inhalt .alt-seite .ad-pille, .u-inhalt .alt-seite .sd-pille { height: 34px; padding: 0 14px; border: 1.5px solid var(--up-rand-stark); border-radius: 999px; background: var(--up-flaeche); font-weight: 600; font-size: .9rem; }
+
 .u-inhalt .alt-seite .alt-link { color: var(--u-akzent-dunkel); font-weight: 600; text-decoration: none; }
 
 /* Labels und Plaketten (z. B. grün „entschuldigt“) ändern beim Überfahren nie ihre Farbe */
-.lbl, .lbl:hover, .std-lbl:hover, .lbl-neu:hover, .lbl-auf:hover, .wert-neu:hover, .u-chip:hover, .badge:hover, .nl-tag:hover, .fz-label, .fz-label:hover,
-a .lbl:hover, a:hover .lbl, a:hover .u-chip, a:hover .fz-label, tr:hover .lbl, tr:hover .u-chip, tr:hover .fz-label, tr:hover .badge { filter: none !important; opacity: 1; }
+ .wert-neu:hover, .u-chip:hover, .badge:hover, .nl-tag:hover, .fz-label, .fz-label:hover, a:hover .u-chip, a:hover .fz-label, tr:hover .u-chip, tr:hover .fz-label, tr:hover .badge { filter: none !important; opacity: 1; }
 
-/* Startseite „Heute“ wie im Original: begrenzte Inhaltsbreite links neben der Navigation, nicht die volle Breite */
-.u-inhalt .heute, .u-inhalt .heute-titel { max-width: 992px; }
+/* Startseite „Heute“: begrenzte Inhaltsbreite links neben der Navigation, nicht die volle Breite */
+.u-inhalt #seite > .heute, .u-inhalt .heute-titel { max-width: 992px; }
 
 /* ------------------------------------------------------------------ Meine Daten (Schüler*innen, Erziehungsberechtigte) und Fehlzeitenliste */
 .fm-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 22px; }
@@ -1691,44 +1228,13 @@ a .lbl:hover, a:hover .lbl, a:hover .u-chip, a:hover .fz-label, tr:hover .lbl, t
 @media (max-width: 700px) { .fm-filter { padding: 12px; gap: 8px; } .fm-raster { grid-template-columns: 1fr; } }
 
 /* Dialoge über den Stundendetails (Abwesenheit, Lehrstoff, Klassenbucheintrag, Prüfung) im neuen Design */
-.sd-altdialog { border: 0; border-radius: 10px; box-shadow: 0 10px 40px rgba(0, 5, 10, .25); font-size: .875rem; overflow: hidden; }
-.sd-altdialog-kopf { background: var(--up-flaeche); border-bottom: 1px solid var(--up-rand); padding: 14px 18px; color: var(--u-titel); font-size: 1.05rem; font-weight: 600; }
-.sd-altdialog-kopf button { color: var(--up-text-2); font-size: 24px; }
-.sd-altdialog-rumpf { padding: 16px 18px 18px; }
-.ad-kopf { font-size: .82rem; color: var(--up-text); }
-.ad-kopf dt { font-weight: 600; }
-.ad-feld { font-size: .8rem; font-weight: 600; color: var(--up-text); gap: 4px; margin-bottom: 12px; }
-.ad-feld input, .ad-feld select, .ad-feld textarea { font-size: .875rem; font-weight: 400; border: 1.5px solid var(--up-rand-stark); border-radius: 6px; padding: 6px 10px; min-height: 36px; }
-.ad-feld input:focus, .ad-feld select:focus, .ad-feld textarea:focus { outline: 0; border-color: var(--u-akzent); }
-.ad-info { font-size: .82rem; color: var(--up-text-2); }
-.ad-fuss { font-size: .78rem; color: var(--up-text-3); margin-top: 8px; }
-.ad-knoepfe { gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-.ad-pille { height: 38px; padding: 0 18px; border: 1.5px solid var(--up-rand-stark); font-size: .9rem; color: var(--u-text); }
-.ad-pille:hover { border-color: var(--up-text-3); color: var(--u-text); }
-.ad-pille.klein { height: 28px; padding: 0 11px; font-size: .78rem; }
-.ad-pille.rot { color: var(--up-entfall); border-color: #e3b4b0; } .ad-pille.rot:hover { background: var(--up-entfall-flaeche); }
-.ad-liste { font-size: .82rem; }
+
+ 
+
 /* Abwesenheitsdialog: klares Formular mit Beschriftungen links */
-.ab-formular { display: grid; grid-template-columns: 140px 1fr; gap: 12px 16px; align-items: center; }
-.ab-formular > label { font-weight: 600; color: var(--up-text); font-size: .85rem; margin: 0; }
-.ab-wert { font-weight: 600; color: var(--u-titel); }
-.ab-zeile { display: flex; gap: 8px; flex-wrap: wrap; }
-.ab-formular input, .ab-formular select { font: inherit; font-size: .9rem; border: 1.5px solid var(--up-rand-stark); border-radius: 6px; padding: 6px 10px; min-height: 38px; color: var(--u-text); background: var(--up-flaeche); }
-.ab-formular input:focus, .ab-formular select:focus { outline: 0; border-color: var(--u-akzent); }
-.ab-formular input:disabled { background: var(--up-hintergrund); color: var(--up-text-2); }
-.ab-zeile input[type=date] { width: 170px; } .ab-zeile input[type=time] { width: 120px; }
-.ab-formular select, .ab-formular #ab-text { width: 100%; }
-.ab-schnell { display: flex; gap: 6px; flex-wrap: wrap; }
-.ab-formular .vs-vorschau { margin: 0; }
-.ab-status { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
-.ab-radio { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: .9rem; }
-.ab-radio input { accent-color: var(--u-akzent); width: 16px; height: 16px; min-height: 0; }
-.ab-hinweis { flex-basis: 100%; font-size: .75rem; color: var(--up-text-3); }
-.ab-ganz { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 400; cursor: pointer; }
-.ab-ganz input { margin: 0; width: 16px; height: 16px; flex: 0 0 16px; accent-color: var(--u-akzent); cursor: pointer; }
-.ab-ganz .ab-hinweis { flex-basis: auto; }
-.ab-knoepfe { justify-content: flex-end; border-top: 1px solid var(--up-rand); padding-top: 14px; }
-@media (max-width: 560px) { .ab-formular { grid-template-columns: 1fr; gap: 6px; } }
+
+ 
+
 /* Fehlzeiten aufgeklappt: Untertabelle je Schüler*in leicht eingerückt auf hellgrauer Fläche, feine Linien, klare Chevrons */
 .fz-tabelle tr.fz-stunde > td { padding: 0 16px 14px 56px !important; background: var(--up-flaeche-hover); border-bottom: 1px solid var(--up-rand); }
 .fz-unter { background: var(--up-flaeche); border: 1px solid var(--up-rand); border-radius: 6px; overflow: hidden; }
@@ -1751,20 +1257,14 @@ a .lbl:hover, a:hover .lbl, a:hover .u-chip, a:hover .fz-label, tr:hover .lbl, t
 @media (max-width: 767.98px) { .fz-tabelle tr.fz-stunde > td { padding: 0 8px 10px 8px !important; } .fz-unter { overflow-x: auto; } }
 
 /* Karte: Stunde findet online statt */
-.ecke .ecke-online { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 14px; color: var(--up-frei); font-size: 13px; line-height: 1; margin-right: 3px; vertical-align: middle; }
-.ecke .ecke-online .bi { display: block; line-height: 1; }
+
 /* Stundendetails: Link zum Online-Unterricht */
-.sd-online-feld { margin-top: .6rem; max-width: 560px; }
-.sd-online-feld input[type="url"] { flex: 1 1 260px; min-width: 0; }
-.sd-online-link { display: inline-flex; align-items: center; gap: .45rem; padding: .35rem 1rem; border-radius: 999px; background: var(--u-akzent); color: var(--up-flaeche); font-weight: 600; font-size: .9rem; text-decoration: none; }
-.sd-online-link:hover, .sd-online-link:focus-visible { background: var(--u-akzent-dunkel); color: var(--up-flaeche); }
-.sd-online-ohne { color: var(--u-grau-2); }
 
 /* ------------------------------------------------------------------ Vertretungs-Labels außerhalb der Karten (Stundendetails, Heute)
    Offene Vertretung: abwesende Lehrkraft durchgestrichen im grünen Label; eingeteilte Vertretung: neue Lehrkraft als grünes Label. */
 .v-lbl { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--u-gruen-label); color: var(--up-flaeche); font-weight: 600; line-height: 1.45; white-space: nowrap; }
 .v-lbl.weg { text-decoration: line-through; text-decoration-thickness: 1px; }
-.v-lbl a, .v-lbl a:hover, .sd-zeile .v-lbl .sd-link, .sd-zeile .v-lbl .sd-link:hover { color: var(--up-flaeche) !important; text-decoration: inherit; }
+.v-lbl a, .v-lbl a:hover { color: var(--up-flaeche) !important; text-decoration: inherit; }
 .v-alt { color: var(--up-text-3); text-decoration-thickness: .75px; }
 .v-trenn { color: var(--up-schiefer-300); margin-right: .1rem; }
 .monitor .v-trenn { color: var(--up-primaer); margin-right: .25rem; }
@@ -1802,12 +1302,6 @@ a .lbl:hover, a:hover .lbl, a:hover .u-chip, a:hover .fz-label, tr:hover .lbl, t
 @media (max-width: 575.98px) { .up-hinweis { left: 16px; right: 16px; bottom: 16px; max-width: none; } }
 
 /* ===== Stundendetails: einheitliche graue Umriss-Symbole, weiche Abwesend-Symbole in den Schülerkacheln ===== */
-.sd-rumpf .kb-icon.wu { color: var(--up-schiefer-400); }
-.sd-linie { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; display: block; }
-.sd-umschalten { color: var(--up-schiefer-400); font-size: 17px; }
-.sd-umschalten:hover, .sd-umschalten:focus-visible { color: var(--up-entfall); }
-.sd-kachel:not(.da) .sd-umschalten:hover, .sd-kachel:not(.da) .sd-umschalten:focus-visible { color: var(--up-ok); }
-.sd-kachel .sd-statusbild.weg { display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--up-flaeche); color: var(--up-entfall); font-size: 16px; }
 
 /* ===== Infocenter (runder Knopf unten rechts mit Panel) ===== */
 .ic-knopf { position: fixed; right: 22px; bottom: 18px; z-index: 1035; width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--up-flaeche); color: var(--u-grau);
@@ -1897,35 +1391,8 @@ body:has(.u-app:not([data-ansicht="heute"])) :is(.ic-wurzel, .ic-hinweis), body:
 
 /* Übersicht (für alle Rollen): Stile in css/uebersicht.css (lädt js/ansichten/uebersicht.js). */
 @media (max-width: 575.98px) { .ic-panel { max-height: calc(100vh - 150px); max-height: calc(100dvh - 150px); } }
-/* Stundendetails wie im Original: bei Entfall Kopf hellgrau, darunter roter Balken „ENTFÄLLT“ (bündig mit dem Inhalt);
+/* Stundendetails: bei Entfall Kopf hellgrau, darunter roter Balken „ENTFÄLLT“ (bündig mit dem Inhalt);
    Prüfung/Veranstaltung als dezente graue Kapsel im Kopf; „Abwesende Schüler*innen“ als Tabelle im neuen Design */
-.sd-kopf.grau { background: var(--up-rand); padding-bottom: 16px; }
-.sd-entfall-leiste { background: var(--up-entfall); color: var(--up-flaeche); font-size: 1rem; font-weight: 500; letter-spacing: .02em; line-height: 22px; padding: 5px 16px; text-align: center; }
+
 /* Leiste durchgängig über die volle Breite; der Text „ENTFÄLLT“ steht linksbündig auf Linie mit Kopf und Inhalt (Einzug 166px wie .sd-kopf/.sd-rumpf) */
-.modal .sd-entfall-leiste { margin: 0; border-radius: 0; text-align: left; padding-left: 166px; padding-right: 28px; }
-@media (max-width: 991.98px) { .modal .sd-entfall-leiste { padding-left: 16px; padding-right: 16px; } }
-.sd-kopf.grau + .sd-entfall-leiste + .sd-reiter { margin-top: 2px; }
-.sd-statuspille { display: inline-block; margin-left: .75rem; padding: 1px 10px; border-radius: 999px; background: var(--up-rand); color: var(--up-text-2); font-size: .8125rem; font-weight: 400; line-height: 20px; vertical-align: 1px; }
-.sd-kopf.grau .sd-statuspille { background: var(--up-flaeche); }
-.sd-strich { color: var(--up-schiefer-300); margin: 0 .2rem; }
-.nl-tabelle.sd-abw { border-radius: 6px; font-size: .875rem; overflow-x: auto; }
-.sd-abw thead th { background: var(--up-hintergrund); padding: 10px 12px; font-size: .82rem; font-weight: 600; color: var(--up-text); }
-.sd-abw td { padding: 8px 12px; background: var(--up-flaeche); }
-.sd-abw tbody tr:hover td { background: var(--up-flaeche-hover); }
-.sd-abw tbody tr.nl-gewaehlt td { background: var(--up-primaer-flaeche); }
-.sd-abw tr.vorstunde td { color: var(--u-grau); }
-.sd-abw .nl-wahl { width: 48px; padding-left: 14px !important; }
-.sd-abw .nl-rund { width: 20px; height: 20px; }
-.sd-abw-name { font-weight: 600; color: var(--u-text); white-space: nowrap; }
-.sd-abw-zeit { color: var(--u-grau); margin-left: 4px; }
-.sd-abw-zusatz { display: inline-block; margin-left: 8px; color: var(--u-grau); font-size: .8rem; }
-.sd-abw-text { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sd-abw .nl-fuss { padding: 8px 12px 8px 16px; background: var(--up-flaeche); }
-.sd-abw-anzahl { color: var(--u-grau); font-size: .82rem; }
-.sd-abw .nl-knopf { height: 32px; font-size: .85rem; }
-.sd-abw .nl-knopf:disabled { opacity: .45; cursor: default; }
-.sd-kreisknopf { display: inline-grid; place-content: center; width: 32px; height: 32px; padding: 0; border: 1.5px solid var(--up-rand-stark); border-radius: 50%; background: var(--up-flaeche); color: var(--up-text); font-size: .9rem; line-height: 1; vertical-align: middle; }
-.sd-kreisknopf:hover { border-color: var(--up-text-3); color: var(--u-text); background: var(--up-flaeche-hover); }
-.sd-kreisknopf:focus-visible { outline: 2px solid var(--u-akzent); outline-offset: 1px; }
-.sd-kreisknopf.klein { width: 24px; height: 24px; font-size: .78rem; border-width: 1px; margin: 0 6px; }
-@media (max-width: 767.98px) { .nl-tabelle.sd-abw { overflow-x: auto; } }
+

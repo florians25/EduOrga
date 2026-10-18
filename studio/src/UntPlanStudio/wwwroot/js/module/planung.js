@@ -263,7 +263,7 @@ export async function tauschDialog(stunde, quelle) {
   } catch (e) { fehlerMelden(e); } finally { weg(); }
   if (!vorschlaege.length) liste.append(h('tr', null, h('td', { colspan: 2, class: 'pl-leer-zelle' }, 'Für diese Stunde gibt es keine Tauschmöglichkeit.')));
   for (const v of vorschlaege) {
-    const tr = h('tr', null, h('td', { class: `z ${v.gewinn > 0 ? 'gruen' : v.gewinn < 0 ? 'rot' : ''}` }, v.gewinn > 0 ? `+${v.gewinn}` : String(v.gewinn)), h('td', null, v.beschreibung));
+    const tr = h('tr', null, h('td', { class: `z ${v.gewinn > 0 ? 'gruen' : v.gewinn < 0 ? 'rot' : ''}` }, v.gewinn > 0 ? `+${v.gewinn}` : String(v.gewinn)), h('td', null, String(v.beschreibung ?? '').replace(/\s*\u21c4\s*/g, ' und ')));
     tr.addEventListener('click', () => { gewaehlt = v; for (const x of liste.children) x.classList.toggle('gewaehlt', x === tr); });
     tr.addEventListener('dblclick', () => { gewaehlt = v; inhalt.closest('.dialog')?.querySelector('.knopf.primaer')?.click(); });
     liste.append(tr);

@@ -1,4 +1,4 @@
-/* Melden (js/ansichten/melden.js) im Portal-Design: Kacheln der Meldearten, einheitliche Formularkarten, „Meine Meldungen“ mit Status-Pills.
+/* Melden (js/ansichten/melden.js): Kacheln der Meldearten, einheitliche Formularkarten, „Meine Meldungen“ mit Status-Pills.
    Schrift nur Regular/Medium; Akzent orange. */
 .mf-seite { max-width: 980px; }
 .mf-einleitung { margin: 0 0 16px; color: var(--up-text-2); font-size: .95rem; }

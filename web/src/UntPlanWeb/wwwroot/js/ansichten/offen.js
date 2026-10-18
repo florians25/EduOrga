@@ -1,4 +1,4 @@
-// Klassenbuch → Offene Stunden im Original-Look (nl-design): oben – direkt auf dem grauen Seitengrund wie bei allen Listenseiten – das gemeinsame
+// Klassenbuch → Offene Stunden: oben – direkt auf dem grauen Seitengrund wie bei allen Listenseiten – das gemeinsame
 // Suchfeld mit Filter (ui.js suchfeldMitFilter): Chips für Lehrkraft und Klasse (Klassenleitungen bekommen „Meine Klassen“ zuerst), die Art der
 // Anzeige als Dropdown im Suchfeld wie bei den Hausaufgaben, rechts der Zeitraum zum Anklicken (Kalender mit zwei Monaten)
 // und die Auswahlbox mit vordefinierten Zeitbereichen. Darunter eine schlichte Tabelle ○ | Lehrkraft | Klasse | Fach | Datum | Art | Raum |
@@ -91,7 +91,7 @@ export async function zeigen(seite, kontext, [bereichParam, artParam, lehrerPara
     kontext.titel('Offene Stunden', `${nachricht ? `<button type="button" class="btn btn-outline-secondary" data-nachricht ${liste.length ? '' : 'disabled'}>Nachricht senden</button>` : ''}
       <button type="button" class="btn btn-outline-secondary" data-bericht ${liste.length ? '' : 'disabled'}>Bericht</button>`, `${liste.length}`);
     const alleGewaehlt = liste.length > 0 && liste.every(z => auswahl.has(z.i));
-    inhalt.innerHTML = `<div class="os-seite os-original">
+    inhalt.innerHTML = `<div class="os-seite os-liste">
       ${liste.length ? `<div class="os-tabelle"><table>
         <thead><tr>
           <th class="os-wahl"><input type="checkbox" class="nl-rund" data-alle ${alleGewaehlt ? 'checked' : ''} aria-label="Alle auswählen"></th>

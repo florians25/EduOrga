@@ -43,14 +43,23 @@ const S = {
 /** Symbol als HTML (Maske in currentColor, Größe 1em bzw. über CSS); unbekannte Namen liefern null. */
 export function symbol(name, klasse = '') {
   const s = S[name];
-  return s ? `<i class="sym sym-${s} ${klasse}" aria-hidden="true"></i>` : null;
+  return s ? `<span class="u-sym sym sym-${s} ${klasse}" aria-hidden="true"></span>` : null;
 }
 
 /** Alle verwendeten Lucide-Namen (für das Erzeugen von css/symbole.css). */
 export const symbolNamen = [...new Set(Object.values(S))];
 
-/** Wortmarke „UntPlan“ (Text in IBM Plex Sans 600) für Kopfleiste, Anmeldung und Monitor – kein Bildzeichen. */
+/** Wortmarke „UntPlan“ (Text in IBM Plex Sans 600). */
 export const WORTMARKE = '<span class="wortmarke">UntPlan</span>';
 
-/** Marke in der Oberfläche (Wortmarke). Das Monogramm (img/logo.svg) dient nur als Favicon und App-Symbol. */
-export const LOGO = WORTMARKE;
+/** Zeichen „UP“ (U und P teilen sich den mittleren Strich) in currentColor – neben der Wortmarke in Seitenleiste und Anmeldung. */
+export const ZEICHEN = `<svg class="logo zeichen" viewBox="8 10 48 46" aria-hidden="true" focusable="false"><path d="M14 16v18a10 10 0 0 0 20 0V16" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="square"/><path d="M34 16h8a8 8 0 0 1 0 16h-8M34 34v16" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="square"/></svg>`;
+
+/** Bildzeichen der Oberfläche (Favicon und App-Symbole: img/logo.svg bzw. die PNG-Dateien in img/). */
+export const LOGO = ZEICHEN;
+
+/** Zeichen und Wortmarke zusammen. */
+export const MARKE = `<span class="marke">${ZEICHEN}${WORTMARKE}</span>`;
+
+/** RSS-Symbol (Nachrichten zum Tag als Feed). */
+export const RSS = '<i class="sym sym-rss u-rss" aria-hidden="true"></i>';

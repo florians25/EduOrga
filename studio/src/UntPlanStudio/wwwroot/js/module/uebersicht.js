@@ -1,5 +1,4 @@
-// Modul „Übersichtspläne“: Klassen-, Lehrer- und Raum-Übersicht quer – alle Elemente als Zeilen, Tage × Stunden
-// als Spalten. Schnell auch bei großen Schulen: kompakte Server-Antwort, es werden nur die sichtbaren Zeilen gezeichnet.
+// Modul „Gesamtübersichten“: Klassen, Lehrkräfte und Räume – alle Elemente als Zeilen, Tage × Stunden als Spalten. Schnell auch bei großen Schulen: kompakte Server-Antwort, es werden nur die sichtbaren Zeilen gezeichnet.
 // Drag & Drop: Stunde innerhalb der Zeile verschieben/tauschen; im Raum-Übersichtsplan in eine andere Raumzeile = Raumverlegung.
 // Server: Api/UebersichtApi.cs (/uebersicht/{typ}), Druck: /druck/uebersicht (PDF).
 import { h } from '../kern/dom.js';
@@ -9,12 +8,13 @@ import { betrifft, melden } from '../kern/ereignisse.js';
 import { fensterverwaltung } from '../kern/fenster.js';
 import { hinweis, fehlerMelden, laden } from '../kern/dialog.js';
 import { druckUrl, vorschau, herunterladen } from './druck.js';
+import { werkzeugFeld } from './unterricht.js';
 
-const TITEL = { klasse: 'Klassen', lehrer: 'Lehrer', raum: 'Räume', fach: 'Fächer' };
+const TITEL = { klasse: 'Klassen', lehrer: 'Lehrkräfte', raum: 'Räume', fach: 'Fächer' };
 const SYMBOL = { klasse: 'klassen', lehrer: 'lehrer', raum: 'raeume', fach: 'faecher' };
-const ZH = 22;        // Zeilenhöhe
-const NAME = 64;      // Breite der Namensspalte
-const KOPF = 36;      // Kopf: Tage + Stunden
+const ZH = 26;        // Zeilenhöhe
+const NAME = 72;      // Breite der Namensspalte
+const KOPF = 44;      // Kopf: Tage + Stunden
 const TYP_UE = 'application/x-untplan-uebersicht';
 
 /** Textfarbe passend zur Hintergrundfarbe. */
@@ -22,7 +22,7 @@ function textfarbe(hex) {
   if (!hex) return '';
   const n = parseInt(hex.slice(1), 16);
   const l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
-  return l < 0.55 ? '#fff' : '#1f2933';
+  return l < 0.55 ? 'var(--up-text-invers)' : 'var(--up-schiefer-800)';
 }
 
 function uebersichtFenster(f, p) {
@@ -33,7 +33,7 @@ function uebersichtFenster(f, p) {
   let sichtbar = [];   // Indizes der Elemente nach Filter
   let spaltenBreite = 18;
   const schreiben = darfSchreiben();
-  f.titel(`${TITEL[typ]} Übersicht quer`);
+  f.titel(`Gesamtübersicht ${TITEL[typ]}`);
 
   const kopf = h('div', { class: 'ue-kopf' });
   const platz = h('div', { class: 'ue-platz' });
@@ -43,17 +43,17 @@ function uebersichtFenster(f, p) {
   f.inhalt.append(h('div', { class: 'ue-rahmen' }, kopf, koerper));
 
   // ---- Werkzeuge ----
-  const wahl = h('select', { class: 'eingabe', title: 'Inhalt der Zellen' },
-    [['Standard', 'Standard'], ['Fach', 'Fach'], ['Lehrer', 'Lehrkräfte'], ['Klasse', 'Klassen'], ['Raum', 'Räume']].map(([w, t]) => h('option', { value: w, selected: w === inhalt }, `Inhalt: ${t}`)));
+  const wahl = h('select', { class: 'eingabe', 'aria-label': 'Zelleninhalt' },
+    [['Standard', 'Standard'], ['Fach', 'Fach'], ['Lehrer', 'Lehrkräfte'], ['Klasse', 'Klassen'], ['Raum', 'Räume']].map(([w, t]) => h('option', { value: w, selected: w === inhalt }, t)));
   wahl.addEventListener('change', () => { inhalt = wahl.value; f.parameterSetzen({ inhalt }); laden_().catch(fehlerMelden); });
-  const filter = h('input', { class: 'eingabe', type: 'search', placeholder: 'Filtern …', style: { width: '120px' } });
+  const filter = h('input', { class: 'eingabe', type: 'search', placeholder: `${TITEL[typ]} filtern`, 'aria-label': 'Filtern', style: { width: '160px' } });
   filter.addEventListener('input', () => { filterText = filter.value.trim().toLowerCase(); filtern(); });
-  f.werkzeuge.append(wahl, filter);
+  f.werkzeuge.append(werkzeugFeld('Zelleninhalt', wahl), filter);
   f.trenner();
-  f.werkzeug({ text: 'Drucken', symbol: 'drucken', aktion: () => vorschau(druckUrl('/uebersicht', { typ, inhalt }), `${TITEL[typ]} Übersicht`) });
-  f.werkzeug({ text: 'PDF', symbol: 'herunterladen', nurSymbol: true, titel: 'Als PDF herunterladen', aktion: () => herunterladen(druckUrl('/uebersicht', { typ, inhalt })) });
-  f.werkzeuge.append(h('span', { class: 'leise ue-hinweis' }, schreiben
-    ? (typ === 'raum' ? 'Raumverlegung: Stunde in eine andere Raumzeile ziehen; in der Zeile verschieben/tauschen.' : 'Stunde per Drag & Drop innerhalb der Zeile verschieben/tauschen.')
+  f.werkzeug({ text: 'Drucken', titel: 'Druckvorschau', aktion: () => vorschau(druckUrl('/uebersicht', { typ, inhalt }), `Gesamtübersicht ${TITEL[typ]}`) });
+  f.werkzeug({ text: 'PDF', titel: 'Als PDF herunterladen', aktion: () => herunterladen(druckUrl('/uebersicht', { typ, inhalt })) });
+  f.werkzeuge.append(h('span', { class: 'pl-hinweis-leiste ue-hinweis' }, schreiben
+    ? (typ === 'raum' ? 'Stunde in eine andere Raumzeile ziehen verlegt den Raum; innerhalb der Zeile verschieben oder tauschen.' : 'Stunden innerhalb der Zeile ziehen, um sie zu verschieben oder zu tauschen.')
     : ''));
 
   const spalten = () => daten.zeitraster.tage.length * daten.zeitraster.stunden.length;
@@ -70,7 +70,7 @@ function uebersichtFenster(f, p) {
   function zeichneKopf(gesamt) {
     const z = daten.zeitraster;
     const n = z.stunden.length;
-    const innen = h('div', { class: 'ue-kopf-innen', style: { width: `${gesamt}px` } }, h('div', { class: 'ue-ecke', style: { width: `${NAME}px` } }, `${sichtbar.length}`));
+    const innen = h('div', { class: 'ue-kopf-innen', style: { width: `${gesamt}px` } }, h('div', { class: 'ue-ecke', style: { width: `${NAME}px` } }, TITEL[typ]));
     z.tage.forEach((t, i) => {
       innen.append(h('div', { class: 'ue-tag', style: { left: `${NAME + i * n * spaltenBreite}px`, width: `${n * spaltenBreite}px` } }, spaltenBreite * n > 120 ? t.lang : t.kurz,
         h('div', { class: 'ue-stunden' }, z.stunden.map((s) => h('span', { style: { width: `${spaltenBreite}px` } }, s.label)))));
@@ -98,7 +98,7 @@ function uebersichtFenster(f, p) {
     for (let r = von; r < bis; r++) {
       const i = sichtbar[r];
       const el = daten.elemente[i];
-      const zeile = h('div', { class: `ue-zeile${r % 2 ? ' wechsel' : ''}`, style: { top: `${r * ZH}px`, height: `${ZH}px` }, dataset: { i } },
+      const zeile = h('div', { class: 'ue-zeile', style: { top: `${r * ZH}px`, height: `${ZH}px` }, dataset: { i } },
         h('div', { class: 'ue-name', style: { width: `${NAME}px` }, title: el.l || el.k, dataset: { i } }, el.k));
       for (let t = 1; t < tage; t++) zeile.append(h('div', { class: 'ue-taglinie', style: { left: `${NAME + t * n * spaltenBreite}px` } }));
       for (const [tag, stunde, u, text, titel, farbe, fix] of daten.zellen[i]) {
@@ -106,7 +106,7 @@ function uebersichtFenster(f, p) {
           class: `ue-zelle${fix ? ' fix' : ''}`, draggable: schreiben && !fix ? 'true' : null, title: titel,
           style: { left: `${NAME + (tag * n + stunde - 1) * spaltenBreite + 1}px`, width: `${spaltenBreite - 2}px`, background: farbe || '', color: textfarbe(farbe) },
           dataset: { u, tag, stunde, i },
-        }, (fix ? '*' : '') + text);
+        }, text);
         zeile.append(z);
       }
       frag.append(zeile);
@@ -196,7 +196,7 @@ function uebersichtFenster(f, p) {
     try {
       daten = await api.get(api.dok(`/uebersicht/${typ}?inhalt=${inhalt}`));
       const anzahl = daten.zellen.reduce((a, z) => a + z.length, 0);
-      f.fuss.replaceChildren(h('span', null, `${daten.elemente.length} ${TITEL[typ]}`), h('span', null, `${anzahl} belegte Stunden`), h('span', { class: 'rechts' }, daten.periode));
+      f.fuss.replaceChildren(h('span', null, `${daten.elemente.length} ${TITEL[typ]}`), h('span', null, `${anzahl} belegte Stunden`), h('span', null, 'Fixierte Stunden sind umrandet · Doppelklick öffnet den Stundenplan'), h('span', { class: 'rechts' }, daten.periode));
       filtern();
     } finally { weg(); }
   }
@@ -216,21 +216,21 @@ function uebersichtFenster(f, p) {
 }
 
 const oeffnen = ({ typ = 'klasse', inhalt } = {}) => (zustand.dokument ? fensterverwaltung.oeffnen('uebersicht', { typ, inhalt }) : null);
-const e = (id, reiter, gruppe, text, typ, gross = true) => ({ id, reiter, gruppe, text, symbol: 'uebersicht', gross, befehl: 'uebersicht.oeffnen', args: { typ }, braucht: 'dokument', hinweis: `${TITEL[typ]} Übersicht quer: alle ${TITEL[typ]} mit Tagen und Stunden` });
+const e = (id, reiter, gruppe, text, typ, gross = true) => ({ id, reiter, gruppe, text, symbol: 'uebersicht', gross, befehl: 'uebersicht.oeffnen', args: { typ }, braucht: 'dokument', hinweis: `Gesamtübersicht: alle ${TITEL[typ]} mit Tagen und Stunden` });
 
 export default {
   id: 'uebersicht',
   css: ['css/module/uebersicht.css'],
   fenster: {
     uebersicht: {
-      titel: 'Übersicht', symbol: 'uebersicht', symbolFuer: (p) => SYMBOL[p.typ] || 'uebersicht', breite: 1180, hoehe: 560,
+      titel: 'Gesamtübersicht', symbol: 'uebersicht', symbolFuer: (p) => SYMBOL[p.typ] || 'uebersicht', breite: 1180, hoehe: 560,
       einzig: (p) => p.typ || 'klasse', erstellen: uebersichtFenster,
     },
   },
   befehle: { 'uebersicht.oeffnen': oeffnen },
   ribbon: [
-    e('stundenplaene.uebersicht.klasse', 'Stundenpläne', 'Übersichtspläne', 'Klassen Übersicht', 'klasse'),
-    e('stundenplaene.uebersicht.lehrer', 'Stundenpläne', 'Übersichtspläne', 'Lehrer Übersicht', 'lehrer'),
-    e('stundenplaene.uebersicht.raum', 'Stundenpläne', 'Übersichtspläne', 'Räume Übersicht', 'raum'),
+    e('stundenplaene.uebersicht.klasse', 'Stundenpläne', 'Gesamtübersichten', 'Gesamtübersicht Klassen', 'klasse'),
+    e('stundenplaene.uebersicht.lehrer', 'Stundenpläne', 'Gesamtübersichten', 'Gesamtübersicht Lehrkräfte', 'lehrer'),
+    e('stundenplaene.uebersicht.raum', 'Stundenpläne', 'Gesamtübersichten', 'Gesamtübersicht Räume', 'raum'),
   ],
 };

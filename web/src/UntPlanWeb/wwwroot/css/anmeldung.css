@@ -1,6 +1,6 @@
 /* UntPlanWeb – Anmeldung, Ersteinrichtung und Pflicht-Passwortwechsel (app.js: anmeldeRahmen).
-   Zweigeteilt: links eine ruhige, warme Verlaufsfläche mit Bildmarke, Schulname, Datum und dezenter Wochen-Illustration,
-   rechts auf hellem Grund eine weiße Formularkarte (Radius 20px) mit beschrifteten Feldern und orangem Pill-Knopf.
+   Zweigeteilt: links eine ruhige Fläche mit Zeichen und Wortmarke, Schulname, Datum und dezenter Wochen-Illustration,
+   rechts auf hellem Grund eine weiße Formularkarte (Radius 20px) mit beschrifteten Feldern und Marine-Pill-Knopf.
    Nur Regular und Medium. */
 
 .anmeldung.an-seite {
@@ -11,14 +11,10 @@
 /* ------------------------------------------------------------------ links: Bühne */
 .an-buehne {
   position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 28px; padding: 40px clamp(32px, 5vw, 72px) 40px;
-  background:
-    radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, .85) 0%, rgba(255, 255, 255, 0) 60%),
-    radial-gradient(90% 70% at 100% 100%, rgba(35, 79, 150, .22) 0%, rgba(35, 79, 150, 0) 70%),
-    linear-gradient(155deg, var(--up-hintergrund) 0%, var(--up-primaer-flaeche) 48%, var(--up-primaer-flaeche) 100%);
+  background: var(--up-primaer-flaeche); border-right: 1px solid var(--up-rand);
   color: var(--up-text);
 }
-.an-buehne::after { content: ""; position: absolute; right: -120px; top: -120px; width: 360px; height: 360px; border-radius: 50%;
-  border: 1px solid rgba(35, 79, 150, .18); pointer-events: none; }
+.an-buehne::after { content: none; }
 .an-marke { display: flex; align-items: center; gap: 12px; font-size: 1.15rem; font-weight: 500; letter-spacing: .01em; color: var(--up-text); }
 .an-marke .logo { width: 40px; height: 40px; color: var(--u-akzent, var(--up-primaer)); }
 .an-text { margin-top: clamp(24px, 8vh, 96px); max-width: 520px; }
@@ -92,3 +88,8 @@
   .an-text { margin-top: 12px; }
   .an-bild { width: min(100%, 340px); }
 }
+
+/* Marke: Zeichen „UP“ und Wortmarke als Text */
+.an-marke .marke { display: inline-flex; align-items: center; gap: 10px; }
+.an-marke .zeichen { width: 30px; height: 30px; color: var(--up-marine-900); }
+.an-marke .wortmarke { font-size: 22px; font-weight: 600; letter-spacing: -.01em; color: var(--up-text); }

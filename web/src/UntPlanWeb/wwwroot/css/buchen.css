@@ -239,7 +239,7 @@ button.bu-zusammenfassung:hover { border-color: rgba(var(--u-akzent-rgb), .6); b
 
 /* ------------------------------------------------------------------ Raumübersicht: Belegungsraster Räume × Stunden (Tag) bzw. Raum × Wochentage
    (Woche) mit fester Kopfzeile und Raumspalte, klaren Farben je Belegungsart, Hover-Details, Zoom (Kompakt/Normal/Groß), Gruppen je Gebäude;
-   auf dem Telefon eine Liste je Raum. Farben: Unterricht blaugrau, Buchung orange, Prüfung lila, Termin türkis, vorgemerkt gelb,
+   auf dem Telefon eine Liste je Raum. Farben: Unterricht blaugrau, Buchung marine, Prüfung lila, Termin türkis, vorgemerkt gelb,
    gesperrt rot schraffiert, frei weiß (grün beim Überfahren). */
 .bu-ru-leiste { align-items: center; }
 .bu-raumsuche.u-suchfeld, .bu-res-suche.u-suchfeld { flex: 1 1 220px; max-width: 320px; }

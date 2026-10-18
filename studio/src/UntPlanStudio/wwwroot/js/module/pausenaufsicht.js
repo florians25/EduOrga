@@ -1,7 +1,10 @@
-// Modul „Pausenaufsichten“ (Desktop: PausenaufsichtFenster): Reiter Gang (Aufsichtsbereich) bzw. Lehrer mit der Matrix
-// Tage × Aufsichtspausen, Lehrerliste (PA Max/Ist/Anzahl), Lehrervorschlag mit Bewertung, Aufsicht eintragen/löschen/teilen,
-// „keine Aufsicht“, Optimierung und Gewichtung; dazu die Vertretung der Aufsichten eines Tages (Vertretungsmodus).
+// Modul „Pausenaufsichten“: Wochenplan nach Aufsichtsbereich bzw. Lehrkraft mit der Matrix Tage × Aufsichtspausen,
+// Liste der Lehrkräfte (Soll/Ist in Minuten, Anzahl), Vorschlag mit Bewertung, Aufsicht eintragen/entfernen/teilen,
+// „keine Aufsicht“, automatische Einteilung und Gewichtung; dazu die Vertretung der Aufsichten eines Tages (Vertretungsmodus).
 import { h } from '../kern/dom.js';
+import { symbol } from '../kern/symbole.js';
+import { planungsdatum } from './vertretung/kern.js';
+import { menueKnopf, schalter } from './vertretung/steuer.js';
 import { api } from '../kern/api.js';
 import { zustand, darfSchreiben } from '../kern/zustand.js';
 import { betrifft } from '../kern/ereignisse.js';
@@ -16,39 +19,47 @@ function planFenster(f, p) {
   let liste = { gaenge: [], lehrer: [] };
   let daten = null;
   let akt = null; // { tag, nach }
-  const reiter = h('div', { class: 'pa-reiter' });
-  const element = h('select', { class: 'eingabe', style: { width: '120px' } });
-  const minuten = h('span', { class: 'leise' });
+  const reiter = h('div', { class: 'pa-sicht vt-reiter', role: 'tablist' });
+  const element = h('select', { class: 'eingabe pa-element' });
+  const elementTitel = h('span', { class: 'pa-wz-titel' });
+  const minuten = h('span');
   const raster = h('div', { class: 'pa-raster', tabindex: '0' });
   const seite = h('div', { class: 'pa-lehrerliste' });
   f.inhalt.append(reiter, h('div', { class: 'pa-teilung' }, raster, seite));
+  f.fuss.append(minuten);
 
-  f.werkzeuge.append(element);
-  f.werkzeug({ text: '◀', titel: 'Vorheriges Element', nurSymbol: false, aktion: () => blaettern(-1) });
-  f.werkzeug({ text: '▶', titel: 'Nächstes Element', aktion: () => blaettern(1) });
-  f.werkzeuge.append(minuten);
+  const pfeil = (sym, titel, d) => h('button', { type: 'button', class: 'wz-knopf nur-symbol', title: titel, 'aria-label': titel, onclick: () => blaettern(d) }, symbol(sym));
+  f.werkzeuge.append(h('span', { class: 'pa-elementwahl' }, elementTitel, pfeil('pfeil_links', 'Vorheriger Eintrag', -1), element, pfeil('pfeil_rechts', 'Nächster Eintrag', 1)));
   f.trenner();
+  const nurBereich = () => { if (sicht !== 'gang') { hinweis('Aufsichten lassen sich nur in der Ansicht „Nach Aufsichtsbereich“ bearbeiten.', 'warnung'); return false; } return true; };
   if (schreiben) {
-    f.werkzeug({ text: 'Vorschlag', symbol: 'lehrer', titel: 'Lehrervorschlag mit Bewertung', aktion: () => vorschlag() });
-    f.werkzeug({ text: 'Entfernen', symbol: 'loeschen', titel: 'Aufsicht löschen', aktion: () => zelleLoeschen() });
-    f.werkzeug({ text: 'Keine Aufsicht', symbol: 'abwesenheit', titel: 'Aufsicht (???) bzw. keine Aufsicht', aktion: () => teile(0) });
-    f.werkzeug({ text: 'Teilen', symbol: 'plus', titel: 'Aufsicht teilen', aktion: () => teile(1) });
-    f.werkzeug({ text: 'Teilung –', symbol: 'zeile_loeschen', titel: 'Teilung entfernen', aktion: () => teile(-1) });
-    f.trenner();
-    f.werkzeug({ text: 'Optimierung', symbol: 'optimierung', aktion: optimieren });
-    f.werkzeug({ text: 'Gewichtung', symbol: 'statistik', aktion: gewichtung });
-    f.werkzeug({ text: 'Alle …', symbol: 'loeschen', titel: 'Aufsichten des Elements bzw. alle löschen', aktion: () => {
-      const r = f.werkzeuge.getBoundingClientRect();
-      menue(r.right - 260, r.bottom, [
-        { text: 'Aufsichten dieses Elements löschen', aktion: async () => { if (await frage('Alle Aufsichten dieses Elements löschen?', { gefahr: true, ja: 'Löschen' })) { await api.post(api.dok('/pausenaufsicht/loeschen'), { sicht, id: Number(element.value) }); neu(); } } },
-        { text: 'Alle Aufsichten löschen', aktion: async () => { if (await frage('Alle Pausenaufsichten löschen?', { gefahr: true, ja: 'Löschen' })) { await api.post(api.dok('/pausenaufsicht/loeschen'), { sicht: 'alle', id: 0 }); neu(); } } },
-      ]);
-    } });
+    f.werkzeug({ text: 'Vorschlag …', titel: 'Lehrkräfte für die gewählte Aufsicht mit Bewertung vorschlagen', aktion: () => vorschlag() });
+    f.werkzeug({ text: 'Entfernen', titel: 'Gewählte Aufsicht entfernen', aktion: () => zelleLoeschen() });
+    menueKnopf(f, 'Weitere Aktionen', () => {
+      const z = aktZelle();
+      return [
+        { text: 'Eingeben …', deaktiviert: sicht !== 'gang' || !akt, aktion: () => nurBereich() && eingeben(null, z?.text || '') },
+        { text: z?.keine ? 'Aufsicht wieder einplanen' : 'Keine Aufsicht', deaktiviert: sicht !== 'gang' || !akt, aktion: () => teile(0) },
+        { text: 'Aufsicht teilen', deaktiviert: sicht !== 'gang' || !akt, aktion: () => teile(1) },
+        { text: 'Teilung entfernen', deaktiviert: sicht !== 'gang' || !akt || (z?.teile ?? 0) < 2, aktion: () => teile(-1) },
+        null,
+        { text: sicht === 'gang' ? 'Aufsichten dieses Bereichs löschen …' : 'Aufsichten dieser Lehrkraft löschen …', aktion: async () => { if (await frage('Alle Aufsichten dieses Eintrags löschen?', { gefahr: true, ja: 'Löschen', nein: 'Abbrechen' })) { await api.post(api.dok('/pausenaufsicht/loeschen'), { sicht, id: Number(element.value) }); neu(); } } },
+        { text: 'Alle Aufsichten löschen …', aktion: async () => { if (await frage('Alle Pausenaufsichten löschen?', { gefahr: true, ja: 'Löschen', nein: 'Abbrechen' })) { await api.post(api.dok('/pausenaufsicht/loeschen'), { sicht: 'alle', id: 0 }); neu(); } } },
+      ];
+    });
+    f.werkzeug({ text: 'Automatisch einteilen …', titel: 'Offene Aufsichten automatisch besetzen', aktion: optimieren }).classList.add('rechts');
   }
-  f.werkzeug({ text: 'Gänge', symbol: 'gaenge', titel: 'Aufsichtsbereiche (Gänge) bearbeiten', aktion: () => fensterverwaltung.oeffnen('stammdaten', { typ: 'gang' }) });
+  const einst = menueKnopf(f, 'Einstellungen', () => [
+    { text: 'Gewichtung …', deaktiviert: !schreiben, aktion: gewichtung },
+    { text: 'Aufsichtsbereiche …', aktion: bereicheOeffnen },
+  ]);
+  if (!schreiben) einst.classList.add('rechts');
+  const aktZelle = () => (daten && akt ? daten.tage.find((t) => t.tag === akt.tag)?.zellen.find((z) => z.nach === akt.nach) : null);
+  function bereicheOeffnen() { fensterverwaltung.oeffnen('stammdaten', { typ: 'gang' }); }
 
   function reiterZeichnen() {
-    reiter.replaceChildren(...[['gang', 'Gang'], ['lehrer', 'Lehrer']].map(([id, t]) => h('button', { type: 'button', class: id === sicht ? 'aktiv' : '', onclick: () => { sicht = id; f.parameterSetzen({ sicht }); elementeFuellen(); neu(); } }, t)));
+    reiter.replaceChildren(...[['gang', 'Nach Aufsichtsbereich'], ['lehrer', 'Nach Lehrkraft']].map(([id, t]) => h('button', { type: 'button', role: 'tab', 'aria-selected': String(id === sicht), class: id === sicht ? 'aktiv' : '', onclick: () => { sicht = id; f.parameterSetzen({ sicht }); elementeFuellen(); neu(); } }, t)));
+    elementTitel.textContent = sicht === 'gang' ? 'Bereich' : 'Lehrkraft';
   }
   function elementeFuellen() {
     const alt = Number(element.value);
@@ -65,15 +76,22 @@ function planFenster(f, p) {
   element.addEventListener('change', () => { f.parameterSetzen({ element: Number(element.value) }); neu(); });
 
   function zeichnen() {
-    if (!daten) { raster.replaceChildren(h('div', { class: 'leise pa-leer' }, sicht === 'gang' ? 'Keine Gänge angelegt – bitte unter Dateneingabe → Gänge anlegen.' : 'Keine Lehrkräfte.')); return; }
+    if (!daten) {
+      minuten.textContent = '';
+      seite.replaceChildren();
+      raster.replaceChildren(h('div', { class: 'pa-leer' }, sicht === 'gang'
+        ? [h('p', null, 'Es sind noch keine Aufsichtsbereiche angelegt.'), h('button', { type: 'button', class: 'knopf klein', onclick: bereicheOeffnen }, 'Aufsichtsbereiche anlegen')]
+        : h('p', null, 'Es sind keine Lehrkräfte vorhanden.')));
+      return;
+    }
     minuten.textContent = daten.minuten;
-    const kopf = h('tr', null, h('th'), ...daten.spalten.map((s) => h('th', { title: `${s.minuten} Minuten` }, h('div', null, s.name), h('div', { class: 'leise' }, s.zeit))));
-    const zeilen = daten.tage.map((t) => h('tr', null, h('th', null, t.name), ...t.zellen.map((z) => {
+    const kopf = h('tr', null, h('th', { class: 'pa-ecke' }), ...daten.spalten.map((s) => h('th', { title: `${s.minuten} Minuten` }, h('div', null, s.name), h('div', { class: 'pa-zeit' }, s.zeit))));
+    const zeilen = daten.tage.map((t) => h('tr', null, h('th', { class: 'pa-tag' }, t.name), ...t.zellen.map((z) => {
       const kl = ['pa-zelle'];
       if (sicht === 'gang') { if (z.keine) kl.push('keine'); if (z.offen && !z.keine) kl.push('offen'); if (z.schlecht?.length) kl.push('schlecht'); }
       else kl.push(z.moeglich ? 'moeglich' : 'gesperrt');
       if (akt && akt.tag === t.tag && akt.nach === z.nach) kl.push('aktiv');
-      const td = h('td', { class: kl.join(' '), title: z.schlecht?.length ? `Schlecht bewertet: ${z.schlecht.join(', ')}` : '' }, z.text);
+      const td = h('td', { class: kl.join(' '), title: z.schlecht?.length ? `Ungünstig: ${z.schlecht.join(', ')}` : '' }, z.keine ? 'keine Aufsicht' : z.text);
       td.addEventListener('click', () => { akt = { tag: t.tag, nach: z.nach }; zeichnen(); });
       td.addEventListener('dblclick', () => { akt = { tag: t.tag, nach: z.nach }; if (sicht === 'gang' && schreiben) eingeben(td, z.text); });
       td.addEventListener('contextmenu', (e) => {
@@ -82,10 +100,11 @@ function planFenster(f, p) {
         zeichnen();
         if (sicht !== 'gang' || !schreiben) return;
         menue(e.clientX, e.clientY, [
-          { text: 'Lehrervorschlag …', symbol: 'lehrer', aktion: vorschlag },
+          { text: 'Vorschlag …', aktion: vorschlag },
           { text: 'Eingeben …', aktion: () => eingeben(null, z.text) },
-          { text: 'Aufsicht löschen', symbol: 'loeschen', aktion: zelleLoeschen },
-          { text: z.keine ? 'Aufsicht (???)' : 'Keine Aufsicht', aktion: () => teile(0) },
+          { text: 'Aufsicht entfernen', aktion: zelleLoeschen },
+          null,
+          { text: z.keine ? 'Aufsicht wieder einplanen' : 'Keine Aufsicht', aktion: () => teile(0) },
           { text: 'Aufsicht teilen', aktion: () => teile(1) },
           { text: 'Teilung entfernen', aktion: () => teile(-1), deaktiviert: z.teile < 2 },
         ]);
@@ -93,16 +112,20 @@ function planFenster(f, p) {
       return td;
     })));
     raster.replaceChildren(h('table', { class: 'pa-tabelle' }, h('thead', null, kopf), h('tbody', null, zeilen)));
-    seite.replaceChildren(h('table', { class: 'pa-tabelle klein' },
-      h('thead', null, h('tr', null, ['Lehrer', 'PA Max (Min)', 'PA Ist (Min)', 'PA Anz', 'PA-Vertr.', 'Ist-Max', 'Geschl.'].map((x) => h('th', null, x)))),
-      h('tbody', null, daten.lehrer.map((l) => h('tr', { class: 'pa-lehrerzeile', ondblclick: () => { sicht = 'lehrer'; elementeFuellen(); element.value = l.id; neu(); } },
-        h('td', null, l.kurz), h('td', null, l.max), h('td', null, l.ist), h('td', null, l.anzahl), h('td', null, l.vertretungen), h('td', { class: l.ueber ? 'pa-ueber' : '' }, l.differenz), h('td', null, l.geschlecht))))));
+    const spalte = (t, titel) => h('th', { class: 'zahl', title: titel }, t);
+    seite.replaceChildren(h('div', { class: 'pa-seitenkopf' }, h('span', { class: 'fett' }, 'Lehrkräfte'), h('span', { class: 'leise' }, 'Doppelklick zeigt den Plan der Lehrkraft')),
+      h('table', { class: 'pa-tabelle klein' },
+        h('thead', null, h('tr', null, h('th', null, 'Lehrkraft'), spalte('Soll', 'Höchstens Minuten Aufsicht pro Woche'), spalte('Ist', 'Eingeteilte Minuten pro Woche'), spalte('Anzahl', 'Anzahl der Aufsichten'),
+          spalte('Vertr.', 'Vertretene Aufsichten'), spalte('Differenz', 'Ist minus Soll in Minuten'), h('th', { title: 'Geschlecht' }, 'G.'))),
+        h('tbody', null, daten.lehrer.map((l) => h('tr', { class: 'pa-lehrerzeile', ondblclick: () => { sicht = 'lehrer'; elementeFuellen(); element.value = l.id; neu(); } },
+          h('td', null, l.kurz), h('td', { class: 'zahl' }, l.max), h('td', { class: 'zahl' }, l.ist), h('td', { class: 'zahl' }, l.anzahl), h('td', { class: 'zahl' }, l.vertretungen),
+          h('td', { class: `zahl${l.ueber ? ' pa-ueber' : ''}` }, l.differenz), h('td', null, l.geschlecht))))));
   }
 
   async function eingeben(td, alt) {
     const t = await (async () => {
-      const ein = h('input', { class: 'eingabe', value: alt === '???' ? '' : alt.replace(/\?\?\?/g, '').replace(/,\s*,/g, ',').replace(/^,|,$/g, ''), placeholder: 'Kurznamen, z. B. MÜL, SCH (geteilte Aufsicht)' });
-      const ok = await dialog({ titel: 'Pausenaufsicht', inhalt: h('div', { class: 'formular' }, h('label', null, 'Lehrer'), ein), knoepfe: [{ text: 'OK', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] });
+      const ein = h('input', { class: 'eingabe', id: `pa-ein-${f.id}`, value: alt === '???' ? '' : alt.replace(/\?\?\?/g, '').replace(/,\s*,/g, ',').replace(/^,|,$/g, ''), placeholder: 'z. B. MÜL, SCH' });
+      const ok = await dialog({ titel: 'Pausenaufsicht eingeben', inhalt: h('div', { class: 'formular' }, h('label', { for: ein.id }, 'Lehrkräfte'), ein, h('div', { class: 'hinweis' }, 'Kurznamen; mehrere teilen sich die Aufsicht.')), knoepfe: [{ text: 'Übernehmen', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] });
       return ok ? ein.value : null;
     })();
     if (t === null) return;
@@ -116,24 +139,28 @@ function planFenster(f, p) {
     neu();
   }
   async function teile(delta) {
-    if (!akt || sicht !== 'gang') { hinweis('Bitte im Reiter Gang eine Aufsicht wählen.', 'warnung'); return; }
+    if (!nurBereich()) return;
+    if (!akt) { hinweis('Bitte zuerst eine Aufsicht wählen.', 'warnung'); return; }
     daten = await api.post(api.dok('/pausenaufsicht/teile'), { gang: Number(element.value), tag: akt.tag, nach: akt.nach, delta }, { quelle: f.id });
     zeichnen();
   }
 
   async function vorschlag() {
-    if (sicht !== 'gang' || !akt) { hinweis('Bitte im Reiter Gang eine Aufsicht wählen.', 'warnung'); return; }
+    if (!nurBereich()) return;
+    if (!akt) { hinweis('Bitte zuerst eine Aufsicht wählen.', 'warnung'); return; }
     const gang = Number(element.value);
     const v = await api.get(api.dok(`/pausenaufsicht/vorschlag?gang=${gang}&tag=${akt.tag}&nach=${akt.nach}`));
     let gewaehlt = null;
     const huelle = h('div', { class: 'pa-vorschlag' });
-    const ok = dialog({ titel: v.titel, breite: '960px', inhalt: h('div', null, v.ersetzt ? h('p', { class: 'leise' }, `Alle Teile belegt – ersetzt wird ${v.ersetzt}.`) : null, huelle),
+    const ok = dialog({ titel: String(v.titel || '').replace(/^Lehrervorschlag/, 'Vorschlag'), breite: '960px', inhalt: h('div', null, v.ersetzt ? h('p', { class: 'leise' }, `Alle Teile sind belegt – ersetzt wird ${v.ersetzt}.`) : null, huelle),
       knoepfe: [{ text: 'Einteilen', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] });
     const t = new Tabelle(huelle, {
+      zeilenHoehe: 30,
+      leerText: 'Keine Lehrkraft verfügbar.',
       zeilenKlasse: (z) => (z.schlecht ? 'pa-schlecht' : ''),
       beiAuswahl: (_, aktiv) => { gewaehlt = aktiv; },
       beiDoppelklick: (z) => { gewaehlt = z; huelle.closest('.dialog')?.querySelector('.knopf.primaer')?.click(); },
-      spalten: v.spalten.map((titel, i) => ({ schluessel: `v${i}`, titel, breite: i === 0 ? 60 : 62, art: 'NurLesen', editierbar: false, wert: (z) => z.werte[i] })),
+      spalten: v.spalten.map((titel, i) => ({ schluessel: `v${i}`, titel, hinweis: titel, breite: Math.max(i === 0 ? 64 : 56, Math.round(titel.length * 6.6) + 22), art: 'NurLesen', editierbar: false, wert: (z) => z.werte[i] })),
     });
     t.daten(v.zeilen.map((z) => ({ ...z, title: z.verletzt.join('\n') })));
     gewaehlt = v.zeilen[0] || null;
@@ -143,14 +170,16 @@ function planFenster(f, p) {
   }
 
   async function optimieren() {
-    const nurGang = h('input', { type: 'checkbox', disabled: sicht !== 'gang' });
-    const schlecht = h('input', { type: 'checkbox' });
-    const kurz = h('input', { class: 'eingabe', type: 'number', min: 0, max: 60, value: 0, style: { width: '70px' } });
-    const ok = await dialog({ titel: 'Optimierung Pausenaufsichten', breite: '440px', inhalt: h('div', { class: 'upw-spalte' },
-      h('label', { class: 'kontrolle' }, nurGang, 'Nur aktuellen Gang'), h('label', { class: 'kontrolle' }, schlecht, 'Schlechte Einteilungen vorher löschen'),
-      h('label', { class: 'kontrolle' }, kurz, 'Pausen ab Minuten'),
-      h('p', { class: 'leise' }, 'Es werden nur offene Aufsichten (???) besetzt. Lehrer mit PA Max = 0, gesperrte Lehrer und unpassendes Geschlecht sind ausgeschlossen.')),
-    knoepfe: [{ text: 'OK', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] });
+    const nurGangS = schalter('Nur der aktuelle Aufsichtsbereich', { disabled: sicht !== 'gang' });
+    const schlechtS = schalter('Ungünstige Einteilungen vorher entfernen');
+    const nurGang = nurGangS.eingabe;
+    const schlecht = schlechtS.eingabe;
+    const kurz = h('input', { class: 'eingabe pa-zahl', type: 'number', min: 0, max: 60, value: 0, id: `pa-kurz-${f.id}` });
+    const ok = await dialog({ titel: 'Pausenaufsichten automatisch einteilen', breite: '480px', inhalt: h('div', { class: 'formular pa-dialog' },
+      h('div', { class: 'voll' }, nurGangS), h('div', { class: 'voll' }, schlechtS),
+      h('label', { for: kurz.id }, 'Nur Pausen ab'), h('span', { class: 'pa-einheit' }, kurz, h('span', { class: 'leise' }, 'Minuten')),
+      h('p', { class: 'leise voll' }, 'Besetzt werden nur offene Aufsichten. Lehrkräfte ohne Aufsichtsminuten, gesperrte Lehrkräfte und unpassende Zuordnungen nach Geschlecht bleiben außen vor.')),
+    knoepfe: [{ text: 'Einteilen', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] });
     if (!ok) return;
     const weg = laden(f.inhalt);
     try {
@@ -162,12 +191,19 @@ function planFenster(f, p) {
 
   async function gewichtung() {
     const g = await api.get(api.dok('/pausenaufsicht/gewichtung'));
-    const max = h('input', { class: 'eingabe', type: 'number', min: 1, max: 5, value: g.maxProTag, style: { width: '60px' } });
-    const regler = g.kriterien.map((k) => ({ k, el: h('input', { type: 'range', min: 0, max: 5, value: k.wert }) }));
-    const ok = await dialog({ titel: 'Gewichtung Pausenaufsichten', breite: '620px', inhalt: h('div', { class: 'pa-gewichtung' },
-      h('label', null, 'Max. Pausenaufsichten pro Tag'), max, h('div', { class: 'leise pa-skala' }, 'unwichtig ← → extrem wichtig (5 = nie verletzen)'),
-      ...regler.flatMap(({ k, el }) => [h('label', null, k.text), el])),
-    knoepfe: [{ text: 'OK', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] });
+    const max = h('input', { class: 'eingabe pa-zahl', type: 'number', min: 1, max: 5, value: g.maxProTag, id: `pa-max-${f.id}` });
+    const regler = g.kriterien.map((k) => {
+      const el = h('input', { type: 'range', min: 0, max: 5, value: k.wert, 'aria-label': k.text });
+      const wert = h('span', { class: 'pa-wert' }, String(k.wert));
+      el.addEventListener('input', () => { wert.textContent = el.value; });
+      return { k, el, wert };
+    });
+    const ok = await dialog({ titel: 'Gewichtung der Pausenaufsichten', breite: '620px', inhalt: h('div', { class: 'pa-gewichtung' },
+      h('label', { for: max.id }, 'Höchstens Aufsichten pro Tag'), h('span', null, max),
+      h('h3', { class: 'pa-abschnitt' }, 'Gewichtung der Kriterien'),
+      h('p', { class: 'leise pa-skala' }, '0 = unwichtig, 5 = darf nie verletzt werden.'),
+      ...regler.flatMap(({ k, el, wert }) => [h('label', null, k.text), h('span', { class: 'pa-regler' }, el, wert)])),
+    knoepfe: [{ text: 'Speichern', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }] });
     if (!ok) return;
     await api.put(api.dok('/pausenaufsicht/gewichtung'), { maxProTag: Number(max.value) || 1, werte: Object.fromEntries(regler.map(({ k, el }) => [k.schluessel, Number(el.value)])) });
     hinweis('Gewichtung gespeichert.', 'ok');
@@ -195,10 +231,10 @@ function planFenster(f, p) {
 function vertretungFenster(f) {
   f.titel('Vertretung der Pausenaufsichten');
   const schreiben = darfSchreiben();
-  const start = zustand.vertretungsdatum || zustand.datum || new Date().toISOString().slice(0, 10);
-  const datum = h('input', { class: 'eingabe', type: 'date', value: typeof start === 'string' ? start.slice(0, 10) : start });
-  f.werkzeuge.append(h('span', null, 'Datum'), datum);
-  f.werkzeug({ text: 'Plan', symbol: 'pausenaufsicht', titel: 'Wöchentliche Pausenaufsichten', aktion: () => fensterverwaltung.oeffnen('pausenaufsicht', {}) });
+  const start = planungsdatum() || zustand.vertretungsdatum || zustand.datum || new Date().toISOString().slice(0, 10);
+  const datum = h('input', { class: 'eingabe', type: 'date', value: typeof start === 'string' ? start.slice(0, 10) : start, id: `pav-datum-${f.id}` });
+  f.werkzeuge.append(h('label', { class: 'pa-elementwahl', for: datum.id }, h('span', { class: 'pa-wz-titel' }, 'Datum'), datum));
+  f.werkzeug({ text: 'Wochenplan', titel: 'Wöchentliche Pausenaufsichten', aktion: () => fensterverwaltung.oeffnen('pausenaufsicht', {}) }).classList.add('rechts');
   const flaeche = h('div', { class: 'pa-vertretung' });
   f.inhalt.append(flaeche);
 
@@ -207,13 +243,13 @@ function vertretungFenster(f) {
     try { zeichnen(await api.get(api.dok(`/pausenaufsicht/vertretung/${datum.value}`))); } catch (e) { fehlerMelden(e); } finally { weg(); }
   }
   function zeichnen(d) {
-    f.fuss.replaceChildren(h('span', null, `${d.datumText}: ${d.zeilen.length} Aufsichtsvertretungen, ${d.zeilen.filter((z) => z.offen).length} offen`), d.unterrichtstag ? null : h('span', { class: 'leise' }, ' · kein Unterrichtstag'));
-    if (!d.zeilen.length) { flaeche.replaceChildren(h('p', { class: 'leise pa-leer' }, 'Keine Pausenaufsichtsvertretungen an diesem Tag (entstehen automatisch, wenn eingeteilte Lehrkräfte abwesend sind).')); return; }
-    flaeche.replaceChildren(h('table', { class: 'pa-tabelle' },
-      h('thead', null, h('tr', null, ['Pause', 'Gang', 'Lehrer (abwesend)', 'Vertretung', 'Text', 'Kandidaten (Zähler, Aufsichten)'].map((x) => h('th', null, x)))),
+    f.fuss.replaceChildren(h('span', null, d.datumText), h('span', null, `${d.zeilen.length} zu vertreten`), h('span', null, `${d.zeilen.filter((z) => z.offen).length} offen`), ...(d.unterrichtstag ? [] : [h('span', null, 'kein Unterrichtstag')]));
+    if (!d.zeilen.length) { flaeche.replaceChildren(h('div', { class: 'pa-leer' }, h('p', null, 'An diesem Tag ist keine Pausenaufsicht zu vertreten.'))); return; }
+    flaeche.replaceChildren(h('table', { class: 'pa-tabelle pa-voll' },
+      h('thead', null, h('tr', null, ['Pause', 'Aufsichtsbereich', 'Abwesend', 'Vertretung', 'Text', 'Weitere Lehrkräfte (Zähler, Aufsichten)'].map((x) => h('th', null, x)))),
       h('tbody', null, d.zeilen.map((z) => {
         const wahl = h('select', { class: 'eingabe', disabled: !schreiben },
-          h('option', { value: '' }, z.offen ? '??? (offen)' : '– Vertretung aufheben –'),
+          h('option', { value: '' }, z.offen ? 'Offen' : 'Vertretung aufheben'),
           z.vertreterId && !z.kandidaten.some((k) => k.id === z.vertreterId) ? h('option', { value: z.vertreterId, selected: true }, z.vertreter) : null,
           ...z.kandidaten.map((k) => h('option', { value: k.id, selected: k.id === z.vertreterId }, `${k.kurz} (${k.zaehler}, ${k.aufsichten})`)));
         wahl.addEventListener('change', async () => {
@@ -224,6 +260,7 @@ function vertretungFenster(f) {
   }
   datum.addEventListener('change', neu);
   f.an('datum', (dt) => { if (dt) { datum.value = String(dt).slice(0, 10); neu(); } });
+  f.an('vertretung.datum', (dt) => { if (dt) { datum.value = dt; neu(); } });
   f.an('daten', (e) => { if (e.quelle !== f.id && betrifft(e, 'Vertretung', 'Stundenplan')) neu(); });
   neu();
 }
@@ -244,10 +281,10 @@ export default {
   ribbon: [
     { id: 'start.pausenaufsichten', reiter: 'Start', gruppe: 'Module', text: 'Pausenaufsichten', symbol: 'pausenaufsicht', befehl: 'pausenaufsicht.oeffnen', braucht: 'dokument' },
     {
-      id: 'vertretung.pausenaufsichten', reiter: 'Vertretungsplanung', gruppe: 'Planung', text: 'Pausen-aufsichten', symbol: 'pausenaufsicht', gross: true, braucht: 'dokument',
+      id: 'vertretung.pausenaufsichten', reiter: 'Vertretungsplanung', gruppe: 'Planung', text: 'Pausenaufsichten', symbol: 'pausenaufsicht', gross: true, braucht: 'dokument',
       menue: [
-        { text: 'Vertretung der Pausenaufsichten …', symbol: 'vertretung', befehl: 'pausenaufsicht.vertretung' },
-        { text: 'Pausenaufsichten (Wochenplan) …', symbol: 'pausenaufsicht', befehl: 'pausenaufsicht.oeffnen' },
+        { text: 'Vertretung der Pausenaufsichten', befehl: 'pausenaufsicht.vertretung' },
+        { text: 'Wochenplan', befehl: 'pausenaufsicht.oeffnen' },
       ],
     },
   ],

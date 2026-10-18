@@ -2,8 +2,8 @@
 //
 //   NODE_PATH=$(npm root -g) STUDIO_URL=http://127.0.0.1:5513 STUDIO_PASSWORT=… node studio/tests/smoke/druck.cjs
 //
-// Ablauf: Anmelden → Beispielschule (mit Stundenplan) öffnen → Einstellungen, Zeitraster, Kalender/Ferien, Perioden,
-// Unterrichtsgruppen → Lehrer-Übersicht → Druckauswahl mit Vorschau → Berichte → Stundenplanformate → Vertretungsplan-Ausgabe.
+// Ablauf: Anmelden → Beispielschule (mit Stundenplan) öffnen → Einstellungen, Zeitraster, Kalender und Ferien, Perioden,
+// Unterrichtsgruppen → Lehrer-Übersicht → Druckauswahl mit Vorschau → Berichte → Planformate → Vertretungsplan-Ausgabe.
 // Bildschirmfotos nach STUDIO_SCREENSHOTS.
 const { chromium } = require('playwright');
 
@@ -32,7 +32,8 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
   const foto = (name) => page.screenshot({ path: path.join(BILDER, `${name}.png`) });
   const reiter = async (name) => {}; // Reiter gibt es nicht mehr – Navigation ist immer sichtbar
   const knopf = (id) => eintrag(page, id);
-  const alleZu = async () => { await reiter('Start'); await knopf('start.fenster.alle'); };
+  const alleZu = () => page.evaluate(async () => (await import('/js/kern/fenster.js')).fensterverwaltung.alleSchliessen());
+  const ansichtZu = (typ) => page.evaluate(async (typ) => (await import('/js/kern/fenster.js')).fensterverwaltung.alle().find((f) => f.typ === typ)?.schliessen(), typ);
 
   try {
     await page.goto(URL);
@@ -105,7 +106,6 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await reiter('Stundenpläne');
     await knopf('stundenplaene.uebersicht.lehrer');
     await page.waitForSelector('.fenster[data-typ=uebersicht] .ue-zelle');
-    await page.locator('.fenster[data-typ=uebersicht] ').evaluate((el) => el.closest('.ws-bereich').querySelector('.ws-kopf').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })));
     await page.waitForTimeout(300);
     await foto('07-lehrer-uebersicht');
     await alleZu();
@@ -129,7 +129,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await page.waitForTimeout(1200);
     await foto('10-druckvorschau');
     // HTML-Ausgabe (wird auch im kopflosen Browser angezeigt)
-    await page.click('.ws-tab[data-typ=\"druck.vorschau\"] .ws-tab-zu');
+    await ansichtZu('druck.vorschau');
     await page.click('.fenster[data-typ="druck.auswahl"] button:has-text("HTML-Ausgabe")');
     await page.waitForSelector('.fenster[data-typ="druck.vorschau"] iframe');
     await page.waitForTimeout(1200);
@@ -152,7 +152,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await page.fill('.dialog input[name=neu]', 'Klasse Smoke');
     await page.click('.dialog button:has-text("Anlegen")');
     await page.waitForSelector('.fm-eintrag.aktiv:has-text("Klasse Smoke")');
-    await page.click('.es-reiterknopf:text-is("Stundenplan-Stunde")');
+    await page.click('.es-reiterknopf:text-is("Stundenfeld")');
     await page.click('button:has-text("Feld hinzufügen")');
     await page.click('button:has-text("Feld hinzufügen")');
     await page.click('.fenster[data-typ="formate.editor"] .wz-knopf:has-text("Speichern")');

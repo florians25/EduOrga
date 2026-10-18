@@ -13,7 +13,7 @@ export async function zeigen(seite, kontext, art) {
 const neuLaden = kontext => kontext.navigieren(location.hash);
 const csvZelle = x => `"${String(x ?? '').replace(/"/g, '""')}"`;
 
-/** Auswahl-Fußzeile mit Anzahl und Knöpfen wie in der Vorlage (Neu, Sortieren, Löschen …). */
+/** Auswahl-Fußzeile mit Anzahl und Knöpfen (Neu, Sortieren, Löschen …). */
 const fuss = (n, knoepfe) => `<div class="nl-fuss"><span class="kbe-anzahl">${n} ${n === 1 ? 'Element' : 'Elemente'}</span><span class="ms-auto d-flex flex-wrap gap-2">${knoepfe}</span></div>`;
 
 /** Reihenfolge per Pfeil ändern und speichern. */

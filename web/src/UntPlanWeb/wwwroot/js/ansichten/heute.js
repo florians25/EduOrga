@@ -1,4 +1,4 @@
-// Heute – Startseite wie im Original (UW-05): „Heute 15.10.2026“, letzte Anmeldung und Planaktualisierung, „Nachrichten“ mit
+// Heute – Startseite (UW-05): „Heute 15.10.2026“, letzte Anmeldung und Planaktualisierung, „Nachrichten“ mit
 // RSS-Symbol und Stift (formatierte Tagestexte, sicher bereinigt) und „Mein nächster Unterricht“ im neuen Listen-Design
 // (nl-tabelle): Uhrzeit, Stunde, Fach, Klasse, Raum, ggf. Lehrkraft, Status-Labels und Klassenbuch-Stand. Entfall grau
 // durchgestrichen, Vertretungen mit grünen Labels wie auf den Plankarten.
@@ -6,7 +6,6 @@ import { e, icon, holen, WOCHENTAGE, lehrkraftLabel } from '../ui.js';
 import { RSS } from '../symbole.js';
 import { karteDialog } from '../plangitter.js';
 
-const L = '/img/wu/legacy/';
 
 /** „2026-10-14 17:50:10“ → „Mittwoch, 14.10.2026 17:50:10“ */
 function zeitstempel(s) {
@@ -82,7 +81,7 @@ export async function zeigen(seite, kontext) {
 
   // nach Stunde sortiert (der Server liefert Karten gruppiert, z. B. Veranstaltungen zuerst); Entfall vor der Ersatzstunde
   const stunden = (d.stunden ?? []).slice().sort((a, b) => a.stunde - b.stunde || (a.status === 'entfall' ? 0 : 1) - (b.status === 'entfall' ? 0 : 1));
-  // Schüler*innen und Erziehungsberechtigte: nur Anmeldung, Planaktualisierung und Nachrichten (wie im Original)
+  // Schüler*innen und Erziehungsberechtigte: nur Anmeldung, Planaktualisierung und Nachrichten
   const mitStunden = !kontext.familie && !d.keinPlan && (stunden.length || ich.kollegium);
   const anderTag = d.tag && d.tag !== d.datum;
   // Lehrkraft-Spalte nur, wenn sie etwas aussagt (Vertretung, Kopplung, Schüler*innen-Ansicht)
@@ -120,7 +119,7 @@ export async function zeigen(seite, kontext) {
       </section>
       <section class="heute-karte">
         <header>Nachrichten ${d.rss ? `<a href="/rss/nachrichten.xml" target="_blank" rel="noopener" title="RSS-Feed der Nachrichten zum Tag" class="ms-0">${RSS}</a>` : RSS}
-          ${ich.nachrichten ? `<a href="#/admin/nachrichten" class="h-stift" title="Nachrichten zum Tag bearbeiten" aria-label="Nachrichten zum Tag bearbeiten"><img src="${L}absence-edit.png" alt=""></a>` : ''}</header>
+          ${ich.nachrichten ? `<a href="#/admin/nachrichten" class="h-stift" title="Nachrichten zum Tag bearbeiten" aria-label="Nachrichten zum Tag bearbeiten"><i class="bi bi-pencil" aria-hidden="true"></i></a>` : ''}</header>
         <div class="heute-nachrichten">${nachrichten}</div>
       </section>
       ${ich.kollegium && d.offeneStunden ? `<section class="heute-karte heute-hinweis">${icon('offen')}

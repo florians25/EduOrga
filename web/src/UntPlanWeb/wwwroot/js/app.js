@@ -1,6 +1,7 @@
-// UntPlanWeb – Einstieg: Sitzung laden, Anmeldung/Einrichtung, Hülle im Stil des Vorbilds (linke Navigationsleiste mit
-// Untermenüs, Schuljahr-Pille, Benutzer unten, Konto wechseln) und Hash-Router.
-import { LOGO, icon, e, holen, senden, api, fehler, alarm, lade, initialen, toast } from './ui.js';
+// UntPlanWeb – Einstieg: Sitzung laden, Anmeldung/Einrichtung, Hülle (helle Seitenleiste links mit Marke, Schuljahr, Bereichen als
+// aufklappbaren Textgruppen, Konto unten) und Hash-Router.
+import { icon, e, holen, senden, api, fehler, alarm, lade, toast } from './ui.js';
+import { MARKE } from './symbole.js';
 import { beobachten as auswahlBeobachten } from './auswahl.js';
 import { beobachten as kalenderBeobachten } from './kalender.js';
 
@@ -42,11 +43,9 @@ const app = document.getElementById('app');
 let sitzung = null;
 let elementeCache = null;
 let laufendeAnsicht = null;
-/** Geöffnetes Untermenü (Gruppen-ID) oder null für das Hauptmenü. */
-let untermenue = null;
+/** Aufgeklappte Bereiche der Seitenleiste (Gruppen-IDs). */
+const offeneGruppen = new Set();
 let aktiverPunkt = null;
-/** Nächstes Zeichnen bzw. Markieren der Navigation blendet die Menüpunkte gestaffelt ein (nach einem Klick in der Seitenleiste). */
-let navEinblendenAngefordert = false;
 
 /** Gemeinsamer Kontext für alle Ansichten. */
 const kontext = {
@@ -149,16 +148,16 @@ async function start() {
 // ------------------------------------------------------------------ Anmeldung und Einrichtung
 
 /**
- * Anmeldeseite: zweigeteilt. Links eine ruhige, warme Verlaufsfläche mit Bildmarke, Schulname, heutigem Datum und einer
- * zurückhaltenden Illustration (stilisierte Stundenplanwoche); rechts auf hellem Grund eine Formularkarte mit Pill-Knopf.
- * Auf dem Telefon steht ein schmaler Kopf mit Bildmarke und Schulname über der Karte.
+ * Anmeldeseite: zweigeteilt. Links eine ruhige Fläche mit Zeichen und Wortmarke, Schulname, heutigem Datum und einer
+ * zurückhaltenden Illustration (stilisierte Stundenplanwoche); rechts auf hellem Grund eine Formularkarte.
+ * Auf dem Telefon steht ein schmaler Kopf mit Marke und Schulname über der Karte.
  */
 function anmeldeRahmen(titel, inhalt, untertitel = '') {
   const heute = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const schule = sitzung?.schule?.name || 'UntPlanWeb';
   app.innerHTML = `<main class="anmeldung an-seite">
     <section class="an-buehne" aria-label="${e(schule)}">
-      <div class="an-marke">${LOGO}<span>UntPlanWeb</span></div>
+      <div class="an-marke">${MARKE}</div>
       <div class="an-text">
         <p class="an-datum">${e(heute)}</p>
         <h2 class="an-schule">${e(schule)}</h2>
@@ -169,7 +168,7 @@ function anmeldeRahmen(titel, inhalt, untertitel = '') {
     </section>
     <section class="an-bereich">
       <div class="an-karte">
-        <div class="an-kopf">${LOGO}<div><h1 class="an-titel">${e(titel)}</h1>${untertitel ? `<p class="an-unter">${e(untertitel)}</p>` : ''}</div></div>
+        <div class="an-kopf"><div><h1 class="an-titel">${e(titel)}</h1>${untertitel ? `<p class="an-unter">${e(untertitel)}</p>` : ''}</div></div>
         <div class="lg-form">${inhalt}</div>
       </div>
       <footer class="an-fuss"><button type="button" class="lg-app d-none" data-pwa>${icon('herunterladen')}Als App installieren</button>
@@ -210,21 +209,21 @@ async function oeffentlicheHinweise(box) {
 }
 /** Ruhige Illustration der Anmeldeseite: stilisierte Stundenplanwoche mit runden Karten (rein dekorativ). */
 function anmeldeBild() {
-  const farben = ['#f56b2a', '#7fb2d6', '#8ccfa8', '#f3c95c', '#c5b3e6'];
+  const farben = ['#234f96', '#7a9cc9', '#0b7a75', '#b7791f', '#6b5bb5'];
   const spalten = [[0, 1, 3], [0, 2, 3, 4], [1, 2, 4], [0, 1, 2, 4], [0, 3]];
   let karten = '';
   spalten.forEach((reihen, t) => reihen.forEach(r => {
     const f = farben[(t * 2 + r) % farben.length];
-    karten += `<rect x="${34 + t * 74}" y="${58 + r * 54}" width="62" height="44" rx="10" fill="#fff" opacity=".92"/>`
+    karten += `<rect x="${34 + t * 74}" y="${58 + r * 54}" width="62" height="44" rx="4" fill="#fff" opacity=".92"/>`
       + `<rect x="${40 + t * 74}" y="${64 + r * 54}" width="4" height="32" rx="2" fill="${f}"/>`
       + `<rect x="${50 + t * 74}" y="${68 + r * 54}" width="30" height="5" rx="2.5" fill="#c9d0d6"/><rect x="${50 + t * 74}" y="${79 + r * 54}" width="20" height="4" rx="2" fill="#e1e5e9"/>`;
   }));
   return `<svg class="an-bild" viewBox="0 0 420 340" aria-hidden="true" focusable="false">
-      <rect x="14" y="14" width="392" height="312" rx="26" fill="#fff" opacity=".45"/>
+      <rect x="14" y="14" width="392" height="312" rx="6" fill="#fff" opacity=".45"/>
       ${[0, 1, 2, 3, 4].map(t => `<rect x="${44 + t * 74}" y="32" width="42" height="8" rx="4" fill="#fff" opacity=".9"/>`).join('')}
       ${[0, 1, 2, 3, 4, 5].map(r => `<line x1="30" x2="390" y1="${54 + r * 54}" y2="${54 + r * 54}" stroke="#fff" stroke-opacity=".7"/>`).join('')}
       ${karten}
-      <circle cx="356" cy="290" r="34" fill="#f56b2a" opacity=".12"/><circle cx="356" cy="290" r="12" fill="#f56b2a" opacity=".5"/>
+      
     </svg>`;
 }
 window.addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); window.__pwaAngebot = ev; window.dispatchEvent(new Event('untplan:pwa')); });
@@ -313,7 +312,7 @@ async function abmelden() {
   start();
 }
 
-// ------------------------------------------------------------------ Menü (Aufbau wie im Original)
+// ------------------------------------------------------------------ Menü
 
 /** Haupt- und Untermenüpunkte je nach Rolle. Ein Punkt hat nav (Schlüssel für „aktiv“), href, text, icon. */
 function menue() {
@@ -341,7 +340,7 @@ function menue() {
     plaene.push({ nav: 'tag-raum', href: '#/tag/raum', text: 'Tag - Räume', icon: 'tagraeume' });
     plaene.push({ nav: 'vertretungen', href: '#/vertretungen', text: 'Vertretungsplan', icon: 'vertretungen' });
     m.push({ id: 'stundenplan', text: 'Stundenplan', icon: 'stundenplan', unter: plaene });
-    // Unterricht wie in der Vorlage: Mein Unterricht, Klasse, Schüler*in, Prüfungen, Prüfungskalender, Aufgaben, Lehrkraft - Tag, Klasse - Tag
+    // Unterricht: Mein Unterricht, Klasse, Schüler*in, Prüfungen, Prüfungskalender, Aufgaben, Lehrkraft - Tag, Klasse - Tag
     m.push({ id: 'unterricht', text: 'Unterricht', icon: 'unterricht', unter: [
       { nav: 'unterricht', href: '#/unterricht', text: b.element ? 'Mein Unterricht' : 'Unterricht', icon: 'meineunterrichte' },
       { nav: 'buchen-unterricht', href: '#/buchen/unterricht', text: 'Neuer Unterricht', icon: 'meineunterrichte' },
@@ -390,7 +389,7 @@ function menue() {
         { nav: 'buchen-raumdaten', href: '#/buchen/raumdaten', text: 'Raumdaten', icon: 'raumplan' }] : []),
     ] });
   } else if (familie(b)) {
-    // Schüler*innen und Erziehungsberechtigte wie im Original: Heute, Übersicht, Mitteilungen, Mein Stundenplan, Weitere Stundenpläne,
+    // Schüler*innen und Erziehungsberechtigte: Heute, Übersicht, Mitteilungen, Mein Stundenplan, Weitere Stundenpläne,
     // Abwesenheiten, Hausaufgaben (Lehrerpläne gibt es nicht)
     m[1] = { id: 'uebersicht', nav: 'uebersicht', href: '#/uebersicht', text: 'Übersicht', icon: 'meinedaten' };
     // Mitteilungen mit Untermenü nach den Rechten (Mitteilungs-Einstellungen und Rechte-Modell): Posteingang immer; Gesendet und Entwürfe,
@@ -490,12 +489,6 @@ function navAus(teile) {
   }
 }
 
-function punktHtml(p) {
-  const attr = p.unter ? `data-gruppe="${p.id}"` : `data-nav="${p.nav}"`;
-  return `<a class="u-nav-punkt" href="${p.unter ? p.unter.find(x => x.href)?.href : p.href}" ${attr} title="${e(p.text)}"><span class="u-nav-sym">${icon(p.icon)}</span><span class="u-nav-text">${e(p.text)}</span>`
-    + `${p.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</a>`;
-}
-
 /** Schuljahre zur Auswahl: das aktuelle aus UntPlan und die sieben vorherigen (1.8. – 31.7.). */
 function schuljahre() {
   const sj = sitzung?.schuljahr;
@@ -521,19 +514,17 @@ function schuljahrText() {
   return v === b ? v : `${v}/${b}`;
 }
 
-/** Navigationsleiste neu zeichnen (Haupt- oder Untermenü). */
+/** Navigationsleiste neu zeichnen: Marke, Schuljahr, Bereiche als aufklappbare Textgruppen, Konto unten. */
 function leisteZeichnen() {
   const leiste = document.getElementById('seitenleiste');
   if (!leiste) return;
   const gruppen = menue();
-  const gruppe = gruppen.find(g => g.id === untermenue && g.unter);
   const jahr = schuljahrText();
-  leiste.classList.toggle('mit-unter', !!gruppe);
-  leiste.querySelector('[data-leistenkopf]').innerHTML = gruppe
-    ? `<div class="u-unterkopf"><button type="button" class="u-zurueck" data-zurueck title="Zurück" aria-label="Zurück">${icon('zurueck')}</button><b title="${e(gruppe.text)}">${e(gruppe.text)}</b></div>`
-    : `<a class="u-marke" href="#/heute" title="UntPlanWeb">${LOGO}<span><b>UntPlanWeb</b><small>${e(sitzung.schule.name || '')}</small></span></a>`;
+  leiste.querySelector('[data-leistenkopf]').innerHTML =
+    `<a class="u-marke" href="#/heute" title="UntPlan">${MARKE}<small>${e(sitzung.schule.name || '')}</small></a>`;
   const gw = gewaehltesSchuljahr();
   leiste.querySelector('[data-jahr]').innerHTML = jahr ? `<span class="u-jahrwahl">
+      <span class="u-jahr-titel">Schuljahr</span>
       <button type="button" class="u-jahr mit-pfeil ${gw.aktuell ? '' : 'anders'}" data-jahrwahl aria-haspopup="listbox" aria-expanded="false" aria-describedby="u-jahr-tipp">${e(gw.text)} <i class="bi bi-chevron-down"></i></button>
       <span class="u-jahr-tipp" id="u-jahr-tipp" role="tooltip">Aktuelles Schuljahr: ${e(jahr)}</span>
       <span class="u-jahrliste d-none" role="listbox" data-jahrliste>${schuljahre().map(x => `<button type="button" role="option" data-jahr-von="${x.von}" aria-selected="${x.text === gw.text}" class="${x.text === gw.text ? 'an' : ''}">${e(x.text)}</button>`).join('')}</span></span>` : '';
@@ -551,35 +542,69 @@ function leisteZeichnen() {
     document.addEventListener('click', () => liste.classList.add('d-none'), { once: true });
   }
   const nav = leiste.querySelector('nav');
-  nav.className = `u-nav ${gruppe ? 'u-nav-unter' : ''} ${gruppe && ['admin', 'stammdaten'].includes(gruppe.id) ? 'u-nav-kompakt' : ''}`;
+  nav.className = 'u-nav';
   // verborgene Punkte (z. B. Sitzplan – nur über das Zahnrad in den Stundendetails) bleiben als Route erlaubt, stehen aber nicht im Menü
-  nav.innerHTML = (gruppe ? gruppe.unter.filter(p => !p.verborgen) : gruppen).map(punktHtml).join('');
+  nav.innerHTML = gruppen.map(g => g.unter ? gruppeHtml(g) : punktHtml(g)).join('');
   aktivMarkieren();
   zaehlerAktualisieren();
 }
 
+/** Einzelner Menüpunkt: reiner Text, rechts ggf. die Zahl ungelesener Mitteilungen. */
+function punktHtml(p, unter = false) {
+  return `<a class="u-nav-punkt ${unter ? 'u-nav-unterpunkt' : ''}" href="${p.href}" data-nav="${p.nav}"><span class="u-nav-text">${e(p.text)}</span>`
+    + `${p.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}</a>`;
+}
+
+/** Bereich mit Unterpunkten: Kopfzeile zum Auf- und Zuklappen (Pfeil rechts), darunter eingerückt die Seiten. */
+function gruppeHtml(g) {
+  const auf = offeneGruppen.has(g.id);
+  return `<div class="u-nav-gruppe ${auf ? 'auf' : ''}" data-gruppe-box="${g.id}">
+      <button type="button" class="u-nav-punkt u-nav-kopf" data-gruppe="${g.id}" aria-expanded="${auf}" aria-controls="u-nav-${g.id}">
+        <span class="u-nav-text">${e(g.text)}</span>${g.zaehler ? '<span class="u-zahl d-none" data-zaehler></span>' : ''}<i class="bi bi-chevron-down u-nav-pfeil" aria-hidden="true"></i></button>
+      <div class="u-nav-liste" id="u-nav-${g.id}" ${auf ? '' : 'hidden'}>${g.unter.filter(p => !p.verborgen).map(p => punktHtml(p, true)).join('')}</div>
+    </div>`;
+}
+
+/** Gruppe auf- oder zuklappen (ohne Neuzeichnen der ganzen Leiste). */
+function gruppeUmschalten(id, auf) {
+  const box = document.querySelector(`#seitenleiste [data-gruppe-box="${CSS.escape(id)}"]`);
+  if (!box) return;
+  auf = auf ?? !offeneGruppen.has(id);
+  // nur ein Bereich ist aufgeklappt: Öffnen klappt die übrigen zu
+  if (auf) [...offeneGruppen].filter(x => x !== id).forEach(x => gruppeUmschalten(x, false));
+  if (auf) offeneGruppen.add(id); else offeneGruppen.delete(id);
+  box.classList.toggle('auf', auf);
+  box.querySelector('[data-gruppe]')?.setAttribute('aria-expanded', String(auf));
+  const liste = box.querySelector('.u-nav-liste');
+  if (liste) liste.hidden = !auf;
+  try { localStorage.setItem('untplan:gruppen', JSON.stringify([...offeneGruppen])); } catch { /* privat */ }
+  if (auf) navEinblenden(liste);
+}
+
 /**
- * Menüpunkte nach einem Klick in der Seitenleiste von oben nach unten gestaffelt einblenden (Deckkraft und 6px Versatz, 220ms, 24ms
- * Abstand, höchstens 14 Stufen). Nur transform/opacity – kein Einfluss auf das Layout; bei „Bewegung reduzieren“ keine Animation.
+ * Unterpunkte einer gerade aufgeklappten Gruppe kurz einblenden (Deckkraft und 4px Versatz, 160ms, 16ms Abstand). Nur transform/opacity –
+ * kein Einfluss auf das Layout; bei „Bewegung reduzieren“ keine Animation.
  */
-function navEinblenden() {
-  if (!navEinblendenAngefordert) return;
-  navEinblendenAngefordert = false;
-  const nav = document.querySelector('#seitenleiste nav');
-  if (!nav || typeof nav.animate !== 'function') return;
+function navEinblenden(liste) {
+  if (!liste || typeof liste.animate !== 'function') return;
   try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch { /* ohne matchMedia */ }
-  [...nav.querySelectorAll('.u-nav-punkt')].forEach((p, i) => {
+  [...liste.querySelectorAll('.u-nav-punkt')].forEach((p, i) => {
     p.getAnimations?.().forEach(a => a.cancel());
-    p.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
-      { duration: 220, delay: Math.min(i, 14) * 24, easing: 'cubic-bezier(.2, .7, .3, 1)', fill: 'backwards' });
+    p.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 160, delay: Math.min(i, 12) * 16, easing: 'cubic-bezier(.2, .7, .3, 1)', fill: 'backwards' });
   });
 }
 
 function aktivMarkieren() {
-  navEinblenden();
   const gruppen = menue();
   const gruppe = gruppen.find(g => g.unter?.some(p => p.nav === aktiverPunkt));
-  document.querySelectorAll('#seitenleiste [data-nav]').forEach(a => a.classList.toggle('aktiv', a.dataset.nav === aktiverPunkt));
+  // die Gruppe der aktuellen Seite ist immer aufgeklappt
+  if (gruppe && !offeneGruppen.has(gruppe.id)) gruppeUmschalten(gruppe.id, true);
+  document.querySelectorAll('#seitenleiste [data-nav]').forEach(a => {
+    const an = a.dataset.nav === aktiverPunkt;
+    a.classList.toggle('aktiv', an);
+    if (an) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
   document.querySelectorAll('#seitenleiste [data-gruppe]').forEach(a => a.classList.toggle('aktiv', a.dataset.gruppe === gruppe?.id));
   document.querySelector('.u-benutzer')?.classList.toggle('aktiv', aktiverPunkt === 'profil');
 }
@@ -588,25 +613,29 @@ function huelle() {
   const b = sitzung.benutzer;
   let zu = false;
   try { zu = localStorage.getItem('untplan:leiste') === 'zu'; } catch { /* privat */ }
+  try { JSON.parse(localStorage.getItem('untplan:gruppen') || '[]').forEach(id => offeneGruppen.add(id)); } catch { /* privat */ }
   app.innerHTML = `
     <div class="u-app ${zu ? 'zu' : ''}">
       <header class="u-kopfleiste">
-        <button type="button" class="rundknopf" data-menue aria-label="Menü öffnen" aria-controls="seitenleiste">${icon('menue')}</button>
-        ${LOGO}<b id="kopftitel">UntPlanWeb</b>
+        <button type="button" class="u-menueknopf" data-menue aria-label="Menü öffnen" aria-controls="seitenleiste">${icon('menue')}<span>Menü</span></button>
+        <b id="kopftitel">UntPlan</b>
       </header>
       <aside class="u-leiste" id="seitenleiste" aria-label="Navigation">
-        <div data-leistenkopf></div>
+        <div class="u-leistenkopf" data-leistenkopf></div>
         <div class="u-jahrzeile" data-jahr></div>
         <nav class="u-nav"></nav>
         <div class="u-fuss">
-          <button type="button" class="u-griff" data-einklappen title="Navigation ein-/ausklappen" aria-label="Navigation ein- oder ausklappen"><span></span></button>
-          <button type="button" class="u-benutzer" data-kontomenue title="Konto" aria-haspopup="menu" aria-expanded="false"><span class="u-avatar">${e(b.login.slice(0, 1).toUpperCase())}</span>
-            <span class="u-benutzer-text"><b>${e(b.login)}</b><small>${e(b.rollenname)}</small></span></button>
+          <button type="button" class="u-benutzer" data-kontomenue title="Konto" aria-haspopup="menu" aria-expanded="false">
+            <span class="u-benutzer-text"><b>${e(b.login)}</b><small>${e(b.rollenname)}</small></span><i class="bi bi-chevron-up" aria-hidden="true"></i></button>
           <div class="u-kontomenue d-none" role="menu" data-konten></div>
-          <a class="u-abmelden u-neuigkeiten" href="#/neuigkeiten" data-neuigkeiten title="Neuigkeiten">${icon('nachrichten')}<span>Neuigkeiten</span></a>
-          <button type="button" class="u-abmelden" data-abmelden title="Abmelden">${icon('abmelden')}<span>Abmelden</span></button>
+          <div class="u-fusslinks">
+            <a class="u-abmelden u-neuigkeiten" href="#/neuigkeiten" data-neuigkeiten>Neuigkeiten</a>
+            <button type="button" class="u-abmelden" data-abmelden>Abmelden</button>
+          </div>
+          <button type="button" class="u-griff" data-einklappen title="Navigation ausblenden" aria-label="Navigation ein- oder ausblenden">${icon('einklappen')}<span>Navigation ausblenden</span></button>
         </div>
       </aside>
+      <button type="button" class="u-leiste-auf" data-ausklappen title="Navigation einblenden" aria-label="Navigation einblenden">${icon('menue')}</button>
       <div class="u-schleier" data-schleier></div>
       <main class="u-haupt">
         <div class="u-werkzeug d-none nicht-drucken" id="werkzeug"></div>
@@ -626,26 +655,18 @@ function huelle() {
   import('./infocenter.js').then(m => m.starten(kontext)).catch(() => { /* ohne Infocenter */ });
   app.querySelector('[data-menue]').onclick = () => huelleEl.classList.add('offen');
   app.querySelector('[data-schleier]').onclick = mobilZu;
-  app.querySelector('[data-einklappen]').onclick = () => {
-    const z = huelleEl.classList.toggle('zu');
+  const einklappen = z => {
+    huelleEl.classList.toggle('zu', z);
     document.body.classList.toggle('leiste-zu', z);
     try { localStorage.setItem('untplan:leiste', z ? 'zu' : 'offen'); } catch { /* privat */ }
   };
+  app.querySelector('[data-einklappen]').onclick = () => einklappen(true);
+  app.querySelector('[data-ausklappen]').onclick = () => einklappen(false);
   app.querySelector('[data-kontomenue]').onclick = ev => { ev.stopPropagation(); kontomenue(); };
   leiste.addEventListener('click', ev => {
-    if (ev.target.closest('[data-zurueck]')) { untermenue = null; navEinblendenAngefordert = true; leisteZeichnen(); return; }
     const g = ev.target.closest('[data-gruppe]');
-    if (g) {
-      // Gruppe öffnet ihr Untermenü und zeigt (wie im Original) gleich die erste Seite; auf dem Telefon bleibt das Menü offen
-      untermenue = g.dataset.gruppe;
-      navEinblendenAngefordert = true;
-      leisteZeichnen();
-      return;
-    }
-    // Seitenwechsel über einen Menüpunkt: beim nächsten Markieren (route) die Punkte gestaffelt einblenden – nicht beim Klick auf die offene Seite
-    const punkt = ev.target.closest('[data-nav]');
-    if (punkt && punkt.getAttribute('href') !== location.hash) navEinblendenAngefordert = true;
-    if (ev.target.closest('[data-nav], .u-marke, [data-profil]')) mobilZu();
+    if (g) { gruppeUmschalten(g.dataset.gruppe); return; }
+    if (ev.target.closest('[data-nav], .u-marke, [data-profil], [data-neuigkeiten]')) mobilZu();
   });
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { mobilZu(); kontomenueZu(); } });
   document.addEventListener('click', ev => { if (!ev.target.closest('[data-konten]')) kontomenueZu(); });
@@ -666,17 +687,17 @@ async function kontomenue() {
   if (!m.classList.contains('d-none')) return kontomenueZu();
   m.classList.remove('d-none');
   document.querySelector('[data-kontomenue]').setAttribute('aria-expanded', 'true');
-  m.innerHTML = `<a href="#/profil" role="menuitem" data-profil>${icon('profil')}<span>Mein Profil</span></a><div class="u-kontoliste">${lade()}</div>`;
+  m.innerHTML = `<a href="#/profil" role="menuitem" data-profil><span>Mein Profil</span></a><div class="u-kontoliste">${lade()}</div>`;
   m.querySelector('[data-profil]').onclick = () => kontomenueZu();
   let konten = [];
   try { konten = await holen('/api/app/konten'); } catch { /* still */ }
   const andere = konten.filter(k => !k.aktuell);
   m.querySelector('.u-kontoliste').innerHTML = `${andere.length ? '<div class="u-kontokopf">Konto wechseln</div>' : ''}
-    ${andere.map(k => `<div class="u-konto"><button type="button" role="menuitem" data-wechseln="${k.id}"><span class="u-avatar">${e(initialen(k.anzeigename || k.login).slice(0, 1))}</span>
+    ${andere.map(k => `<div class="u-konto"><button type="button" role="menuitem" data-wechseln="${k.id}">
       <span><b>${e(k.login)}</b><small>${e(k.rolle)}</small></span></button><button type="button" class="u-konto-weg" data-vergessen="${k.id}" title="Vom Gerät entfernen" aria-label="Konto vom Gerät entfernen">${icon('x')}</button></div>`).join('')}
-    <button type="button" role="menuitem" class="u-konto-neu" data-weiteres>${icon('wechseln')}<span>Weiteres Konto anmelden</span></button>`;
+    <button type="button" role="menuitem" class="u-konto-neu" data-weiteres><span>Weiteres Konto anmelden</span></button>`;
   m.querySelectorAll('[data-wechseln]').forEach(b => b.onclick = async () => {
-    try { await senden(`/api/app/konten/${b.dataset.wechseln}/wechseln`, {}); history.replaceState(null, '', '#/heute'); untermenue = null; await start(); toast('Konto gewechselt.'); }
+    try { await senden(`/api/app/konten/${b.dataset.wechseln}/wechseln`, {}); history.replaceState(null, '', '#/heute'); await start(); toast('Konto gewechselt.'); }
     catch (err) { fehler(err); }
   });
   m.querySelectorAll('[data-vergessen]').forEach(b => b.onclick = async ev => {
@@ -734,10 +755,8 @@ async function route() {
   const erlaubt = name === 'profil' || name === 'neuigkeiten' || (name === 'sprechtag' && sitzung.benutzer.rolle === 'schueler') || allePunkte().some(p => p.nav === nav);
   if (!ANSICHTEN[name] || !erlaubt) { name = 'heute'; nav = 'heute'; }
   aktiverPunkt = nav;
-  // passendes Untermenü öffnen (wie im Original: Stundenplan, Klassenbuch … mit Zurück-Knopf)
-  const gruppe = menue().find(g => g.unter?.some(p => p.nav === nav));
-  if ((gruppe?.id ?? null) !== untermenue) { untermenue = gruppe?.id ?? null; leisteZeichnen(); }
-  else aktivMarkieren();
+  // Seite markieren; der Bereich der Seite klappt in der Leiste auf
+  aktivMarkieren();
   const seite = document.getElementById('seite');
   if (!seite) return;
   const nummer = laufendeAnsicht = Symbol(name);
@@ -745,6 +764,7 @@ async function route() {
   kontext.titel('');
   kontext.werkzeug('');
   document.querySelector('.u-app')?.setAttribute('data-ansicht', name);
+  document.querySelector('.u-app')?.classList.toggle('kb-seiten', KLASSENBUCH_SEITEN.has(name) && sitzung.benutzer.kollegium);
   const kopf = weisserKopf(nav);
   planScrollBeobachten();
   window.scrollTo(0, 0);
@@ -800,6 +820,10 @@ function kopfMerken(nav) {
   if (!teil || teil.offsetHeight <= 0) return;
   try { sessionStorage.setItem(kopfSchluessel(nav), String(Math.round(teil.getBoundingClientRect().height))); } catch { /* privat */ }
 }
+
+/** Klassenbuch-Seiten mit eigener Gestaltung (css/klassenbuch-seiten.css). */
+const KLASSENBUCH_SEITEN = new Set(['klassenbuch', 'offen', 'eintraege', 'hausaufgaben', 'dienste', 'berichte', 'abwesenheiten', 'entschuldigen',
+  'befreiungen', 'sitzplan', 'kbeinstellungen']);
 
 /** Ist diese Ansicht noch die aktuelle? (gegen verspätete Antworten) */
 kontext.aktuell = () => { const s = laufendeAnsicht; return () => s === laufendeAnsicht; };

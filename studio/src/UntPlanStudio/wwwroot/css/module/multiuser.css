@@ -1,19 +1,33 @@
-/* Modul MultiUser (Präfix mu-) */
-.mu-feld .sym { width: 14px; height: 14px; }
-.mu-sperre { color: var(--up-pruefung-flaeche); margin-left: 4px; }
-.mu-fenster { flex: 1; min-height: 0; overflow: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 12px; background: var(--flaeche); }
-.mu-fenster h3 { margin: 0 0 6px; font-size: 13px; font-weight: var(--mittel); color: var(--akzent); }
-.mu-fenster p { margin: 4px 0; }
-.mu-tabelle { border-collapse: collapse; width: 100%; font-size: 12.5px; }
-.mu-tabelle th, .mu-tabelle td { border-bottom: 1px solid var(--rand-leise); padding: 4px 6px; text-align: left; }
-.mu-tabelle th { background: var(--kopf); font-weight: var(--mittel); }
+/* Modul Mehrbenutzerbetrieb (Präfix mu-). Die Anzeige in der Kopfleiste (.mu-feld) gestaltet css/shell.css. */
+.mu-sperre { color: var(--warnung); margin-left: 2px; }
+.mu-fenster { flex: 1; min-height: 0; overflow: auto; padding: 20px 24px 28px; display: flex; flex-direction: column; gap: 20px; }
+.mu-abschnitt { max-width: 1100px; border: 1px solid var(--rand); border-radius: 6px; background: var(--flaeche); overflow: hidden; }
+.mu-kopf { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 8px 16px; border-bottom: 1px solid var(--rand-leise); }
+.mu-kopf h3 { margin: 0; font-size: 13px; font-weight: var(--fett); }
+.mu-kopf > :not(h3) { margin-left: auto; }
+.mu-kopfinfo { font-size: 12.5px; color: var(--text-leise); }
+.mu-text { margin: 0; padding: 12px 16px; }
+.mu-leer { margin: 0; padding: 20px 16px; text-align: center; color: var(--text-leise); }
+.mu-tabelle { border-collapse: collapse; width: 100%; font-size: 13px; }
+.mu-tabelle th { height: 34px; padding: 0 12px; text-align: left; font-size: 12px; font-weight: var(--mittel); color: var(--text-2); background: var(--up-schiefer-25); border-bottom: 1px solid var(--rand); white-space: nowrap; }
+.mu-tabelle td { height: 40px; padding: 4px 12px; border-bottom: 1px solid var(--rand-leise); }
+.mu-tabelle tr:last-child td { border-bottom: 0; }
+.mu-tabelle td.zahl { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mu-tabelle td.mitte { text-align: center; }
+.mu-tabelle td.aktion { text-align: right; white-space: nowrap; }
 .mu-tabelle .knopf + .knopf { margin-left: 4px; }
-.mu-inaktiv { color: var(--text-leise); }
-.mu-gesperrt { background: var(--up-pruefung-flaeche); }
-.mu-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--up-schiefer-300); margin-right: 6px; }
-.mu-punkt.an { background: var(--ok); }
+.mu-tabelle .eingabe { height: 30px; min-height: 30px; padding-top: 0; padding-bottom: 0; }
+.mu-tabelle b { font-weight: var(--mittel); }
+.mu-inaktiv td { color: var(--text-leise); }
+.mu-gesperrt td { background: var(--up-pruefung-flaeche); }
+.plakette.mu-an { background: var(--up-ok-flaeche); color: var(--up-ok); }
 .mu-warnung { color: var(--warnung); font-weight: var(--mittel); }
-.mu-nachrichten { max-height: 160px; overflow: auto; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; }
-.mu-nachrichten b { font-weight: var(--mittel); }
-.mu-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-.mu-spalten fieldset { border: 1px solid var(--rand-leise); border-radius: var(--radius); display: flex; flex-direction: column; gap: 4px; }
+.mu-nachrichten { max-height: 220px; overflow: auto; display: flex; flex-direction: column; }
+.mu-nachricht { display: grid; grid-template-columns: 72px max-content 1fr; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--rand-leise); font-size: 13px; }
+.mu-nachricht:last-child { border-bottom: 0; }
+.mu-nachricht b { font-weight: var(--mittel); }
+.mu-zeit { color: var(--text-leise); font-variant-numeric: tabular-nums; }
+.mu-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
+.mu-spalten h3 { font-size: 13px; font-weight: var(--fett); margin: 0 0 10px; }
+.mu-spalten .formular { min-width: 0; }
+.mu-rechte { display: flex; flex-direction: column; gap: 8px; }

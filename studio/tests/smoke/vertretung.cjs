@@ -4,7 +4,7 @@
 //
 // Ablauf: Anmelden → Beispielschule → Vertretungsmodus → Absenz in der Liste eingeben (Zeilen-Commit) → Vertretungen (offene ???) →
 // Vertretungsvorschlag übernehmen → Entfall mit „-“ → Kalender, tagesaktueller Lehrerplan, Veranstaltung mit allen Lehrkräften →
-// Standardanordnung → Tag blättern (Strg+Bild↓). Bildschirmfotos nach STUDIO_SCREENSHOTS.
+// Tagesplanung → Tag blättern (Strg+Bild↓). Bildschirmfotos nach STUDIO_SCREENSHOTS.
 const { chromium } = require('playwright');
 
 // Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
@@ -104,7 +104,7 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     await foto('05-vorschlag-uebernommen.png');
 
     // Entfall mit „-“ auf der nächsten offenen Zeile
-    await page.click('.ws-tab[data-typ="vertretung.liste"]');
+    await page.click(`${liste} .fenster-fuss`);
     const o2 = await offeneZeile();
     if (o2) {
       const nr2 = o2.nr;
@@ -139,9 +139,9 @@ const BILDER = process.env.STUDIO_SCREENSHOTS || path.join(os.tmpdir(), 'studio-
     schritt('Veranstaltung „Alle Lehrkräfte“ angelegt');
     await foto('08-veranstaltung-alle.png');
 
-    // Standardanordnung
+    // Arbeitsplatz Tagesplanung (über die Listenansichten)
     await eintrag(page, 'vertretung.formate');
-    await page.click('.menue .m-eintrag:has-text("Standardanordnung")');
+    await page.click('.menue .m-eintrag:has-text("Tagesplanung")');
     await page.waitForSelector(`${liste} .t-zeile`, { timeout: 15000 });
     await page.waitForSelector('.fenster[data-typ="vertretung.plan"] .r-eintrag', { timeout: 15000 });
     await page.waitForTimeout(800);

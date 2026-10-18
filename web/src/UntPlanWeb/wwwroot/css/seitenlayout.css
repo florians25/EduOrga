@@ -63,40 +63,15 @@
 
 /* ------------------------------------------------------------------ Suchfeld (gemeinsame Komponente) */
 
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) {
-  position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; height: 40px; margin-bottom: 0; padding: 0 14px 0 14px;
-  background: var(--up-schiefer-50); border: 1px solid transparent; border-radius: 20px; box-shadow: none; color: var(--up-text); cursor: text;
-  transition: background-color .12s, border-color .12s, box-shadow .12s;
-}
 .au-suchfeld.au-suchfeld { display: inline-flex; vertical-align: middle; }
 .u-suchfeld.u-suchfeld { flex: 1 1 260px; max-width: 480px; }
 .u-suchfeld.u-suchfeld.voll { max-width: none; width: 100%; }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: var(--up-schiefer-100); }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):focus-within {
-  background: var(--up-flaeche) !important; border-color: rgba(var(--u-akzent-rgb, 35, 79, 150), .55); box-shadow: 0 0 0 3px rgba(var(--u-akzent-rgb, 35, 79, 150), .12);
-}
+
 /* direkt auf dem grauen Seitengrund etwas kräftiger, auf weißen Flächen (Karten, Tabellen, Dialoge) das helle Grau */
-.u-inhalt :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) { background: var(--up-rand); }
-.u-inhalt :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: var(--up-rand); }
-.u-inhalt :is(.card, .u-panel, .nl-tabelle, .u-tabelle-karte, .rm-rollenkarte, .list-group, .kbd-fenster, .bv-karte, .nl-karte) :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) { background: var(--up-schiefer-50); }
-.u-inhalt :is(.card, .u-panel, .nl-tabelle, .u-tabelle-karte, .rm-rollenkarte, .list-group, .kbd-fenster, .bv-karte, .nl-karte) :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: var(--up-schiefer-100); }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > :is(.bi-search, .bi, .au-lupe, .u-sym) {
-  position: static !important; transform: none !important; flex: none; width: auto; height: auto; color: var(--up-text-2) !important; font-size: 1rem; line-height: 1; pointer-events: none;
-}
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > input {
-  flex: 1 1 auto; width: 100% !important; min-width: 0; height: 100% !important; padding: 0 !important; margin: 0; border: 0 !important; border-radius: 0 !important;
-  background: transparent !important; box-shadow: none !important; outline: 0 !important; font: inherit; font-size: .9rem !important; font-weight: 500 !important; color: var(--up-text);
-}
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > input::placeholder { color: var(--up-text-3); font-weight: 500; opacity: 1; }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche).au-mit-x { padding-right: 38px; }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche).au-mit-x > .au-x {
-  position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; background: var(--up-rand); color: var(--up-text); font-size: .62rem;
-}
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche).au-mit-x > .au-x:hover { background: var(--up-rand-stark); color: var(--up-text); }
+
 .au-suchfeld.au-sm.au-sm { height: 34px; border-radius: 17px; padding-left: 12px; }
 .mt-ew-suche.mt-ew-suche { margin: 0 24px; }
-.sd-raumsuche.sd-raumsuche { margin-bottom: .7rem; }
+
 /* Suchleisten mit Filter-Chips (Klassenbuch-Werkzeugleiste): gleiche Fläche und gleicher Fokus */
 .u-suche, .os-suche { background: var(--up-schiefer-50); border: 1px solid transparent; border-radius: 21px; transition: background-color .12s, border-color .12s, box-shadow .12s; }
 .u-suche:focus-within, .os-suche:focus-within { background: var(--up-flaeche); border-color: rgba(var(--u-akzent-rgb, 35, 79, 150), .55); box-shadow: 0 0 0 3px rgba(var(--u-akzent-rgb, 35, 79, 150), .12); }

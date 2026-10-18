@@ -1,9 +1,9 @@
-// Gemeinsame Hilfen: Schnittstelle, Escaping, Symbole (Bootstrap Icons, Linienstil), Meldungen und Dialoge, Datumsfunktionen.
+// Gemeinsame Hilfen: Schnittstelle, Escaping, Symbole (Linien-Symbole, css/symbole.css), Meldungen und Dialoge, Datumsfunktionen.
 
-import { symbol, LOGO as BILDMARKE } from './symbole.js';
+import { symbol, LOGO as ZEICHEN } from './symbole.js';
 
-/** Bildmarke von UntPlanWeb (eigenes Zifferblatt-Symbol). */
-export const LOGO = BILDMARKE;
+/** Zeichen „UP“ von UntPlan. */
+export const LOGO = ZEICHEN;
 
 const SYMBOLE = {
   heute: 'house', plan: 'calendar3-week', tag: 'grid-3x3', vertretung: 'arrow-left-right', mitteilung: 'envelope',
@@ -15,7 +15,7 @@ const SYMBOLE = {
   abwesend: 'person-x', hausaufgabe: 'pencil-square', kopieren: 'clipboard', kalender: 'calendar-event', stift: 'pencil',
   augen: 'eye', protokoll: 'list-ul', plaene: 'calendar-week', klasse: 'people', lehrkraft: 'person-workspace',
   tagklassen: 'calendar-range', taglehrer: 'person-lines-fill', tagraeume: 'building', schloss: 'lock-fill',
-  // Ersatz aus Bootstrap Icons, falls symbole.js kein Original-Icon zuordnet
+  // allgemeine Symbolnamen, falls symbole.js keinen fachlichen Namen kennt
   dashboard: 'grid', uebersicht: 'card-list', mitteilungen: 'chat-square-text', posteingang: 'inbox', gesendet: 'send',
   stundenplan: 'calendar3', meinplan: 'calendar2-week', raumplan: 'door-closed', unterricht: 'easel', meineunterrichte: 'easel2',
   offen: 'hourglass-split', pruefung: 'file-earmark-text', klassenbuchnav: 'journal-bookmark', eintraege: 'journal-text',
@@ -25,7 +25,7 @@ const SYMBOLE = {
   aufsicht: 'eye', ruckmeldung: 'inbox',
 };
 
-/** Symbol: Original-Icons (symbole.js, img/wu), sonst Bootstrap Icons für kleine Bedienelemente. */
+/** Symbol: fachlicher Name aus symbole.js, sonst allgemeiner Symbolname (beide als Linien-Symbol aus css/symbole.css). */
 export function icon(name, klasse = '') {
   return symbol(name, klasse) ?? `<i class="bi bi-${SYMBOLE[name] ?? name} ${klasse === 'icon-klein' ? '' : klasse}" aria-hidden="true"></i>`;
 }

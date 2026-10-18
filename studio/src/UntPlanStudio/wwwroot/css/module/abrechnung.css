@@ -1,18 +1,29 @@
-/* Modul Wertrechnung / Vertretungsstatistik (Präfix abr-) */
-.abr-reiter, .pa-reiter, .kp-reiter { flex: none; display: flex; gap: 2px; padding: 4px 6px 0; background: var(--leiste); border-bottom: 1px solid var(--rand); }
-.abr-reiter button, .pa-reiter button, .kp-reiter button { border: 1px solid transparent; border-bottom: 0; background: none; padding: 4px 12px; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font: inherit; }
-.abr-reiter button.aktiv, .pa-reiter button.aktiv, .kp-reiter button.aktiv { background: var(--flaeche); border-color: var(--rand); font-weight: var(--mittel); margin-bottom: -1px; }
-.abr-werkzeug, .kp-werkzeug { flex: none; display: flex; gap: 8px; align-items: center; padding: 4px 8px; }
+/* Modul Soll und Ist / Vertretungsstatistik (Präfix abr-). Die Textreiter gelten auch für .pa-reiter und .kp-reiter. */
+.abr-reiter, .pa-reiter, .kp-reiter { flex: none; display: flex; gap: 4px; padding: 0 16px; background: var(--flaeche); border-bottom: 1px solid var(--rand); }
+.abr-reiter button, .pa-reiter button, .kp-reiter button {
+  position: relative; height: 40px; padding: 0 10px; border: 0; background: none; cursor: pointer; font: inherit; font-weight: var(--mittel);
+  color: var(--text-leise); white-space: nowrap;
+}
+.abr-reiter button:hover, .pa-reiter button:hover, .kp-reiter button:hover { color: var(--text); }
+.abr-reiter button:focus-visible, .pa-reiter button:focus-visible, .kp-reiter button:focus-visible { outline: 2px solid var(--up-fokus); outline-offset: -2px; }
+.abr-reiter button.aktiv, .pa-reiter button.aktiv, .kp-reiter button.aktiv { color: var(--text); }
+.abr-reiter button.aktiv::after, .pa-reiter button.aktiv::after, .kp-reiter button.aktiv::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--akzent);
+}
+.abr-werkzeug, .kp-werkzeug { flex: none; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; min-height: 48px; padding: 8px 16px; border-bottom: 1px solid var(--rand-leise); }
 .abr-werkzeug:empty { display: none; }
-.abr-werkzeug select.eingabe { width: 160px; }
+.abr-werkzeug select.eingabe { width: 180px; height: 30px; min-height: 30px; padding-top: 0; padding-bottom: 0; }
+.abr-tipp { font-size: 12px; color: var(--text-leise); }
+.abr-filter { flex: none; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--rand); }
+.abr-filter .eingabe { height: 30px; min-height: 30px; padding-top: 0; padding-bottom: 0; }
 .abr-flaeche { flex: 1; min-height: 0; display: flex; }
 .abr-links { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.abr-rechts { width: 380px; flex: none; display: flex; flex-direction: column; border-left: 1px solid var(--rand); }
-.abr-titel { padding: 4px 6px; font-weight: var(--mittel); background: var(--kopf); }
-.abr-summe { flex: none; padding: 5px 8px; background: var(--kopf); border-top: 1px solid var(--rand-leise); font-size: 12px; }
+.abr-rechts { width: 400px; flex: none; display: flex; flex-direction: column; border-left: 1px solid var(--rand); }
+.abr-titel { flex: none; padding: 10px 12px; font-size: 13px; font-weight: var(--fett); border-bottom: 1px solid var(--rand-leise); }
+.abr-summe { flex: none; padding: 8px 16px; border-top: 1px solid var(--rand); font-size: 12.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .abr-summe.gross { min-height: 44px; }
 .tabelle .t-zeile.abr-zuwenig .t-zelle { color: var(--up-entfall); }
 .tabelle .t-zeile.abr-zuviel .t-zelle { color: var(--up-marine-700); }
 .tabelle .t-zeile.abr-verguetung { background: var(--up-pruefung-flaeche); }
 .tabelle .t-zeile.abr-minus .t-zelle { color: var(--gefahr); }
-.tabelle .t-zeile.abr-gruppe { font-weight: var(--mittel); background: var(--kopf); }
+.tabelle .t-zeile.abr-gruppe { font-weight: var(--mittel); background: var(--up-schiefer-25); }

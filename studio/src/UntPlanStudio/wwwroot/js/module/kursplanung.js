@@ -1,5 +1,5 @@
-// Modul „Kursplanung“ (Desktop: KursplanungFenster): Kurse einer Klasse bzw. eines Jahrgangs (Kursname und Band änderbar),
-// Kurswahlen der Schüler, Kollisionsmatrix, automatische Bandbildung mit Vorschlag und Übernahme der Bänder.
+// Modul „Kursplanung“: Kurse einer Klasse bzw. eines Jahrgangs (Kursname und Band änderbar), Kurswahlen der Schüler,
+// Kollisionsmatrix, automatische Bandbildung mit Vorschlag und Übernahme der Bänder. Innere Reiter als Textreiter.
 import { h } from '../kern/dom.js';
 import { api } from '../kern/api.js';
 import { zustand, darfSchreiben } from '../kern/zustand.js';
@@ -7,6 +7,7 @@ import { betrifft } from '../kern/ereignisse.js';
 import { Tabelle } from '../kern/tabelle.js';
 import { formular, frage, hinweis, laden, fehlerMelden } from '../kern/dialog.js';
 import { fensterverwaltung } from '../kern/fenster.js';
+import { werkzeugFeld, weitereAktionen } from './unterricht.js';
 
 const REITER = [['kurse', 'Kurse'], ['wahlen', 'Kurswahlen'], ['matrix', 'Kollisionsmatrix'], ['baender', 'Bandbildung']];
 
@@ -16,19 +17,30 @@ function kursFenster(f, p) {
   let reiter = p.tab || 'kurse';
   let d = null;
   let vorschlag = null;
-  const klasse = h('select', { class: 'eingabe', style: { width: '110px' } });
-  f.werkzeuge.append(h('span', null, 'Klasse/Jahrgang:'), klasse);
+  const klasse = h('select', { class: 'eingabe', style: { width: '120px' }, 'aria-label': 'Klasse oder Jahrgang' });
+  f.werkzeuge.append(werkzeugFeld('Klasse oder Jahrgang', klasse));
   f.trenner();
-  f.werkzeug({ text: 'Schüler', symbol: 'schueler', aktion: () => fensterverwaltung.oeffnen('stammdaten', { typ: 'schueler' }) });
-  if (schreiben) f.werkzeug({ text: 'Kurswahlen zufällig füllen (Test)', symbol: 'neu', aktion: zufall });
-  const leiste = h('div', { class: 'kp-reiter' });
+  f.werkzeug({ text: 'Schülerinnen und Schüler', titel: 'Stammdaten der Schülerinnen und Schüler', aktion: () => fensterverwaltung.oeffnen('stammdaten', { typ: 'schueler' }) });
+  if (schreiben) weitereAktionen(f, () => [{ text: 'Fehlende Kurswahlen zufällig füllen (Testdaten) …', aktion: zufall }]);
+  const leiste = h('div', { class: 'kp-reiterleiste', role: 'tablist' });
   const flaeche = h('div', { class: 'kp-flaeche' });
   const status = h('div', { class: 'kp-status' });
   f.inhalt.append(leiste, flaeche, status);
   let tabelle = null;
 
   function leisteZeichnen() {
-    leiste.replaceChildren(...REITER.map(([id, t]) => h('button', { type: 'button', class: id === reiter ? 'aktiv' : '', onclick: () => { reiter = id; f.parameterSetzen({ tab: id }); zeichnen(); } }, t)));
+    leiste.replaceChildren(...REITER.map(([id, t], i) => h('button', {
+      type: 'button', role: 'tab', class: id === reiter ? 'aktiv' : '', 'aria-selected': String(id === reiter), tabindex: id === reiter ? '0' : '-1',
+      onclick: () => { reiter = id; f.parameterSetzen({ tab: id }); zeichnen(); },
+      onkeydown: (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        reiter = REITER[(i + (e.key === 'ArrowRight' ? 1 : -1) + REITER.length) % REITER.length][0];
+        f.parameterSetzen({ tab: reiter });
+        zeichnen();
+        leiste.querySelector('.aktiv')?.focus();
+      },
+    }, t)));
   }
 
   function zeichnen() {
@@ -43,8 +55,9 @@ function kursFenster(f, p) {
       tabelle = new Tabelle(flaeche, {
         zustandSchluessel: 'tabelle.kursplanung.kurse',
         aendern: schreiben ? async (z, s, wert) => { d = await api.patch(api.dok(`/kursplanung/${d.klasse.id}/kurs/${z.id}`), { feld: s.schluessel, wert }, { quelle: f.id }); setTimeout(zeichnen); return null; } : undefined,
-        spalten: [['id', 'U-Nr', 50], ['kursname', 'Kursname', 100, true], ['fach', 'Fach', 55], ['lehrer', 'Lehrer', 70], ['klassen', 'Klasse(n)', 80], ['wst', 'Wst.', 45], ['band', 'Band', 80, true], ['teilnehmer', 'Teilnehmer', 80], ['mw', 'm/w', 60]]
-          .map(([schluessel, titel, breite, edit]) => ({ schluessel, titel, breite, art: edit && schreiben ? 'Text' : 'NurLesen', editierbar: !!edit && schreiben, farbe: edit && schreiben ? () => '#ffffee' : undefined })),
+        spalten: [['id', 'Unterricht', 80, false, 'rechts'], ['kursname', 'Kursname', 110, true], ['fach', 'Fach', 60], ['lehrer', 'Lehrkraft', 80], ['klassen', 'Klassen', 90], ['wst', 'Wochenstd.', 90, false, 'rechts'], ['band', 'Band', 90, true], ['teilnehmer', 'Teilnehmer', 90, false, 'rechts'], ['mw', 'm/w', 70, false, 'rechts']]
+          .map(([schluessel, titel, breite, edit, ausrichtung]) => ({ schluessel, titel, breite, ausrichtung, art: edit && schreiben ? 'Text' : 'NurLesen', editierbar: !!edit && schreiben })),
+        leerText: 'Diese Klasse hat keine Kurse.',
       });
       tabelle.daten(d.kurse);
     } else if (reiter === 'wahlen') {
@@ -55,26 +68,27 @@ function kursFenster(f, p) {
           status.textContent = d.status;
           return null;
         } : undefined,
-        spalten: [{ schluessel: 'name', titel: 'Schüler', breite: 170, art: 'NurLesen', editierbar: false }, { schluessel: 'anzahl', titel: 'Anz.', breite: 45, art: 'NurLesen', editierbar: false },
-          ...d.kurse.map((k) => ({ schluessel: `k${k.id}`, kurs: k.id, titel: k.kursname, breite: 62, art: schreiben ? 'Bool' : 'NurLesen', editierbar: schreiben }))],
-        leerText: 'Keine Schüler in dieser Klasse',
+        spalten: [{ schluessel: 'name', titel: 'Schülerin bzw. Schüler', breite: 190, art: 'NurLesen', editierbar: false }, { schluessel: 'anzahl', titel: 'Kurse', breite: 60, art: 'NurLesen', editierbar: false, ausrichtung: 'rechts' },
+          ...d.kurse.map((k) => ({ schluessel: `k${k.id}`, kurs: k.id, titel: k.kursname, breite: 76, art: schreiben ? 'Bool' : 'NurLesen', editierbar: schreiben, ausrichtung: 'mitte' }))],
+        leerText: 'Diese Klasse hat keine Schülerinnen und Schüler.',
       });
       tabelle.daten(wahlZeilen());
     } else if (reiter === 'matrix') {
       tabelle = new Tabelle(flaeche, {
         spalten: [{ schluessel: 'kurs', titel: 'Kurs', breite: 120, art: 'NurLesen', editierbar: false },
-          ...d.kurse.map((k, j) => ({ schluessel: `m${j}`, titel: k.kursname, breite: 52, art: 'NurLesen', editierbar: false, wert: (z) => (z.werte[j] > 0 ? z.werte[j] : ''),
-            farbe: (z) => { if (z.werte[j] < 0) return '#dcdcdc'; const a = d.kurse[z.i]; return a.band && a.band === k.band ? (z.werte[j] > 0 ? '#f6c6c6' : '#e1f5e1') : null; } }))],
+          ...d.kurse.map((k, j) => ({ schluessel: `m${j}`, titel: k.kursname, hinweis: `${k.kursname} – Band ${k.band || 'ohne'}`, breite: 76, art: 'NurLesen', editierbar: false, ausrichtung: 'rechts', wert: (z) => (z.werte[j] > 0 ? z.werte[j] : ''),
+            farbe: (z) => { if (z.werte[j] < 0) return 'var(--up-schiefer-100)'; const a = d.kurse[z.i]; return a.band && a.band === k.band ? (z.werte[j] > 0 ? 'var(--up-entfall-flaeche)' : 'var(--up-ok-flaeche)') : null; } }))],
       });
       tabelle.daten(d.kurse.map((k, i) => ({ id: k.id, i, kurs: `${k.kursname} (${k.band})`, werte: d.matrix[i] })));
     } else {
-      const max = h('input', { class: 'eingabe', type: 'number', min: 1, max: 30, value: 10, style: { width: '60px' } });
-      flaeche.append(h('div', { class: 'kp-werkzeug' }, h('span', null, 'max. Bänder:'), max,
-        h('button', { class: 'knopf', type: 'button', onclick: async () => {
+      const max = h('input', { class: 'eingabe', type: 'number', min: 1, max: 30, value: 10, id: 'kp-max', style: { width: '72px' } });
+      flaeche.append(h('div', { class: 'kp-werkzeug' }, h('label', { class: 'pl-feld-titel', for: 'kp-max' }, 'Höchstens'), max, h('span', { class: 'pl-feld-titel' }, 'Bänder'),
+        h('button', { class: 'knopf klein', type: 'button', onclick: async () => {
           const weg = laden(f.inhalt);
           try { vorschlag = await api.post(api.dok(`/kursplanung/${d.klasse.id}/bandbildung`), { maxBaender: Number(max.value) || 10 }); status.textContent = vorschlag.text; baender(); } catch (e) { fehlerMelden(e); } finally { weg(); }
         } }, 'Bandbildung starten'),
-        h('button', { class: 'knopf', type: 'button', disabled: !schreiben, onclick: uebernehmen }, 'Bänder übernehmen')));
+        h('button', { class: 'knopf klein', type: 'button', disabled: !schreiben, onclick: uebernehmen }, 'Bänder übernehmen'),
+        h('span', { class: 'pl-hinweis-leiste' }, 'Zuerst einen Vorschlag berechnen, dann in den Unterricht übernehmen.')));
       baender();
     }
   }
@@ -96,10 +110,10 @@ function kursFenster(f, p) {
     flaeche.append(huelle);
     tabelle = new Tabelle(huelle, {
       id: (z) => z.band,
-      spalten: [{ schluessel: 'band', titel: vorschlag ? 'Band (Vorschlag)' : 'Band (aktuell)', breite: 120, art: 'NurLesen', editierbar: false },
+      spalten: [{ schluessel: 'band', titel: vorschlag ? 'Band (Vorschlag)' : 'Band (aktuell)', breite: 130, art: 'NurLesen', editierbar: false },
         ...Array.from({ length: max }, (_, i) => ({ schluessel: `k${i}`, titel: `Kurs ${i + 1}`, breite: 100, art: 'NurLesen', editierbar: false, wert: (z) => z.kurse[i] || '' })),
-        { schluessel: 'schueler', titel: 'Schüler', breite: 70, art: 'NurLesen', editierbar: false }],
-      leerText: 'Noch keine Bänder – „Bandbildung starten“',
+        { schluessel: 'schueler', titel: 'Schüler', breite: 80, art: 'NurLesen', editierbar: false, ausrichtung: 'rechts' }],
+      leerText: 'Noch keine Bänder – zuerst die Bandbildung starten.',
     });
     tabelle.daten(quelle);
   }
@@ -115,13 +129,13 @@ function kursFenster(f, p) {
   }
 
   async function zufall() {
-    if (!d || !(await frage('Für alle Schüler der Klasse ohne Kurswahl zufällig Kurse wählen (je Fach höchstens ein Kurs)?'))) return;
+    if (!d || !(await frage('Für alle Schülerinnen und Schüler der Klasse ohne Kurswahl zufällig Kurse wählen (je Fach höchstens ein Kurs)? Gedacht für Testdaten.', { ja: 'Füllen', nein: 'Abbrechen' }))) return;
     d = await api.post(api.dok(`/kursplanung/${d.klasse.id}/zufall`), {}, { quelle: f.id });
     zeichnen();
   }
 
   async function laden_() {
-    if (!klasse.value) { d = null; zeichnen(); status.textContent = 'Keine Klassen vorhanden.'; return; }
+    if (!klasse.value) { d = null; zeichnen(); flaeche.replaceChildren(h('div', { class: 'pl-leer' }, 'Es sind keine Klassen mit Kursen vorhanden.')); status.textContent = ''; return; }
     const weg = laden(f.inhalt);
     try { d = await api.get(api.dok(`/kursplanung/${klasse.value}`)); vorschlag = null; zeichnen(); } catch (e) { fehlerMelden(e); } finally { weg(); }
   }
@@ -148,6 +162,6 @@ export default {
   befehle: { 'kursplanung.oeffnen': oeffnen },
   ribbon: [
     { id: 'start.kursplanung', reiter: 'Start', gruppe: 'Module', text: 'Kursplanung', symbol: 'schueler', befehl: 'kursplanung.oeffnen', braucht: 'dokument' },
-    { id: 'kurs.kurse', reiter: 'Kursplanung', gruppe: 'Kursplanung', text: 'Kurse & Bänder', symbol: 'schueler', gross: true, befehl: 'kursplanung.oeffnen', braucht: 'dokument' },
+    { id: 'kurs.kurse', reiter: 'Kursplanung', gruppe: 'Kursplanung', text: 'Kurse und Bänder', symbol: 'schueler', gross: true, befehl: 'kursplanung.oeffnen', braucht: 'dokument' },
   ],
 };

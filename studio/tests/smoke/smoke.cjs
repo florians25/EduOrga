@@ -4,8 +4,8 @@
 //
 // Umgebungsvariablen: STUDIO_URL (Standard http://127.0.0.1:5501), STUDIO_BENUTZER (admin), STUDIO_PASSWORT,
 // STUDIO_SCREENSHOTS (Ordner für Bildschirmfotos), PLAYWRIGHT_BROWSERS_PATH (z. B. /opt/pw-browsers).
-// Ablauf: Anmelden → Beispiel-Schuldatei als .up hochladen (Datei → Öffnen) → Fenster Lehrkräfte und Klassenplan öffnen →
-// Wert in der Tabelle ändern → Fenster nebeneinander anordnen → Bildschirmfotos.
+// Ablauf: Anmelden → Beispiel-Schuldatei als .up hochladen (Datei → Öffnen) → Lehrkräfte öffnen und einen Wert in der Tabelle
+// ändern → Klassenplan, Unterricht, Arbeitsplatz „Manuell planen“ → Vertretungsmodus → Bildschirmfotos.
 const { chromium } = require('playwright');
 
 // Befehl über die Navigation auslösen (Eintrag in der Seitenleiste, sonst über das Modulsystem).
@@ -74,19 +74,24 @@ async function api(pfad, optionen = {}) {
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => [...document.querySelectorAll('.fenster[data-typ=stammdaten] .t-zelle')].some((z) => z.textContent === 'Smoketest'));
 
-  // Stundenpläne → Klassenplan
+  // Stundenpläne → Klassenplan (eigene Seite)
   await eintrag(page, 'stundenplaene.klasse');
   await page.waitForSelector('.fenster[data-typ=stundenplan] .r-eintrag');
-  await eintrag(page, 'start.fenster.nebeneinander');
   await page.waitForTimeout(400);
-  await page.screenshot({ path: path.join(BILDER, '02-lehrkraefte-stundenplan.png') });
+  await page.screenshot({ path: path.join(BILDER, '02-stundenplan.png') });
 
   // Unterricht der Klasse
   await eintrag(page, 'eingabe.unterricht.klassen');
   await page.waitForSelector('.fenster[data-typ=unterricht] .t-zeile');
-  await eintrag(page, 'start.fenster.untereinander');
   await page.waitForTimeout(400);
-  await page.screenshot({ path: path.join(BILDER, '03-drei-fenster.png') });
+  await page.screenshot({ path: path.join(BILDER, '03-unterricht.png') });
+
+  // Arbeitsplatz „Manuell planen“: Unterricht und Klassenplan nebeneinander
+  await page.evaluate(async () => { const m = await import('/js/kern/modulsystem.js'); await m.befehl('fenster.standard'); });
+  await page.waitForSelector('.fenster[data-typ=unterricht] .t-zeile');
+  await page.waitForSelector('.fenster[data-typ=stundenplan] .r-eintrag');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(BILDER, '03b-manuell-planen.png') });
 
   // Vertretungsmodus (grün)
   await eintrag(page, 'start.vertretungsmodus');

@@ -203,7 +203,7 @@
 .kbu-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; width: 100%; padding: 12px 0; }
 .kbu-wahl { display: flex; align-items: center; gap: 10px; }
 .kbu-wahl-titel { font-size: .8rem; font-weight: 600; color: var(--up-text-3); text-transform: uppercase; letter-spacing: .04em; }
-.kbu-wahl .wahl-knopf { height: 40px; min-width: 120px; border-radius: 999px !important; justify-content: space-between; font-weight: 600; }
+
 .kbu-zeit { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .kbu-pfeil { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--up-text); text-decoration: none !important; }
 .kbu-pfeil:hover { background: var(--up-flaeche-hover); color: var(--up-text); }
@@ -334,7 +334,7 @@ button.kbu-kachel:hover { background: var(--up-flaeche-2); }
   .kbu-zeitraum { flex: 1; justify-content: center; padding: 0 10px; font-size: .875rem; }
   .kbu-heute { margin-left: 0; padding: 0 14px; }
   .kbu-segment { width: 100%; } .kbu-segment a { flex: 1; justify-content: center; }
-  .kbu-wahl { width: 100%; } .kbu-wahl .elementwahl { flex: 1; } .kbu-wahl .wahl-knopf { width: 100%; }
+  .kbu-wahl { width: 100%; }  
   .kbu-kennzahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kbu-kachel:nth-child(n) { border-left: 1px solid var(--up-linie); border-top: 1px solid var(--up-linie); }
   .kbu-kachel:first-child { border-top: 0; border-left: 0; }
@@ -348,7 +348,6 @@ button.kbu-kachel:hover { background: var(--up-flaeche-2); }
   .kbu-tagchips:empty { display: none; }
   .kbu-status .kbu-st { font-size: .75rem; }
 }
-
 
 /* ------------------------------------------------------------------ Klassenbuch-Übersicht als Liste (Endlos-Scroll durchs Schuljahr):
    Kopf mit Unterrichtsauswahl bzw. Suche und Filterknöpfen, je Tag Trennlinie mit KW und Datumspille, darunter eine ruhige Tabelle */
@@ -391,7 +390,7 @@ button.kbu-kachel:hover { background: var(--up-flaeche-2); }
 .kbl-heute { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--s-orange-hell); color: var(--up-primaer); font-size: .72rem; }
 .kbl-tagblock.ist-heute .kbl-datum { border-color: var(--s-orange); }
 
-/* Tabelle wie im Original: h | Fach | (Lehrkräfte) | Klassen | Lehrstoff | Abwesenheiten | Hausaufgaben */
+/* Tabelle: h | Fach | (Lehrkräfte) | Klassen | Lehrstoff | Abwesenheiten | Hausaufgaben */
 .kbl-tabelle { --kbl-spalten: minmax(34px, .55fr) minmax(60px, 1.5fr) minmax(110px, 1.5fr) minmax(70px, 1.5fr) minmax(120px, 1.5fr) minmax(180px, 1.9fr) minmax(110px, 1.4fr);
   overflow: visible; border-radius: 4px; background: var(--up-flaeche); box-shadow: 0 1px 5px rgba(20, 30, 40, .09); }
 .kbl-tabelle.ohne-lehrer { --kbl-spalten: minmax(34px, .6fr) minmax(60px, 1.8fr) minmax(70px, 1.8fr) minmax(120px, 1.8fr) minmax(180px, 2.2fr) minmax(110px, 1.6fr); }
@@ -467,9 +466,6 @@ button.kbu-kachel:hover { background: var(--up-flaeche-2); }
 /* ------------------------------------------------------------------ Stundendetails: abgerundete Schülerkacheln, Hausaufgaben als Zeilen
    mit Detailfenster, Klassendienste in der Optik der Seite Klassendienste */
 
-.sd-kacheln { gap: 6px; }
-.sd-kachel { border-radius: 10px; }
-.sd-kachel.gewaehlt { outline-offset: -2px; }
 .kb-hw.klickbar { width: 100%; margin: 0 0 6px; padding: 8px 12px; border: 1px solid var(--up-primaer-flaeche); border-radius: 10px; background: var(--up-flaeche); text-align: left; font: inherit; font-size: .9rem; align-items: center; cursor: pointer; }
 .kb-hw.klickbar:hover { border-color: var(--up-rand-stark); background: var(--up-flaeche-2); }
 .kb-hw.klickbar:focus-visible { outline: 2px solid rgba(35, 79, 150, .55); outline-offset: 1px; }
@@ -481,8 +477,7 @@ button.kbu-kachel:hover { background: var(--up-flaeche-2); }
 .kb-kd { display: flex; flex-direction: column; border: 1px solid var(--up-primaer-flaeche); border-radius: 10px; background: var(--up-flaeche); overflow: hidden; }
 .kb-kd-zeile { display: grid; grid-template-columns: minmax(170px, 1fr) minmax(0, 2fr); align-items: center; gap: 8px 16px; padding: 10px 14px; border-bottom: 1px solid var(--up-flaeche-hover); font-size: .9rem; }
 .kb-kd-zeile:last-child { border-bottom: 0; }
-.sd-link-klein { font-size: .82rem; font-weight: 600; color: var(--up-text-2); text-decoration: none; }
-.sd-link-klein:hover { color: var(--s-orange); text-decoration: none; }
+
 @media (max-width: 575.98px) { .kb-kd-zeile { grid-template-columns: 1fr; } }
 
 /* Hausaufgaben: Liste (Zeile anklickbar) und Fenster (Details, Formular) */
@@ -542,22 +537,22 @@ button.kbu-kachel:hover { background: var(--up-flaeche-2); }
 }
 @media (max-width: 575.98px) { .br-reihe-aktionen .br-knopf span { display: none; } .br-reihe-aktionen .br-knopf { width: 38px; padding: 0; } }
 
-/* ------------------------------------------------------------------ Offene Stunden im Original-Look: schlichte Tabelle, „Prüfen“/„Eingeben“,
+/* ------------------------------------------------------------------ Offene Stunden: schlichte Tabelle, „Prüfen“/„Eingeben“,
    Auswahl „Alle“ in der Suche, Kalender mit zwei Monaten, Seitenleiste „Lehrstoff“ */
 
 .os-trenn { width: 1px; height: 20px; background: var(--up-rand-stark); margin: 0 4px; flex: none; }
 .os-artwahl { margin: 0; flex: none; }
 .os-artwahl select { height: 32px; border: 0; background-color: transparent; font: inherit; font-size: .88rem; font-weight: 600; color: var(--up-text); }
-.os-artwahl .wahl-knopf, .os-artwahl .auswahl-knopf { border: 0 !important; background: transparent !important; box-shadow: none !important; min-height: 32px; height: 32px; font-weight: 600; }
-.os-original .os-tabelle th { text-transform: none; letter-spacing: 0; font-size: .78rem; color: var(--up-text-3); font-weight: 600; padding: 12px 10px; }
-.os-original .os-tabelle td { height: 52px; padding: 0 10px; font-size: .875rem; color: var(--up-text); }
-.os-original .os-tabelle td.os-wahl, .os-original .os-tabelle th.os-wahl { width: 52px; padding-left: 18px; }
-.os-original .os-datum { font-variant-numeric: tabular-nums; }
-.os-original .os-artspalte { color: var(--up-text-2); font-size: .82rem; }
+ .os-artwahl .auswahl-knopf { border: 0 !important; background: transparent !important; box-shadow: none !important; min-height: 32px; height: 32px; font-weight: 600; }
+.os-liste .os-tabelle th { text-transform: none; letter-spacing: 0; font-size: .78rem; color: var(--up-text-3); font-weight: 600; padding: 12px 10px; }
+.os-liste .os-tabelle td { height: 52px; padding: 0 10px; font-size: .875rem; color: var(--up-text); }
+.os-liste .os-tabelle td.os-wahl, .os-liste .os-tabelle th.os-wahl { width: 52px; padding-left: 18px; }
+.os-liste .os-datum { font-variant-numeric: tabular-nums; }
+.os-liste .os-artspalte { color: var(--up-text-2); font-size: .82rem; }
 .os-pille { display: inline-flex; align-items: center; height: 28px; padding: 0 14px; border: 1px solid var(--up-rand-stark); border-radius: 999px; background: var(--up-flaeche); color: var(--up-text); font-size: .8rem; font-weight: 600; white-space: nowrap; }
 .os-pille:hover { border-color: var(--up-text); }
 .os-pille:focus-visible { outline: 2px solid rgba(35, 79, 150, .55); outline-offset: 2px; }
-.os-original .os-hinweis { margin: 12px 0 0; }
+.os-liste .os-hinweis { margin: 12px 0 0; }
 .os-zeitraum { font-variant-numeric: tabular-nums; }
 
 .os-leiste-huelle { position: fixed; inset: 0; z-index: 1060; }

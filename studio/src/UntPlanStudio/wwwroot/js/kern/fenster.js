@@ -444,6 +444,7 @@ export const fensterverwaltung = {
   oeffnenIn(bereich, typ, parameter = {}, _neu = false) {
     const f = new Fenster(typ, parameter);
     fenster.push(f);
+    flaeche?.querySelector('.willkommen')?.setAttribute('hidden', ''); // Startfläche sofort ausblenden
     bereich.aufnehmen(f);
     layoutZeichnen();
     bereichAktivieren(bereich);

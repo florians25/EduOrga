@@ -19,6 +19,7 @@ const KENNZAHLEN = [
   ['ohneRaum', 'Ohne Raum'], ['kollisionen', 'Kollisionen'],
 ];
 
+const gruppenName = (g) => (g === 'Lehrer' ? 'Lehrkräfte' : g === 'Klasse' ? 'Klassen' : g === 'Raum' ? 'Räume' : g);
 const zahl = (n) => (typeof n === 'number' ? n.toLocaleString('de-DE') : n ?? '');
 
 // =============================================================================================
@@ -68,7 +69,7 @@ function diagnoseFenster(f) {
     if (!punkte.length) liste.append(h('div', { class: 'pl-leer' }, rubrik === 'stundenplan' ? 'Der Stundenplan verletzt keine Vorgaben.' : 'Die Eingabedaten sind ohne Auffälligkeiten.'));
     for (const g of gruppen) {
       const ps = punkte.filter((p) => p.gruppe === g);
-      liste.append(h('div', { class: 'op-zeile gruppe' }, h('span', null, g), h('span', null, ''), h('span', { class: 'z' }, String(ps.reduce((a, p) => a + p.anzahl, 0)))));
+      liste.append(h('div', { class: 'op-zeile gruppe' }, h('span', null, gruppenName(g)), h('span', null, ''), h('span', { class: 'z' }, String(ps.reduce((a, p) => a + p.anzahl, 0)))));
       for (const p of ps) {
         const el = h('div', { class: `op-zeile punkt${p.anzahl === 0 ? ' leer' : p.gewicht >= 5 ? ' schwer' : ''}${p === punkt ? ' gewaehlt' : ''}`, tabindex: '-1' },
           h('span', null, p.titel), h('span', { class: 'z' }, String(p.gewicht)), h('span', { class: 'z' }, String(p.anzahl)));
@@ -81,7 +82,7 @@ function diagnoseFenster(f) {
 
   function details() {
     if (!punkt) { titel.replaceChildren(h('div', { class: 'op-pfad' }, 'Diagnose'), h('h3', null, 'Keine Prüfung gewählt')); beschreibung.textContent = 'Links eine Prüfung wählen, um die einzelnen Fälle zu sehen.'; faelle.daten([]); return; }
-    titel.replaceChildren(h('div', { class: 'op-pfad' }, `${punkt.rubrik} · ${punkt.gruppe}`), h('h3', null, punkt.titel));
+    titel.replaceChildren(h('div', { class: 'op-pfad' }, `${punkt.rubrik} · ${gruppenName(punkt.gruppe)}`), h('h3', null, punkt.titel));
     beschreibung.textContent = punkt.beschreibung;
     faelle.daten(punkt.faelle.map((x, i) => ({ ...x, nr: i, u: x.u ?? '' })));
   }
@@ -337,7 +338,7 @@ function laufFenster(f) {
     const statusText = { laeuft: 'Läuft', fertig: 'Abgeschlossen', abgebrochen: 'Abgebrochen', fehler: 'Fehler', uebernommen: `Plan ${a.uebernommen} übernommen` }[a.status] || a.status;
     const verfahren = String(a.strategie || '').replace(/^[A-E]\s+/, '');
     const uhrzeit = new Date(a.start).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    kopf.replaceChildren(
+    kopf.replaceChildren(...[
       h('div', { class: 'op-statuszeile' },
         h('span', { class: `op-gross plakette ${a.status}` }, statusText),
         h('span', { class: 'op-titelzeile' }, verfahren),
@@ -348,7 +349,7 @@ function laufFenster(f) {
         h('dt', null, 'Dauer'), h('dd', null, `${a.dauer.toLocaleString('de-DE')} s`),
         h('dt', null, 'Gestartet'), h('dd', null, `${uhrzeit} von ${a.benutzer}`)),
       a.fehler ? h('div', { class: 'fehlertext' }, a.fehler) : null,
-      a.dokumentGeaendert && a.ergebnisse && a.status === 'fertig' ? h('div', { class: 'op-hinweis' }, 'Die Schuldatei wurde seit dem Start geändert – beim Übernehmen gehen diese Stundenplanänderungen verloren.') : null);
+      a.dokumentGeaendert && a.ergebnisse && a.status === 'fertig' ? h('div', { class: 'op-hinweis' }, 'Die Schuldatei wurde seit dem Start geändert – beim Übernehmen gehen diese Stundenplanänderungen verloren.') : null].filter(Boolean));
     leeren(ergebnis);
     if (!a.ergebnisse?.length) return;
     const besser = (k, wert) => (a.aktuell?.[k] ?? 0) - wert;

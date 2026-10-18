@@ -1,6 +1,6 @@
-/* UntPlanWeb – Kalender (js/kalender.js): eigener Datumswähler im Portal-Design.
-   Weiße Karte mit weichem Schatten, Kopf mit Monat und runden Pfeilen, Spalte „KW“, heute als orangener Ring,
-   Auswahl als orangener Kreis, Bereiche hellorange, Ferien hellblau und Feiertage mit Punkt – nur Regular und Medium. */
+/* UntPlanWeb – Kalender (js/kalender.js): eigener Datumswähler.
+   Weiße Karte mit weichem Schatten, Kopf mit Monat und runden Pfeilen, Spalte „KW“, heute als Marine-Ring,
+   Auswahl als Marine-Kreis, Bereiche hell-marine, Ferien hellblau und Feiertage mit Punkt – nur Regular und Medium. */
 
 .kal-pop {
   --kal-zelle: 36px;
@@ -53,7 +53,7 @@ button.kal-titel:hover { background: var(--up-hintergrund); }
 .kal-tag.k-frei-frei::before { background: var(--kal-frei); }
 .kal-tag.k-frei-feiertag::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--kal-akzent); opacity: .75; }
 .kal-tag.k-fremd.k-frei::before { opacity: .45; }
-/* heute: orangener Ring */
+/* heute: Marine-Ring */
 .kal-tag.k-heute { font-weight: 500; }
 .kal-tag.k-heute::before { box-shadow: inset 0 0 0 1.5px var(--kal-akzent); }
 /* Auswahl */
@@ -61,7 +61,7 @@ button.kal-titel:hover { background: var(--up-hintergrund); }
 .kal-tag.k-gewaehlt::before, .kal-tag.k-anfang::before, .kal-tag.k-ende::before,
 .kal-tag.k-gewaehlt:hover::before, .kal-tag.k-anfang:hover::before, .kal-tag.k-ende:hover::before { background: var(--kal-akzent); box-shadow: none; }
 .kal-tag.k-gewaehlt::after, .kal-tag.k-anfang::after, .kal-tag.k-ende::after { background: var(--up-flaeche); }
-/* Bereich: durchgehendes hellorangenes Band zwischen Beginn und Ende */
+/* Bereich: durchgehendes hell-marine Band zwischen Beginn und Ende */
 .kal-tag.k-im, .kal-tag.k-vorschau { border-radius: 0; background: var(--kal-akzent-hell); }
 .kal-tag.k-im.k-anfang, .kal-tag.k-vorschau.k-anfang { border-radius: 999px 0 0 999px; }
 .kal-tag.k-im.k-ende { border-radius: 0 999px 999px 0; }
@@ -69,7 +69,7 @@ button.kal-titel:hover { background: var(--up-hintergrund); }
 .kal-tag.k-vorschau:not(.k-anfang):not(.k-im) { background: var(--up-primaer-flaeche); }
 .kal-tag.k-im:not(.k-anfang):not(.k-ende)::before { background: transparent; }
 .kal-tag.k-im.k-frei-ferien:not(.k-anfang):not(.k-ende)::before { background: rgba(190, 218, 237, .4); }
-/* Wochenauswahl: ganze Zeile reagiert, gewählte Woche hellorange */
+/* Wochenauswahl: ganze Zeile reagiert, gewählte Woche hell-marine */
 .kal-m-woche .kal-zeile[data-mo] { cursor: pointer; }
 .kal-m-woche .kal-zeile[data-mo]:hover { background: var(--up-hintergrund); }
 .kal-m-woche .kal-zeile[data-mo]:hover .kal-tag:hover::before { background: transparent; }
@@ -123,7 +123,7 @@ input.kal-eingabe:disabled { cursor: default; }
 input.kal-eingabe::placeholder { color: var(--up-schiefer-400); opacity: 1; }
 /* Kalendersymbol rechts in Feldern mit Rahmen (nicht in Pillen und Leisten, dort steht die Beschriftung davor) */
 input.kal-eingabe:is(.form-control, .kbe-datum),
-.kd-feld input.kal-eingabe, .kd-dfeld input.kal-eingabe, .ug-felder input.kal-eingabe, .ad-feld input.kal-eingabe, .ab-zeile input.kal-eingabe {
+.kd-feld input.kal-eingabe, .kd-dfeld input.kal-eingabe, .ug-felder input.kal-eingabe {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2367747e' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M2 2a1 1 0 0 0-1 1v1h14V3a1 1 0 0 0-1-1zm13 3H1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1z'/%3E%3Cpath d='M11 7.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 12px center; background-size: 14px 14px; padding-right: 34px;
 }
@@ -131,7 +131,7 @@ input.kal-eingabe.form-control-sm { background-position: right 9px center; paddi
 input.kal-eingabe[aria-expanded="true"] { border-color: var(--u-akzent, var(--up-primaer)); }
 input.kal-eingabe.form-control[aria-expanded="true"] { box-shadow: 0 0 0 .2rem rgba(35, 79, 150, .15); }
 /* Breiten wie bei den bisherigen Datumsfeldern */
-.ab-zeile input.kal-eingabe { width: 170px; }
+
 .abw-leiste .nl-pille input.kal-eingabe { width: 92px; }
 .nl-pille input.kal-eingabe { width: 92px; padding-right: 0; }
 .fm-datum input.kal-eingabe { width: 130px; }
