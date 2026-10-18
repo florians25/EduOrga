@@ -13,13 +13,6 @@ namespace UntPlanWeb.Tests;
 /// </summary>
 public class KartenSprint27Tests
 {
-    private static string Datei(params string[] teile)
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "src", "UntPlanWeb", "UntPlanWeb.csproj"))) dir = dir.Parent;
-        Assert.NotNull(dir);
-        return File.ReadAllText(Path.Combine(new[] { dir!.FullName, "src", "UntPlanWeb", "wwwroot" }.Concat(teile).ToArray()));
-    }
 
     private static JsonObject Vertretung(int id, string datum, int stunde, string art, string lehrer, string vertreter, string fach, string raum, string neuerRaum,
         string vertrVon = "", string nach = "", string text = "", params string[] klassen) => new()
@@ -318,60 +311,6 @@ public class KartenSprint27Tests
 
     // ------------------------------------------------------------------ Web
 
-    [Fact]
-    public void Web_Verlegung_Hover_Marker_Plus_und_gekuerzte_Zeilen()
-    {
-        var js = Datei("js", "plangitter.js");
-        // Verlegung: Hover „Ursprung → Ziel“ (rot an der ursprünglichen Stunde), auch beim Zeigen auf die Karte
-        Assert.Contains("const verlegungsZeit = z => `${datumDe(z.datum)}${z.beginn ? ` | ${z.beginn}${z.ende ? ` - ${z.ende}` : ''}` : ''}`;", js);
-        Assert.Contains("${verlegungsZeit(k.verlegungVon)} → ${verlegungsZeit(k.verlegungNach)}", js);
-        Assert.Contains("data-hover-art=\"rot\"", js);
-        // Hover nur auf dem Symbol (nicht auf der ganzen Karte), etwas kleiner
-        Assert.DoesNotContain("karte.querySelector('.mks .mk-verlegung[data-hover]')", js);
-        Assert.Contains("data-hover-mitte data-hover-klein></i>", js);
-        // mehrere Symbole untereinander
-        Assert.Contains("if (k.status === 'klausur') { m.push('<i class=\"mk-kreis\"></i>'); if (wertGeaendert(k)) m.push('<i class=\"mk-quadrat\"></i>'); }", js);
-        // hinzugefügter Wert: „+B070“
-        Assert.Contains("if (w.neu) return `<span class=\"lbl lbl-plus\">+${e(w.k)}</span>`;", js);
-        // gekürzte Zeilen: Hover je Zeile, Wertelisten mit „+N“ und Pillen, Fach mit vollem Namen
-        Assert.Contains("export function listenKuerzen(wurzel)", js);
-        Assert.Contains("if (zeile && karte.contains(zeile) && zeileGekuerzt(zeile)) { hoverZeigen(zeile); return; }", js);
-        Assert.Contains("data-pillen=", js);
-        Assert.Contains("const fachVoll = k.fachName && k.fachName !== k.fach ? k.fachName : '';", js);
-        // Vertretung: Label der vertretenden Lehrkraft auch in deren eigenem Plan (keine Ausnahme für die eigene Lehrkraft)
-        Assert.DoesNotContain("lehrerOhneEigene", js);
-        Assert.Contains(": k.lehrer.length > 1 || k.lehrer.some(w => w.alt || w.neu) ? werteListe(k.lehrer, entfall, true) : '';", js);
-        // grüne Labels genau mittig über dem Label
-        Assert.Contains("r.left + r.width / 2 - b / 2", js);
-        // keine „Raum gesperrt“/„Klasse abwesend“ über dem Tag
-        Assert.Contains("!/^(abwesend|raum gesperrt|klasse abwesend)\\b/i.test(h)", js);
-        // Aufsichten wie die Stundenkarten bis an die Linie
-        Assert.Contains("top:${aufbau.pause.get(nach) + 2}px;height:${PAUSE - 4}px;left:calc(${j * breite}% + 2px);width:calc(${breite}% - 4px)", js);
-        var css = Datei("css", "karten.css");
-        Assert.Contains(".u-hover-label.rot { background: var(--up-entfall); }", css);
-        Assert.Contains(".u-hover-label.klein { font-size: 11.5px;", css);
-        // Status als Schild mit Text (Entfall, Verlegt …) statt Bildzeichen
-        Assert.Contains(".mk-verlegung::before { content: \"Verlegt\"; }", css);
-        Assert.Contains(".u-hover-label.pillen span { padding: 3px 7px; border-radius: 3px; background: var(--up-schiefer-800);", css);
-        Assert.Contains(".u-hover-label.pillen span.p-weg, .u-hover-label.pillen span.p-aus { text-decoration: line-through;", css);
-        Assert.Contains(".std .z-liste > .z-namen", css);
-        Assert.Contains(".std .mks { position: absolute; right: 4px; bottom: 4px;", css);
-    }
-
-    [Fact]
-    public void Web_Stundendetails_Badges_oben_Knoepfe_kleiner_Abmelden_schliesst_Dialog()
-    {
-        var sd = Datei("js", "stundendetails.js");
-        Assert.Contains("<div class=\"sd-titel\"><h2>${titel.join('<span class=\"trenn\">|</span>')}${pille ? `<span class=\"sd-statuspille\">${pille}</span>` : ''}", sd);
-        Assert.Contains("window.addEventListener('untplan:abmeldung', abmeldung, { once: true });", sd);
-        Assert.Contains("if (beendet || !el.isConnected) return;", sd);
-        var app = Datei("js", "app.js");
-        Assert.Contains("function dialogeSchliessen()", app);
-        Assert.Contains("async function abmelden() {\n  dialogeSchliessen();", app);
-        var css = Datei("css", "karten.css");
-        Assert.Contains(".sd-titel h2 .sd-statuspille:not(.sd-einzelpille) { background: var(--up-pruefung-flaeche); color: var(--up-pruefung); }", css);
-        Assert.Contains(".sd-fuss.sd-status .sd-haupt { height: 32px; }", css);
-    }
     // ------------------------------------------------------------------ Lehrstoff aus Vorwochen
 
     [Fact]
@@ -401,36 +340,4 @@ public class KartenSprint27Tests
         Assert.Empty((await Testserver.HolenAsync(c, $"/api/app/klassenbuch/lehrstoff/vorstunden?datum={ziel.Datum}&stunde={ziel.Von}&unterricht={ziel.Unterricht}&lehrer=XYZ")).AsArray());
     }
 
-    [Fact]
-    public void Web_Lehrstoff_Dialog_breiter_mit_Uebernehmen_und_Anhaengen()
-    {
-        var sd = Datei("js", "stundendetails.js");
-        Assert.Contains("Lehrstoff aus Vorwochen", sd);
-        Assert.Contains("data-ad-anhaengen=", sd);
-        Assert.Contains("data-ad-kopie=", sd);
-        Assert.Contains("/api/app/klassenbuch/lehrstoff/vorstunden?datum=${k.datum}&stunde=${bereich().von}&unterricht=${k.unterricht}${einzigeLehrkraft()}", sd);
-        Assert.Contains("}, 600);   // etwas breiter", sd);
-        Assert.Contains(".ad-liste.ad-vorwochen .ad-vw-knopf", Datei("css", "karten.css"));
-    }
-    [Fact]
-    public void Web_nur_ein_Hover_Veranstaltungskopf_gestrichelt_Aufsichtsbalken_Zeitleiste()
-    {
-        // gekürzte Kartenzeilen: nur der dunkelgraue Hover (plangitter.js), kein zweiter heller Kürzungs-Hover
-        Assert.Contains(".modal-footer, .u-kuerzung-hover, .std')", Datei("js", "ui.js"));
-        var sd = Datei("js", "stundendetails.js");
-        // Veranstaltung: oben keine Bezeichnung und kein Badge; Name unten unter „Information zur Stunde“
-        Assert.Contains(": k.status === 'veranstaltung' ? e(k.fach || '') : e(k.fach || k.text || k.art || 'Stunde');", sd);
-        Assert.Contains("const pille = istEntfall() ? '' : k.status === 'klausur' ? 'Prüfung' : k.zusaetzlich ? 'Zusätzl. Unterrichtsstunde' : '';", sd);
-        Assert.Contains("'Information zur Stunde'", sd);
-        // sehr viele Elemente im Kopf: „… +N“ mit Hover
-        Assert.Contains("class=\"sd-mehr\" data-hover=", sd);
-        Assert.Contains("const klassenTeil = alleKlassen.length ? wertKopf(alleKlassen, 6,", sd);
-        // Uhrzeiten auf den Karten: links nur Stundennummern
-        var js = Datei("js", "plangitter.js");
-        Assert.Contains("if (!kartenZeiten) html += `<div class=\"tt-zeit beginn\"", js);
-        Assert.Contains("if (!kartenZeiten) html += `<div class=\"tt-zeit ende\"", js);
-        var css = Datei("css", "karten.css");
-        Assert.Contains(".std.bereitschaft, .std.vorgemerkt, .std.lehrer-abwesend { background: var(--up-flaeche-2) !important;", css);
-        Assert.Contains(".aufsicht::before { content: \"\"; flex: none; width: 12px; height: 12px;", css);
-    }
 }

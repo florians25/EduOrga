@@ -1,7 +1,11 @@
 **/bin
 **/obj
+**/node_modules
 **/daten
 **/*.db*
+web/src/UntPlanWeb/wwwroot/assets
+web/src/UntPlanWeb/wwwroot/index.html
+web/src/UntPlanWeb/wwwroot/monitor.html
 .git
 artifacts
 installer

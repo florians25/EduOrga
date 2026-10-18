@@ -28,6 +28,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/client/package-lock.json
+      - name: Oberfläche bauen (Typprüfung + Vite)
+        working-directory: web/client
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x

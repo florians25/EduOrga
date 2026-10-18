@@ -7,6 +7,15 @@ import stammdaten from './stammdaten';
 import unterricht from './unterricht';
 import stundenplan from './stundenplan';
 import planung from './planung';
+import vertretung from './vertretung';
+import optimierung from './optimierung';
+import zeitwuensche from './zeitwuensche';
+import abrechnung from './abrechnung';
+import austausch from './austausch';
+import kommentare from './kommentare';
+import kursplanung from './kursplanung';
+import multiuser from './multiuser';
+import pausenaufsicht from './pausenaufsicht';
 
 export const module: StudioModul[] = [
   datei,
@@ -15,4 +24,13 @@ export const module: StudioModul[] = [
   unterricht,
   stundenplan,
   planung,
+  vertretung,
+  optimierung,
+  zeitwuensche,
+  abrechnung,
+  austausch,
+  kommentare,
+  kursplanung,
+  multiuser,
+  pausenaufsicht,
 ];

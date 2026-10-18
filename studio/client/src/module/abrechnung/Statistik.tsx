@@ -1,0 +1,61 @@
+// Vertretungsstatistik: Abrechnung, Einzelnachweis, Mehrarbeit NRW, Monatsabrechnung, Entfalltage, Vertretungsübersicht und
+// Wochenwerte – als Tabelle, HTML-Dokument und CSV.
+import { Input, Select } from '@fluentui/react-components';
+import { useEffect, useState } from 'react';
+import { api, dateiHerunterladen } from '@/api/client';
+import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
+import { useDaten } from '@/kern/laden';
+import { AnsichtRahmen, Feld, Werkzeug } from '@/komponenten/ansicht';
+import { MenueKnopf } from '@/komponenten/menue';
+import { Tabelle } from '@/komponenten/tabelle/Tabelle';
+import { useElemente } from '../gemeinsam';
+import './abrechnung.css';
+
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+interface Bericht { nr: number; text: string; lehrer: boolean }
+interface Auswertung { nr: number; kopf: string[]; breiten: number[]; zeilen: { werte: string[]; markierung?: string; lehrer?: number }[]; summe: string }
+
+export default function Statistik({ p }: AnsichtProps) {
+  const a = useAnsicht();
+  const jetzt = new Date();
+  const [von, setVon] = useState(String(p.von || iso(new Date(jetzt.getFullYear(), jetzt.getMonth(), 1))));
+  const [bis, setBis] = useState(String(p.bis || iso(new Date(jetzt.getFullYear(), jetzt.getMonth() + 1, 0))));
+  const [bericht, setBericht] = useState(Number(p.bericht ?? 0));
+  const [lehrer, setLehrer] = useState<number | null>(null);
+  const lehrkraefte = useElemente('lehrer');
+  const { daten: berichte } = useDaten(() => api.get<Bericht[]>(api.dok('/abrechnung/berichte')), []);
+  const mitLehrer = !!berichte?.find((x) => x.nr === bericht)?.lehrer;
+  useEffect(() => { if (lehrer == null && lehrkraefte[0]) setLehrer(lehrkraefte[0].id); }, [lehrkraefte, lehrer]);
+  useEffect(() => { a.parameterSetzen({ von, bis, bericht }); }, [von, bis, bericht]); // eslint-disable-line react-hooks/exhaustive-deps
+  const q = (alle = false) => `bericht=${bericht}&von=${von}&bis=${bis}${lehrer ? `&lehrer=${lehrer}` : ''}${alle ? '&alle=true' : ''}`;
+  const { daten, laedt } = useDaten(() => api.get<Auswertung>(api.dok(`/abrechnung/statistik?${q()}`)), [von, bis, bericht, lehrer], { bereiche: ['Vertretung', 'Stammdaten'], aktiv: !!berichte });
+  const zeitraum = (i: number) => {
+    const d = new Date();
+    if (i === 1) { setVon(iso(new Date(d.getFullYear(), d.getMonth(), 1))); setBis(iso(new Date(d.getFullYear(), d.getMonth() + 1, 0))); }
+    if (i === 2) { setVon(iso(new Date(d.getFullYear(), d.getMonth() - 1, 1))); setBis(iso(new Date(d.getFullYear(), d.getMonth(), 0))); }
+    if (i === 3) { const m = new Date(d); m.setDate(d.getDate() - ((d.getDay() + 6) % 7)); const s = new Date(m); s.setDate(m.getDate() + 6); setVon(iso(m)); setBis(iso(s)); }
+    if (i === 4) { const j = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1; setVon(`${j}-08-01`); setBis(`${j + 1}-07-31`); }
+  };
+  const zeilen = (daten?.zeilen || []).map((z, i) => ({ ...z, i }));
+  return (
+    <AnsichtRahmen titel="Vertretungsstatistik" laden={laedt}
+      werkzeuge={<>
+        <Werkzeug text="Als HTML öffnen" titel="Dokument (HTML) zum Drucken" aktion={() => window.open(api.dok(`/abrechnung/statistik.html?${q()}`), '_blank')} />
+        <Werkzeug text="CSV exportieren" titel="Tabelle als CSV-Datei herunterladen" aktion={() => dateiHerunterladen(api.dok(`/abrechnung/statistik.csv?${q()}`), 'Statistik.csv')} />
+        <MenueKnopf text="Weitere Aktionen" eintraege={[{ text: 'HTML für alle Lehrkräfte (je Lehrkraft eine Seite)', aktion: () => window.open(api.dok(`/abrechnung/statistik.html?${q(true)}`), '_blank') }]} />
+      </>}
+      filter={<>
+        <Feld titel="Auswertung"><Select size="small" style={{ width: 260 }} value={String(bericht)} onChange={(_, d) => setBericht(Number(d.value))}>{(berichte || []).map((x) => <option key={x.nr} value={x.nr}>{x.text}</option>)}</Select></Feld>
+        <Feld titel="Lehrkraft"><Select size="small" disabled={!mitLehrer} value={lehrer ? String(lehrer) : ''} onChange={(_, d) => setLehrer(Number(d.value))}>{lehrkraefte.map((l) => <option key={l.id} value={l.id}>{l.k}</option>)}</Select></Feld>
+        <Feld titel="Von"><Input size="small" type="date" value={von} onChange={(_, d) => setVon(d.value)} /></Feld>
+        <Feld titel="Bis"><Input size="small" type="date" value={bis} onChange={(_, d) => setBis(d.value)} /></Feld>
+        <Select size="small" value="0" title="Zeitraum übernehmen" onChange={(_, d) => zeitraum(Number(d.value))}>{['Zeitraum wählen', 'Aktueller Monat', 'Vormonat', 'Aktuelle Woche', 'Schuljahr'].map((t, i) => <option key={t} value={i}>{t}</option>)}</Select>
+      </>}
+      fuss={daten?.summe ? <span style={{ whiteSpace: 'pre-wrap' }}>{daten.summe}</span> : null}>
+      <Tabelle key={`${daten?.nr}-${daten?.kopf.length}`} name="statistik" id={(z) => z.i} zeilen={zeilen} leerText="Keine Einträge im gewählten Zeitraum."
+        zeilenKlasse={(z) => (z.markierung ? `abr-${z.markierung}` : null)}
+        beiDoppelklick={(z) => { if (daten?.nr === 0 && z.lehrer) { setLehrer(z.lehrer); setBericht(1); } }}
+        spalten={(daten?.kopf || []).map((titel, i) => ({ schluessel: `c${i}`, titel, breite: daten!.breiten[i], art: 'NurLesen' as const, wert: (z: (typeof zeilen)[number]) => z.werte[i] }))} />
+    </AnsichtRahmen>
+  );
+}

@@ -1,0 +1,1 @@
+import{j as e}from"./react-BGJsppEn.js";import{U as s,V as t}from"./index-Kf39jlDF.js";import"./fluent-CQJWayXq.js";import"./werkzeuge-CwmrTYK1.js";function a(){return e.jsxs(s,{schluessel:"manuell",anteile:[45,55],children:[e.jsx(t,{id:"unterricht",typ:"unterricht",p:{sicht:"klasse"}}),e.jsx(t,{id:"plan",typ:"stundenplan",p:{typ:"klasse"}})]})}export{a as default};

@@ -12,13 +12,6 @@ namespace UntPlanWeb.Tests;
 /// </summary>
 public class SeitenlayoutTests
 {
-    private static string Datei(params string[] teile)
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "src", "UntPlanWeb", "UntPlanWeb.csproj"))) dir = dir.Parent;
-        Assert.NotNull(dir);
-        return File.ReadAllText(Path.Combine(new[] { dir!.FullName, "src", "UntPlanWeb", "wwwroot" }.Concat(teile).ToArray()));
-    }
 
     // ------------------------------------------------------------------ Klassenbucheinträge: Detaildialog
 
@@ -79,132 +72,9 @@ public class SeitenlayoutTests
         Assert.Equal(HttpStatusCode.BadRequest, (await admin.PutAsJsonAsync("/api/app/klassenbuch/vermerke/999999", new { datum = "2026-10-13", klasse = "7a", art = "Lob", text = "x" })).StatusCode);
     }
 
-    [Fact]
-    public void Eintraege_Liste_oeffnet_Detaildialog_mit_kbDialog()
-    {
-        var js = Datei("js", "ansichten", "eintraege.js");
-        Assert.Contains("from '../kbdialog.js'", js);
-        Assert.Contains("export function detail(", js);
-        Assert.Contains("tr[data-eintrag]", js);
-        foreach (var feld in new[] { "'Datum'", "'Stunde'", "'Klasse'", "'Schüler*in'", "'Kategorie'", "'Verfasser*in'", "'Erfasst'" }) Assert.Contains(feld, js);
-        Assert.Contains("x.bearbeiten", js);
-        Assert.Contains("x.loeschen", js);
-        Assert.Contains("'PUT'", js);
-    }
-
     // ------------------------------------------------------------------ Gemeinsame Bausteine
 
-    [Fact]
-    public void Seitenlayout_Stilvorlage_eingebunden_und_Heute_ausgenommen()
-    {
-        var index = Datei("index.html");
-        Assert.Contains("<link rel=\"stylesheet\" href=\"css/seitenlayout.css\">", index);
-        Assert.True(index.IndexOf("css/seitenlayout.css", StringComparison.Ordinal) > index.IndexOf("css/kompakt.css", StringComparison.Ordinal));
-        var css = Datei("css", "seitenlayout.css");
-        Assert.Contains("--u-rand", css);
-        Assert.Contains("--u-seite-max", css);
-        // Container-Regeln gelten nie für die Startseite „Heute“
-        foreach (var zeile in css.Split('\n').Where(z => z.Contains(".u-inhalt") && z.Contains("padding-left: var(--u-rand)")))
-            Assert.Contains(":not([data-ansicht=\"heute\"])", zeile);
-        Assert.Contains("table.u-karten-tabelle", css);
-    }
-
-    [Fact]
-    public void Suchfeld_und_Segment_als_gemeinsame_Komponenten()
-    {
-        var ui = Datei("js", "ui.js");
-        Assert.Contains("export const suchfeld", ui);
-        Assert.Contains("export const segment", ui);
-        Assert.Contains("export function segmentSetzen", ui);
-        var css = Datei("css", "seitenlayout.css");
-        // alle bisherigen Suchfeld-Varianten erhalten dieselbe Darstellung (graues Feld, runde Ecken, Fokus-Ring, Löschen-X)
-        foreach (var k in new[] { ".u-suchfeld", ".au-suchfeld", ".nl-suche", ".br-suche", ".sp-suche", ".mt-ew-suche" }) Assert.Contains(k, css);
-        Assert.Contains("border-radius: 20px", css);
-        Assert.Contains(".au-x", css);
-        Assert.Contains(".u-segment", css);
-        // Löschen-X ergänzt auswahl.js für jedes Suchfeld automatisch
-        Assert.Contains("suchfeldAufwerten", Datei("js", "auswahl.js"));
-    }
-
-    [Fact]
-    public void Offene_Stunden_Art_als_Dropdown_im_Suchfeld_im_weissen_Kopf()
-    {
-        var js = Datei("js", "ansichten", "offen.js");
-        // Art der Anzeige als Dropdown im gemeinsamen Suchfeld (wie Hausaufgaben) statt Pillen-Gruppe
-        Assert.Contains("suchfeldMitFilter({", js);
-        Assert.Contains("filter: [{ name: 'art', label: 'Anzeigen'", js);
-        Assert.Contains("suchfeldMitFilterBinden(w, {", js);
-        Assert.DoesNotContain("segment(ART_WAHL", js);
-        Assert.DoesNotContain("data-artwahl", js);
-        Assert.DoesNotContain("os-artwahl", js);
-        // Leiste als Teil des weißen Kopfes (u-kopfteil, app.js/seitenlayout.css), nicht mehr in der nachträglich gefüllten Werkzeugleiste
-        Assert.DoesNotContain("kontext.werkzeug(", js);
-        Assert.Contains("<div class=\"u-sf-leiste u-kopfteil os-filter\">", js);
-    }
-
-    [Fact]
-    public void Suchfeld_mit_Filter_als_gemeinsame_Komponente()
-    {
-        var ui = Datei("js", "ui.js");
-        Assert.Contains("export const suchfeldMitFilter = (", ui);
-        Assert.Contains("export function suchfeldMitFilterBinden(", ui);
-        Assert.Contains("export const zeitraumPillen = (", ui);
-        Assert.Contains("export function zeilenFiltern(", ui);
-        Assert.Contains("data-chip-weg", ui);
-        Assert.Contains("data-sf-weg", ui);
-        Assert.Contains("ev.key !== 'Backspace'", ui);
-        var css = Datei("css", "seitenlayout.css");
-        foreach (var k in new[] { ".u-suchfilter", ".u-sf-filter.gewaehlt", ".u-sf-chip", ".u-sf-leiste", ".u-suchfilter .u-trenn", ".u-suchfilter.au-mit-x > .au-x" }) Assert.Contains(k, css);
-        Assert.DoesNotContain("font-weight: 600", css);
-        Assert.DoesNotContain("font-weight: 700", css);
-        // alle Listenseiten mit Suche und Filter nutzen die Komponente
-        foreach (var datei in new[] { "hausaufgaben.js", "offen.js", "pruefungen.js", "abwesenheiten.js", "klassenbuch.js", "entschuldigungen.js", "eintraege.js", "dienste.js",
-                     "befreiungen.js", "melden.js", "mitteilungen.js", "neuigkeiten.js", "benutzerverwaltung.js", "rechte.js", "stammdaten.js", "berichte.js" })
-        {
-            var js = Datei("js", "ansichten", datei);
-            Assert.True(js.Contains("suchfeldMitFilter(") && js.Contains("suchfeldMitFilterBinden("), datei);
-        }
-        Assert.Contains("suchfeldMitFilterBinden(", Datei("js", "infocenter.js"));
-        // keine weiße Werkzeugleiste mehr auf den Listenseiten
-        foreach (var datei in new[] { "hausaufgaben.js", "pruefungen.js", "offen.js" }) Assert.DoesNotContain("kontext.werkzeug(", Datei("js", "ansichten", datei));
-    }
-
     // ------------------------------------------------------------------ Sprint 28: weißer Kopf der Klassenbuch-Verwaltungsseiten
-
-    [Fact]
-    public void Klassenbuch_Verwaltungsseiten_haben_weissen_Kopf_ohne_Springen()
-    {
-        var app = Datei("js", "app.js");
-        // Kopf steht sofort beim Seitenwechsel (vor dem Laden des Moduls): Titel aus dem Menü, Platzhalter für die Suchleiste
-        Assert.Contains("const WEISSER_KOPF = {", app);
-        Assert.Contains("id=\"kopfplatz\"", app);
-        var route = app[app.IndexOf("async function route()", StringComparison.Ordinal)..];
-        Assert.True(route.IndexOf("weisserKopf(nav)", StringComparison.Ordinal) < route.IndexOf("await ANSICHTEN[name]()", StringComparison.Ordinal));
-        Assert.Contains("kopfMerken(kopf)", route);
-        Assert.Contains("sessionStorage", app[app.IndexOf("function weisserKopf", StringComparison.Ordinal)..]);
-        foreach (var nav in new[] { "offen", "hausaufgaben", "pruefungen", "abwesenheiten", "fehlzeiten", "eintraege", "dienste", "befreiungen", "berichte", "entschuldigen", "kbeinstellungen" })
-            Assert.Matches($"[{{ ,]'?{nav}'?: {{ suche", app);
-
-        var css = Datei("css", "seitenlayout.css");
-        Assert.Contains(".u-app.u-kopf-weiss :is(#seitenkopf, #kopfplatz, #seite .u-kopfteil)::after", css);
-        Assert.Contains("inset: 0 -100vmax", css);                     // volle Breite …
-        Assert.Contains(".u-app.u-kopf-weiss .u-haupt { overflow-x: clip; }", css);   // … ohne waagrechtes Scrollen
-        Assert.Contains(":not(:has(#seite .u-kopfteil, #seite > .alert)) #kopfplatz { display: block; height: var(--kopfplatz-h", css);
-        Assert.Contains("height: 82px", css);                          // feste Höhe der Titelzeile (Aktionen kommen später)
-        Assert.DoesNotContain("font-weight: 600", css);
-
-        // jede Seite zeichnet ihre Suchleiste als Teil des Kopfes, keine nachträglich gefüllte Werkzeugleiste
-        foreach (var datei in new[] { "offen.js", "hausaufgaben.js", "pruefungen.js", "abwesenheiten.js", "eintraege.js", "dienste.js", "befreiungen.js", "berichte.js", "entschuldigungen.js", "klassenbuch.js" })
-        {
-            var js = Datei("js", "ansichten", datei);
-            Assert.True(js.Contains("u-kopfteil"), datei);
-            if (datei != "klassenbuch.js") Assert.DoesNotContain("kontext.werkzeug(", js);
-        }
-        // Abwesenheiten: Reiter gehört zum Kopf, Platzhalter der Suchleiste während des Ladens
-        var abw = Datei("js", "ansichten", "abwesenheiten.js");
-        Assert.Contains("u-kopfreiter", abw);
-        Assert.Contains("u-kopfskelett", abw);
-    }
 
     // ------------------------------------------------------------------ Sprint 28: eigene Abwesenheit im Stundenplan
 
@@ -252,42 +122,6 @@ public class SeitenlayoutTests
     }
 
     [Fact]
-    public void Abwesenheit_als_Flaeche_hinter_den_Stunden_und_im_Menue_ausblendbar()
-    {
-        var gitter = Datei("js", "plangitter.js");
-        Assert.Contains("function abwesenheitFlaechen(", gitter);
-        Assert.Contains("plan.abwesenheiten", gitter);
-        // vor den Karten eingefügt (liegt hinter den Stunden), Text im freien Bereich
-        Assert.Contains("html = html.slice(0, vorKarten) + abw + html.slice(vorKarten)", gitter);
-        Assert.Contains("tt-abw-text", gitter);
-        var plan = Datei("js", "ansichten", "plan.js");
-        Assert.Contains("Abwesenheiten anzeigen</button>", plan);
-        Assert.Contains("localStorage.setItem('untplan:planeinstellungen'", plan);
-        var css = Datei("css", "karten.css");
-        Assert.Contains(".tt.ohne-abwesenheiten .tt-abw { display: none; }", css);
-        var regel = css.Split('\n').First(z => z.StartsWith(".tt-abw {", StringComparison.Ordinal));
-        Assert.DoesNotContain("z-index", regel);
-    }
-
-    [Fact]
-    public void Rechteverwaltung_zeigt_neue_Rechte_und_Gruppen_automatisch()
-    {
-        var js = Datei("js", "ansichten", "rechte.js");
-        // Gruppen aus dem Katalog, ergänzt um Gruppen neuer Rechte; Werte fehlender Rechte aus dem Standard der Basisrolle
-        Assert.Contains("const gruppenAus = k =>", js);
-        Assert.Contains("r.standard?.[p.basis]", js);
-        Assert.Contains("k.rechte.filter(", js);
-        // Stufen als Segment-Pillen, fixierte Spaltenköpfe, Rolle-für-Rolle-Ansicht auf kleinen Bildschirmen
-        Assert.Contains("'Kein Zugriff'", js);
-        Assert.Contains("'Lesen'", js);
-        Assert.Contains("'Schreiben'", js);
-        Assert.Contains("rm-kopfzeile", js);
-        Assert.Contains("position: sticky", js);
-        Assert.Contains("matchMedia('(max-width: 991.98px)')", js);
-        Assert.Contains("rolleAnsicht", js);
-    }
-
-    [Fact]
     public async Task Rechtekatalog_enthaelt_Standard_je_Basisrolle_fuer_jedes_Recht()
     {
         await using var s = await Testserver.StartenAsync();
@@ -301,13 +135,4 @@ public class SeitenlayoutTests
         }
     }
 
-    [Fact]
-    public void Infocenter_auf_dem_Telefon_als_Bodenblatt_mit_Schleier()
-    {
-        Assert.Contains("data-ic-schleier", Datei("js", "infocenter.js"));
-        var css = Datei("css", "seitenlayout.css");
-        Assert.Contains(".ic-schleier", css);
-        Assert.Contains("border-radius: 18px 18px 0 0", css);
-        Assert.Contains("env(safe-area-inset-bottom)", css);
-    }
 }

@@ -23,8 +23,10 @@ const useStile = makeStyles({
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2,
   },
   bereichTitel: { flex: 1, fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: tokens.fontSizeBase300 },
-  werkzeuge: { padding: '2px 12px', flexShrink: 0, flexWrap: 'wrap', rowGap: '2px', borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, minHeight: '40px' },
+  werkzeuge: { whiteSpace: 'nowrap', padding: '2px 12px', flexShrink: 0, flexWrap: 'wrap', rowGap: '2px', borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, minHeight: '40px' },
   werkzeugeSeite: { padding: '2px 16px' },
+  werkzeugeBereich: { flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'thin', padding: '0 8px', '& > *': { flexShrink: 0 } },
+  filterBereich: { padding: '6px 12px', gap: '6px 12px' },
   filter: {
     display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px 16px', padding: '8px 16px', flexShrink: 0,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
@@ -91,8 +93,8 @@ export function AnsichtRahmen({ titel, aktionen, werkzeuge, filter, fuss, childr
           {a.schliessen ? <Tooltip content="Bereich schließen" relationship="label"><Button size="small" appearance="subtle" icon={<Dismiss20Regular />} onClick={a.schliessen} /></Tooltip> : null}
         </div>
       )}
-      {werkzeuge ? <Toolbar size="small" className={mergeClasses(s.werkzeuge, seite && s.werkzeugeSeite)} aria-label="Werkzeuge">{werkzeuge}</Toolbar> : null}
-      {filter ? <div className={s.filter}>{filter}</div> : null}
+      {werkzeuge ? <Toolbar size="small" className={mergeClasses(s.werkzeuge, seite ? s.werkzeugeSeite : s.werkzeugeBereich)} aria-label="Werkzeuge">{werkzeuge}</Toolbar> : null}
+      {filter ? <div className={mergeClasses(s.filter, !seite && s.filterBereich)}>{filter}</div> : null}
       <div className={mergeClasses(s.inhalt, rollen && s.inhaltRollen)}>
         {children}
         {laden ? <div className={s.laden}><Spinner size="small" /></div> : null}

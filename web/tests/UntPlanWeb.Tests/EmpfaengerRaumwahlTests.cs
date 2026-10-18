@@ -14,14 +14,6 @@ public class EmpfaengerRaumwahlTests
 {
     private static int Id(Testserver s, string login) => s.Dienst<Benutzerdienst>().NachLogin(login)!.Id;
 
-    private static string Datei(params string[] teile)
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "src", "UntPlanWeb", "UntPlanWeb.csproj"))) dir = dir.Parent;
-        Assert.NotNull(dir);
-        return File.ReadAllText(Path.Combine(new[] { dir!.FullName, "src", "UntPlanWeb", "wwwroot" }.Concat(teile).ToArray()));
-    }
-
     private static async Task EinstellenAsync(HttpClient admin, Action<JsonObject> aendern)
     {
         var e = (await Testserver.HolenAsync(admin, "/api/app/mitteilungen/einstellungen"))["einstellungen"]!.AsObject();
@@ -76,32 +68,6 @@ public class EmpfaengerRaumwahlTests
         Assert.Contains("profil:" + profil.Id, sek["gruppen"]!.AsArray().Select(x => x!.GetValue<string>()));
         var g = d["filter"]!["gruppen"]!.AsArray().Single(x => x!["id"]!.GetValue<string>() == "profil:" + profil.Id)!;
         Assert.Equal("Sekretariat", g["name"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void Empfaengerdialog_Aufbau()
-    {
-        var js = Datei("js", "ansichten", "mitteilungen.js");
-        var css = Datei("css", "mitteilungen.css");
-        Assert.Contains("async function empfaengerDialog(", js);
-        Assert.Contains("titel: 'Empfänger*innen'", js);
-        Assert.Contains("Kolleg*innen suchen", js);
-        foreach (var pill in new[] { "Ausgewählt", "'Liste (indiv.)'", "'Klasse'", "'Abteilung'", "'Rolle'", "'Gruppe'", "Alle auswählen", "'Abbrechen'", "'Übernehmen'" })
-            Assert.Contains(pill, js);
-        Assert.Contains("/personen?typ=", js);
-        // Reihenfolge der Filter
-        Assert.True(js.IndexOf("['liste', 'Liste (indiv.)'", StringComparison.Ordinal) < js.IndexOf("['klasse', 'Klasse'", StringComparison.Ordinal));
-        Assert.True(js.IndexOf("['abteilung', 'Abteilung'", StringComparison.Ordinal) < js.IndexOf("['rolle', 'Rolle'", StringComparison.Ordinal));
-        Assert.True(js.IndexOf("['rolle', 'Rolle'", StringComparison.Ordinal) < js.IndexOf("['gruppe', 'Gruppe'", StringComparison.Ordinal));
-        // Tastatur: Pfeiltasten, Leertaste/Enter, Esc im Menü schließt nur das Menü
-        Assert.Contains("ev.key === 'ArrowDown'", js);
-        Assert.Contains("ev.stopPropagation(); menueZu(true)", js);
-        // runde Auswahlkreise, Avatar weiß mit grauem Rand, dunkle und helle Rollen-Pills
-        Assert.Contains(".mt-ew-kreis {", css);
-        Assert.Contains(".mt-ew-avatar {", css);
-        Assert.Contains("border-radius: 50%; background: var(--up-flaeche);", css);
-        Assert.Contains(".mt-ew-pill.dunkel", css);
-        Assert.Contains(".mt-ew-suche input {", css);
     }
 
     // ------------------------------------------------------------------ Mitteilungen für Schüler*innen und Erziehungsberechtigte
@@ -195,22 +161,6 @@ public class EmpfaengerRaumwahlTests
         })).StatusCode);
     }
 
-    [Fact]
-    public void Familie_hat_Mitteilungen_Untermenue_nach_Rechten()
-    {
-        var js = Datei("js", "app.js");
-        var familie = js[js.IndexOf("} else if (familie(b)) {", StringComparison.Ordinal)..];
-        familie = familie[..familie.IndexOf("} else {", StringComparison.Ordinal)];
-        Assert.Contains("b.mitteilungen ??", familie);
-        Assert.Contains("text: 'Posteingang'", familie);
-        Assert.Contains("text: 'Gesendet'", familie);
-        Assert.Contains("text: 'Entwürfe'", familie);
-        Assert.Contains("nav: 'mitteilungen-verfassen', href: '#/mitteilungen/verfassen', text: 'Verfassen'", familie);
-        Assert.Contains("mt.senden ?", familie);
-        Assert.Contains("'verfassen'].includes(a) ? 'mitteilungen-' + a", js);
-        Assert.Contains("const verfassen = ordnerParam === 'verfassen';", Datei("js", "ansichten", "mitteilungen.js"));
-    }
-
     // ------------------------------------------------------------------ Raumwahl beim Eintragen einer Prüfung
 
     [Fact]
@@ -257,79 +207,6 @@ public class EmpfaengerRaumwahlTests
         Assert.Equal(HttpStatusCode.Forbidden, (await sch.GetAsync("/api/app/buchen/raumstatus?datum=2026-10-15&von=3")).StatusCode);
     }
 
-    [Fact]
-    public void Pruefungsformulare_nutzen_die_Raumwahl()
-    {
-        var rw = Datei("js", "raumwahl.js");
-        Assert.Contains("/api/app/buchen/raumstatus?datum=", rw);
-        Assert.Contains("role', 'combobox'", rw);
-        Assert.Contains("ev.key === 'ArrowDown'", rw);
-        Assert.Contains("ev.key === 'Escape' && offen()) { ev.preventDefault(); ev.stopPropagation();", rw);
-        Assert.Contains("Plätze", rw);
-        Assert.Contains("'Raum der Stunde', 'Buchbare Räume', 'Weitere Räume'", rw);
-        var sd = Datei("js", "stundendetails.js");
-        Assert.Contains("import { raumwahl, raumListe } from './raumwahl.js';", sd);
-        Assert.Contains("raumwahl(box.querySelector('[name=raeume]'), { wurzel: box, unterricht: k.unterricht })", sd);
-        Assert.Contains("raumwahl(o.querySelector('[name=raeume]'), { wurzel: o, unterricht: k.unterricht })", sd);
-        Assert.DoesNotContain("sd-klausur-raeume", sd);
-        var melden = Datei("js", "ansichten", "melden.js");
-        Assert.Contains("raumwahl(form.raeume, { wurzel: form, felder: { datum: 'datum', von: 'stundeVon', bis: 'stundeBis' } });", melden);
-        Assert.Contains(".rw-status.belegt", Datei("css", "raumwahl.css"));
-    }
-
     // ------------------------------------------------------------------ Oberfläche
 
-    [Fact]
-    public void Schaltflaechen_werden_beim_Ueberfahren_nicht_unterstrichen()
-    {
-        var css = Datei("css", "nl-design.css");
-        Assert.Contains(":is(button, .btn, .nav-link, .dropdown-item, .page-link, .badge, label.btn, [role=\"button\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"option\"], a[class]):is(:hover, :focus, :focus-visible, :active) {\n  text-decoration: none;", css);
-        Assert.Contains(".btn-link, .btn-link:hover, .btn-link:focus-visible { text-decoration: none; }", css);
-        // keine Einzelregel unterstreicht mehr eine Schaltfläche beim Überfahren
-        foreach (var datei in new[] { "app.css", "uebersicht.css", "buchen.css", "kbeinstellungen.css", "klassenbuch.css", "sprechtag.css" })
-        {
-            var inhalt = Datei("css", datei);
-            foreach (var zeile in inhalt.Split('\n').Where(z => z.Contains(":hover") && z.Contains("text-decoration: underline") && !z.TrimStart().StartsWith("a:hover {")))
-                Assert.Fail($"{datei}: {zeile.Trim()}");
-        }
-        // gewöhnliche Links im Text behalten ihre Unterstreichung
-        Assert.Contains(".mt-text a:hover { text-decoration: underline; }", Datei("css", "mitteilungen.css"));
-    }
-
-    [Fact]
-    public void Ferienflaechen_haben_an_allen_Tagen_dieselbe_Deckkraft()
-    {
-        // eine Regel für alle freien Tage (css/karten.css), keine tagesabhängige Deckkraft
-        var css = Datei("css", "karten.css");
-        var regel = css.Split('\n').First(z => z.StartsWith(".tt-ferien {", StringComparison.Ordinal));
-        Assert.Contains("position: absolute; inset: 2px 0;", regel);
-        Assert.DoesNotContain("nth-child", css.Split('\n').Where(z => z.Contains(".tt-ferien")).Aggregate("", (a, z) => a + z));
-    }
-
-    [Fact]
-    public void Navigation_blendet_Menuepunkte_gestaffelt_ein()
-    {
-        var js = Datei("js", "app.js");
-        // Seitenleiste: Unterpunkte einer aufgeklappten Gruppe werden kurz gestaffelt eingeblendet
-        Assert.Contains("function navEinblenden(liste)", js);
-        Assert.Contains("prefers-reduced-motion: reduce", js);
-        Assert.Contains("duration: 160, delay: Math.min(i, 12) * 16", js);
-        Assert.Contains("transform: 'translateY(-4px)'", js);
-        Assert.Contains("if (auf) navEinblenden(liste);", js);
-    }
-
-    [Fact]
-    public void Neue_Dateien_ohne_Fremdnamen_und_nur_Regular_Medium()
-    {
-        var mt = Datei("css", "mitteilungen.css");
-        var empfaengerCss = mt[mt.IndexOf("Dialog „Empfänger*innen“", StringComparison.Ordinal)..];
-        var js = Datei("js", "ansichten", "mitteilungen.js");
-        var empfaengerJs = js[js.IndexOf("async function empfaengerDialog(", StringComparison.Ordinal)..];
-        foreach (var inhalt in new[] { Datei("js", "raumwahl.js"), Datei("css", "raumwahl.css"), empfaengerCss, empfaengerJs })
-        {
-            Assert.DoesNotContain(new string(new[] { 'u', 'n', 't', 'i', 's' }), inhalt, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("font-weight: 700", inhalt);
-            Assert.DoesNotContain("font-weight: bold", inhalt);
-        }
-    }
 }

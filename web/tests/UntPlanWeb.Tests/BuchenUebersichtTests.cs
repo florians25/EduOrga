@@ -11,13 +11,6 @@ namespace UntPlanWeb.Tests;
 /// </summary>
 public class BuchenUebersichtTests
 {
-    private static string Datei(params string[] teile)
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "src", "UntPlanWeb", "UntPlanWeb.csproj"))) dir = dir.Parent;
-        Assert.NotNull(dir);
-        return File.ReadAllText(Path.Combine(new[] { dir!.FullName, "src", "UntPlanWeb", "wwwroot" }.Concat(teile).ToArray()));
-    }
 
     [Fact]
     public async Task Ressource_mit_Standort_und_Art_mit_Symbol()
@@ -103,61 +96,4 @@ public class BuchenUebersichtTests
         Assert.True(w["tage"]!.AsArray().Count >= 5);
     }
 
-    [Fact]
-    public void Raumuebersicht_Raster_mit_Filtern_Zoom_Hover_und_Telefonliste()
-    {
-        var js = Datei("js", "ansichten", "buchen.js");
-        var css = Datei("css", "buchen.css");
-        // Raster: feste Kopfzeile und Raumspalte, Blöcke zusammenhängender Belegung, Gruppen je Gebäude, aktuelle Stunde
-        Assert.Contains("const laeufe = (r, t) =>", js);
-        Assert.Contains("class=\"bu-gruppe\"", js);
-        Assert.Contains(".bu-uebersicht thead th { position: sticky; top: 0;", css);
-        Assert.Contains(".bu-raumname { position: sticky; left: 0;", css);
-        // Farben je Art
-        foreach (var art in new[] { "unterricht", "buchung", "klausur", "termin", "vorgemerkt", "gesperrt" })
-            Assert.Contains($".bu-zelle.{art} .bu-block", css);
-        // Filter: Verfügbarkeit (frei in Stunde), Zoom, Hover-Details, Telefon: Liste je Raum, Schnellbuchung bleibt
-        Assert.Contains("{ name: 'frei', label: 'Verfügbarkeit'", js);
-        Assert.Contains("const ZOOM = [['kompakt', 'Kompakt'", js);
-        Assert.Contains(".bu-uebersicht.zoom-kompakt", css);
-        Assert.Contains("function hoverVerbinden(wurzel, inhalt)", js);
-        Assert.Contains("const SCHMAL = '(max-width: 767.98px)';", js);
-        Assert.Contains("class=\"bu-ru-liste", js);
-        Assert.Contains("schnellbuchung(kontext, opt, el.klassen,", js);
-        // Ressourcen: Symbol je Art, Karten/Liste, Zeitstrahl, Buchen direkt aus der Liste
-        Assert.Contains("export const ressourcenSymbol = r =>", js);
-        Assert.Contains("[['karten', 'Karten'", js);
-        Assert.Contains("class=\"bu-strahl", js);
-        Assert.Contains("function ressourceBuchen(kontext, opt, r, datum, von, bis, raster)", js);
-        Assert.Contains("#/buchen/ressource/${w('datum').value}", js);
-        // Verwaltung: Standort, Symbolwahl, Beispiele
-        var vw = Datei("js", "ansichten", "buchungsverwaltung.js");
-        Assert.Contains("name=\"standort\"", vw);
-        Assert.Contains("bu-symbolwahl", vw);
-        Assert.Contains("/api/app/buchen/ressourcen/beispiele", vw);
-        // gemeinsame Suchfeld-mit-Filter-Komponente statt eigener Suchfelder
-        Assert.Contains("<div class=\"u-sf-leiste bu-leiste\">", js);
-        Assert.Contains("<div class=\"u-sf-leiste bu-ru-leiste\">", js);
-        Assert.Contains("suchfeldMitFilterBinden(", vw);
-        Assert.DoesNotContain("nl-suche", js);
-        Assert.DoesNotContain("nl-suche", vw);
-        // Browser-Speicher nur mit try/catch
-        Assert.Contains("try { localStorage.setItem(`untplan:buchen:", js);
-    }
-
-    [Fact]
-    public void Buchen_Dateien_nur_Regular_Medium_ohne_Fremdnamen()
-    {
-        var verboten = new string(new[] { 'u', 'n', 't', 'i', 's' });
-        foreach (var (inhalt, name) in new[]
-        {
-            (Datei("js", "ansichten", "buchen.js"), "buchen.js"), (Datei("css", "buchen.css"), "buchen.css"),
-            (Datei("js", "ansichten", "buchungsverwaltung.js"), "buchungsverwaltung.js"),
-        })
-        {
-            Assert.False(inhalt.Contains(verboten, StringComparison.OrdinalIgnoreCase), name);
-            foreach (var w in new[] { "font-weight: 600", "font-weight: 700", "font-weight: bold", "fw-semibold", "fw-bold" })
-                Assert.False(inhalt.Contains(w), $"{name}: {w}");
-        }
-    }
 }

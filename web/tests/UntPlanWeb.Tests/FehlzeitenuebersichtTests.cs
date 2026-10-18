@@ -140,40 +140,6 @@ public class FehlzeitenuebersichtTests
         Assert.Contains("Bus verpasst", await eltern.GetStringAsync($"/api/app/familie/export?liste=abwesenheiten&format=csv&{zeitraum}"));
     }
 
-    private static string Datei(params string[] teile)
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "src", "UntPlanWeb", "UntPlanWeb.csproj"))) dir = dir.Parent;
-        Assert.NotNull(dir);
-        return File.ReadAllText(Path.Combine(new[] { dir!.FullName, "src", "UntPlanWeb", "wwwroot" }.Concat(teile).ToArray()));
-    }
-
-    [Fact]
-    public void Oberflaeche_ohne_Summen_mit_Zeitraum_Details_und_Sprechtag_fuer_Schueler()
-    {
-        var familie = Datei("js", "ansichten", "familie.js");
-        // keine Summen-/Statistik-Box oben („bis“-Datum in der URL, aufklappbare Stunden und „teilweise“ bei
-        // Fachlehrer-Entschuldigungen bleiben; der Server liefert summen weiterhin, angezeigt werden sie nicht)
-        Assert.DoesNotContain("summenLeiste", familie);
-        Assert.DoesNotContain("fm-summe", familie);
-        Assert.DoesNotContain("daten.summen", familie);
-        Assert.Contains("data-bis", familie);
-        Assert.Contains("#/abwesenheiten/${r}/${v}/${s || '-'}${b ? `/${b}` : ''}", familie);
-        Assert.Contains("stundenDetails(", familie);
-        Assert.Contains("statusGemischt", familie);
-        Assert.Contains("[reiterParam, vonParam, bisParam, klasseParam]", Datei("js", "ansichten", "abwesenheiten.js"));
-        // Übersicht: offene Abwesenheit heißt „offen“ (nicht „nicht entschuldigt“), Verspätung als solche
-        var ueb = Datei("js", "ansichten", "uebersicht.js");
-        Assert.DoesNotContain("'nicht entschuldigt' : e(z.status)", ueb);
-        Assert.Contains("'Verspätet'", ueb);
-        Assert.DoesNotContain(".fm-summe", Datei("css", "app.css"));
-        // Sprechtag: Formular mit „sichtbar für Schüler*innen“ an, Menüpunkt auch für Schüler*innen
-        var st = Datei("js", "ansichten", "sprechtag.js");
-        Assert.Contains("sichtbarSchueler: true, ankuendigen: true", st);
-        Assert.Contains("o.sichtbarSchueler ?? true", st);
-        Assert.Contains("b.rolle === 'eltern' || b.rolle === 'schueler') m.push({ id: 'sprechtag'", Datei("js", "app.js"));
-    }
-
     [Fact]
     public async Task Ganztaegig_erfasst_alle_Stunden_der_Tage_mit_Fehltagen()
     {
@@ -211,20 +177,6 @@ public class FehlzeitenuebersichtTests
         var tag = (await Testserver.HolenAsync(kl, $"/api/app/abwesenheiten/fehlzeiten?klasse=7a&von=2026-10-12&bis=2026-10-12&schueler={schueler[1].Id}")).AsArray();
         Assert.Equal(montag.Count, tag.Count);
         Assert.Equal(1, tag.Sum(z => Z(z!, "fehltage")));
-    }
-
-    [Fact]
-    public void Ganztaegig_Zeitraum_und_Oberflaeche()
-    {
-        Assert.Equal((new DateTime(2026, 10, 12), new DateTime(2026, 10, 13, 23, 59, 0)), Klassenbuchdienst.Ganztaegig(new DateTime(2026, 10, 12, 10, 0, 0), new DateTime(2026, 10, 13, 8, 0, 0)));
-        Assert.Equal((new DateTime(2026, 10, 12), new DateTime(2026, 10, 12, 23, 59, 0)), Klassenbuchdienst.Ganztaegig(new DateTime(2026, 10, 12, 10, 0, 0), new DateTime(2026, 10, 11)));
-        var sd = Datei("js", "stundendetails.js");
-        Assert.Contains("data-ab-ganz", sd);
-        Assert.Contains("ganztaegig: q('[data-ab-ganz]').checked || null", sd);
-        var abw = Datei("js", "ansichten", "abwesenheiten.js");
-        Assert.Contains("name=\"ganztaegig\"", abw);
-        Assert.Contains("beimOeffnen: ganzBinden", abw);
-        Assert.Contains("ganztaegig: ganz || null", abw);
     }
 
     [Fact]

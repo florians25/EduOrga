@@ -62,7 +62,7 @@ function Eintrag({ e, t, stunde, typ, kompakt, ziehbar, planId, gewaehlt, waehle
     e.online ? `findet online statt${e.onlineLink ? `: ${e.onlineLink}` : ''}${e.onlineAbweichend ? ' (nur an diesem Tag)' : ''}` : e.onlineAbweichend ? 'findet an diesem Tag in Präsenz statt' : ''].filter(Boolean).join('\n');
   return (
     <div ref={setNodeRef} {...(ziehbar ? listeners : {})} {...(ziehbar ? attributes : {})} role="button" tabIndex={-1}
-      className={`ra-eintrag vt-st-${e.status}${e.durch ? ' vt-durch' : ''}${geaendert ? ' vt-geaendert' : ''}${e.gekoppelt ? ' gekoppelt' : ''}${ziehbar ? ' ziehbar' : ''}${gewaehlt ? ' gewaehlt' : ''}${isDragging ? ' zieht' : ''}`}
+      className={`ra-eintrag vt-st-${e.status}${e.durch ? ' vt-durch' : ''}${geaendert ? ' vt-geaendert' : ''}${e.gekoppelt ? ' gekoppelt' : ''}${e.online ? ' vt-online' : ''}${ziehbar ? ' ziehbar' : ''}${gewaehlt ? ' gewaehlt' : ''}${isDragging ? ' zieht' : ''}`}
       style={e.farbe && !geaendert ? { ['--fachfarbe' as string]: e.farbe } : undefined} title={titel} data-vtr={e.vtr} data-u={e.u}
       onClick={waehlen} onDoubleClick={doppel} onContextMenu={(ev) => { ev.preventDefault(); ev.stopPropagation(); kontext(ev); }}>
       <span className="kopfzeile">
@@ -186,7 +186,7 @@ export default function Tagesplan({ p }: AnsichtProps) {
   const bloecke = useMemo<RasterBlock[]>(() => {
     if (!plan) return [];
     const st = plan.zeitraster.stunden;
-    return plan.zellen.map((z) => {
+    return plan.zellen.map((z): RasterBlock | null => {
       const j = st.findIndex((x) => x.nr === z.stunde);
       if (j < 0) return null;
       const t = plan.tage[z.tag]!;

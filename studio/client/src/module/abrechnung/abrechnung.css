@@ -1,0 +1,5 @@
+.tb-zeile.abr-zuwenig .tb-zelle { color: var(--up-entfall); }
+.tb-zeile.abr-zuviel .tb-zelle { color: var(--up-marine-700); }
+.tb-zeile.abr-verguetung { background: var(--up-pruefung-flaeche); }
+.tb-zeile.abr-minus .tb-zelle { color: var(--up-entfall); }
+.tb-zeile.abr-gruppe { font-weight: 500; background: var(--colorNeutralBackground2); }

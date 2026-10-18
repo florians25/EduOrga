@@ -1,0 +1,25 @@
+/* Zeitwünsche: Wertfarben (+3 … −3) */
+.zw-w3 { background: var(--up-marine-700); color: #fff; }
+.zw-w2 { background: var(--up-marine-400); color: #fff; }
+.zw-w1 { background: var(--up-marine-100); color: var(--up-marine-800); }
+.zw-w0 { background: var(--colorNeutralBackground1); color: var(--colorNeutralForeground1); }
+.zw-w-1 { background: var(--up-entfall-flaeche); color: var(--up-entfall); }
+.zw-w-2 { background: color-mix(in srgb, var(--up-entfall) 62%, var(--colorNeutralBackground1)); color: #fff; }
+.zw-w-3 { background: var(--up-entfall); color: #fff; }
+.zw-flaeche { padding: 12px 20px 24px 20px; overflow: auto; flex: 1; }
+.zw-name { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.zw-name h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.zw-name span { color: var(--colorNeutralForeground3); font-size: 13px; }
+.zw-tabelle { border-collapse: collapse; user-select: none; touch-action: none; font-size: 13px; }
+.zw-tabelle th { font-weight: 500; font-size: 12px; color: var(--colorNeutralForeground2); padding: 4px 6px; white-space: nowrap; }
+.zw-tabelle th.zw-tag { text-align: left; padding-right: 12px; }
+.zw-tabelle th.zw-nm { color: var(--colorNeutralForeground3); }
+.zw-tabelle td { width: 44px; height: 32px; text-align: center; border: 1px solid var(--colorNeutralStroke2); cursor: crosshair; font-variant-numeric: tabular-nums; font-weight: 600; }
+.zw-tabelle td.zw-aus { background-image: repeating-linear-gradient(45deg, transparent 0 5px, rgba(0,0,0,.08) 5px 6px); }
+.zw-tabelle td[data-grenze] { border-left: 2px solid var(--colorNeutralStroke1); }
+.zw-tabelle td.zw-ganzzelle { background: var(--colorNeutralBackground2); width: 84px; cursor: pointer; }
+.zw-tabelle td.zw-ganzzelle:hover { background: var(--colorNeutralBackground2Hover); }
+.zw-tabelle .zw-grenze-ganz { border-left: 8px solid var(--colorNeutralBackground1); }
+.zw-hilfe { color: var(--colorNeutralForeground3); font-size: 12px; margin: 10px 0; max-width: 760px; }
+.zw-wertknopf { min-width: 36px !important; font-variant-numeric: tabular-nums; font-weight: 600; }
+.zw-wertknopf[aria-checked="true"] { box-shadow: 0 0 0 2px var(--colorNeutralBackground1), 0 0 0 4px var(--colorBrandStroke1); z-index: 1; }

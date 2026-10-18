@@ -63,7 +63,7 @@ export default function Absenzen({ p }: AnsichtProps) {
 
   const ladeNr = useRef(0);
   async function laden(von = zrRef.current.von, bis = zrRef.current.bis) {
-    if (entwurfRef.current || !von || vaZeigen === null) return;
+    if (entwurfRef.current || !von || vaZeigenRef.current === null) return;
     const n = ++ladeNr.current;
     try {
       const d = await api.get<AbsenzDaten>(vpfad(`/absenzen?art=${ARTEN[artIndexRef.current]!.art}&von=${von}&bis=${bis}&veranstaltungen=${vaZeigenRef.current}`));

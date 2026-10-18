@@ -91,6 +91,8 @@ export interface TabelleApi<Z> {
   /** Sichtbarkeit einzelner Spalten setzen (ohne Speichern) */
   sichtbarSetzen: (werte: Record<string, boolean>) => void;
   sichtbare: () => string[];
+  /** Diese Zeilen markieren (Mehrfachauswahl ersetzen) */
+  markieren: (ids: (string | number)[]) => void;
 }
 
 const NEU_ID = '__neu';
@@ -554,6 +556,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     editorOffen: () => !!editorRef.current,
     sichtbarSetzen: (werte) => setSichtbarkeit((v) => ({ ...v, ...werte })),
     sichtbare: () => sichtbarRef.current.map((x) => x.s.schluessel),
+    markieren: (ids) => { const g = new Set(ids); setGewaehlt(g); gewaehltRef.current = g; },
   }));
 
   // ---- Zeichnen ----

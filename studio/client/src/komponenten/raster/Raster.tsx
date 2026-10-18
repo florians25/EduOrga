@@ -25,6 +25,8 @@ export interface RasterProps {
   feldKontextmenue?: (tag: number, stunde: number, e: MouseEvent) => void;
   feldKlick?: (tag: number, stunde: number) => void;
   zeitAnzeigen?: boolean;
+  /** zusätzliche Klasse je Feld (Tag-Index, Stunde) */
+  feldKlasse?: (tag: number, stunde: number) => string | null | undefined;
   className?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
 }
@@ -68,7 +70,8 @@ export const Raster = forwardRef<HTMLDivElement, RasterProps>(function Raster(p,
         })}
         {tage.map((t, i) => stunden.map((s, j) => {
           const art = t.gesperrt ? '' : (belegung?.[i]?.[j] ?? 'V');
-          const kl = `${s.pauseDanach ? ' pause-danach' : ''}${art === '' ? ' gesperrt' : art === 'N' ? ' nachmittag' : ''}`;
+          const extra = p.feldKlasse?.(i, s.nr);
+          const kl = `${s.pauseDanach ? ' pause-danach' : ''}${art === '' ? ' gesperrt' : art === 'N' ? ' nachmittag' : ''}${extra ? ` ${extra}` : ''}`;
           return (
             <Feld key={`f${i}:${s.nr}`} id={id} tag={i} stunde={s.nr} zeile={j} spalte={i} klasse={kl} ziel={ziele?.[i]?.[s.nr - 1]}
               ablage={ablage ? ablage(i, s.nr) : null}

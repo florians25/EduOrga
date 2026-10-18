@@ -8,13 +8,6 @@ namespace UntPlanWeb.Tests;
 /// </summary>
 public class FerienFlaecheTests
 {
-    private static string Datei(params string[] teile)
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "src", "UntPlanWeb", "UntPlanWeb.csproj"))) dir = dir.Parent;
-        Assert.NotNull(dir);
-        return File.ReadAllText(Path.Combine(new[] { dir!.FullName, "src", "UntPlanWeb", "wwwroot" }.Concat(teile).ToArray()));
-    }
 
     [Fact]
     public async Task Ganze_Ferienwoche_hat_fuer_jeden_Tag_dieselben_Ferienangaben()
@@ -33,23 +26,4 @@ public class FerienFlaecheTests
         });
     }
 
-    [Fact]
-    public void Raster_zeigt_jeden_freien_Tag_als_eigene_Flaeche()
-    {
-        var js = Datei("js", "plangitter.js");
-        var css = Datei("css", "nl-design.css");
-        // je Tag eine Fläche mit dem eigenen Inhalt, keine Gesamtfläche über n Tage
-        Assert.Contains("return `<div class=\"tt-ferien tag\">${freiInhalt([t])}</div>`;", js);
-        Assert.Contains("if (t.frei) html += freiUeberlagerung(t);", js);
-        Assert.DoesNotContain("tt-ferien gesamt", js);
-        Assert.DoesNotContain("--frei-tage", js);
-        Assert.DoesNotContain("--frei-tage", css);
-        Assert.DoesNotContain(".tt-ferien.einzeln { display: none; }", css);
-        // Fläche nur so breit wie die eigene Spalte (4px Überstand je Seite), Schrift höchstens Medium
-        // Fläche nur so breit wie die eigene Spalte, Schrift höchstens Medium (css/karten.css)
-        var karten = Datei("css", "karten.css");
-        Assert.Contains(".tt-ferien { position: absolute; inset: 2px 0;", karten);
-        Assert.Contains(".tt-ferien .inhalt { display: flex; flex-direction: column;", karten);
-        Assert.DoesNotContain("--frei-tage", karten);
-    }
 }

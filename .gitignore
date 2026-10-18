@@ -13,3 +13,7 @@ web/src/UntPlanWeb/daten/
 *.db-shm
 *.db-wal
 node_modules/
+# UntPlanWeb: Build-Ausgabe der Oberfläche (web/client, npm run build)
+web/src/UntPlanWeb/wwwroot/index.html
+web/src/UntPlanWeb/wwwroot/monitor.html
+web/src/UntPlanWeb/wwwroot/assets/

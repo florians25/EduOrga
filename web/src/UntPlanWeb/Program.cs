@@ -162,8 +162,10 @@ public class Program
         app.UseDefaultFiles();
         app.UseStaticFiles(new StaticFileOptions
         {
-            // Oberfläche ohne Build-Schritt: HTML, Skripte, Stile und JSON (z. B. Neuigkeiten) immer neu prüfen (ETag), damit nach einem Update nichts Veraltetes läuft
-            OnPrepareResponse = c => c.Context.Response.Headers.CacheControl = c.File.Name.EndsWith(".html") || c.File.Name.EndsWith(".js") || c.File.Name.EndsWith(".css") || c.File.Name.EndsWith(".json") || c.File.Name.EndsWith(".webmanifest") ? "no-cache" : "public, max-age=3600",
+            // Gebaute Oberfläche (web/client → wwwroot): Dateien unter /assets/ tragen einen Inhalts-Hash im Namen und dürfen dauerhaft
+            // zwischengespeichert werden; HTML, JSON (z. B. Neuigkeiten) und Manifest immer neu prüfen (ETag), damit nach einem Update nichts Veraltetes läuft
+            OnPrepareResponse = c => c.Context.Response.Headers.CacheControl = c.Context.Request.Path.StartsWithSegments("/assets") ? "public, max-age=31536000, immutable"
+                : c.File.Name.EndsWith(".html") || c.File.Name.EndsWith(".js") || c.File.Name.EndsWith(".css") || c.File.Name.EndsWith(".json") || c.File.Name.EndsWith(".webmanifest") ? "no-cache" : "public, max-age=3600",
         });
         app.UseAuthentication();
         app.UseAuthorization();
@@ -192,12 +194,21 @@ public class Program
         UnterrichtKlassenApi.Abbilden(app);
         WartungApi.Abbilden(app);
         app.MapGet("/monitor/{token}", (string token, IWebHostEnvironment env) => env.WebRootFileProvider.GetFileInfo("monitor.html") is { Exists: true, PhysicalPath: { } pfad }
-            ? Results.File(pfad, "text/html; charset=utf-8") : Results.NotFound());
+            ? Results.File(pfad, "text/html; charset=utf-8") : OhneOberflaeche());
+        // Oberfläche (web/client, React) noch nicht gebaut: kurzer Hinweis statt 404 – sonst liefert UseDefaultFiles wwwroot/index.html
+        app.MapGet("/", OhneOberflaeche);
         app.MapGet("/gesundheit", () => Results.Ok(new { ok = true }));
 
         Einrichten(app.Services, konfig);
         return app;
     }
+
+    static IResult OhneOberflaeche() => Results.Content("""
+        <!doctype html><html lang="de"><head><meta charset="utf-8"><title>UntPlanWeb</title></head>
+        <body style="font-family:system-ui,sans-serif;margin:3rem;color:#1d2530"><h1>UntPlanWeb</h1>
+        <p>Die Oberfläche ist noch nicht gebaut. Bitte im Ordner <code>web/client</code> <code>npm ci</code> und <code>npm run build</code> ausführen
+        (die Ausgabe landet in <code>wwwroot</code>). Die Programmierschnittstelle unter <code>/api</code> ist bereit.</p></body></html>
+        """, "text/html; charset=utf-8");
 
     /// <summary>Automatische Einrichtung über Umgebungsvariablen und Beispielpaket.</summary>
     private static void Einrichten(IServiceProvider sp, Konfiguration k)

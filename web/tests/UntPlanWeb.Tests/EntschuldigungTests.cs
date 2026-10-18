@@ -273,28 +273,4 @@ public class EntschuldigungTests
         Assert.Contains(bu.Rueckmeldungen(), m => m.Typ == WebRueckmeldungsTypen.BuchungStorno && m.BezugId == $"buchung-{stunden[0].Id}");
     }
 
-    [Fact]
-    public void Klassenbuch_Dialoge_nutzen_die_gemeinsame_Modal_Komponente()
-    {
-        var js = Path.Combine(Wurzel(), "src", "UntPlanWeb", "wwwroot", "js");
-        var komponente = File.ReadAllText(Path.Combine(js, "kbdialog.js"));
-        foreach (var teil in new[] { "kbd-s", "kbd-m", "kbd-l", "kbd-xl", "Escape", "kbd-zu", "kbd-fuss" }) Assert.Contains(teil, komponente);
-        // alle Klassenbuch-Seiten holen Dialog und Rückfrage aus kbdialog.js (nicht mehr aus ui.js)
-        foreach (var datei in new[] { "ansichten/klassenbuch.js", "ansichten/abwesenheiten.js", "ansichten/dienste.js", "ansichten/befreiungen.js", "ansichten/eintraege.js",
-                     "ansichten/offen.js", "ansichten/berichte.js", "ansichten/entschuldigungen.js", "hausaufgabe.js", "stundendetails.js" })
-        {
-            var text = File.ReadAllText(Path.Combine(js, datei));
-            Assert.Contains("kbdialog.js", text);
-            Assert.DoesNotMatch(@"import \{[^}]*\bdialog\b[^}]*\} from '\.\.?/ui\.js'", text);
-            Assert.DoesNotContain("sd-altdialog", text);
-        }
-        Assert.Contains(".kbd-overlay", File.ReadAllText(Path.Combine(Wurzel(), "src", "UntPlanWeb", "wwwroot", "css", "klassenbuch.css")));
-    }
-
-    private static string Wurzel()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "src", "UntPlanWeb", "UntPlanWeb.csproj"))) dir = dir.Parent;
-        return dir!.FullName;
-    }
 }

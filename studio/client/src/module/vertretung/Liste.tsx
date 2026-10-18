@@ -41,6 +41,7 @@ export default function Liste({ p }: AnsichtProps) {
   const [filter, setFilter] = useState({ offen: !!p.offen, kollisionen: false, sammeln: p.sammeln !== false });
   const [daten, setDaten] = useState<ListeDaten | null>(null);
   const [felder, setFelder] = useState<Record<string, string>>({});
+  const felderRef = useRef(felder); felderRef.current = felder;
   const [vorInhalt, setVorInhalt] = useState<Record<string, boolean> | null>(null);
   const [status, setStatus] = useState<{ text: string; art?: string }>({ text: '' });
   const [nr, setNr] = useState('');
@@ -61,12 +62,12 @@ export default function Liste({ p }: AnsichtProps) {
 
   // ---- Laden ----
   const ladeNr = useRef(0);
-  async function laden(z = zrRef.current) {
+  async function laden(z: { von: string | null; bis: string | null } = zrRef.current) {
     if (!z.von || !z.bis) return;
     const n = ++ladeNr.current;
     const { ansicht: an, element: el, filter: fi } = zustandRef.current;
     const artenAus = ((await einstellungLesen<Record<string, unknown>>(ARTEN_AUS)) || {}) as Record<string, unknown>;
-    const lang = Object.entries(felder).filter(([, v]) => v.includes('L')).map(([k]) => k).join(',');
+    const lang = Object.entries(felderRef.current).filter(([, v]) => v.includes('L')).map(([k]) => k).join(',');
     const q = new URLSearchParams({
       von: z.von, bis: z.bis, ansicht: String(ANSICHTEN.indexOf(an)), offen: String(fi.offen), kollisionen: String(fi.kollisionen),
       sammeln: String(fi.sammeln), behalten: [...behalten.current].join(','), lang, artenAus: ((artenAus[an] as string[]) || []).join(','), unterricht: String(!!artenAus.__unterricht),

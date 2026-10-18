@@ -12,7 +12,7 @@ const useStile = makeStyles({
   zeitraum: { display: 'inline-flex', alignItems: 'center', gap: '4px' },
   datum: { width: '140px' },
   bis: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, padding: '0 2px' },
-  kopf: { display: 'inline-flex', alignItems: 'center', gap: '2px', padding: '0 4px' },
+  kopf: { display: 'inline-flex', alignItems: 'center', gap: '2px', padding: '0 4px', flexShrink: 0 },
   kopfDatum: { width: '150px', fontVariantNumeric: 'tabular-nums' },
 });
 

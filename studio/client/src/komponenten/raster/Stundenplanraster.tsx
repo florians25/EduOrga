@@ -54,6 +54,7 @@ interface Props {
   feldKontextmenue?: (tag: number, stunde: number, ev: MouseEvent) => void;
   beiMarkierung?: (m: Markierung[]) => void;
   onKeyDown?: (e: KeyboardEvent<HTMLDivElement>) => void;
+  feldKlasse?: (tag: number, stunde: number) => string | null | undefined;
 }
 
 const sk = (u: number, tag: number, stunde: number) => `${u}:${tag}:${stunde}`;
@@ -252,7 +253,7 @@ export const Stundenplanraster = forwardRef<StundenplanrasterApi, Props>(functio
   return (
     <Raster ref={element} id={id} kompakt={kompakt} stunden={stunden} belegung={belegung} bloecke={rasterBloecke}
       tage={tage.map((t) => ({ kopf: <><span className="kurz">{t.kurz}</span><span className="lang">{t.lang || t.kurz}</span></>, titel: t.lang }))}
-      ziele={ziele?.status} gruende={ziele?.gruende} ablage={ziehen ? ablage : undefined} onKeyDown={props.onKeyDown}
+      ziele={ziele?.status} gruende={ziele?.gruende} ablage={ziehen ? ablage : undefined} onKeyDown={props.onKeyDown} feldKlasse={props.feldKlasse ? (i, st) => props.feldKlasse!(tagNr(i), st) : undefined}
       feldKontextmenue={props.feldKontextmenue ? (i, s, e) => props.feldKontextmenue!(tagNr(i), s, e) : undefined}
       feldKlick={() => { if (markiert.size) { const m = new Map(); setMarkiert(m); meldenMarkierung(m); } }} />
   );
