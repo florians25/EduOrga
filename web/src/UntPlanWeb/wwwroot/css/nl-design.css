@@ -54,12 +54,12 @@ body.leiste-zu .modal:not(.stundendetails), body.leiste-zu .modal-backdrop, body
 
 :root {
   /* Hintergrund: diagonaler Verlauf von unten links (dunkler) nach oben rechts (heller) */
-  --u-verlauf: linear-gradient(to top right, #dcdfe5 0%, #e9ebee 50%, #f5f6f8 100%);
-  --tt-linie: #bfc8cf;
-  --u-ferien: #cadeed;
-  --u-rot-hell: #ffe5e5;
-  --u-gelb-hell: #fff9da;
-  --u-gruen-hell: #dff6eb;
+  --u-verlauf: linear-gradient(to top right, var(--up-rand) 0%, var(--up-rand) 50%, var(--up-hintergrund) 100%);
+  --tt-linie: var(--up-rand-stark);
+  --u-ferien: var(--up-frei-flaeche);
+  --u-rot-hell: var(--up-entfall-flaeche);
+  --u-gelb-hell: var(--up-pruefung-flaeche);
+  --u-gruen-hell: var(--up-ok-flaeche);
 }
 
 /* Kopf: Zeitraum 14px Medium dunkel, Tage 16px grau (Medium), heute Medium schwarz */
@@ -68,7 +68,7 @@ body.leiste-zu .modal:not(.stundendetails), body.leiste-zu .modal-backdrop, body
 .tt-tag { font-size: 1rem; font-weight: 600; color: var(--u-grau-2); height: 48px; box-sizing: border-box; padding-bottom: 0; }
 [data-ansicht="plan"] .tt > .tt-tag, [data-ansicht="plan"] .tt > .tt-ecke:first-child { padding-top: 0; }
 @media (min-width: 992px) { [data-ansicht="plan"] { --plankopf: 51px; } [data-ansicht="plan"] .planleiste { padding-top: 11px; } }
-.tt-tag.heute { color: #414d55; font-weight: 600; }
+.tt-tag.heute { color: var(--up-text); font-weight: 600; }
 
 /* Raster: Zeitspalte 44px, 16px zwischen den Tagen, Linien durchgehend über die Lücken (nicht in der Zeitspalte) */
 @media (min-width: 992px) {
@@ -76,7 +76,7 @@ body.leiste-zu .modal:not(.stundendetails), body.leiste-zu .modal-backdrop, body
   [data-ansicht="plan"] .tt { --tt-spalt: 16px; grid-template-columns: 44px repeat(var(--tage), minmax(0, 1fr)); }
 }
 .tt-zeit { left: 3px; font-size: 14px; font-weight: 600; color: var(--u-grau-2); }
-.tt-nr { left: 12px; color: #a3adb6; }
+.tt-nr { left: 12px; color: var(--up-text-3); }
 .tt-linie, .tt-pause { left: calc(var(--tt-spalt, 16px) / -2); right: calc(var(--tt-spalt, 16px) / -2); }
 .tt-achse + .tt-spalte .tt-linie, .tt-achse + .tt-spalte .tt-jetzt:not(.heute) { left: 0; }
 .tt-tag.letzter ~ .tt-spalte:last-child .tt-linie, .tt-spalte:last-child .tt-linie { right: 0; }
@@ -84,7 +84,7 @@ body.leiste-zu .modal:not(.stundendetails), body.leiste-zu .modal-backdrop, body
 /* Karten wie im Original: weiß, Radius 4px, Innenabstand 6px; Farbbalken 4px breit mit Radius 2px (oben/unten/links 6px), Text 8px
    rechts vom Balken; erste Zeile 14px Medium, weitere Zeilen 12px Medium dunkelgrau; Uhrzeiten 10px grau links vor dem Balken */
 .tt .std { border-radius: 4px; padding: 8px 24px 6px 18px; }
-.tt .std::before { left: 6px; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; background: var(--fach, #bfc8cf); }
+.tt .std::before { left: 6px; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; background: var(--fach, var(--up-rand-stark)); }
 .tt .std.mit-zeit { padding-left: 45px; }
 .tt .std.mit-zeit::before { left: 33px; }
 .tt .std .zt { left: 3px; font-size: 10px; color: var(--u-grau-2); }
@@ -92,35 +92,35 @@ body.leiste-zu .modal:not(.stundendetails), body.leiste-zu .modal-backdrop, body
 .tt .std .zt.u { bottom: 6px; line-height: 7px; }
 .std .lbl { border-radius: 1.5px; }
 /* Bereitschaft und abwesende Lehrkraft: gestrichelter Rand 1,5px wie im Original */
-.std.bereitschaft, .std.lehrer-abwesend, .std.vorgemerkt { outline: 1.5px dashed #8a96a1; outline-offset: -1.5px; border-radius: 4px; }
-.std.bereitschaft, .std.lehrer-abwesend { background: #f1f5f8 !important; }
+.std.bereitschaft, .std.lehrer-abwesend, .std.vorgemerkt { outline: 1.5px dashed var(--up-text-3); outline-offset: -1.5px; border-radius: 4px; }
+.std.bereitschaft, .std.lehrer-abwesend { background: var(--up-flaeche-2) !important; }
 /* Hover eines geänderten Werts: „alt → neu“ ohne Durchstreichung */
 .u-hover-label s { text-decoration: none; }
 /* erste Zeile einen Tick kräftiger (feiner Strich statt Bold-Schnitt), etwas mehr Luft zwischen den Zeilen (Label ↔ Text) */
-.std .z1 { font-size: 14px; font-weight: 600; line-height: 16px; margin-bottom: 1px; color: #414d55; -webkit-text-stroke: .25px currentColor; }
+.std .z1 { font-size: 14px; font-weight: 600; line-height: 16px; margin-bottom: 1px; color: var(--up-text); -webkit-text-stroke: .25px currentColor; }
 .std .z1 .lbl { -webkit-text-stroke: 0; }
-.std .z2 { font-size: 12px; font-weight: 500; line-height: 16px; color: #414d55; }
+.std .z2 { font-size: 12px; font-weight: 500; line-height: 16px; color: var(--up-text); }
 .std .z2 + .z2 { margin-top: 1px; }
 .std .lbl + .lbl { margin-left: 2px; }
 .std .zt { color: var(--u-grau-2); font-weight: 600; }
 .std .lbl { font-weight: 600; }
 /* vergangene Stunden: Fläche leicht grau, Schrift bleibt gleich kräftig */
-.std.vergangen .z1, .std.vergangen .z2 { color: #414d55; }
+.std.vergangen .z1, .std.vergangen .z2 { color: var(--up-text); }
 
 /* Symbole oben rechts: Entfall rotes Dreieck, Prüfung gelber Punkt, Änderung grünes Quadrat mit Plus */
 .std .mks { top: 8px; right: 9px; }
-.mk-kreis { width: 12px; height: 12px; background: #ffd615; }
+.mk-kreis { width: 12px; height: 12px; background: var(--up-pruefung); }
 .mk-dreieck { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 24'%3E%3Cpath d='M13 3.5 23.5 21H2.5Z' fill='%23ff4040' stroke='%23ff4040' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 
 /* Ferien und freie Tage wie im Original: halbtransparente hellblaue Fläche (#bedaedb3) über dem Raster – die Linien laufen ohne
    Unterbrechung weiter und scheinen durch; je Tag eine eigene Fläche mit eigenem Text (keine Zusammenfassung über mehrere Tage),
    4px über die Spalte hinaus, Radius 4px; mittig Schloss + Art, Name, Zeitraum (16px Abstand). */
-.tt-ferien { inset: 0 auto 0 -4px; width: calc(100% + 8px); border-radius: 4px; background: rgba(190, 218, 237, .7); color: #414d55; z-index: 3; }
+.tt-ferien { inset: 0 auto 0 -4px; width: calc(100% + 8px); border-radius: 4px; background: rgba(190, 218, 237, .7); color: var(--up-text); z-index: 3; }
 @media (max-width: 767.98px) { .tt-ferien { left: 0; width: 100%; } }
 /* Gleiche Deckkraft an allen Tagen: Der Seitenhintergrund ist ein fixierter diagonaler Verlauf – durch die halbtransparente Fläche
    schien er unterschiedlich hell durch (linke/untere Tage dunkler als rechte/obere, je nach Lage der Woche). Darunter liegt deshalb
    ein deckender neutraler Grund in derselben Form (Mitte des Verlaufs); die Linien liegen dazwischen und scheinen weiter durch. */
-.tt-spalte.frei:is(.ferien, .feiertag, .frei)::before { content: ""; position: absolute; inset: 0 -4px; border-radius: 4px; background: #e9ebee; pointer-events: none; }
+.tt-spalte.frei:is(.ferien, .feiertag, .frei)::before { content: ""; position: absolute; inset: 0 -4px; border-radius: 4px; background: var(--up-rand); pointer-events: none; }
 @media (max-width: 767.98px) { .tt-spalte.frei:is(.ferien, .feiertag, .frei)::before { inset: 0; } }
 .tt-spalte.frei .tt-linie { display: block; }
 .tt-ferien .inhalt { top: 50%; transform: translateY(-50%); gap: 16px; font-size: 14px; font-weight: 500; line-height: 19px; }
@@ -131,36 +131,36 @@ body.leiste-zu .modal:not(.stundendetails), body.leiste-zu .modal-backdrop, body
    grünes Label wie auf den Stundenkarten; ohne Vertretung das Kürzel durchgestrichen im grünen Label */
 .aufsicht.vertretung, .aufsicht.vertretung.vergangen, .aufsicht.vertreten.vergangen { opacity: 1; filter: none; }
 .aufsicht.vertretung { box-shadow: var(--u-schatten-karte); }
-.aufsicht.vertreten { background: #f1f5f8; color: #24323d; outline: 1.5px dashed #8a96a1; outline-offset: -1.5px; }
+.aufsicht.vertreten { background: var(--up-flaeche-2); color: var(--up-text); outline: 1.5px dashed var(--up-text-3); outline-offset: -1.5px; }
 .aufsicht .auf-wechsel { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px; }
-.aufsicht .auf-alt { font-size: 12px; font-weight: 500; color: #414d55; text-decoration-thickness: 1px; }
+.aufsicht .auf-alt { font-size: 12px; font-weight: 500; color: var(--up-text); text-decoration-thickness: 1px; }
 .aufsicht .lbl-auf { margin-left: 0; font-size: 12px; line-height: 15px; padding: 0 3px; border-radius: 2px; }
 .aufsicht .lbl-auf.weg { text-decoration: line-through; text-decoration-thickness: 1px; }
 
 /* Stundendetails-Kopf: weggefallene Bereitschaft – Kürzel durchgestrichen im grünen Label (wie auf der Karte) */
-.sd-lbl-weg { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--u-gruen-label); color: #fff; font-weight: 600; line-height: 18px; text-decoration: line-through; text-decoration-thickness: 1px; }
-.sd-lbl-weg .sd-link, .sd-lbl-weg .sd-link:hover { color: #fff; text-decoration: line-through; }
+.sd-lbl-weg { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--u-gruen-label); color: var(--up-flaeche); font-weight: 600; line-height: 18px; text-decoration: line-through; text-decoration-thickness: 1px; }
+.sd-lbl-weg .sd-link, .sd-lbl-weg .sd-link:hover { color: var(--up-flaeche); text-decoration: line-through; }
 
 /* Legende unten: dunkle Pillen in weißer Leiste */
-.u-legende-pille { background: #67747e; border-color: #67747e; font-weight: 600; }
+.u-legende-pille { background: var(--up-text-2); border-color: var(--up-text-2); font-weight: 600; }
 
 /* ------------------------------------------------------------------ Seitenleiste wie im Vorbild: dunkelgraue Texte (Medium), Symbole grau, aktiv orange */
 
-.u-nav-punkt { color: #4a5662; font-weight: 600; font-size: 1rem; }
+.u-nav-punkt { color: var(--up-text-2); font-weight: 600; font-size: 1rem; }
 .u-nav-unter .u-nav-punkt { font-size: .95rem; }
 .u-nav-kompakt .u-nav-punkt { font-size: .92rem; }
 .u-nav-punkt .u-nav-sym { color: var(--u-grau-2); }
-.u-nav-punkt:hover { color: #36424c; background: #f4f6f8; }
+.u-nav-punkt:hover { color: var(--up-text); background: var(--up-hintergrund); }
 .u-nav-punkt:hover .u-nav-sym { color: var(--u-grau); }
 .u-nav-punkt.aktiv, .u-nav-punkt.aktiv:hover { color: var(--u-akzent); }
 .u-nav-punkt.aktiv .u-nav-sym { color: var(--u-akzent); }
-.u-marke b, .u-unterkopf b { color: #414d55; }
+.u-marke b, .u-unterkopf b { color: var(--up-text); }
 .u-marke small { color: var(--u-grau-2); }
-.u-benutzer b { color: #4a5662; font-weight: 600; }
+.u-benutzer b { color: var(--up-text-2); font-weight: 600; }
 .u-benutzer small { color: var(--u-grau-2); }
-.u-abmelden { color: #4a5662; }
-.u-benutzer:hover, .u-benutzer.aktiv, .u-abmelden:hover, .u-abmelden:focus-visible { background: #f4f6f8; color: #36424c; }
-.u-benutzer:hover b, .u-benutzer.aktiv b { color: #36424c; }
+.u-abmelden { color: var(--up-text-2); }
+.u-benutzer:hover, .u-benutzer.aktiv, .u-abmelden:hover, .u-abmelden:focus-visible { background: var(--up-hintergrund); color: var(--up-text); }
+.u-benutzer:hover b, .u-benutzer.aktiv b { color: var(--up-text); }
 .u-abmelden:hover .u-sym { color: var(--u-grau); }
 
 /* ------------------------------------------------------------------ Planfenster der Rolle: Woche außerhalb (leeres Raster mit Meldung)
@@ -174,10 +174,10 @@ body.leiste-zu .modal:not(.stundendetails), body.leiste-zu .modal-backdrop, body
 }
 .tt-sperre-symbol {
   display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 50%;
-  background: #fff; color: var(--u-grau-2, #7d8a95); font-size: 1.9rem; box-shadow: 0 2px 10px rgba(30, 45, 60, .12); margin-bottom: 1.1rem;
+  background: var(--up-flaeche); color: var(--u-grau-2, var(--up-text-3)); font-size: 1.9rem; box-shadow: 0 2px 10px rgba(30, 45, 60, .12); margin-bottom: 1.1rem;
 }
-.tt-sperre-titel { margin: 0 0 .3rem; font-size: 1.15rem; font-weight: 600; color: var(--u-grau-2, #6c7883); }
-.tt-sperre-text { margin: 0; font-size: .875rem; font-weight: 400; color: var(--u-grau-2, #7d8a95); max-width: 34rem; }
+.tt-sperre-titel { margin: 0 0 .3rem; font-size: 1.15rem; font-weight: 600; color: var(--u-grau-2, var(--up-text-2)); }
+.tt-sperre-text { margin: 0; font-size: .875rem; font-weight: 400; color: var(--u-grau-2, var(--up-text-3)); max-width: 34rem; }
 @media (max-width: 991.98px) { .tt-sperre { left: 58px; padding-top: 72px; } }
 .tag-gesperrt { min-height: 360px; }
 .tag-gesperrt .tt-sperre { left: 0; top: 0; padding-top: 64px; }

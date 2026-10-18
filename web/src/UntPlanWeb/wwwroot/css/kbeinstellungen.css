@@ -4,15 +4,15 @@
 .kbe { max-width: 1040px; padding-bottom: 72px; }
 
 /* Reiter als Segment-Pillen */
-.kbe-reiter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; padding: 4px; background: #fff; border: 1px solid var(--u-linie); border-radius: 999px; width: fit-content; max-width: 100%; }
+.kbe-reiter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; padding: 4px; background: var(--up-flaeche); border: 1px solid var(--u-linie); border-radius: 999px; width: fit-content; max-width: 100%; }
 .kbe-reiter button { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent;
   color: var(--u-text); font: inherit; font-size: .9rem; font-weight: 500; cursor: pointer; }
 .kbe-reiter button:hover { background: var(--u-hover); }
-.kbe-reiter button.an { background: var(--u-akzent); color: #fff; }
+.kbe-reiter button.an { background: var(--u-akzent); color: var(--up-flaeche); }
 .kbe-reiter button:focus-visible { outline: 2px solid var(--u-akzent); outline-offset: 2px; }
 
 /* Karten */
-.kbe-karte { background: var(--u-flaeche); border: 1px solid #dfe3e7; border-radius: 10px; margin: 0 0 16px; overflow: hidden; }
+.kbe-karte { background: var(--u-flaeche); border: 1px solid var(--up-rand); border-radius: 10px; margin: 0 0 16px; overflow: hidden; }
 .kbe-karte > header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--u-linie-2); }
 .kbe-karte > header h2 { margin: 0; font-size: 1rem; font-weight: 500; color: var(--u-titel); }
 .kbe-symbol { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--u-akzent-hell); color: var(--u-akzent-dunkel); flex: none; }
@@ -21,7 +21,7 @@
 
 /* Zeilen: Beschriftung links, Eingabe rechts (Telefon: untereinander) */
 .kbe-zeile { display: grid; grid-template-columns: minmax(180px, 320px) minmax(0, 1fr); gap: 8px 24px; align-items: start; padding: 12px 18px; }
-.kbe-zeile + .kbe-zeile { border-top: 1px solid #f0f2f4; }
+.kbe-zeile + .kbe-zeile { border-top: 1px solid var(--up-schiefer-100); }
 .kbe-label { padding-top: 7px; font-size: .9rem; font-weight: 500; color: var(--u-titel); }
 .kbe-label label, .kbe-label span { margin: 0; }
 .kbe-wert { min-width: 0; }
@@ -37,7 +37,7 @@
 .kbe-schalter { display: flex; align-items: center; gap: 12px; margin: 0; cursor: pointer; }
 .kbe-schalter input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .kbe-schiene { position: relative; flex: none; width: 40px; height: 22px; border-radius: 999px; background: var(--u-grau-3); transition: background .15s; }
-.kbe-schiene::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s; }
+.kbe-schiene::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--up-flaeche); box-shadow: 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s; }
 .kbe-schalter input:checked + .kbe-schiene { background: var(--u-akzent); }
 .kbe-schalter input:checked + .kbe-schiene::after { transform: translateX(18px); }
 .kbe-schalter input:focus-visible + .kbe-schiene { outline: 2px solid var(--u-akzent); outline-offset: 2px; }
@@ -62,21 +62,21 @@
 .kbe-auswahl { max-width: 380px; }
 .kbe-kurz { width: 110px; }
 .kbe-reihe { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; }
-.kbe-info { display: flex; gap: 10px; margin: 6px 18px 12px; padding: 12px 14px; border-radius: 8px; background: #f1f5f8; color: #57626b; font-size: .85rem; line-height: 1.5; }
+.kbe-info { display: flex; gap: 10px; margin: 6px 18px 12px; padding: 12px 14px; border-radius: 8px; background: var(--up-flaeche-2); color: var(--up-text-2); font-size: .85rem; line-height: 1.5; }
 .kbe-info b { font-weight: 500; color: var(--u-titel); }
-.kbe-info .bi { color: #7b8892; margin-top: 2px; }
+.kbe-info .bi { color: var(--up-text-3); margin-top: 2px; }
 .kbe-karte > header .nl-knopf { text-decoration: none; }
 
 /* Notenschemen in der Übersicht (Reiter „Noten“) */
 .kbe-schemen { list-style: none; margin: 0 18px 8px; padding: 0; }
-.kbe-schemen li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 0; border-top: 1px solid #f0f2f4; font-size: .9rem; }
+.kbe-schemen li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 0; border-top: 1px solid var(--up-schiefer-100); font-size: .9rem; }
 .kbe-schemen li:first-child { border-top: 0; }
 .kbe-schemen b { font-weight: 500; color: var(--u-titel); }
 .kbe-schemen li > span:not(.nl-chip) { color: var(--u-grau); }
 
 /* feste Leiste unten mit Speichern */
 .kbe-leiste { position: sticky; bottom: 12px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; padding: 10px 14px;
-  background: #fff; border: 1px solid #dfe3e7; border-radius: 999px; box-shadow: var(--u-schatten); }
+  background: var(--up-flaeche); border: 1px solid var(--up-rand); border-radius: 999px; box-shadow: var(--u-schatten); }
 .kbe-stand { margin-right: auto; padding-left: 6px; font-size: .85rem; color: var(--u-grau); }
 .kbe-leiste .nl-knopf:disabled { opacity: .45; cursor: default; }
 
@@ -88,14 +88,14 @@
 .kbe-link:hover { color: var(--u-akzent-dunkel); text-decoration: none; }
 .kbe-iknopf { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 50%; background: transparent; color: var(--u-grau); cursor: pointer; }
 .kbe-iknopf:hover:not(:disabled) { background: var(--u-hover); color: var(--u-titel); }
-.kbe-iknopf.rot:hover:not(:disabled) { background: #fdecec; color: #c62828; }
-.kbe-iknopf.gruen { color: #0f7b47; }
+.kbe-iknopf.rot:hover:not(:disabled) { background: var(--up-entfall-flaeche); color: var(--up-entfall); }
+.kbe-iknopf.gruen { color: var(--up-ok); }
 .kbe-iknopf:disabled { opacity: .3; cursor: default; }
 .kbe-iknopf:focus-visible { outline: 2px solid var(--u-akzent); outline-offset: 1px; }
 .kbe-ja { color: var(--u-gruen); font-size: 1.1rem; }
 .kbe-leise { color: var(--u-grau-2); font-size: .85rem; }
 .kbe-noten { display: flex; flex-wrap: wrap; gap: 4px; }
-.kbe-note { display: inline-flex; align-items: baseline; gap: 4px; padding: 2px 8px; border-radius: 6px; background: #eef1f4; font-size: .8rem; font-weight: 500; color: var(--u-text); }
+.kbe-note { display: inline-flex; align-items: baseline; gap: 4px; padding: 2px 8px; border-radius: 6px; background: var(--up-schiefer-100); font-size: .8rem; font-weight: 500; color: var(--u-text); }
 .kbe-note small { font-weight: 400; color: var(--u-grau); }
 .kbe-art { display: inline-block; min-width: 44px; padding: 3px 10px; border: 1px solid rgba(0, 0, 0, .12); border-radius: 6px; font: inherit; font-size: .85rem; font-weight: 500; text-align: center; cursor: pointer; }
 .kbe-art.gross { padding: 6px 14px; cursor: default; }
@@ -110,9 +110,9 @@
 .kbe-farben .form-control-color { width: 64px; height: 38px; }
 .kbe-notentabelle { width: 100%; border-collapse: collapse; }
 .kbe-notentabelle th { padding: 6px 8px; font-size: .85rem; font-weight: 500; color: var(--u-grau); text-align: left; }
-.kbe-notentabelle td { padding: 4px 8px; border-top: 1px solid #f0f2f4; }
+.kbe-notentabelle td { padding: 4px 8px; border-top: 1px solid var(--up-schiefer-100); }
 .kbe-notentabelle td:first-child { width: 76px; }
-.kbe-notentabelle .kbe-neuzeile td { background: #fbfcfd; }
+.kbe-notentabelle .kbe-neuzeile td { background: var(--up-flaeche-2); }
 .kbe-wertfeld { width: 100px; }
 .kbe-maxraster { display: flex; flex-direction: column; gap: 8px; }
 .kbe-max { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; font-size: .9rem; }

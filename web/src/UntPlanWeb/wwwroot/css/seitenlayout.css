@@ -54,10 +54,10 @@
 @media (max-width: 767.98px) {
   table.u-karten-tabelle, table.u-karten-tabelle > tbody, table.u-karten-tabelle > tbody > tr, table.u-karten-tabelle > tbody > tr > td { display: block; width: 100%; }
   table.u-karten-tabelle > thead { display: none; }
-  table.u-karten-tabelle > tbody > tr { position: relative; padding: 12px 44px 12px 16px; border-bottom: 1px solid #edf0f2; }
+  table.u-karten-tabelle > tbody > tr { position: relative; padding: 12px 44px 12px 16px; border-bottom: 1px solid var(--up-linie); }
   table.u-karten-tabelle > tbody > tr:last-child { border-bottom: 0; }
   table.u-karten-tabelle > tbody > tr > td { display: flex; gap: 10px; padding: 2px 0 !important; border: 0 !important; background: none !important; text-align: left !important; }
-  table.u-karten-tabelle > tbody > tr > td[data-label]::before { content: attr(data-label); flex: 0 0 96px; color: #8a96a1; font-size: .78rem; font-weight: 500; padding-top: 1px; }
+  table.u-karten-tabelle > tbody > tr > td[data-label]::before { content: attr(data-label); flex: 0 0 96px; color: var(--up-text-3); font-size: .78rem; font-weight: 500; padding-top: 1px; }
   table.u-karten-tabelle > tbody > tr > td:not([data-label]) { position: absolute; top: 10px; right: 12px; width: auto; }
 }
 
@@ -65,54 +65,54 @@
 
 :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) {
   position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; height: 40px; margin-bottom: 0; padding: 0 14px 0 14px;
-  background: #f2f4f6; border: 1px solid transparent; border-radius: 20px; box-shadow: none; color: #24323d; cursor: text;
+  background: var(--up-schiefer-50); border: 1px solid transparent; border-radius: 20px; box-shadow: none; color: var(--up-text); cursor: text;
   transition: background-color .12s, border-color .12s, box-shadow .12s;
 }
 .au-suchfeld.au-suchfeld { display: inline-flex; vertical-align: middle; }
 .u-suchfeld.u-suchfeld { flex: 1 1 260px; max-width: 480px; }
 .u-suchfeld.u-suchfeld.voll { max-width: none; width: 100%; }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: #eceff2; }
+:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: var(--up-schiefer-100); }
 :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):focus-within {
-  background: #fff !important; border-color: rgba(var(--u-akzent-rgb, 245, 107, 42), .55); box-shadow: 0 0 0 3px rgba(var(--u-akzent-rgb, 245, 107, 42), .12);
+  background: var(--up-flaeche) !important; border-color: rgba(var(--u-akzent-rgb, 35, 79, 150), .55); box-shadow: 0 0 0 3px rgba(var(--u-akzent-rgb, 35, 79, 150), .12);
 }
 /* direkt auf dem grauen Seitengrund etwas kräftiger, auf weißen Flächen (Karten, Tabellen, Dialoge) das helle Grau */
-.u-inhalt :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) { background: #e8ebee; }
-.u-inhalt :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: #e1e5e9; }
-.u-inhalt :is(.card, .u-panel, .nl-tabelle, .u-tabelle-karte, .rm-rollenkarte, .list-group, .kbd-fenster, .bv-karte, .nl-karte) :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) { background: #f2f4f6; }
-.u-inhalt :is(.card, .u-panel, .nl-tabelle, .u-tabelle-karte, .rm-rollenkarte, .list-group, .kbd-fenster, .bv-karte, .nl-karte) :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: #eceff2; }
+.u-inhalt :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) { background: var(--up-rand); }
+.u-inhalt :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: var(--up-rand); }
+.u-inhalt :is(.card, .u-panel, .nl-tabelle, .u-tabelle-karte, .rm-rollenkarte, .list-group, .kbd-fenster, .bv-karte, .nl-karte) :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) { background: var(--up-schiefer-50); }
+.u-inhalt :is(.card, .u-panel, .nl-tabelle, .u-tabelle-karte, .rm-rollenkarte, .list-group, .kbd-fenster, .bv-karte, .nl-karte) :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche):hover { background: var(--up-schiefer-100); }
 :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > :is(.bi-search, .bi, .au-lupe, .u-sym) {
-  position: static !important; transform: none !important; flex: none; width: auto; height: auto; color: #67747e !important; font-size: 1rem; line-height: 1; pointer-events: none;
+  position: static !important; transform: none !important; flex: none; width: auto; height: auto; color: var(--up-text-2) !important; font-size: 1rem; line-height: 1; pointer-events: none;
 }
 :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > input {
   flex: 1 1 auto; width: 100% !important; min-width: 0; height: 100% !important; padding: 0 !important; margin: 0; border: 0 !important; border-radius: 0 !important;
-  background: transparent !important; box-shadow: none !important; outline: 0 !important; font: inherit; font-size: .9rem !important; font-weight: 500 !important; color: #24323d;
+  background: transparent !important; box-shadow: none !important; outline: 0 !important; font: inherit; font-size: .9rem !important; font-weight: 500 !important; color: var(--up-text);
 }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > input::placeholder { color: #8a96a1; font-weight: 500; opacity: 1; }
+:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > input::placeholder { color: var(--up-text-3); font-weight: 500; opacity: 1; }
 :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche) > input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
 :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche).au-mit-x { padding-right: 38px; }
 :is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche).au-mit-x > .au-x {
-  position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; background: #dfe3e8; color: #414d55; font-size: .62rem;
+  position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; background: var(--up-rand); color: var(--up-text); font-size: .62rem;
 }
-:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche).au-mit-x > .au-x:hover { background: #c9d0d6; color: #24323d; }
+:is(.u-suchfeld, .au-suchfeld, .nl-suche, .br-suche, .sp-suche, .mt-suche, .mt-ew-suche, .mt-suchfeld, .sd-raumsuche).au-mit-x > .au-x:hover { background: var(--up-rand-stark); color: var(--up-text); }
 .au-suchfeld.au-sm.au-sm { height: 34px; border-radius: 17px; padding-left: 12px; }
 .mt-ew-suche.mt-ew-suche { margin: 0 24px; }
 .sd-raumsuche.sd-raumsuche { margin-bottom: .7rem; }
 /* Suchleisten mit Filter-Chips (Klassenbuch-Werkzeugleiste): gleiche Fläche und gleicher Fokus */
-.u-suche, .os-suche { background: #f2f4f6; border: 1px solid transparent; border-radius: 21px; transition: background-color .12s, border-color .12s, box-shadow .12s; }
-.u-suche:focus-within, .os-suche:focus-within { background: #fff; border-color: rgba(var(--u-akzent-rgb, 245, 107, 42), .55); box-shadow: 0 0 0 3px rgba(var(--u-akzent-rgb, 245, 107, 42), .12); }
+.u-suche, .os-suche { background: var(--up-schiefer-50); border: 1px solid transparent; border-radius: 21px; transition: background-color .12s, border-color .12s, box-shadow .12s; }
+.u-suche:focus-within, .os-suche:focus-within { background: var(--up-flaeche); border-color: rgba(var(--u-akzent-rgb, 35, 79, 150), .55); box-shadow: 0 0 0 3px rgba(var(--u-akzent-rgb, 35, 79, 150), .12); }
 .u-suche input, .os-suche input { font-weight: 500; font-size: .9rem; }
-.u-suche input::placeholder, .os-suche input::placeholder { color: #8a96a1; font-weight: 500; }
+.u-suche input::placeholder, .os-suche input::placeholder { color: var(--up-text-3); font-weight: 500; }
 
 /* ------------------------------------------------------------------ Segment-Auswahl (gemeinsame Komponente) */
 
-.u-segment { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 3px; border-radius: 999px; background: #f2f4f6; overflow-x: auto;
+.u-segment { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 3px; border-radius: 999px; background: var(--up-schiefer-50); overflow-x: auto;
   scrollbar-width: none; vertical-align: middle; flex: none; }
 .u-segment::-webkit-scrollbar { display: none; }
 .u-segment > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent;
-  color: #57626b; font: inherit; font-size: .875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color .12s, color .12s, box-shadow .12s; }
-.u-segment > button:hover:not(.an):not(:disabled) { color: #24323d; background: rgba(255, 255, 255, .55); }
-.u-segment > button.an { background: #fff; color: #24323d; box-shadow: 0 1px 2px rgba(0, 5, 10, .12), 0 0 0 1px rgba(0, 5, 10, .04); }
-.u-segment > button:focus-visible { outline: 2px solid rgba(var(--u-akzent-rgb, 245, 107, 42), .55); outline-offset: 1px; }
+  color: var(--up-text-2); font: inherit; font-size: .875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color .12s, color .12s, box-shadow .12s; }
+.u-segment > button:hover:not(.an):not(:disabled) { color: var(--up-text); background: rgba(255, 255, 255, .55); }
+.u-segment > button.an { background: var(--up-flaeche); color: var(--up-text); box-shadow: 0 1px 2px rgba(0, 5, 10, .12), 0 0 0 1px rgba(0, 5, 10, .04); }
+.u-segment > button:focus-visible { outline: 2px solid rgba(var(--u-akzent-rgb, 35, 79, 150), .55); outline-offset: 1px; }
 .u-segment > button:disabled { cursor: default; opacity: .6; }
 .u-segment > button .bi { font-size: .95em; }
 .u-segment.klein { padding: 2px; }
@@ -129,27 +129,27 @@
 /* per Suche ausgeblendete Zeilen bleiben auch in Karten-Tabellen verborgen */
 .u-inhalt :is(tr, li, .card, article)[hidden] { display: none !important; }
 .u-sf-leiste > .nl-pille.u-sf-datum { flex: none; }
-.u-sf-zeit { color: #57626b; font-weight: 500; font-size: .9rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.u-sf-zeit { color: var(--up-text-2); font-weight: 500; font-size: .9rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .u-suchfilter { position: relative; display: flex; align-items: center; gap: 8px; flex: 1 1 calc(260px + var(--sf-n, 1) * 130px); max-width: calc(520px + var(--sf-n, 1) * 130px); min-width: 0; min-height: 42px; padding: 4px 6px 4px 14px;
-  background: #f2f4f6; border: 1px solid transparent; border-radius: 21px; color: #24323d; cursor: text; transition: background-color .12s, border-color .12s, box-shadow .12s; }
-.u-suchfilter:hover { background: #eceff2; }
-.u-inhalt .u-suchfilter { background: #e8ebee; }
-.u-inhalt .u-suchfilter:hover { background: #e1e5e9; }
-.u-inhalt :is(.card, .u-panel, .nl-tabelle, .u-tabelle-karte, .list-group, .kbd-fenster, .nl-karte, .modal-body) .u-suchfilter { background: #f2f4f6; }
-.u-suchfilter.u-suchfilter:focus-within { background: #fff; border-color: rgba(var(--u-akzent-rgb, 245, 107, 42), .55); box-shadow: 0 0 0 3px rgba(var(--u-akzent-rgb, 245, 107, 42), .12); }
-.u-suchfilter > :is(.bi-search, .u-sym) { flex: none; width: auto; height: auto; color: #67747e; font-size: 1rem; line-height: 1; pointer-events: none; }
+  background: var(--up-schiefer-50); border: 1px solid transparent; border-radius: 21px; color: var(--up-text); cursor: text; transition: background-color .12s, border-color .12s, box-shadow .12s; }
+.u-suchfilter:hover { background: var(--up-schiefer-100); }
+.u-inhalt .u-suchfilter { background: var(--up-rand); }
+.u-inhalt .u-suchfilter:hover { background: var(--up-rand); }
+.u-inhalt :is(.card, .u-panel, .nl-tabelle, .u-tabelle-karte, .list-group, .kbd-fenster, .nl-karte, .modal-body) .u-suchfilter { background: var(--up-schiefer-50); }
+.u-suchfilter.u-suchfilter:focus-within { background: var(--up-flaeche); border-color: rgba(var(--u-akzent-rgb, 35, 79, 150), .55); box-shadow: 0 0 0 3px rgba(var(--u-akzent-rgb, 35, 79, 150), .12); }
+.u-suchfilter > :is(.bi-search, .u-sym) { flex: none; width: auto; height: auto; color: var(--up-text-2); font-size: 1rem; line-height: 1; pointer-events: none; }
 .u-suchfilter > .u-sym { width: 18px; height: 18px; }
 .u-suchfilter > input { flex: 1 1 120px; min-width: 72px; height: 32px; padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; outline: 0;
-  font: inherit; font-size: .9rem; font-weight: 500; color: #24323d; }
-.u-suchfilter > input::placeholder { color: #8a96a1; font-weight: 500; opacity: 1; }
+  font: inherit; font-size: .9rem; font-weight: 500; color: var(--up-text); }
+.u-suchfilter > input::placeholder { color: var(--up-text-3); font-weight: 500; opacity: 1; }
 .u-suchfilter > input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
-.u-suchfilter.au-mit-x > .au-x { position: static; transform: none; flex: none; width: 24px; height: 24px; border-radius: 50%; background: #dfe3e8; color: #414d55; font-size: .62rem; }
-.u-suchfilter.au-mit-x > .au-x:hover { background: #c9d0d6; color: #24323d; }
-.u-suchfilter .u-trenn { flex: none; width: 1px; height: 20px; margin: 0 2px; background: #c9d0d6; }
+.u-suchfilter.au-mit-x > .au-x { position: static; transform: none; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--up-rand); color: var(--up-text); font-size: .62rem; }
+.u-suchfilter.au-mit-x > .au-x:hover { background: var(--up-rand-stark); color: var(--up-text); }
+.u-suchfilter .u-trenn { flex: none; width: 1px; height: 20px; margin: 0 2px; background: var(--up-rand-stark); }
 /* Chips (gewählte Lehrkräfte, Klassen …) */
-.u-sf-chip { display: inline-flex; align-items: center; gap: 2px; flex: none; max-width: 180px; height: 30px; padding: 0 4px 0 12px; border-radius: 999px; background: #414d55; color: #fff;
+.u-sf-chip { display: inline-flex; align-items: center; gap: 2px; flex: none; max-width: 180px; height: 30px; padding: 0 4px 0 12px; border-radius: 999px; background: var(--up-text); color: var(--up-flaeche);
   font-size: .85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.u-sf-chip button, .u-sf-weg { display: inline-grid; place-content: center; flex: none; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #fff; font-size: .95rem; line-height: 1; }
+.u-sf-chip button, .u-sf-weg { display: inline-grid; place-content: center; flex: none; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--up-flaeche); font-size: .95rem; line-height: 1; }
 .u-sf-chip button:hover, .u-sf-weg:hover { background: rgba(255, 255, 255, .18); }
 .u-sf-chip button:focus-visible, .u-sf-weg:focus-visible { outline: 2px solid rgba(255, 255, 255, .8); outline-offset: -2px; }
 .u-sf-weg[hidden] { display: none; }
@@ -157,17 +157,17 @@
 .u-sf-filter { display: inline-flex; align-items: center; flex: none; min-width: 0; max-width: 220px; height: 32px; border-radius: 999px; transition: background-color .12s; }
 .u-sf-filter > .au { display: inline-block; width: auto; min-width: 0; max-width: 100%; }
 .u-sf-filter .au-knopf { min-height: 0; height: 32px; padding: 0 8px 0 10px; gap: 6px; border: 0; border-radius: 999px; background: transparent; box-shadow: none !important;
-  font-size: .9rem; font-weight: 500; color: #24323d; }
+  font-size: .9rem; font-weight: 500; color: var(--up-text); }
 .u-sf-filter .au-knopf.leer .au-wert-text, .u-sf-filter .au-platzhalter { color: inherit; }
-.u-sf-filter .au-pfeil { color: #414d55; }
+.u-sf-filter .au-pfeil { color: var(--up-text); }
 .u-sf-filter .au-knopf:hover { background: rgba(255, 255, 255, .65); }
-.u-sf-filter .au.offen > .au-knopf, .u-sf-filter .au-knopf:focus-visible { background: #fff; box-shadow: inset 0 0 0 1.5px rgba(var(--u-akzent-rgb, 245, 107, 42), .6) !important; }
-.u-sf-filter.gewaehlt { background: #414d55; padding-right: 4px; }
-.u-sf-filter.gewaehlt .au-knopf { color: #fff; padding-right: 4px; }
+.u-sf-filter .au.offen > .au-knopf, .u-sf-filter .au-knopf:focus-visible { background: var(--up-flaeche); box-shadow: inset 0 0 0 1.5px rgba(var(--u-akzent-rgb, 35, 79, 150), .6) !important; }
+.u-sf-filter.gewaehlt { background: var(--up-text); padding-right: 4px; }
+.u-sf-filter.gewaehlt .au-knopf { color: var(--up-flaeche); padding-right: 4px; }
 .u-sf-filter.gewaehlt .au-knopf:hover, .u-sf-filter.gewaehlt .au.offen > .au-knopf { background: transparent; }
 .u-sf-filter.gewaehlt .au-knopf:focus-visible { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .8) !important; }
 .u-sf-filter.gewaehlt .au-pfeil { color: rgba(255, 255, 255, .8); }
-.u-sf-filter.gewaehlt .au.offen .au-pfeil { color: #fff; }
+.u-sf-filter.gewaehlt .au.offen .au-pfeil { color: var(--up-flaeche); }
 .u-suchfilter.voll { flex: 1 1 100%; max-width: none; }
 .mt-seite > .u-sf-leiste { margin: 32px 0 0; }
 /* Vorschlagsliste unter dem Feld (z. B. Offene Stunden: Lehrkräfte, Klassen) */
@@ -193,23 +193,23 @@
 
 .ke-tabelle tbody tr { cursor: pointer; }
 .ke-tabelle tbody tr:focus-visible { outline: 0; }
-.ke-tabelle tbody tr:focus-visible > td { background: #f6f8f9; }
+.ke-tabelle tbody tr:focus-visible > td { background: var(--up-flaeche-hover); }
 .ke-tabelle tbody tr:focus-visible > td:first-child { box-shadow: inset 3px 0 0 var(--u-akzent); }
 .ke-tabelle .ke-text { max-width: 420px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; }
-.ke-tabelle .ke-stunde { font-size: .75rem; color: #8a96a1; }
+.ke-tabelle .ke-stunde { font-size: .75rem; color: var(--up-text-3); }
 .ke-tabelle .ke-aktion { white-space: nowrap; }
-.ke-tabelle .ke-pfeil { margin-left: 10px; color: #b7c0c7; font-size: .8rem; transition: color .12s, transform .12s; }
+.ke-tabelle .ke-pfeil { margin-left: 10px; color: var(--up-schiefer-400); font-size: .8rem; transition: color .12s, transform .12s; }
 .ke-tabelle tbody tr:hover .ke-pfeil { color: var(--u-akzent); transform: translateX(2px); }
 @media (max-width: 767.98px) { table.u-karten-tabelle.ke-tabelle .ke-text { display: flex; max-width: none; } .ke-tabelle .ke-pfeil { margin-left: 8px; }
   table.u-karten-tabelle.ke-tabelle > tbody > tr { padding-right: 72px; } }
 .ke-detail .ke-kopf { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.ke-detail .ke-kopf-klasse { font-size: .85rem; color: #67747e; font-weight: 500; }
-.ke-detail .ke-volltext { margin: 0 0 18px; padding: 14px 16px; border-radius: 10px; background: #f6f7f9; color: #24323d; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
+.ke-detail .ke-kopf-klasse { font-size: .85rem; color: var(--up-text-2); font-weight: 500; }
+.ke-detail .ke-volltext { margin: 0 0 18px; padding: 14px 16px; border-radius: 10px; background: var(--up-flaeche-2); color: var(--up-text); line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
 .ke-detail .ke-angaben { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; margin: 0; }
 .ke-detail .ke-zeile { min-width: 0; }
-.ke-detail .ke-zeile dt { font-size: .75rem; font-weight: 500; color: #8a96a1; margin-bottom: 2px; }
-.ke-detail .ke-zeile dd { margin: 0; color: #24323d; font-weight: 500; overflow-wrap: anywhere; }
-.ke-detail .ke-hinweis { display: flex; gap: 8px; align-items: center; margin: 18px 0 0; font-size: .8rem; color: #8a96a1; }
+.ke-detail .ke-zeile dt { font-size: .75rem; font-weight: 500; color: var(--up-text-3); margin-bottom: 2px; }
+.ke-detail .ke-zeile dd { margin: 0; color: var(--up-text); font-weight: 500; overflow-wrap: anywhere; }
+.ke-detail .ke-hinweis { display: flex; gap: 8px; align-items: center; margin: 18px 0 0; font-size: .8rem; color: var(--up-text-3); }
 .ke-detail .kbd-fuss .bi { margin-right: 6px; }
 @media (max-width: 575.98px) { .ke-detail .ke-angaben { grid-template-columns: 1fr; gap: 10px; } }
 
@@ -221,11 +221,11 @@
   .ic-wurzel:has(.ic-panel:not([hidden])) .ic-schleier { display: block; position: fixed; inset: 0; z-index: 1035; background: rgba(36, 50, 61, .4); animation: kbd-ein .16s ease; }
   .ic-panel { left: 0; right: 0; bottom: 0; width: 100%; max-height: 86dvh; border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom); transform-origin: bottom center;
     animation: ic-blatt .2s ease-out; }
-  .ic-panel::before { content: ""; position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #d5dae0; }
+  .ic-panel::before { content: ""; position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--up-rand); }
   .ic-panel-kopf { flex-wrap: wrap; padding: 18px 12px 10px 18px; row-gap: 4px; }
   .ic-panel-kopf h2 { font-size: 1.1rem; font-weight: 500; }
   .ic-zu { order: 2; width: 40px; height: 40px; margin-left: auto; border-radius: 50%; display: grid; place-content: center; font-size: 1.05rem; }
-  .ic-zu:active { background: #f1f3f5; }
+  .ic-zu:active { background: var(--up-flaeche-hover); }
   .ic-link { order: 3; flex-basis: 100%; margin: 0; padding: 4px 0; text-align: left; font-weight: 500; font-size: .85rem; }
   .ic-filter { flex-wrap: nowrap; }
   .ic-karte { padding: 14px 16px 14px 18px; }
@@ -252,16 +252,16 @@
 .u-app.u-kopf-weiss .u-inhalt { padding-top: 0; }
 .u-app.u-kopf-weiss :is(#seitenkopf, #kopfplatz, #seite .u-kopfteil) { position: relative; }
 .u-app.u-kopf-weiss :is(#seitenkopf, #kopfplatz, #seite .u-kopfteil)::after {
-  content: ""; position: absolute; inset: 0 -100vmax; z-index: -1; background: #fff; pointer-events: none;
+  content: ""; position: absolute; inset: 0 -100vmax; z-index: -1; background: var(--up-flaeche); pointer-events: none;
 }
 .u-app.u-kopf-weiss #seitenkopf { display: flex !important; flex-wrap: nowrap; margin-bottom: 0; padding: 24px 0 16px; height: 82px; min-height: 0; }
 /* Unterkante: feine Linie über die volle Breite am letzten Teil des Kopfes */
-.u-app.u-kopf-weiss:not(.u-kopf-suche) #seitenkopf::after, .u-app.u-kopf-weiss :is(#kopfplatz, #seite .u-kopfteil)::after { border-bottom: 1px solid #e5e8ec; }
+.u-app.u-kopf-weiss:not(.u-kopf-suche) #seitenkopf::after, .u-app.u-kopf-weiss :is(#kopfplatz, #seite .u-kopfteil)::after { border-bottom: 1px solid var(--up-rand); }
 .u-app.u-kopf-weiss:not(.u-kopf-suche) #seitenkopf { margin-bottom: 24px; }
 .u-app.u-kopf-weiss #seite .u-kopfteil { margin: 0 0 24px; padding-bottom: 18px; }
 /* Platzhalter der Suchleiste, solange die Seite noch keine gezeichnet hat (bzw. ohne Fehlermeldung) */
 .u-app.u-kopf-weiss.u-kopf-suche .u-inhalt:not(:has(#seite .u-kopfteil, #seite > .alert)) #kopfplatz { display: block; height: var(--kopfplatz-h, 60px); margin-bottom: 24px; }
-.u-app.u-kopf-weiss :is(#kopfplatz, .u-kopfskelett)::before { content: ""; display: block; height: 42px; max-width: 640px; border-radius: 21px; background: #f2f4f6; }
+.u-app.u-kopf-weiss :is(#kopfplatz, .u-kopfskelett)::before { content: ""; display: block; height: 42px; max-width: 640px; border-radius: 21px; background: var(--up-schiefer-50); }
 .u-app.u-kopf-weiss #seite .u-kopfteil.u-kopfskelett { height: var(--kopfplatz-h, 60px); }
 /* Teile innerhalb eines Kopfteils (z. B. Berichte: Suche und Parameter) ohne Abstand nach unten am Ende */
 .u-app.u-kopf-weiss #seite .u-kopfteil > :last-child { margin-bottom: 0; }
@@ -273,8 +273,8 @@
 .u-app.u-kopf-weiss #seite .u-kopfteil.u-kopfreiter { margin-bottom: 0; padding-bottom: 14px; }
 .u-app.u-kopf-weiss #seite .u-kopfteil.u-kopfreiter::after { border-bottom: 0; }
 /* Suchfelder im weißen Kopf im hellen Grau (wie auf weißen Flächen) */
-.u-app.u-kopf-weiss .u-kopfteil :is(.u-suchfilter, .u-suchfeld, .nl-suche, .u-suche) { background: #f2f4f6; }
-.u-app.u-kopf-weiss .u-kopfteil :is(.u-suchfilter, .u-suchfeld, .nl-suche, .u-suche):hover { background: #eceff2; }
+.u-app.u-kopf-weiss .u-kopfteil :is(.u-suchfilter, .u-suchfeld, .nl-suche, .u-suche) { background: var(--up-schiefer-50); }
+.u-app.u-kopf-weiss .u-kopfteil :is(.u-suchfilter, .u-suchfeld, .nl-suche, .u-suche):hover { background: var(--up-schiefer-100); }
 /* Fehlzeiten: die Klassenwahl steht in der Kopfzeile (die Zeile darüber entfällt) */
 .u-app.u-kopf-weiss[data-ansicht="klassenbuch"] #seite > .u-filter { display: none; }
 @media (max-width: 991.98px) {
