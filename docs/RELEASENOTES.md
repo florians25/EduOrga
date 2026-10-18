@@ -15,16 +15,17 @@ UntPlan – Stunden- und Vertretungsplanung für Schulen in NRW.
 ### Neue Bedienung
 - Navigation nach Arbeitsbereichen (Stammdaten, Unterricht, Planung, Stundenpläne, Oberstufe, Auswertung, Ausgabe,
   Datenaustausch, Schule; im Vertretungsmodus zusätzlich Vertretungsplanung, Ereignisse, Tagespläne, Auswertung und
-  Ausgabe) statt Menüband.
+  Ausgabe) als schlichte Textnavigation statt Menüband.
 - **Befehlssuche** (Strg+K) findet jede Funktion.
-- Neuer Arbeitsbereich für die Ansichten; die Anordnung wird je Schuldatei gemerkt.
-- Übersicht der Schuldatei mit Kennzahlen, Planqualität und Schnellzugriff.
+- Seiten statt Fenster: jede Aufgabe hat eine eigene Seite mit Adresse und Zurück-Taste; feste Arbeitsplätze für
+  *Manuell planen*, *Tagesplanung* und *Verlegen und Tauschen*.
+- Übersicht der Schuldatei mit Kennzahlen, Planqualität und häufigen Aufgaben.
 - Optimierungsverfahren mit sprechenden Namen: *Kompakt*, *Gründlich*, *Stufenweise – schnell*, *Stufenweise –
   gründlich*, *Langlauf – über Nacht*; die Optimierung läuft im Hintergrund, mit Ergebnisvergleich.
 
 ### Designsystem
 - Gemeinsames Designsystem für Studio, UntPlan Web, UntPlan Mobile und iOS: Schrift IBM Plex Sans, Markenfarbe Marine,
-  ruhige Flächen, einheitliche Linien-Symbole und einheitliche Statusfarben für Entfall, Vertretung/Änderung, Prüfung,
+  ruhige Flächen, Wortmarke statt Bildzeichen, Symbole nur für Funktionen und einheitliche Statusfarben für Entfall, Vertretung/Änderung, Prüfung,
   Veranstaltung und unterrichtsfreie Tage.
 - Einheitliche Stundenplan-Darstellung auf allen Oberflächen.
 

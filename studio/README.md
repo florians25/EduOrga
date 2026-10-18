@@ -7,23 +7,24 @@ Berechnungen laufen auf dem Server mit der Fachlogik aus `src/UntPlan.Core`.
 
 ![Übersicht](docs/bilder/uebersicht.png)
 
-| Manuell planen | Vertretungsplanung | Befehlssuche |
+| Manuell planen | Tagesplanung | Suche |
 |---|---|---|
 | ![Planen](docs/bilder/planen.png) | ![Vertretung](docs/bilder/vertretung.png) | ![Suche](docs/bilder/suche.png) |
 
 ## Oberfläche
 
-* **Seitenleiste** mit den Arbeitsbereichen *Stammdaten, Unterricht, Planung, Stundenpläne, Oberstufe, Auswertung,
-  Ausgabe, Datenaustausch, Schule* – im Vertretungsmodus zusätzlich *Vertretungsplanung, Ereignisse, Tagespläne,
-  Auswertung und Ausgabe*. Selten gebrauchte Punkte stehen unter „weitere“. Strg+B klappt die Leiste ein.
-* **Kopfleiste**: Schuldatei wählen (zuletzt verwendet, alle Dateien, neu, hochladen), Rückgängig/Wiederholen,
-  Speichern mit Speicherstand und Live-Verbindung, aktive Benutzer, **Befehlssuche** (Strg+K – findet jede Funktion),
-  Modus *Stundenplanung / Vertretungsplanung*, im Vertretungsmodus das Planungsdatum, Arbeitsbereich und Konto.
-* **Arbeitsbereich**: Ansichten öffnen als Reiter. Reiter lassen sich an den Rand eines Bereichs ziehen (teilt ihn),
-  über „Rechts teilen“/„Unten teilen“ nebeneinander stellen, Trenner verschieben, ein Bereich lässt sich vergrößern.
-  Die Anordnung wird je Schuldatei gemerkt; eigene Anordnungen lassen sich speichern.
-* **Übersicht**: Kennzahlen der Schuldatei, Planqualität (Kollisionen, Hohlstunden, Zeitwunschverletzungen …) und
-  Schnellzugriff.
+* **Seiten statt Fenster:** Jede Aufgabe ist eine Seite mit eigener Adresse (Lesezeichen, Zurück-Taste des Browsers).
+  Aufgaben, die mehrere Inhalte gleichzeitig brauchen, sind feste **Arbeitsplätze** – *Manuell planen* (Unterricht und
+  Klassenplan), *Tagesplanung* der Vertretung (Kalender, Abwesenheiten, Vertretungen, Vorschlag, Tagespläne),
+  *Verlegen und Tauschen*. Inhalte, die aus einer Seite heraus geöffnet werden (z. B. der Unterricht zu einem Plan),
+  erscheinen rechts daneben; „Öffnen“ macht daraus eine eigene Seite.
+* **Navigation** links, nur Text: *Stammdaten, Unterricht, Planung, Stundenpläne, Oberstufe, Auswertung, Ausgabe,
+  Datenaustausch, Schule* – im Vertretungsmodus *Vertretungsplanung, Ereignisse, Tagespläne, Auswertung und Ausgabe*.
+  Strg+B blendet sie aus.
+* **Kopfleiste:** Schuldatei (zuletzt verwendet, alle Dateien, neu, hochladen), Modus *Stundenplanung /
+  Vertretungsplanung*, im Vertretungsmodus das Planungsdatum, Rückgängig/Wiederholen/Speichern mit Speicherstand,
+  aktive Benutzer, Suche (Strg+K – findet jede Funktion) und Konto.
+* **Übersicht:** Kennzahlen der Schuldatei, Planqualität und häufige Aufgaben.
 
 ## Lokal starten
 

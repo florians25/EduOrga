@@ -8,7 +8,7 @@ Build-Schritt. Schuldateien (`.up`) sind JSON-Dateien und lassen sich jederzeit 
 Browser (wwwroot)                                  Server (UntPlanStudio)                         UntPlan.Core
 ┌───────────────────────────────┐   REST/JSON    ┌───────────────────────────────────────┐      ┌──────────────────┐
 │ Shell: Navigation, Kopfleiste,│ ─────────────▶ │ Api/<Modul>Api.cs  (IStudioModul)      │ ───▶ │ Dokument, Model, │
-│ Arbeitsbereich (Reiter)       │                │   └─ Arbeitsdokument (Sperre, Undo)    │      │ Stammdaten,      │
+│ Seiten und Arbeitsplätze      │                │   └─ Arbeitsdokument (Sperre, Undo)    │      │ Stammdaten,      │
 │ Module: js/module/<modul>.js  │ ◀───────────── │ Dokumentdienst (Ablage, Autosave)      │      │ Planung, …       │
 │ Komponenten: Tabelle, Raster  │  SSE-Ereignisse│ Benutzerdienst, Benutzereinstellungen  │      └──────────────────┘
 └───────────────────────────────┘                └───────────────────────────────────────┘
@@ -131,11 +131,12 @@ Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT
   (`design/DESIGN.md`): Grundwerte in `css/tokens.css` (Kopie von `design/tokens.css`), auf die Namen der Oberfläche
   abgebildet in `css/basis.css`. Schrift IBM Plex Sans (lokal in `fonts/`). `html[data-modus="vertretung"]` schaltet den
   Akzent von Marine auf Petrol.
-* **Aufbau:** Seitenleiste (`kern/navigation.js`) mit fachlich gegliederten Arbeitsbereichen, Kopfleiste (`kern/shell.js`)
-  mit Schuldatei-Wahl, Rückgängig/Wiederholen/Speichern, Speicherstand, Befehlssuche (Strg+K), Modusschalter
-  *Stundenplanung / Vertretungsplanung*, Arbeitsbereich-Menü und Konto. Inhalte erscheinen als **Ansichten** in Reitern;
-  der Arbeitsbereich lässt sich in Spalten und Zeilen teilen (Reiter an den Rand eines Bereichs ziehen, „Rechts/Unten
-  teilen“), Trenner sind verschiebbar, ein Bereich lässt sich vergrößern. Es gibt keine überlappenden Fenster.
+* **Aufbau:** Navigation (`kern/navigation.js`, nur Text), Kopfleiste (`kern/shell.js`), darunter die **Seite**
+  (`kern/fenster.js`): Seitenkopf (Bereich + Titel) und eine Ansicht bzw. bei Arbeitsplätzen mehrere fest angeordnete
+  Bereiche. Aufrufe aus Navigation, Suche und Übersicht beginnen eine neue Seite (`fensterverwaltung.naechsterAufrufNeueSeite()`),
+  Aufrufe aus einer Ansicht öffnen einen Nebenbereich rechts, Aufrufe mit `lage` bauen Arbeitsplätze
+  (`fensterverwaltung.arbeitsplatz(titel, aufbauen)`). Die Adresse (`#/<ansicht>?<parameter>`) und die Zurück-Taste
+  des Browsers werden unterstützt. Es gibt keine schwebenden Fenster, Reiter oder frei teilbaren Bereiche.
 * `js/kern/` – wiederverwendbare Bausteine (bitte nutzen statt eigene zu bauen):
   * `api.js` – `api.get/post/put/patch/loeschen/hochladen`, `api.dok('/pfad')`, `einstellungLesen/einstellungSchreiben`.
     Option `{ quelle: fenster.id }` bei Änderungen, damit die auslösende Ansicht ihr eigenes `daten`-Ereignis überspringen kann.
@@ -143,11 +144,12 @@ Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT
     `dokument`, `stand`, `daten`, `modus`, `element` (Verknüpfung von Ansichten), `meldung`, `grunddaten`, `fenster-aktiv`, `arbeitsbereich`.
   * `zustand.js` – `zustand` (Benutzer, Dokument, Grunddaten, Modus), `elemente(typ)` (gecachte Auswahllisten), `darfSchreiben()`.
   * `dokument.js` – Öffnen/Schließen, Speichern, Rückgängig/Wiederholen, Ereignisverbindung.
-  * `fenster.js` – Arbeitsbereich. Ansichtstyp (historisch „Fenster“): `{ titel, symbol, symbolFuer(p), einzig(p), erstellen(f, p) }`.
-    In der Ansicht: `f.titel()`, `f.werkzeug({text, symbol, aktion})`, `f.trenner()`, `f.werkzeuge`, `f.inhalt`, `f.fuss`,
-    `f.an(ereignis, f)` (wird beim Schließen abgemeldet), `f.parameterSetzen({...})` (fließt in gespeicherte Anordnungen),
-    `f.beimSchliessen()`. Öffnen mit `fensterverwaltung.oeffnen(typ, parameter, lage)`; `lage.andock` (`links`, `rechts`,
-    `lo`, `lu`, `ro`, `ru`, `max`) bzw. `x/y/b/h` bestimmen Spalte und Zeile. Anordnungen werden je Dokument gespeichert.
+  * `fenster.js` – Seitenverwaltung. Ansichtstyp (historisch „Fenster“): `{ titel, symbol, symbolFuer(p), einzig(p), erstellen(f, p) }`.
+    In der Ansicht: `f.titel()`, `f.werkzeug({text, aktion})` (Textknopf; `nurSymbol` + `symbol` für Pfeile u. ä.),
+    `f.trenner()`, `f.werkzeuge`, `f.inhalt`, `f.fuss`, `f.an(ereignis, f)` (wird beim Schließen abgemeldet),
+    `f.parameterSetzen({...})` (fließt in Adresse und gespeicherte Arbeitsplätze), `f.beimSchliessen()`.
+    Öffnen mit `fensterverwaltung.oeffnen(typ, parameter, lage)`; `lage.andock` (`links`, `rechts`, `lo`, `lu`, `ro`, `ru`)
+    bzw. `x/y/b/h` bestimmen Spalte und Zeile im Arbeitsplatz. Die zuletzt gezeigte Seite wird je Dokument gespeichert.
   * `navigation.js` – `NAVIGATION`: fachliche Gliederung der Seitenleiste. Einträge verweisen per `ref` auf die id eines
     Modul-Eintrags (Befehl, Untermenü, Rechte werden übernommen). Die Befehlssuche findet zusätzlich jeden Eintrag und
     Untermenüpunkt aller Module.
@@ -158,7 +160,8 @@ Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT
     Kacheln mit Fachfarbe als Tönung (`--fachfarbe`).
   * `dialog.js` – `dialog`, `meldung`, `frage`, `formular`, `dateiWaehlen`, `menue` (Kontextmenü), `hinweis`, `fehlerMelden`, `laden`.
   * `auswahl.js` – Vorschlagsliste für Eingabefelder (auch Listen „5a,5b“).
-  * `symbole.js` – Linien-Symbole (Lucide, ISC) unter fachlichen Namen (`symbol('lehrer')`); neue Symbole dort ergänzen.
+  * `symbole.js` – Linien-Symbole (Lucide, ISC) unter fachlichen Namen; nur für Funktionen (Pfeile, Schließen, Suchen,
+    Mehr) verwenden – Navigation, Menüs, Überschriften und Textknöpfe haben keine Symbole.
 * Ein Oberflächen-Modul exportiert `{ id, css, fenster, befehle, ribbon, start }` (siehe Kopf von `js/kern/modulsystem.js`).
   Die Liste `ribbon` heißt aus historischen Gründen so; sie enthält die **Befehlseinträge** des Moduls:
   `{ id, reiter, gruppe, text, symbol, befehl, args, menue, hinweis, taste, braucht: 'dokument'|'schreiben'|'admin', gedrueckt }`.
