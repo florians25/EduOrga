@@ -92,4 +92,4 @@
 /* Marke: Zeichen „UP“ und Wortmarke als Text */
 .an-marke .marke { display: inline-flex; align-items: center; gap: 10px; }
 .an-marke .zeichen { width: 30px; height: 30px; color: var(--up-marine-900); }
-.an-marke .wortmarke { font-size: 22px; font-weight: 600; letter-spacing: -.01em; color: var(--up-text); }
+.an-marke .wortmarke { font-size: 22px; letter-spacing: -.01em; color: var(--up-text); }

@@ -46,7 +46,10 @@ public class FerienFlaecheTests
         Assert.DoesNotContain("--frei-tage", css);
         Assert.DoesNotContain(".tt-ferien.einzeln { display: none; }", css);
         // Fläche nur so breit wie die eigene Spalte (4px Überstand je Seite), Schrift höchstens Medium
-        Assert.Contains(".tt-ferien { inset: 0 auto 0 -4px; width: calc(100% + 8px);", css);
-        Assert.Contains(".tt-ferien .inhalt { top: 50%; transform: translateY(-50%); gap: 16px; font-size: 14px; font-weight: 500;", css);
+        // Fläche nur so breit wie die eigene Spalte, Schrift höchstens Medium (css/karten.css)
+        var karten = Datei("css", "karten.css");
+        Assert.Contains(".tt-ferien { position: absolute; inset: 2px 0;", karten);
+        Assert.Contains(".tt-ferien .inhalt { display: flex; flex-direction: column;", karten);
+        Assert.DoesNotContain("--frei-tage", karten);
     }
 }

@@ -7,7 +7,7 @@ namespace UntPlanWeb.Tests;
 /// <summary>
 /// Stundenkarten (Sprint 26): Online-Unterricht ohne Raumlabel, Zusatzstunde mit Badge statt Vertretungstext, Verlegung mit
 /// Richtung („von“/„nach“), Pausenaufsichten mit Label hinter dem Ort, Schalter „Findet online statt“, Pfeil beim Lehrerwechsel
-/// und die macOS-Korrekturen (nur mit html.is-mac).
+/// und ohne Plattform-Sonderregeln (eine freie Schrift für alle Systeme).
 /// </summary>
 public class KartenDarstellungTests
 {
@@ -93,12 +93,12 @@ public class KartenDarstellungTests
     public void Karten_online_ohne_Raumlabel_Verlegungspfeile_Zusatzbadge()
     {
         var js = Datei("js", "plangitter.js");
-        // online: kein Raumlabel, nur das Symbol online_lesson unten auf der Karte
+        // online: kein Raumlabel, nur das Linien-Symbol „online“ unten auf der Karte
         Assert.Contains("const istOnline = (k, typ) => !!k.online && !istEntfall(k, typ) && k.status !== 'abwesend';", js);
         Assert.Contains("const raum = istOnline(k, typ) ? '' : werte(k.raeume, entfall);", js);
-        Assert.Contains("img/wu/klassenbuch/online_lesson.svg", js);
+        Assert.Contains("<i class=\"sym sym-video ecke-online\"", js);
         Assert.DoesNotContain("bi-camera-video-fill", js);
-        Assert.Contains("<path d=\"m20 11.011-3 1v-1", Datei("img", "wu", "klassenbuch", "online_lesson.svg"));
+        Assert.DoesNotContain("img/wu", js);
         // Verlegung: Richtung vom Server, Fallback Entfall = ursprüngliche Stunde
         Assert.Contains("k.verlegung === 'von' || k.verlegung === 'nach' ? k.verlegung : istEntfall(k, typ) ? 'von' : 'nach'", js);
         Assert.Contains("mk-verlegung ${richtung}", js);
@@ -106,13 +106,13 @@ public class KartenDarstellungTests
         Assert.Contains("export const ZUSATZ_TEXT = 'Zusätzl. Unterrichtsstunde';", js);
         Assert.Contains("if (k.text && k.fach && !/^entf", js);   // Sprint 27: Info-Symbol auch bei Zusatzstunden mit eigenem Text
         var css = Datei("css", "karten.css");
-        Assert.Contains(".mks .mk-verlegung.von { background-color: #f03e3e;", css);
-        Assert.Contains("M3.5 8h9M9 4.5 12.5 8 9 11.5", css);    // Pfeil nach rechts (ursprüngliche Stunde)
-        Assert.DoesNotContain("M12.5 8h-9M7 4.5 3.5 8 7 11.5", css);   // Sprint 27: auch die Zielstunde mit Pfeil nach rechts
+        // Verlegung als Schild „Verlegt“: ursprüngliche Stunde in der Entfallfarbe, Zielstunde in der Änderungsfarbe
+        Assert.Contains(".mks .mk-verlegung.von { background: var(--up-entfall); color: #fff; }", css);
+        Assert.Contains(".mks .mk-verlegung { background: var(--up-aenderung); color: #fff; }", css);
         // Zeilen etwas enger
-        Assert.Contains(".std .z1 { margin-bottom: 0; }", css);
-        Assert.Contains(".std .z2 + .z2 { margin-top: 0; }", css);
-        Assert.Contains("font-variant-numeric: lining-nums;", css);
+        Assert.Contains("line-height: 16px; margin-bottom: 1px;", css);
+        Assert.Contains(".std .z2 + .z2 { margin-top: 1px; }", css);
+        Assert.Contains("font-variant-numeric: lining-nums tabular-nums;", css);
     }
 
     [Fact]
@@ -143,40 +143,26 @@ public class KartenDarstellungTests
         Assert.DoesNotContain("<i class=\"bi bi-plus-lg\"></i>", sd);
         var css = Datei("css", "karten.css");
         Assert.Contains(".sd-schalter input:checked + .sd-schalter-spur { background: var(--u-akzent); }", css);
-        Assert.Contains(".sd-schalter input:checked + .sd-schalter-spur::after { transform: translateX(16px); }", css);
-        Assert.Contains(".sd-plus-sym { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }", css);
+        Assert.Contains(".sd-schalter input:checked + .sd-schalter-spur::after { transform: translateX(14px); }", css);
+        Assert.Contains(".sd-plus-sym { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }", css);
     }
 
-    // ------------------------------------------------------------------ macOS-Korrekturen nur mit html.is-mac
+    // ------------------------------------------------------------------ keine Plattform-Sonderregeln mehr (eine Schrift für alle Systeme)
 
     [Fact]
-    public void MacOS_Korrekturen_nur_mit_Plattformklasse()
+    public void Keine_Plattform_Sonderregeln_und_freie_Schrift()
     {
-        var plattform = Datei("js", "plattform.js");
-        Assert.Contains("document.documentElement.classList.add('is-mac')", plattform);
-        Assert.Contains("navigator.userAgentData", plattform);
         var index = Datei("index.html");
-        Assert.Contains("<link rel=\"stylesheet\" href=\"css/karten.css\">\n  <script src=\"js/plattform.js\"></script>", index);
-        Assert.True(index.IndexOf("js/plattform.js", StringComparison.Ordinal) < index.IndexOf("js/app.js", StringComparison.Ordinal));
-
-        var css = Datei("css", "karten.css");
-        var mac = css[css.IndexOf("/* ------------------------------------------------------------------ macOS", StringComparison.Ordinal)..];
-        Assert.Contains("text-box: trim-both cap alphabetic;", mac);
-        Assert.Contains("text-underline-offset: calc(-.5cap - var(--strich) / 2);", mac);
-        Assert.Contains("text-decoration-skip-ink: none;", mac);
-        // jede Regel im macOS-Abschnitt gilt nur mit der Plattformklasse – Windows bleibt unverändert
-        var ohneKommentar = System.Text.RegularExpressions.Regex.Replace(mac, @"/\*.*?\*/", "", System.Text.RegularExpressions.RegexOptions.Singleline);
-        foreach (var kopf in ohneKommentar.Split('}').Select(r => r.Contains('{') ? r[..r.LastIndexOf('{')] : "").Select(k => k.Split('{').Last().Trim())
-                     .Where(k => k.Length > 0 && !k.StartsWith("@supports")))
-            Assert.Contains("html:root.is-mac", kopf);
-        Assert.DoesNotContain("is-mac", css[..css.IndexOf("/* ------------------------------------------------------------------ macOS", StringComparison.Ordinal)].Replace("<html class=\"is-mac\">", ""));
-        Assert.DoesNotContain("text-box", Datei("css", "app.css"));
+        Assert.DoesNotContain("plattform.js", index);
+        Assert.DoesNotContain("is-mac", Datei("css", "karten.css"));
+        Assert.Contains("IBM Plex Sans", Datei("css", "tokens.css"));
+        Assert.Contains("--u-schrift: var(--up-schrift);", Datei("css", "app.css"));
     }
 
     [Fact]
     public void Neue_Dateien_ohne_Fremdnamen_und_nur_Regular_Medium()
     {
-        foreach (var inhalt in new[] { Datei("css", "karten.css"), Datei("js", "plattform.js"), Datei("js", "plangitter.js") })
+        foreach (var inhalt in new[] { Datei("css", "karten.css"), Datei("js", "plangitter.js"), Datei("js", "symbole.js"), Datei("css", "symbole.css") })
         {
             Assert.DoesNotContain(new string(new[] { 'u', 'n', 't', 'i', 's' }), inhalt, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("font-weight: 700", inhalt);

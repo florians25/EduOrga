@@ -12,7 +12,8 @@
 }
 .u-app .u-haupt { margin-left: var(--u-leiste); }
 
-/* Marke */
+/* Marke: Zeichen „UP“ und Wortmarke „UntPlan“ (IBM Plex Sans 600) – auch auf der Anmeldeseite */
+.marke .wortmarke { font-weight: 600; }
 .u-app .u-leistenkopf { padding: 16px 16px 10px; }
 .u-app .u-marke { display: block; padding: 0; color: var(--up-text); text-decoration: none !important; }
 .u-app .u-marke .marke { display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 0; }

@@ -346,15 +346,16 @@ public class KartenSprint27Tests
         // keine „Raum gesperrt“/„Klasse abwesend“ über dem Tag
         Assert.Contains("!/^(abwesend|raum gesperrt|klasse abwesend)\\b/i.test(h)", js);
         // Aufsichten wie die Stundenkarten bis an die Linie
-        Assert.Contains("top:${aufbau.pause.get(nach) + 1}px;height:${PAUSE - 1}px;left:calc(${j * breite}% + 1px);width:calc(${breite}% - 1px)", js);
+        Assert.Contains("top:${aufbau.pause.get(nach) + 2}px;height:${PAUSE - 4}px;left:calc(${j * breite}% + 2px);width:calc(${breite}% - 4px)", js);
         var css = Datei("css", "karten.css");
-        Assert.Contains(".u-hover-label.rot { background: #f44336;", css);
-        Assert.Contains(".u-hover-label.klein { font-size: 13px;", css);
-        Assert.Contains("M13 3.5 23.5 21H2.5Z' fill='%23ff4040' stroke='%23ff4040' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M7.4 16h11.2M14.2 11.6l4.4 4.4-4.4 4.4' fill='none' stroke='%23fff' stroke-width='2.5'", css);
-        Assert.Contains(".u-hover-label.pillen span { background: #6b7680;", css);
+        Assert.Contains(".u-hover-label.rot { background: var(--up-entfall); }", css);
+        Assert.Contains(".u-hover-label.klein { font-size: 11.5px;", css);
+        // Status als Schild mit Text (Entfall, Verlegt …) statt Bildzeichen
+        Assert.Contains(".mk-verlegung::before { content: \"Verlegt\"; }", css);
+        Assert.Contains(".u-hover-label.pillen span { padding: 3px 7px; border-radius: 3px; background: var(--up-schiefer-800);", css);
         Assert.Contains(".u-hover-label.pillen span.p-weg, .u-hover-label.pillen span.p-aus { text-decoration: line-through;", css);
         Assert.Contains(".std .z-liste > .z-namen", css);
-        Assert.Contains(".std .mks { gap: 4px; }", css);
+        Assert.Contains(".std .mks { position: absolute; right: 4px; bottom: 4px;", css);
     }
 
     [Fact]
@@ -368,8 +369,8 @@ public class KartenSprint27Tests
         Assert.Contains("function dialogeSchliessen()", app);
         Assert.Contains("async function abmelden() {\n  dialogeSchliessen();", app);
         var css = Datei("css", "karten.css");
-        Assert.Contains(".sd-titel h2 .sd-statuspille:not(.sd-einzelpille), .sd-kopf.grau .sd-titel h2 .sd-statuspille:not(.sd-einzelpille) { background: #6b7680; color: #fff; }", css);
-        Assert.Contains(".sd-fuss.sd-status .sd-orange { height: 46px; min-height: 46px;", css);
+        Assert.Contains(".sd-titel h2 .sd-statuspille:not(.sd-einzelpille) { background: var(--up-pruefung-flaeche); color: var(--up-pruefung); }", css);
+        Assert.Contains(".sd-fuss.sd-status .sd-haupt { height: 32px; }", css);
     }
     // ------------------------------------------------------------------ Lehrstoff aus Vorwochen
 
@@ -429,7 +430,7 @@ public class KartenSprint27Tests
         Assert.Contains("if (!kartenZeiten) html += `<div class=\"tt-zeit beginn\"", js);
         Assert.Contains("if (!kartenZeiten) html += `<div class=\"tt-zeit ende\"", js);
         var css = Datei("css", "karten.css");
-        Assert.Contains(".std.vorgemerkt, .std.lehrer-abwesend, .std.bereitschaft { background: #f1f5f8 !important; }", css);
-        Assert.Contains(".tt .aufsicht::before { left: 6px; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; }", css);
+        Assert.Contains(".std.bereitschaft, .std.vorgemerkt, .std.lehrer-abwesend { background: var(--up-flaeche-2) !important;", css);
+        Assert.Contains(".aufsicht::before { content: \"\"; flex: none; width: 12px; height: 12px;", css);
     }
 }

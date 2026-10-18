@@ -123,11 +123,12 @@ public class KalenderOberflaecheTests
         Assert.Contains("@media (min-width: 992px) and (max-width: 1440px) {\n  :root { --u-leiste: 248px; }", css);
         Assert.Contains("@media (min-width: 992px) and (max-width: 1300px) {\n  :root { --u-leiste: 232px; }", css);
         Assert.Contains("@media (min-width: 992px) and (max-height: 860px)", css);
-        Assert.Contains(".tt { container: plan-raster / inline-size; }", css);
-        Assert.Contains("@container plan-raster (max-width: 1000px)", css);
-        Assert.Contains("@container plan-raster (max-width: 820px)", css);
-        Assert.Contains("--tt-spalt: clamp(8px, .9vw, 14px)", css);
-        Assert.Contains(".tagplan-gitter { min-width: min(900px, 100%); }", css);
+        // das Stundenplan-Raster skaliert über Container-Abfragen in css/karten.css (eigene Gestaltung des Stundenplans)
+        var karten = Datei("css", "karten.css");
+        Assert.Contains("container: plan-raster / inline-size;", karten);
+        Assert.Contains("@container plan-raster (max-width: 980px)", karten);
+        Assert.Contains("@container plan-raster (max-width: 760px)", karten);
+        Assert.DoesNotContain(".tt {", css);
     }
 
     // ------------------------------------------------------------------ Anmeldung, Navigation, Kopf des Stundenplans
@@ -146,7 +147,8 @@ public class KalenderOberflaecheTests
         Assert.Contains("<link rel=\"stylesheet\" href=\"css/anmeldung.css\">", Datei("index.html"));
         Assert.Contains("grid-template-columns: minmax(0, 46fr) minmax(420px, 54fr)", css);
         Assert.Contains(".an-seite .lg-login { height: 48px; margin-top: 8px; border-radius: 999px;", css);
-        Assert.Contains("var(--u-akzent, #f56b2a)", css);
+        Assert.Contains("var(--u-akzent, var(--up-primaer))", css);
+        Assert.DoesNotContain("#f56b2a", css);
     }
 
     [Fact]
@@ -161,10 +163,11 @@ public class KalenderOberflaecheTests
     public void Auswahl_im_Plankopf_zeigt_den_Rahmen_nur_beim_Ueberfahren()
     {
         var css = Datei("css", "app.css");
-        Assert.Contains(".element-pill .wahl-knopf { background: transparent !important; border: 1.5px solid transparent !important;", css);
-        Assert.Contains(".element-pill .wahl-knopf:is(:hover, :focus-visible, [aria-expanded=\"true\"]) { border-color: var(--u-text) !important;", css);
-        Assert.Contains("border: 1px solid transparent; border-radius: 999px;", css);
-        Assert.Contains(".zeitraum.kal-pille:hover, .zeitraum.kal-pille[aria-expanded=\"true\"] { border-color: #67747e;", css);
+        // Elementwahl und Zeitraum stehen in der Werkzeugleiste über dem Raster (css/karten.css), nicht mehr in app.css
+        Assert.DoesNotContain(".element-pill", css);
+        var karten = Datei("css", "karten.css");
+        Assert.Contains(".wahl-knopf { gap: 8px; max-width: 320px; height: 32px;", karten);
+        Assert.Contains(".zeitraum:hover, .zeitraum.kal-pille[aria-expanded=\"true\"] { border-color: var(--up-schiefer-400);", karten);
     }
 
     [Fact]

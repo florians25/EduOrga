@@ -263,7 +263,7 @@ public class SeitenlayoutTests
         var plan = Datei("js", "ansichten", "plan.js");
         Assert.Contains("Abwesenheiten anzeigen</button>", plan);
         Assert.Contains("localStorage.setItem('untplan:planeinstellungen'", plan);
-        var css = Datei("css", "app.css");
+        var css = Datei("css", "karten.css");
         Assert.Contains(".tt.ohne-abwesenheiten .tt-abw { display: none; }", css);
         var regel = css.Split('\n').First(z => z.StartsWith(".tt-abw {", StringComparison.Ordinal));
         Assert.DoesNotContain("z-index", regel);

@@ -828,8 +828,8 @@ button.u-statuspille:hover { border-color: var(--u-grau); color: var(--u-titel);
   
   
   
-  
-  
+  .modal:not(.stundendetails) { left: var(--u-leiste); width: auto; right: 0; }
+  body.leiste-zu .modal:not(.stundendetails) { left: var(--u-leiste-zu); }
   .modal-backdrop { left: var(--u-leiste); width: auto; right: 0; }
   body.leiste-zu .modal-backdrop { left: var(--u-leiste-zu); }
 }

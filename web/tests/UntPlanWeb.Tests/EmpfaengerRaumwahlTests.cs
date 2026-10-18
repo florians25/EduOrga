@@ -99,7 +99,7 @@ public class EmpfaengerRaumwahlTests
         // runde Auswahlkreise, Avatar weiß mit grauem Rand, dunkle und helle Rollen-Pills
         Assert.Contains(".mt-ew-kreis {", css);
         Assert.Contains(".mt-ew-avatar {", css);
-        Assert.Contains("border-radius: 50%; background: #fff;", css);
+        Assert.Contains("border-radius: 50%; background: var(--up-flaeche);", css);
         Assert.Contains(".mt-ew-pill.dunkel", css);
         Assert.Contains(".mt-ew-suche input {", css);
     }
@@ -299,20 +299,23 @@ public class EmpfaengerRaumwahlTests
     [Fact]
     public void Ferienflaechen_haben_an_allen_Tagen_dieselbe_Deckkraft()
     {
-        var css = Datei("css", "nl-design.css");
-        Assert.Contains(".tt-spalte.frei:is(.ferien, .feiertag, .frei)::before { content: \"\"; position: absolute; inset: 0 -4px; border-radius: 4px; background: #e9ebee;", css);
-        Assert.Contains(".tt-ferien { inset: 0 auto 0 -4px; width: calc(100% + 8px); border-radius: 4px; background: rgba(190, 218, 237, .7);", css);
+        // eine Regel für alle freien Tage (css/karten.css), keine tagesabhängige Deckkraft
+        var css = Datei("css", "karten.css");
+        var regel = css.Split('\n').First(z => z.StartsWith(".tt-ferien {", StringComparison.Ordinal));
+        Assert.Contains("position: absolute; inset: 2px 0;", regel);
+        Assert.DoesNotContain("nth-child", css.Split('\n').Where(z => z.Contains(".tt-ferien")).Aggregate("", (a, z) => a + z));
     }
 
     [Fact]
     public void Navigation_blendet_Menuepunkte_gestaffelt_ein()
     {
         var js = Datei("js", "app.js");
-        Assert.Contains("function navEinblenden()", js);
+        // Seitenleiste: Unterpunkte einer aufgeklappten Gruppe werden kurz gestaffelt eingeblendet
+        Assert.Contains("function navEinblenden(liste)", js);
         Assert.Contains("prefers-reduced-motion: reduce", js);
-        Assert.Contains("duration: 220, delay: Math.min(i, 14) * 24", js);
-        Assert.Contains("transform: 'translateY(-6px)'", js);
-        Assert.Contains("navEinblendenAngefordert = true;", js);
+        Assert.Contains("duration: 160, delay: Math.min(i, 12) * 16", js);
+        Assert.Contains("transform: 'translateY(-4px)'", js);
+        Assert.Contains("if (auf) navEinblenden(liste);", js);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 // Monitoranzeige (ohne Anmeldung, über geheimen Link): Vertretungsplan mit Uhr, automatischem Bildlauf und Aktualisierung.
-import { LOGO, e, datumLang } from './ui.js';
+import { e, datumLang } from './ui.js';
+import { MARKE } from './symbole.js';
 
 const wurzel = document.getElementById('monitor');
 const token = location.pathname.split('/').filter(Boolean).pop();
@@ -63,7 +64,7 @@ async function laden() {
     // Monitoransichten (Administration): Nachrichten in der Kopfzeile der Tage, Laufschrift, Aktualisierungsintervall
     const anzeige = d.anzeige ?? {};
     const ticker = anzeige.ticker && d.tage[0]?.nachrichten.length ? d.tage[0].nachrichten.join('   +++   ') : '';
-    wurzel.innerHTML = `<header class="monitor-kopf">${LOGO}<div><h1>Vertretungsplan</h1><div class="schule">${e(d.schule)}</div></div><div class="uhr"></div></header>
+    wurzel.innerHTML = `<header class="monitor-kopf">${MARKE}<div><h1>Vertretungsplan</h1><div class="schule">${e(d.schule)}</div></div><div class="uhr"></div></header>
       <div class="monitor-tage">${d.tage.map(t => tagHtml(t, d.version === 'lehrer', anzeige.kopfzeile !== false)).join('') || '<p class="monitor-leer">Keine Daten.</p>'}</div>
       ${ticker ? `<div class="monitor-ticker"><span>${e(ticker)}</span></div>` : ''}`;
     const takt = Math.max(15, Number(anzeige.aktualisierung) || 60) * 1000;

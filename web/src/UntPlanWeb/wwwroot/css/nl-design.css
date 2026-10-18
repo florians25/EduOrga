@@ -21,8 +21,14 @@ body:has(.u-app.zu > .u-leiste) { --u-leiste-akt: var(--u-leiste-zu); }
 .u-toasts { left: var(--u-inhalt-mitte); max-width: calc(100% - var(--u-leiste-akt) - 2rem); }
 
 /* Dialoge, Dialoghintergrund und Stundendetails beginnen rechts der Navigation – die Dialoge stehen dadurch mittig im Inhalt */
- .modal-backdrop, body.leiste-zu .modal-backdrop {
+.modal:not(.stundendetails), .modal-backdrop,
+body.leiste-zu .modal:not(.stundendetails), body.leiste-zu .modal-backdrop {
   left: var(--u-leiste-akt); right: 0; width: auto;
+}
+@media (max-width: 991.98px) {
+  /* Telefon: die Kopfleiste liegt über den Dialogen – Dialoge darunter beginnen lassen, damit der Titel sichtbar bleibt */
+  .modal:not(.stundendetails) .modal-dialog { margin-top: calc(var(--u-kopf) + .5rem); }
+  .modal:not(.stundendetails) .modal-dialog-centered { min-height: calc(100% - var(--u-kopf) - 1rem); }
 }
 
 /* Ladeanzeige: Kreis mittig im jeweiligen Bereich */

@@ -2,7 +2,8 @@
 
 UntPlanWeb ist das webbasierte Gegenstück zu UntPlan: Stunden- und Vertretungspläne im Browser und in Apps für
 Schülerinnen und Schüler, Lehrkräfte und Eltern, dazu Krankmeldungen, Nachrichten und Raumbuchungen. UntPlanWeb wird
-in einem **eigenen Repository** entwickelt. Dieses Dokument beschreibt alles, was UntPlan dafür bereitstellt.
+im Ordner `web/` entwickelt (Server `web/src/UntPlanWeb`, Tests `web/tests/UntPlanWeb.Tests`, Bedienung und Betrieb in
+`web/README.md`). Dieses Dokument beschreibt die Schnittstelle zwischen UntPlan und UntPlanWeb und die Gestaltung der Weboberfläche.
 
 ## Architektur
 
@@ -91,9 +92,25 @@ siehe `SYNC_API.md`) und dient UntPlanWeb als Vorlage und für Tests (`tests/Unt
 * **Paket als Datei exportieren (JSON).**
 * **Einstellungen:** Schul-ID, Server, Port, https, API-Schlüssel, Verbindung prüfen sowie die Exportoptionen.
 
-## Empfehlungen für das UntPlanWeb-Repository
+## Weboberfläche
 
-* ASP.NET Core (Minimal API) + Datenbank (PostgreSQL/SQL Server) für Pakete, Benutzer, Rückmeldungen.
+Die Weboberfläche (`web/src/UntPlanWeb/wwwroot`) kommt ohne Build-Schritt und ohne Laden aus dem Internet aus: Bootstrap 5.3,
+ES-Module je Seite, Schrift IBM Plex Sans (SIL OFL), Linien-Symbole aus Lucide (ISC-Lizenz). Grundlage ist das Designsystem in
+`design/DESIGN.md` mit den Grundwerten aus `design/tokens.css` (als `wwwroot/css/tokens.css` eingebunden).
+
+* **Marke:** Zeichen „UP“ und Wortmarke „UntPlan“ als Text; Favicon und App-Symbole aus dem Monogramm (`img/logo.svg`,
+  PNG-Dateien mit `design/logo/icons_rendern.cjs` erzeugt).
+* **Seitenleiste:** hell, nur Text; Bereiche klappen an Ort und Stelle auf, der aktive Punkt ist hell marineblau hinterlegt.
+  Auf Telefon und Tablet als Schublade über den Knopf *Menü*.
+* **Stundenplan:** Werkzeugleiste über dem Raster, Zeitspalte mit Stundennummer und Uhrzeiten, heutiger Tag hervorgehoben,
+  Jetzt-Linie; Kacheln in der Fachfarbe getönt, Status als Schraffur, Rahmen oder Schild; Stundendetails als Bereich rechts.
+* **Klassenbuch-Seiten:** dichte Arbeitsansicht mit Filterzeile und Tabellen.
+* **Übrige Seiten:** gemeinsame Bausteine (Knöpfe, Felder, Listen, Dialoge) in den Farben des Designsystems.
+* **Monitor:** Vertretungsplan für Bildschirme im Schulhaus auf dunkler Marine-Fläche.
+
+## Hinweise zur Weiterentwicklung
+
+* ASP.NET Core (Minimal API) mit SQLite oder MariaDB/MySQL für Pakete, Benutzer und Rückmeldungen.
 * Rollen: Schüler/Eltern (Klassenplan, Vertretungen der Klasse), Lehrkräfte (eigener Plan, Lehrerversion, Krankmeldung),
   Schulleitung/Admin (Freigaben, API-Schlüssel).
 * Ansichten aus `WebPaket.Tage` erzeugen (bereits aufgelöst – keine Planlogik im Web nötig), Regelplan aus `Perioden`.
