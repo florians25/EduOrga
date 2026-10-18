@@ -71,7 +71,13 @@ fi
 
 # aktuelle docker-compose.yml laden (die eigene .env bleibt unverändert; die bisherige Datei wird beiseitegelegt)
 QUELLE=${UNTPLAN_QUELLE:-https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation}
-if command -v curl >/dev/null 2>&1 && curl -fsSL "$QUELLE/docker-compose.yml" -o docker-compose.yml.neu 2>/dev/null \
+# Datei aus dem Repository laden – über die GitHub-API (nicht zwischengespeichert), sonst über raw.githubusercontent.com
+API=${UNTPLAN_API:-https://api.github.com/repos/florians25/UntPlanNext/contents/installation}
+laden() { # laden <Datei> <Ziel>
+  curl -fsSL -H "Accept: application/vnd.github.raw" "$API/$1?ref=master" -o "$2" 2>/dev/null \
+    || curl -fsSL "$QUELLE/$1" -o "$2" 2>/dev/null
+}
+if command -v curl >/dev/null 2>&1 && laden docker-compose.yml docker-compose.yml.neu \
    && grep -q "ghcr.io/florians25/untplannext-studio" docker-compose.yml.neu; then
   if ! cmp -s docker-compose.yml docker-compose.yml.neu; then
     mv docker-compose.yml "docker-compose.yml.alt-$(date +%Y%m%d-%H%M%S)"; mv docker-compose.yml.neu docker-compose.yml

@@ -21,7 +21,7 @@ Jedes Programm läuft als eigener Docker-Container; Studio und Web haben jeweils
 
 ```sh
 mkdir -p /opt/untplannext && cd /opt/untplannext
-curl -fsSLO https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation/install.sh
+curl -fsSL -H "Accept: application/vnd.github.raw" -o install.sh "https://api.github.com/repos/florians25/UntPlanNext/contents/installation/install.sh?ref=master"
 sh install.sh      # Einrichtung mit Rückfragen (Programme, Datenbank, HTTPS)
 ./update.sh        # Update mit vorheriger Sicherung beider Datenbanken
 ```

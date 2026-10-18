@@ -28,7 +28,7 @@ in einem eigenen Volume – Studio kann ohne Web betrieben, gesichert und aktual
 
 ```sh
 mkdir -p /opt/untplannext && cd /opt/untplannext
-curl -fsSLO https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation/install.sh
+curl -fsSL -H "Accept: application/vnd.github.raw" -o install.sh "https://api.github.com/repos/florians25/UntPlanNext/contents/installation/install.sh?ref=master"
 sh install.sh
 ```
 

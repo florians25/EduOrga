@@ -6,7 +6,7 @@
 #
 # Ohne Repository auf einem frischen Server:
 #   mkdir -p /opt/untplannext && cd /opt/untplannext
-#   curl -fsSLO https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation/install.sh
+#   curl -fsSL -H "Accept: application/vnd.github.raw" -o install.sh "https://api.github.com/repos/florians25/UntPlanNext/contents/installation/install.sh?ref=master"
 #   sh install.sh
 set -eu
 
@@ -37,10 +37,17 @@ command -v docker >/dev/null 2>&1 || fehler "Docker ist nicht installiert. Anlei
 docker compose version >/dev/null 2>&1 || fehler "Docker Compose (Plugin „docker compose“) fehlt."
 docker info >/dev/null 2>&1 || fehler "Kein Zugriff auf Docker. Als root oder Mitglied der Gruppe „docker“ ausführen."
 
+# Datei aus dem Repository laden – über die GitHub-API (nicht zwischengespeichert), sonst über raw.githubusercontent.com
+API=${UNTPLAN_API:-https://api.github.com/repos/florians25/UntPlanNext/contents/installation}
+laden() { # laden <Datei> <Ziel>
+  curl -fsSL -H "Accept: application/vnd.github.raw" "$API/$1?ref=master" -o "$2" 2>/dev/null \
+    || curl -fsSL "$QUELLE/$1" -o "$2" 2>/dev/null
+}
+
 # docker-compose.yml und update.sh immer in der aktuellen Fassung verwenden (ältere oder fremde Dateien, z. B. aus
 # früheren UntPlan-Installationen, werden als *.alt-<Datum> beiseitegelegt)
 for datei in docker-compose.yml update.sh; do
-  if command -v curl >/dev/null 2>&1 && curl -fsSL "$QUELLE/$datei" -o "$datei.neu" 2>/dev/null; then
+  if command -v curl >/dev/null 2>&1 && laden "$datei" "$datei.neu"; then
     if [ -f "$datei" ] && ! cmp -s "$datei" "$datei.neu"; then
       mv "$datei" "$datei.alt-$(date +%Y%m%d-%H%M%S)"
       echo "Ältere $datei beiseitegelegt, aktuelle Fassung geladen."
@@ -52,7 +59,8 @@ for datei in docker-compose.yml update.sh; do
   fi
 done
 grep -q "ghcr.io/florians25/untplannext-studio" docker-compose.yml \
-  || fehler "docker-compose.yml ist keine UntPlan-Gesamtinstallation (alte Datei?). Bitte in einem leeren Ordner neu starten."
+  || fehler "docker-compose.yml ist nicht die aktuelle Fassung von UntPlan Next (GitHub lieferte evtl. noch eine zwischengespeicherte Datei).
+Bitte „rm docker-compose.yml“ und install.sh in ein paar Minuten erneut aufrufen."
 chmod +x update.sh
 
 if [ -f .env ] && [ "$NEU" = 0 ]; then
