@@ -8,7 +8,6 @@ import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
 import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
 import TableViewOutlined from '@mui/icons-material/TableViewOutlined';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import { holen } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
@@ -68,7 +67,7 @@ export default function FamilieAbwesenheiten({ teile }: { teile: string[] }) {
         <><Box sx={{ mb: d.liste.length > 1 ? 2 : 0 }}><KindWahl liste={d.liste} kind={d.kind} onWahl={() => void g.neu()} /></Box><MeldungenListe key={d.kind.id} kind={d.kind} gruende={d.gruende} /></>
       ) : (
         <>
-          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
+          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
             <IconButton onClick={() => navigieren(ziel(reiter, monatPlus(von, -1)))} aria-label="Einen Monat früher"><ArrowBackRounded /></IconButton>
             <DatumFeld label="Ab" wert={von} onWert={v => v && navigieren(ziel(reiter, v))} pflicht />
             <IconButton onClick={() => navigieren(ziel(reiter, monatPlus(von, 1)))} aria-label="Einen Monat später"><ArrowForwardRounded /></IconButton>
@@ -81,7 +80,7 @@ export default function FamilieAbwesenheiten({ teile }: { teile: string[] }) {
             <Tooltip title="Als PDF exportieren"><IconButton href={`/api/app/familie/export?liste=${reiter === 'meine' ? 'abwesenheiten' : 'fehlzeiten'}&format=pdf&${d.q}`} aria-label="Als PDF exportieren"><PictureAsPdfOutlined /></IconButton></Tooltip>
             <Tooltip title="Als CSV exportieren (Excel)"><IconButton href={`/api/app/familie/export?liste=${reiter === 'meine' ? 'abwesenheiten' : 'fehlzeiten'}&format=csv&${d.q}`} aria-label="Als CSV exportieren"><TableViewOutlined /></IconButton></Tooltip>
           </Paper>
-          <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+          <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
             {reiter === 'fehlzeiten' ? <FehlzeitenTabelle zeilen={d.zeilen as FehlzeitZeile[]} grundName={x => d.gruende[x] ?? x} /> : !d.zeilen.length ? <Leer text="Keine Abwesenheiten im Zeitraum." /> : (
               <Box sx={{ overflowX: 'auto' }}><Table size="small">
                 <TableHead><TableRow><TableCell padding="checkbox"><Checkbox size="small" checked={auswahl.size === d.zeilen.length} onChange={e => setAuswahl(e.target.checked ? new Set(d.zeilen.map((_, i) => i)) : new Set())} inputProps={{ 'aria-label': 'Alle auswählen' }} /></TableCell>
@@ -111,7 +110,7 @@ export default function FamilieAbwesenheiten({ teile }: { teile: string[] }) {
           </Paper>
           {reiter === 'meine' && (
             <Stack direction="row" gap={1.5} alignItems="center" sx={{ mt: 2 }} flexWrap="wrap">
-              <Button variant="contained" startIcon={<PrintOutlined />} onClick={() => void brief(d.kind!.id, d.zeilen as Zeitraum[])}>Entschuldigungsschreiben drucken</Button>
+              <Button variant="contained" onClick={() => void brief(d.kind!.id, d.zeilen as Zeitraum[])}>Entschuldigungsschreiben drucken</Button>
               <Typography variant="body2" color="text.secondary">Ohne Auswahl: alle noch nicht entschuldigten Abwesenheiten im Zeitraum.</Typography>
             </Stack>
           )}

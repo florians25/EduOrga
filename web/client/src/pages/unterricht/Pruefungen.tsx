@@ -2,9 +2,7 @@
 // Datum, Von, Bis, Räume, Aufgegeben am, Text. Klausuren aus EduOrga Studio und in EduOrga Web vorgemerkte Prüfungen; Löschen nach Rückfrage.
 import { useState } from 'react';
 import { Button, IconButton, Tooltip, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import { holen, senden, speichern } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Seite } from '../../components/Seite';
@@ -51,8 +49,8 @@ export default function Pruefungen({ teile }: SeitenProps) {
   return (
     <Seite titel="Prüfungen" untertitel={g.daten ? `${l.length} Prüfungen · ${datumDe(z.von)} – ${datumDe(z.bis)}` : undefined}
       aktionen={<>
-        {ich.kollegium && <Button variant="outlined" startIcon={<AddRounded />} href="#/melden/klausur">Prüfung eintragen</Button>}
-        <Button variant="outlined" startIcon={<DownloadRounded />} disabled={!l.length} onClick={() => {
+        {ich.kollegium && <Button variant="outlined" href="#/melden/klausur">Prüfung eintragen</Button>}
+        <Button variant="outlined" disabled={!l.length} onClick={() => {
           const zeilen = auswahl.size ? l.filter(p => auswahl.has(p.i)) : l;
           speichern(csv([['Art', 'Name', 'Klassen', 'Fach', 'Lehrkräfte', 'Datum', 'Von', 'Bis', 'Räume', 'Aufgegeben am', 'Text', 'Status'],
             ...zeilen.map(p => [p.art, p.titel, p.klassen.join(', '), p.fach, p.lehrer.join(', '), datumDe(p.datum), p.beginn, p.ende, p.raeume.join(', '), datumDe(p.aufgegeben), p.text, p.status])]), `pruefungen-${z.von}-${z.bis}.csv`);

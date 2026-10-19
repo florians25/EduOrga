@@ -1,6 +1,5 @@
 // Hinweiskarte „Sprechtag“ auf der Startseite (Einladungs- bzw. Anmeldezeitraum).
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
-import ForumOutlined from '@mui/icons-material/ForumOutlined';
 import { holen } from '../../api/client';
 import { useLaden } from '../../lib/useLaden';
 import { Plakette } from '../../components/Bausteine';
@@ -13,10 +12,9 @@ export function SprechtagKarte() {
   return (
     <>
       {g.daten.map(k => (
-        <Paper key={k.id} variant="outlined" sx={{ p: 2, borderRadius: 2, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-          <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: 'action.selected', color: 'primary.main', display: 'grid', placeItems: 'center', flex: 'none' }}><ForumOutlined fontSize="small" /></Box>
+        <Paper key={k.id} variant="outlined" sx={{ p: 2, borderRadius: 1.5, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap"><Typography sx={{ fontWeight: 600 }}>{k.name}</Typography>{k.status === 'angekuendigt' && <Plakette ton="termin">angekündigt</Plakette>}</Stack>
+            <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap"><Typography sx={{ fontWeight: 500 }}>{k.name}</Typography>{k.status === 'angekuendigt' && <Plakette ton="termin">angekündigt</Plakette>}</Stack>
             <Typography variant="body2" color="text.secondary">{k.datumText}{k.beginn ? ` · ${k.beginn}–${k.ende} Uhr` : ''}{k.ort ? ` · ${k.ort}` : ''}</Typography>
             {k.text && <Typography variant="body2" sx={{ mt: 0.5 }}>{k.text}</Typography>}
             <Button size="small" href={`#/sprechtag/${k.id}`} sx={{ mt: 1, ml: -1 }}>Zum Sprechtag</Button>

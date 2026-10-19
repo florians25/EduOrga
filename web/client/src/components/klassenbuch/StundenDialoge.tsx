@@ -22,7 +22,7 @@ export interface Bereich { von: number; bis: number; beginn: string; ende: strin
 function Kopf({ k, zusatz }: { k: Karte; zusatz?: [string, string][] }) {
   const z: [string, string][] = [['Klasse', kuerzel(k.klassen).join(', ')], ['Lehrkraft', kuerzel(k.lehrer).join(', ')], ['Fach', k.fach], ...(zusatz ?? [])];
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 2, rowGap: 0.5, p: 1.5, mb: 2, borderRadius: 2, bgcolor: 'action.hover', fontSize: 13 }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 2, rowGap: 0.5, p: 1.5, mb: 2, borderRadius: 1.5, bgcolor: 'action.hover', fontSize: 13 }}>
       {z.filter(x => x[1]).map(([a, b]) => [<Typography key={a} variant="body2" color="text.secondary">{a}</Typography>, <Typography key={a + 'w'} variant="body2" sx={{ fontWeight: 500 }}>{b}</Typography>])}
     </Box>
   );

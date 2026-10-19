@@ -2,20 +2,15 @@
 // Meldungen, Formulare für Abwesenheit und Prüfung (Raumwahl mit Belegung) und „Meine Meldungen“ mit Suche, Status- und Art-Filter,
 // Zurückziehen offener Meldungen und Löschen eingetragener Prüfungen. Raum buchen führt in das Buchungsmodul.
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Alert, Autocomplete, Badge, Box, Button, Chip, MenuItem, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import ArrowForwardIosRounded from '@mui/icons-material/ArrowForwardIosRounded';
+import { Alert, Autocomplete, Box, Button, Chip, MenuItem, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import ChatOutlined from '@mui/icons-material/ChatOutlined';
 import ChecklistRounded from '@mui/icons-material/ChecklistRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
 import FactCheckOutlined from '@mui/icons-material/FactCheckOutlined';
 import HighlightOffRounded from '@mui/icons-material/HighlightOffRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import MeetingRoomOutlined from '@mui/icons-material/MeetingRoomOutlined';
 import PersonRemoveOutlined from '@mui/icons-material/PersonRemoveOutlined';
-import SendRounded from '@mui/icons-material/SendRounded';
-import UndoRounded from '@mui/icons-material/UndoRounded';
-import AddRounded from '@mui/icons-material/AddRounded';
 import { holen, loeschen, senden } from '../../api/client';
 import type { Element, Zeit } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
@@ -32,9 +27,9 @@ import { pruefungLoeschen, type Pruefung } from '../unterricht/Pruefungen';
 import { meldungText, MeldungStatus, type Meldung } from './meldungen';
 
 const GRUENDE = ['Krankheit', 'Fortbildung', 'Dienstlicher Termin', 'Klassenfahrt / Exkursion', 'Sonderurlaub', 'Sonstiges'];
-const ART: Record<string, { text: string; icon: ReactNode }> = {
-  absenz: { text: 'Abwesenheit', icon: <PersonRemoveOutlined /> }, klausur: { text: 'Prüfung', icon: <FactCheckOutlined /> }, klausurloeschen: { text: 'Prüfung löschen', icon: <DeleteOutlineRounded /> },
-  raumbuchung: { text: 'Raumbuchung', icon: <MeetingRoomOutlined /> }, buchungstorno: { text: 'Storno', icon: <HighlightOffRounded /> }, nachricht: { text: 'Nachricht', icon: <ChatOutlined /> },
+const ART: Record<string, { text: string }> = {
+  absenz: { text: 'Abwesenheit' }, klausur: { text: 'Prüfung' }, klausurloeschen: { text: 'Prüfung löschen' },
+  raumbuchung: { text: 'Raumbuchung' }, buchungstorno: { text: 'Storno' }, nachricht: { text: 'Nachricht' },
 };
 const artVon = (m: Meldung) => ART[m.typ] ?? ART.nachricht;
 const titelVon = (m: Meldung) => meldungText(m).replace(/^Klausur /, 'Prüfung ');
@@ -62,16 +57,15 @@ export default function Melden({ teile }: SeitenProps) {
 function MeldungZeile({ m, aktionen, neu }: { m: Meldung; aktionen?: boolean; neu?: () => void }) {
   const a = artVon(m);
   const aktion = !aktionen ? null : m.typ === 'klausur' && (m.von ?? '') >= heuteIso()
-    ? <Button size="small" color="error" startIcon={<DeleteOutlineRounded />} onClick={async () => {
+    ? <Button size="small" color="error" onClick={async () => {
       if (await pruefungLoeschen({ datum: m.von!, stundeVon: m.stundeVon ?? 1, stundeBis: m.stundeBis ?? m.stundeVon ?? 1, klassen: m.klassen ?? [], titel: m.titel ?? '' } as Pruefung)) neu?.();
     }}>Löschen</Button>
-    : m.status === 'offen' ? <Button size="small" startIcon={<UndoRounded />} onClick={async () => {
+    : m.status === 'offen' ? <Button size="small" onClick={async () => {
       if (!(await bestaetigen('Meldung zurückziehen', 'Soll die Meldung zurückgezogen werden?', 'Zurückziehen'))) return;
       try { await loeschen(`/api/app/meldungen/${encodeURIComponent(m.id)}`); toast('Meldung zurückgezogen.'); neu?.(); } catch (err) { fehler(err); }
     }}>Zurückziehen</Button> : null;
   return (
     <Stack direction="row" gap={1.5} alignItems="center" sx={{ py: 1.25, px: 2, borderTop: 1, borderColor: 'divider', '&:first-of-type': { borderTop: 0 }, opacity: m.status === 'abgelehnt' ? 0.75 : 1 }}>
-      <Box sx={{ width: 36, height: 36, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main', flexShrink: 0, '& svg': { fontSize: 20 } }} title={a.text}>{a.icon}</Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontWeight: 500 }} noWrap>{titelVon(m)}</Typography>
         <Typography variant="body2" color="text.secondary" noWrap>{a.text}{erstelltText(m) && ` · gemeldet ${erstelltText(m)}`}{m.text && m.typ !== 'nachricht' ? ` · ${m.text}` : ''}</Typography>
@@ -85,22 +79,24 @@ function MeldungZeile({ m, aktionen, neu }: { m: Meldung; aktionen?: boolean; ne
 function Uebersicht() {
   const g = useLaden(sig => holen<Meldung[]>('/api/app/meldungen', sig).catch(() => [] as Meldung[]), []);
   const offen = (g.daten ?? []).filter(m => m.status === 'offen').length;
-  const kachel = (href: string, icon: ReactNode, titel: string, text: string, zahl = 0) => (
-    <Paper variant="outlined" component="a" href={href} sx={{ p: 2.25, display: 'flex', gap: 2, alignItems: 'center', textAlign: 'left', borderRadius: 2, justifyContent: 'flex-start', textDecoration: 'none', color: 'inherit', transition: 'border-color .12s, box-shadow .12s', '&:hover': { borderColor: 'primary.main', boxShadow: '0 6px 18px rgba(21,26,33,.07)' } }}>
-      <Badge badgeContent={zahl} color="primary"><Box sx={{ width: 46, height: 46, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main' }}>{icon}</Box></Badge>
-      <Box sx={{ flex: 1 }}><Typography sx={{ fontWeight: 600 }}>{titel}</Typography><Typography variant="body2" color="text.secondary">{text}</Typography></Box>
-      <ArrowForwardIosRounded sx={{ fontSize: 14, color: 'text.disabled' }} />
-    </Paper>
+  // Einstiege als schlichte Linkliste (eine Zeile je Aufgabe, Beschreibung daneben) – keine Symbolkacheln.
+  const kachel = (href: string, titel: string, text: string, zahl = 0) => (
+    <Box component="a" href={href} sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr) auto', md: '220px minmax(0, 1fr) auto' }, columnGap: 2, alignItems: 'baseline', px: 2, py: 1.25,
+      textDecoration: 'none', color: 'inherit', borderBottom: 1, borderColor: 'divider', '&:last-of-type': { borderBottom: 0 }, '&:hover': { bgcolor: 'action.hover' } }}>
+      <Typography sx={{ fontWeight: 500, color: 'secondary.main' }}>{titel}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>{text}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>{zahl ? `${zahl} offen` : ''}</Typography>
+    </Box>
   );
   return (
-    <Stack gap={3}>
-      <Typography color="text.secondary">Was möchten Sie melden? Meldungen gehen an die Planung und erscheinen nach der Übernahme im Stundenplan.</Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5 }}>
-        {kachel('#/melden/abwesenheit', <PersonRemoveOutlined />, 'Abwesenheit melden', 'Krankheit, Fortbildung oder Termin – ganztägig oder für einzelne Stunden')}
-        {kachel('#/melden/klausur', <FactCheckOutlined />, 'Prüfung eintragen', 'Klassenarbeit, Klausur oder Test mit Raum und Aufsicht')}
-        {kachel('#/buchen/raum', <MeetingRoomOutlined />, 'Raum buchen', 'Freien Raum für eine Stunde oder als Serie buchen')}
-        {kachel('#/melden/meine', <ChecklistRounded />, 'Meine Meldungen', 'Status verfolgen, offene Meldungen zurückziehen', offen)}
-      </Box>
+    <Stack gap={2}>
+      <Typography variant="body2" color="text.secondary">Meldungen gehen an die Planung und erscheinen nach der Übernahme im Stundenplan.</Typography>
+      <Paper variant="outlined" component="nav" aria-label="Melden">
+        {kachel('#/melden/abwesenheit', 'Abwesenheit melden', 'Krankheit, Fortbildung oder Termin – ganztägig oder für einzelne Stunden')}
+        {kachel('#/melden/klausur', 'Prüfung eintragen', 'Klassenarbeit, Klausur oder Test mit Raum und Aufsicht')}
+        {kachel('#/buchen/raum', 'Raum buchen', 'Freien Raum für eine Stunde oder als Serie buchen')}
+        {kachel('#/melden/meine', 'Meine Meldungen', 'Status verfolgen, offene Meldungen zurückziehen', offen)}
+      </Paper>
       <Paper variant="outlined">
         <Stack direction="row" alignItems="center" sx={{ px: 2, pt: 1.75, pb: 1 }}><Typography variant="h3" sx={{ flex: 1 }}>Zuletzt gemeldet</Typography>{!!g.daten?.length && <Button size="small" href="#/melden/meine">Alle anzeigen</Button>}</Stack>
         <Geladen g={g}>{l => l.length ? <Box>{l.slice(0, 4).map(m => <MeldungZeile key={m.id} m={m} />)}</Box> : <Leer text="Noch keine Meldungen" unter="Ihre Meldungen erscheinen hier mit ihrem Status." />}</Geladen>
@@ -109,15 +105,14 @@ function Uebersicht() {
   );
 }
 
-function FormKarte({ icon, titel, unter, children, fuss }: { icon: ReactNode; titel: string; unter: string; children: ReactNode; fuss: ReactNode }) {
+function FormKarte({ titel, unter, children, fuss }: { titel: string; unter: string; children: ReactNode; fuss: ReactNode }) {
   return (
     <Paper variant="outlined" sx={{ maxWidth: 820 }}>
-      <Stack direction="row" gap={2} alignItems="center" sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider' }}>
-        <Box sx={{ width: 44, height: 44, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main' }}>{icon}</Box>
+      <Stack direction="row" gap={2} alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
         <Box><Typography variant="h3">{titel}</Typography><Typography variant="body2" color="text.secondary">{unter}</Typography></Box>
       </Stack>
-      <Box sx={{ p: 2.5 }}>{children}</Box>
-      <Stack direction="row" gap={1} justifyContent="flex-end" sx={{ px: 2.5, py: 1.5, borderTop: 1, borderColor: 'divider' }}>{fuss}</Stack>
+      <Box sx={{ p: 2 }}>{children}</Box>
+      <Stack direction="row" gap={1} justifyContent="flex-end" sx={{ px: 2, py: 1.5, borderTop: 1, borderColor: 'divider' }}>{fuss}</Stack>
     </Paper>
   );
 }
@@ -139,8 +134,8 @@ function Abwesenheit({ stunden }: { stunden: Zeit[] }) {
   const [laeuft, setLaeuft] = useState(false);
   const zeitraum = von === bis || !bis ? datumLang(von) : `${datumLang(von)} bis ${datumLang(bis)}`;
   return (
-    <FormKarte icon={<PersonRemoveOutlined />} titel="Abwesenheit melden" unter="Die Meldung geht an die Vertretungsplanung und wird dort als Abwesenheit übernommen."
-      fuss={<><Button variant="outlined" href="#/melden">Abbrechen</Button><Button variant="contained" startIcon={<SendRounded />} disabled={laeuft} onClick={async () => {
+    <FormKarte titel="Abwesenheit melden" unter="Die Meldung geht an die Vertretungsplanung und wird dort als Abwesenheit übernommen."
+      fuss={<><Button variant="outlined" href="#/melden">Abbrechen</Button><Button variant="contained" disabled={laeuft} onClick={async () => {
         setLaeuft(true);
         try {
           await senden('/api/app/meldungen/abwesenheit', { von, bis, grund, text, stundeVon: ganz ? null : sv, stundeBis: ganz ? null : sb });
@@ -184,8 +179,8 @@ function Klausur({ stunden, klassen, lehrer }: { stunden: Zeit[]; klassen: Eleme
       renderInput={p => <TextField {...p} label={label} placeholder={wert.length ? '' : platzhalter} />} />
   );
   return (
-    <FormKarte icon={<FactCheckOutlined />} titel="Prüfung eintragen" unter="Die Prüfung steht sofort im Stundenplan und wird von EduOrga Studio übernommen."
-      fuss={<><Button variant="outlined" href="#/melden">Abbrechen</Button><Button variant="contained" startIcon={<SendRounded />} disabled={laeuft} onClick={async () => {
+    <FormKarte titel="Prüfung eintragen" unter="Die Prüfung steht sofort im Stundenplan und wird von EduOrga Studio übernommen."
+      fuss={<><Button variant="outlined" href="#/melden">Abbrechen</Button><Button variant="contained" disabled={laeuft} onClick={async () => {
         if (!titel.trim()) { toast('Bitte einen Titel angeben.', true); return; }
         if (!kl.length) { toast('Bitte mindestens eine Klasse auswählen.', true); return; }
         setLaeuft(true);
@@ -219,7 +214,7 @@ function Meine() {
   const f = suche.trim().toLowerCase();
   const l = liste.filter(m => (!status || m.status === status) && (!art || (ART[m.typ] ? m.typ : 'nachricht') === art) && (!f || `${titelVon(m)} ${m.text ?? ''} ${artVon(m).text}`.toLowerCase().includes(f)));
   return (
-    <Seite titel="Meine Meldungen" untertitel={g.daten ? `${liste.length} Meldungen` : undefined} aktionen={<Button variant="contained" startIcon={<AddRounded />} href="#/melden">Neue Meldung</Button>}
+    <Seite titel="Meine Meldungen" untertitel={g.daten ? `${liste.length} Meldungen` : undefined} aktionen={<Button variant="contained" href="#/melden">Neue Meldung</Button>}
       filter={<>
         <SuchFeld wert={suche} onWert={setSuche} platzhalter="Meldungen durchsuchen" />
         <Wahl label="Status" wert={status} onWert={setStatus} alle={`Jeder Status (${anzahl('')})`} breite={220}
@@ -227,7 +222,7 @@ function Meine() {
         {arten.length > 1 && <Wahl label="Art" wert={art} onWert={setArt} alle="Alle Arten" optionen={arten.map(a => [a, ART[a].text] as [string, string])} />}
       </>}>
       <Geladen g={g}>{() => !liste.length
-        ? <Leer text="Noch keine Meldungen" symbol={<EventBusyOutlined />} unter="Melden Sie eine Abwesenheit oder tragen Sie eine Prüfung ein – hier sehen Sie dann den Status." aktion={{ text: 'Neue Meldung', onClick: () => navigieren('#/melden') }} />
+        ? <Leer text="Noch keine Meldungen" unter="Melden Sie eine Abwesenheit oder tragen Sie eine Prüfung ein – hier sehen Sie dann den Status." aktion={{ text: 'Neue Meldung', onClick: () => navigieren('#/melden') }} />
         : l.length ? <Paper variant="outlined">{l.map(m => <MeldungZeile key={m.id} m={m} aktionen neu={() => void g.neu()} />)}</Paper>
           : <Leer text="Keine Meldungen für diesen Filter" aktion={{ text: 'Filter zurücksetzen', onClick: () => { setSuche(''); setStatus(''); setArt(''); } }} />}</Geladen>
     </Seite>

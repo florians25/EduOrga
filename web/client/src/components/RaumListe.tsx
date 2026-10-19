@@ -17,7 +17,7 @@ export function RaumStatusPlakette({ r, status }: { r: RaumStatus; status?: { te
   const t = useTheme();
   const s = status ?? { text: r.frei ? 'frei' : 'belegt', frei: r.frei, titel: r.frei ? '' : belegtText(r) };
   const farbe = s.frei ? t.palette.status.ok.main : t.palette.status.entfall.main;
-  return <Tooltip title={s.titel ? <Box sx={{ whiteSpace: 'pre-line' }}>{s.titel}</Box> : ''}><Box component="span" sx={{ px: 1, height: 22, display: 'inline-flex', alignItems: 'center', borderRadius: 999, fontSize: 12, fontWeight: 600, color: farbe, bgcolor: alpha(farbe, 0.1) }}>{s.text}</Box></Tooltip>;
+  return <Tooltip title={s.titel ? <Box sx={{ whiteSpace: 'pre-line' }}>{s.titel}</Box> : ''}><Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', fontSize: 12, fontWeight: 500, color: farbe }}>{s.text}</Box></Tooltip>;
 }
 
 export interface RaumFilter { suche: string; gebaeude: string; abteilung: string; raumart: string; kapazitaet: string; nurFrei: boolean }
@@ -49,10 +49,10 @@ export function RaumListe({ raeume: roh, gewaehlt, onWahl, filter, setFilter, wa
     return (
       <Box key={kurz ?? '-'} role="option" aria-selected={an} aria-disabled={aus} tabIndex={aus ? -1 : 0} onClick={() => !aus && onWahl(kurz)}
         onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && !aus) { e.preventDefault(); onWahl(kurz); } }}
-        sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1.5, py: 1, borderRadius: 2, cursor: aus ? 'not-allowed' : 'pointer', opacity: aus ? 0.5 : 1,
+        sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1.5, py: 1, borderRadius: 1.5, cursor: aus ? 'not-allowed' : 'pointer', opacity: aus ? 0.5 : 1,
           bgcolor: an ? alpha(t.palette.primary.main, 0.08) : 'transparent', border: 1, borderColor: an ? 'primary.main' : 'transparent', '&:hover': { bgcolor: aus ? undefined : an ? undefined : 'action.hover' } }}>
         <Box sx={{ width: 18, height: 18, borderRadius: 9, border: 2, borderColor: an ? 'primary.main' : 'text.disabled', display: 'grid', placeItems: 'center', flex: 'none' }}>
-          {an && <Box sx={{ width: 8, height: 8, borderRadius: 4, bgcolor: 'primary.main' }} />}
+          {an && <Box sx={{ width: 8, height: 8, borderRadius: 1.5, bgcolor: 'primary.main' }} />}
         </Box>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontWeight: 600, fontSize: 14 }} component="span">{r ? r.kurz : ohne}</Typography>

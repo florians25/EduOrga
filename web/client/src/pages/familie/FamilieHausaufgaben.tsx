@@ -29,7 +29,7 @@ export default function FamilieHausaufgaben({ teile }: { teile: string[] }) {
     <Seite titel="Hausaufgaben">
       <Geladen g={g}>{d => !d.kind ? <Leer text={OHNE_ZUORDNUNG} /> : (
         <>
-          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
+          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
             <IconButton onClick={() => navigieren(ziel(zeitraum === 'monat' ? monatPlus(von, -1) : plusTage(von, -7)))} aria-label="Zurück"><ArrowBackRounded /></IconButton>
             <DatumFeld label="Datum" wert={von} onWert={v => v && navigieren(ziel(v))} pflicht />
             <IconButton onClick={() => navigieren(ziel(zeitraum === 'monat' ? monatPlus(von, 1) : plusTage(von, 7)))} aria-label="Weiter"><ArrowForwardRounded /></IconButton>

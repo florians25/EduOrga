@@ -3,9 +3,7 @@
 // Die Liste aus EduOrga Studio bleibt Grundlage; Änderungen in EduOrga Web überlagern sie.
 import { useState } from 'react';
 import { Button, IconButton, MenuItem, Stack, TextField, Tooltip, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import SwapHorizRounded from '@mui/icons-material/SwapHorizRounded';
 import { holen, loeschen, senden, speichern } from '../../api/client';
@@ -34,8 +32,8 @@ export default function Schueler({ teile }: SeitenProps) {
   return (
     <Seite titel="Schüler*innen" untertitel={d ? `${d.schueler.length} Schüler*innen` : undefined}
       aktionen={d && <>
-        {d.anlegen && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'form', s: null })}>Neu</Button>}
-        <Button variant="outlined" startIcon={<DownloadRounded />} onClick={() => speichern(csv([['Nachname', 'Vorname', 'Klasse', 'Geschlecht', 'Geburtsdatum', 'E-Mail'],
+        {d.anlegen && <Button variant="contained" onClick={() => setDialog({ art: 'form', s: null })}>Neu</Button>}
+        <Button variant="outlined" onClick={() => speichern(csv([['Nachname', 'Vorname', 'Klasse', 'Geschlecht', 'Geburtsdatum', 'E-Mail'],
           ...d.schueler.map(s => [s.name, s.vorname, s.klasse, s.geschlecht, s.geburtsdatum, s.email])]), `schueler-${klasse || 'alle'}.csv`)}>CSV</Button>
       </>}
       filter={d && <>

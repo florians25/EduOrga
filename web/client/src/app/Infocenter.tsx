@@ -69,7 +69,7 @@ export function InfoKarte({ x, onClick, werkzeuge }: { x: InfoEintrag; onClick?:
   const d = new Date(String(x.datum).slice(0, 10) + 'T12:00');
   const lang = (x.text?.length ?? 0) > 220 || (x.punkte?.length ?? 0) > 3;
   return (
-    <Box onClick={onClick} sx={{ display: 'flex', gap: 2, p: 2, borderRadius: 2, border: 1, borderColor: x.gelesen ? 'divider' : 'primary.light', bgcolor: x.gelesen ? 'background.paper' : 'action.selected',
+    <Box onClick={onClick} sx={{ display: 'flex', gap: 2, p: 2, borderRadius: 1.5, border: 1, borderColor: x.gelesen ? 'divider' : 'primary.light', bgcolor: x.gelesen ? 'background.paper' : 'action.selected',
       cursor: onClick && !x.gelesen ? 'pointer' : 'default', position: 'relative' }}>
       <Box sx={{ textAlign: 'center', minWidth: 40 }}>
         <Typography sx={{ fontSize: 20, fontWeight: 600, lineHeight: 1 }}>{Number.isNaN(d.getTime()) ? '' : d.getDate()}</Typography>
@@ -87,7 +87,7 @@ export function InfoKarte({ x, onClick, werkzeuge }: { x: InfoEintrag; onClick?:
         </Box>
         {lang && <Button size="small" onClick={e => { e.stopPropagation(); setAuf(!auf); }} sx={{ mt: 0.5, ml: -1 }}>{auf ? 'weniger' : 'mehr'}</Button>}
       </Box>
-      {!x.gelesen && <Box sx={{ width: 8, height: 8, borderRadius: 4, bgcolor: 'primary.main', position: 'absolute', top: 14, right: 14 }} aria-label="ungelesen" />}
+      {!x.gelesen && <Box sx={{ width: 8, height: 8, borderRadius: 1.5, bgcolor: 'primary.main', position: 'absolute', top: 14, right: 14 }} aria-label="ungelesen" />}
     </Box>
   );
 }

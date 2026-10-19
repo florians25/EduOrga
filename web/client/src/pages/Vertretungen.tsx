@@ -2,7 +2,6 @@
 // Lehrkräften und gesperrten Räumen; Tabelle der Änderungen (alt durchgestrichen → neu). Filter nach Klasse bzw. Lehrkraft, 1/2/5 Tage.
 import { useState } from 'react';
 import { alpha, Box, Button, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, ToggleButton, ToggleButtonGroup, Typography, useTheme } from '@mui/material';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import CelebrationOutlined from '@mui/icons-material/CelebrationOutlined';
 import CampaignOutlined from '@mui/icons-material/CampaignOutlined';
 import { holen } from '../api/client';
@@ -35,7 +34,7 @@ export function VertretungsTag({ t, kollegium, filter = '' }: { t: VTag; kollegi
   const zeilen = f ? t.zeilen.filter(z => z.klassen.toLowerCase().split(/,\s*/).some(k => k.startsWith(f)) || (kollegium && `${z.lehrer} ${z.lehrerAlt ?? ''}`.toLowerCase().includes(f))) : t.zeilen;
   const infos: [string, string[]][] = [['Abwesende Klassen', t.abwesendeKlassen], ...(kollegium ? [['Abwesende Lehrkräfte', t.abwesendeLehrer] as [string, string[]]] : []), ['Nicht verfügbare Räume', t.blockierteRaeume]];
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', mb: 2.5, breakInside: 'avoid' }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden', mb: 2.5, breakInside: 'avoid' }}>
       <Stack direction="row" alignItems="center" gap={1.5} sx={{ px: 2.5, py: 1.75, borderBottom: 1, borderColor: 'divider', bgcolor: t.datum === heuteIso() ? alpha(th.palette.primary.main, 0.05) : undefined }}>
         <Typography variant="h3" component="h2">{datumLang(t.datum)}</Typography>
         {t.woche && <Typography color="text.secondary">{t.woche}-Woche</Typography>}
@@ -83,7 +82,7 @@ export default function Vertretungen({ teile }: SeitenProps) {
   const g = useLaden(s => holen<{ tage: VTag[] }>(`/api/app/vertretungen?datum=${datum}&tage=${tage}`, s), [datum, tage]);
   return (
     <Seite titel="Vertretungsplan" untertitel={ich.kollegium ? 'Lehrerversion' : undefined} aktionen={<Stack direction="row" gap={1}>
-      <Button variant="outlined" startIcon={<PrintOutlined />} onClick={() => window.open(`/api/app/vertretungen.pdf?datum=${datum}&tage=${tage}`, '_blank', 'noopener')}>PDF</Button>
+      <Button variant="outlined" onClick={() => window.open(`/api/app/vertretungen.pdf?datum=${datum}&tage=${tage}`, '_blank', 'noopener')}>PDF</Button>
       <Button variant="outlined" title="Aushang für das Schwarze Brett: große Schrift, Querformat" onClick={() => window.open(`/api/app/vertretungen.pdf?datum=${datum}&tage=${tage}&gross=true`, '_blank', 'noopener')}>Aushang groß</Button>
     </Stack>}
       filter={<>

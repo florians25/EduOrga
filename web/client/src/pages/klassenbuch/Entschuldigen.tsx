@@ -49,7 +49,7 @@ export function StundenDialog({ zeilen, onClose, fertig }: { zeilen: FeZeile[]; 
           helperText={gesperrt ? undefined : 'Der Text ist für andere Lehrkräfte mit einer Fehlstunde in derselben Abwesenheit sichtbar.'} slotProps={{ htmlInput: { maxLength: 1000 } }} />
         {zeilen.length === 1 && !!z.texte?.length && (
           <Box><Typography variant="subtitle2" sx={{ mb: 1 }}>Zuletzt eingegebene Entschuldigungstexte</Typography>
-            {z.texte.map((t, i) => <Box key={i} sx={{ p: 1.25, mb: 1, borderRadius: 2, bgcolor: 'action.hover' }}>
+            {z.texte.map((t, i) => <Box key={i} sx={{ p: 1.25, mb: 1, borderRadius: 1.5, bgcolor: 'action.hover' }}>
               <Typography variant="caption" color="text.secondary"><b>{t.lehrer || '–'}</b>{t.rolle === 'klassenleitung' ? ' (Klassenleitung)' : ''} · {zeitstempel(t.zeit)}{t.fach ? ` · ${t.fach}, ${t.stunde}. Std.` : ''} · {STATUS_TEXT[t.status]?.[0] ?? t.status}</Typography>
               <Typography variant="body2">{t.text}</Typography></Box>)}
           </Box>
@@ -73,7 +73,7 @@ export function FehlzeitenLeiste({ a, grundName, onClose }: { a: FeAbwesenheit; 
         {tage.map(t => (
           <Box key={t} sx={{ mt: 2 }}><Typography variant="subtitle2" sx={{ mb: 1 }}>{datumLang(t)}</Typography>
             {a.stunden.filter(x => x.datum === t).sort((x, y) => (y.stunde ?? 0) - (x.stunde ?? 0)).map(x => (
-              <Box key={x.id} sx={{ p: 1.25, mb: 1, borderRadius: 2, border: 1, borderColor: 'divider' }}>
+              <Box key={x.id} sx={{ p: 1.25, mb: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
                 <Stack direction="row" justifyContent="space-between"><Typography variant="body2" sx={{ fontWeight: 500 }}>{x.beginn} – {x.ende}</Typography><StatusLabel s={x.status} /></Stack>
                 <Typography variant="caption" color="text.secondary">{x.fach}{x.lehrer ? ` – ${x.lehrer}` : ''}{x.entschuldigung ? ` · ${x.entschuldigung.rolle === 'klassenleitung' ? 'Klassenleitung' : 'Fachlehrkraft'} ${x.entschuldigung.lehrer}, ${zeitstempel(x.entschuldigung.zeit)}` : ''}</Typography>
                 {x.entschuldigung?.text && <Typography variant="body2" sx={{ mt: 0.5 }}>{x.entschuldigung.text}</Typography>}
@@ -159,7 +159,7 @@ export default function Entschuldigen({ teile }: SeitenProps) {
                 { id: 'zeit', kopf: 'Zeit', zelle: z => `${z.beginn} – ${z.ende}`, nowrap: true },
                 { id: 'fach', kopf: 'Fach', zelle: z => z.fach }, { id: 'lehrer', kopf: 'Lehrkraft', zelle: z => z.lehrer, verbergenMobil: true },
                 { id: 'grund', kopf: 'Grund', zelle: z => d.grund[z.grund] ?? z.grund, verbergenMobil: true },
-                { id: 'status', kopf: 'Status', zelle: z => <Button size="small" variant={z.darf ? 'outlined' : 'text'} onClick={() => setDialog([z])} startIcon={z.gesperrt ? <LockOutlined fontSize="small" /> : undefined}>{z.darf ? 'entschuldigen' : <StatusLabel s={z.status} />}</Button> },
+                { id: 'status', kopf: 'Status', zelle: z => <Button size="small" variant={z.darf ? 'outlined' : 'text'} onClick={() => setDialog([z])}>{z.darf ? 'entschuldigen' : <StatusLabel s={z.status} />}</Button> },
                 { id: 'text', kopf: 'Text', zelle: z => z.entschuldigung?.text ?? '', verbergenMobil: true },
               ]} />
             {auswahl.size > 0 && <Stack direction="row" gap={1} sx={{ mt: 1.5 }}><Button variant="contained" color="success" onClick={() => setDialog(d.zeilen.filter(z => auswahl.has(z.id)))}>{auswahl.size} entschuldigen</Button></Stack>}

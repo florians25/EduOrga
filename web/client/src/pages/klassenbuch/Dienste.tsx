@@ -3,16 +3,12 @@
 // Adresse: #/dienste/<Klasse|alle>/<Dienst|alle>/<liste|zeit>/<von>/<bis>
 import { useEffect, useState } from 'react';
 import { Box, Button, Checkbox, Chip, FormControlLabel, IconButton, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableFooter, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import BadgeOutlined from '@mui/icons-material/BadgeOutlined';
-import ViewWeekOutlined from '@mui/icons-material/ViewWeekOutlined';
-import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import { api, holen, senden } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
-import { FormDialog, NamensAvatar, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
+import { FormDialog, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
 import { DatumFeld } from '../../components/Auswahl';
 import { bestaetigen, fehler, toast } from '../../lib/meldungen';
 import { datumDe, datumKurz, heuteIso, istIsoDatum, montag, plusTage } from '../../lib/datum';
@@ -62,7 +58,7 @@ function EinteilenDialog({ d, g, klasse, dienstVorgabe, onClose, fertig }: { d: 
         <Box>
           <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}><Typography variant="subtitle2">Schüler*innen</Typography>{ids.size > 0 && <Typography variant="caption" color="text.secondary">· {ids.size} gewählt</Typography>}
             <Box sx={{ flex: 1 }} /><SuchFeld wert={suche} onWert={setSuche} platzhalter="Name suchen …" breite={200} /></Stack>
-          <Box sx={{ maxHeight: 280, overflowY: 'auto', border: 1, borderColor: 'divider', borderRadius: 2, p: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 0.5 }}>
+          <Box sx={{ maxHeight: 280, overflowY: 'auto', border: 1, borderColor: 'divider', borderRadius: 1.5, p: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 0.5 }}>
             {schueler.filter(x => !suche || `${x.name} ${x.vorname}`.toLowerCase().includes(suche.toLowerCase())).map(x => (
               <FormControlLabel key={x.id} sx={{ m: 0 }} control={<Checkbox size="small" checked={ids.has(x.id)} onChange={() => setIds(s => { const n = new Set(s); if (n.has(x.id)) n.delete(x.id); else n.add(x.id); return n; })} />} label={`${x.name} ${x.vorname}`} />
             ))}
@@ -126,10 +122,10 @@ export default function Dienste({ teile }: SeitenProps) {
         <DatumFeld label="Bis" wert={bis} onWert={b => b && navigieren(ziel(undefined, undefined, undefined, von, b))} pflicht />
       </>;
       const aktionen = <>
-        <Button variant="outlined" startIcon={liste ? <ViewWeekOutlined /> : <ViewListOutlined />} href={liste ? ziel(klasse || el.klassen[0]?.kurz, dienst?.id, 'zeit') : ziel(klasse, dienst?.id, 'liste')}>{liste ? 'Zeitansicht' : 'Listenansicht'}</Button>
+        <Button variant="outlined" href={liste ? ziel(klasse || el.klassen[0]?.kurz, dienst?.id, 'zeit') : ziel(klasse, dienst?.id, 'liste')}>{liste ? 'Zeitansicht' : 'Listenansicht'}</Button>
         <Button variant="outlined" href={`#/berichte/klassendienste/${encodeURIComponent(klasse || '-')}/${von}/${bis}`}>Bericht</Button>
         {d.verwalten && !liste && dienst && <Button variant="outlined" onClick={() => setDialog({ art: 'auto' })}>Automatische Einteilung</Button>}
-        {d.verwalten && liste && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'einteilen', g: null })}>Dienst einteilen</Button>}
+        {d.verwalten && liste && <Button variant="contained" onClick={() => setDialog({ art: 'einteilen', g: null })}>Dienst einteilen</Button>}
       </>;
       const heute = heuteIso();
       if (liste) {
@@ -144,10 +140,10 @@ export default function Dienste({ teile }: SeitenProps) {
         const darf = d.verwalten || ich.admin;
         return (
           <Seite titel="Klassendienste" untertitel={klasse || 'alle Klassen'} aktionen={aktionen} filter={filter}>
-            {!d.arten.length ? <Leer symbol={<BadgeOutlined />} text="Noch keine Dienste angelegt" unter="Die Administration legt Dienste wie Tafeldienst oder Klassenordner unter Stammdaten → Dienste an." />
-              : !sicht.length ? <Leer symbol={<BadgeOutlined />} text="Niemand eingeteilt" unter={`Im Zeitraum ${datumDe(von)} – ${datumDe(bis)} ist ${alleDienste ? 'für keinen Dienst' : `für „${dienst?.name ?? ''}“`} jemand eingeteilt.`} />
+            {!d.arten.length ? <Leer text="Noch keine Dienste angelegt" unter="Die Administration legt Dienste wie Tafeldienst oder Klassenordner unter Stammdaten → Dienste an." />
+              : !sicht.length ? <Leer text="Niemand eingeteilt" unter={`Im Zeitraum ${datumDe(von)} – ${datumDe(bis)} ist ${alleDienste ? 'für keinen Dienst' : `für „${dienst?.name ?? ''}“`} jemand eingeteilt.`} />
               : (
-                <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
                   <Box sx={{ overflowX: 'auto' }}><Table>
                     <TableHead><TableRow>{darf && <TableCell padding="checkbox"><Checkbox size="small" checked={auswahl.size === sicht.length} onChange={e => setAuswahl(e.target.checked ? new Set(sicht.map(s => s.i)) : new Set())} inputProps={{ 'aria-label': 'Alle auswählen' }} /></TableCell>}
                       <TableCell>Dienst</TableCell><TableCell>Schüler*innen</TableCell><TableCell>Zeitraum</TableCell><TableCell>Text</TableCell>{darf && <TableCell />}</TableRow></TableHead>
@@ -157,7 +153,7 @@ export default function Dienste({ teile }: SeitenProps) {
                         <TableRow key={i} hover selected={auswahl.has(i)} sx={{ opacity: x.bis < heute ? 0.65 : 1 }}>
                           {darf && <TableCell padding="checkbox"><Checkbox size="small" checked={auswahl.has(i)} onChange={() => setAuswahl(s => { const n = new Set(s); if (n.has(i)) n.delete(i); else n.add(i); return n; })} inputProps={{ 'aria-label': 'auswählen' }} /></TableCell>}
                           <TableCell><Stack direction="row" gap={1.25} alignItems="center"><BadgeOutlined color="action" /><Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{x.dienst}</Typography>{!klasse && <Typography variant="caption" color="text.secondary">Klasse {x.klasse}</Typography>}</Box></Stack></TableCell>
-                          <TableCell><Stack direction="row" gap={0.5} flexWrap="wrap">{x.eintraege.map(z => <Chip key={z.id} size="small" avatar={<NamensAvatar name={z.schueler} id={z.schuelerId} groesse={20} />} label={z.schueler} variant="outlined" />)}</Stack></TableCell>
+                          <TableCell><Stack direction="row" gap={0.5} flexWrap="wrap">{x.eintraege.map(z => <Chip key={z.id} size="small" label={z.schueler} variant="outlined" />)}</Stack></TableCell>
                           <TableCell sx={{ whiteSpace: 'nowrap' }}><Typography variant="body2">{x.von === x.bis ? datumDe(x.von) : `${datumKurz(x.von)} – ${datumDe(x.bis)}`}</Typography><Plakette ton={phase[1]}>{phase[0]}</Plakette></TableCell>
                           <TableCell>{x.text || <Typography component="span" color="text.disabled">–</Typography>}</TableCell>
                           {darf && <TableCell align="right"><IconButton size="small" onClick={() => setDialog({ art: 'einteilen', g: x })} aria-label="Bearbeiten"><EditOutlined fontSize="small" /></IconButton></TableCell>}
@@ -167,7 +163,7 @@ export default function Dienste({ teile }: SeitenProps) {
                   </Table></Box>
                   {darf && <Stack direction="row" alignItems="center" sx={{ p: 1.5, borderTop: 1, borderColor: 'divider' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>{sicht.length} {sicht.length === 1 ? 'Einteilung' : 'Einteilungen'}</Typography>
-                    <Button color="error" variant="outlined" size="small" startIcon={<DeleteOutlineRounded />} disabled={!auswahl.size} onClick={async () => {
+                    <Button color="error" variant="outlined" size="small" disabled={!auswahl.size} onClick={async () => {
                       const ids = [...auswahl].flatMap(i => gruppen[i].eintraege.map(z => z.id));
                       if (!(await bestaetigen('Einteilungen löschen', `${ids.length} ${ids.length === 1 ? 'Einteilung' : 'Einteilungen'} löschen?`))) return;
                       try { for (const id of ids) await api(`/api/app/klassendienste/${id}`, { methode: 'DELETE' }); toast('Gelöscht.'); } catch (err) { fehler(err); }
@@ -186,7 +182,7 @@ export default function Dienste({ teile }: SeitenProps) {
       return (
         <Seite titel={klasse && dienst ? `Klassendienste: ${klasse} | ${dienst.name}` : 'Klassendienste'} aktionen={aktionen} filter={filter}>
           {!klasse ? <Leer text="Keine Klassen vorhanden." /> : !dienst ? <Leer text="Es sind noch keine Dienste angelegt (Stammdaten → Dienste)." /> : !d.schueler.length ? <Leer text="Für diese Klasse wurde keine Schülerliste aus EduOrga Studio übertragen." /> : (
-            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'auto' }}>
+            <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'auto' }}>
               <Table size="small" stickyHeader>
                 <TableHead><TableRow><TableCell sx={{ position: 'sticky', left: 0, zIndex: 3 }}>Schüler*in</TableCell>{wochen.map(w => <TableCell key={w} align="center" title={`Woche ab ${datumDe(w)}`}>{datumKurz(w)}</TableCell>)}<TableCell align="center">Σ</TableCell></TableRow></TableHead>
                 <TableBody>{d.schueler.map(s => (

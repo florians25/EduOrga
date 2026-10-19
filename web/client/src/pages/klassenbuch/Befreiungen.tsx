@@ -2,7 +2,6 @@
 // Klassenleitung, Bericht. Befreite Schüler*innen sind in den Stundendetails gekennzeichnet.
 import { useEffect, useState } from 'react';
 import { Button, IconButton, MenuItem, Stack, TextField } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import { api, holen, senden } from '../../api/client';
@@ -79,7 +78,7 @@ export default function Befreiungen({ teile }: SeitenProps) {
       return (
         <Seite titel="Befreiungen vom Unterricht" untertitel={`${liste.length} ${liste.length === 1 ? 'Befreiung' : 'Befreiungen'}`}
           aktionen={<><Button variant="outlined" href={`#/berichte/befreiungen/${encodeURIComponent(klasse || '-')}/${von}/${bis}`}>Bericht Befreiungen</Button>
-            {d.verwalten && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ b: null })}>Neu</Button>}</>}
+            {d.verwalten && <Button variant="contained" onClick={() => setDialog({ b: null })}>Neu</Button>}</>}
           filter={<>
             <SuchFeld wert={suche} onWert={setSuche} platzhalter="Schüler*in, Fach oder Text suchen" />
             <Wahl label="Klasse" wert={klasse} onWert={k => navigieren(ziel(k))} optionen={el.klassen.map(k => [k.kurz, k.kurz])} alle="Alle Klassen" breite={150} />

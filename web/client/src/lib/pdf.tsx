@@ -46,7 +46,7 @@ export function PdfWahl() {
         <Stack direction="row" gap={2} justifyContent="center">
           {(['hoch', 'quer'] as const).map(a => (
             <ButtonBase key={a} onClick={() => setWahl(a)} onDoubleClick={() => fertig(a)} aria-pressed={wahl === a}
-              sx={{ flexDirection: 'column', gap: 1, p: 2, borderRadius: 3, border: 2, borderColor: wahl === a ? 'primary.main' : 'divider', width: 130 }}>
+              sx={{ flexDirection: 'column', gap: 1, p: 2, borderRadius: 1.5, border: 2, borderColor: wahl === a ? 'primary.main' : 'divider', width: 130 }}>
               <Box sx={{ width: a === 'hoch' ? 44 : 62, height: a === 'hoch' ? 62 : 44, border: 2, borderColor: 'text.secondary', borderRadius: 1, p: 0.75, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 {[0, 1, 2].map(i => <Box key={i} sx={{ height: 3, bgcolor: 'divider', borderRadius: 1 }} />)}
               </Box>

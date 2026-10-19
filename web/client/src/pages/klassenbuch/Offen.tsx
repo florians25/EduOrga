@@ -8,7 +8,6 @@ import CloseRounded from '@mui/icons-material/CloseRounded';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded';
-import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
 import { holen, senden, speichern } from '../../api/client';
 import type { Karte } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
@@ -66,7 +65,7 @@ function LehrstoffLeiste({ liste, start, onClose }: { liste: Zeile[]; start: num
           <Typography variant="caption">{i + 1}/{liste.length}</Typography>
           <IconButton size="small" disabled={i >= liste.length - 1} onClick={() => setI(i + 1)} aria-label="Nächste Stunde"><ChevronRightRounded /></IconButton>
         </Stack>
-        <Box sx={{ p: 1.5, mb: 2, borderRadius: 2, borderLeft: `4px solid ${gueltigeFarbe(z.farbe) ?? t.palette.divider}`, bgcolor: 'action.hover', display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+        <Box sx={{ p: 1.5, mb: 2, borderRadius: 1.5, borderLeft: `4px solid ${gueltigeFarbe(z.farbe) ?? t.palette.divider}`, bgcolor: 'action.hover', display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
           <b>{z.fach}</b><span>{z.klassen.join(', ')}</span><span>{z.lehrer}</span><span>{z.raeume.join(', ')}</span>
         </Box>
         {st === undefined ? <Skeleton variant="rounded" height={160} /> : (
@@ -188,7 +187,7 @@ export default function Offen({ teile }: SeitenProps) {
                 { id: 'kontrolle', kopf: 'Abwesenheitskontrolle', zelle: z => (z.geprueft ? <Tooltip title="Abwesenheiten kontrolliert"><CheckRounded sx={{ color: 'status.ok.main' }} /></Tooltip> : <Button size="small" variant="outlined" onClick={e => { e.stopPropagation(); const i = liste.indexOf(z); setDetails({ k: karten[i], liste: karten }); }}>Prüfen</Button>) },
                 { id: 'lehrstoff', kopf: 'Lehrstoff', zelle: z => (z.lehrstoff ? <Tooltip title="Lehrstoff eingetragen"><CheckRounded sx={{ color: 'status.ok.main' }} /></Tooltip> : <Button size="small" variant="outlined" onClick={e => { e.stopPropagation(); setLeiste({ liste, start: liste.indexOf(z) }); }}>Eingeben</Button>) },
               ]} />
-          ) : <Leer symbol={<TaskAltRounded />} text={r.gesamt ? 'Alles erledigt' : 'Keine gehaltenen Stunden'} unter={r.gesamt ? (q ? 'Keine Stunde passt zur Suche.' : 'Im gewählten Zeitraum sind Abwesenheiten und Lehrstoff vollständig eingetragen.') : 'Im gewählten Zeitraum gibt es keine gehaltenen Stunden.'} />}
+          ) : <Leer text={r.gesamt ? 'Alles erledigt' : 'Keine gehaltenen Stunden'} unter={r.gesamt ? (q ? 'Keine Stunde passt zur Suche.' : 'Im gewählten Zeitraum sind Abwesenheiten und Lehrstoff vollständig eingetragen.') : 'Im gewählten Zeitraum gibt es keine gehaltenen Stunden.'} />}
           {!r.alle && r.klassenleitung.length > 0 && !zustand.klasse && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>Als Klassenleitung können Sie über die Suche alle Stunden {r.klassenleitung.length === 1 ? 'Ihrer Klasse' : 'Ihrer Klassen'} anzeigen.</Typography>}
           {details && <Stundendetails karte={details.k} liste={details.liste} typ="lehrer" onClose={() => setDetails(null)} onGeaendert={() => void g.neu()} />}
           {leiste && <LehrstoffLeiste liste={leiste.liste} start={leiste.start} onClose={x => { setLeiste(null); if (x) void g.neu(); }} />}

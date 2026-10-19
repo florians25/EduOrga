@@ -6,14 +6,10 @@ import { lazy, Suspense, useState, type ReactNode } from 'react';
 import {
   Alert, Box, Button, Checkbox, FormControlLabel, IconButton, InputAdornment, Link, MenuItem, Paper, Stack, Switch, TextField, Tooltip, Typography,
 } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
-import KeyRounded from '@mui/icons-material/KeyRounded';
 import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded';
 import RefreshRounded from '@mui/icons-material/RefreshRounded';
-import UploadFileRounded from '@mui/icons-material/UploadFileRounded';
 import { api, holen, loeschen, senden, speichern } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { UpdateDialog, updateInstallieren, updatestandSetzen, type Updatestand } from '../../app/Update';
@@ -171,14 +167,14 @@ function Sync() {
                 <KopierFeld label="Adresse" wert={u.adresse} />
                 <KopierFeld label="Schul-ID" wert={u.schulId || ''} />
                 {schluessel ? <KopierFeld label="API-Schlüssel" wert={schluessel} /> : <TextField size="small" label="API-Schlüssel" value={u.apiSchluesselGesetzt ? 'gespeichert (wird aus Sicherheitsgründen nicht angezeigt)' : 'noch nicht erzeugt'} slotProps={{ input: { readOnly: true } }} />}
-                <Box><Button variant="outlined" size="small" startIcon={<KeyRounded />} onClick={async () => {
+                <Box><Button variant="outlined" size="small" onClick={async () => {
                   if (u.apiSchluesselGesetzt && !(await bestaetigen('Neuen API-Schlüssel erzeugen', 'Der bisherige Schlüssel wird ungültig. EduOrga Studio muss danach mit dem neuen Schlüssel eingerichtet werden.', 'Neu erzeugen'))) return;
                   try { const r = await senden<{ apiSchluessel: string }>('/api/app/admin/apischluessel', {}); setSchluessel(r.apiSchluessel); toast('Neuer Schlüssel erzeugt.'); } catch (err) { fehler(err); }
                 }}>{u.apiSchluesselGesetzt ? 'Neuen Schlüssel erzeugen' : 'Schlüssel erzeugen'}</Button></Box>
                 <Typography variant="body2" color="text.secondary">In EduOrga Studio unter <b>EduOrga Web → Einstellungen</b> Adresse, Schul-ID und API-Schlüssel eintragen. Danach überträgt <b>Exportieren</b> die Daten; <b>Importieren</b> holt Abwesenheiten, Raumbuchungen und Klausuren ab.</Typography>
               </Stack>
             </Karte>
-            <Karte titel="Datenstand" aktion={<Button component="label" size="small" variant="outlined" startIcon={<UploadFileRounded />}>Paket hochladen<input type="file" accept=".json,application/json" hidden onChange={async e => {
+            <Karte titel="Datenstand" aktion={<Button component="label" size="small" variant="outlined">Paket hochladen<input type="file" accept=".json,application/json" hidden onChange={async e => {
               const datei = e.target.files?.[0];
               if (!datei) return;
               const fd = new FormData(); fd.append('datei', datei);
@@ -233,10 +229,10 @@ function UpdateKarte() {
           <Typography variant="body2">Datenbank {u.datenbank} <Typography component="span" variant="body2" color="text.secondary">· Schemastand {u.schemastand}</Typography></Typography>
           {u.angefordert && <Typography variant="body2">Angefordert: {u.angefordert} – wartet auf das Update-Skript</Typography>}
           <Box sx={{ mt: 1.5 }}>{u.installierbar ? (
-            <Button variant={u.updateVerfuegbar ? 'contained' : 'outlined'} startIcon={<DownloadRounded />} onClick={async () => { if (await updateInstallieren()) void g.neu(); }}>Update installieren</Button>
+            <Button variant={u.updateVerfuegbar ? 'contained' : 'outlined'} onClick={async () => { if (await updateInstallieren()) void g.neu(); }}>Update installieren</Button>
           ) : <>
             <Typography variant="caption" color="text.secondary">Update auf dem Server (Sicherung vorher, Migrationen laufen beim Start automatisch):</Typography>
-            <Box component="code" sx={{ display: 'block', p: 1.25, mt: 0.5, bgcolor: 'action.hover', borderRadius: 2, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
+            <Box component="code" sx={{ display: 'block', p: 1.25, mt: 0.5, bgcolor: 'action.hover', borderRadius: 1.5, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
           </>}</Box>
           <UpdateDialog stand={u} offen={hinweise} schliessen={() => setHinweise(false)} />
         </Stack>
@@ -287,7 +283,7 @@ function Nachrichten() {
       <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap" sx={{ mb: 2 }}>
         <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 280 }}>Nachrichten erscheinen im Vertretungsplan sowie wahlweise auf der Übersicht und den Monitoren. Tagestexte aus EduOrga Studio werden zusätzlich angezeigt.</Typography>
         <Button variant="outlined" href="#/heute">Startseite ansehen</Button>
-        <Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({})}>Nachricht</Button>
+        <Button variant="contained" onClick={() => setForm({})}>Nachricht</Button>
       </Stack>
       <Geladen g={g}>{l => (
         <Tabelle zeilen={l} schluessel={n => n.id} leer="Keine Nachrichten." onZeile={n => setForm(n)} zeilenSx={n => (n.bis < heute ? { opacity: 0.55 } : {})}
@@ -349,7 +345,7 @@ function Monitore() {
         { name: 'nurOeffentlich', typ: 'schalter', label: 'Nur öffentliche Nachrichten anzeigen' }, { name: 'aktualisierung', typ: 'zahl', label: 'Aktualisierung [Sekunden]', min: 15, max: 3600 }]} />
       <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
         <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 280 }}>Ein Monitor zeigt den Vertretungsplan ohne Anmeldung über einen geheimen Link an, z. B. im Eingangsbereich (Browser im Vollbild).</Typography>
-        <Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({})}>Monitor</Button>
+        <Button variant="contained" onClick={() => setForm({})}>Monitor</Button>
       </Stack>
       <Geladen g={g}>{l => (
         <Tabelle zeilen={l} schluessel={m => m.id} leer="Noch keine Monitore." onZeile={m => setForm(m)}
@@ -416,7 +412,7 @@ function FreieTage() {
     <Stack gap={2.5}>
       <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
         <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 280 }}>Ferien und Feiertage kommen aus EduOrga Studio. Hier lassen sich zusätzliche unterrichtsfreie Tage eintragen (z. B. pädagogischer Tag, beweglicher Ferientag) – sie erscheinen sofort in allen Plänen, im Vertretungsplan und im Klassenbuch.</Typography>
-        <Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({})}>Neu</Button>
+        <Button variant="contained" onClick={() => setForm({})}>Neu</Button>
       </Stack>
       <Geladen g={g}>{d => (
         <>
@@ -477,7 +473,7 @@ function Import({ teil }: { teil?: string }) {
           <Karte titel="Benutzer importieren (CSV)">
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Spalten: <code>Benutzername;Name;Rolle;Kürzel;E-Mail;Passwort</code> (Semikolon oder Komma, UTF-8 oder Windows-1252, erste Zeile darf eine Kopfzeile sein). Rolle: Administration, Schulleitung, Lehrkraft oder Klasse. Ohne Passwort wird ein Startpasswort erzeugt, das bei der ersten Anmeldung geändert werden muss.</Typography>
             <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
-              <Button component="label" variant="outlined" startIcon={<UploadFileRounded />}>Datei wählen und prüfen<input type="file" accept=".csv,text/csv,text/plain" hidden onChange={async e => {
+              <Button component="label" variant="outlined">Datei wählen und prüfen<input type="file" accept=".csv,text/csv,text/plain" hidden onChange={async e => {
                 const datei = e.target.files?.[0];
                 if (!datei) return;
                 const fd = new FormData(); fd.append('datei', datei);
@@ -501,7 +497,7 @@ function Import({ teil }: { teil?: string }) {
           )}
           <Typography variant="body2" color="text.secondary">Stammdaten (Lehrkräfte, Fächer, Klassen, Räume) und Pausenaufsichten werden nicht hier importiert: sie kommen bei jeder Übertragung aus EduOrga Studio.</Typography>
           {ergebnis && (
-            <FormDialog offen titel="Import abgeschlossen" onClose={() => setErgebnis(null)} links={ergebnis.neu.length > 0 && <Button startIcon={<DownloadRounded />} onClick={() => speichern(ergebnis.csv, `import-${heuteIso()}.csv`)}>Liste herunterladen (CSV)</Button>}>
+            <FormDialog offen titel="Import abgeschlossen" onClose={() => setErgebnis(null)} links={ergebnis.neu.length > 0 && <Button onClick={() => speichern(ergebnis.csv, `import-${heuteIso()}.csv`)}>Liste herunterladen (CSV)</Button>}>
               <Typography>{ergebnis.neu.length} Konten angelegt, {ergebnis.aktualisiert} aktualisiert, {ergebnis.uebersprungen} übersprungen.</Typography>
               {ergebnis.neu.length > 0 && <Alert severity="warning" sx={{ mt: 2 }}>Die Startpasswörter werden nur jetzt angezeigt. Bitte die Liste herunterladen.</Alert>}
             </FormDialog>
@@ -535,7 +531,7 @@ function Export() {
         ['protokoll', 'Protokoll', 'Die letzten 300 Einträge des Protokolls.']].map(([id, t, x]) => (
         <Karte key={id} titel={t}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{x}</Typography>
-          <Button variant="outlined" startIcon={<DownloadRounded />} onClick={() => laden(id).catch(fehler)}>CSV herunterladen</Button>
+          <Button variant="outlined" onClick={() => laden(id).catch(fehler)}>CSV herunterladen</Button>
         </Karte>
       ))}
     </Box>

@@ -9,7 +9,6 @@ import HourglassBottomRounded from '@mui/icons-material/HourglassBottomRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import CheckRounded from '@mui/icons-material/CheckRounded';
 import VideocamOutlined from '@mui/icons-material/VideocamOutlined';
-import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import { holen } from '../api/client';
 import type { Karte, Wert } from '../api/types';
@@ -145,14 +144,14 @@ export default function Heute() {
                           );
                         })}
                       </Box>
-                    ) : <Leer symbol={<EventBusyOutlined />} text={d.frei ? `Heute ist unterrichtsfrei (${d.frei}).` : 'In den nächsten Tagen ist kein Unterricht eingetragen.'} />}
+                    ) : <Leer text={d.frei ? `Heute ist unterrichtsfrei (${d.frei}).` : 'In den nächsten Tagen ist kein Unterricht eingetragen.'} />}
                   </Abschnitt>
                 ) : null}
               </Grid>
               <Grid size={{ xs: 12, lg: mitStunden ? 4.5 : 12 }} sx={{ order: { xs: 1, lg: 2 } }}>
                 <Stack gap={2.5}>
                   {ich.kollegium && d.offeneStunden > 0 && (
-                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 3.5, display: 'flex', gap: 1.5, alignItems: 'center', bgcolor: 'status.pruefung.flaeche', borderColor: alpha(t.palette.status.pruefung.main, 0.3) }}>
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, display: 'flex', gap: 1.5, alignItems: 'center', bgcolor: 'status.pruefung.flaeche', borderColor: alpha(t.palette.status.pruefung.main, 0.3) }}>
                       <HourglassBottomRounded sx={{ color: 'status.pruefung.main' }} />
                       <Typography sx={{ flex: 1 }}><b>{d.offeneStunden}</b> {d.offeneStunden === 1 ? 'Stunde' : 'Stunden'} der letzten zwei Wochen ohne Lehrstoff.</Typography>
                       <Button href="#/offen" variant="contained" size="small">Offene Stunden</Button>
@@ -168,7 +167,7 @@ export default function Heute() {
                   </Abschnitt>
                   <SprechtagKarte />
                   {d.keinPlan && ich.admin && <Alert severity="info">Diesem Administrationskonto ist kein eigener Stundenplan zugewiesen.</Alert>}
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 3.5 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5 }}>
                     <Typography variant="body2" color="text.secondary">Letzte Anmeldung</Typography>
                     <Typography sx={{ fontWeight: 500, mb: 1 }}>{d.letzteAnmeldung ? `${wochentag(d.letzteAnmeldung.slice(0, 10))}, ${zeitstempel(d.letzteAnmeldung)}` : '–'}</Typography>
                     <Typography variant="body2" color="text.secondary">Letzte Planaktualisierung aus EduOrga Studio</Typography>

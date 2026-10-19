@@ -1,7 +1,6 @@
 // Klassenbucheinträge (Vermerke wie Lob, Ordnungsmaßnahme, Elterngespräch) über alle oder eine Klasse: Filter, Details, Bearbeiten, Löschen.
 import { useEffect, useState } from 'react';
 import { Alert, Box, Button, IconButton, MenuItem, Stack, TextField, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import { api, holen, senden, qs } from '../../api/client';
@@ -69,7 +68,7 @@ export default function Eintraege({ teile }: SeitenProps) {
   };
   const verfasser = (el: Elemente, k: string) => { const l = el.lehrer.find(x => x.kurz === k); return l ? `${l.name} (${l.kurz})` : k || '–'; };
   return (
-    <Seite titel="Klassenbucheinträge" aktionen={<Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'neu' })} disabled={!g.daten}>Neuer Eintrag</Button>}
+    <Seite titel="Klassenbucheinträge" aktionen={<Button variant="contained" onClick={() => setDialog({ art: 'neu' })} disabled={!g.daten}>Neuer Eintrag</Button>}
       filter={g.daten && <>
         <SuchFeld wert={suche} onWert={setSuche} platzhalter="Schüler*in, Text oder Lehrkraft suchen" breite={300} />
         <Wahl label="Klasse" wert={klasse} onWert={k => navigieren(ziel(von, bis, k))} optionen={g.daten.el.klassen.map(k => [k.kurz, k.kurz])} alle="Alle Klassen" breite={150} />

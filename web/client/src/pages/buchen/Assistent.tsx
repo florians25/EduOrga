@@ -9,11 +9,8 @@ import {
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
 import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
-import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
 import CheckRounded from '@mui/icons-material/CheckRounded';
 import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
-import ListAltOutlined from '@mui/icons-material/ListAltOutlined';
-import GridViewOutlined from '@mui/icons-material/GridViewOutlined';
 import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
 import { holen, senden } from '../../api/client';
 import type { Elemente } from '../../api/types';
@@ -53,7 +50,7 @@ function zeitDaten(z: Zeit) {
 }
 
 export function BuchenKopfAktionen() {
-  return <><Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/raeume">Raumbelegung</Button><Button variant="outlined" startIcon={<ListAltOutlined />} href="#/buchen/meine">Meine Buchungen</Button></>;
+  return <><Button variant="outlined" href="#/buchen/raeume">Raumbelegung</Button><Button variant="outlined" href="#/buchen/meine">Meine Buchungen</Button></>;
 }
 
 export function Assistent({ art, rest }: { art: Art; rest: string[] }) {
@@ -209,12 +206,11 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
     const b = gespeichert.buchungen;
     const raeume = [...new Set(b.map(x => x.raum).filter(Boolean))];
     return (
-      <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', maxWidth: 680, mx: 'auto' }}>
-        <CheckCircleRounded sx={{ fontSize: 56, color: 'success.main' }} />
-        <Typography variant="h2" sx={{ mt: 1 }}>{b.length === 1 ? 'Die Buchung ist gespeichert.' : `Serie mit ${b.length} Terminen gespeichert.`}</Typography>
+      <Paper variant="outlined" sx={{ p: 2, maxWidth: 760 }}>
+        <Typography variant="h3" component="h2">{b.length === 1 ? 'Die Buchung ist gespeichert.' : `Serie mit ${b.length} Terminen gespeichert.`}</Typography>
         <Typography color="text.secondary" sx={{ mt: 1 }}>{b[0].titel} · {tagKurz(b[0].datum)}{b.length > 1 ? ` – ${tagKurz(b[b.length - 1].datum)}` : ''} · {stdText(b[0].stundeVon, b[0].stundeBis)}{raeume.length ? ` · ${raeume.length > 1 ? 'Räume' : 'Raum'} ${raeume.join(', ')}` : ''}</Typography>
-        {!!gespeichert.hinweise?.length && <Alert severity="warning" sx={{ mt: 2, textAlign: 'left' }}>{gespeichert.hinweise.join(' ')}</Alert>}
-        <Stack direction="row" gap={1} justifyContent="center" flexWrap="wrap" sx={{ mt: 3 }}>
+        {!!gespeichert.hinweise?.length && <Alert severity="warning" sx={{ mt: 2 }}>{gespeichert.hinweise.join(' ')}</Alert>}
+        <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mt: 2 }}>
           <Button variant="outlined" href="#/buchen/meine">Meine Buchungen</Button>
           {b[0].raum && <Button variant="outlined" href={link('plan', 'raum', b[0].raum, b[0].datum)}>Raumplan</Button>}
           <Button variant="contained" onClick={() => navigieren(art === 'unterricht' ? link('buchen', 'stunden', String(unterricht!.id)) : link('buchen', art === 'raum' ? 'raum' : art), true)}>Weitere Buchung</Button>
@@ -225,7 +221,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
 
   const n = suche?.termine.length ?? vorschau?.termine.length ?? 0;
   const zeitLeiste = (
-    <ButtonBase onClick={() => setSchritt(0)} sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.5, px: 2, py: 1.25, mb: 2, borderRadius: 2, border: 1, borderColor: 'divider', bgcolor: 'background.paper', textAlign: 'left' }}>
+    <ButtonBase onClick={() => setSchritt(0)} sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.5, px: 2, py: 1.25, mb: 2, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'background.paper', textAlign: 'left' }}>
       <CalendarMonthOutlined color="primary" /><Typography sx={{ fontWeight: 500 }}>{zeitText(z)}</Typography><Typography variant="body2" color="text.secondary">{n} {n === 1 ? 'Termin' : 'Termine'}</Typography>
       <Box sx={{ flex: 1 }} /><Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>Ändern</Typography>
     </ButtonBase>
@@ -262,7 +258,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
               {tage.map((t, i) => <Chip key={t} label={t} color={z.wochentage.includes(i) ? 'primary' : 'default'} variant={z.wochentage.includes(i) ? 'filled' : 'outlined'}
                 onClick={() => zSet({ wochentage: z.wochentage.includes(i) ? z.wochentage.filter(x => x !== i) : [...z.wochentage, i] })} aria-pressed={z.wochentage.includes(i)} />)}</Stack>
           )}
-          <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2 }}>
+          <Box sx={{ bgcolor: 'action.hover', borderRadius: 1.5, p: 2 }}>
             {vorschauFehler ? <Typography color="error.main">{vorschauFehler}</Typography> : vorschau ? (
               <>
                 <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap" sx={{ mb: vorschau.termine.length ? 1.25 : 0 }}>
@@ -329,10 +325,10 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
             const aus = r.belegt.length >= n;
             const maxMenge = Math.max(1, ...r.verfuegbar);
             return (
-              <Stack key={r.id} direction="row" gap={1.5} alignItems="center" sx={{ p: 1.25, borderRadius: 2, border: 1, borderColor: an ? 'primary.main' : 'divider', bgcolor: an ? 'action.selected' : 'transparent', opacity: aus ? 0.5 : 1, cursor: aus ? 'default' : 'pointer' }}
+              <Stack key={r.id} direction="row" gap={1.5} alignItems="center" sx={{ p: 1.25, borderRadius: 1.5, border: 1, borderColor: an ? 'primary.main' : 'divider', bgcolor: an ? 'action.selected' : 'transparent', opacity: aus ? 0.5 : 1, cursor: aus ? 'default' : 'pointer' }}
                 onClick={() => !aus && setResWahl(m => { const x = new Map(m); if (x.has(r.id)) x.delete(r.id); else x.set(r.id, 1); return x; })}>
                 <Checkbox checked={an} disabled={aus} sx={{ p: 0.5 }} />
-                <Box sx={{ width: 36, height: 36, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.hover', color: 'primary.main' }}><ResSymbol r={r} /></Box>
+                <Box sx={{ width: 36, height: 36, borderRadius: 1.5, display: 'grid', placeItems: 'center', bgcolor: 'action.hover', color: 'primary.main' }}><ResSymbol r={r} /></Box>
                 <Box sx={{ flex: 1, minWidth: 0 }}><Typography sx={{ fontWeight: 500 }}>{r.name}</Typography><Typography variant="body2" color="text.secondary" noWrap>{[r.art, r.standort ? `Standort: ${r.standort}` : '', r.bemerkung].filter(Boolean).join(' · ')}</Typography></Box>
                 {r.anzahl > 1 && <TextField type="number" size="small" label={`von ${r.anzahl}`} value={resWahl.get(r.id) ?? 1} onClick={e => e.stopPropagation()} sx={{ width: 100 }}
                   onChange={e => { const v = Math.max(1, Math.min(maxMenge, Number(e.target.value) || 1)); setResWahl(m => new Map(m).set(r.id, v)); }} slotProps={{ htmlInput: { min: 1, max: maxMenge } }} />}

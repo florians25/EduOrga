@@ -3,7 +3,6 @@
 // zurückziehen. Bestätigte Meldungen erscheinen als Abwesenheit unter „Meine Abwesenheiten“.
 import { useState } from 'react';
 import { Box, Button, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import { api, holen, senden } from '../../api/client';
 import { DatumFeld } from '../../components/Auswahl';
 import { FormDialog, Plakette } from '../../components/Bausteine';
@@ -52,15 +51,15 @@ export function MeldungenListe({ kind, gruende }: { kind: { id: number; vorname:
   const g = useLaden(() => holen<{ meldungen: Meldung[] }>(`/api/app/familie/meldungen?schueler=${kind.id}`), [kind.id]);
   return (
     <>
-      <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'flaechen.band' }}>
+      <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 1.5, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'flaechen.band' }}>
         <Box sx={{ flex: 1, minWidth: 240 }}>
           <Typography sx={{ fontWeight: 600 }}>{kind.vorname} kann nicht zur Schule kommen?</Typography>
           <Typography variant="body2" color="text.secondary">Melden Sie die Abwesenheit hier – die Klassenleitung sieht sie sofort und bestätigt sie. Die Lehrkräfte sehen die Meldung in ihren Stunden.</Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddRounded />} onClick={() => setNeu(true)}>Abwesenheit melden</Button>
+        <Button variant="contained" onClick={() => setNeu(true)}>Abwesenheit melden</Button>
       </Paper>
       <Geladen g={g}>{d => !d.meldungen.length ? <Leer text="Noch keine Meldungen." /> : (
-        <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
           {d.meldungen.map(m => {
             const [st, ton] = MELDUNG_STATUS[m.status] ?? [m.status, 'neutral'];
             return (

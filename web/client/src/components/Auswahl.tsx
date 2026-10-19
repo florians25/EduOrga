@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Autocomplete, Box, Button, IconButton, Popover, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -53,14 +52,14 @@ export function ZeitNavi({ datum, onDatum, art = 'woche', tage = 5 }: { datum: s
   return (
     <Stack direction="row" alignItems="center" gap={0.5} flexWrap="wrap" sx={{ minWidth: 0 }}>
       <Tooltip title={art === 'woche' ? 'Vorherige Woche' : 'Vorheriger Tag'}><IconButton size="small" onClick={() => onDatum(art === 'woche' ? plusTage(basis, -schritt) : tagWeiter(-1))} aria-label={art === 'woche' ? 'Vorherige Woche' : 'Vorheriger Tag'}><ChevronLeftRounded /></IconButton></Tooltip>
-      <Button variant="outlined" onClick={e => setAnker(e.currentTarget)} startIcon={<CalendarTodayOutlined sx={{ fontSize: '16px !important' }} />} aria-haspopup="dialog"
+      <Button variant="outlined" onClick={e => setAnker(e.currentTarget)} aria-haspopup="dialog"
         sx={{ fontWeight: 600, gap: 0.5, whiteSpace: 'nowrap' }}>
         {art === 'woche' ? <><Box component="span" sx={{ color: 'text.secondary', fontWeight: 500, mr: 0.75 }}>KW {kalenderwoche(mo)}</Box>{wochenText(mo, tage)}</>
           : <><Box component="span" sx={{ color: 'text.secondary', fontWeight: 500, mr: 0.75 }}>{wochentagKurz(datum)}</Box>{datumDe(datum)}</>}
       </Button>
       <Tooltip title={art === 'woche' ? 'Nächste Woche' : 'Nächster Tag'}><IconButton size="small" onClick={() => onDatum(art === 'woche' ? plusTage(basis, schritt) : tagWeiter(1))} aria-label={art === 'woche' ? 'Nächste Woche' : 'Nächster Tag'}><ChevronRightRounded /></IconButton></Tooltip>
       <Button variant="outlined" onClick={() => onDatum(heuteIso())} sx={{ ml: 0.5 }}>Heute</Button>
-      <Popover open={!!anker} anchorEl={anker} onClose={() => setAnker(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} slotProps={{ paper: { sx: { borderRadius: 2, mt: 1 } } }}>
+      <Popover open={!!anker} anchorEl={anker} onClose={() => setAnker(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} slotProps={{ paper: { sx: { borderRadius: 1.5, mt: 1 } } }}>
         <DateCalendar value={dayjs(datum)} onChange={(v: Dayjs | null) => { if (v) { onDatum(v.format('YYYY-MM-DD')); setAnker(null); } }} showDaysOutsideCurrentMonth displayWeekNumber />
       </Popover>
     </Stack>

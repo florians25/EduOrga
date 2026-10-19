@@ -6,7 +6,6 @@ import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid, IconButton, ListItemIcon, ListItemText, ListSubheader, Menu, MenuItem,
   Paper, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
-import TuneRounded from '@mui/icons-material/TuneRounded';
 import HelpOutlineRounded from '@mui/icons-material/HelpOutlineRounded';
 import CheckRounded from '@mui/icons-material/CheckRounded';
 import PrintOutlined from '@mui/icons-material/PrintOutlined';
@@ -88,7 +87,7 @@ export function AnsichtMenue({ einst, setEinst, mitAbwesenheiten = true }: { ein
   const haken = (an: boolean) => <ListItemIcon>{an ? <CheckRounded fontSize="small" /> : null}</ListItemIcon>;
   return (
     <>
-      <Button variant="outlined" startIcon={<TuneRounded />} onClick={e => setAnker(e.currentTarget)} aria-haspopup="menu">Ansicht</Button>
+      <Button variant="outlined" onClick={e => setAnker(e.currentTarget)} aria-haspopup="menu">Ansicht</Button>
       <Menu anchorEl={anker} open={!!anker} onClose={() => setAnker(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <ListSubheader sx={{ lineHeight: '32px' }}>Kacheln</ListSubheader>
         <MenuItem onClick={() => setEinst({ ...einst, zeiten: !einst.zeiten })}>{haken(einst.zeiten)}<ListItemText>Uhrzeiten in den Kacheln</ListItemText></MenuItem>

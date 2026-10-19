@@ -26,7 +26,7 @@ import { api, holen, senden, qs } from '../../api/client';
 import type { Elemente, Karte } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
 import { Abschnitt, Fehler, Geladen, Laden, Leer, Seite } from '../../components/Seite';
-import { FormDialog, NamensAvatar, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
+import { FormDialog, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
 import { DatumFeld, ElementWahl } from '../../components/Auswahl';
 import { Stundendetails } from '../../components/plan/Stundendetails';
 import { karteAus } from '../../components/plan/karte';
@@ -134,7 +134,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
   let letzteKw = -1;
   return (
     <Seite titel={suchModus ? 'Stunden suchen' : 'Meine Stunden'} untertitel={suchModus ? 'Unterrichte nach Klasse, Lehrkraft oder Fach – mit Thema, Anwesenheitskontrolle und Hausaufgaben.' : 'Ihre Unterrichte des Schuljahres je Tag – offene Dokumentation ist markiert.'} dokumentTitel="Klassenbuch – Stunden">
-      <Paper variant="outlined" sx={{ p: 1.5, mb: 2.5, borderRadius: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', position: 'sticky', top: { xs: 60, lg: 8 }, zIndex: 5 }} className="nicht-drucken">
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 2.5, borderRadius: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', position: 'sticky', top: { xs: 60, lg: 8 }, zIndex: 5 }} className="nicht-drucken">
         {suchModus ? (
           <Autocomplete multiple options={optionen} value={optionen.filter(o => kriterien.some(k => k.typ === o.typ && k.kurz === o.kurz))} groupBy={o => GRUPPE[o.typ]}
             getOptionLabel={o => o.kurz} isOptionEqualToValue={(a, b) => a.typ === b.typ && a.kurz === b.kurz}
@@ -165,7 +165,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
         ))}
         <DatumFeld label="Gehe zu" wert={zielDatum} min={sjVon} max={sjBis} onWert={d => { if (d) { setBereich({ von: grenze(plusTage(montag(d), -7)), bis: grenze(plusTage(d, 21)) }); navigieren(ziel({ d })); } }} breite={160} />
       </Paper>
-      {!abfrage ? <Leer symbol={<SearchRounded />} text={kriterien.length ? 'Nur ein Fach genügt nicht – bitte zusätzlich eine Klasse oder Lehrkraft angeben.' : 'Benutzen Sie die Suche, um das Ergebnis mit zumindest einer Lehrkraft und/oder Klasse einzuschränken.'} />
+      {!abfrage ? <Leer text={kriterien.length ? 'Nur ein Fach genügt nicht – bitte zusätzlich eine Klasse oder Lehrkraft angeben.' : 'Benutzen Sie die Suche, um das Ergebnis mit zumindest einer Lehrkraft und/oder Klasse einzuschränken.'} />
         : daten.fehler ? <Fehler fehler={daten.fehler} neu={daten.neu} /> : !daten.daten ? <Laden /> : (
           <>
             {bereich.von <= sjVon ? <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}><FlagOutlined sx={{ fontSize: 16, verticalAlign: -3, mr: 0.5 }} />Beginn des Schuljahres · {datumDe(sjVon)}</Typography>
@@ -183,7 +183,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
                     {tag.datum === heute && <Plakette ton="primaer" fest>Heute</Plakette>}
                     <Box sx={{ flex: 1, borderTop: 1, borderColor: 'divider' }} />
                   </Stack>
-                  <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', borderColor: tag.datum === heute ? alpha(t.palette.primary.main, 0.4) : 'divider' }}>
+                  <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden', borderColor: tag.datum === heute ? alpha(t.palette.primary.main, 0.4) : 'divider' }}>
                     <Box sx={{ overflowX: 'auto' }}><Table size="small">
                       <TableHead><TableRow><TableCell sx={{ width: 44 }}>h</TableCell><TableCell>Fach</TableCell>{mitLehrer && <TableCell>Lehrkräfte</TableCell>}<TableCell>Klassen</TableCell><TableCell>Lehrstoff</TableCell><TableCell>Abwesenheiten</TableCell><TableCell>Hausaufgaben</TableCell></TableRow></TableHead>
                       <TableBody>{sicht.map(x => {
@@ -346,7 +346,7 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
               {tage.map(x => {
                 const st = x.stunden.filter(s => sichtbar(s, x.datum)).sort((a, b) => a.von - b.von);
                 return (
-                  <Paper key={x.datum} variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                  <Paper key={x.datum} variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
                     <Stack direction="row" alignItems="center" sx={{ px: 1.5, py: 0.75, bgcolor: x.datum === heute ? alpha(t.palette.primary.main, 0.06) : 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}>
                       <Typography sx={{ fontWeight: 600, flex: 1, color: x.datum === heute ? 'primary.main' : 'text.primary' }}>{wochentag(x.datum)}, {datumKurz(x.datum)}</Typography>
                       {!x.frei && <IconButton size="small" onClick={() => setVermerk(x.datum)} aria-label={`Klassenbucheintrag am ${datumKurz(x.datum)}`}><AddRounded fontSize="small" /></IconButton>}
@@ -368,7 +368,7 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
               })}
             </Stack>
           ) : (
-            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'auto', mb: 3 }}>
+            <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'auto', mb: 3 }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: `56px repeat(${tage.length}, minmax(150px, 1fr))`, minWidth: 56 + tage.length * 150 }}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'flaechen.band' }} />
                 {tage.map(x => (
@@ -401,7 +401,7 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
             {(Object.keys(DOKU) as Doku[]).map(x => <Stack key={x} direction="row" gap={0.75} alignItems="center"><Plakette ton={DOKU[x].ton}>{DOKU[x].text}</Plakette><Typography variant="caption">{
               x === 'dokumentiert' ? 'Thema eingetragen und Anwesenheit kontrolliert' : x === 'offen' ? 'Thema oder Anwesenheitskontrolle fehlt' : x === 'entfall' ? 'Stunde fällt aus' : 'Stunde liegt in der Zukunft'}</Typography></Stack>)}
           </Stack>
-          <Abschnitt titel="Klassenbucheinträge der Woche" aktion={<Button size="small" startIcon={<AddRounded />} onClick={() => setVermerk(heute >= w.von && heute <= w.bis ? heute : w.von)}>Neuer Eintrag</Button>}>
+          <Abschnitt titel="Klassenbucheinträge der Woche" aktion={<Button size="small" onClick={() => setVermerk(heute >= w.von && heute <= w.bis ? heute : w.von)}>Neuer Eintrag</Button>}>
             <Box sx={{ px: 2, pb: 1.5 }}>
               {vermerke.length ? vermerke.map((v, i) => (
                 <Stack key={i} direction={{ xs: 'column', sm: 'row' }} columnGap={2} rowGap={0.25} sx={{ py: 1, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 } }} alignItems={{ sm: 'baseline' }}>
@@ -490,7 +490,7 @@ function Fehlzeiten({ klasse, bis, vonParam, ziel }: { klasse: string; bis: stri
       const zahl = (n: number, ton?: 'entfall' | 'pruefung' | 'ok') => (n ? <Box component="b" sx={{ color: ton ? `status.${ton}.main` : 'text.primary' }}>{n}</Box> : <Box component="span" sx={{ color: 'text.disabled' }}>–</Box>);
       return (
         <>
-          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             <DatumFeld label="Von" wert={von} onWert={v => v && neu(v)} pflicht />
             <DatumFeld label="Bis" wert={bis} onWert={b => b && neu(von, b)} pflicht />
             <SuchFeld wert={suche} onWert={setSuche} platzhalter="Schüler*in suchen" breite={200} />
@@ -499,11 +499,11 @@ function Fehlzeiten({ klasse, bis, vonParam, ziel }: { klasse: string; bis: stri
             {f.schueler.length > 0 && <Stack direction="row" gap={1.5}>
               <Typography variant="body2"><b>{zeilen.length}/{f.schueler.length}</b> mit Fehlzeiten</Typography><Typography variant="body2" color="status.entfall.main"><b>{fehlt.length}</b> Fehlstd.</Typography>
               <Typography variant="body2" color="status.pruefung.main"><b>{fehlt.filter(y => y.status === 'offen').length}</b> offen</Typography></Stack>}
-            {f.verwalten && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'fehlen' })}>Fehlen eintragen</Button>}
+            {f.verwalten && <Button variant="contained" onClick={() => setDialog({ art: 'fehlen' })}>Fehlen eintragen</Button>}
           </Paper>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Fehlstunden entstehen aus einer Abwesenheit und dem Stundenplan. Den Zeitraum selbst erfassen Sie unter <a href={`#/abwesenheiten/schueler/${von}/${bis}/${encodeURIComponent(klasse)}`}>Abwesenheiten</a>.</Typography>
           {!f.schueler.length ? <Leer text="Für diese Klasse wurde keine Schülerliste aus EduOrga Studio übertragen." /> : !zeilen.length ? <Leer text="Im Zeitraum hat niemand gefehlt." /> : (
-            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+            <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
               <Box sx={{ overflowX: 'auto' }}><Table size="small">
                 <TableHead><TableRow>{f.verwalten && <TableCell padding="checkbox" />}<TableCell>Name</TableCell><TableCell align="right">Fehlstunden</TableCell><TableCell align="right">Fehltage</TableCell><TableCell align="right">offen</TableCell><TableCell align="right">entschuldigt</TableCell><TableCell align="right">nicht entsch.</TableCell><TableCell /></TableRow></TableHead>
                 <TableBody>{zeilen.map(x => {
@@ -513,7 +513,7 @@ function Fehlzeiten({ klasse, bis, vonParam, ziel }: { klasse: string; bis: stri
                     <Fragment key={x.id}>
                       <TableRow hover onClick={() => setAuf(a => { const n = new Set(a); if (n.has(x.id)) n.delete(x.id); else n.add(x.id); return n; })} sx={{ cursor: 'pointer' }}>
                         {f.verwalten && <TableCell padding="checkbox" onClick={e => e.stopPropagation()}><Checkbox size="small" checked={alleGewaehlt} indeterminate={!alleGewaehlt && ids.some(id => wahl.has(id))} onChange={() => setWahl(w => { const n = new Set(w); ids.forEach(id => (alleGewaehlt ? n.delete(id) : n.add(id))); return n; })} inputProps={{ 'aria-label': 'alle Fehlstunden auswählen' }} /></TableCell>}
-                        <TableCell><Stack direction="row" gap={1.25} alignItems="center"><NamensAvatar name={`${x.name} ${x.vorname}`} id={x.id} /><Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{x.name} {x.vorname}</Typography>{x.hinweis && <Typography variant="caption" color="status.entfall.main">{x.hinweis}</Typography>}</Box></Stack></TableCell>
+                        <TableCell><Stack direction="row" gap={1.25} alignItems="center"><Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{x.name} {x.vorname}</Typography>{x.hinweis && <Typography variant="caption" color="status.entfall.main">{x.hinweis}</Typography>}</Box></Stack></TableCell>
                         <TableCell align="right">{zahl(x.stunden)}</TableCell><TableCell align="right">{zahl(x.tage)}</TableCell><TableCell align="right">{zahl(x.offen, 'pruefung')}</TableCell>
                         <TableCell align="right">{zahl(x.entschuldigt, 'ok')}</TableCell><TableCell align="right">{zahl(x.unentschuldigt, 'entfall')}</TableCell>
                         <TableCell align="right"><ExpandMoreRounded sx={{ transform: auf.has(x.id) ? 'rotate(180deg)' : 'none', color: 'text.secondary' }} /></TableCell>
@@ -564,7 +564,7 @@ function Vermerke({ klasse }: { klasse: string }) {
     holen<{ id: number; name: string; vorname: string }[]>(`/api/app/klassenbuch/schueler?klasse=${encodeURIComponent(klasse)}`)]), [klasse]);
   const [neu, setNeu] = useState(false);
   return (
-    <Abschnitt titel={`Vermerke · ${klasse}`} aktion={<Button variant="contained" size="small" startIcon={<AddRounded />} onClick={() => setNeu(true)}>Neuer Vermerk</Button>}>
+    <Abschnitt titel={`Vermerke · ${klasse}`} aktion={<Button variant="contained" size="small" onClick={() => setNeu(true)}>Neuer Vermerk</Button>}>
       <Geladen g={g}>{([v, sl]) => v.vermerke.length ? <Box sx={{ px: 2, pb: 1 }}>{v.vermerke.map(x => (
         <Stack key={x.id} direction="row" gap={2} alignItems="baseline" sx={{ py: 1, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 } }}>
           <Typography variant="body2" color="text.secondary" sx={{ width: 90, flex: 'none' }}>{datumDe(x.datum)}</Typography>

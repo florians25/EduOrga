@@ -7,23 +7,14 @@
 // Online-Unterricht wird nur angezeigt (festgelegt in EduOrga Studio). Schüler*innen und Eltern sehen nur den Reiter „Stunde“ und den Verlauf.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  Box, Button, Dialog, IconButton, Link, ListItemIcon, Menu, MenuItem, Skeleton, Stack, Tab, Tabs, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
+  Box, Button, Dialog, IconButton, Link, Menu, MenuItem, Skeleton, Stack, Tab, Tabs, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
   useMediaQuery, useTheme,
 } from '@mui/material';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import VideocamOutlined from '@mui/icons-material/VideocamOutlined';
-import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
-import RadioButtonUncheckedRounded from '@mui/icons-material/RadioButtonUncheckedRounded';
 import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
 import MoreHorizRounded from '@mui/icons-material/MoreHorizRounded';
-import MailOutline from '@mui/icons-material/MailOutline';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
-import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
-import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined';
-import ReportOutlined from '@mui/icons-material/ReportOutlined';
-import KeyboardOutlined from '@mui/icons-material/KeyboardOutlined';
 import LinkRounded from '@mui/icons-material/LinkRounded';
 import { holen, senden } from '../../api/client';
 import type { Karte, PlanTyp, Wert, Zeit } from '../../api/types';
@@ -257,14 +248,14 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
 
   const stoff = !!(d?.st?.eintrag?.thema || (einzel && d?.st?.blockEintrag?.thema));
   const kommend = k.datum > heuteIso() || (k.datum === heuteIso() && !!bereich.beginn && bereich.beginn > hhmm(jetztMinuten()));
+  // Stand der Dokumentation als schlichter Text: Erledigtes in Zweittextfarbe, Fehlendes in Bernstein – keine Häkchen-Symbole.
   const stand = (an: boolean, ja: string, nein: string, warn: boolean) => (
-    <Stack direction="row" gap={0.5} alignItems="center" sx={{ fontSize: 12.5, fontWeight: 500, color: an ? 'status.ok.main' : warn ? 'status.pruefung.main' : 'text.secondary', whiteSpace: 'nowrap' }}>
-      {an ? <CheckCircleRounded sx={{ fontSize: 16 }} /> : <RadioButtonUncheckedRounded sx={{ fontSize: 16 }} />}{an ? ja : nein}
-    </Stack>
+    <Box component="span" sx={{ fontSize: 13, color: !an && warn ? 'status.pruefung.main' : 'text.secondary', fontWeight: !an && warn ? 500 : 400, whiteSpace: 'nowrap' }}>{an ? ja : nein}</Box>
   );
   const dokumentation = mitKlassenbuch && d && (
-    <Stack direction="row" gap={1.5} alignItems="center" aria-label="Stand der Dokumentation">
+    <Stack direction="row" gap={1} alignItems="center" aria-label="Stand der Dokumentation" sx={{ color: 'text.disabled', fontSize: 13 }}>
       {stand(stoff, 'Thema eingetragen', 'Thema fehlt', !kommend)}
+      <span aria-hidden>·</span>
       {stand(!!d.anw?.geprueft, 'Anwesenheit kontrolliert', kommend ? 'Anwesenheit ab Stundenbeginn' : 'Anwesenheit offen', !kommend)}
     </Stack>
   );
@@ -323,25 +314,24 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
           <ToggleButtonGroup exclusive size="small" value={einzel ?? 0} onChange={(_, v) => { if (v === null || v === (einzel ?? 0)) return; void (async () => { if (ausstehend.current) await sichern(); setEinzel(v || null); })(); }}
             sx={{ mb: 1, alignSelf: { xs: 'flex-start', md: 'auto' } }} aria-label="Ganzer Block oder Einzelstunde">
             <ToggleButton value={0}>Ganzer Block</ToggleButton>
-            {einzelstunden.map(z => <ToggleButton key={z.stunde} value={z.stunde} title={z.beginn ? `${z.beginn}–${z.ende}` : undefined}>{z.stunde}. Std.{z.eintrag && <Box component="span" sx={{ ml: 0.75, width: 6, height: 6, borderRadius: 3, bgcolor: 'primary.main' }} />}</ToggleButton>)}
+            {einzelstunden.map(z => <ToggleButton key={z.stunde} value={z.stunde} title={z.beginn ? `${z.beginn}–${z.ende}` : undefined}>{z.stunde}. Std.{z.eintrag && <Box component="span" sx={{ ml: 0.75, width: 6, height: 6, borderRadius: 1.5, bgcolor: 'primary.main' }} />}</ToggleButton>)}
           </ToggleButtonGroup>
         )}
       </Stack>
       <Menu anchorEl={mehr} open={!!mehr} onClose={() => setMehr(null)}>
-        {kl[0] && kollegium && <MenuItem onClick={() => { setMehr(null); void schliessen().then(() => navigieren(`#/klassenbuch/${encodeURIComponent(kl[0])}/woche/${k.datum}`)); }}><ListItemIcon><MenuBookOutlined fontSize="small" /></ListItemIcon>Klassenbuch der Klasse {kl[0]}</MenuItem>}
-        {kollegium && <MenuItem onClick={() => { setMehr(null); void schliessen().then(() => navigieren('#/mitteilungen/verfassen')); }}><ListItemIcon><MailOutline fontSize="small" /></ListItemIcon>Mitteilung schreiben</MenuItem>}
-        {mitKlassenbuch && <MenuItem onClick={() => { setMehr(null); setDialog({ art: 'ticket' }); }}><ListItemIcon><ReportOutlined fontSize="small" /></ListItemIcon>Ticket an Schulleitung und Administration</MenuItem>}
-        {mitKlassenbuch && <MenuItem onClick={() => { setMehr(null); setDialog({ art: 'einst' }); }}><ListItemIcon><SettingsOutlined fontSize="small" /></ListItemIcon>Anzeige der Schülerliste</MenuItem>}
-        <MenuItem onClick={() => { setMehr(null); window.print(); }}><ListItemIcon><PrintOutlined fontSize="small" /></ListItemIcon>Drucken</MenuItem>
-        {!mobil && <MenuItem onClick={() => { setMehr(null); setTasten(true); }}><ListItemIcon><KeyboardOutlined fontSize="small" /></ListItemIcon>Tastenkürzel</MenuItem>}
+        {kl[0] && kollegium && <MenuItem onClick={() => { setMehr(null); void schliessen().then(() => navigieren(`#/klassenbuch/${encodeURIComponent(kl[0])}/woche/${k.datum}`)); }}>Klassenbuch der Klasse {kl[0]}</MenuItem>}
+        {kollegium && <MenuItem onClick={() => { setMehr(null); void schliessen().then(() => navigieren('#/mitteilungen/verfassen')); }}>Mitteilung schreiben</MenuItem>}
+        {mitKlassenbuch && <MenuItem onClick={() => { setMehr(null); setDialog({ art: 'ticket' }); }}>Ticket an Schulleitung und Administration</MenuItem>}
+        {mitKlassenbuch && <MenuItem onClick={() => { setMehr(null); setDialog({ art: 'einst' }); }}>Anzeige der Schülerliste</MenuItem>}
+        <MenuItem onClick={() => { setMehr(null); window.print(); }}>Drucken</MenuItem>
+        {!mobil && <MenuItem onClick={() => { setMehr(null); setTasten(true); }}>Tastenkürzel</MenuItem>}
       </Menu>
     </Box>
   );
   function reiterZahl(r: Reiter): ReactNode {
     if (!d) return null;
-    const zahl = (n: number, ton: 'warn' | 'neutral') => n > 0 && <Box component="span" sx={{ px: 0.6, minWidth: 18, height: 18, borderRadius: '3px', fontSize: 11.5, fontWeight: 600, display: 'inline-grid', placeItems: 'center',
-      bgcolor: ton === 'warn' ? 'status.entfall.flaeche' : 'action.hover', color: ton === 'warn' ? 'status.entfall.main' : 'text.secondary' }}>{n}</Box>;
-    if (r === 'anwesenheit') return d.anw && !kommend && !d.anw.geprueft ? <Box component="span" title="noch nicht kontrolliert" sx={{ width: 7, height: 7, borderRadius: 4, bgcolor: 'status.pruefung.main' }} /> : zahl((d.anw?.fehlzeiten ?? []).filter(f => f.art === 'fehlt').length, 'warn');
+    const zahl = (n: number, ton: 'warn' | 'neutral') => n > 0 && <Box component="span" sx={{ fontSize: 12.5, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: ton === 'warn' ? 'status.entfall.main' : 'text.secondary' }}>{n}</Box>;
+    if (r === 'anwesenheit') return d.anw && !kommend && !d.anw.geprueft ? <Box component="span" title="noch nicht kontrolliert" sx={{ width: 7, height: 7, borderRadius: 1.5, bgcolor: 'status.pruefung.main' }} /> : zahl((d.anw?.fehlzeiten ?? []).filter(f => f.art === 'fehlt').length, 'warn');
     if (r === 'eintraege') return zahl(d.vermerke.filter(v => v.datum === k.datum).length, 'neutral');
     return null;
   }
@@ -350,7 +340,7 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
   const onlineKarte = unterrichtKarte && online && d && (
     <Bereichskarte titel="Findet online statt" rechts={einzel && d.st?.blockEintrag?.online ? <Typography variant="caption" color="text.secondary">ganzer Block</Typography> : null}>
       {sichererLink(onlineLink) ? (
-        <Button variant="contained" startIcon={<VideocamOutlined />} href={onlineLink} target="_blank" rel="noopener noreferrer">Online-Unterricht beitreten</Button>
+        <Button variant="contained" href={onlineLink} target="_blank" rel="noopener noreferrer">Online-Unterricht beitreten</Button>
       ) : <Hinweis>Es wurde noch kein Link zum Online-Unterricht hinterlegt.</Hinweis>}
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>Online-Unterricht und Link legt die Schulleitung in EduOrga Studio fest.</Typography>
     </Bereichskarte>
@@ -392,7 +382,6 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
   const fuss = (
     <Stack component="footer" direction="row" gap={1.5} alignItems="center" className="nicht-drucken" sx={{ px: { xs: 2, sm: 3 }, py: 1.25, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper', flex: 'none', minHeight: 56 }}>
       <Stack direction="row" gap={0.75} alignItems="center" sx={{ minWidth: 0, flex: 1, color: speicher.art === 'fehler' ? 'status.entfall.main' : 'text.secondary' }} role="status" aria-live="polite">
-        {speicher.art === 'gespeichert' && <CheckCircleRounded sx={{ fontSize: 17, color: 'status.ok.main' }} />}
         {speicher.art === 'fehler' && <ErrorOutlineRounded sx={{ fontSize: 17 }} />}
         <Typography variant="body2" noWrap sx={{ color: 'inherit' }}>{speicherText}</Typography>
         {speicher.art === 'fehler' && <Button size="small" onClick={() => void sichern()}>Erneut versuchen</Button>}
@@ -405,7 +394,7 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
   return (
     <Dialog open onClose={() => void schliessen()} fullScreen={mobil} maxWidth={false} aria-labelledby="stunde-titel" scroll="paper"
       slotProps={{
-        paper: { sx: mobil ? { display: 'flex', flexDirection: 'column' } : { width: reiterListe.length > 1 ? 'min(1360px, 94vw)' : 'min(760px, 94vw)', height: reiterListe.length > 1 ? '90vh' : 'auto', maxHeight: '90vh', m: 2, display: 'flex', flexDirection: 'column', borderRadius: 2, overflow: 'hidden' } },
+        paper: { sx: mobil ? { display: 'flex', flexDirection: 'column' } : { width: reiterListe.length > 1 ? 'min(1360px, 94vw)' : 'min(760px, 94vw)', height: reiterListe.length > 1 ? '90vh' : 'auto', maxHeight: '90vh', m: 2, display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' } },
         backdrop: { sx: { bgcolor: 'rgba(12,44,49,.32)' } },
       }}>
       {kopf}

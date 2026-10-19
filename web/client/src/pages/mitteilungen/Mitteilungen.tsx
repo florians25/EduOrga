@@ -12,11 +12,9 @@ import AttachFileRounded from '@mui/icons-material/AttachFileRounded';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DraftsOutlined from '@mui/icons-material/DraftsOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
 import ForwardOutlined from '@mui/icons-material/ForwardOutlined';
-import GroupsOutlined from '@mui/icons-material/GroupsOutlined';
 import InsertDriveFileOutlined from '@mui/icons-material/InsertDriveFileOutlined';
 import MarkEmailReadOutlined from '@mui/icons-material/MarkEmailReadOutlined';
 import MarkEmailUnreadOutlined from '@mui/icons-material/MarkEmailUnreadOutlined';
@@ -25,12 +23,11 @@ import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import ReplyAllRounded from '@mui/icons-material/ReplyAllRounded';
 import ReplyRounded from '@mui/icons-material/ReplyRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
-import SendRounded from '@mui/icons-material/SendRounded';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import { api, holen, loeschen as entfernen, senden } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
-import { FormDialog, NamensAvatar, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
+import { FormDialog, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
 import { Tabelle } from '../../components/Tabelle';
 import { bestaetigen, fehler, toast } from '../../lib/meldungen';
 import { navigieren } from '../../lib/router';
@@ -63,7 +60,6 @@ function zeitKurz(s: string) {
 }
 const zeitLang = (s: string) => { const d = datum(s); return isNaN(+d) ? s : `${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`; };
 const groesse = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
-const ohneZusatz = (name: string) => String(name || '?').replace(/\(.*\)/, '').replace(/–.*/, '').trim();
 
 export default function Mitteilungen({ teile }: SeitenProps) {
   const [a, id] = teile;
@@ -114,7 +110,7 @@ function Postfach({ ordner, verfassen, oeffnenId }: { ordner: Ordner; verfassen:
   const nachSenden = (ziel: string) => { if (location.hash === ziel) void g.neu(); else navigieren(ziel); };
 
   return (
-    <Seite titel={TITEL[ordner]} aktionen={g.daten?.optionen.darfSenden && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setSchreiben({})}>Neue Mitteilung</Button>}
+    <Seite titel={TITEL[ordner]} aktionen={g.daten?.optionen.darfSenden && <Button variant="contained" onClick={() => setSchreiben({})}>Neue Mitteilung</Button>}
       filter={<>
         <SuchFeld wert={suche} onWert={setSuche} platzhalter="Inhalt oder Person suchen" breite={320} />
         <Wahl label="Anzeigen" wert={merkmal} onWert={setMerkmal} alle="Alle" breite={200}
@@ -128,8 +124,8 @@ function Postfach({ ordner, verfassen, oeffnenId }: { ordner: Ordner; verfassen:
           .sort((x, y) => Number(offenBestaetigen(y)) - Number(offenBestaetigen(x)));
         return (
           <>
-            {!liste.length ? <Leer text={ordner === 'gesendet' ? 'Noch keine Mitteilungen gesendet.' : ordner === 'entwuerfe' ? 'Keine Entwürfe.' : 'Keine Mitteilungen.'} symbol={<DraftsOutlined />} />
-              : !gezeigt.length ? <Leer text="Keine Treffer." symbol={<SearchRounded />} />
+            {!liste.length ? <Leer text={ordner === 'gesendet' ? 'Noch keine Mitteilungen gesendet.' : ordner === 'entwuerfe' ? 'Keine Entwürfe.' : 'Keine Mitteilungen.'} />
+              : !gezeigt.length ? <Leer text="Keine Treffer." />
               : (
                 <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
                   <List disablePadding>
@@ -140,7 +136,6 @@ function Postfach({ ordner, verfassen, oeffnenId }: { ordner: Ordner; verfassen:
                           {i > 0 && <Divider component="li" />}
                           <ListItemButton onClick={() => oeffnen(m)} sx={{ gap: 1.5, py: 1.25, alignItems: 'center', position: 'relative', bgcolor: neu ? 'action.hover' : undefined }}>
                             {neu && <Box sx={{ position: 'absolute', left: 4, top: '50%', mt: '-4px', width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main' }} />}
-                            <NamensAvatar name={ohneZusatz(kopfName(m) || 'E')} id={m.id} groesse={36} />
                             <Box sx={{ minWidth: 0, flex: 1, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(140px, 220px) minmax(0, 1fr)' }, columnGap: 2, alignItems: 'baseline' }}>
                               <Typography noWrap sx={{ fontWeight: neu ? 600 : 500, fontSize: 14 }} title={kopfName(m)}>{kopfName(m)}</Typography>
                               <Typography noWrap sx={{ fontSize: 14, color: 'text.secondary' }}>
@@ -207,7 +202,6 @@ function LesenDialog({ m, ordner, optionen, onClose, onSchreiben, onBestaetigt, 
       </DialogTitle>
       <DialogContent dividers>
         <Stack direction="row" gap={1.5} alignItems="flex-start" sx={{ mb: 2 }}>
-          <NamensAvatar name={ohneZusatz(eingang ? m.absender : m.empfaengerText || m.empfaenger[0] || 'E')} id={m.id} groesse={40} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             {eingang ? (
               <>
@@ -247,7 +241,7 @@ function LesenDialog({ m, ordner, optionen, onClose, onSchreiben, onBestaetigt, 
         }), 'error')}
         <Box sx={{ ml: 'auto' }}>
           {eingang && m.lesebestaetigung && !m.bestaetigt && (
-            <Button variant="contained" startIcon={<MarkEmailReadOutlined />} disabled={laeuft}
+            <Button variant="contained" disabled={laeuft}
               onClick={() => void aktion(async () => { const r = await senden<{ bestaetigt: string }>(`${BASIS}/${m.id}/bestaetigen`, {}); toast('Lesebestätigung gesendet.'); onBestaetigt(r.bestaetigt); })}>Lesebestätigung senden</Button>
           )}
           {m.bestaetigt && <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><CheckCircleOutlineRounded fontSize="small" />Lesebestätigung gesendet am {zeitLang(m.bestaetigt)}</Typography>}
@@ -312,10 +306,9 @@ function EmpfaengerDialog({ kollegium, gewaehlt, onClose, fertig }: { kollegium:
         const gruppen = (d.gruppen ?? []).filter(x => x.art !== 'liste' && !(filter.liste || filter.abteilung || filter.rolle || filter.gruppe)
           && (!filter.klasse || x.klasse === filter.klasse) && (!nurGewaehlt || neu.has(x.id)) && (!f || x.name.toLowerCase().includes(f)));
         const alle = personen.length > 0 && personen.every(p => neu.has(p.id));
-        const zeile = (id: string, name: string, chip: string, avatar: React.ReactNode, pills: React.ReactNode, titel?: string) => (
-          <ListItemButton key={id} onClick={() => umschalten(id, chip)} sx={{ gap: 1.5, borderRadius: 2, py: 0.75 }} title={titel} role="checkbox" aria-checked={neu.has(id)}>
+        const zeile = (id: string, name: string, chip: string, pills: React.ReactNode, titel?: string) => (
+          <ListItemButton key={id} onClick={() => umschalten(id, chip)} sx={{ gap: 1.5, borderRadius: 1.5, py: 0.75 }} title={titel} role="checkbox" aria-checked={neu.has(id)}>
             <Checkbox edge="start" checked={neu.has(id)} tabIndex={-1} disableRipple sx={{ p: 0.5 }} />
-            {avatar}
             <Box sx={{ minWidth: 0 }}><Typography noWrap sx={{ fontSize: 14, fontWeight: 500 }}>{name}</Typography><Stack direction="row" gap={0.5} flexWrap="wrap">{pills}</Stack></Box>
           </ListItemButton>
         );
@@ -344,15 +337,15 @@ function EmpfaengerDialog({ kollegium, gewaehlt, onClose, fertig }: { kollegium:
             })()}
             <List dense disablePadding sx={{ maxHeight: { xs: 'none', sm: 420 }, overflow: 'auto', mx: -1 }}>
               {personen.length > 0 && (
-                <ListItemButton sx={{ gap: 1.5, borderRadius: 2 }} onClick={() => setNeu(alt => { const m = new Map(alt); personen.forEach(p => (alle ? m.delete(p.id) : m.set(p.id, chipName(p)))); return m; })}>
+                <ListItemButton sx={{ gap: 1.5, borderRadius: 1.5 }} onClick={() => setNeu(alt => { const m = new Map(alt); personen.forEach(p => (alle ? m.delete(p.id) : m.set(p.id, chipName(p)))); return m; })}>
                   <Checkbox edge="start" checked={alle} indeterminate={!alle && personen.some(p => neu.has(p.id))} tabIndex={-1} disableRipple sx={{ p: 0.5 }} />
                   <Typography sx={{ fontSize: 14, fontWeight: 500 }}>Alle auswählen ({personen.length})</Typography>
                 </ListItemButton>
               )}
-              {personen.map(p => zeile(p.id, p.name, chipName(p), <NamensAvatar name={p.initialen || p.name} groesse={32} />,
+              {personen.map(p => zeile(p.id, p.name, chipName(p),
                 p.rollen.map((r, i) => <Plakette key={i} ton={DUNKEL.has(r.art) ? 'primaer' : 'neutral'}>{r.text}</Plakette>), p.anzeigename !== p.name ? p.anzeigename : undefined))}
               {gruppen.length > 0 && <Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 1.5, pt: 1.5 }}>Gruppen und Klassen</Typography>}
-              {gruppen.map(x => zeile(x.id, x.name, x.name, <Box sx={{ width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'action.selected' }}><GroupsOutlined fontSize="small" /></Box>,
+              {gruppen.map(x => zeile(x.id, x.name, x.name,
                 <Plakette>{x.art === 'klasse' ? 'Klasse' : 'Gruppe'}</Plakette>))}
               {!personen.length && !gruppen.length && <Typography color="text.secondary" sx={{ p: 2 }}>{f || nurGewaehlt || Object.values(filter).some(Boolean) ? 'Keine Treffer.' : 'Keine Empfänger*innen verfügbar.'}</Typography>}
             </List>
@@ -469,7 +462,7 @@ function SchreibDialog({ an, vorgabe, entwurf, titel, onClose, fertig }: Schreib
           <Tooltip title="Vorschau"><ToggleButton value="v" size="small" selected={vorschau} onChange={() => setVorschau(!vorschau)} aria-label="Vorschau"><VisibilityOutlined fontSize="small" /></ToggleButton></Tooltip>
           <Box sx={{ flex: 1 }} />
           <Button variant="outlined" onClick={onClose}>Abbrechen</Button>
-          <Button variant="contained" startIcon={<SendRounded />} disabled={laeuft} onClick={() => void los(async () => {
+          <Button variant="contained" disabled={laeuft} onClick={() => void los(async () => {
             if (!gewaehlt.size) { toast('Bitte mindestens einen Empfänger auswählen.', true); return; }
             if (!betreff.trim()) { toast('Bitte einen Betreff eingeben.', true); return; }
             if (entwurfId.current || dateien.length) { const id = await speichernEntwurf(); await senden(`${BASIS}/${id}/senden`, {}); }
@@ -508,7 +501,7 @@ function KategorieAuswahl({ empfaenger, gewaehlt, setGewaehlt }: { empfaenger: E
         {klassen.length > 1 && <Wahl label="Klasse" wert={klasse} onWert={setKlasse} alle="Alle Klassen" optionen={klassen.map(k => [k, k])} breite={160} />}
       </Stack>
       <FormControlLabel control={<Checkbox checked={alle} onChange={e => setzen(sichtbar, e.target.checked)} />} label="Alle auswählen" />
-      <Box sx={{ maxHeight: 300, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 2 }}>
+      <Box sx={{ maxHeight: 300, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
         {sichtbar.map(x => (
           <FormControlLabel key={x.id} sx={{ display: 'flex', mx: 0, px: 1, borderBottom: 1, borderColor: 'divider' }}
             control={<Checkbox size="small" checked={gewaehlt.has(x.id)} onChange={e => setzen([x], e.target.checked)} />}
@@ -528,7 +521,7 @@ function Listen() {
   const [schreiben, setSchreiben] = useState<string | null>(null);
   return (
     <Seite titel="Listen" untertitel="Eigene Listen fassen Empfänger zusammen (Personen, Klassen, Gruppen). Beim Schreiben erscheinen sie im Filter „Liste“."
-      aktionen={<Button variant="contained" startIcon={<AddRounded />} onClick={() => setFormular({ l: null })}>Erstellen</Button>}>
+      aktionen={<Button variant="contained" onClick={() => setFormular({ l: null })}>Erstellen</Button>}>
       <Geladen g={g}>{liste => (
         <Tabelle zeilen={liste} schluessel={l => l.id} leer="Noch keine Listen angelegt." onZeile={l => setFormular({ l })}
           spalten={[
@@ -537,7 +530,7 @@ function Listen() {
             { id: 'erstellt', kopf: 'erstellt', sortWert: l => l.erstellt, zelle: l => zeitKurz(l.erstellt), verbergenMobil: true, nowrap: true },
             { id: 'akt', kopf: '', rechts: true, nowrap: true, zelle: l => (
               <Stack direction="row" gap={0.5} justifyContent="flex-end" onClick={e => e.stopPropagation()}>
-                <Button size="small" variant="outlined" startIcon={<SendRounded />} onClick={() => setSchreiben('liste:' + l.id)}>Schreiben</Button>
+                <Button size="small" variant="outlined" onClick={() => setSchreiben('liste:' + l.id)}>Schreiben</Button>
                 <IconButton size="small" aria-label="Bearbeiten" onClick={() => setFormular({ l })}><EditOutlined fontSize="small" /></IconButton>
                 <IconButton size="small" color="error" aria-label="Löschen" onClick={async () => {
                   if (!(await bestaetigen('Liste löschen', `Liste „${l.name}“ löschen?`))) return;
@@ -626,7 +619,7 @@ function Einstellungen() {
             <Stack direction="row" alignItems="center" sx={{ mb: 1 }}><Typography variant="h3">Sperren</Typography><Box sx={{ flex: 1 }} /><Plakette ton={gesperrt.size ? 'entfall' : 'neutral'}>{gesperrt.size} gesperrt</Plakette></Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Gesperrte Konten können Mitteilungen lesen, aber keine senden.</Typography>
             <SuchFeld wert={suche} onWert={setSuche} platzhalter="Konto suchen" />
-            <Box sx={{ maxHeight: 360, overflow: 'auto', mt: 1.5, border: 1, borderColor: 'divider', borderRadius: 2 }}>
+            <Box sx={{ maxHeight: 360, overflow: 'auto', mt: 1.5, border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
               {konten.map(b => (
                 <FormControlLabel key={b.id} sx={{ display: 'flex', mx: 0, px: 1, borderBottom: 1, borderColor: 'divider' }}
                   control={<Checkbox size="small" checked={gesperrt.has(b.id)} onChange={e => setGesperrt(s => { const n = new Set(s); if (e.target.checked) n.add(b.id); else n.delete(b.id); return n; })} />}

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Box, Button, Checkbox, FormControlLabel, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { holen, senden } from '../../api/client';
-import { FormDialog, NamensAvatar, Plakette } from '../../components/Bausteine';
+import { FormDialog, Plakette } from '../../components/Bausteine';
 import { Geladen, Leer } from '../../components/Seite';
 import { datumDe, wochentagKurz, zeitstempel } from '../../lib/datum';
 import { toast } from '../../lib/meldungen';
@@ -26,12 +26,12 @@ export function Abwesenheitsmeldungen({ klasse, grundName, geaendert }: { klasse
         <Typography variant="body2" color="text.secondary">Eltern und Schüler*innen melden Abwesenheiten online. Mit „Bestätigen“ wird die Abwesenheit für alle Unterrichtsstunden der Tage eingetragen.</Typography>
       </Stack>
       <Geladen g={g}>{l => !l.length ? <Leer text={ansicht === 'offen' ? 'Keine Meldungen zu bestätigen.' : 'Noch keine Meldungen.'} /> : (
-        <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
           {l.map(m => {
             const [st, ton] = MELDUNG_STATUS[m.status] ?? [m.status, 'neutral'];
             return (
               <Box key={m.id} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(200px, 1fr) 230px minmax(0, 1.4fr) auto' }, gap: 1.5, px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', '&:last-of-type': { borderBottom: 0 }, alignItems: 'center' }}>
-                <Stack direction="row" gap={1.25} alignItems="center"><NamensAvatar name={m.schueler} id={m.schuelerId} />
+                <Stack direction="row" gap={1.25} alignItems="center">
                   <Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{m.schueler || `Schüler*in ${m.schuelerId}`}</Typography><Typography variant="caption" color="text.secondary">Klasse {m.klasse}</Typography></Box></Stack>
                 <Box><Typography variant="body2" sx={{ fontWeight: 500 }}>{zeitraum(m)}</Typography><Typography variant="caption" color="text.secondary">gemeldet {zeitstempel(m.gemeldet)} · {m.gemeldetVon}</Typography></Box>
                 <Box sx={{ minWidth: 0 }}>

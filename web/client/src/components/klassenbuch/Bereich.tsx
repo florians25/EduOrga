@@ -77,7 +77,7 @@ export function KlassenbuchRahmen({ nav, children }: { nav: string; children: Re
   }
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: '212px minmax(0, 1fr)', gap: 3, alignItems: 'start' }}>
-      <Box component="nav" aria-label="Klassenbuch" className="nicht-drucken" sx={{ position: 'sticky', top: 16, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper', overflow: 'hidden' }}>
+      <Box component="nav" aria-label="Klassenbuch" className="nicht-drucken" sx={{ position: 'sticky', top: 16, border: 1, borderColor: 'divider', borderRadius: 1.5, bgcolor: 'background.paper', overflow: 'hidden' }}>
         <Box sx={{ px: 2, py: 1.5, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}>
           <Typography sx={{ fontWeight: 600, fontSize: 15 }}>Klassenbuch</Typography>
           {klasse && <Typography variant="caption" color="text.secondary">Zuletzt gewählt: Klasse {klasse}</Typography>}

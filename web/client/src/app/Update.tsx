@@ -7,7 +7,6 @@ import {
   Alert, AlertTitle, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Link, Stack, Typography,
 } from '@mui/material';
 import CloseRounded from '@mui/icons-material/CloseRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded';
 import { holen, senden } from '../api/client';
 import { bestaetigen, fehler, toast } from '../lib/meldungen';
@@ -122,14 +121,14 @@ export function UpdateDialog({ stand: u, offen, schliessen }: { stand: Updatesta
           {u.veroeffentlicht && <Typography component="span" variant="body2" color="text.secondary"> · veröffentlicht am {datum(u.veroeffentlicht)}</Typography>}
         </Typography>
         {u.hinweise && (
-          <Box sx={{ mt: 2, px: 2, py: 0.5, maxHeight: '45vh', overflow: 'auto', bgcolor: 'action.hover', borderRadius: 2 }}>
+          <Box sx={{ mt: 2, px: 2, py: 0.5, maxHeight: '45vh', overflow: 'auto', bgcolor: 'action.hover', borderRadius: 1.5 }}>
             <Versionshinweise text={u.hinweise} />
           </Box>
         )}
         {!u.installierbar && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary">Update auf dem Server (Sicherung vorher, Migrationen laufen beim Start automatisch):</Typography>
-            <Box component="code" sx={{ display: 'block', p: 1.25, mt: 0.5, bgcolor: 'action.hover', borderRadius: 2, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
+            <Box component="code" sx={{ display: 'block', p: 1.25, mt: 0.5, bgcolor: 'action.hover', borderRadius: 1.5, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
           </Box>
         )}
       </DialogContent>
@@ -138,7 +137,7 @@ export function UpdateDialog({ stand: u, offen, schliessen }: { stand: Updatesta
         <Stack direction="row" gap={1}>
           {u.updateVerfuegbar && <Button onClick={() => { ausblenden(u.neueste); schliessen(); }}>Hinweis ausblenden</Button>}
           {u.installierbar && u.updateVerfuegbar
-            ? <Button variant="contained" startIcon={<DownloadRounded />} onClick={async () => { if (await updateInstallieren()) schliessen(); }}>Update installieren</Button>
+            ? <Button variant="contained" onClick={async () => { if (await updateInstallieren()) schliessen(); }}>Update installieren</Button>
             : <Button variant="contained" onClick={schliessen}>Schließen</Button>}
         </Stack>
       </DialogActions>
@@ -156,7 +155,7 @@ export function UpdateHinweis() {
       <Alert severity="info" sx={{ mb: 3, alignItems: 'center' }} data-testid="update-hinweis"
         action={<>
           <Button color="inherit" size="small" onClick={() => setOffen(true)}>Versionshinweise</Button>
-          {u.installierbar && <Button color="inherit" size="small" startIcon={<DownloadRounded />} onClick={() => { void updateInstallieren(); }}>Update installieren</Button>}
+          {u.installierbar && <Button color="inherit" size="small" onClick={() => { void updateInstallieren(); }}>Update installieren</Button>}
           <IconButton color="inherit" size="small" aria-label="Für diese Version ausblenden" title="Für diese Version ausblenden" onClick={() => ausblenden(u.neueste)}><CloseRounded fontSize="small" /></IconButton>
         </>}>
         <AlertTitle sx={{ mb: 0 }}>Neue Version {u.neueste} verfügbar</AlertTitle>

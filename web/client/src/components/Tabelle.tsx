@@ -78,5 +78,5 @@ export function Tabelle<T>({ zeilen, spalten, schluessel, onZeile, auswahl, setA
       )}
     </TableContainer>
   );
-  return rahmen ? <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>{inhalt}</Paper> : inhalt;
+  return rahmen ? <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>{inhalt}</Paper> : inhalt;
 }

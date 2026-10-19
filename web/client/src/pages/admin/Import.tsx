@@ -2,10 +2,6 @@
 // Abgleich-Modus, Trockenlauf mit Ergebnisliste und Übernahme (optional mit Konten). Dazu die Quelle der Schülerdaten (auch unter Ansichtseinstellungen).
 import { useEffect, useState } from 'react';
 import { Alert, Box, Button, Checkbox, FormControlLabel, ListSubheader, MenuItem, Paper, Radio, RadioGroup, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
-import SaveOutlined from '@mui/icons-material/SaveOutlined';
-import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import UploadFileRounded from '@mui/icons-material/UploadFileRounded';
 import { api, holen, loeschen, senden, speichern } from '../../api/client';
 import { Geladen } from '../../components/Seite';
 import { FormDialog, Plakette, type Ton } from '../../components/Bausteine';
@@ -83,7 +79,7 @@ export function SchuelerImport() {
           <Karte titel="1 · Datei wählen">
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>CSV- oder TXT-Datei (Trennzeichen ; , oder Tab, UTF-8 oder Windows-1252 – beides wird erkannt). Aktuell {gr.schueler} Schüler*innen.</Typography>
             <Stack direction="row" gap={2} flexWrap="wrap" alignItems="center">
-              <Button component="label" variant="outlined" startIcon={<UploadFileRounded />}>Datei wählen<input type="file" accept=".csv,.txt,text/csv,text/plain" hidden onChange={e => { setDatei(e.target.files?.[0] ?? null); e.target.value = ''; }} /></Button>
+              <Button component="label" variant="outlined">Datei wählen<input type="file" accept=".csv,.txt,text/csv,text/plain" hidden onChange={e => { setDatei(e.target.files?.[0] ?? null); e.target.value = ''; }} /></Button>
               <TextField select size="small" label="Trennzeichen" value={trenner} onChange={e => setTrenner(e.target.value)} sx={{ width: 160 }}><MenuItem value="">automatisch</MenuItem><MenuItem value=";">Semikolon</MenuItem><MenuItem value=",">Komma</MenuItem><MenuItem value="tab">Tabulator</MenuItem></TextField>
               <TextField select size="small" label="Kodierung" value={kodierung} onChange={e => setKodierung(e.target.value)} sx={{ width: 160 }}><MenuItem value="">automatisch</MenuItem><MenuItem value="utf-8">UTF-8</MenuItem><MenuItem value="windows-1252">Windows-1252</MenuItem></TextField>
               {d && <Typography variant="body2" color="text.secondary">{d.datei}: {d.anzahl} Zeilen · {d.kodierung} · Trennzeichen {d.trennzeichen === 'tab' ? 'Tabulator' : `„${d.trennzeichen}“`}</Typography>}
@@ -102,8 +98,8 @@ export function SchuelerImport() {
                   if (!Object.keys(z).length) Object.entries(v.spalten ?? {}).forEach(([i, f]) => { if (Number(i) < d.spalten) z[i] = f; });
                   setKopfzeile(v.kopfzeile); setZuordnung(z);
                 }}><MenuItem value="">–</MenuItem>{gr.vorlagen.map(v => <MenuItem key={v.name} value={v.name}>{v.name}</MenuItem>)}</TextField>
-                <Button size="small" startIcon={<SaveOutlined />} onClick={() => setVorlageName('')}>Als Vorlage speichern</Button>
-                {vorlage && <Button size="small" color="error" startIcon={<DeleteOutlineRounded />} onClick={async () => {
+                <Button size="small" onClick={() => setVorlageName('')}>Als Vorlage speichern</Button>
+                {vorlage && <Button size="small" color="error" onClick={async () => {
                   if (!(await bestaetigen('Vorlage löschen', `Vorlage „${vorlage}“ löschen?`))) return;
                   await loeschen(`/api/app/admin/schuelerimport/vorlagen/${encodeURIComponent(vorlage)}`); setVorlage(''); void g.neu();
                 }}>Vorlage löschen</Button>}
@@ -178,7 +174,7 @@ export function SchuelerImport() {
             </FormDialog>
           )}
           {konten && (
-            <FormDialog offen titel="Neue Konten" onClose={() => setKonten(null)} links={<Button startIcon={<DownloadRounded />} onClick={() => speichern(konten.csv ?? '', `konten-${heuteIso()}.csv`)}>Liste herunterladen (CSV)</Button>}>
+            <FormDialog offen titel="Neue Konten" onClose={() => setKonten(null)} links={<Button onClick={() => speichern(konten.csv ?? '', `konten-${heuteIso()}.csv`)}>Liste herunterladen (CSV)</Button>}>
               <Typography>{konten.konten?.length} Konten angelegt.</Typography>
               <Alert severity="warning" sx={{ mt: 2 }}>Die Startpasswörter werden nur jetzt angezeigt. Bitte die Liste herunterladen.</Alert>
             </FormDialog>

@@ -1,23 +1,27 @@
-// Gemeinsame Bausteine: Statusplakette, Suchfeld, Filter-Auswahl, Dialog mit Aktionen, Kennzahl, Datums-Kachel, Avatar mit Initialen.
+// Gemeinsame Bausteine: Statuswort, Suchfeld, Filter-Auswahl, Dialog mit Aktionen, Kennzahl als Text, Datum für Listen, beschriftete Angabe.
+// Keine Initialen-Avatare in Listen (nur das Kontomenü der Kopfleiste zeigt Initialen).
 import { useState, type ReactNode } from 'react';
 import {
-  alpha, Avatar, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Paper, Select,
+  Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select,
   Stack, TextField, Typography, useMediaQuery, useTheme, type ChipProps, type SxProps,
 } from '@mui/material';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import { fehler } from '../lib/meldungen';
-import { ausIso, heuteIso, WOCHENTAGE_KURZ, MONATE } from '../lib/datum';
+import { ausIso, heuteIso, WOCHENTAGE_KURZ } from '../lib/datum';
 
 export type Ton = 'entfall' | 'aenderung' | 'pruefung' | 'termin' | 'frei' | 'ok' | 'neutral' | 'primaer' | 'warnung';
 
-/** Kleine Plakette in der Statusfarbe (hell hinterlegt). */
+/**
+ * Kurzes Statuswort. Standard: nur Text in der Statusfarbe (12 px/500), ohne Fläche und Rahmen – Status wird über Textfarbe
+ * gezeigt, nicht über bunte Pillen. „neutral“ ist Zweittext. „fest“ (sparsam, z. B. „Heute“) ist ein kleines gefülltes Schild.
+ */
 export function Plakette({ ton = 'neutral', children, fest = false, sx, title }: { ton?: Ton; children: ReactNode; fest?: boolean; sx?: SxProps; title?: string }) {
   const t = useTheme();
   const farbe = ton === 'neutral' ? t.palette.text.secondary : ton === 'primaer' ? t.palette.primary.main : ton === 'warnung' ? t.palette.status.pruefung.main : t.palette.status[ton].main;
   return (
-    <Box component="span" title={title} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, height: 20, px: 0.75, borderRadius: '3px', fontSize: 11.5, fontWeight: 600, whiteSpace: 'nowrap',
-      color: fest ? '#fff' : farbe, bgcolor: fest ? farbe : alpha(farbe, ton === 'neutral' ? 0.1 : 0.12), ...sx }}>{children}</Box>
+    <Box component="span" title={title} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, verticalAlign: 'baseline', fontSize: 12, fontWeight: 500, lineHeight: '18px', whiteSpace: 'nowrap',
+      color: fest ? t.palette.getContrastText(farbe) : farbe, ...(fest ? { bgcolor: farbe, px: 0.625, borderRadius: '3px' } : {}), '& svg': { fontSize: 14 }, ...sx }}>{children}</Box>
   );
 }
 
@@ -82,37 +86,34 @@ export function FormDialog({ offen, titel, untertitel, children, onClose, aktion
   );
 }
 
-/** Kennzahl (Übersichten). */
-export function Kennzahl({ wert, text, ton = 'primaer', onClick, unter }: { wert: ReactNode; text: string; ton?: Ton; onClick?: () => void; unter?: ReactNode }) {
+/** Kennzahl als Text („5 Lehrkräfte“) für Zusammenfassungen über Tabellen – keine Kacheln. Mit onClick als Filter; ton „primaer“ = gewählt. */
+export function Kennzahl({ wert, text, ton = 'neutral', onClick, unter }: { wert: ReactNode; text: string; ton?: Ton; onClick?: () => void; unter?: ReactNode }) {
   const t = useTheme();
-  const farbe = ton === 'neutral' ? t.palette.text.primary : ton === 'primaer' ? t.palette.primary.main : ton === 'warnung' ? t.palette.status.pruefung.main : t.palette.status[ton].main;
+  const gewaehlt = ton === 'primaer';
+  const farbe = ton === 'neutral' || gewaehlt || wert === 0 ? t.palette.text.primary : ton === 'warnung' ? t.palette.status.pruefung.main : t.palette.status[ton].main;
   return (
-    <Paper variant="outlined" onClick={onClick} sx={{ p: 2, minWidth: 0, borderRadius: 2, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s', '&:hover': onClick ? { boxShadow: '0 4px 14px rgba(21,26,33,.08)' } : {} }}>
-      <Typography sx={{ fontSize: 28, fontWeight: 600, color: farbe, lineHeight: 1.1 }}>{wert}</Typography>
-      <Typography variant="body2" color="text.secondary" noWrap title={text} sx={{ mt: 0.5 }}>{text}</Typography>
-      {unter}
-    </Paper>
-  );
-}
-
-/** Datum als Kachel (Wochentag, Tag, Monat) für Listen. */
-export function DatumKachel({ datum, klein }: { datum: string; klein?: boolean }) {
-  const d = ausIso(datum);
-  const heute = datum === heuteIso();
-  return (
-    <Box sx={{ width: klein ? 44 : 52, flex: 'none', textAlign: 'center', borderRadius: 2, py: 0.5, bgcolor: heute ? 'primary.main' : 'action.hover', color: heute ? 'primary.contrastText' : 'text.primary' }}>
-      <Typography sx={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', opacity: 0.8, lineHeight: 1.2 }}>{WOCHENTAGE_KURZ[(d.getDay() + 6) % 7]}</Typography>
-      <Typography sx={{ fontSize: klein ? 16 : 19, fontWeight: 600, lineHeight: 1.1 }}>{d.getDate()}</Typography>
-      <Typography sx={{ fontSize: 10.5, opacity: 0.8, lineHeight: 1.2 }}>{MONATE[d.getMonth()].slice(0, 3)}</Typography>
+    <Box component={onClick ? 'button' : 'span'} type={onClick ? 'button' : undefined} onClick={onClick}
+      sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.5, p: 0, border: 0, bgcolor: 'transparent', font: 'inherit', fontSize: 13, color: 'text.secondary', cursor: onClick ? 'pointer' : 'default',
+        borderBottom: '2px solid', borderColor: gewaehlt ? 'secondary.main' : 'transparent', pb: '1px', '&:hover': onClick ? { color: 'text.primary' } : {} }}>
+      <Box component="span" sx={{ fontWeight: 600, color: farbe, fontVariantNumeric: 'tabular-nums' }}>{wert}</Box>{text}{unter}
     </Box>
   );
 }
 
-const AVATAR_FARBEN = ['#dce6f6', '#dff0e8', '#f6e8da', '#e9e1f6', '#f6e0e6', '#dcedf0', '#efedd8'];
-export function NamensAvatar({ name, id = 0, groesse = 32 }: { name: string; id?: number; groesse?: number }) {
-  const teile = name.trim().split(/\s+/).filter(Boolean);
-  const ini = (teile.length > 1 ? teile[0][0] + teile[teile.length - 1][0] : (teile[0] ?? '?').slice(0, 2)).toUpperCase();
-  return <Avatar sx={{ width: groesse, height: groesse, fontSize: groesse * 0.38, fontWeight: 600, bgcolor: AVATAR_FARBEN[Math.abs(id) % AVATAR_FARBEN.length], color: 'grey.800' }}>{ini}</Avatar>;
+/** Zeile mit Kennzahlen (Text, durch Abstand getrennt). */
+export function Kennzahlen({ children, sx }: { children: ReactNode; sx?: SxProps }) {
+  return <Stack direction="row" flexWrap="wrap" columnGap={2.5} rowGap={0.5} alignItems="baseline" sx={{ mb: 1.5, ...sx }}>{children}</Stack>;
+}
+
+/** Datum für Listen als schlichter Text („Mo 19.10.“), heute in der Akzentfarbe – keine Kalenderkachel. */
+export function DatumKachel({ datum, klein }: { datum: string; klein?: boolean }) {
+  const d = ausIso(datum);
+  const heute = datum === heuteIso();
+  return (
+    <Box sx={{ width: klein ? 64 : 76, flex: 'none', fontSize: 13, lineHeight: '20px', fontVariantNumeric: 'tabular-nums', color: heute ? 'secondary.main' : 'text.secondary', fontWeight: heute ? 600 : 400 }}>
+      {WOCHENTAGE_KURZ[(d.getDay() + 6) % 7]} {String(d.getDate()).padStart(2, '0')}.{String(d.getMonth() + 1).padStart(2, '0')}.
+    </Box>
+  );
 }
 
 export function ChipListe({ werte, farbe, groesse = 'small' }: { werte: string[]; farbe?: ChipProps['color']; groesse?: 'small' | 'medium' }) {

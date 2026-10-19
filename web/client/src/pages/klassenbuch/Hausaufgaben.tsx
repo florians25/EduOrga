@@ -2,9 +2,7 @@
 // gruppiert mit Reiter „Lehrstoff“; Schüler*innen und Eltern – eigene Seite (FamilieHausaufgaben). Auch unter „Unterricht → Aufgaben“.
 import { useState } from 'react';
 import { Box, Button, Paper, Stack, Tab, Tabs, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import { holen, qs } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
@@ -39,7 +37,7 @@ function Liste({ bereichP, basis }: { bereichP?: string; basis: string }) {
   const l = (g.daten ?? []).filter(h => (!klasse || (h.klassen ?? []).includes(klasse)) && (!suche || `${h.fach} ${h.lehrer} ${h.text} ${h.bemerkung} ${(h.klassen ?? []).join(' ')}`.toLowerCase().includes(suche.toLowerCase())));
   return (
     <Seite titel={basis === '#/aufgaben' ? 'Aufgaben' : 'Hausaufgaben'} untertitel={`${datumDe(von)} – ${datumDe(bis)} · ${l.length} ${l.length === 1 ? 'Hausaufgabe' : 'Hausaufgaben'}`}
-      aktionen={ich.element ? <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'neu' })}>Neue Hausaufgabe</Button> : undefined}
+      aktionen={ich.element ? <Button variant="contained" onClick={() => setDialog({ art: 'neu' })}>Neue Hausaufgabe</Button> : undefined}
       filter={<>
         <SuchFeld wert={suche} onWert={setSuche} platzhalter="Hausaufgaben durchsuchen" />
         {ich.element && <Wahl label="Auswahl" wert={wahl} onWert={setWahl} optionen={[['meine', 'Meine'], ['alle', 'Alle']]} breite={130} />}
@@ -86,7 +84,7 @@ function Gefiltert({ teile }: { teile: string[] }) {
   }, [reiter, von, bis, klasse, lehrer]);
   const heute = heuteIso();
   return (
-    <Seite titel="Hausaufgaben" aktionen={<Button variant="outlined" startIcon={<PrintOutlined />} onClick={() => window.print()}>Drucken</Button>}
+    <Seite titel="Hausaufgaben" aktionen={<Button variant="outlined" onClick={() => window.print()}>Drucken</Button>}
       filter={<>
         <DatumFeld label="Von" wert={von} onWert={v => v && navigieren(ziel(reiter, v, bis))} pflicht />
         <DatumFeld label="Bis" wert={bis} onWert={b => b && navigieren(ziel(reiter, von, b))} pflicht />
@@ -98,7 +96,7 @@ function Gefiltert({ teile }: { teile: string[] }) {
       {!ich.kollegium && <Tabs value={reiter} onChange={(_, v) => navigieren(ziel(v, von, bis))} sx={{ mb: 2 }}><Tab value="offen" label="Hausaufgaben" /><Tab value="lehrstoff" label="Lehrstoff" /></Tabs>}
       <Geladen g={g}>{d => {
         if (reiter === 'lehrstoff') return d.ls.length ? (
-          <Paper variant="outlined" sx={{ borderRadius: 2 }}>{d.ls.map((x, i) => (
+          <Paper variant="outlined" sx={{ borderRadius: 1.5 }}>{d.ls.map((x, i) => (
             <Stack key={i} direction="row" gap={2} sx={{ p: 2, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 } }}>
               <DatumKachel datum={x.datum} />
               <Box><Typography sx={{ fontWeight: 600 }}>{x.fach} <Typography component="span" color="text.secondary">· {x.stunde}. Std. · {x.lehrer}</Typography></Typography><Typography>{x.thema}</Typography>
@@ -108,7 +106,7 @@ function Gefiltert({ teile }: { teile: string[] }) {
         const gruppen = new Map<string, HaZeile[]>();
         for (const h of d.ha) { const s = h.faellig ?? h.datum; gruppen.set(s, [...(gruppen.get(s) ?? []), h]); }
         return d.ha.length ? (
-          <Paper variant="outlined" sx={{ borderRadius: 2 }}>
+          <Paper variant="outlined" sx={{ borderRadius: 1.5 }}>
             {[...gruppen.entries()].map(([datum, hs]) => (
               <Stack key={datum} direction="row" gap={2} sx={{ p: 2, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 }, opacity: datum < heute ? 0.7 : 1 }}>
                 <DatumKachel datum={datum} />

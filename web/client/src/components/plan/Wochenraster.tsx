@@ -4,7 +4,6 @@
 // Hinweise im Tageskopf, eigene Abwesenheiten als graue Fläche hinter den Stunden.
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { alpha, Box, ButtonBase, Popover, Stack, Tooltip, Typography, useTheme } from '@mui/material';
-import LockOutlined from '@mui/icons-material/LockOutlined';
 import type { Aufsicht, Karte, Tageskopf, Wochenplan, Zeit } from '../../api/types';
 import { heuteIso, hhmm, jetztMinuten, minuten, wochentagKurz, datumKurz } from '../../lib/datum';
 import { Kachel } from './Kachel';
@@ -280,10 +279,9 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
           );
         })}
         {plan.gesperrt && (
-          <Box role="status" sx={{ position: 'absolute', inset: 0, zIndex: 7, display: 'grid', placeItems: 'center', bgcolor: alpha(t.palette.background.paper, 0.75), backdropFilter: 'blur(1px)' }}>
-            <Box sx={{ textAlign: 'center', maxWidth: 420, p: 3 }}>
-              <Box sx={{ width: 48, height: 48, borderRadius: 24, bgcolor: 'action.hover', display: 'grid', placeItems: 'center', mx: 'auto', mb: 1.5 }}><LockOutlined color="action" /></Box>
-              <Typography sx={{ fontWeight: 600 }}>Es werden hier keine Termine angezeigt.</Typography>
+          <Box role="status" sx={{ position: 'absolute', inset: 0, zIndex: 7, display: 'grid', placeItems: 'center', bgcolor: alpha(t.palette.background.paper, 0.85) }}>
+            <Box sx={{ maxWidth: 420, p: 2, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
+              <Typography sx={{ fontWeight: 500 }}>Es werden hier keine Termine angezeigt.</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{plan.sperrhinweis || 'Die Anzeige des Stundenplans ist durch die Administration beschränkt.'}</Typography>
             </Box>
           </Box>
@@ -291,7 +289,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
       </Box>
       {linie && null}
       <Popover open={!!parallel} anchorEl={parallel?.el} onClose={() => setParallel(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { width: 300, maxHeight: 420, borderRadius: 2 } } }}>
+        slotProps={{ paper: { sx: { width: 300, maxHeight: 420, borderRadius: 1.5 } } }}>
         {parallel && (
           <Box role="dialog" aria-label="Gleichzeitige Stunden">
             <Typography sx={{ px: 2, py: 1.25, fontWeight: 600, fontSize: 13.5, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}>

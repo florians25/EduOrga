@@ -8,17 +8,14 @@ import {
 } from '@mui/material';
 import AssessmentOutlined from '@mui/icons-material/AssessmentOutlined';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import GroupsOutlined from '@mui/icons-material/GroupsOutlined';
-import PersonOutlineRounded from '@mui/icons-material/PersonOutlineRounded';
 import RestartAltRounded from '@mui/icons-material/RestartAltRounded';
-import SwapHorizRounded from '@mui/icons-material/SwapHorizRounded';
 import { holen, loeschen, senden, speichern } from '../../api/client';
 import type { Element } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
-import { FormDialog, NamensAvatar, Plakette, SuchFeld } from '../../components/Bausteine';
+import { FormDialog, Plakette, SuchFeld } from '../../components/Bausteine';
 import { DatumFeld, ElementWahl } from '../../components/Auswahl';
 import { Tabelle } from '../../components/Tabelle';
 import { ZeitraumWahl, zeitraumAus } from '../../components/Zeitraum';
@@ -50,8 +47,8 @@ export default function UnterrichtKlassen({ teile }: SeitenProps) {
   return (
     <Seite titel={`Unterricht Klasse ${klasse}`} untertitel={g.daten?.d?.leitung?.length ? `Klassenleitung: ${g.daten.d.leitung.join(', ')}` : undefined}
       aktionen={g.daten?.d && <>
-        {g.daten.d.schreiben && <Button variant="outlined" startIcon={<SwapHorizRounded />} onClick={() => setDialog({ art: 'wechsel' })}>Befristeter Unterrichtswechsel</Button>}
-        <Button variant="outlined" startIcon={<DownloadRounded />} onClick={() => speichern(csv([['U-Nr', 'Klassen', 'Schülergruppe', 'Lehrkraft', 'Fach', 'Std.', 'Termine', 'Schüler*innen', 'Schülergruppen'],
+        {g.daten.d.schreiben && <Button variant="outlined" onClick={() => setDialog({ art: 'wechsel' })}>Befristeter Unterrichtswechsel</Button>}
+        <Button variant="outlined" onClick={() => speichern(csv([['U-Nr', 'Klassen', 'Schülergruppe', 'Lehrkraft', 'Fach', 'Std.', 'Termine', 'Schüler*innen', 'Schülergruppen'],
           ...g.daten!.d!.unterricht.map(u => [u.id, u.klassen.join(', '), u.gruppe, u.lehrer.join(', '), u.fach, u.wochenstunden, u.termine.join(', '), u.schueler, u.gruppen])]), `unterricht-klasse-${klasse}-${z.von}-${z.bis}.csv`)}>Bericht</Button>
       </>}
       filter={g.daten && <>
@@ -76,9 +73,9 @@ export default function UnterrichtKlassen({ teile }: SeitenProps) {
                 ) },
                 { id: 'std', kopf: 'Std.', rechts: true, sortWert: u => u.wochenstunden, zelle: u => u.wochenstunden },
                 { id: 'termine', kopf: 'Termine', zelle: u => <Stack direction="row" gap={0.5} flexWrap="wrap">{u.termine.length ? u.termine.map(t => <Plakette key={t}>{t}</Plakette>) : '–'}</Stack>, verbergenMobil: true },
-                { id: 'schueler', kopf: 'Schüler*innen', zelle: u => <Button size="small" variant="outlined" startIcon={<PersonOutlineRounded />} onClick={() => setDialog({ art: 'schueler', u: u.id })}>{u.schueler}</Button> },
+                { id: 'schueler', kopf: 'Schüler*innen', zelle: u => <Button size="small" variant="outlined" onClick={() => setDialog({ art: 'schueler', u: u.id })}>{u.schueler}</Button> },
                 { id: 'gruppen', kopf: 'Schülergruppen', zelle: u => (
-                  <Stack direction="row" gap={0.75} alignItems="center"><Button size="small" variant="outlined" startIcon={<GroupsOutlined />} onClick={() => setDialog({ art: 'gruppen', u: u.id })}>{u.gruppen}</Button>
+                  <Stack direction="row" gap={0.75} alignItems="center"><Button size="small" variant="outlined" onClick={() => setDialog({ art: 'gruppen', u: u.id })}>{u.gruppen}</Button>
                     {u.gaeste > 0 && <Plakette ton="termin">{u.gaeste} Gast</Plakette>}</Stack>
                 ) },
                 { id: 'ber', kopf: '', rechts: true, zelle: () => <Tooltip title="Berichte"><IconButton size="small" href={link('berichte', '-', klasse, z.von, z.bis)}><AssessmentOutlined fontSize="small" /></IconButton></Tooltip> },
@@ -119,7 +116,7 @@ function GruppenDialog({ unterricht, stichtag, onClose, fertig }: { unterricht: 
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{zeitraum(x.von, x.bis)}{x.gast && !x.gilt && <Plakette sx={{ ml: 1 }}>nicht am Stichtag</Plakette>}</TableCell>
                   <TableCell align="right">{x.anzahl}</TableCell>
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    <Button size="small" startIcon={<PersonOutlineRounded />} onClick={() => setMitglieder(x.id)}>Schüler*innen</Button>
+                    <Button size="small" onClick={() => setMitglieder(x.id)}>Schüler*innen</Button>
                     {d.schreiben && x.gast && <IconButton size="small" aria-label="Bearbeiten" onClick={() => setAendern(x)}><EditOutlined fontSize="small" /></IconButton>}
                     {d.schreiben && (x.gast || (x.id > 0 && x.abweichungen > 0)) && (
                       <Tooltip title={x.gast ? 'Löschen' : 'Abweichungen zurücksetzen'}><IconButton size="small" color="error" onClick={async () => {
@@ -201,7 +198,7 @@ function MitgliederDialog({ unterricht, gruppe, stichtag, onClose, fertig }: { u
                   {sichtbar.map(x => (
                     <TableRow key={x.id} sx={{ opacity: x.auswahl ? 1 : 0.6 }}>
                       <TableCell padding="checkbox"><Checkbox checked={x.auswahl} disabled={!d.schreiben} onChange={e => setze(x.id, { auswahl: e.target.checked })} aria-label={`${x.vorname} ${x.name} nimmt teil`} /></TableCell>
-                      <TableCell><Stack direction="row" gap={1} alignItems="center"><NamensAvatar name={`${x.vorname} ${x.name}`} id={x.id} groesse={28} /><Box><Typography variant="body2" sx={{ fontWeight: 500 }}>{x.name}, {x.vorname}</Typography><Typography variant="caption" color="text.secondary">{GESCHLECHT[x.geschlecht] ?? ''}</Typography></Box></Stack></TableCell>
+                      <TableCell><Stack direction="row" gap={1} alignItems="center"><Box><Typography variant="body2" sx={{ fontWeight: 500 }}>{x.name}, {x.vorname}</Typography><Typography variant="caption" color="text.secondary">{GESCHLECHT[x.geschlecht] ?? ''}</Typography></Box></Stack></TableCell>
                       <TableCell>{x.klasse}</TableCell>
                       <TableCell><DatumFeld label="Von" wert={x.von || null} onWert={v => setze(x.id, { von: v ?? '' })} deaktiviert={!d.schreiben} breite={150} /></TableCell>
                       <TableCell><DatumFeld label="Bis" wert={x.bis || null} onWert={v => setze(x.id, { bis: v ?? '' })} deaktiviert={!d.schreiben} breite={150} /></TableCell>
@@ -284,7 +281,7 @@ function Unterrichtswechsel({ klassen, vorgabe, onClose, fertig }: { klassen: El
               <Button size="small" onClick={() => setSchueler(s => new Set([...s, ...gefiltert.map(x => x.id)]))}>Alle angezeigten wählen</Button>
               <Button size="small" onClick={() => setSchueler(new Set())}>Auswahl leeren</Button>
             </Stack>
-            <Box sx={{ maxHeight: 320, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 2, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' } }}>
+            <Box sx={{ maxHeight: 320, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 1.5, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' } }}>
               {gefiltert.map(x => (
                 <Stack key={x.id} component="label" direction="row" alignItems="center" sx={{ px: 1, cursor: 'pointer', bgcolor: schueler.has(x.id) ? 'action.selected' : undefined }}>
                   <Checkbox size="small" checked={schueler.has(x.id)} onChange={e => setSchueler(s => umschalten(s, x.id, e.target.checked))} />

@@ -1,7 +1,6 @@
 // Seitengerüst: Kopf mit Titel, Untertitel und Aktionen, optionale Filterleiste, Inhalt. Dazu Lade-, Leer- und Fehlerzustände.
 import { useEffect, type ReactNode } from 'react';
 import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
-import InboxOutlined from '@mui/icons-material/InboxOutlined';
 import { PRODUKT } from './Marke';
 
 export function Seite({ titel, untertitel, aktionen, filter, children, breit = true, dokumentTitel }: {
@@ -39,13 +38,13 @@ export function Laden({ hoehe = 200 }: { hoehe?: number }) {
   );
 }
 
-export function Leer({ text, symbol, aktion, unter }: { text: string; symbol?: ReactNode; aktion?: { text: string; onClick: () => void }; unter?: ReactNode }) {
+/** Leerer Zustand: eine sachliche Zeile links, ohne Symbol oder Illustration; optional Zusatzzeile und Knopf. */
+export function Leer({ text, aktion, unter }: { text: string; aktion?: { text: string; onClick: () => void }; unter?: ReactNode }) {
   return (
-    <Box sx={{ textAlign: 'center', py: 6, px: 2, color: 'text.secondary' }}>
-      <Box sx={{ color: 'text.disabled', mb: 1, '& svg': { fontSize: 36 } }}>{symbol ?? <InboxOutlined />}</Box>
-      <Typography sx={{ fontWeight: 500 }}>{text}</Typography>
+    <Box sx={{ py: 1.5, px: 2, color: 'text.secondary' }}>
+      <Typography variant="body2">{text}</Typography>
       {unter && <Typography variant="body2" sx={{ mt: 0.5 }}>{unter}</Typography>}
-      {aktion && <Button variant="outlined" sx={{ mt: 2 }} onClick={aktion.onClick}>{aktion.text}</Button>}
+      {aktion && <Button variant="outlined" size="small" sx={{ mt: 1 }} onClick={aktion.onClick}>{aktion.text}</Button>}
     </Box>
   );
 }
@@ -65,7 +64,7 @@ export function Geladen<T>({ g, children, hoehe }: { g: { daten: T | undefined; 
 /** Karte (Paper) mit Kopfzeile. */
 export function Abschnitt({ titel, aktion, children, sx, kein_rand }: { titel?: ReactNode; aktion?: ReactNode; children: ReactNode; sx?: object; kein_rand?: boolean }) {
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', ...sx }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden', ...sx }}>
       {(titel || aktion) && (
         <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ px: 2, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider', mb: kein_rand ? 0 : 0.5 }}>
           {typeof titel === 'string' ? <Typography variant="h4" component="h2">{titel}</Typography> : titel}

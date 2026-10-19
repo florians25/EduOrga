@@ -236,7 +236,7 @@ function NeueHausaufgabe({ k, einzel, hwNeu, naechste }: StundeProps & { naechst
           {chip('in einer Woche', plusTage(k.datum, 7))}
         </Stack>
         <Box sx={{ flex: 1 }} />
-        <Button variant="contained" startIcon={<AddRounded />} onClick={() => void anlegen()} disabled={laeuft || !text.trim()}>Hinzufügen</Button>
+        <Button variant="contained" onClick={() => void anlegen()} disabled={laeuft || !text.trim()}>Hinzufügen</Button>
       </Stack>
     </Box>
   );

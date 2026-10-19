@@ -16,10 +16,7 @@ import EditOutlined from '@mui/icons-material/EditOutlined';
 import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
-import SendRounded from '@mui/icons-material/SendRounded';
 import SwapHorizRounded from '@mui/icons-material/SwapHorizRounded';
-import UndoRounded from '@mui/icons-material/UndoRounded';
 import VideocamOutlined from '@mui/icons-material/VideocamOutlined';
 import { holen, loeschen, senden } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
@@ -55,7 +52,7 @@ function Liste() {
     return d;
   }), []);
   return (
-    <Seite titel="Elternsprechtag" aktionen={g.daten?.admin && <Button variant="contained" startIcon={<AddRounded />} href="#/sprechtag/neu">Sprechtag anlegen</Button>}>
+    <Seite titel="Elternsprechtag" aktionen={g.daten?.admin && <Button variant="contained" href="#/sprechtag/neu">Sprechtag anlegen</Button>}>
       <Geladen g={g}>{d => (
         <Tabelle zeilen={d.sprechtage} schluessel={x => x.sprechtag.id} onZeile={x => navigieren(`#/sprechtag/${x.sprechtag.id}`)}
           leer={d.admin ? 'Noch kein Sprechtag angelegt.' : 'Zurzeit ist kein Sprechtag freigegeben.'}
@@ -92,11 +89,11 @@ function Start({ id }: { id: number }) {
   const t = g.daten?.sprechtag;
   return (
     <Seite titel={t?.name ?? 'Elternsprechtag'} aktionen={t && g.daten!.admin && <>
-      <Button variant="outlined" startIcon={<PictureAsPdfOutlined />} href={`${BASIS}/${t.id}/plan.pdf`} target="_blank">Gesamtplan (PDF)</Button>
-      <Button variant="outlined" startIcon={<PrintOutlined />} href={`${BASIS}/${t.id}/plan.pdf?leer=true`} target="_blank">Aushang</Button>
+      <Button variant="outlined" href={`${BASIS}/${t.id}/plan.pdf`} target="_blank">Gesamtplan (PDF)</Button>
+      <Button variant="outlined" href={`${BASIS}/${t.id}/plan.pdf?leer=true`} target="_blank">Aushang</Button>
       {absagbar(t) && <>
-        <Button variant="outlined" color="error" startIcon={<CloseRounded />} onClick={() => setAbsage(true)}>Sprechtag absagen</Button>
-        <Button variant="contained" startIcon={<EditOutlined />} href={`#/sprechtag/${t.id}/verwalten`}>Bearbeiten</Button>
+        <Button variant="outlined" color="error" onClick={() => setAbsage(true)}>Sprechtag absagen</Button>
+        <Button variant="contained" href={`#/sprechtag/${t.id}/verwalten`}>Bearbeiten</Button>
       </>}
     </>}>
       <Geladen g={g}>{d => {
@@ -161,8 +158,8 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
   return (
     <Seite titel={t ? (lehrer ? `${t.name} · ${d!.lehrer.name}` : t.name) : 'Elternsprechtag'} aktionen={t && <>
       {absagbar(t) && (d!.lehrer.abgesagt
-        ? <Button variant="outlined" color="success" startIcon={<UndoRounded />} onClick={() => tue(() => senden(`${BASIS}/${id}/teilnahme/wiederaufnehmen`, mit({})), 'Teilnahme wieder aufgenommen – die Zeitfenster sind wieder buchbar.')}>Teilnahme wieder aufnehmen</Button>
-        : <Button variant="outlined" color="error" startIcon={<CloseRounded />} onClick={() => setDialog({ art: 'teilnahme' })}>Teilnahme absagen</Button>)}
+        ? <Button variant="outlined" color="success" onClick={() => tue(() => senden(`${BASIS}/${id}/teilnahme/wiederaufnehmen`, mit({})), 'Teilnahme wieder aufgenommen – die Zeitfenster sind wieder buchbar.')}>Teilnahme wieder aufnehmen</Button>
+        : <Button variant="outlined" color="error" onClick={() => setDialog({ art: 'teilnahme' })}>Teilnahme absagen</Button>)}
       {d!.admin && <Button variant="outlined" startIcon={<ArrowBackRounded />} href={`#/sprechtag/${id}`}>Übersicht</Button>}
     </>}>
       <Geladen g={g}>{({ d, sch }) => {
@@ -221,7 +218,7 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
                         </TextField>
                       </Stack>
                       <TextField label="Nachricht an die Eltern (optional)" value={text} onChange={e => setText(e.target.value)} placeholder="z. B. Anlass des Gesprächs" slotProps={{ htmlInput: { maxLength: 1000 } }} />
-                      <Button variant="contained" startIcon={<SendRounded />} sx={{ alignSelf: 'flex-start' }} onClick={() => {
+                      <Button variant="contained" sx={{ alignSelf: 'flex-start' }} onClick={() => {
                         if (!einladen.length) { toast('Bitte mindestens eine Schülerin bzw. einen Schüler wählen.', true); return; }
                         void tue(async () => {
                           const r = await senden<{ neu: number; ohneKonto: string[] }>(`${BASIS}/${id}/einladungen`, mit({ schuelerIds: einladen, text }));
@@ -245,8 +242,8 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
                 <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" sx={{ mb: 1.5 }}>
                   <Typography variant="h3" sx={{ flex: 1 }}>Meine Termine</Typography>
                   <Plakette ton="pruefung">{gebucht} gebucht</Plakette>{gesperrt > 0 && <Plakette ton="entfall">{gesperrt} gesperrt</Plakette>}
-                  <Button size="small" variant="outlined" startIcon={<PictureAsPdfOutlined />} href={`${BASIS}/${id}/plan.pdf${q}`} target="_blank">Terminliste</Button>
-                  <Button size="small" variant="outlined" startIcon={<PrintOutlined />} href={`${BASIS}/${id}/plan.pdf?leer=true${lehrer ? `&lehrer=${encodeURIComponent(lehrer)}` : ''}`} target="_blank">Aushang</Button>
+                  <Button size="small" variant="outlined" href={`${BASIS}/${id}/plan.pdf${q}`} target="_blank">Terminliste</Button>
+                  <Button size="small" variant="outlined" href={`${BASIS}/${id}/plan.pdf?leer=true${lehrer ? `&lehrer=${encodeURIComponent(lehrer)}` : ''}`} target="_blank">Aushang</Button>
                 </Stack>
                 <Box sx={{ overflowX: 'auto' }}>
                   <Table size="small">
@@ -276,8 +273,8 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
                 </Box>
                 <Stack direction="row" gap={1} alignItems="center" sx={{ mt: 1.5 }} flexWrap="wrap">
                   <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>{wahl.size ? `${wahl.size} Zeitfenster gewählt` : 'Zeitfenster wählen, um sie zu sperren (abwesend) oder freizugeben.'}</Typography>
-                  <Button size="small" color="error" variant="outlined" startIcon={<LockOutlined />} disabled={!auswahl.some(z => z.status === 'frei')} onClick={() => sperren(auswahl.filter(z => z.status === 'frei').map(z => z.beginn), true)}>Sperren</Button>
-                  <Button size="small" color="success" variant="outlined" startIcon={<LockOpenOutlined />} disabled={!auswahl.some(z => z.status === 'gesperrt')} onClick={() => sperren(auswahl.filter(z => z.status === 'gesperrt').map(z => z.beginn), false)}>Freigeben</Button>
+                  <Button size="small" color="error" variant="outlined" disabled={!auswahl.some(z => z.status === 'frei')} onClick={() => sperren(auswahl.filter(z => z.status === 'frei').map(z => z.beginn), true)}>Sperren</Button>
+                  <Button size="small" color="success" variant="outlined" disabled={!auswahl.some(z => z.status === 'gesperrt')} onClick={() => sperren(auswahl.filter(z => z.status === 'gesperrt').map(z => z.beginn), false)}>Freigeben</Button>
                 </Stack>
               </Paper>
             </Box>
@@ -346,7 +343,7 @@ function Eltern({ id }: { id: number }) {
   const tue = async (f: () => Promise<unknown>) => { try { await f(); void g.neu(); } catch (err) { fehler(err); } };
   const d = g.daten;
   return (
-    <Seite titel={d?.sprechtag.name ?? 'Elternsprechtag'} aktionen={d && !d.nurLesen && <Button variant="outlined" startIcon={<PictureAsPdfOutlined />} href={`${BASIS}/${id}/elternplan.pdf`} target="_blank">Meine Termine (PDF)</Button>}>
+    <Seite titel={d?.sprechtag.name ?? 'Elternsprechtag'} aktionen={d && !d.nurLesen && <Button variant="outlined" href={`${BASIS}/${id}/elternplan.pdf`} target="_blank">Meine Termine (PDF)</Button>}>
       <Geladen g={g}>{d => {
         const t = d.sprechtag;
         const lesen = !!d.nurLesen;
@@ -399,7 +396,7 @@ function Eltern({ id }: { id: number }) {
                     <TableRow key={x.id}>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}><b>{x.beginn}</b> <Typography component="span" variant="body2" color="text.secondary">– {x.ende}</Typography></TableCell>
                       <TableCell sx={{ fontWeight: 500 }}>{x.lehrerName}</TableCell>
-                      <TableCell>{x.online ? (x.link ? <Button size="small" startIcon={<VideocamOutlined />} href={x.link} target="_blank" rel="noopener noreferrer">Online-Gespräch</Button> : 'online') : x.raum || '–'}</TableCell>
+                      <TableCell>{x.online ? (x.link ? <Button size="small" href={x.link} target="_blank" rel="noopener noreferrer">Online-Gespräch</Button> : 'online') : x.raum || '–'}</TableCell>
                       <TableCell>{x.schueler.vorname} {x.schueler.name} <Typography component="span" variant="body2" color="text.secondary">{x.schueler.klasse}</Typography></TableCell>
                       <TableCell align="right">{absagbar(t) && !lesen && <Button size="small" color="error" onClick={() => setStorno({ id: x.id, text: `${x.beginn} Uhr bei ${x.lehrerName}` })}>Absagen</Button>}</TableCell>
                     </TableRow>

@@ -82,7 +82,7 @@ export function HausaufgabeFormular({ h, stunde, lehrer, onClose, geaendert }: {
     <FormDialog offen titel={neu ? 'Neue Hausaufgabe' : 'Hausaufgabe bearbeiten'} onClose={onClose} aktion={speichern} aktionText={neu ? 'Erstellen' : 'Speichern'}>
       <Stack gap={2} sx={{ pt: 0.5 }}>
         {fest ? (
-          <Stack direction="row" gap={1} alignItems="center" sx={{ p: 1.25, borderRadius: 2, bgcolor: 'action.hover' }}>
+          <Stack direction="row" gap={1} alignItems="center" sx={{ p: 1.25, borderRadius: 1.5, bgcolor: 'action.hover' }}>
             <MenuBookOutlined fontSize="small" color="action" />
             <Typography variant="body2">{(fest.klassen ?? []).join(', ')}{fest.fach ? ` | ${fest.fach}` : ''} · {mitTag(fest.datum)}{fest.von ? ` · ${fest.einzelstunde ?? fest.von}. Std.` : ''}</Typography>
           </Stack>

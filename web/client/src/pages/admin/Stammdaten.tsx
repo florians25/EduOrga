@@ -2,10 +2,8 @@
 // die in EduOrga Web gepflegten Abwesenheits-/Befreiungsgründe und Klassendienste sowie Notenschemen und Prüfungsarten (Noten.tsx).
 import { useState } from 'react';
 import { Box, Button, FormControlLabel, IconButton, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import CheckRounded from '@mui/icons-material/CheckRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import { holen, loeschen, senden, speichern } from '../../api/client';
 import { Geladen, Seite } from '../../components/Seite';
 import { FormDialog, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
@@ -71,8 +69,8 @@ function Liste({ art }: { art: string }) {
   return (
     <Seite titel={a.titel} untertitel={!bearbeitbar && art !== 'versionen' ? 'Diese Stammdaten werden in EduOrga Studio gepflegt und mit jeder Übertragung aktualisiert.' : art === 'versionen' ? 'Jede Übertragung aus EduOrga Studio erzeugt eine neue Version des Stundenplans; aktiv ist immer die zuletzt empfangene.' : undefined}
       aktionen={<>
-        {bearbeitbar && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({})}>Neu</Button>}
-        <Button variant="outlined" startIcon={<DownloadRounded />} disabled={!liste.length} onClick={() => speichern(csv([a.spalten.map(([, t]) => t), ...liste.map(x => a.spalten.map(([k]) => (typeof x[k] === 'boolean' ? (x[k] ? 'ja' : 'nein') : x[k])))]), `${art}.csv`)}>Bericht</Button>
+        {bearbeitbar && <Button variant="contained" onClick={() => setForm({})}>Neu</Button>}
+        <Button variant="outlined" disabled={!liste.length} onClick={() => speichern(csv([a.spalten.map(([, t]) => t), ...liste.map(x => a.spalten.map(([k]) => (typeof x[k] === 'boolean' ? (x[k] ? 'ja' : 'nein') : x[k])))]), `${art}.csv`)}>Bericht</Button>
       </>}
       filter={<>
         <SuchFeld wert={suche} onWert={setSuche} />

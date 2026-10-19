@@ -90,7 +90,7 @@ function UKarte({ symbol, titel, href, linkText, gruppen, vorne, leerSymbol }: {
         </Box>
       ))}
       {leer.length > 0 && (
-        <Stack direction="row" gap={1} alignItems="center" sx={{ color: 'text.secondary', bgcolor: 'action.hover', borderRadius: 2, px: 1.5, py: 1, fontSize: 13.5 }}>
+        <Stack direction="row" gap={1} alignItems="center" sx={{ color: 'text.secondary', bgcolor: 'action.hover', borderRadius: 1.5, px: 1.5, py: 1, fontSize: 13.5 }}>
           {leerSymbol ?? <CheckRounded fontSize="small" />}<span>{leer.map((x, i) => (i ? x.charAt(0).toLowerCase() + x.slice(1) : x)).join(' · ')}</span>
         </Stack>
       )}
@@ -219,7 +219,7 @@ export default function Uebersicht() {
           if (!unterrichtstage.length) gruppen.unshift({ titel: 'leer', zeilen: [], leer: gesperrt ? 'Die Anzeige des Stundenplans ist beschränkt' : ferien?.laeuft ? undefined : 'Kein Unterricht in den nächsten Tagen' });
           const ferienVorne = !!ferien && (!unterrichtstage.length || unterrichtstage[0] > ferien.bis);
           karten.push(<UKarte key="heute" symbol={<CalendarMonthOutlined />} titel="Heute & nächste Tage" href="#/plan/mein" linkText="Stundenplan" gruppen={gruppen} leerSymbol={gesperrt ? <LockOutlined fontSize="small" /> : undefined}
-            vorne={ferien && ferienVorne ? <Stack direction="row" gap={1} alignItems="center" sx={{ bgcolor: t.palette.status.frei.flaeche, borderRadius: 2, px: 1.5, py: 1, fontSize: 14 }}><WbSunnyOutlined fontSize="small" />{ferien.text}</Stack> : null} />);
+            vorne={ferien && ferienVorne ? <Stack direction="row" gap={1} alignItems="center" sx={{ bgcolor: t.palette.status.frei.flaeche, borderRadius: 1.5, px: 1.5, py: 1, fontSize: 14 }}><WbSunnyOutlined fontSize="small" />{ferien.text}</Stack> : null} />);
         }
         const erledigen: GruppeDaten[] = [];
         if (kollegium && element) erledigen.push({ titel: 'Klassenbuch · Lehrstoff fehlt', href: '#/offen', leer: 'Klassenbuch vollständig',

@@ -2,7 +2,6 @@
 // im Stundenplan. Klick öffnet die Stundendetails.
 import { useMemo, useState } from 'react';
 import { alpha, Box, Button, Paper, Stack, Typography, useTheme } from '@mui/material';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import { holen } from '../api/client';
 import type { Karte, PlanTyp, Tagesuebersicht } from '../api/types';
@@ -32,7 +31,7 @@ export default function TagSeite({ teile }: SeitenProps) {
     return (g.daten?.zeilen ?? []).filter(z => !f || `${z.kurz} ${z.name}`.toLowerCase().includes(f));
   }, [g.daten, filter]);
   return (
-    <Seite titel={`Tagesansicht ${TYPEN[typ]}`} untertitel={datumText(datum)} aktionen={<Button variant="outlined" startIcon={<PrintOutlined />} onClick={() => window.print()}>Drucken</Button>}
+    <Seite titel={`Tagesansicht ${TYPEN[typ]}`} untertitel={datumText(datum)} aktionen={<Button variant="outlined" onClick={() => window.print()}>Drucken</Button>}
       filter={<><SuchFeld wert={filter} onWert={setFilter} platzhalter={`${TYPEN[typ]} filtern`} /><Box sx={{ flex: 1 }} /><ZeitNavi art="tag" datum={datum} onDatum={d => navigieren(`#/tag/${typ}/${d}${u}`)} /></>}>
       <Geladen g={g}>{tag => {
         const max = Math.max(6, ...tag.zeilen.flatMap(z => z.karten.map(k => k.bis)));

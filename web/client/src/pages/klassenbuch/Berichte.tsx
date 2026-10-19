@@ -3,16 +3,14 @@
 // Entschuldigungsschreiben je Schüler*in als Druckseite.
 // Adresse: #/berichte/<Bericht|->/<Klasse|->/<von>/<bis>/<Schüler|->/<n1>/<n2>
 import { useEffect, useState } from 'react';
-import { alpha, Box, Button, ButtonBase, Chip, IconButton, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, useTheme } from '@mui/material';
+import { Box, Button, ButtonBase, Chip, IconButton, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import PersonOffOutlined from '@mui/icons-material/PersonOffOutlined';
 import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined';
 import FactCheckOutlined from '@mui/icons-material/FactCheckOutlined';
 import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
 import GridViewOutlined from '@mui/icons-material/GridViewOutlined';
-import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
 import TableViewOutlined from '@mui/icons-material/TableViewOutlined';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { ApiFehler, holen, speichern } from '../../api/client';
@@ -31,10 +29,6 @@ import type { SeitenProps } from '../register';
 interface Art { id: string; titel: string; gruppe: string; klasseNoetig?: boolean; parameter?: string }
 interface Ergebnis { titel: string; von: string; bis: string; spalten: string[]; zeilen: (string | number | null)[][]; arten?: (string | null)[]; hinweis?: string }
 const ALIAS: Record<string, string> = { fehlzeiten: 'fehlzeiten_schueler', lehrstoff: 'arbeitsbericht_tag' };
-const GRUPPEN: Record<string, { icon: React.ReactNode; ton: 'entfall' | 'frei' | 'ok' | 'pruefung' | 'termin' }> = {
-  Abwesenheiten: { icon: <PersonOffOutlined />, ton: 'entfall' }, Klassenbucheinträge: { icon: <MenuBookOutlined />, ton: 'frei' }, Arbeitsbericht: { icon: <FactCheckOutlined />, ton: 'ok' },
-  Prüfungen: { icon: <AssignmentOutlined />, ton: 'pruefung' }, Weitere: { icon: <GridViewOutlined />, ton: 'termin' },
-};
 const BESCHREIBUNG: Record<string, string> = {
   fehlzeiten_schueler: 'Fehlstunden, Fehltage und Entschuldigungsstatus je Schüler*in im gewählten Zeitraum.', fehlzeiten_klasse: 'Summen der Fehlzeiten je Klasse – geeignet für Konferenzen und Zeugnisse.',
   fehlzeiten_fach: 'Fehlstunden aufgeschlüsselt nach Fächern.', fehltage_klasse: 'Fehltage je Klasse und Schüler*in mit Datum, Stunden und Status, Summen je Schüler*in (mit Schultagen) und je Klasse.',
@@ -56,12 +50,6 @@ async function holeDatei(url: string) {
   return r.blob();
 }
 
-function GruppenSymbol({ g }: { g: string }) {
-  const t = useTheme();
-  const x = GRUPPEN[g] ?? GRUPPEN.Weitere;
-  const f = t.palette.status[x.ton].main;
-  return <Box sx={{ width: 38, height: 38, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: alpha(f, 0.1), color: f, flex: 'none' }}>{x.icon}</Box>;
-}
 
 export default function Berichte({ teile }: SeitenProps) {
   const s = useSitzung();
@@ -110,9 +98,8 @@ export default function Berichte({ teile }: SeitenProps) {
     const fehlt = !!a.klasseNoetig && !klasse;
     return (
       <Stack key={a.id} direction="row" alignItems="center" gap={1.5} sx={{ px: 2, py: 1.25, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 }, bgcolor: a.id === art ? 'action.selected' : undefined }}>
-        <GruppenSymbol g={a.gruppe} />
         <ButtonBase onClick={() => setPanel(a)} sx={{ flex: 1, minWidth: 0, justifyContent: 'flex-start', textAlign: 'left', flexDirection: 'column', alignItems: 'flex-start', borderRadius: 1 }}>
-          <Typography sx={{ fontWeight: 600 }}>{a.titel}</Typography>
+          <Typography sx={{ fontWeight: 500 }}>{a.titel}</Typography>
           <Typography variant="body2" color="text.secondary">{BESCHREIBUNG[a.id] ?? a.gruppe}</Typography>
         </ButtonBase>
         <Stack direction="row" gap={0.5} sx={{ display: { xs: 'none', md: 'flex' } }}>
@@ -120,7 +107,7 @@ export default function Berichte({ teile }: SeitenProps) {
           {a.parameter && <Plakette>{a.parameter.replace('{n1}', String(vorgabe(a, 1))).replace('{n2}', String(vorgabe(a, 2)))}</Plakette>}
         </Stack>
         <Stack direction="row" gap={0.5}>
-          <Button size="small" startIcon={<VisibilityOutlined />} disabled={fehlt} onClick={() => anzeigen(a, standard(a))}>Anzeigen</Button>
+          <Button size="small" disabled={fehlt} onClick={() => anzeigen(a, standard(a))}>Anzeigen</Button>
           <IconButton size="small" disabled={fehlt} onClick={() => void exportieren(a, standard(a), 'pdf')} aria-label="Als PDF" title="Als PDF herunterladen"><PictureAsPdfOutlined fontSize="small" /></IconButton>
           <IconButton size="small" disabled={fehlt || a.id === 'entschuldigungsschreiben'} onClick={() => void exportieren(a, standard(a), 'csv')} aria-label="Als CSV" title="Als CSV herunterladen"><TableViewOutlined fontSize="small" /></IconButton>
         </Stack>
@@ -143,9 +130,9 @@ export default function Berichte({ teile }: SeitenProps) {
           {!sicht.length ? <Leer text="Kein Bericht gefunden" unter={`Für „${suche}“ gibt es keinen passenden Bericht.`} />
             : gruppe === 'alle' && !q ? gruppen.map(x => (
               <Box key={x} sx={{ mb: 2.5 }} className="nicht-drucken"><Typography variant="overline" color="text.secondary">{x}</Typography>
-                <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>{arten.filter(a => a.gruppe === x).map(reihe)}</Paper></Box>))
-            : <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }} className="nicht-drucken">{sicht.map(reihe)}</Paper>}
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }} className="nicht-drucken"><InfoOutlined sx={{ fontSize: 16, verticalAlign: -3, mr: 0.5 }} />Notfallliste, BAföG- und Fahrkostenbescheinigungen benötigen Adress- bzw. Kontaktdaten, die EduOrga Studio nicht überträgt.</Typography>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>{arten.filter(a => a.gruppe === x).map(reihe)}</Paper></Box>))
+            : <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }} className="nicht-drucken">{sicht.map(reihe)}</Paper>}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }} className="nicht-drucken">Notfallliste, BAföG- und Fahrkostenbescheinigungen benötigen Adress- bzw. Kontaktdaten, die EduOrga Studio nicht überträgt.</Typography>
           {panel && <ParameterDialog a={panel} p={standard(panel)} el={d.el} onClose={() => setPanel(null)} anzeigen={p => anzeigen(panel, p)} exportieren={(p, f) => void exportieren(panel, p, f)} />}
         </>
       )}</Geladen>
@@ -167,7 +154,7 @@ function ParameterDialog({ a, p, el, onClose, anzeigen, exportieren }: { a: Art;
   const teile = a.parameter ? a.parameter.split(/(\{n1\}|\{n2\})/) : [];
   return (
     <FormDialog offen titel={a.titel} untertitel={a.gruppe} onClose={onClose} aktionText="Anzeigen" aktion={() => { anzeigen(w); return false; }}
-      links={<><Button startIcon={<TableViewOutlined />} disabled={a.id === 'entschuldigungsschreiben'} onClick={() => exportieren(w, 'csv')}>CSV</Button><Button startIcon={<PictureAsPdfOutlined />} onClick={() => exportieren(w, 'pdf')}>PDF</Button></>}>
+      links={<><Button disabled={a.id === 'entschuldigungsschreiben'} onClick={() => exportieren(w, 'csv')}>CSV</Button><Button onClick={() => exportieren(w, 'pdf')}>PDF</Button></>}>
       <Stack gap={2} sx={{ pt: 0.5 }}>
         <Typography variant="body2" color="text.secondary">{BESCHREIBUNG[a.id]}</Typography>
         <TextField select label="Klasse" value={w.klasse} onChange={e => setW({ ...w, klasse: e.target.value, schueler: '' })} required={a.klasseNoetig}>
@@ -202,15 +189,14 @@ function Vorschau({ a, p, schule, zuHref, exportieren }: { a: Art; p: Param; sch
   if (brief) r.zeilen.forEach(z => proSchueler.set(String(z[0]), [...(proSchueler.get(String(z[0])) ?? []), z]));
   const kopf = <Typography variant="body2" sx={{ display: 'none', '@media print': { display: 'block', mb: 1 } }}><b>{schule}</b> · {r.titel}{p.klasse ? ` · Klasse ${p.klasse}` : ''} · {datumDe(r.von)} – {datumDe(r.bis)}</Typography>;
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, mb: 3, overflow: 'hidden' }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1.5, mb: 3, overflow: 'hidden' }}>
       <Stack direction="row" alignItems="center" gap={1.5} sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }} className="nicht-drucken">
-        <GruppenSymbol g={a.gruppe} />
         <Box sx={{ flex: 1, minWidth: 0 }}><Typography variant="h4">{r.titel}</Typography><Typography variant="body2" color="text.secondary">{p.klasse ? `Klasse ${p.klasse} · ` : ''}{datumDe(r.von)} – {datumDe(r.bis)} · {brief ? `${proSchueler.size} Schüler*innen` : `${datenzeilen} ${datenzeilen === 1 ? 'Zeile' : 'Zeilen'}`}</Typography></Box>
-        {!brief && <><Button size="small" variant="outlined" startIcon={<PictureAsPdfOutlined />} onClick={() => void exportieren(a, p, 'pdf')}>PDF</Button><Button size="small" variant="outlined" startIcon={<TableViewOutlined />} onClick={() => void exportieren(a, p, 'csv')}>CSV</Button></>}
-        <Button size="small" variant="outlined" startIcon={<PrintOutlined />} onClick={druck}>Drucken</Button>
+        {!brief && <><Button size="small" variant="outlined" onClick={() => void exportieren(a, p, 'pdf')}>PDF</Button><Button size="small" variant="outlined" onClick={() => void exportieren(a, p, 'csv')}>CSV</Button></>}
+        <Button size="small" variant="outlined" onClick={druck}>Drucken</Button>
         <IconButton href={zuHref} aria-label="Vorschau schließen"><CloseRounded /></IconButton>
       </Stack>
-      {r.hinweis && <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1, bgcolor: 'background.default' }}><InfoOutlined sx={{ fontSize: 16, verticalAlign: -3, mr: 0.5 }} />{r.hinweis}</Typography>}
+      {r.hinweis && <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1, bgcolor: 'background.default' }}>{r.hinweis}</Typography>}
       {brief ? (proSchueler.size ? [...proSchueler].map(([name, zeilen]) => (
         <Box key={name} sx={{ p: 3, borderBottom: 1, borderColor: 'divider', '@media print': { breakAfter: 'page' } }}>
           {kopf}

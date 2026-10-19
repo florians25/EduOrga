@@ -3,8 +3,6 @@
 // eigener Dauer und Online-Link; rechts eine Vorschau mit Zeitslots und Kapazität.
 import { useMemo, useState } from 'react';
 import { Alert, Box, Button, Checkbox, Chip, FormControlLabel, IconButton, Link, MenuItem, Paper, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
-import CheckRounded from '@mui/icons-material/CheckRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import LocalCafeOutlined from '@mui/icons-material/LocalCafeOutlined';
 import { holen, senden } from '../../api/client';
@@ -108,7 +106,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
   return (
     <Seite titel={id ? 'Sprechtag bearbeiten' : 'Sprechtag anlegen'} aktionen={<>
       <Button variant="outlined" href={`#/sprechtag${id ? '/' + id : ''}`}>Abbrechen</Button>
-      <Button variant="contained" startIcon={<CheckRounded />} disabled={laeuft} onClick={speichern}>Speichern</Button>
+      <Button variant="contained" disabled={laeuft} onClick={speichern}>Speichern</Button>
     </>}>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 340px' }, gap: 2.5, alignItems: 'start' }}>
         <Stack gap={2.5}>
@@ -121,7 +119,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
                 : (
                   <Stack gap={1} sx={{ flex: '1 1 260px' }}>
                     <Stack direction="row" gap={1} alignItems="center"><DatumFeld label="Weiterer Tag (optional)" wert={neuerTag} onWert={setNeuerTag} breite={200} />
-                      <Button size="small" startIcon={<AddRounded />} onClick={() => { if (neuerTag && !tage.includes(neuerTag) && neuerTag !== f.datum) { setTage([...tage, neuerTag].sort()); setNeuerTag(null); } }}>Tag</Button></Stack>
+                      <Button size="small" onClick={() => { if (neuerTag && !tage.includes(neuerTag) && neuerTag !== f.datum) { setTage([...tage, neuerTag].sort()); setNeuerTag(null); } }}>Tag</Button></Stack>
                     <Stack direction="row" gap={0.5} flexWrap="wrap">{tage.map(d => <Chip key={d} size="small" label={datumLang(d)} onDelete={() => setTage(tage.filter(x => x !== d))} />)}</Stack>
                   </Stack>
                 )}
@@ -144,7 +142,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
                 <TextField type="number" label="Höchstens Termine je Familie" value={f.maxTermineFamilie} onChange={e => set({ maxTermineFamilie: Number(e.target.value) })} helperText="0 = unbegrenzt" slotProps={{ htmlInput: { min: 0, max: 50 } }} sx={{ width: 230 }} />
               </Stack>
             </Stack>
-          ), <Button size="small" startIcon={<AddRounded />} onClick={() => {
+          ), <Button size="small" onClick={() => {
             const letzt = bloecke[bloecke.length - 1];
             const start = letzt?.bis ? minutenAus(letzt.bis) + 15 : 15 * 60;
             setBloecke([...bloecke, { von: zeitText(Math.min(start, 23 * 60)), bis: zeitText(Math.min(start + 60, 23 * 60 + 59)) }]);

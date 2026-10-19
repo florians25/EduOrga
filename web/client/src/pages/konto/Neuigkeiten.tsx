@@ -2,13 +2,8 @@
 // #/neuigkeiten/verwalten: Infos anlegen, bearbeiten, löschen (Administration, Schulleitung).
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, FormControlLabel, IconButton, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
-import CampaignOutlined from '@mui/icons-material/CampaignOutlined';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DoneAllRounded from '@mui/icons-material/DoneAllRounded';
-import EditOutlined from '@mui/icons-material/EditOutlined';
-import NotificationsOffOutlined from '@mui/icons-material/NotificationsOffOutlined';
 import { holen, loeschen, senden } from '../../api/client';
 import { InfoKarte, useInfocenter } from '../../app/Infocenter';
 import { Geladen, Leer, Seite } from '../../components/Seite';
@@ -49,8 +44,8 @@ function Liste({ filter }: { filter: string }) {
   return (
     <Seite titel="Neuigkeiten" untertitel="Infos der Schule und Neuerungen in EduOrga Web – neue Einträge sind mit einem Punkt markiert."
       aktionen={<>
-        {ic.ungelesen > 0 && <Button variant="outlined" startIcon={<DoneAllRounded />} onClick={() => ic.gelesen()}>Alle als gelesen markieren</Button>}
-        {ic.darfVerwalten && <Button variant="contained" startIcon={<EditOutlined />} href="#/neuigkeiten/verwalten">Infos verwalten</Button>}
+        {ic.ungelesen > 0 && <Button variant="outlined" onClick={() => ic.gelesen()}>Alle als gelesen markieren</Button>}
+        {ic.darfVerwalten && <Button variant="contained" href="#/neuigkeiten/verwalten">Infos verwalten</Button>}
       </>}
       filter={<>
         <SuchFeld wert={suche} onWert={setSuche} platzhalter="Neuigkeiten durchsuchen" breite={300} />
@@ -62,7 +57,7 @@ function Liste({ filter }: { filter: string }) {
           {liste.map(x => <InfoKarte key={x.schluessel} x={{ ...x, gelesen: !neu.has(x.schluessel) }} />)}
         </Stack>
       ) : (
-        <Leer text={filter === 'infos' ? 'Keine Infos der Schule' : 'Keine Neuigkeiten'} symbol={filter === 'infos' ? <CampaignOutlined /> : <NotificationsOffOutlined />}
+        <Leer text={filter === 'infos' ? 'Keine Infos der Schule' : 'Keine Neuigkeiten'}
           unter={filter === 'infos' ? 'Die Schule hat aktuell keine Infos veröffentlicht.' : 'Sobald es etwas Neues gibt, erscheint es hier.'} />
       )}
     </Seite>
@@ -82,7 +77,7 @@ function Verwalten() {
   return (
     <Seite titel="Infos verwalten" untertitel="Infos erscheinen im Infocenter (Glocke) bei der gewählten Zielgruppe – im angegebenen Zeitraum. Wichtige Infos stehen oben."
       aktionen={<><Button variant="outlined" startIcon={<ArrowBackRounded />} href="#/neuigkeiten">Neuigkeiten</Button>
-        <Button variant="contained" startIcon={<AddRounded />} onClick={() => setFormular({ i: null })}>Info erstellen</Button></>}>
+        <Button variant="contained" onClick={() => setFormular({ i: null })}>Info erstellen</Button></>}>
       {g.fehler ? <Alert severity="warning">{g.fehler.message}</Alert> : (
         <Geladen g={g}>{infos => (
           <Tabelle zeilen={infos} schluessel={i => i.id} leer="Noch keine Infos angelegt." onZeile={i => setFormular({ i })}

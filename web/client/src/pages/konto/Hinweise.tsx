@@ -3,7 +3,6 @@
 // die Anmeldeseite lädt die freigegebenen Hinweise ohne Cookies und ohne Tracking.
 import { useState } from 'react';
 import { Alert, Box, Button, FormControlLabel, IconButton, Stack, Switch, TextField, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import ShieldOutlined from '@mui/icons-material/ShieldOutlined';
 import { holen, loeschen, senden } from '../../api/client';
@@ -34,7 +33,7 @@ export default function Hinweise() {
   const [formular, setFormular] = useState<{ h: Hinweis | null } | null>(null);
   if (!darf) return <Seite titel="Hinweise auf der Anmeldeseite"><Alert severity="warning">Öffentliche Hinweise verwalten Administration und Schulleitung.</Alert></Seite>;
   return (
-    <Seite titel="Hinweise auf der Anmeldeseite" aktionen={<Button variant="contained" startIcon={<AddRounded />} onClick={() => setFormular({ h: null })}>Hinweis</Button>}>
+    <Seite titel="Hinweise auf der Anmeldeseite" aktionen={<Button variant="contained" onClick={() => setFormular({ h: null })}>Hinweis</Button>}>
       <Alert severity="info" icon={<ShieldOutlined />} sx={{ mb: 2, maxWidth: 980 }}>
         Diese Hinweise sind <b>ohne Anmeldung öffentlich</b> sichtbar. Bitte nur allgemeine Informationen eintragen (z. B. „Elternsprechtag am 12.11. von 15 bis 19 Uhr“) –
         keine Namen, keine Termine einzelner Personen, keine Links und keine E-Mail-Adressen. Die Anmeldeseite lädt die Hinweise ohne Cookies und ohne Tracking.

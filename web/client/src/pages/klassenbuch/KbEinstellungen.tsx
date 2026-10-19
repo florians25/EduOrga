@@ -6,10 +6,8 @@ import {
   Alert, Box, Button, FormControlLabel, InputAdornment, MenuItem, Paper, Radio, RadioGroup, Stack, Switch, Tab, Tabs, TextField, Typography,
 } from '@mui/material';
 import AssignmentTurnedInOutlined from '@mui/icons-material/AssignmentTurnedInOutlined';
-import EditOutlined from '@mui/icons-material/EditOutlined';
 import EmojiEventsOutlined from '@mui/icons-material/EmojiEventsOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
-import SendRounded from '@mui/icons-material/SendRounded';
 import TuneOutlined from '@mui/icons-material/TuneOutlined';
 import WebOutlined from '@mui/icons-material/WebOutlined';
 import { holen, senden } from '../../api/client';
@@ -172,7 +170,7 @@ function Formular({ d, noten, reiterStart, nurUnterricht }: { d: Daten; noten: N
         <Zeile label="Versand jeden">{auswahl('erinnerungTag', WOCHENTAGE.map((t, i) => [i + 1, t] as [number, string]), 200)}</Zeile>
         <Alert severity="info" sx={{ mt: 1 }}><b>Wann gilt eine Stunde als offen?</b> Nach „Offene Stunden anzeigen für“: fehlender Lehrstoff, fehlende Abwesenheitskontrolle oder beides.<br />
           <b>Wer erhält die Erinnerung?</b> Die für die Stunde verantwortliche Lehrkraft als Mitteilung – mit einem Link, der direkt zur Stunde führt.</Alert>
-      </>, darf && <Button size="small" variant="outlined" startIcon={<SendRounded />} onClick={async () => {
+      </>, darf && <Button size="small" variant="outlined" onClick={async () => {
         try {
           const r = await senden<{ lehrkraefte: number; stunden: number }>('/api/app/klassenbuch/einstellungen/erinnerung', {});
           toast(r.lehrkraefte ? `Erinnerung an ${r.lehrkraefte} ${r.lehrkraefte === 1 ? 'Lehrkraft' : 'Lehrkräfte'} gesendet (${r.stunden} offene Stunden).` : 'Keine offenen Stunden – es wurde keine Erinnerung gesendet.');
@@ -200,9 +198,9 @@ function Formular({ d, noten, reiterStart, nurUnterricht }: { d: Daten; noten: N
           </Stack>
         )) : <Typography variant="body2" color="text.secondary">Es sind noch keine Notenschemen angelegt.</Typography>}
         <Zeile label="Gesamtnotenschema"><Typography sx={{ pt: 1 }}>{gesamt ? gesamt.name : 'nicht gewählt'}</Typography></Zeile>
-      </>, ich.admin && <Button size="small" variant="outlined" startIcon={<EditOutlined />} href="#/stammdaten/notenschemen">Verwalten</Button>)}
+      </>, ich.admin && <Button size="small" variant="outlined" href="#/stammdaten/notenschemen">Verwalten</Button>)}
       {karte('Prüfungsarten', <Typography variant="body2" color="text.secondary">Prüfungsarten mit Höchstzahlen je Schüler*in, Farben und Notenschema pflegt die Administration unter Stammdaten → Prüfungsarten. Hat eine Prüfungsart kein Notenschema, wählt die Lehrkraft beim Anlegen der Prüfung ein individuelles Schema.</Typography>,
-        ich.admin && <Button size="small" variant="outlined" startIcon={<EditOutlined />} href="#/stammdaten/pruefungsarten">Verwalten</Button>)}
+        ich.admin && <Button size="small" variant="outlined" href="#/stammdaten/pruefungsarten">Verwalten</Button>)}
     </>
   );
 
@@ -217,7 +215,7 @@ function Formular({ d, noten, reiterStart, nurUnterricht }: { d: Daten; noten: N
       {!darf && <Alert severity="info" icon={<LockOutlined />} sx={{ mb: 2 }}>Die Einstellungen ändert die Administration (Recht „Klassenbuch-Einstellungen“). Sie sehen die aktuellen Werte.</Alert>}
       <Stack gap={2.5} sx={{ maxWidth: 1000, pb: darf ? 10 : 0 }}>{inhalt[nurUnterricht ? 'unterricht' : reiter]}</Stack>
       {darf && reiter !== 'noten' && (
-        <Paper elevation={6} className="nicht-drucken" sx={{ position: 'sticky', bottom: 16, mt: 2, maxWidth: 1000, px: 2, py: 1.25, display: 'flex', alignItems: 'center', gap: 1, borderRadius: 999 }}>
+        <Paper elevation={6} className="nicht-drucken" sx={{ position: 'sticky', bottom: 16, mt: 2, maxWidth: 1000, px: 2, py: 1.25, display: 'flex', alignItems: 'center', gap: 1, borderRadius: 1.5 }}>
           <Typography variant="body2" color={geaendert ? 'warning.main' : 'text.secondary'} sx={{ flex: 1, pl: 1 }}>{geaendert ? 'Nicht gespeicherte Änderungen' : 'Alle Änderungen gespeichert'}</Typography>
           <Button disabled={!geaendert} onClick={() => setW(gespeichert)}>Verwerfen</Button>
           <Button variant="contained" disabled={!geaendert || laeuft} onClick={async () => {

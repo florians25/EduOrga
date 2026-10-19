@@ -3,12 +3,8 @@
 // (Kapazität, Gebäude, Abteilung, Raumgruppe) für die Auswahlkriterien.
 import { useEffect, useState } from 'react';
 import { Alert, Autocomplete, Box, Button, FormControlLabel, IconButton, MenuItem, Paper, Stack, Switch, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
-import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import EventRepeatOutlined from '@mui/icons-material/EventRepeatOutlined';
-import GridViewOutlined from '@mui/icons-material/GridViewOutlined';
 import { holen, loeschen, senden } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Seite } from '../../components/Seite';
@@ -29,7 +25,7 @@ export function NeuerUnterricht() {
   const [w, setW] = useState({ lehrer: ich.element || '', fach: '', klassen: [] as string[], wochenstunden: 1, gruppe: '', text: '' });
   return (
     <Seite titel="Unterricht anlegen" untertitel="Legen Sie hier Unterricht an, der nicht im Stundenplan aus EduOrga Studio steht, und verplanen Sie danach seine Stunden über „Zusätzliche Stunden“."
-      aktionen={<><Button variant="outlined" href="#/unterricht">Mein Unterricht</Button><Button variant="contained" startIcon={<AddRounded />} onClick={() => setNeu(true)}>Neuer Unterricht</Button></>}>
+      aktionen={<><Button variant="outlined" href="#/unterricht">Mein Unterricht</Button><Button variant="contained" onClick={() => setNeu(true)}>Neuer Unterricht</Button></>}>
       <Geladen g={g}>{({ liste, el }) => (
         <>
           <Tabelle zeilen={liste} schluessel={u => u.id} leer="Noch kein Unterricht in EduOrga Web angelegt."
@@ -42,7 +38,7 @@ export function NeuerUnterricht() {
               { id: 'geb', kopf: 'gebucht', rechts: true, zelle: u => `${u.gebuchteStunden} Std.` },
               { id: 'akt', kopf: '', rechts: true, nowrap: true, zelle: u => (
                 <Stack direction="row" gap={0.5} justifyContent="flex-end">
-                  <Button size="small" variant="outlined" startIcon={<EventRepeatOutlined />} href={link('buchen', 'stunden', u.id)}>Zusätzliche Stunden</Button>
+                  <Button size="small" variant="outlined" href={link('buchen', 'stunden', u.id)}>Zusätzliche Stunden</Button>
                   {(ich.admin || u.benutzerId === ich.id) && <IconButton size="small" color="error" aria-label="Löschen" onClick={async () => {
                     if (!(await bestaetigen('Unterricht löschen', 'Den Unterricht löschen? Seine kommenden zusätzlichen Stunden werden storniert.'))) return;
                     try { await loeschen(`${BASIS}/unterricht/${u.id}`); toast('Gelöscht.'); void g.neu(); } catch (err) { fehler(err); }
@@ -97,7 +93,7 @@ export function Ressourcenverwaltung() {
   if (!ich.admin) return <Seite titel="Geräte & Medien verwalten"><Alert severity="warning">Nur für die Administration.</Alert></Seite>;
   return (
     <Seite titel="Geräte & Medien verwalten" untertitel={g.daten ? `${g.daten.liste.length} Ressourcen` : undefined}
-      aktionen={<><Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/ressourcen">Gerätebelegung</Button><Button variant="contained" startIcon={<AddRounded />} onClick={() => setFormular({})}>Ressource hinzufügen</Button></>}>
+      aktionen={<><Button variant="outlined" href="#/buchen/ressourcen">Gerätebelegung</Button><Button variant="contained" onClick={() => setFormular({})}>Ressource hinzufügen</Button></>}>
       <Geladen g={g}>{({ opt, arten, liste, symbole }) => {
         const q = suche.toLowerCase();
         const sichtbar = liste.filter(r => (!q || `${r.name} ${r.art} ${r.raum} ${r.standort}`.toLowerCase().includes(q)) && (!artFilter || String(r.artId ?? '') === artFilter) && (!zuordnung || (r.raum ? 'fest' : 'mobil') === zuordnung));
@@ -125,7 +121,7 @@ export function Ressourcenverwaltung() {
                 try { await senden(`${BASIS}/ressourcenarten`, { name: neueArt, reihenfolge: arten.length * 10 + 10 }); toast('Ressourcenart angelegt.'); setNeueArt(''); void g.neu(); } catch (err) { fehler(err); }
               }}>
                 <TextField size="small" value={neueArt} onChange={e => setNeueArt(e.target.value)} placeholder="Neue Ressourcenart" sx={{ flex: 1 }} slotProps={{ htmlInput: { maxLength: 100 } }} />
-                <Button type="submit" variant="contained" startIcon={<AddRounded />}>Hinzufügen</Button>
+                <Button type="submit" variant="contained">Hinzufügen</Button>
               </Stack>
             </Paper>
             <Box>
@@ -154,8 +150,8 @@ export function Ressourcenverwaltung() {
                   <Typography sx={{ fontWeight: 600 }}>Noch keine Ressourcen angelegt.</Typography>
                   <Typography variant="body2" color="text.secondary">Mobile Geräte (Beamer, Laptopwagen, Tablet-Koffer …) mit Anzahl und Standort oder feste Ausstattung eines Raums.</Typography>
                   <Stack direction="row" gap={1} justifyContent="center" sx={{ mt: 2 }}>
-                    <Button variant="outlined" startIcon={<AutoAwesomeOutlined />} onClick={async () => { try { const r = await senden<{ angelegt: number }>(`${BASIS}/ressourcen/beispiele`, {}); toast(`${r.angelegt} Beispiel-Ressourcen angelegt.`); void g.neu(); } catch (err) { fehler(err); } }}>Beispiel-Ressourcen anlegen</Button>
-                    <Button variant="contained" startIcon={<AddRounded />} onClick={() => setFormular({})}>Ressource hinzufügen</Button>
+                    <Button variant="outlined" onClick={async () => { try { const r = await senden<{ angelegt: number }>(`${BASIS}/ressourcen/beispiele`, {}); toast(`${r.angelegt} Beispiel-Ressourcen angelegt.`); void g.neu(); } catch (err) { fehler(err); } }}>Beispiel-Ressourcen anlegen</Button>
+                    <Button variant="contained" onClick={() => setFormular({})}>Ressource hinzufügen</Button>
                   </Stack>
                 </Paper>
               )}

@@ -9,12 +9,11 @@ import CloseRounded from '@mui/icons-material/CloseRounded';
 import AccessTimeRounded from '@mui/icons-material/AccessTimeRounded';
 import LogoutRounded from '@mui/icons-material/LogoutRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
 import { senden } from '../../../api/client';
 import { datumDe, heuteIso, jetztMinuten, minuten, zeitstempel } from '../../../lib/datum';
 import { toast } from '../../../lib/meldungen';
 import { Plakette } from '../../Bausteine';
-import { kbEinstellungenSpeichern, nameZeilen, sortieren, SitzplanAnordnung, darfIrgendwas, avatarFarbe, initialenVon, type Schueler } from '../sitzplan';
+import { kbEinstellungenSpeichern, nameZeilen, sortieren, SitzplanAnordnung, darfIrgendwas, type Schueler } from '../sitzplan';
 import type { Fehlzeit } from '../StundenDialoge';
 import { Bereichskarte, Hinweis } from './bausteine';
 import type { AnwesenheitMit, Fz, StundeProps } from './kontext';
@@ -121,7 +120,7 @@ export function ReiterAnwesenheit(p: StundeProps & { onSpeichern: (z: 'speichert
       {meldungen.map(m => {
         const da = statusVon(fzVon(m.schuelerId)) === 'da';
         return (
-          <Stack key={m.id} direction={{ xs: 'column', sm: 'row' }} gap={1} alignItems={{ sm: 'center' }} sx={{ px: 1.5, py: 1, borderRadius: 1.5, border: 1, borderColor: alpha(t.palette.status.frei.main, 0.35), bgcolor: 'status.frei.flaeche' }}>
+          <Stack key={m.id} direction={{ xs: 'column', sm: 'row' }} gap={1} alignItems={{ sm: 'center' }} sx={{ px: 1.5, py: 1, borderRadius: 1, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
             <Plakette ton="frei">{m.status === 'bestaetigt' ? 'Gemeldet · bestätigt' : 'Gemeldet'}</Plakette>
             <Typography variant="body2" sx={{ flex: 1 }}><b>{name(m.schuelerId)}</b> – {m.von === m.bis ? datumDe(m.von) : `${datumDe(m.von)} bis ${datumDe(m.bis)}`}{m.grund ? ` · Grund ${m.grund}` : ''}{m.text ? ` · ${m.text}` : ''}
               <Typography component="span" variant="caption" color="text.secondary"> · gemeldet {zeitstempel(m.gemeldet)}</Typography></Typography>
@@ -130,14 +129,14 @@ export function ReiterAnwesenheit(p: StundeProps & { onSpeichern: (z: 'speichert
         );
       })}
       {vorstunde.length > 0 && (
-        <Stack direction={{ xs: 'column', sm: 'row' }} gap={1} alignItems={{ sm: 'center' }} sx={{ px: 1.5, py: 1, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} gap={1} alignItems={{ sm: 'center' }} sx={{ px: 1.5, py: 1, borderRadius: 1, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Plakette ton="warnung">Vorstunde</Plakette>
           <Typography variant="body2" sx={{ flex: 1 }}>In einer früheren Stunde heute abwesend: <b>{vorstunde.map(f => name(f.schuelerId)).join(', ')}</b></Typography>
           {bedienbar && <Button size="small" variant="outlined" onClick={() => void verlaengern(vorstunde.map(f => f.schuelerId))}>Für diese Stunde übernehmen</Button>}
         </Stack>
       )}
       {befreit.length > 0 && (
-        <Stack direction="row" gap={1} alignItems="center" sx={{ px: 1.5, py: 1, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Stack direction="row" gap={1} alignItems="center" sx={{ px: 1.5, py: 1, borderRadius: 1, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Plakette>Befreit</Plakette>
           <Typography variant="body2">Vom Unterricht befreit: <b>{befreit.map(x => `${x.vorname} ${x.name}`).join(', ')}</b></Typography>
         </Stack>
@@ -148,10 +147,13 @@ export function ReiterAnwesenheit(p: StundeProps & { onSpeichern: (z: 'speichert
   // ------------------------------------------------------------------ Liste
   const segment = (x: Schueler) => {
     const st = statusVon(fzVon(x.id));
-    const farbe = (v: Status) => (v === 'da' ? t.palette.status.ok.main : v === 'fehlt' ? t.palette.status.entfall.main : t.palette.status.pruefung.main);
+    const farbe = (v: Status) => (v === 'fehlt' ? t.palette.status.entfall.main : t.palette.status.pruefung.main);
+    // Desktop: nur Text. Schmal: Symbol für die nicht gewählten Zustände (Platz), Text für den gewählten.
+    // „Anwesend“ gewählt = neutral (Normalfall, keine Farbe); nur Abweichungen tragen die Statusfarbe.
     const knopf = (v: Status, text: string, symbol: React.ReactNode) => (
-      <ToggleButton value={v} aria-label={`${x.vorname} ${x.name}: ${text}`} sx={{ px: schmal ? 1 : 1.25, gap: 0.5, '&.Mui-selected, &.Mui-selected:hover': { bgcolor: alpha(farbe(v), 0.12), color: farbe(v), borderColor: alpha(farbe(v), 0.5) } }}>
-        {symbol}{!schmal || v === st ? <Box component="span" sx={{ fontSize: 12.5 }}>{text}</Box> : null}
+      <ToggleButton value={v} aria-label={`${x.vorname} ${x.name}: ${text}`} sx={{ px: schmal ? 1 : 1.25, minWidth: schmal ? 0 : 76, fontSize: 12.5,
+        '&.Mui-selected, &.Mui-selected:hover': v === 'da' ? { bgcolor: 'action.selected', color: 'text.primary' } : { bgcolor: alpha(farbe(v), 0.1), color: farbe(v) } }}>
+        {schmal && v !== st ? symbol : text}
       </ToggleButton>
     );
     return (
@@ -173,10 +175,9 @@ export function ReiterAnwesenheit(p: StundeProps & { onSpeichern: (z: 'speichert
       <Box key={x.id} role="row" sx={{ display: 'grid', gridTemplateColumns: schmal ? '36px minmax(0, 1fr) auto' : '36px minmax(170px, 1.1fr) auto 96px minmax(120px, 1fr) 40px', alignItems: 'center', columnGap: 1.25, rowGap: 0.75,
         px: 1, py: 0.5, borderBottom: 1, borderColor: 'divider', bgcolor: an ? 'action.selected' : st === 'fehlt' ? alpha(t.palette.status.entfall.main, 0.04) : 'transparent' }}>
         <Checkbox size="small" checked={an} onChange={() => umschalten(x.id)} disabled={!darf} inputProps={{ 'aria-label': `${x.vorname} ${x.name} auswählen` }} />
-        <Stack direction="row" gap={1.25} alignItems="center" sx={{ minWidth: 0 }}>
-          <Box sx={{ width: 30, height: 30, borderRadius: 15, bgcolor: avatarFarbe(x.id), color: 'grey.800', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600, flex: 'none', opacity: d.befreit.has(x.id) ? 0.55 : 1 }}>{initialenVon(x)}</Box>
+        <Stack direction="row" alignItems="center" sx={{ minWidth: 0, opacity: d.befreit.has(x.id) ? 0.6 : 1 }}>
           <Box sx={{ minWidth: 0 }}>
-            <Typography noWrap sx={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.25 }}>{z1} {z2}</Typography>
+            <Typography noWrap sx={{ fontSize: 13.5, fontWeight: 500, lineHeight: 1.25 }}>{z1} {z2}</Typography>
             {(kbw.klasseZeigen && x.klasse) || d.befreit.has(x.id) || gemeldet ? <Typography noWrap sx={{ fontSize: 11.5, color: 'text.secondary' }}>{[kbw.klasseZeigen && x.klasse, d.befreit.has(x.id) && 'befreit', gemeldet && 'Abwesenheit gemeldet'].filter(Boolean).join(' · ')}</Typography> : null}
           </Box>
         </Stack>
@@ -207,17 +208,11 @@ export function ReiterAnwesenheit(p: StundeProps & { onSpeichern: (z: 'speichert
       <Tooltip key={x.id} title={`${titel}${bedienbar ? ' – klicken zum Umschalten' : ''}`}>
         <Box role="button" tabIndex={0} aria-label={`${x.vorname} ${x.name}: ${titel}`} onClick={() => bedienbar && statusSetzen(x.id, st === 'da' ? 'fehlt' : 'da')}
           onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && bedienbar) { e.preventDefault(); statusSetzen(x.id, st === 'da' ? 'fehlt' : 'da'); } }}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.75, pr: 1, borderRadius: 1.5, cursor: bedienbar ? 'pointer' : 'default', userSelect: 'none', minWidth: 0,
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.75, borderRadius: 1, cursor: bedienbar ? 'pointer' : 'default', userSelect: 'none', minWidth: 0,
             border: 1, borderColor: st === 'da' ? 'divider' : alpha(ton, 0.5), bgcolor: st === 'fehlt' ? 'status.entfall.flaeche' : st !== 'da' ? 'status.pruefung.flaeche' : 'background.paper', opacity: d.befreit.has(x.id) && st === 'da' ? 0.6 : 1 }}>
-          <Box sx={{ position: 'relative', flex: 'none' }}>
-            <Box sx={{ width: 30, height: 30, borderRadius: 15, bgcolor: avatarFarbe(x.id), color: 'grey.800', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600 }}>{initialenVon(x)}</Box>
-            <Box sx={{ position: 'absolute', right: -3, bottom: -3, width: 15, height: 15, borderRadius: 8, bgcolor: ton, color: '#fff', display: 'grid', placeItems: 'center', border: `2px solid ${t.palette.background.paper}` }}>
-              {st === 'da' ? <CheckRounded sx={{ fontSize: 9 }} /> : st === 'fehlt' ? <CloseRounded sx={{ fontSize: 9 }} /> : <AccessTimeRounded sx={{ fontSize: 9 }} />}
-            </Box>
-          </Box>
           <Box sx={{ minWidth: 0, lineHeight: 1.2 }}>
-            <Typography noWrap sx={{ fontSize: 12.5, fontWeight: 600 }}>{z1}</Typography>
-            <Typography noWrap sx={{ fontSize: 11.5, color: 'text.secondary' }}>{z2}{f && st !== 'fehlt' ? ` · ${st === 'verspaetet' ? '+' : '−'}${f.minuten}′` : ''}</Typography>
+            <Typography noWrap sx={{ fontSize: 12.5, fontWeight: 500 }}>{z1}</Typography>
+            <Typography noWrap sx={{ fontSize: 11.5, color: st === 'da' ? 'text.secondary' : ton }}>{st === 'da' ? z2 : `${z2 ? `${z2} · ` : ''}${st === 'fehlt' ? 'abwesend' : `${st === 'verspaetet' ? '+' : '−'}${f!.minuten} min`}`}</Typography>
           </Box>
         </Box>
       </Tooltip>
@@ -237,13 +232,13 @@ export function ReiterAnwesenheit(p: StundeProps & { onSpeichern: (z: 'speichert
         {zahl.vorzeitig > 0 && <Typography variant="body2" sx={{ color: 'status.pruefung.main' }}><b>{zahl.vorzeitig}</b> früher weg</Typography>}
       </Stack>
       <Box sx={{ flex: 1 }} />
-      {a.geprueft && <Stack direction="row" gap={0.5} alignItems="center" sx={{ color: 'status.ok.main', fontSize: 13, fontWeight: 500 }}><CheckCircleRounded sx={{ fontSize: 18 }} />Kontrolliert{a.geprueft.length > 10 ? ` ${zeitstempel(a.geprueft)}` : ''}</Stack>}
+      {a.geprueft && <Typography variant="body2" color="text.secondary">Kontrolliert{a.geprueft.length > 10 ? ` ${zeitstempel(a.geprueft)}` : ''}</Typography>}
       {ansicht === 'sitzplan' && darfIrgendwas(d.sitz) && <Button size="small" variant="outlined" onClick={() => setDialog({ art: 'sitz' })}>{d.sitz?.gueltig ? 'Sitzplan bearbeiten' : 'Sitzplan erstellen'}</Button>}
     </Stack>
   );
   const sammel = darf && auswahl.size > 0 && (
-    <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center" sx={{ position: 'sticky', bottom: 0, zIndex: 2, mt: 1.5, p: 1.25, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 -2px 8px rgba(21,34,38,.06)' }}>
-      <Typography variant="body2" sx={{ fontWeight: 600, mr: 1 }}>{auswahl.size} ausgewählt</Typography>
+    <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center" sx={{ position: 'sticky', bottom: 0, zIndex: 2, mt: 1.5, p: 1, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Typography variant="body2" sx={{ fontWeight: 500, mr: 1 }}>{auswahl.size} ausgewählt</Typography>
       <Button size="small" variant="contained" color="error" disabled={!bedienbar} onClick={() => { setzen([...auswahl].map(id => [id, { ...(fzVon(id) ?? {}), art: 'fehlt', minuten: 0, von: null, bis: null }])); setAuswahl(new Set()); }}>Abwesend</Button>
       <Button size="small" variant="outlined" onClick={() => setDialog({ art: 'abw', ids: [...auswahl], f: null })}>Abwesenheit mit Zeitraum …</Button>
       <Button size="small" variant="outlined" onClick={() => setDialog({ art: 'eintrag', ids: [...auswahl] })}>Klassenbucheintrag …</Button>
@@ -262,7 +257,7 @@ export function ReiterAnwesenheit(p: StundeProps & { onSpeichern: (z: 'speichert
             {zukunft && <Typography variant="body2" sx={{ mb: 1.5, color: 'text.secondary' }}>Die Anwesenheit wird ab dem Tag der Stunde erfasst.</Typography>}
             {!darf && <Typography variant="body2" sx={{ mb: 1.5, color: 'text.secondary' }}>Nur Anzeige – die Anwesenheit erfasst die Lehrkraft der Stunde bzw. die Klassenleitung.</Typography>}
             {ansicht === 'sitzplan' ? (d.sitz?.gueltig ? <SitzplanAnordnung d={d.sitz} schueler={sl} kachel={kachel} w={kbw} />
-              : <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: 'action.hover' }}><Typography variant="body2">Für diese Stunde ist noch kein Sitzplan hinterlegt.{darfIrgendwas(d.sitz) ? ' Legen Sie ihn mit „Sitzplan erstellen“ an.' : ''}</Typography></Box>)
+              : <Box sx={{ py: 1 }}><Typography variant="body2">Für diese Stunde ist noch kein Sitzplan hinterlegt.{darfIrgendwas(d.sitz) ? ' Legen Sie ihn mit „Sitzplan erstellen“ an.' : ''}</Typography></Box>)
               : <Box role="table" aria-label="Anwesenheit" sx={{ mx: -1, borderTop: 1, borderColor: 'divider' }}>{sl.map(zeile)}</Box>}
             {sammel}
           </>

@@ -3,15 +3,13 @@
 import { Marke, SLOGAN } from '../../components/Marke';
 import { Rechtshinweis } from '../../components/Ueber';
 import { useEffect, useState } from 'react';
-import { Alert, Box, Button, FormControlLabel, Paper, Stack, Switch, TextField, Typography, useTheme } from '@mui/material';
+import { Alert, Box, Button, FormControlLabel, Paper, Stack, Switch, TextField, Typography } from '@mui/material';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
-import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
-import RefreshRounded from '@mui/icons-material/RefreshRounded';
 import RemoveCircleOutlineRounded from '@mui/icons-material/RemoveCircleOutlineRounded';
 import { holen, senden } from '../../api/client';
 import { Geladen } from '../../components/Seite';
-import { NamensAvatar, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
+import { Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
 import { Tabelle } from '../../components/Tabelle';
 import { datumDe } from '../../lib/datum';
 import { fehler, toast } from '../../lib/meldungen';
@@ -28,7 +26,6 @@ export default function Wartung({ art, teil }: { art: 'aktive' | 'zugriff' | 'ue
 interface Sitzung { benutzerId: number; login: string; anzeigename: string; rollenname: string; geraet?: string; adresse?: string; beginn: string; letzte: string; minuten: number; aktiv: boolean }
 
 function Aktive({ stunden }: { stunden: string }) {
-  const t = useTheme();
   const g = useLaden(sig => holen<{ sitzungen: Sitzung[]; aktivMinuten: number; gesperrt: boolean }>(`/api/app/admin/sitzungen?stunden=${stunden}`, sig), [stunden]);
   const [suche, setSuche] = useState('');
   return (
@@ -45,14 +42,12 @@ function Aktive({ stunden }: { stunden: string }) {
             <SuchFeld wert={suche} onWert={setSuche} platzhalter="Benutzer suchen" />
             <Wahl label="Aktivität" wert={stunden} onWert={v => navigieren(`#/admin/aktive/${v}`, true)} optionen={[['1', 'letzte Stunde'], ['24', 'letzte 24 Stunden'], ['168', 'letzte 7 Tage']]} />
             <Box sx={{ flex: 1 }} />
-            <Button startIcon={<RefreshRounded />} onClick={() => void g.neu()}>Aktualisieren</Button>
-            <Button variant="outlined" startIcon={<LockOutlined />} href="#/admin/zugriff">Wartungsmodus</Button>
+            <Button onClick={() => void g.neu()}>Aktualisieren</Button>
+            <Button variant="outlined" href="#/admin/zugriff">Wartungsmodus</Button>
           </Stack>
           <Tabelle zeilen={l} schluessel={(s, i) => `${s.benutzerId}-${i}`} leer="In diesem Zeitraum war niemand angemeldet."
             spalten={[
-              { id: 'b', kopf: 'Benutzer', sortWert: s => s.anzeigename || s.login, zelle: s => <Stack direction="row" gap={1.25} alignItems="center"><Box sx={{ position: 'relative' }}><NamensAvatar name={s.anzeigename || s.login} groesse={32} />
-                {s.aktiv && <Box sx={{ position: 'absolute', right: -1, bottom: -1, width: 10, height: 10, borderRadius: '50%', bgcolor: t.palette.status.ok.main, border: 2, borderColor: 'background.paper' }} />}</Box>
-                <Box><Typography sx={{ fontWeight: 500 }}>{s.anzeigename || s.login}</Typography><Typography variant="caption" color="text.secondary">{s.login}</Typography></Box></Stack> },
+              { id: 'b', kopf: 'Benutzer', sortWert: s => s.anzeigename || s.login, zelle: s => <Stack direction="row" gap={1.25} alignItems="center"><Box><Typography sx={{ fontWeight: 500 }}>{s.anzeigename || s.login}{s.aktiv && <Plakette ton="ok" sx={{ ml: 1 }}>aktiv</Plakette>}</Typography><Typography variant="caption" color="text.secondary">{s.login}</Typography></Box></Stack> },
               { id: 'r', kopf: 'Rolle', zelle: s => s.rollenname },
               { id: 'g', kopf: 'Gerät', zelle: s => s.geraet || '–', verbergenMobil: true },
               { id: 'a', kopf: 'Adresse', zelle: s => s.adresse || '–', verbergenMobil: true },
@@ -74,7 +69,6 @@ function Zugriff() {
     <Geladen g={g}>{d => w && (
       <Stack gap={2.5} sx={{ maxWidth: 820 }}>
         <Paper variant="outlined" sx={{ p: 2.5, display: 'flex', gap: 2, alignItems: 'center', borderColor: d.gesperrt ? 'warning.main' : 'divider' }}>
-          <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: d.gesperrt ? 'warning.main' : 'success.main' }}>{d.gesperrt ? <LockOutlined /> : <LockOpenOutlined />}</Box>
           <Box><Typography variant="h3">{d.gesperrt ? 'Zugriff gesperrt' : 'Zugriff freigegeben'}</Typography>
             <Typography variant="body2" color="text.secondary">{d.gesperrt ? `Seit ${kurzZeit(d.seit)}${d.von ? ` (${d.von})` : ''} können sich nur Konten der Administration anmelden.` : 'Alle Benutzer können sich anmelden.'}</Typography></Box>
         </Paper>

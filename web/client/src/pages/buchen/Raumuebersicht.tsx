@@ -7,7 +7,6 @@ import AddRounded from '@mui/icons-material/AddRounded';
 import ApartmentOutlined from '@mui/icons-material/ApartmentOutlined';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import ListAltOutlined from '@mui/icons-material/ListAltOutlined';
 import ScheduleRounded from '@mui/icons-material/ScheduleRounded';
 import { holen, senden } from '../../api/client';
 import type { Elemente } from '../../api/types';
@@ -242,8 +241,8 @@ export function Raumuebersicht({ rest }: { rest: string[] }) {
 
   return (
     <Seite titel="Raumbelegung" aktionen={<>
-      <Button variant="outlined" startIcon={<ListAltOutlined />} href="#/buchen/meine">Meine Buchungen</Button>
-      {o?.raumBuchen !== false && <Button variant="contained" startIcon={<AddRounded />} href="#/buchen/raum">Raum buchen</Button>}
+      <Button variant="outlined" href="#/buchen/meine">Meine Buchungen</Button>
+      {o?.raumBuchen !== false && <Button variant="contained" href="#/buchen/raum">Raum buchen</Button>}
     </>}
       filter={o && <>
         <SuchFeld wert={f.suche} onWert={s => filter({ suche: s })} platzhalter="Raum suchen" breite={200} />

@@ -7,7 +7,6 @@ import {
   Alert, alpha, Box, Button, Divider, IconButton, List, ListItemButton, ListItemText, MenuItem, Paper, Stack, Tab, Tabs, TextField, ToggleButton, ToggleButtonGroup,
   Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import BlockRounded from '@mui/icons-material/BlockRounded';
 import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
@@ -63,7 +62,7 @@ function StufenWahl({ r, wert, onWert, geaendert }: { r: Recht; wert: number; on
   const farbe = (v: number) => (v === 2 ? t.palette.status.ok.main : v === 1 ? t.palette.primary.main : t.palette.text.secondary);
   return (
     <ToggleButtonGroup exclusive size="small" value={wert} onChange={(_, v) => v !== null && onWert(v)} aria-label={r.name}
-      sx={{ outline: geaendert ? `2px solid ${t.palette.primary.main}` : 'none', outlineOffset: 1, borderRadius: 999, '& .MuiToggleButton-root': { px: 1, py: 0.25, gap: 0.5, fontSize: 12, '& svg': { fontSize: 15 } },
+      sx={{ outline: geaendert ? `2px solid ${t.palette.primary.main}` : 'none', outlineOffset: 1, borderRadius: 1.5, '& .MuiToggleButton-root': { px: 1, py: 0.25, gap: 0.5, fontSize: 12, '& svg': { fontSize: 15 } },
         '& .Mui-selected': { color: `${farbe(wert)} !important`, bgcolor: `${alpha(farbe(wert), 0.12)} !important` } }}>
       {pillen.map(([v, text, icon]) => <Tooltip key={v} title={text}><ToggleButton value={v}>{icon}<Box component="span" sx={{ display: v === wert ? 'inline' : { xs: 'none', xl: 'inline' } }}>{text}</Box></ToggleButton></Tooltip>)}
     </ToggleButtonGroup>
@@ -155,7 +154,7 @@ function Rollen() {
             <Wahl label="Filter" wert={filter} onWert={setFilter} optionen={[['alle', 'Alle Rechte'], ['abweichend', 'Abweichend vom Standard'], ['ungespeichert', 'Ungespeichert']]} breite={220} />
             <Box sx={{ flex: 1 }} />
             {!schmal && <ToggleButtonGroup exclusive size="small" value={ansichtWahl} onChange={(_, v) => { if (v) { setAnsichtWahl(v); speicherSchreiben('untplan:rechte-ansicht', v); } }}><ToggleButton value="matrix">Matrix</ToggleButton><ToggleButton value="rolle">Rolle für Rolle</ToggleButton></ToggleButtonGroup>}
-            <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'neu' })}>Neue Rolle</Button>
+            <Button variant="contained" onClick={() => setDialog({ art: 'neu' })}>Neue Rolle</Button>
           </Stack>
           <Alert severity="info" sx={{ mb: 2 }}>{k.rechte.length} Rechte in {gruppen.length} Gruppen · Administration hat immer alle Rechte. Eigene Rollen bauen auf einer Basisrolle auf (Kollegium, Schüler*in, Erziehungsberechtigte); Rechte des Kollegiums wirken bei Schüler- und Elternkonten nicht.
             „Rückwirkend bearbeiten“: Abwesenheiten, die länger als {Number(k.rueckwirkendTage) || 0} Tage zurückliegen. Stundenplan-Zeitraum: Wochen vor bzw. nach der aktuellen Woche (leer = unbegrenzt, 0 = nur die aktuelle Woche). Einzelnen Konten lassen sich unter „Rechte einzelner Benutzer“ Rechte zusätzlich geben oder entziehen.</Alert>
@@ -196,7 +195,7 @@ function Rollen() {
             </>
           )}
           {anzahl > 0 && (
-            <Paper elevation={8} sx={{ position: 'sticky', bottom: 16, mt: 2, ml: 'auto', width: 'fit-content', maxWidth: '100%', px: 2, py: 1, borderRadius: 999, display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: 'text.primary', color: 'background.paper' }} role="status">
+            <Paper elevation={8} sx={{ position: 'sticky', bottom: 16, mt: 2, ml: 'auto', width: 'fit-content', maxWidth: '100%', px: 2, py: 1, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: 'text.primary', color: 'background.paper' }} role="status">
               <Typography variant="body2">{anzahl === 1 ? '1 ungespeicherte Änderung' : `${anzahl} ungespeicherte Änderungen`}</Typography>
               <Button size="small" sx={{ color: 'inherit' }} onClick={() => { setAenderungen({}); setFenster({}); }}>Verwerfen</Button>
               <Button size="small" variant="contained" disabled={laeuft} onClick={async () => {
@@ -296,7 +295,7 @@ function Benutzerrechte() {
           <SuchFeld wert={suche} onWert={setSuche} platzhalter="Benutzer suchen …" breite="100%" />
           <List dense sx={{ maxHeight: '65vh', overflow: 'auto', mt: 1 }}>
             {liste.filter(u => !suche || `${u.login} ${u.anzeigename} ${u.rollenname}`.toLowerCase().includes(suche.toLowerCase())).slice(0, 300).map(u => (
-              <ListItemButton key={u.id} selected={u.id === gewaehlt} onClick={() => setGewaehlt(u.id)} sx={{ borderRadius: 2 }}>
+              <ListItemButton key={u.id} selected={u.id === gewaehlt} onClick={() => setGewaehlt(u.id)} sx={{ borderRadius: 1.5 }}>
                 <ListItemText primary={u.anzeigename || u.login} secondary={`${u.login} · ${u.rollenname}`} />
               </ListItemButton>
             ))}

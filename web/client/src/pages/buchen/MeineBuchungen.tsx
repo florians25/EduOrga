@@ -2,11 +2,7 @@
 // Serien zusammengefasst und aufklappbar, Storno einzeln oder Serie, CSV-Export.
 import { useMemo, useState } from 'react';
 import { Box, Button, Collapse, FormControlLabel, Link, Paper, Stack, Switch, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
-import GridViewOutlined from '@mui/icons-material/GridViewOutlined';
-import RepeatRounded from '@mui/icons-material/RepeatRounded';
 import { api, holen, speichern } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
@@ -100,7 +96,7 @@ export function MeineBuchungen({ rest }: { rest: string[] }) {
         <Box key={'s' + b.id}>
           <Zeile b={b} />
           <Stack direction="row" gap={1} alignItems="center" sx={{ px: 2, pb: 1.25, pl: 10 }}>
-            <Button size="small" startIcon={<RepeatRounded />} endIcon={<ExpandMoreRounded sx={{ transform: auf ? 'rotate(180deg)' : 'none' }} />} aria-expanded={auf}
+            <Button size="small" endIcon={<ExpandMoreRounded sx={{ transform: auf ? 'rotate(180deg)' : 'none' }} />} aria-expanded={auf}
               onClick={() => setOffen(s => { const x = new Set(s); if (x.has(b.serie!)) x.delete(b.serie!); else x.add(b.serie!); return x; })}>
               Serie · {gr.length === serien.get(b.serie!) ? `${gr.length} Termine` : `${gr.length} von ${serien.get(b.serie!)} Terminen`} · bis {tagKurz(gr[gr.length - 1].datum)}
             </Button>
@@ -115,13 +111,13 @@ export function MeineBuchungen({ rest }: { rest: string[] }) {
   return (
     <Seite titel={alle ? 'Alle Buchungen' : 'Meine Buchungen'} untertitel={g.daten ? `${anzahl('kommend')} kommende Buchungen` : undefined}
       aktionen={<>
-        <Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/raeume">Raumbelegung</Button>
-        <Button variant="outlined" startIcon={<DownloadRounded />} disabled={!sichtbar.length} onClick={() => speichern(csv([
+        <Button variant="outlined" href="#/buchen/raeume">Raumbelegung</Button>
+        <Button variant="outlined" disabled={!sichtbar.length} onClick={() => speichern(csv([
           ['Datum', 'Wochentag', 'Stunde von', 'Stunde bis', 'Beginn', 'Ende', 'Art', 'Raum', 'Ressourcen', 'Klassen', 'Lehrkraft', 'Fach', 'Titel', 'Bemerkung', 'Status', 'Serie', 'Gebucht von', 'Erstellt'],
           ...sichtbar.map(b => [datumDe(b.datum), b.wochentag, b.stundeVon, b.stundeBis, b.beginn, b.ende, b.artName, b.raum, b.ressourcen.map(r => `${r.menge > 1 ? `${r.menge}x ` : ''}${r.name}`).join(', '),
             b.klassen.join(', '), b.lehrer, b.fach, b.titel, b.text, b.status, b.serie, b.absender, b.erstellt]),
         ]), `buchungen-${von}-${bis}.csv`)}>Export</Button>
-        <Button variant="contained" startIcon={<AddRounded />} href="#/buchen/raum">Neue Buchung</Button>
+        <Button variant="contained" href="#/buchen/raum">Neue Buchung</Button>
       </>}
       filter={<>
         <SuchFeld wert={f.suche} onWert={s => filter({ suche: s })} platzhalter="Titel, Raum, Klasse …" breite={240} />

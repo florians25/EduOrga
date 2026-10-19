@@ -3,13 +3,10 @@
 // Beispiel-Ressourcen an.
 import { useEffect, useState } from 'react';
 import { alpha, Box, Button, ButtonBase, Chip, FormControlLabel, IconButton, MenuItem, Paper, Stack, Switch, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useTheme } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
-import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined';
 import MeetingRoomOutlined from '@mui/icons-material/MeetingRoomOutlined';
-import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import { holen, senden } from '../../api/client';
 import { Geladen, Leer, Seite } from '../../components/Seite';
 import { FormDialog, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
@@ -122,15 +119,15 @@ export function Ressourcenuebersicht({ rest }: { rest: string[] }) {
     const [v, b] = zz.wahl;
     if (!r.mobil) return opt?.raumBuchen === false || datum < heute || zz.v <= 0 ? null : <Button size="small" variant="outlined" href={`#/buchen/raum/${datum}/${v}/${b}/${encodeURIComponent(r.raum ?? '')}`}>Raum buchen</Button>;
     if (!darfBuchen(r, datum)) return null;
-    return zz.v > 0 ? <Button size="small" variant="contained" startIcon={<AddRounded />} onClick={() => setBuchen({ r, datum, von: v, bis: b })}>Buchen</Button>
+    return zz.v > 0 ? <Button size="small" variant="contained" onClick={() => setBuchen({ r, datum, von: v, bis: b })}>Buchen</Button>
       : <Button size="small" variant="outlined" onClick={() => setBuchen({ r, datum, von: v, bis: b })}>Andere Zeit</Button>;
   };
-  const symbol = (r: Res) => <Box sx={{ width: 40, height: 40, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main', flexShrink: 0 }}><ResSymbol r={r} /></Box>;
+  const symbol = (r: Res) => <Box sx={{ width: 40, height: 40, borderRadius: 1.5, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main', flexShrink: 0 }}><ResSymbol r={r} /></Box>;
 
   return (
     <Seite titel="Gerätebelegung" aktionen={opt && <>
-      {opt.admin && <Button variant="outlined" startIcon={<SettingsOutlined />} href="#/buchen/verwaltung">Verwalten</Button>}
-      {opt.ressourcenBuchen !== false && <Button variant="contained" startIcon={<AddRounded />} href="#/buchen/ressource">Geräte &amp; Medien buchen</Button>}
+      {opt.admin && <Button variant="outlined" href="#/buchen/verwaltung">Verwalten</Button>}
+      {opt.ressourcenBuchen !== false && <Button variant="contained" href="#/buchen/ressource">Geräte &amp; Medien buchen</Button>}
     </>}
       filter={g.daten && opt && <>
         <SuchFeld wert={f.suche} onWert={x => setF({ suche: x })} platzhalter="Ressource oder Standort suchen" breite={240} />
@@ -155,7 +152,7 @@ export function Ressourcenuebersicht({ rest }: { rest: string[] }) {
           && (!f.ort || (r.mobil ? r.standort : `fest in ${r.raum}`) === f.ort) && (!f.nurFrei || zustand(r).v > 0));
         if (!u.ressourcen.length) return (
           <Leer text="Es sind noch keine Ressourcen angelegt." unter={opt?.admin ? 'Legen Sie mobile Geräte wie Beamer, Laptopwagen oder Tablet-Koffer an – oder übernehmen Sie zum Start typische Beispiele.' : 'Die Administration legt buchbare Geräte wie Beamer oder Laptopwagen an.'}
-            aktion={opt?.admin ? { text: 'Beispiel-Ressourcen anlegen', onClick: async () => { try { const r = await senden<{ angelegt: number }>(`${BASIS}/ressourcen/beispiele`, {}); toast(`${r.angelegt} Beispiel-Ressourcen angelegt.`); void g.neu(); } catch (err) { fehler(err); } } } : undefined} symbol={<AutoAwesomeOutlined />} />
+            aktion={opt?.admin ? { text: 'Beispiel-Ressourcen anlegen', onClick: async () => { try { const r = await senden<{ angelegt: number }>(`${BASIS}/ressourcen/beispiele`, {}); toast(`${r.angelegt} Beispiel-Ressourcen angelegt.`); void g.neu(); } catch (err) { fehler(err); } } } : undefined} />
         );
         return (
           <>

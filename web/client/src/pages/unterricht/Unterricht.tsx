@@ -2,10 +2,8 @@
 // Lehrkraft, Wochenstunden und Schnellzugriffen auf Klassenbuch, Termine im Plan, Lehrstoff, Fehlzeiten, Schülergruppe und Berichte.
 import { useState } from 'react';
 import { Button, IconButton, Stack, Tooltip, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import AssessmentOutlined from '@mui/icons-material/AssessmentOutlined';
 import CalendarViewWeekOutlined from '@mui/icons-material/CalendarViewWeekOutlined';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import GroupsOutlined from '@mui/icons-material/GroupsOutlined';
 import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined';
 import NotesOutlined from '@mui/icons-material/NotesOutlined';
@@ -50,8 +48,8 @@ export default function Unterricht({ teile }: SeitenProps) {
   const titel = art === 'lehrer' ? `${element === ich.element ? 'Mein Unterricht' : 'Unterricht'} ${element}` : `Unterricht ${element}`;
   return (
     <Seite titel={titel} aktionen={<>
-      {ich.kollegium && <Button variant="outlined" startIcon={<AddRounded />} href="#/buchen/unterricht">Neuer Unterricht</Button>}
-      <Button variant="outlined" startIcon={<DownloadRounded />} disabled={!g.daten?.zeilen.length} onClick={() => g.daten && speichern(csv([
+      {ich.kollegium && <Button variant="outlined" href="#/buchen/unterricht">Neuer Unterricht</Button>}
+      <Button variant="outlined" disabled={!g.daten?.zeilen.length} onClick={() => g.daten && speichern(csv([
         ['Aktivitätsart', 'Klassen', 'Schülergruppe', 'Fach', 'Lehrkraft', 'Wochenstunden', 'Termine', 'Räume'],
         ...g.daten.zeilen.map(u => [u.aktivitaet, u.klassen.join(', '), u.kurs, u.fach, u.lehrer.join(', '), u.wochenstunden, u.termine.join(', '), u.raeume.join(', ')]),
       ]), `unterricht-${element}-${z.von}-${z.bis}.csv`)}>Bericht</Button>

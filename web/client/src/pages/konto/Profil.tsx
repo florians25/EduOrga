@@ -6,7 +6,7 @@ import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded';
 import { holen, loeschen, senden } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Seite } from '../../components/Seite';
-import { FormDialog, NamensAvatar, Plakette } from '../../components/Bausteine';
+import { FormDialog, Plakette } from '../../components/Bausteine';
 import { bestaetigen, fehler, toast } from '../../lib/meldungen';
 import { navigieren } from '../../lib/router';
 import { useLaden } from '../../lib/useLaden';
@@ -39,7 +39,6 @@ function Allgemein({ p }: { p: Profil }) {
   return (
     <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, maxWidth: 880 }}>
       <Stack direction="row" gap={2} alignItems="center" sx={{ mb: 3 }}>
-        <NamensAvatar name={p.anzeigename || p.login} groesse={52} />
         <Box><Typography variant="overline" color="text.secondary">{p.rolle}</Typography><Typography variant="h2">{p.anzeigename || p.login}</Typography></Box>
       </Stack>
       <Stack direction="row" gap={2} flexWrap="wrap">
@@ -112,7 +111,6 @@ function Freigaben({ p }: { p: Profil }) {
         <Typography variant="h3" sx={{ mb: 1.5 }}>Konten auf diesem Gerät</Typography>
         {konten.length ? konten.map(k => (
           <Stack key={k.id} direction="row" gap={1.5} alignItems="center" sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
-            <NamensAvatar name={k.login} groesse={32} />
             <Box sx={{ flex: 1 }}><Typography sx={{ fontWeight: 500 }}>{k.login}{k.aktuell && <Plakette ton="ok" sx={{ ml: 1 }}>angemeldet</Plakette>}</Typography><Typography variant="caption" color="text.secondary">{k.rolle}</Typography></Box>
             {!k.aktuell && <Button size="small" variant="outlined" onClick={async () => { try { await loeschen(`/api/app/konten/${k.id}`); void laden(); } catch (err) { fehler(err); } }}>Entfernen</Button>}
           </Stack>

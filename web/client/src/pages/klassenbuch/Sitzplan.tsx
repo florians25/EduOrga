@@ -2,8 +2,6 @@
 // und die persönlichen Klassenbuch-Einstellungen (Namen, Sortierung). Der Klassen-Sitzplan gilt in jedem Unterricht der Klasse.
 import { useState } from 'react';
 import { Alert, Button, IconButton, Tooltip } from '@mui/material';
-import EditOutlined from '@mui/icons-material/EditOutlined';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import { holen } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
@@ -32,8 +30,8 @@ export default function Sitzplan({ teile }: SeitenProps) {
   const d: SitzDaten | null = r ? { kontext: { klasse, klassen: [klasse] }, schueler: r.schueler, gueltig: r.plan.vorhanden ? r.plan : null, plaene: { klasse: r.plan.vorhanden ? r.plan : null }, rechte: { klasse: r.verwalten } } : null;
   return (
     <Seite titel={klasse ? `Sitzplan ${klasse}` : 'Sitzplan'} aktionen={r && <>
-      {r.verwalten && <Button variant="contained" startIcon={<EditOutlined />} onClick={() => setEditor(true)}>Sitzplan bearbeiten</Button>}
-      <Button variant="outlined" startIcon={<PrintOutlined />} disabled={!d?.gueltig} onClick={() => d?.gueltig && sitzplanPdf({ ...d.gueltig, bereich: 'klasse', klasse, klassen: [klasse], belegung: d.gueltig.belegung ?? {}, titel: `Sitzplan ${klasse}`, vornameZuerst: w.namen === 'vorname', kurz: w.namen === 'kurz', klasseZeigen: w.klasseZeigen })}>Drucken</Button>
+      {r.verwalten && <Button variant="contained" onClick={() => setEditor(true)}>Sitzplan bearbeiten</Button>}
+      <Button variant="outlined" disabled={!d?.gueltig} onClick={() => d?.gueltig && sitzplanPdf({ ...d.gueltig, bereich: 'klasse', klasse, klassen: [klasse], belegung: d.gueltig.belegung ?? {}, titel: `Sitzplan ${klasse}`, vornameZuerst: w.namen === 'vorname', kurz: w.namen === 'kurz', klasseZeigen: w.klasseZeigen })}>Drucken</Button>
       <Tooltip title="Klassenbuch-Einstellungen"><IconButton onClick={() => setPanel(true)} aria-label="Klassenbuch-Einstellungen"><SettingsOutlined /></IconButton></Tooltip>
     </>}
       filter={g.daten && <ElementWahl liste={g.daten.el.klassen} wert={klasse} onWahl={k => navigieren(link('sitzplan', k))} platzhalter="Klasse wählen" breite={180} />}>

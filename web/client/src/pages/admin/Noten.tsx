@@ -9,8 +9,6 @@ import ArrowUpwardRounded from '@mui/icons-material/ArrowUpwardRounded';
 import CheckRounded from '@mui/icons-material/CheckRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
-import SortByAlphaRounded from '@mui/icons-material/SortByAlphaRounded';
 import { holen, senden, speichern } from '../../api/client';
 import { Geladen, Seite } from '../../components/Seite';
 import { FormDialog, Plakette, SuchFeld } from '../../components/Bausteine';
@@ -51,7 +49,7 @@ export function Notenschemen() {
   };
   return (
     <Seite titel="Notenschemen" untertitel="Notenschemen legen fest, welche Noten vergeben werden, z. B. „1 – 5“, „+, ~, -“ oder „Bestanden / Nicht bestanden“. Werte sind optional – ohne Werte werden keine Durchschnittsnoten berechnet."
-      aktionen={<Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({ s: null })}>Neu</Button>}>
+      aktionen={<Button variant="contained" onClick={() => setForm({ s: null })}>Neu</Button>}>
       <Geladen g={g}>{d => {
         const ids = d.schemen.map(s => s.id);
         const gw = gesamt ?? d.gesamt ?? '';
@@ -67,8 +65,8 @@ export function Notenschemen() {
               </Stack>
             </Paper>
             <Stack direction="row" gap={1} justifyContent="flex-end">
-              <Button startIcon={<SortByAlphaRounded />} disabled={d.schemen.length < 2} onClick={async () => { await senden('/api/app/notenschemen/reihenfolge', { ids: null }, 'PUT'); toast('Alphabetisch sortiert.'); neu(); }}>Sortieren</Button>
-              <Button color="error" startIcon={<DeleteOutlineRounded />} disabled={!auswahl.size} onClick={() => loeschen([...auswahl] as number[], d.schemen)}>Löschen{auswahl.size ? ` (${auswahl.size})` : ''}</Button>
+              <Button disabled={d.schemen.length < 2} onClick={async () => { await senden('/api/app/notenschemen/reihenfolge', { ids: null }, 'PUT'); toast('Alphabetisch sortiert.'); neu(); }}>Sortieren</Button>
+              <Button color="error" disabled={!auswahl.size} onClick={() => loeschen([...auswahl] as number[], d.schemen)}>Löschen{auswahl.size ? ` (${auswahl.size})` : ''}</Button>
             </Stack>
             <Tabelle zeilen={d.schemen} schluessel={s => s.id} auswahl={auswahl} setAuswahl={setAuswahl} onZeile={s => setForm({ s })} leer="Noch keine Notenschemen – legen Sie mit „Neu“ das erste an."
               spalten={[
@@ -152,11 +150,11 @@ export function Pruefungsarten() {
   };
   return (
     <Seite titel="Prüfungsarten" aktionen={<>
-      <Button variant="outlined" startIcon={<DownloadRounded />} disabled={!g.daten?.arten.length} onClick={() => speichern(csv([
+      <Button variant="outlined" disabled={!g.daten?.arten.length} onClick={() => speichern(csv([
         ['Kurzname', 'Langname', 'Art', 'Max pro Tag', 'Max pro Woche', 'Max pro Zeitbereich', 'innerhalb Tagen', 'Keine Prüfung nach freien Tagen', 'Gruppierung', 'Notenschema', 'Gewichtung', 'aktiv'],
         ...g.daten!.arten.map(a => [a.kurz, a.name, a.muendlich ? 'mündlich' : 'schriftlich', a.maxTag, a.maxWoche, a.maxZeitraum, a.zeitraumTage, a.freieTage, a.gruppierung, a.notenschema, String(a.gewichtung).replace('.', ','), a.aktiv ? 'ja' : 'nein']),
       ]), 'pruefungsarten.csv')}>Bericht</Button>
-      <Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({ a: null })}>Neu</Button>
+      <Button variant="contained" onClick={() => setForm({ a: null })}>Neu</Button>
     </>} filter={<SuchFeld wert={suche} onWert={setSuche} platzhalter="Suche (Kurz- oder Langname)" breite={280} />}>
       <Geladen g={g}>{d => {
         const ids = d.arten.map(a => a.id);
@@ -164,8 +162,8 @@ export function Pruefungsarten() {
         return (
           <>
             <Stack direction="row" gap={1} justifyContent="flex-end" sx={{ mb: 1.5 }}>
-              <Button startIcon={<SortByAlphaRounded />} disabled={d.arten.length < 2} onClick={async () => { await senden('/api/app/pruefungsarten/reihenfolge', { ids: null }, 'PUT'); toast('Alphabetisch sortiert.'); neu(); }}>Sortieren</Button>
-              <Button color="error" startIcon={<DeleteOutlineRounded />} disabled={!auswahl.size} onClick={() => loeschen([...auswahl] as number[], d.arten)}>Löschen{auswahl.size ? ` (${auswahl.size})` : ''}</Button>
+              <Button disabled={d.arten.length < 2} onClick={async () => { await senden('/api/app/pruefungsarten/reihenfolge', { ids: null }, 'PUT'); toast('Alphabetisch sortiert.'); neu(); }}>Sortieren</Button>
+              <Button color="error" disabled={!auswahl.size} onClick={() => loeschen([...auswahl] as number[], d.arten)}>Löschen{auswahl.size ? ` (${auswahl.size})` : ''}</Button>
             </Stack>
             <Tabelle zeilen={l} schluessel={a => a.id} auswahl={auswahl} setAuswahl={setAuswahl} onZeile={a => setForm({ a })} leer="Noch keine Prüfungsarten – legen Sie mit „Neu“ die erste an."
               spalten={[

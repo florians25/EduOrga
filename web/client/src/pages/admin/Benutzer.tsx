@@ -7,19 +7,14 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Autocomplete, Box, Button, Checkbox, Drawer, FormControlLabel, IconButton, MenuItem, Stack, Switch, Tab, Tabs, TextField, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import KeyRounded from '@mui/icons-material/KeyRounded';
 import LockOutlined from '@mui/icons-material/LockOutlined';
-import PersonAddAltRounded from '@mui/icons-material/PersonAddAltRounded';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import { holen, loeschen, senden, speichern } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen } from '../../components/Seite';
-import { FormDialog, Kennzahl, NamensAvatar, Plakette, SuchFeld, Wahl, type Ton } from '../../components/Bausteine';
+import { FormDialog, Kennzahl, Plakette, SuchFeld, Wahl, type Ton } from '../../components/Bausteine';
 import { Tabelle } from '../../components/Tabelle';
 import { heuteIso } from '../../lib/datum';
 import { bestaetigen, fehler, toast } from '../../lib/meldungen';
@@ -62,8 +57,8 @@ export function ZugangsdatenDialog({ titel, r, onClose }: { titel: string; r: Zu
   if (!r.anzahl) return <FormDialog offen titel={titel} onClose={onClose}><Typography>Es wurden keine Konten angelegt – alle gewählten Personen haben bereits ein Konto.</Typography></FormDialog>;
   return (
     <FormDialog offen titel={titel} breite="md" onClose={onClose} links={<>
-      <Button startIcon={<DownloadRounded />} onClick={() => speichern(r.csv, `zugangsdaten-${heuteIso()}.csv`)}>CSV</Button>
-      <Button startIcon={<PrintOutlined />} onClick={async () => {
+      <Button onClick={() => speichern(r.csv, `zugangsdaten-${heuteIso()}.csv`)}>CSV</Button>
+      <Button onClick={async () => {
         const ausrichtung = await pdfAusrichtung('hoch', 'zugangsdaten');
         if (!ausrichtung) return;
         try {
@@ -147,10 +142,10 @@ export function Benutzer({ weitere = [] }: { weitere?: string[] }) {
             <Wahl label="Zuordnung" wert={f.zuordnung} onWert={v => setF({ ...f, zuordnung: v })} alle="Jede Zuordnung" optionen={[['ohne', 'Ohne Zuordnung'], ['mit', 'Mit Zuordnung']]} breite={180} />
             <Wahl label="Letzte Anmeldung" wert={f.anmeldung} onWert={v => setF({ ...f, anmeldung: v })} alle="Jede Anmeldung" optionen={[['7', 'In den letzten 7 Tagen'], ['30', 'In den letzten 30 Tagen'], ['alt', 'Vor mehr als 90 Tagen'], ['nie', 'Noch nie angemeldet']]} breite={210} />
             <Box sx={{ flex: 1 }} />
-            <Button variant="outlined" startIcon={<DownloadRounded />} onClick={() => speichern(csv([['Benutzername', 'Name', 'Rolle', 'Zuordnung', 'Kürzel', 'E-Mail', 'Zusatzrechte', 'gesperrt', 'Startpasswort offen', 'Letzte Anmeldung'],
+            <Button variant="outlined" onClick={() => speichern(csv([['Benutzername', 'Name', 'Rolle', 'Zuordnung', 'Kürzel', 'E-Mail', 'Zusatzrechte', 'gesperrt', 'Startpasswort offen', 'Letzte Anmeldung'],
               ...sichtbar.map(b => [b.login, b.anzeigename, b.rollenname, zuordnung(b)?.text ?? '', b.element, b.email, (b.zusatzrechte ?? []).join(', '), b.gesperrt ? 'ja' : 'nein', b.passwortAendern ? 'ja' : 'nein', b.letzteAnmeldung ?? ''])]), `benutzer-${heuteIso()}.csv`)}>Bericht</Button>
             <Button variant="outlined" href="#/admin/personen">Personen & Konten</Button>
-            <Button variant="contained" startIcon={<AddRounded />} onClick={() => setPanel({ b: null })}>Benutzer anlegen</Button>
+            <Button variant="contained" onClick={() => setPanel({ b: null })}>Benutzer anlegen</Button>
           </Stack>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(124px, 1fr))', gap: 1.25, mb: 2 }}>
             <Kennzahl wert={liste.length} text="alle" ton="neutral" onClick={() => setF({ ...f, rolle: '', status: '', zuordnung: '' })} />
@@ -161,7 +156,7 @@ export function Benutzer({ weitere = [] }: { weitere?: string[] }) {
           <Tabelle zeilen={sichtbar} schluessel={b => b.id} auswahl={auswahl} setAuswahl={setAuswahl} onZeile={b => setPanel({ b })} sortierung={{ id: 'name', richtung: 'asc' }} max={300}
             zeilenSx={b => (b.gesperrt ? { opacity: 0.65 } : {})} leer="Keine Benutzer gefunden."
             spalten={[
-              { id: 'name', kopf: 'Benutzer', sortWert: b => (b.anzeigename || b.login).toLowerCase(), zelle: b => <Stack direction="row" gap={1.25} alignItems="center"><NamensAvatar name={b.anzeigename || b.login} id={b.id} groesse={32} />
+              { id: 'name', kopf: 'Benutzer', sortWert: b => (b.anzeigename || b.login).toLowerCase(), zelle: b => <Stack direction="row" gap={1.25} alignItems="center">
                 <Box sx={{ minWidth: 0 }}><Typography sx={{ fontWeight: 500 }} noWrap>{b.anzeigename || b.login}</Typography><Typography variant="caption" color="text.secondary" noWrap>{b.login}{b.email ? ` · ${b.email}` : ''}</Typography></Box></Stack> },
               { id: 'rolle', kopf: 'Rolle', sortWert: b => Object.keys(ROLLEN).indexOf(b.rolle), zelle: b => <Stack direction="row" gap={0.5} flexWrap="wrap"><Plakette>{b.rollenname}</Plakette>{(b.zusatzrechte ?? []).map(r => <Plakette key={r} ton="termin" title="Zusatzrecht">+ {grundlagen.zusatzrechte.find(x => x.id === r)?.name ?? r}</Plakette>)}</Stack> },
               { id: 'zuordnung', kopf: 'Zuordnung', sortWert: b => zuordnung(b)?.text?.toLowerCase() ?? '~', zelle: b => { const z = zuordnung(b); return z ? <Box><Typography variant="body2">{z.text}</Typography><Typography variant="caption" color="text.secondary">{z.unter}</Typography></Box> : b.rolle === 'admin' ? '–' : <Plakette ton="pruefung">ohne Zuordnung</Plakette>; }, verbergenMobil: true },
@@ -255,7 +250,6 @@ function KontoPanel({ b, personen, klassen, zusatzrechte, ichId, onClose, fertig
   return (
     <Drawer anchor="right" open onClose={onClose} slotProps={{ paper: { sx: { width: mobil ? '100%' : 520, display: 'flex' } } }}>
       <Stack direction="row" gap={1.5} alignItems="center" sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider' }}>
-        {b ? <NamensAvatar name={k.anzeigename || k.login} id={k.id} groesse={44} /> : <Box sx={{ width: 44, height: 44, borderRadius: '50%', bgcolor: 'action.selected', display: 'grid', placeItems: 'center' }}><PersonAddAltRounded /></Box>}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="h3" noWrap>{b ? k.anzeigename || k.login : 'Benutzer anlegen'}</Typography>
           <Typography variant="body2" color="text.secondary">{b ? `${k.login} · ${k.rollenname}` : 'Neues Konto mit Rolle und Personenzuordnung'}</Typography>
@@ -311,9 +305,9 @@ function KontoPanel({ b, personen, klassen, zusatzrechte, ichId, onClose, fertig
             </Stack>
           )) : <Typography variant="body2" color="text.secondary">Noch keine Anmeldungen aufgezeichnet.</Typography>)}
           {b && abschnitt('Konto-Aktionen', <Stack direction="row" gap={1} flexWrap="wrap">
-            <Button variant="outlined" startIcon={<KeyRounded />} onClick={() => aktion('passwort')}>Passwort zurücksetzen</Button>
+            <Button variant="outlined" onClick={() => aktion('passwort')}>Passwort zurücksetzen</Button>
             <Button variant="outlined" disabled={k.passwortAendern} onClick={() => aktion('erzwingen')}>Passwortänderung erzwingen</Button>
-            {k.id !== ichId && <Button variant="outlined" color="error" startIcon={<DeleteOutlineRounded />} onClick={() => aktion('loeschen')}>Konto löschen</Button>}
+            {k.id !== ichId && <Button variant="outlined" color="error" onClick={() => aktion('loeschen')}>Konto löschen</Button>}
           </Stack>)}
         </>}
       </Box>
@@ -363,8 +357,8 @@ export function Personen({ weitere = [] }: { weitere?: string[] }) {
             <Wahl label="Konto" wert={f.konto} onWert={v => setF({ ...f, konto: v })} alle="Mit und ohne Konto" optionen={[['fehlt', 'Ohne Konto'], ['vorhanden', 'Mit Konto']]} breite={190} />
             <Box sx={{ flex: 1 }} />
             <Button variant="outlined" href="#/admin/benutzer">Benutzer</Button>
-            {verwaltet && <Button variant="outlined" startIcon={<AddRounded />} onClick={() => setPerson({ p: null })}>{art === 'eltern' ? 'Erziehungsberechtigte*n' : 'Person'} erfassen</Button>}
-            <Button variant="contained" startIcon={<PersonAddAltRounded />} disabled={!ohne} onClick={() => setKonten({ auswahl: null })}>Konten anlegen …</Button>
+            {verwaltet && <Button variant="outlined" onClick={() => setPerson({ p: null })}>{art === 'eltern' ? 'Erziehungsberechtigte*n' : 'Person'} erfassen</Button>}
+            <Button variant="contained" disabled={!ohne} onClick={() => setKonten({ auswahl: null })}>Konten anlegen …</Button>
           </Stack>
           {verwaltet && <Alert severity="info" sx={{ mb: 2 }}>{art === 'eltern' ? 'Erziehungsberechtigte werden in EduOrga Web erfasst und mit ihren Kindern verknüpft; das Elternkonto erhält die Kinder automatisch.' : 'Sonstiges Personal (z. B. Sekretariat, Hausmeister, Schulsozialarbeit) wird in EduOrga Web erfasst. Konten erhalten standardmäßig die Rolle Lehrkraft ohne Kürzel (Pläne und Vertretungsplan des Kollegiums).'}</Alert>}
           <Stack direction="row" gap={1} sx={{ mb: 2 }} flexWrap="wrap">
@@ -373,7 +367,7 @@ export function Personen({ weitere = [] }: { weitere?: string[] }) {
           <Tabelle zeilen={sichtbar} schluessel={p => p.schluessel} auswahl={auswahl} setAuswahl={s => setAuswahl(new Set([...s].filter(x => !liste.find(p => p.schluessel === x)?.konto)))} max={400}
             leer={liste.length ? 'Keine Personen gefunden.' : art === 'eltern' ? 'Noch keine Erziehungsberechtigten erfasst.' : art === 'personal' ? 'Noch kein sonstiges Personal erfasst.' : 'Keine Personen – bitte zuerst Daten aus EduOrga Studio übertragen.'}
             spalten={[
-              { id: 'name', kopf: 'Name', sortWert: p => `${p.name} ${p.vorname}`, zelle: p => <Stack direction="row" gap={1.25} alignItems="center"><NamensAvatar name={personName(p) || p.kurz} groesse={30} /><Typography sx={{ fontWeight: 500 }}>{art === 'schueler' ? `${p.name}, ${p.vorname}` : personName(p) || p.kurz}</Typography></Stack> },
+              { id: 'name', kopf: 'Name', sortWert: p => `${p.name} ${p.vorname}`, zelle: p => <Stack direction="row" gap={1.25} alignItems="center"><Typography sx={{ fontWeight: 500 }}>{art === 'schueler' ? `${p.name}, ${p.vorname}` : personName(p) || p.kurz}</Typography></Stack> },
               { id: 'z', kopf: art === 'schueler' ? 'Klasse' : art === 'lehrer' ? 'Kürzel' : art === 'eltern' ? 'Kinder' : 'Funktion', sortWert: p => p.klasse || p.kurz || p.funktion,
                 zelle: p => art === 'schueler' ? <Plakette>{p.klasse}</Plakette> : art === 'lehrer' ? <b>{p.kurz}</b> : art === 'eltern' ? (p.kinder.length ? <Box>{p.kinder.map(i => <Typography key={i} variant="body2">{sNach[i] ? `${personName(sNach[i])} · ${sNach[i].klasse}` : `#${i}`}</Typography>)}</Box> : '–') : p.funktion },
               { id: 'e', kopf: art === 'schueler' ? 'Elternkonten' : 'E-Mail', zelle: p => art === 'schueler' ? (p.elternkonten.length ? <Stack direction="row" gap={0.5} flexWrap="wrap">{p.elternkonten.map(x => <Plakette key={x.id}><a href={`#/admin/benutzer/-/${x.id}`}>{x.login}</a></Plakette>)}</Stack> : '–') : p.email, verbergenMobil: true },
@@ -389,7 +383,7 @@ export function Personen({ weitere = [] }: { weitere?: string[] }) {
             ]} />
           <Stack direction="row" gap={1} alignItems="center" sx={{ mt: 1.5 }}>
             <Typography variant="body2" color="text.secondary">{sichtbar.length} von {liste.length}{auswahl.size ? ` · ${auswahl.size} ausgewählt` : ''}</Typography>
-            <Button size="small" startIcon={<AddRounded />} disabled={!auswahl.size} onClick={() => setKonten({ auswahl: [...auswahl] as string[] })}>Konten für Auswahl anlegen</Button>
+            <Button size="small" disabled={!auswahl.size} onClick={() => setKonten({ auswahl: [...auswahl] as string[] })}>Konten für Auswahl anlegen</Button>
           </Stack>
           {konten && <KontenDialog art={art} liste={liste} schueler={schueler} auswahl={konten.auswahl} onClose={() => setKonten(null)} fertig={r => { setAuswahl(new Set()); void g.neu(); setZugang({ titel: `Zugangsdaten ${ARTEN[art]}`, r }); }} />}
           {person && <PersonDialog art={art} p={person.p} schueler={schueler} onClose={() => setPerson(null)} fertig={() => void g.neu()} />}

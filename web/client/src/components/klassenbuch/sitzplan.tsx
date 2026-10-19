@@ -7,12 +7,6 @@ import {
   TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
 import CloseRounded from '@mui/icons-material/CloseRounded';
-import ShuffleRounded from '@mui/icons-material/ShuffleRounded';
-import SortByAlphaRounded from '@mui/icons-material/SortByAlphaRounded';
-import UndoRounded from '@mui/icons-material/UndoRounded';
-import PrintOutlined from '@mui/icons-material/PrintOutlined';
-import ClearAllRounded from '@mui/icons-material/ClearAllRounded';
-import TableRestaurantOutlined from '@mui/icons-material/TableRestaurantOutlined';
 import RemoveRounded from '@mui/icons-material/RemoveRounded';
 import AddRounded from '@mui/icons-material/AddRounded';
 import CoPresentOutlined from '@mui/icons-material/CoPresentOutlined';
@@ -49,9 +43,6 @@ export function nameZeilen(s: Schueler, w = kbEinstellungen()): [string, string]
   return w.namen === 'vorname' ? [s.vorname, s.name] : [s.name, s.vorname];
 }
 export const anzeigeName = (s: Schueler, w = kbEinstellungen()) => nameZeilen(s, w).filter(Boolean).join(' ');
-export const initialenVon = (s: Schueler) => `${(s.vorname || '')[0] ?? ''}${(s.name || '')[0] ?? ''}`.toUpperCase() || '?';
-const FARBEN = ['#e4ecf7', '#e6f3ec', '#f6ece2', '#efe7f6', '#f6e6ea', '#e3f1f3', '#f3f1e0'];
-export const avatarFarbe = (id: number) => FARBEN[Math.abs(Number(id) || 0) % FARBEN.length];
 
 export function kontextVon(k: Karte): SitzKontext {
   const kurz = (l: { k: string; alt?: string | null }[]) => (l ?? []).filter(x => x.k && !(x.alt && !x.k)).map(x => x.k);
@@ -76,17 +67,16 @@ export async function sitzplanPdf(daten: object) {
   } catch (err) { fenster?.close(); fehler(err); }
 }
 
-/** Kleine Schülerkarte (Avatar und zwei Namenszeilen). */
+/** Kleine Schülerkarte (zwei Namenszeilen, ohne Initialen-Avatar). */
 export function SchuelerKarte({ s, w, gewaehlt, onClick, zusatz, ziehbar, sx }: { s: Schueler; w: KbEinstellungen; gewaehlt?: boolean; onClick?: () => void; zusatz?: ReactNode; ziehbar?: boolean; sx?: object }) {
   const [a, b] = nameZeilen(s, w);
   return (
     <Box data-karte={s.id} role="button" tabIndex={0} onClick={onClick} aria-pressed={gewaehlt} aria-label={anzeigeName(s, w)}
       onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && onClick) { e.preventDefault(); onClick(); } }}
-      sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.75, pr: 1, borderRadius: 2, bgcolor: 'background.paper', border: 1, borderColor: gewaehlt ? 'primary.main' : 'divider',
+      sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.75, borderRadius: 1, bgcolor: 'background.paper', border: 1, borderColor: gewaehlt ? 'primary.main' : 'divider',
         boxShadow: gewaehlt ? t => `0 0 0 2px ${alpha(t.palette.primary.main, 0.25)}` : 'none', cursor: ziehbar ? 'grab' : onClick ? 'pointer' : 'default', userSelect: 'none', touchAction: ziehbar ? 'none' : 'auto', minWidth: 0, ...sx }}>
-      <Box sx={{ width: 30, height: 30, borderRadius: 15, bgcolor: avatarFarbe(s.id), color: 'grey.800', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600, flex: 'none' }}>{initialenVon(s)}</Box>
       <Box sx={{ minWidth: 0, lineHeight: 1.2 }}>
-        <Typography noWrap sx={{ fontSize: 12.5, fontWeight: 600 }}>{a}</Typography>
+        <Typography noWrap sx={{ fontSize: 12.5, fontWeight: 500 }}>{a}</Typography>
         {b && <Typography noWrap sx={{ fontSize: 12, color: 'text.secondary' }}>{b}</Typography>}
         {w.klasseZeigen && s.klasse && <Typography noWrap sx={{ fontSize: 10.5, color: 'text.disabled' }}>{s.klasse}</Typography>}
       </Box>
@@ -159,11 +149,11 @@ export function SitzplanAnordnung({ d, schueler, kachel, w }: { d: SitzDaten | n
   for (let dz = 0; dz < plan.zeilen; dz++) for (let ds = 0; ds < plan.spalten; ds++) {
     const z = hinten ? plan.zeilen - dz : dz + 1, sp = hinten ? plan.spalten - ds : ds + 1;
     const key = `${z}-${sp}`, s = nachId.get(plan.belegung[key]);
-    zellen.push(s ? <Box key={key}>{kachel(s)}</Box> : ohne.has(key) ? <Box key={key} /> : <Box key={key} title={`Reihe ${z}, Platz ${sp} – frei`} sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 2, minHeight: 56 }} />);
+    zellen.push(s ? <Box key={key}>{kachel(s)}</Box> : ohne.has(key) ? <Box key={key} /> : <Box key={key} title={`Reihe ${z}, Platz ${sp} – frei`} sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 1.5, minHeight: 56 }} />);
   }
   const gesetzt = new Set(Object.values(plan.belegung));
   const rest = sortieren(schueler.filter(s => !gesetzt.has(s.id)), w);
-  const pult = <Box sx={{ mx: 'auto', my: 1, px: 3, py: 0.5, borderRadius: 999, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12, fontWeight: 600, width: 'fit-content', display: 'flex', gap: 0.75, alignItems: 'center' }}><CoPresentOutlined sx={{ fontSize: 16 }} />Lehrerpult</Box>;
+  const pult = <Box sx={{ mx: 'auto', my: 1, px: 3, py: 0.5, borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12, fontWeight: 600, width: 'fit-content', display: 'flex', gap: 0.75, alignItems: 'center' }}><CoPresentOutlined sx={{ fontSize: 16 }} />Lehrerpult</Box>;
   return (
     <Box>
       <Box sx={{ overflowX: 'auto' }}>
@@ -361,7 +351,7 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
     zellen.push(
       <Box key={k} data-platz={k} onClick={() => (!s || tische) && platzKlick(k)} role={!s ? 'button' : undefined} tabIndex={!s ? 0 : undefined}
         aria-label={`Reihe ${z}, Platz ${sp}${ohne ? ': kein Tisch' : s ? '' : ': frei'}`}
-        sx={{ position: 'relative', minHeight: 64, borderRadius: 2, p: 0.5, display: 'flex', alignItems: 'stretch',
+        sx={{ position: 'relative', minHeight: 64, borderRadius: 1.5, p: 0.5, display: 'flex', alignItems: 'stretch',
           border: ohne ? '1px dashed transparent' : `1px ${s ? 'solid' : 'dashed'} ${ziel === k ? t.palette.primary.main : t.palette.divider}`,
           bgcolor: ohne ? (tische ? alpha(t.palette.text.primary, 0.04) : 'transparent') : ziel === k ? alpha(t.palette.primary.main, 0.08) : s ? alpha(t.palette.primary.main, 0.03) : 'background.paper',
           cursor: tische || (!s && gewaehlt !== null) ? 'pointer' : 'default' }}>
@@ -378,7 +368,7 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
       </Box>,
     );
   }
-  const pult = <Box sx={{ mx: 'auto', my: 1.5, px: 4, py: 0.75, borderRadius: 999, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12.5, fontWeight: 600, width: 'fit-content', display: 'flex', gap: 0.75, alignItems: 'center' }}><CoPresentOutlined sx={{ fontSize: 18 }} />Lehrerpult</Box>;
+  const pult = <Box sx={{ mx: 'auto', my: 1.5, px: 4, py: 0.75, borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12.5, fontWeight: 600, width: 'fit-content', display: 'flex', gap: 0.75, alignItems: 'center' }}><CoPresentOutlined sx={{ fontSize: 18 }} />Lehrerpult</Box>;
   const zahl = (n: 'zeilen' | 'spalten', text: string) => (
     <Stack direction="row" alignItems="center" gap={0.5}>
       <Typography variant="body2" color="text.secondary">{text}</Typography>
@@ -399,12 +389,12 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
           <ToggleButton value="vorne">Pult oben</ToggleButton><ToggleButton value="hinten">Pult unten</ToggleButton>
         </ToggleButtonGroup>
         <Box sx={{ flex: 1 }} />
-        <Tooltip title="Plätze ohne Tisch festlegen (Gänge, Lücken)"><Button size="small" variant={tische ? 'contained' : 'outlined'} startIcon={<TableRestaurantOutlined />} onClick={() => { setTische(!tische); setGewaehlt(null); }} aria-pressed={tische}>Tische</Button></Tooltip>
-        <Button size="small" variant="outlined" startIcon={<ShuffleRounded />} onClick={() => { const l = schueler.slice(); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } fuellen(l); }}>Zufällig</Button>
-        <Button size="small" variant="outlined" startIcon={<SortByAlphaRounded />} onClick={() => fuellen(schueler)}>Alphabetisch</Button>
-        <Button size="small" variant="outlined" startIcon={<ClearAllRounded />} onClick={() => st.belegung.size && aendern(s => { s.belegung.clear(); return s; })}>Leeren</Button>
-        <Button size="small" variant="outlined" startIcon={<UndoRounded />} onClick={zurueck} disabled={!verlauf.length}>Rückgängig</Button>
-        <Button size="small" variant="outlined" startIcon={<PrintOutlined />} onClick={() => sitzplanPdf({ ...planDaten(), titel, vornameZuerst: w.namen === 'vorname', kurz: w.namen === 'kurz', klasseZeigen: w.klasseZeigen })}>Drucken</Button>
+        <Tooltip title="Plätze ohne Tisch festlegen (Gänge, Lücken)"><Button size="small" variant={tische ? 'contained' : 'outlined'} onClick={() => { setTische(!tische); setGewaehlt(null); }} aria-pressed={tische}>Tische</Button></Tooltip>
+        <Button size="small" variant="outlined" onClick={() => { const l = schueler.slice(); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } fuellen(l); }}>Zufällig</Button>
+        <Button size="small" variant="outlined" onClick={() => fuellen(schueler)}>Alphabetisch</Button>
+        <Button size="small" variant="outlined" onClick={() => st.belegung.size && aendern(s => { s.belegung.clear(); return s; })}>Leeren</Button>
+        <Button size="small" variant="outlined" onClick={zurueck} disabled={!verlauf.length}>Rückgängig</Button>
+        <Button size="small" variant="outlined" onClick={() => sitzplanPdf({ ...planDaten(), titel, vornameZuerst: w.namen === 'vorname', kurz: w.namen === 'kurz', klasseZeigen: w.klasseZeigen })}>Drucken</Button>
       </Stack>
       <Divider />
       <DialogContent sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1fr) 280px' }, gap: 2, p: 2, bgcolor: 'background.default' }}>
@@ -414,7 +404,7 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
           {hinten && pult}
         </Box>
         <Box data-ablage onClick={() => { if (gewaehlt !== null && platzVon(gewaehlt)) setzen(gewaehlt, null); }}
-          sx={{ border: 1, borderColor: ziel === 'ablage' ? 'primary.main' : 'divider', borderRadius: 2, p: 1.5, bgcolor: 'background.paper', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+          sx={{ border: 1, borderColor: ziel === 'ablage' ? 'primary.main' : 'divider', borderRadius: 1.5, p: 1.5, bgcolor: 'background.paper', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Typography variant="subtitle2">Nicht zugeordnet ({frei.length})</Typography>
           <SuchFeld wert={suche} onWert={setSuche} platzhalter="Name suchen …" breite="100%" />
           {!schueler.length ? <Typography variant="body2" color="text.secondary">Für diese Stunde ist keine Schülerliste vorhanden.</Typography>
@@ -440,7 +430,7 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
         <Button variant="outlined" onClick={schliessen}>Abbrechen</Button>
         <Button variant="contained" onClick={speichern} disabled={!erlaubt(ber)}>Speichern</Button>
       </DialogActions>
-      <Box ref={geist} sx={{ display: 'none', position: 'fixed', left: 0, top: 0, zIndex: 3000, pointerEvents: 'none', px: 1.5, py: 1, borderRadius: 2, bgcolor: 'background.paper', border: 1, borderColor: 'primary.main', boxShadow: '0 12px 32px rgba(21,26,33,.2)', fontSize: 13, fontWeight: 600 }} />
+      <Box ref={geist} sx={{ display: 'none', position: 'fixed', left: 0, top: 0, zIndex: 3000, pointerEvents: 'none', px: 1.5, py: 1, borderRadius: 1.5, bgcolor: 'background.paper', border: 1, borderColor: 'primary.main', boxShadow: '0 12px 32px rgba(21,26,33,.2)', fontSize: 13, fontWeight: 600 }} />
     </Dialog>
   );
 }

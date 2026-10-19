@@ -2,7 +2,6 @@
 // mit Filter (Zeitraum, Schüler*in, Kategorie) und „Neuer Eintrag“. Bearbeiten und Löschen unter Klassenbuch → Einträge.
 import { useState } from 'react';
 import { Box, Button, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import { datumDe, plusTage, wochentagKurz } from '../../../lib/datum';
 import { Plakette } from '../../Bausteine';
 import { kuerzel } from '../../plan/logik';
@@ -22,7 +21,7 @@ export function ReiterEintraege({ k, d, setDialog }: StundeProps) {
   const arten = [...new Set([...d.arten, ...d.vermerke.map(v => v.art)])];
   return (
     <Bereichskarte titel={`Klassenbucheinträge · ${kuerzel(k.klassen).join(', ')}`} zahl={liste.length || null}
-      rechts={<Button size="small" variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'eintrag', ids: schueler ? [schueler] : [] })}>Neuer Eintrag</Button>}>
+      rechts={<Button size="small" variant="contained" onClick={() => setDialog({ art: 'eintrag', ids: schueler ? [schueler] : [] })}>Neuer Eintrag</Button>}>
       <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center" sx={{ mb: 2 }}>
         <ToggleButtonGroup exclusive size="small" value={zeitraum} onChange={(_, v) => v && setZeitraum(v)} aria-label="Zeitraum">
           <ToggleButton value="tag">Dieser Tag</ToggleButton><ToggleButton value="woche">7 Tage</ToggleButton><ToggleButton value="alle">Schuljahr</ToggleButton>
