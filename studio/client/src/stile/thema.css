@@ -168,10 +168,3 @@
 
 /* Sichtbarer Fokus auch an eigenen Elementen (Tabellen, Raster, Karten) */
 :where(.ra-eintrag, .mu-stufe, [data-fokusring]):focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: 1px; }
-
-/* Moduswahl in der Kopfleiste: gewählter Modus in seiner Farbe, weiße Schrift */
-.edo-modus-tab[aria-selected="true"],
-.edo-modus-tab[aria-selected="true"]:hover,
-.edo-modus-tab[aria-selected="true"] .fui-Tab__content,
-.edo-modus-tab[aria-selected="true"] .fui-Tab__icon { color: #ffffff !important; }
-.edo-modus-tab[aria-selected="false"] .fui-Tab__icon { color: var(--colorNeutralForeground3); }

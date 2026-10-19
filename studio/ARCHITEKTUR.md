@@ -140,7 +140,7 @@ Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT
 | einstellungen | `GET/PUT/DELETE /api/einstellungen/{schluessel}` (JSON je Benutzer; Schlüssel mit Modulpräfix, z. B. `vertretung.ansicht`) |
 | dokumente | `GET /api/dokumente` (Liste + zuletzt), `POST /api/dokumente/neu`, `POST /api/dokumente/beispiel`, `POST /api/dokumente/hochladen` (multipart `datei`: .up oder BAL); je Dokument: `GET ""` (Stand), `GET /grunddaten` (Zeitraster, Perioden), `POST /speichern`, `GET /herunterladen`, `POST /schliessen`, `DELETE ""`, `PUT /name`, `POST /rueckgaengig`, `POST /wiederholen`, `POST /bal-import` (multipart + Optionen), `GET /ereignisse` |
 | stammdaten | `GET /stammdaten/{typ}`, `GET /stammdaten/{typ}/felder`, `POST /stammdaten/{typ}` (`{kurzname, werte}`), `PATCH /stammdaten/{typ}/{id}` (`{feld, wert}`), `POST /stammdaten/{typ}/aendern` (`{aenderungen:[{id,feld,wert}]}`), `POST /stammdaten/{typ}/loeschen` (`{ids}`), `DELETE /stammdaten/{typ}/{id}`, `GET /stammdaten/{typ}/verwendung?ids=`, `GET /elemente?typen=` (Auswahllisten `{k,l}`) |
-| unterricht | `GET /unterricht?sicht=klasse|lehrer|fach|alle&element=`, `GET /unterricht/spalten`, `POST /unterricht` (`{sicht, element, werte}`), `PATCH /unterricht/{uid}` (`{feld, wert, zeile}`), `POST /unterricht/{uid}/zeilen`, `DELETE /unterricht/{uid}/zeilen/{nr}`, `POST /unterricht/{uid}/kopieren`, `POST /unterricht/loeschen`, `GET /unterricht/online`, `GET/PUT /unterricht/{uid}/online` (siehe „Findet online statt“) |
+| unterricht | `GET /unterricht?sicht=klasse|lehrer|fach|alle&element=`, `GET /unterricht/spalten` (je Spalte `art`, `auswahl`), `POST /unterricht` (`{sicht, element, werte}`), `PATCH /unterricht/{uid}` (`{feld, wert, zeile}`), `POST /unterricht/aendern` (`{aenderungen:[{uid,feld,wert,zeile}]}`, eine Rückgängig-Stufe, alles oder nichts), `POST /unterricht/{uid}/zeilen`, `DELETE /unterricht/{uid}/zeilen/{nr}`, `POST /unterricht/{uid}/kopieren`, `POST /unterricht/loeschen`, `GET /unterricht/online`, `GET/PUT /unterricht/{uid}/online` (siehe „Findet online statt“) |
 | stundenplan | `GET /stundenplan/{typ}/{id}` (Zellen mit Einträgen je Kopplungszeile, nicht verplante Stunden), `GET /stundenplan/zielstatus?unterricht=&tag=&stunde=`, `POST /stundenplan/verplanen`, `POST /stundenplan/verschieben`, `POST /stundenplan/entplanen`, `POST /stundenplan/fixieren` |
 | vertretung | Datum: `GET /vertretung/start`, `GET …/blaettern?datum=&richtung=&woche=`, `POST …/aktualisieren` (Tageswechsel, nur bei Bedarf); `GET …/kalender?datum=`, `POST …/kalendertag`, `PUT …/tagestexte`; Absenzen: `GET …/absenzen?art=&von=&bis=`, `POST …/absenzen/speichern` (liefert `nachfragen`), `…/nachfrage`, `…/loeschen`, `…/teilen`, `…/kopieren`, `…/zusammenfassen`; Liste: `GET …/liste` (Spalten + Zeilen, Filter), `GET …/optionen?id=&spalte=`, `POST …/aendern` (`{ids, spalte, wert}`), `…/entfall`, `…/ohnelehrer`, `…/teilen`, `…/vormerken`, `…/zuruecksetzen`, `…/loeschen`, `…/kennzeichen`, `…/neuberechnen`, `…/veranstaltungslehrer`, `GET/POST …/automatik`; Vorschlag: `GET …/vorschlag/{id}`, `POST …/vorschlag/{id}/uebernehmen|betreuung|raum|vorziehen`; `POST …/sondereinsaetze`, `GET …/klassenkonferenz`, `GET …/bereitschaften`, `…/bereitschaftsplanung[/vorschlag|/{aktion}]`, `GET/POST …/vormerkungen[/{id}/verplanen|/loeschen]`; tagesaktuell: `GET …/plan/{typ}/{id}?datum=`, `GET …/plan/zielstatus`, `POST …/plan/verlegen|entfall|entfallrueckgaengig|vormerken|aenderungenrueckgaengig|text`; Online-Stunden: `GET/PUT …/online`, `GET …/online/stunde` (siehe „Findet online statt“); `GET/PUT …/einstellungen`. Rückfragen: Antwort `{ frage: { schluessel, text, optionen } }`, Wiederholung mit `antworten: { schluessel: index }` |
 | veranstaltungen | `GET /veranstaltungen?von=&bis=`, `POST /veranstaltungen[/{id}]` (`{feld, wert, datum}`), `GET …/gruppen?feld=&va=`, `POST …/schnell[/{id}]`, `…/{id}/ausstunden`, `…/ausstunde`, `…/{id}/kopieren`, `…/loeschen`, `GET …/schuelergruppen` |
@@ -218,12 +218,35 @@ Logik in `UntPlan.Core.Vertretungsplanung.OnlineUnterricht`):
   * `befehle.ts` – Befehle (`befehlRegistrieren`, `befehl`), **Befehlseinträge** (`{ id, text, gruppe, ansicht | arbeitsplatz |
     befehl | aktion, menue, braucht: 'dokument'|'schreiben'|'admin', taste, modus }`), Tastenkürzel, `seiteOeffnen`.
 * `src/komponenten/` – `AnsichtRahmen` (Seitenkopf bzw. Bereichskopf, Werkzeugleiste, Filter, Fuß), `Werkzeug`, `Feld`,
-  `ElementAuswahl`; `Tabelle` (TanStack: virtualisiert, Sortieren, Spalten ein-/ausblenden/verschieben/Breite – gespeichert
-  über `zustandSchluessel`, Inline-Bearbeitung mit Vorschlagslisten, Mehrfachauswahl, Neuanlage-Zeile, Kopieren/Einfügen,
-  Tastatur); `Raster`/`Stundenplanraster` (Stundenpläne mit Blöcken und Kopplungen; Ziehen mit dnd-kit: Verplanen,
+  `ElementAuswahl` (durchsuchbar); `SuchAuswahl` (`suchauswahl.tsx`, Fluent Combobox: Tippen filtert, nur Werte der
+  Liste, einzeln/mehrfach – auch `formular`-Felder `auswahl`, `element`, `elemente`; `datum` = Kalender, ISO);
+  `Tabelle` (siehe „Tabelle“ unten); `Raster`/`Stundenplanraster` (Stundenpläne mit Blöcken und Kopplungen; Ziehen mit dnd-kit: Verplanen,
   Verschieben, Tauschen, Zielstatus je Feld mit Begründung am Mauszeiger); `dialoge` (Promise-Dialoge `dialog`, `frage`,
   `meldung`, `formular`, `dialogZeigen` mit `StandardDialog`), `menue` (Kontextmenüs, `MenueKnopf`), `hinweise`
   (`hinweis`, `fehlerMelden`), `ziehen` (gemeinsamer `DndContext`, damit zwischen Bereichen gezogen werden kann).
+* **Tabelle** (`src/komponenten/tabelle/`: `Tabelle.tsx`, `vorschlagsliste.tsx` Auswahlliste, `pruefung.ts` Prüfung/TSV/Filter,
+  `mehrfach.tsx` Dialog „Mehrfach ändern“) – bedient sich wie eine Tabellenkalkulation:
+  * Spalten `{ schluessel, titel, art, auswahl, refTyp, editierbar(Fuer), pruefen, zusatzWerte, zulassen, vorschlaege, wert, farbe, klasse }`;
+    `art` steuert Editor und Prüfung: `Element`/`ElementListe` (Kombinationsfeld bzw. Mehrfachauswahl mit Haken aus
+    `optionen(s)`), `Auswahl` (`auswahl`), `Bool` (Haken), `Datum` (Kalender), `Ganzzahl`/`Dezimal`/`Bereich`/`Farbe`
+    (geprüft), `Text` (Vorschläge aus vorhandenen Werten). Der Server liefert die Metadaten mit (`felder` der Stammdaten,
+    `spalten` des Unterrichts mit `art`/`auswahl`) – die Oberfläche baut daraus die Editoren generisch.
+  * Unbekannte/ungültige Werte werden nie gespeichert (Editor bleibt offen mit Meldung; beim Einfügen Zelle `.fehler` mit
+    `title`); Serverfehler beim Speichern markieren die Zelle ebenso. `zusatzWerte` (z. B. `-`, `+` für Vertreter) und
+    `zulassen(teil)` (z. B. „Alle Klassen außer …“) erweitern die zulässigen Werte, `pruefen: false` schaltet die Prüfung ab.
+  * Auswahl: Zeilen (`gewaehlt`, Klick/Strg/Umschalt, Auswahlkästchen) und Zellbereich (`bereich`, Umschalt+Pfeil, Ziehen);
+    `beiAuswahl(zeilen, aktiv)`. Fußleiste `[data-tabelle-status]`: Anzahl, Summe, Filter, Kopieren/Mehrfach ändern/Löschen.
+  * Sammelaktionen (Einfügen, Ausfüllen Strg+D, Inhalte löschen, Mehrfach ändern) laufen über `aendernMehrere(liste)`
+    (eine Rückgängig-Stufe: `POST …/stammdaten/{typ}/aendern`, `POST …/unterricht/aendern`; Vertretungen je Spalte+Wert
+    `…/vertretung/aendern`), sonst nacheinander über `aendern`.
+  * Kontextmenü = Einträge des Moduls (`kontextmenue`) + Standardeinträge; Spaltenkopf-Menü (sortieren, filtern, nach
+    Wert filtern, ausblenden, Breite). Filterzeile (Strg+Umschalt+L); durch Bearbeitung herausfallende Zeilen bleiben bis
+    zur nächsten Filteränderung (`.tb-ausserfilter`).
+  * Spaltenzustand (Reihenfolge, Breite, Sichtbarkeit, Sortierung, `fz` Filterzeile, `mk` Auswahlkästchen, `kp` kompakt
+    24 px statt 28 px) in `localStorage` (`studio.<zustandSchluessel>` bzw. `studio.tabelle.<name>`) und mit
+    `zustandSchluessel` zusätzlich als Benutzereinstellung. Kopf `position: sticky`, Zeilen virtualisiert (TanStack Virtual).
+  * Test: `tests/smoke/tabellen.cjs`; Selektoren `.tb-zeile[data-r]`, `.tb-zelle[data-c]`, `.tb-editor`, `.vs-liste`,
+    `.tb-filterzeile input[data-filter=<spalte>]`, `.tb-mk`.
 * Ein Oberflächen-Modul (`src/module/<modul>/index.ts`) exportiert ein `StudioModul`:
   `{ id, ansichten, arbeitsplaetze, befehle, eintraege, start }`. Eigenes Steuerelement in der Kopfleiste:
   `kopfleistenElement({ id, komponente, ort: 'mitte' | 'rechts', modus })`. **Gleiche `id` ersetzt einen früheren Eintrag.**
@@ -234,7 +257,7 @@ Logik in `UntPlan.Core.Vertretungsplanung.OnlineUnterricht`):
   Präsenz schalten (Kontextmenü „Findet online statt …“, Kennzeichen an der Stunde, Ansicht „Online-Stunden“).
 * **Tests:** `OberflaecheTests` (Modulregister, Seitenpfade, Startseite ohne externe Quellen, `tsc --noEmit`) und die
   Playwright-Tests in `tests/smoke` (`smoke.cjs` Rundgang über alle Seiten, `planung.cjs`, `vertretung.cjs`, `druck.cjs`,
-  `smoke-austausch.cjs`). Selektoren: `[data-ansicht="<typ>"]`, `[data-tabelle="<name>"] .tb-zeile`, `.ra-eintrag`,
+  `smoke-austausch.cjs`, `tabellen.cjs`). Selektoren: `[data-ansicht="<typ>"]`, `[data-tabelle="<name>"] .tb-zeile`, `.ra-eintrag`,
   `[data-nav="<id>"]`; `window.studioTest.eintrag(id)` führt einen Befehlseintrag aus.
 
 ## Neues Modul anlegen (konfliktarm)

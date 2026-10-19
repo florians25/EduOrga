@@ -1,53 +1,47 @@
 // Kopfleiste: Navigation ein/aus, Wortmarke, Schuldatei (Menü), Modus Stundenplanung/Vertretungsplanung, Steuerelemente der
-// Module, Rückgängig/Wiederholen/Speichern mit Speicherstand, Suche (Strg+K) und Konto.
+// Module, Rückgängig/Wiederholen mit Speicherstand (gespeichert wird automatisch, siehe speicherstatus.tsx), Suche (Strg+K) und Konto.
 import {
   Avatar, Button, Menu, MenuDivider, MenuGroupHeader, MenuItem, MenuList, MenuPopover, MenuTrigger, Tab, TabList, Text, Tooltip,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import {
-  ArrowRedo20Regular, ArrowUndo20Regular, CalendarLtr20Regular, Checkmark16Regular, PeopleSwap20Regular, ChevronDown16Regular, Navigation20Regular, Search20Regular, Save20Regular,
+  ArrowRedo20Regular, ArrowUndo20Regular, Checkmark16Regular, ChevronDown16Regular, Navigation20Regular, Search20Regular,
 } from '@fluentui/react-icons';
 import { useEffect, useState } from 'react';
 import logo from '../../../../design/logo/edo-monogramm.svg';
 import { api } from '@/api/client';
 import type { DokumentListe } from '@/api/typen';
 import { befehl } from '@/kern/befehle';
-import { dokumentOeffnen, herunterladen, rueckgaengig, speichern, wiederholen } from '@/kern/dokument';
+import { dokumentOeffnen, herunterladen, rueckgaengig, sicherungspunkt, wiederholen } from '@/kern/dokument';
 import { an } from '@/kern/ereignisse';
-import { datumDe, initialen } from '@/kern/hilfen';
+import { initialen } from '@/kern/hilfen';
 import { modusSetzen, setzen, themaSetzen, useStudio, zustand, type Thema } from '@/kern/zustand';
 import { fehlerMelden } from '@/komponenten/hinweise';
 import { useKopfleistenElemente } from './kopfleiste-elemente';
 import { befehlssucheOeffnen } from './befehlssuche';
 import { UpdatePunkt, updateDialogZeigen, useVersionsstand } from './updatehinweis';
+import { Speicherstatus } from './speicherstatus';
 
 const useStile = makeStyles({
   leiste: {
     display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 12px 0 8px', flexShrink: 0,
-    backgroundColor: tokens.colorNeutralBackground1, borderBottom: '3px solid var(--edo-modus)', boxSizing: 'border-box',
-    boxShadow: '0 1px 0 var(--edo-kopflinie)', position: 'relative', zIndex: 2,
+    backgroundColor: tokens.colorNeutralBackground1, borderBottom: `1px solid ${tokens.colorNeutralStroke1}`, boxSizing: 'border-box',
+    position: 'relative', zIndex: 2,
   },
   marke: { display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '8px', userSelect: 'none' },
-  logo: { width: '28px', height: '28px', display: 'block' },
-  wortmarke: { fontSize: '17px', whiteSpace: 'nowrap', letterSpacing: '-0.005em', '@media (max-width: 1440px)': { display: 'none' } },
+  logo: { width: '24px', height: '24px', display: 'block' },
+  wortmarke: { fontSize: '15px', whiteSpace: 'nowrap', '@media (max-width: 1440px)': { display: 'none' } },
   wortmarkeFett: { fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
-  wortmarkeLeicht: { fontWeight: tokens.fontWeightRegular, color: tokens.colorNeutralForeground1 },
-  zusatz: { color: tokens.colorNeutralForeground3, marginLeft: '6px', fontWeight: tokens.fontWeightRegular },
-  modi: {
-    display: 'flex', gap: '2px', padding: '2px', borderRadius: tokens.borderRadiusMedium, border: `1px solid ${tokens.colorNeutralStroke1}`,
-    backgroundColor: tokens.colorNeutralBackground2, flexShrink: 0,
-  },
+  zusatz: { color: tokens.colorNeutralForeground3, marginLeft: '5px', fontWeight: tokens.fontWeightRegular },
+  modi: { flexShrink: 0, alignSelf: 'stretch', alignItems: 'stretch' },
   modusTab: {
-    borderRadius: '4px', padding: '4px 10px', minHeight: '28px',
+    padding: '0 12px', borderRadius: 0,
     '::after': { display: 'none' }, '::before': { display: 'none' },
-    ':hover': { backgroundColor: tokens.colorNeutralBackground1Hover },
-    '& .fui-Tab__content': { fontWeight: tokens.fontWeightMedium },
-    '@media (max-width: 1180px)': { '& .fui-Tab__content': { display: 'none' } },
+    '& .fui-Tab__content': { fontWeight: tokens.fontWeightRegular, color: tokens.colorNeutralForeground2 },
   },
   modusGewaehlt: {
-    backgroundColor: 'var(--edo-modus)', color: '#ffffff',
-    ':hover': { backgroundColor: 'var(--edo-modus)' },
-    ':active': { backgroundColor: 'var(--edo-modus)' },
+    boxShadow: 'inset 0 -3px 0 var(--edo-modus)',
+    '& .fui-Tab__content': { fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
   },
   trenner: { width: '1px', height: '24px', backgroundColor: tokens.colorNeutralStroke2, margin: '0 4px' },
   dokKnopf: { maxWidth: '280px', minWidth: '120px', flexShrink: 1, overflow: 'hidden', justifyContent: 'flex-start', padding: '2px 8px', height: '40px' },
@@ -117,7 +111,7 @@ function DokumentMenue() {
             <>
               <MenuGroupHeader>{d.name}</MenuGroupHeader>
               <MenuItem onClick={los(() => befehl('datei.backstage', { seite: 'info' }))}>Informationen</MenuItem>
-              <MenuItem disabled={!schreiben} secondaryContent="Strg+S" onClick={los(speichern)}>Speichern</MenuItem>
+              <MenuItem disabled={!schreiben} secondaryContent="Strg+S" onClick={los(sicherungspunkt)}>Sicherungspunkt anlegen</MenuItem>
               <MenuItem onClick={los(herunterladen)}>Herunterladen (.up)</MenuItem>
               <MenuItem onClick={los(() => befehl('datei.schliessen'))}>Schließen</MenuItem>
               <MenuDivider />
@@ -194,7 +188,6 @@ export function Kopfleiste() {
   const d = useStudio((x) => x.dokument);
   const modus = useStudio((x) => x.modus);
   const schreiben = useStudio((x) => !!x.benutzer?.darfSchreiben);
-  const verbunden = useStudio((x) => x.verbunden);
   const navEin = useStudio((x) => x.navEingeklappt);
   const elemente = useKopfleistenElemente((x) => x.liste);
   const meldung = useStatusMeldung();
@@ -202,15 +195,6 @@ export function Kopfleiste() {
   const los = (f: () => unknown) => () => { Promise.resolve().then(f).catch(fehlerMelden); };
   const sichtbar = (e: (typeof elemente)[number]) => (!e.modus || e.modus === modus) && (e.ohneDokument || !!d);
 
-  let statusText = '';
-  let statusKlasse = '';
-  if (meldung) { statusText = meldung.text; statusKlasse = s.meldung; }
-  else if (d) {
-    if (!verbunden) { statusText = 'Verbindung unterbrochen'; statusKlasse = s.getrennt; }
-    else if (d.geaendert) { statusText = 'Nicht gespeichert'; statusKlasse = s.ungespeichert; }
-    else statusText = d.gespeichert ? `Gespeichert ${datumDe(d.gespeichert).split(', ')[1] || ''}` : 'Gespeichert';
-  }
-  const statusTitel = d?.geaendert ? 'Änderungen werden automatisch gespeichert (Strg+S speichert sofort)' : d?.gespeichert ? `Gespeichert am ${datumDe(d.gespeichert)}` : '';
 
   return (
     <header className={s.leiste} role="banner">
@@ -219,14 +203,14 @@ export function Kopfleiste() {
       </Tooltip>
       <div className={s.marke}>
         <img src={logo} alt="" className={s.logo} />
-        <span className={s.wortmarke} aria-label="EduOrga Studio"><span className={s.wortmarkeFett}>Edu</span><span className={s.wortmarkeLeicht}>Orga</span><span className={s.zusatz}>Studio</span></span>
+        <span className={s.wortmarke}><span className={s.wortmarkeFett}>EduOrga</span><span className={s.zusatz}>Studio</span></span>
       </div>
       <span className={s.trenner} />
       <DokumentMenue />
       <span className={s.trenner} />
       <TabList size="small" selectedValue={modus} disabled={!d} onTabSelect={(_, x) => modusSetzen(x.value as typeof modus)} aria-label="Arbeitsmodus" className={s.modi}>
-        <Tab value="stundenplan" icon={<CalendarLtr20Regular />} title="Stundenplanung" className={mergeClasses('edo-modus-tab', s.modusTab, modus === 'stundenplan' && s.modusGewaehlt)}>Stundenplanung</Tab>
-        <Tab value="vertretung" icon={<PeopleSwap20Regular />} title="Vertretungsplanung" className={mergeClasses('edo-modus-tab', s.modusTab, modus === 'vertretung' && s.modusGewaehlt)}>Vertretungsplanung</Tab>
+        <Tab value="stundenplan" className={mergeClasses('edo-modus-tab', s.modusTab, modus === 'stundenplan' && s.modusGewaehlt)}>Stundenplanung</Tab>
+        <Tab value="vertretung" className={mergeClasses('edo-modus-tab', s.modusTab, modus === 'vertretung' && s.modusGewaehlt)}>Vertretungsplanung</Tab>
       </TabList>
       <div className={s.mitte}>
         {elemente.filter((e) => e.ort === 'mitte' && sichtbar(e)).map((e) => <e.komponente key={e.id} />)}
@@ -238,11 +222,8 @@ export function Kopfleiste() {
         <Tooltip content={d?.wiederholenText ? `Wiederholen: ${d.wiederholenText} (Strg+Y)` : 'Wiederholen (Strg+Y)'} relationship="label">
           <Button appearance="subtle" icon={<ArrowRedo20Regular />} disabled={!d?.kannWiederholen || !schreiben} onClick={los(wiederholen)} data-testid="wiederholen" />
         </Tooltip>
-        <Tooltip content="Speichern (Strg+S)" relationship="description">
-          <Button appearance="subtle" icon={<Save20Regular />} disabled={!d || !schreiben} onClick={los(speichern)} data-testid="speichern">Speichern</Button>
-        </Tooltip>
       </div>
-      {d ? <Text className={mergeClasses(s.status, statusKlasse)} title={statusTitel} data-testid="speicherstand">{statusText}</Text> : null}
+      {meldung && d ? <Text className={mergeClasses(s.status, s.meldung)} title={meldung.text} data-testid="statusmeldung">{meldung.text}</Text> : <Speicherstatus />}
       {elemente.filter((e) => e.ort === 'rechts' && sichtbar(e)).map((e) => <e.komponente key={e.id} />)}
       <Button className={s.suche} appearance="secondary" icon={<Search20Regular />} onClick={befehlssucheOeffnen} data-testid="suche" aria-label="Suchen (Strg+K)">
         <span className={s.sucheText}>Suchen<span className={s.taste}>{mac ? '⌘K' : 'Strg+K'}</span></span>

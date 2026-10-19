@@ -10,7 +10,7 @@ import { api } from '@/api/client';
 import type { DokumentListe, Rolle } from '@/api/typen';
 import type { AnsichtProps } from '@/kern/ansichten';
 import { useAnsicht } from '@/kern/ansichten';
-import { dokumentSchliessen, herunterladen, speichern, umbenennen } from '@/kern/dokument';
+import { dokumentSchliessen, herunterladen, sicherungspunkt, umbenennen } from '@/kern/dokument';
 import { dateiWaehlen, datumDe, groesse } from '@/kern/hilfen';
 import { useDaten } from '@/kern/laden';
 import { useStudio, zustand } from '@/kern/zustand';
@@ -83,13 +83,13 @@ function SeiteInfo({ wechseln }: { wechseln: (s: string) => void }) {
       <Eigenschaften zeilen={[
         ['Name', d.name], ['Schule', d.schulname], ['Schuljahr', d.schuljahr], ['Aktive Periode', `${d.periode}${d.periodeFixiert ? ' (fixiert)' : ''}`],
         ['Herkunft', d.herkunft], ['Angelegt von', d.besitzer],
-        ['Stand', d.geaendert ? 'Ungespeicherte Änderungen (werden automatisch gespeichert)' : d.gespeichert ? `Gespeichert am ${datumDe(d.gespeichert)}` : 'Gespeichert'],
+        ['Stand', d.speicherfehler ? `Nicht gespeichert: ${d.speicherfehler}` : d.geaendert ? 'Wird gespeichert …' : d.gespeichert ? `Alle Änderungen gespeichert (zuletzt am ${datumDe(d.gespeichert)})` : 'Gespeichert'],
         ['Inhalt', `${z.klassen} Klassen, ${z.lehrer} Lehrkräfte, ${z.raeume} Räume, ${z.faecher} Fächer`],
         ['Planung', `${z.unterrichte} Unterrichte, ${z.planstunden} verplante Stunden, ${z.nichtVerplant} nicht verplant`],
         ['Geöffnet', d.abonnenten === 1 ? 'In einer Sitzung' : `In ${d.abonnenten} Sitzungen`],
       ]} />
       <div className={s.knoepfe}>
-        <Button onClick={() => speichern().catch(fehlerMelden)} disabled={!zustand().benutzer?.darfSchreiben}>Speichern</Button>
+        <Button onClick={() => sicherungspunkt().catch(fehlerMelden)} disabled={!zustand().benutzer?.darfSchreiben} title="Gespeichert wird automatisch – legt zusätzlich eine ältere Fassung an (Strg+S)">Sicherungspunkt anlegen</Button>
         <Button onClick={() => herunterladen()}>Herunterladen (.up)</Button>
         <Button onClick={async () => { await dokumentSchliessen(); wechseln('oeffnen'); }}>Schließen</Button>
       </div>
@@ -167,7 +167,7 @@ function SeiteOeffnen() {
                 onClick={(e) => { if (!(e.target as HTMLElement).closest('button, a')) void oeffnen(d.id); }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) void oeffnen(d.id); }}>
                 <TableCell><div><Text weight="semibold">{d.name}</Text></div><div className={s.leise}>{zuletzt.includes(d.id) ? `${d.besitzer} · zuletzt verwendet` : d.besitzer}</div></TableCell>
-                <TableCell className="zahl">{datumDe(d.geaendert)}{d.ungespeichert ? <div className={s.leise}>Geöffnet, nicht gespeichert</div> : null}</TableCell>
+                <TableCell className="zahl">{datumDe(d.geaendert)}{d.ungespeichert ? <div className={s.leise}>Geöffnet, wird gespeichert</div> : null}</TableCell>
                 <TableCell className="zahl" style={{ textAlign: 'right' }}>{groesse(d.groesse)}</TableCell>
                 <TableCell className={s.leise}>{d.herkunft}</TableCell>
                 <TableCell>

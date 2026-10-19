@@ -7,22 +7,24 @@ import Foundation
 // MARK: - Darstellung der Stundenkarten
 
 /// Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten, Feld `darstellung` der Sitzung;
-/// Server: web/src/UntPlanWeb/Dienste/Kartendarstellung.cs). Fehlende Angaben erhalten ihren Standard.
+/// Server: web/src/UntPlanWeb/Dienste/Kartendarstellung.cs). Fehlende Angaben erhalten ihren Standard – den der Vorlage
+/// „Klassisch“ wie im Web: kompakte weiße Karten, Fachfarbe als 4-px-Balken links mit leichter Tönung, Fach fett oben
+/// links, Raum oben rechts als Text, Radius 2, Änderungen und Prüfungen in der hellen Statusfläche.
 struct Kartendarstellung: Decodable, Equatable, Sendable {
-    /// quadrat | balken-links | balken-oben | flaeche | keine
-    var fachfarbe = "quadrat"
+    /// balken-flaeche | balken-links | balken-oben | quadrat | flaeche | keine
+    var fachfarbe = "balken-flaeche"
     /// 2–6 px
-    var balkenbreite = 3
-    /// 6–30 % (nur bei Fachfarbe „flaeche“)
+    var balkenbreite = 4
+    /// 6–30 % (bei Fachfarbe „flaeche“ bzw. „balken-flaeche“)
     var deckkraft = 12
     /// neutral | weiss | getoent
-    var flaeche = "neutral"
+    var flaeche = "weiss"
     /// fein | kraeftig | keiner
     var rahmen = "fein"
     /// 0–8 px
-    var eckenradius = 3
+    var eckenradius = 2
     /// kompakt | normal | grosszuegig
-    var dichte = "normal"
+    var dichte = "kompakt"
     /// kuerzel | name
     var fach = "kuerzel"
     var raum = true
@@ -30,13 +32,16 @@ struct Kartendarstellung: Decodable, Equatable, Sendable {
     /// kuerzel | name
     var zeile2Text = "kuerzel"
     /// gefuellt | umrandet | text
-    var kuerzel = "umrandet"
+    var kuerzel = "text"
     var statuswoerter = false
+    /// Geänderte Stunden und Prüfungen zusätzlich in der hellen Statusfläche
+    var statusflaeche = true
 
     init() {}
 
     enum CodingKeys: String, CodingKey {
         case fachfarbe, balkenbreite, deckkraft, flaeche, rahmen, eckenradius, dichte, fach, raum, zeile2, zeile2Text, kuerzel, statuswoerter
+        case statusflaeche
     }
 
     init(from decoder: Decoder) throws {
@@ -55,13 +60,15 @@ struct Kartendarstellung: Decodable, Equatable, Sendable {
         zeile2Text = c.textOderNil(.zeile2Text) ?? standard.zeile2Text
         kuerzel = c.textOderNil(.kuerzel) ?? standard.kuerzel
         statuswoerter = c.wahr(.statuswoerter)
+        // wie im Web: fehlende Angaben (ältere Server) erhalten den Standard
+        statusflaeche = c.contains(.statusflaeche) ? c.wahr(.statusflaeche) : standard.statusflaeche
     }
 
-    /// Fachfarbe als Balken links (auch bei „balken-oben“ auf schmalen Karten), Quadrat, Fläche oder keine.
-    var balkenLinks: Bool { fachfarbe == "balken-links" }
+    /// Fachfarbe als Balken links (auch „balken-flaeche“), oben, als Quadrat, als Tönung oder keine.
+    var balkenLinks: Bool { fachfarbe == "balken-links" || fachfarbe == "balken-flaeche" }
     var balkenOben: Bool { fachfarbe == "balken-oben" }
     var quadrat: Bool { fachfarbe == "quadrat" }
-    var tonFlaeche: Bool { fachfarbe == "flaeche" }
+    var mitToenung: Bool { fachfarbe == "flaeche" || fachfarbe == "balken-flaeche" }
     var ohneFachfarbe: Bool { fachfarbe == "keine" }
     var kompakt: Bool { dichte == "kompakt" }
     var grosszuegig: Bool { dichte == "grosszuegig" }

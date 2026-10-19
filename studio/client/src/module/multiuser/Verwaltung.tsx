@@ -76,7 +76,6 @@ const useStile = makeStyles({
   personName: { fontWeight: tokens.fontWeightMedium, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   personLogin: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 },
   wirksam: { display: 'flex', flexDirection: 'column', gap: '3px' },
-  punkte: { display: 'flex', gap: '3px' },
   wirksamText: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground2, whiteSpace: 'nowrap' },
   tipTabelle: { borderCollapse: 'collapse', fontSize: tokens.fontSizeBase200, '& td': { padding: '1px 8px 1px 0' } },
   rechteRaster: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '2px 16px', marginTop: '4px' },
@@ -114,8 +113,8 @@ function StufenWahl({ g, bereich, text, stufen, aendern }: { g: Gruppe; bereich:
       <MenuPopover>
         <MenuList>
           {STUFEN.map((x) => (
-            <MenuItemRadio key={x.stufe} name="stufe" value={x.stufe} secondaryContent={undefined}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span className="mu-punkt" data-stufe={x.stufe} />{langText(x.stufe)}</span>
+            <MenuItemRadio key={x.stufe} name="stufe" value={x.stufe}>
+              {langText(x.stufe)}
             </MenuItemRadio>
           ))}
         </MenuList>
@@ -162,7 +161,6 @@ function WirksameRechte({ b, v }: { b: VBenutzer; v: Verwaltungsdaten }) {
   return (
     <Tooltip content={inhalt} relationship="description" withArrow>
       <div className={s.wirksam} tabIndex={0} data-fokusring aria-label={`Wirksame Rechte: ${herkunft}, ${teile.join(', ')}`}>
-        <div className={s.punkte}>{v.bereiche.map((x) => <span key={x.bereich} className="mu-punkt" data-stufe={st[x.bereich]} />)}</div>
         <span className={s.wirksamText}>{`${herkunft}${b.zuordnung?.nurLesen && b.rolle === 'Planer' ? ' · nur lesen' : ''} · ${teile.join(' · ')}`}</span>
       </div>
     </Tooltip>

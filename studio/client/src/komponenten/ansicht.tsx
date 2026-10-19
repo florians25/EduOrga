@@ -17,15 +17,11 @@ const useStile = makeStyles({
   rahmen: { display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, height: '100%', backgroundColor: tokens.colorNeutralBackground1, position: 'relative' },
   seitenkopf: {
     padding: '10px 20px 8px 20px', display: 'flex', alignItems: 'flex-end', gap: '16px', flexShrink: 0,
-    backgroundColor: 'var(--edo-kopf-flaeche)',
+    backgroundColor: 'var(--edo-kopf-flaeche)', borderTop: '2px solid var(--edo-modus)',
   },
   seitenkopfAllein: { borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
   kopfText: { display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, gap: '1px' },
-  pfad: {
-    display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--edo-modus)', fontSize: '11px', lineHeight: '16px',
-    fontWeight: tokens.fontWeightSemibold, letterSpacing: '0.05em', textTransform: 'uppercase',
-    '::before': { content: '""', width: '8px', height: '8px', borderRadius: '2px', backgroundColor: 'var(--edo-modus)', flexShrink: 0 },
-  },
+  pfad: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, lineHeight: '16px' },
   titel: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: tokens.colorNeutralForeground1 },
   bereichKopf: {
     display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 4px 4px 12px', minHeight: '36px', flexShrink: 0,

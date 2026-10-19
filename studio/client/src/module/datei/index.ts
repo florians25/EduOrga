@@ -2,7 +2,7 @@
 // BAL-Import in die geöffnete Datei, Schließen, Konto (Passwort, Abmelden), Benutzerverwaltung (Admin), Über.
 import { lazy } from 'react';
 import { seiteOeffnen } from '@/kern/befehle';
-import { dokumentSchliessen, herunterladen, speichern } from '@/kern/dokument';
+import { dokumentSchliessen, herunterladen, sicherungspunkt } from '@/kern/dokument';
 import type { StudioModul } from '../typen';
 import { hochladen } from './aktionen';
 
@@ -14,14 +14,14 @@ const modul: StudioModul = {
   befehle: {
     'datei.backstage': ({ seite }: { seite?: string } = {}) => seiteOeffnen('datei', { seite }),
     'datei.hochladen': () => hochladen(),
-    'datei.speichern': () => speichern(),
+    'datei.speichern': () => sicherungspunkt(),
     'datei.herunterladen': () => herunterladen(),
     'datei.schliessen': () => dokumentSchliessen(),
     'datei.balImport': () => seiteOeffnen('datei', { seite: 'import' }),
   },
   eintraege: [
     { id: 'eingabe.bal', text: 'BAL-Import', befehl: 'datei.balImport', braucht: 'schreiben', hinweis: 'Stundenplan aus einer WILLI2-BAL-Datei übernehmen' },
-    { id: 'datei.speichern', text: 'Speichern', befehl: 'datei.speichern', braucht: 'schreiben', gruppe: 'Schuldatei', taste: 'Strg+S' },
+    { id: 'datei.speichern', text: 'Sicherungspunkt anlegen', befehl: 'datei.speichern', braucht: 'schreiben', gruppe: 'Schuldatei', taste: 'Strg+S', hinweis: 'Gespeichert wird automatisch – legt zusätzlich eine ältere Fassung an' },
     { id: 'datei.herunterladen', text: 'Schuldatei herunterladen (.up)', befehl: 'datei.herunterladen', braucht: 'dokument', gruppe: 'Schuldatei' },
     { id: 'datei.oeffnen', text: 'Schuldatei öffnen', befehl: 'datei.backstage', args: { seite: 'oeffnen' }, gruppe: 'Schuldatei' },
     { id: 'datei.neu', text: 'Neue Schuldatei', befehl: 'datei.backstage', args: { seite: 'neu' }, braucht: 'schreiben', gruppe: 'Schuldatei' },

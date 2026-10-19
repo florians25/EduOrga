@@ -7,7 +7,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { einstellungLesen, einstellungSchreiben } from '@/api/client';
 import { adresseVon } from '@/kern/ansichten';
 import { navigationEinrichten, tasteBehandeln, tasteRegistrieren } from '@/kern/befehle';
-import { beiDokumentwechsel, rueckgaengig, speichern, wiederholen } from '@/kern/dokument';
+import { beiDokumentwechsel, rueckgaengig, sicherungspunkt, wiederholen } from '@/kern/dokument';
 import { entprellen } from '@/kern/hilfen';
 import { setzen, zustand } from '@/kern/zustand';
 import { DialogHost, dialogOffen } from '@/komponenten/dialoge';
@@ -64,7 +64,8 @@ export function Shell() {
       const k = e.key.toLowerCase();
       const los = (f: () => Promise<void>) => { e.preventDefault(); f().catch(fehlerMelden); };
       if (strg && !e.shiftKey && k === 'k') { e.preventDefault(); befehlssucheOeffnen(); return; }
-      if (strg && !e.shiftKey && k === 's') { if (zustand().dokument) los(speichern); else e.preventDefault(); return; }
+      // Strg+S: gespeichert wird ohnehin sofort – legt einen Sicherungspunkt an
+      if (strg && !e.shiftKey && k === 's') { if (zustand().dokument && zustand().benutzer?.darfSchreiben) los(sicherungspunkt); else e.preventDefault(); return; }
       if (!imFeld && strg && !e.shiftKey && k === 'z') { los(rueckgaengig); return; }
       if (!imFeld && strg && (k === 'y' || (e.shiftKey && k === 'z'))) { los(wiederholen); return; }
       if (!imFeld) tasteBehandeln(e);

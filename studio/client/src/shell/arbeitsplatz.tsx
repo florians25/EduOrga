@@ -20,14 +20,10 @@ import { seitenortSetzen } from './seitenort';
 const useStile = makeStyles({
   seite: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0, height: '100%' },
   kopf: {
-    padding: '10px 20px 8px 20px', flexShrink: 0, backgroundColor: 'var(--edo-kopf-flaeche)',
+    padding: '10px 20px 8px 20px', flexShrink: 0, backgroundColor: 'var(--edo-kopf-flaeche)', borderTop: '2px solid var(--edo-modus)',
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, display: 'flex', flexDirection: 'column', gap: '1px',
   },
-  pfad: {
-    display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--edo-modus)', fontSize: '11px', lineHeight: '16px',
-    fontWeight: tokens.fontWeightSemibold, letterSpacing: '0.05em', textTransform: 'uppercase',
-    '::before': { content: '""', width: '8px', height: '8px', borderRadius: '2px', backgroundColor: 'var(--edo-modus)', flexShrink: 0 },
-  },
+  pfad: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, lineHeight: '16px' },
   titel: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
   flaeche: { flex: 1, minHeight: 0, display: 'flex', padding: '10px 12px 12px 12px', backgroundColor: tokens.colorNeutralBackground2 },
   teilung: { display: 'flex', flex: 1, minWidth: 0, minHeight: 0 },

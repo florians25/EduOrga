@@ -13,12 +13,7 @@ import { useSeitenort } from './seitenort';
 
 const useStile = makeStyles({
   nav: { width: '252px' },
-  koerper: { paddingTop: '4px' },
-  modus: {
-    display: 'flex', alignItems: 'center', gap: '8px', margin: '10px 12px 6px 12px', padding: '6px 10px', borderRadius: '4px',
-    fontSize: '11px', fontWeight: tokens.fontWeightSemibold, letterSpacing: '0.06em', textTransform: 'uppercase',
-    color: '#ffffff', backgroundColor: 'rgba(255,255,255,0.08)', boxShadow: 'inset 3px 0 0 var(--edo-modus-navi)',
-  },
+  koerper: { paddingTop: '8px' },
   gruppe: { fontWeight: tokens.fontWeightMedium },
   unter: { fontSize: tokens.fontSizeBase300 },
   fuss: { borderTop: '1px solid var(--edo-navi-linie)', paddingTop: '4px' },
@@ -96,7 +91,6 @@ export function NavLeiste() {
         setGeschlossen(neu);
         void einstellungSchreiben('navigation.offen', Object.fromEntries(Object.entries(neu).map(([k, v]) => [k, !v])));
       }}>
-      <div className={s.modus} data-testid="modus-anzeige">{modus === 'vertretung' ? 'Vertretungsplanung' : 'Stundenplanung'}</div>
       <NavDrawerBody className={s.koerper}>
         <NavItem value={uebersicht.id} icon={<UebersichtSymbol />} disabled={!verfuegbar(uebersicht)} onClick={(e) => ausfuehren(uebersicht, e)} data-nav={uebersicht.id}>Übersicht</NavItem>
         {gruppen.map(({ g, eintraege }) => {

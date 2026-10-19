@@ -739,16 +739,46 @@ sich ab. Administratoren legen unter *Benutzerverwaltung* Konten an, setzen Pass
 
 ## 13. Bedienung von Tabellen
 
-- **Bearbeiten:** Enter oder F2 oder einfach lostippen. Tab bzw. Pfeiltasten wechseln die Zelle, Esc bricht ab.
-- **Leeren:** Entf. **Haken setzen:** Leertaste.
-- **Kopieren und Einfügen:** Strg+C / Strg+V, auch aus und in Tabellenkalkulationen. Mehrere Zeilen erhalten so in
-  einem Schritt neue Werte.
-- **Markieren:** Umschalt+Klick bzw. Umschalt+Pfeil markiert einen Bereich, Strg+Klick einzelne Zeilen, Strg+A alle.
-- **Auswahllisten:** In Feldern mit Elementen (z. B. Lehrkraft, Raum) können Sie tippen; gesucht wird im Kurz- und im
-  Langnamen.
-- **Spalten:** Rechtsklick auf die Kopfzeile blendet Spalten ein oder aus und passt Breiten an; *Standardspalten*
-  stellt die Vorgabe wieder her. Kopfzeile ziehen verschiebt Spalten, ein Klick sortiert. Breiten, Reihenfolge,
-  Sichtbarkeit und Sortierung werden je Benutzer gemerkt.
+Die Tabellen bedienen sich wie eine Tabellenkalkulation.
+
+- **Bearbeiten:** Enter oder F2 oder einfach lostippen. Enter speichert und geht eine Zeile weiter, Tab eine Zelle nach
+  rechts, Strg+Enter speichert und bleibt stehen, Esc bricht ab.
+- **Auswahllisten statt freier Eingabe:** Felder mit Lehrkraft, Klasse, Raum, Fach, Grund, Woche (A/B) usw. öffnen beim
+  Bearbeiten eine Auswahlliste (auch mit Alt+↓ oder F4 bzw. über den Pfeil im Feld). Tippen filtert die Liste: zuerst
+  Kurznamen, die so beginnen, dann Namen, die den Text enthalten. Enter oder Tab übernimmt den markierten Eintrag.
+  Werte, die es nicht gibt, werden **nicht gespeichert**: Das Feld bleibt offen, ist rot und nennt den Grund.
+- **Mehrere Werte** (z. B. Klassen „5a,5b“, Lehrkräfte einer Veranstaltung): In der Liste schaltet ein Klick einen
+  Wert hinzu oder weg (Haken), Enter ergänzt den angefangenen Wert, Tab speichert.
+- **Freitext** (z. B. Text, Block): Beim Tippen erscheinen Vorschläge aus den vorhandenen Werten der Spalte.
+- **Datum:** Datumsfelder haben einen Kalender (Symbol im Feld); eingetippt wird TT.MM.JJJJ.
+- **Markieren:** Klick markiert eine Zeile, Strg+Klick schaltet einzelne Zeilen dazu, Umschalt+Klick, Umschalt+Pfeil
+  oder Ziehen mit der Maus markiert einen Bereich, Strg+A alles, Esc hebt die Auswahl auf. Auf Wunsch zeigt die Tabelle
+  Auswahlkästchen vor jeder Zeile (Rechtsklick auf die Kopfzeile → *Auswahlkästchen*). Die Fußleiste der Tabelle zeigt,
+  wie viele Zeilen markiert sind (bei Zahlen auch Summe und Mittelwert), und bietet *Kopieren*, *Mehrfach ändern*,
+  *Löschen* und *Auswahl aufheben*.
+- **Mehrfach ändern:** setzt einen Wert in einer Spalte für alle markierten Zeilen in einem Schritt (eine
+  Rückgängig-Stufe); bei Listen wahlweise *Ersetzen*, *Hinzufügen* oder *Entfernen*. Aufruf über die Fußleiste, das
+  Kontextmenü oder das Menü einer Spalte.
+- **Kopieren und Einfügen:** Strg+C / Strg+V, auch aus und in Tabellenkalkulationen (Tabulator-Text). Eingefügt wird ab
+  der markierten Zelle; ein einzelner Wert füllt den ganzen markierten Bereich. Jede Zelle wird geprüft: ungültige
+  Werte werden nicht übernommen, sondern rot markiert (Hinweis beim Zeigen mit der Maus). Strg+D füllt nach unten aus.
+- **Leeren und Löschen:** Entf leert die Zelle; sind mehrere Zeilen markiert, löscht Entf die Zeilen (nach Rückfrage).
+  Rücktaste bzw. *Inhalte löschen* leert alle markierten Zellen. **Haken setzen:** Leertaste (auch für alle markierten Zeilen).
+- **Kontextmenü (Rechtsklick):** die Befehle des Bereichs (z. B. Kopplungszeile, Vertretung zuweisen) und darunter
+  Kopieren, Einfügen, Inhalte löschen, Mehrfach ändern, Nach unten ausfüllen, Alles markieren, Filterzeile, Spalten.
+- **Sortieren und Filtern:** Klick auf einen Spaltenkopf sortiert. Rechtsklick auf einen Spaltenkopf öffnet das Menü der
+  Spalte: sortieren, *Filtern …*, *Nach Wert filtern*, Breite anpassen, ausblenden. Die **Filterzeile** (Strg+Umschalt+L)
+  hat je Spalte ein Feld: Text = enthält, `=5a` genau, `!5a` enthält nicht, `>2` / `<2` Zahlen, `=` leer, `!=` nicht leer.
+  Zeilen, die durch eine Änderung nicht mehr zum Filter passen, bleiben bis zur nächsten Filteränderung (blass) stehen.
+  Ebenso bleibt in den Vertretungen mit *Nur offene* eine erledigte Vertretung sichtbar (blass mit ✓), bis Sie eine andere
+  Zeile wählen oder den Filter ändern.
+- **Spalten:** Rand des Spaltenkopfs ziehen ändert die Breite (Doppelklick passt sie an), Spaltenkopf ziehen verschiebt
+  die Spalte, *Standardspalten* stellt die Vorgabe wieder her, *Kompakte Zeilen* zeigt mehr Zeilen. Breiten,
+  Reihenfolge, Sichtbarkeit, Sortierung, Filterzeile und Auswahlkästchen werden je Tabelle gemerkt (im Browser und je
+  Benutzer).
+- **Neue Zeile:** Die letzte Zeile („Neu …“) legt beim Eintragen eines Wertes einen neuen Eintrag an.
+- **Dialoge:** Auch in Dialogen sind Auswahlfelder durchsuchbar (tippen filtert), Lehrkräfte, Klassen und Räume werden
+  aus der Liste gewählt, Datumsfelder haben einen Kalender.
 
 ---
 
@@ -774,4 +804,8 @@ sich ab. Administratoren legen unter *Benutzerverwaltung* Konten an, setzen Pass
 | Strg+A / Esc (Stundenplan) | alle Stunden markieren / Markierung aufheben |
 | Entf (Stammdaten) | markierte Einträge löschen |
 | Enter, F2 (Tabellen) | Zelle bearbeiten |
-| Strg+C / Strg+V (Tabellen) | kopieren / einfügen |
+| Alt+↓, F4 (Tabellen) | Auswahlliste öffnen |
+| Strg+C / Strg+V (Tabellen) | kopieren / einfügen (Bereich, ein Wert füllt die Auswahl) |
+| Umschalt+Pfeil, Strg+Klick, Strg+A (Tabellen) | Bereich, einzelne Zeilen, alles markieren |
+| Strg+D (Tabellen) | nach unten ausfüllen |
+| Strg+Umschalt+L (Tabellen) | Filterzeile ein/aus |
