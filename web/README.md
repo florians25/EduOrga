@@ -89,7 +89,7 @@ die Oberfläche selbst; `index.html`, `monitor.html` und `assets/` werden nicht 
   „B070 → C197“ (alter Wert durchgestrichen); Schilder für zusätzlichen Unterricht und Veranstaltungen.
 - **Raumbuchung am Desktop (UW-13, UW-14):** Raum-Chip mit *Ersetzen*/*Löschen*, Plus für einen weiteren Raum, Auswahlliste mit
   Suche, Abteilung und Raumarten. Eine reine Raumbuchung ist nur eine Raumänderung der Stunde: kein Vertretungstext, keine Zeile im
-  Vertretungsplan (Rückmeldung an UntPlan als `raumbuchung` mit `unterrichtNr` und der neuen Raumliste). Raumbuchungen ohne
+  Vertretungsplan (Rückmeldung an EduOrga Studio als `raumbuchung` mit `unterrichtNr` und der neuen Raumliste). Raumbuchungen ohne
   Unterricht (*Buchen*) erscheinen nur im Raumplan.
 - **Eigene Abwesenheit (UW-15):** Kacheln zeigen die vertretende Lehrkraft als Label (Hover „HOF → BEC“); eine wegfallende
   Bereitschaft ist Abwesenheit der eingeteilten Lehrkraft (Kachel gestrichelt, Kürzel durchgestrichen; im Vertretungsplan Art
@@ -103,7 +103,7 @@ die Oberfläche selbst; `index.html`, `monitor.html` und `assets/` werden nicht 
 - **Pausenaufsichten** im Menü *Ansicht*: *Normal*, *Halbiert* oder *Ausgeblendet*; neben einer durchgängigen Veranstaltung wird
   die Aufsicht automatisch schmal.
 - **Zusatzstunden ohne Lehrkraft:** „---“ in Kachel, Details, Startseite und Vertretungsplan – nur bei Zusatzstunden.
-- **Formatierte Tagestexte:** Liefert UntPlan zu einem Tagestext zusätzlich `textHtml`, zeigt *Heute* den formatierten Text. Erlaubt
+- **Formatierte Tagestexte:** Liefert EduOrga Studio zu einem Tagestext zusätzlich `textHtml`, zeigt *Heute* den formatierten Text. Erlaubt
   sind nur `b`, `i`, `u`, `br`, `p` und `span style="color:…"`; alles andere wird als Text angezeigt (Bereinigung auf dem Server,
   zusätzlich im Browser). Monitor und Vertretungsplan zeigen den Klartext.
 
@@ -121,16 +121,16 @@ Seiten (je nach Rolle):
 | **Klassenbuch** | Übersicht, Offene Stunden, Klassenbucheinträge, Hausaufgaben, Klassendienste, Abwesenheiten, Fehlzeiten, Befreiungen, Sitzplan, Berichte |
 | **Melden & Buchen** | Abwesenheit melden, Raum buchen, Prüfung eintragen, Meine Meldungen |
 | **Unterricht** (Schülerverwaltung) | *Schüler\*in*: anzeigen, anlegen, bearbeiten, löschen je nach Rolle (siehe Rollen) |
-| **Stammdaten** (Administration) | Klassen, Lehrkräfte, Fächer, Räume, Schüler*innen (aus UntPlan, lesend), Abwesenheitsgründe, Klassendienste, Versionen (Übertragungsverlauf) |
+| **Stammdaten** (Administration) | Klassen, Lehrkräfte, Fächer, Räume, Schüler*innen (aus EduOrga Studio, lesend), Abwesenheitsgründe, Klassendienste, Versionen (Übertragungsverlauf) |
 | **Administration** | Übersicht & Synchronisation, Nachrichten zum Tag, Freie Tage & Ferien, Import, Export, Aktive Benutzer, Rechte und Rollen, Benutzer, Zuordnungsgruppen, Rückmeldungen, Prüfungssperren, Ansichtseinstellungen, Darstellung der Stundenkarten, Monitore, Protokoll |
 
 Im Einzelnen:
 
 - **Stundenpläne** für Klassen, Lehrkräfte und Räume:
   - Zeitraster mit Beginn/Ende je Stunde und Jetzt-Linie; gleichzeitige Stunden stehen nebeneinander, Aufsichten als schmale Zeilen in den Pausen.
-  - Stundenkarten in hellen Statusfarben mit Akzentbalken in der Fachfarbe aus UntPlan: Änderungen grün (geänderte Werte als grüne
+  - Stundenkarten in hellen Statusfarben mit Akzentbalken in der Fachfarbe aus EduOrga Studio: Änderungen grün (geänderte Werte als grüne
     Kürzelbox), Entfall rot und durchgestrichen mit Dreieck, Prüfungen gelb mit Punkt, Veranstaltungen grün mit Plus.
-  - **Vertretung ohne Lehrkraft** („+++“ in UntPlan): Änderung, bei der die bisherige Lehrkraft durchgestrichen in der grünen Plakette steht
+  - **Vertretung ohne Lehrkraft** („+++“ in EduOrga Studio): Änderung, bei der die bisherige Lehrkraft durchgestrichen in der grünen Plakette steht
     (kein „???“ oder „+++“); ohne eigenen Vertretungstext steht „Vertr. o. Lehrkr.“ als Text.
   - **Kopplungen**: gekoppelte Stunden mit unterschiedlichen Fächern (z. B. KR und ER) oder in unterschiedlichen Räumen sind einzelne
     Karten. Nur bei gleichem Fach **und** gleichem Raum stehen mehrere Lehrkräfte bzw. Klassen auf einer Karte – dann mit allen
@@ -151,7 +151,7 @@ Im Einzelnen:
       Symbolen „auf Tagesbeginn“/„bis Stundenende“, Hausaufgaben (Liste mit *Neue Hausaufgabe*, Fälligkeit – vorbelegt eine Woche
       später –, Bemerkung, erledigt, löschen; fällige Hausaufgaben der Stunde), Klassenbucheinträge mit „+“, Klassendienste, *Ticket erstellen* (Mitteilung an Schulleitung/Administration); unten die Statusleiste „Lehrstoffeintragung vorhanden“ und
       „Abwesenheiten wurden kontrolliert“ (sonst Knöpfe *Lehrstoff eingeben*, *Abwesenheiten kontrollieren*).
-    - *Details*: nur „Findet online statt“ (nur Anzeige, festgelegt in UntPlan Studio), Lehrstoff und Vertretungstext (wenn vorhanden), Hausaufgaben, *Notizen für Schüler*innen*
+    - *Details*: nur „Findet online statt“ (nur Anzeige, festgelegt in EduOrga Studio), Lehrstoff und Vertretungstext (wenn vorhanden), Hausaufgaben, *Notizen für Schüler*innen*
       und *Notizen für Lehrkräfte*; unten *Vorherige Stunde*, *Nächste Stunde*, *Prüfung erstellen* (Prüfungssperren werden beachtet)
       und *Raum buchen*. Gebuchter Raum und Prüfung stehen sofort als Änderung bzw. Prüfung (gelb) im Plan.
   - Bereitschaften, Raumbuchungen und Vormerkungen; Druck, Telefonansicht mit Tagesauswahl.
@@ -163,12 +163,12 @@ Im Einzelnen:
 - **Nachrichten zum Tag** mit Betreff, Zeitraum oder Wochentag, Reihenfolge, Zielgruppen, Anzeige auf Startseite, Monitor und Mobil-App,
   „öffentlich“ für den RSS-Feed (`/rss/nachrichten.xml`, in den Ansichtseinstellungen einschaltbar).
 - **Melden & Buchen** (Lehrkräfte): Abwesenheit melden, freien Raum buchen (nur Räume „buchbar (Web)“), Prüfung eintragen. Die Meldungen gehen
-  als Rückmeldungen an UntPlan; Buchungen erscheinen sofort als „vorgemerkt“.
+  als Rückmeldungen an EduOrga Studio; Buchungen erscheinen sofort als „vorgemerkt“.
 - **Klassenbuch:**
   - Wochenübersicht je Klasse mit Lehrstoff, Hausaufgabe, Anwesenheitsprüfung und Fehlenden je Stunde, Vermerke je Tag.
   - **Offene Stunden:** eigene oder alle Stunden ohne Abwesenheitskontrolle bzw. Lehrstoff (Zeitraum wählbar), *Prüfen* und *Eingeben*
     öffnen die Stundendetails, Mitteilung an die ausgewählten Lehrkräfte, Bericht.
-  - Anwesenheit in den Stundendetails (alle anwesend vorbelegt, abwesend/verspätet). Dafür überträgt UntPlan die Schülerliste.
+  - Anwesenheit in den Stundendetails (alle anwesend vorbelegt, abwesend/verspätet). Dafür überträgt EduOrga Studio die Schülerliste.
   - **Abwesenheiten:** neu anlegen (mehrere Tage/Stunden, Grund), bearbeiten, löschen, zusammenfassen, entschuldigen, zuletzt verwendete
     Texte; Filter nach Zeitraum, Klasse, Grund und Status, CSV; Reiter *Meine Abwesenheiten*.
   - **Fehlzeiten:** Summen je Schüler (Stunden, Tage, entschuldigt, unentschuldigt, offen, Verspätungen), ganze Fehltage in einem Schritt.
@@ -178,12 +178,12 @@ Im Einzelnen:
   - **Klassenbucheinträge**, **Hausaufgaben** wie bisher; Klassenkonten zusätzlich mit Reiter *Lehrstoff*.
   - **Berichte:** 18 Berichte in Gruppen (Fehlzeiten, Abwesenheiten je Schüler/Klasse/Grund, Entschuldigungsschreiben, Lehrstoff,
     Hausaufgaben, Klassenbucheinträge, offene Stunden, Klassendienste, Befreiungen …) – Vorschau, Druck und CSV.
-- **Prüfungen:** Klausuren aus UntPlan und in UntPlanWeb vorgemerkte Prüfungen, Filter nach Zeitraum, Klasse und Lehrkraft, CSV.
+- **Prüfungen:** Klausuren aus EduOrga Studio und in EduOrga Web vorgemerkte Prüfungen, Filter nach Zeitraum, Klasse und Lehrkraft, CSV.
 - **Mitteilungen** zwischen Kollegium, Schulleitung und Klassen (Gruppen, Klassen, einzelne Benutzer, eigene Empfängerlisten),
   Entwürfe und Anhänge (bis 5 Dateien à 10 MB).
 - **Profil:** Name, E-Mail, Sprache, Benachrichtigungen, Passwort (Regeln aus *Rechte und Rollen*), Kalenderabo (iCal).
 - **Konto wechseln:** mehrere Konten auf einem Gerät merken und ohne neue Anmeldung wechseln (Gerätecookie, 30 Tage).
-- **Administration:** Verbindung mit UntPlan (Schul-ID, API-Schlüssel), Paket-Upload, Benutzer (auch automatisch aus den Stammdaten,
+- **Administration:** Verbindung mit EduOrga Studio (Schul-ID, API-Schlüssel), Paket-Upload, Benutzer (auch automatisch aus den Stammdaten,
   CSV-Import mit Vorschau, Sammelaktionen Sperren/Entsperren/Löschen/E-Mail übernehmen/Inaktive sperren, Bericht), Freie Tage,
   Export (CSV), Aktive Benutzer, Passwortregeln, Zuordnung der Schulleitung, Prüfungssperren, Ansichtseinstellungen (Startseite, RSS),
   Rückmeldungen, Nachrichten zum Tag, Monitore, Protokoll.
@@ -197,7 +197,7 @@ Im Einzelnen:
   offene Vertretung, Prüfung, Termin, Online, Doppelstunde). *Speichern* gilt für alle Konten (mit der nächsten Sitzung),
   *Zurücksetzen auf Standard* stellt die Grunddarstellung wieder her. Die Statusdarstellung (Linie, Schraffur, Durchstreichung,
   Kürzel-Plaketten) bleibt in jeder Variante erhalten; ausgeblendete Räume bzw. Lehrkräfte erscheinen bei Änderungen trotzdem.
-- **Mobil-App:** [UntPlanMobile](../mobile/README.md) bringt Stundenplan, Klassenbuch und Mitteilungen als installierbare
+- **Mobil-App:** [EduOrga Mobile](../mobile/README.md) bringt Stundenplan, Klassenbuch und Mitteilungen als installierbare
   App aufs Telefon. Sie läuft als eigener Container (Port 8081) und holt ihre Daten über die JSON-API von UntPlanWeb.
 
 | Mein Stundenplan | Übersicht | Lehrerplan |
@@ -248,7 +248,7 @@ Zusätzlich zu Plan, Vertretungen, Klassenbuch und Mitteilungen (alle unter `/ap
 | `/api/app/admin/gruende`, `…/dienstarten`, `…/freietage`, `…/einstellungen/{bereich}`, `…/benutzer/aktion`, `…/import/pruefen`, `…/import/uebernehmen` | Verwaltung (Administration) |
 | `GET /rss/nachrichten.xml` | öffentliche Nachrichten zum Tag als RSS (wenn eingeschaltet) |
 
-### Buchungsmodul (Menü „Buchen“)
+### Buchungsmodul (Menü „Termine & Buchungen“)
 
 Räume, mobile Ressourcen und Aktivitäten buchen – einmalig oder periodisch (Zeitraum, Wiederholung jede/jede 2./… Woche bzw. täglich,
 Wochentage, Stunden oder Uhrzeit; unterrichtsfreie Tage werden übersprungen). Mehrere Termine bilden eine Serie (`serie`), die einzeln oder
@@ -256,7 +256,7 @@ gesamt (kommende Termine) storniert werden kann. Die Konfliktprüfung auf dem Se
 mit Raum, Raumsperren, Vormerkungen und andere Buchungen; bei Ressourcen die Anzahl. „Maximale Belegung %“ zeigt auch Räume, die an höchstens
 so vielen Terminen belegt sind – für diese Termine wird ein anderer Raum gewählt. Lehrkräfte, Schulleitung und Administration buchen; die
 Administration sieht alle Buchungen, storniert jede und pflegt Ressourcenarten, Ressourcen (fest in einem Raum oder mobil mit Anzahl) und
-Raumdaten (Kapazität, Gebäude, Abteilung, Raumgruppe; Raumart und „buchbar“ kommen aus UntPlan). Unter *Unterricht → Neuer Unterricht*
+Raumdaten (Kapazität, Gebäude, Abteilung, Raumgruppe; Raumart und „buchbar“ kommen aus EduOrga Studio). Unter *Unterricht → Neuer Unterricht*
 wird Unterricht angelegt, dessen Stunden als *Zusätzliche Stunden* gebucht werden.
 
 | Aufruf (`/api/app/buchen…`) | Zweck |
@@ -269,16 +269,16 @@ wird Unterricht angelegt, dessen Stunden als *Zusätzliche Stunden* gebucht werd
 | `GET /liste?von=&bis=&alle=`, `GET /{id}`, `DELETE /{id}?serie=true` | Meine Buchungen (alle: nur Administration), Storno |
 | `GET /raumuebersicht?datum=&tage=&raumart=&gebaeude=&abteilung=&raumgruppe=&kapazitaet=&ressourcenarten=` | Belegung der buchbaren Räume je Stunde (`art`: unterricht, klausur, termin, buchung, vorgemerkt, gesperrt) |
 | `GET /ressourcenuebersicht?datum=&arten=1,2` | Woche – Ressourcen |
-| `GET/POST /unterricht`, `DELETE /unterricht/{id}` | in UntPlanWeb angelegter Unterricht |
+| `GET/POST /unterricht`, `DELETE /unterricht/{id}` | in EduOrga Web angelegter Unterricht |
 | `/ressourcenarten`, `/ressourcen` (GET, POST, PUT/DELETE `/{id}`), `PUT /raumdaten/{raum}` | Verwaltung (Administration) |
 
 In den Plänen (Web, `GET /api/app/plan`, `/tag`, `/heute`, `/start` für PWA und iOS) erscheinen Buchungen als zusätzliche Karte ohne
 Vertretung: Raumbuchung und zusätzliche Stunde mit `status: "buchung"`, `art: "Raumbuchung"` bzw. `"Raumbuchung (Zusätzlicher Unterricht)"`,
 Aktivität mit `status: "veranstaltung"`, `art: "Veranstaltung (Aktivität)"`; `text` = Titel, dazu `fach`, `klassen`, `lehrer`, `raeume`,
 `unterricht` und `vertretung` sind `null`. Reine Ressourcenbuchungen erscheinen nur in den Buchungslisten. Nie entsteht ein Vertretungstext
-oder Vertretungsstatus. An UntPlan gehen Raumbuchungen, Aktivitäten und zusätzliche Stunden über die bestehende Rückmeldungs-Schnittstelle
+oder Vertretungsstatus. An EduOrga Studio gehen Raumbuchungen, Aktivitäten und zusätzliche Stunden über die bestehende Rückmeldungs-Schnittstelle
 als Typ `raumbuchung` (Id `buchung-{Nummer}`, mit `fach` bei Aktivitäten); nach dem Quittieren gelten sie als übertragen und werden nicht
-doppelt angezeigt, sobald UntPlan sie im Paket zurückliefert.
+doppelt angezeigt, sobald EduOrga Studio sie im Paket zurückliefert.
 
 ## Installation mit Docker
 
@@ -292,7 +292,7 @@ docker compose up -d
 ```
 
 Dann im Browser `http://<server>:8080` öffnen. Der Einrichtungsassistent legt die Schule und das Administrationskonto an und zeigt
-**Schul-ID** und **API-Schlüssel** für UntPlan an.
+**Schul-ID** und **API-Schlüssel** für EduOrga Studio an.
 
 **Mit HTTPS** (empfohlen, automatisches Let's-Encrypt-Zertifikat über Caddy). Voraussetzung: ein DNS-Name, der auf den Server zeigt, und die Ports 80 und 443:
 
@@ -320,9 +320,9 @@ Anmeldung als `admin` / `admin12345`. Die Beispielwoche wird automatisch auf die
 | `UNTPLANWEB_ZEITZONE` | Zeitzone der Schule | `Europe/Berlin` |
 | `UNTPLANWEB_ADMIN_PASSWORT` | legt beim ersten Start den Benutzer `admin` an (statt Assistent) | – |
 | `UNTPLANWEB_SCHUL_ID` | feste Schul-ID | aus dem Schulnamen |
-| `UNTPLANWEB_API_SCHLUESSEL` | fester API-Schlüssel für UntPlan | wird erzeugt |
+| `UNTPLANWEB_API_SCHLUESSEL` | fester API-Schlüssel für EduOrga Studio | wird erzeugt |
 | `UNTPLANWEB_DEMO` | `1` = Beispieldaten laden, solange noch keine Daten vorhanden sind | – |
-| `UNTPLANWEB_MOBILE_URL` | erlaubte Adresse(n) von UntPlanMobile für die Einmalanmeldung (kommagetrennt) | gleicher Rechnername |
+| `UNTPLANWEB_MOBILE_URL` | erlaubte Adresse(n) von EduOrga Mobile für die Einmalanmeldung (kommagetrennt) | gleicher Rechnername |
 | `UNTPLANWEB_DB` | Datenbank: `sqlite` oder `mysql` (auch `mariadb`) | `sqlite` |
 | `UNTPLANWEB_DB_CONNECTION` | Verbindung zu MySQL/MariaDB: `Server=…;Port=3306;Database=…;User ID=…;Password=…` oder `mysql://benutzer:passwort@host:3306/datenbank` | – |
 | `UNTPLANWEB_DB_WARTEN` | Sekunden, die beim Start auf den Datenbankserver gewartet wird | `60` |
@@ -331,13 +331,13 @@ Anmeldung als `admin` / `admin12345`. Die Beispielwoche wird automatisch auf die
 | `UNTPLANWEB_UPDATE_TAG_PRAEFIX` | nur Tags mit diesem Präfix berücksichtigen (z. B. `web-v`) | – |
 | `UNTPLANWEB_UPDATE_MODUS` | „Update installieren“: `aus`, `watchtower` oder `datei` | `watchtower`, wenn eine Watchtower-Adresse gesetzt ist, sonst `aus` |
 | `UNTPLANWEB_UPDATE_WATCHTOWER_URL`, `…_TOKEN` | HTTP-API von Watchtower, z. B. `http://watchtower:8080/v1/update`, und deren Token | – |
-| `UNTPLANWEB_MOBILE_INTERN_URL` | Adresse von UntPlanMobile aus Sicht des Servers (Versionsanzeige in der Administration), z. B. `http://untplanmobile:8081` | – |
+| `UNTPLANWEB_MOBILE_INTERN_URL` | Adresse von EduOrga Mobile aus Sicht des Servers (Versionsanzeige in der Administration), z. B. `http://untplanmobile:8081` | – |
 
 ### Installation mit MariaDB/MySQL
 
 SQLite bleibt der Standard (und wird für die Tests verwendet). Für produktive Installationen mit vielen Benutzer*innen oder
-vorhandener Datenbank-Infrastruktur kann UntPlanWeb MariaDB (ab 10.5) oder MySQL (ab 8.0.13) verwenden. Die Datei
-`docker-compose.mariadb.yml` startet UntPlanWeb zusammen mit einem MariaDB-Dienst (eigenes Volume, Healthcheck; UntPlanWeb
+vorhandener Datenbank-Infrastruktur kann EduOrga Web MariaDB (ab 10.5) oder MySQL (ab 8.0.13) verwenden. Die Datei
+`docker-compose.mariadb.yml` startet EduOrga Web zusammen mit einem MariaDB-Dienst (eigenes Volume, Healthcheck; EduOrga Web
 startet erst, wenn die Datenbank bereit ist):
 
 ```bash
@@ -356,7 +356,7 @@ Tipp: `export COMPOSE_FILE=docker-compose.mariadb.yml` (oder `COMPOSE_FILE=…` 
 
 Eigener Datenbankserver statt Container: `UNTPLANWEB_DB=mysql` und
 `UNTPLANWEB_DB_CONNECTION=Server=db.schule.local;Database=untplanweb;User ID=untplanweb;Password=…` setzen. Die Datenbank
-muss existieren (Zeichensatz `utf8mb4`), der Benutzer braucht alle Rechte darauf. Tabellen und Migrationen legt UntPlanWeb beim
+muss existieren (Zeichensatz `utf8mb4`), der Benutzer braucht alle Rechte darauf. Tabellen und Migrationen legt EduOrga Web beim
 Start selbst an. Ein Passwort mit `;` in Anführungszeichen setzen (`Password="a;b"`) oder die Form `mysql://…` mit URL-Kodierung
 verwenden. Das Volume `/data` bleibt auch mit MySQL nötig (Schlüssel der Anmelde-Cookies, Sicherungen, Update-Anforderungen).
 
@@ -383,7 +383,7 @@ docker compose pull && docker compose up -d
 SQLite per `--sichern`, MariaDB bzw. MySQL im Container (Dienst `mariadb`, `mysql` oder `db`, sonst `DB_DIENST=…`) per `mariadb-dump`/`mysqldump`
 als `./sicherungen/untplanweb-…sql.gz` und einen externen Datenbankserver mit `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_BENUTZER`, `DB_PASSWORT`.
 Danach lädt es die neuen Images und startet neu; die letzten 14 Sicherungen bleiben (`SICHERUNGEN_BEHALTEN`).
-Für UntPlanMobile gibt es dasselbe als `mobile/update.sh` (aktualisiert UntPlanWeb und UntPlanMobile gemeinsam).
+Für EduOrga Mobile gibt es dasselbe als `mobile/update.sh` (aktualisiert EduOrga Web und EduOrga Mobile gemeinsam).
 
 **Updateanzeige:** Unter *Administration → Übersicht* zeigt die Karte *Version & Updates* die laufende Version, die Datenbank
 mit Schemastand und die neueste veröffentlichte Version (Standard: GitHub-Releases von florians25/UntPlanNext – Entwürfe und
@@ -401,7 +401,7 @@ Vorher wird SQLite automatisch nach `/data/sicherungen` gesichert (die letzten f
 
 - **Watchtower** (empfohlen): Die Compose-Dateien enthalten einen optionalen Dienst `watchtower` (Profil `updater`), der nur auf
   Anforderung und nur Container mit dem Label `com.centurylinklabs.watchtower.enable=true` aktualisiert (nicht MariaDB):
-  `docker compose --profile updater up -d`, Token in `.env` (`WATCHTOWER_TOKEN`), bei UntPlanWeb
+  `docker compose --profile updater up -d`, Token in `.env` (`WATCHTOWER_TOKEN`), bei EduOrga Web
   `UNTPLANWEB_UPDATE_WATCHTOWER_URL=http://watchtower:8080/v1/update` und `UNTPLANWEB_UPDATE_WATCHTOWER_TOKEN` setzen
   (in `docker-compose.mariadb.yml` bereits vorbelegt). Watchtower erhält Zugriff auf den Docker-Socket – nur mit eigenem, langem Token betreiben.
 - **Anforderungsdatei** (`UNTPLANWEB_UPDATE_MODUS=datei`, ohne Docker-Socket im Container): Der Knopf legt
@@ -444,20 +444,20 @@ docker compose -f docker-compose.mariadb.yml up -d
 ```
 
 Ohne Docker: `UNTPLANWEB_DATEN=/pfad/zum/datenordner UNTPLANWEB_DB_CONNECTION="Server=…;Database=…;User ID=…;Password=…" dotnet UntPlanWeb.dll --migrieren-nach-mysql [--quelle datei.db] [--ueberschreiben]`,
-danach UntPlanWeb mit `UNTPLANWEB_DB=mysql` starten. Der Ablauf ist durch Tests abgedeckt (`DatenbankTests`: SQLite → SQLite immer,
+danach EduOrga Web mit `UNTPLANWEB_DB=mysql` starten. Der Ablauf ist durch Tests abgedeckt (`DatenbankTests`: SQLite → SQLite immer,
 SQLite → MySQL/MariaDB über den Kommandozeilenbefehl, wenn `UNTPLANWEB_TEST_MYSQL` gesetzt ist).
 
 **Sicherung des Volumes** (z. B. zusätzlich): `docker run --rm -v untplanweb_untplanweb-daten:/data -v $PWD:/b alpine tar czf /b/untplanweb.tgz /data`.
 
-## UntPlan verbinden
+## EduOrga Studio verbinden
 
-1. In UntPlanWeb: *Administration → Übersicht & Synchronisation*. Dort stehen Adresse, Schul-ID und API-Schlüssel (der Schlüssel kann neu erzeugt werden).
-2. In UntPlan: *UntPlanWeb → Einstellungen*. Adresse, Schul-ID und API-Schlüssel eintragen und *Verbindung prüfen*.
-3. *Exportieren* überträgt Stammdaten, Unterricht und Vertretungen. Das geht auch über den UntPlanWeb-Knopf in der Schnellzugriffsleiste.
-4. *Importieren* holt Abwesenheiten, Buchungen und Klausuren ab. Übernommene Meldungen werden in UntPlanWeb als „übernommen“ angezeigt.
+1. In EduOrga Web: *Verwaltung → System & Datenabgleich*. Dort stehen Adresse, Schul-ID und API-Schlüssel (der Schlüssel kann neu erzeugt werden).
+2. In EduOrga Studio: *EduOrga Web → Einstellungen*. Adresse, Schul-ID und API-Schlüssel eintragen und *Verbindung prüfen*.
+3. *Exportieren* überträgt Stammdaten, Unterricht und Vertretungen. Das geht auch über den EduOrga-Web-Knopf in der Schnellzugriffsleiste.
+4. *Importieren* holt Abwesenheiten, Buchungen und Klausuren ab. Übernommene Meldungen werden in EduOrga Web als „übernommen“ angezeigt.
 5. *Administration → Benutzer → Konten aus Stammdaten* legt Konten für alle Lehrkräfte und Klassen an.
 
-Die Schnittstelle (Schema `untplanweb/1`) ist in `src/UntPlan.Web.Contracts` definiert und wird von UntPlan und UntPlanWeb gemeinsam verwendet:
+Die Schnittstelle (Schema `untplanweb/1`) ist in `src/UntPlan.Web.Contracts` definiert und wird von EduOrga Studio und EduOrga Web gemeinsam verwendet:
 
 | Aufruf | Zweck |
 |---|---|
@@ -465,8 +465,8 @@ Die Schnittstelle (Schema `untplanweb/1`) ist in `src/UntPlan.Web.Contracts` def
 | `PUT /api/v1/schulen/{schulId}/untplanweb` | Paket übertragen (ganz oder nur einzelne Teile); veraltete Revision → 409 |
 | `GET /api/v1/schulen/{schulId}/rueckmeldungen` | offene Rückmeldungen abholen |
 | `POST /api/v1/schulen/{schulId}/rueckmeldungen/quittieren` | übernommene Rückmeldungen quittieren (`["id", …]`) |
-| `GET /api/v1/schulen/{schulId}/fehlzeiten?ab=…&bis=…` | im Klassenbuch erfasste Schüler-Fehlzeiten (UntPlan: Import „Studenten*“) |
-| `GET /api/v1/schulen/{schulId}/klassenbuch?ab=…&bis=…` | Lehrstoff und Hausaufgaben je Stunde, ohne interne Notizen (UntPlan: Import „Kurse“) |
+| `GET /api/v1/schulen/{schulId}/fehlzeiten?ab=…&bis=…` | im Klassenbuch erfasste Schüler-Fehlzeiten (EduOrga Studio: Import „Studenten*“) |
+| `GET /api/v1/schulen/{schulId}/klassenbuch?ab=…&bis=…` | Lehrstoff und Hausaufgaben je Stunde, ohne interne Notizen (EduOrga Studio: Import „Kurse“) |
 
 Die Authentifizierung erfolgt über `Authorization: Bearer <API-Schlüssel>`.
 
@@ -474,8 +474,8 @@ Die Authentifizierung erfolgt über `Authorization: Bearer <API-Schlüssel>`.
 
 **Schülerverwaltung:** Administration und Schulleitung sehen und bearbeiten alle Schüler\*innen (auch Klassenwechsel und Löschen),
 die Klassenleitung bearbeitet die Schüler\*innen ihrer Klassen (inkl. Geburtsdatum, E-Mail, Bemerkung; kein Klassenwechsel, kein Löschen),
-andere Lehrkräfte sehen nur Name, Klasse und Geschlecht, Klassenkonten haben keinen Zugriff. Die Liste aus UntPlan bleibt Grundlage;
-Änderungen und neu angelegte Schüler\*innen (Ids ab 10.000.000) werden in UntPlanWeb gespeichert und überstehen neue Übertragungen.
+andere Lehrkräfte sehen nur Name, Klasse und Geschlecht, Klassenkonten haben keinen Zugriff. Die Liste aus EduOrga Studio bleibt Grundlage;
+Änderungen und neu angelegte Schüler\*innen (Ids ab 10.000.000) werden in EduOrga Web gespeichert und überstehen neue Übertragungen.
 
 | Rolle | sieht | darf |
 |---|---|---|
@@ -489,8 +489,8 @@ vor bzw. nach der aktuellen Woche der Stundenplan angezeigt wird (*Wochen zurüc
 0 = nur die aktuelle Woche, n = n Kalenderwochen (Wochenbeginn Montag). Die Administration ist nie beschränkt. Der Server setzt das
 Fenster für Web und Apps durch: `GET /api/app/plan` liefert außerhalb `gesperrt: true`, `sperrhinweis` und leere `karten`
 (ebenso `GET /api/app/tag`); `GET /api/app/sitzung` enthält `benutzer.planWochenZurueck` und `benutzer.planWochenVor` (Zahl oder `null`).
-Klassenbucheinträge (Lehrstoff, Notizen) sind zeitlich nicht begrenzt. „Findet online statt“ kommt mit dem Paket aus UntPlan
-Studio (je Unterricht bzw. Stunde) und lässt sich in UntPlan Web nicht mehr einstellen; `PUT /api/app/klassenbuch/online` und die
+Klassenbucheinträge (Lehrstoff, Notizen) sind zeitlich nicht begrenzt. „Findet online statt“ kommt mit dem Paket aus EduOrga Studio
+(je Unterricht bzw. Stunde) und lässt sich in EduOrga Web nicht mehr einstellen; `PUT /api/app/klassenbuch/online` und die
 Felder `online`/`onlineLink` von `PUT /api/app/klassenbuch/stunde` werden für ältere Apps angenommen, aber ignoriert.
 
 ## Sicherheit
@@ -534,7 +534,7 @@ Aufbau:
 - `src/UntPlanWeb/wwwroot`: feste Dateien (Schriften, Bilder, Manifest, `neuigkeiten.json`) plus Build-Ausgabe der Oberfläche.
 - `demo/beispiel-paket.json`: Beispielpaket, mit UntPlan.Core aus der Beispielschule erzeugt.
 
-UntPlanWeb gehört nicht zur Desktop-Solution `UntPlan.sln` und hat einen eigenen CI-Ablauf (`.github/workflows/web.yml`).
+EduOrga Web gehört nicht zur Desktop-Solution `UntPlan.sln` und hat einen eigenen CI-Ablauf (`.github/workflows/web.yml`).
 Dieser testet und veröffentlicht das Image `ghcr.io/florians25/untplannext-web`. Der Desktop-Build bleibt davon unberührt.
 
 > Hinweis: Ein neues GHCR-Paket ist zunächst privat. Damit `docker pull` ohne Anmeldung funktioniert, stellen Sie es einmalig auf öffentlich:
