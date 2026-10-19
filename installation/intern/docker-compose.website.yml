@@ -1,0 +1,48 @@
+# EduOrga Website – interne Installation, NUR für den Betreiber des Projekts (nicht Teil der Installation an Schulen).
+#
+# Eigenes Compose-Projekt „untplannext-website“, unabhängig von einer EduOrga-Installation auf demselben Server.
+#   untplannext-website        Produkt-Website (statische Seiten, kleiner Server, keine Datenbank, kein Volume)
+#   untplannext-website-caddy  optional (Profil „https“), HTTPS mit automatischem Zertifikat für die eigene Domain
+#
+# Einrichtung und Update: ./install-intern.sh bzw. ./install-intern.sh --update (siehe README.md in diesem Ordner).
+# Von Hand:               docker compose -f docker-compose.website.yml pull && docker compose -f docker-compose.website.yml up -d
+
+name: untplannext-website
+
+services:
+  untplannext-website:
+    image: ghcr.io/florians25/untplannext-website:${WEBSITE_VERSION:-latest}
+    container_name: untplannext-website
+    restart: unless-stopped
+    ports:
+      - "${WEBSITE_BIND:-0.0.0.0}:${WEBSITE_PORT:-8290}:8080"
+    environment:
+      TZ: ${ZEITZONE:-Europe/Berlin}
+      # Angaben für Impressum und Datenschutz (leer = deutlich markierte Platzhalter auf der Website)
+      WEBSITE_BETREIBER_NAME: ${WEBSITE_BETREIBER_NAME:-}
+      WEBSITE_BETREIBER_ANSCHRIFT: ${WEBSITE_BETREIBER_ANSCHRIFT:-}
+      WEBSITE_BETREIBER_EMAIL: ${WEBSITE_BETREIBER_EMAIL:-}
+    security_opt:
+      - no-new-privileges:true
+
+  untplannext-website-caddy:
+    image: caddy:2
+    container_name: untplannext-website-caddy
+    profiles: ["https"]
+    restart: unless-stopped
+    depends_on:
+      - untplannext-website
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - untplannext-website-caddy-daten:/data
+      - untplannext-website-caddy-config:/config
+
+volumes:
+  untplannext-website-caddy-daten:
+    name: untplannext-website-caddy-daten
+  untplannext-website-caddy-config:
+    name: untplannext-website-caddy-config

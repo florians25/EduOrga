@@ -1579,3 +1579,9 @@ code {
     transition: none !important;
   }
 }
+
+/* Textseiten (Hinweis, Impressum, Datenschutz) linksbündig zur Kopfzeile, Zeilenlänge begrenzt */
+.breite.textseite {
+  max-width: calc(820px + 2 * var(--w-rand));
+  margin-left: max(0px, calc((100% - var(--w-breite) - 2 * var(--w-rand)) / 2));
+}
