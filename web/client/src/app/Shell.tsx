@@ -146,9 +146,10 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
     setOffen(offen === g.id ? null : g.id);
   };
 
-  // Seitenleiste in Petrol: Text weiß, aktive Zeile in der Akzentfarbe mit heller Markierung links, Unterpunkte eingerückt
-  const zeile = { color: 'nav.text', borderRadius: '6px', '&:hover': { bgcolor: 'nav.hover' }, '&.Mui-focusVisible': { outline: '2px solid', outlineColor: 'nav.marke', outlineOffset: -2 } };
-  const aktivZeile = { bgcolor: 'nav.aktiv', color: '#fff', boxShadow: 'inset 3px 0 0 var(--mui-palette-nav-marke)', '&:hover': { bgcolor: 'nav.aktiv' } };
+  // Seitenleiste in Petrol, klassisch: Zeilen über die volle Breite, eckig; aktive Zeile leicht getönt mit 3-px-Kante links und Schrift 600,
+  // Überfahren nur sehr leicht getönt; Unterpunkte als eingerückter Text
+  const zeile = { color: 'nav.text', borderRadius: 0, '&:hover': { bgcolor: 'nav.hover' }, '&.Mui-focusVisible': { outline: '2px solid', outlineColor: 'nav.marke', outlineOffset: -2 } };
+  const aktivZeile = { bgcolor: 'nav.aktiv', color: 'nav.text', fontWeight: 600, boxShadow: 'inset 3px 0 0 var(--mui-palette-nav-marke)', '&:hover': { bgcolor: 'nav.aktiv' } };
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', color: 'nav.text' }}>
       <Stack direction="row" alignItems="center" sx={{ px: schmal ? 0 : 2, pt: 1.75, pb: 1.25, minHeight: 60, justifyContent: schmal ? 'center' : 'space-between' }}>
@@ -176,14 +177,14 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
         </Box>
       )}
       <Divider sx={{ borderColor: 'nav.linie' }} />
-      <List component="div" sx={{ flex: 1, overflowY: 'auto', px: schmal ? 1 : 1, py: 1, scrollbarColor: 'rgba(255,255,255,.25) transparent' }} aria-label="Navigation">
+      <List component="div" sx={{ flex: 1, overflowY: 'auto', px: 0, py: 0.75, scrollbarColor: 'rgba(255,255,255,.25) transparent' }} aria-label="Navigation">
         {m.map(g => {
           const an = aktiv(g);
           const knopf = (
             <ListItemButton key={g.id} onClick={ev => kopfKlick(g, ev)} selected={an && (!g.unter || schmal)} aria-current={g.nav === nav ? 'page' : undefined}
               aria-expanded={g.unter && !schmal ? offen === g.id : undefined}
-              sx={{ ...zeile, mb: 0.25, minHeight: 38, px: schmal ? 0 : 1.25, justifyContent: schmal ? 'center' : 'flex-start',
-                '&.Mui-selected': aktivZeile, '& .MuiListItemIcon-root': { color: an ? '#fff' : 'nav.text2' } }}>
+              sx={{ ...zeile, minHeight: 38, px: schmal ? 0 : 2, justifyContent: schmal ? 'center' : 'flex-start',
+                '&.Mui-selected': aktivZeile, '& .MuiListItemIcon-root': { color: an ? 'nav.text' : 'nav.text2' } }}>
               <ListItemIcon sx={{ minWidth: schmal ? 0 : 34, justifyContent: 'center', '& svg': { fontSize: 20 } }}>
                 {g.zaehler && schmal ? <Badge variant="dot" color="error" invisible={!ungelesen}>{g.icon}</Badge>
                   : updatePunkt(g) ? <Badge variant="dot" color="warning" title="Neue Version verfügbar">{g.icon}</Badge> : g.icon}
@@ -199,10 +200,10 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
               {schmal ? <Tooltip title={g.text} placement="right">{knopf}</Tooltip> : knopf}
               {g.unter && !schmal && (
                 <Collapse in={offen === g.id} timeout={160} unmountOnExit>
-                  <List component="div" disablePadding sx={{ ml: 2.6, pl: 1, borderLeft: '1px solid', borderColor: 'nav.linie', mb: 0.75 }}>
+                  <List component="div" disablePadding sx={{ pb: 0.5 }}>
                     {g.unter.filter(p => !p.verborgen).map(p => (
                       <ListItemButton key={p.nav} component="a" href={p.href} onClick={schliessen} selected={p.nav === nav} aria-current={p.nav === nav ? 'page' : undefined}
-                        sx={{ ...zeile, color: 'nav.text2', minHeight: 30, py: 0.25, px: 1.25, mb: '1px', '&:hover': { bgcolor: 'nav.hover', color: 'nav.text' }, '&.Mui-selected': { ...aktivZeile, fontWeight: 600 } }}>
+                        sx={{ ...zeile, color: 'nav.text2', minHeight: 30, py: 0.25, pl: 6.25, pr: 2, '&:hover': { bgcolor: 'nav.hover', color: 'nav.text' }, '&.Mui-selected': aktivZeile }}>
                         <ListItemText primary={p.text} slotProps={{ primary: { sx: { fontSize: 13.5, fontWeight: 'inherit' } } }} />
                         {zahl(p.zaehler)}
                         {update && p.nav === 'admin-sync' && <Badge badgeContent="Update" color="warning" sx={{ mr: 2.5, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} />}
@@ -225,7 +226,7 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
       <Divider sx={{ borderColor: 'nav.linie' }} />
       <Konto schmal={schmal} abmelden={abmelden} neuStarten={neuStarten} schliessen={schliessen} />
       {!mobil && (
-        <ListItemButton onClick={() => einklappen(!schmal)} sx={{ ...zeile, color: 'nav.text2', flex: 'none', mx: 1, mb: 1, minHeight: 32, justifyContent: schmal ? 'center' : 'flex-start' }}
+        <ListItemButton onClick={() => einklappen(!schmal)} sx={{ ...zeile, color: 'nav.text2', flex: 'none', px: schmal ? 0 : 2, minHeight: 34, justifyContent: schmal ? 'center' : 'flex-start' }}
           aria-label="Navigation ein- oder ausklappen" title="Navigation ein- oder ausklappen">
           {schmal ? <KeyboardDoubleArrowRightRounded fontSize="small" /> : <><KeyboardDoubleArrowLeftRounded fontSize="small" /><Typography variant="caption" sx={{ ml: 1 }}>Navigation einklappen</Typography></>}
         </ListItemButton>
@@ -257,9 +258,9 @@ function Konto({ schmal, abmelden, neuStarten, schliessen }: { schmal: boolean; 
   const modi: ['light' | 'dark' | 'system', string, ReactNode][] = [['light', 'Hell', <LightModeOutlined fontSize="small" />], ['dark', 'Dunkel', <DarkModeOutlined fontSize="small" />], ['system', 'Wie das System', <ContrastOutlined fontSize="small" />]];
   return (
     <>
-      <ListItemButton onClick={e => oeffnen(e.currentTarget)} aria-haspopup="menu" sx={{ flex: 'none', m: 1, mb: 0.5, py: 0.75, px: schmal ? 0 : 1.25, justifyContent: schmal ? 'center' : 'flex-start', gap: 1.25, borderRadius: '6px', color: 'nav.text', '&:hover': { bgcolor: 'nav.hover' } }}>
+      <ListItemButton onClick={e => oeffnen(e.currentTarget)} aria-haspopup="menu" sx={{ flex: 'none', py: 1, px: schmal ? 0 : 2, justifyContent: schmal ? 'center' : 'flex-start', gap: 1.25, borderRadius: 0, color: 'nav.text', '&:hover': { bgcolor: 'nav.hover' } }}>
         <Badge variant="dot" color="error" invisible={!ic.ungelesen || !schmal} overlap="circular">
-          <Avatar sx={{ width: 32, height: 32, fontSize: 13, fontWeight: 600, bgcolor: 'nav.aktiv', color: '#fff', border: '1px solid', borderColor: 'nav.linie' }}>{initialen(ich.anzeigename || ich.login)}</Avatar>
+          <Avatar sx={{ width: 32, height: 32, fontSize: 13, fontWeight: 600, bgcolor: 'secondary.main', color: '#fff', border: '1px solid', borderColor: 'nav.linie' }}>{initialen(ich.anzeigename || ich.login)}</Avatar>
         </Badge>
         {!schmal && (
           <Box sx={{ minWidth: 0, flex: 1 }}>

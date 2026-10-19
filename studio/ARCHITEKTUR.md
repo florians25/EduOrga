@@ -41,11 +41,13 @@ studio/
     package.json, vite.config.ts, tsconfig.json, index.html, public/ (Symbol, Schriften)
     PORTIERUNG.md              Stand der Portierung je Modul der früheren Oberfläche
     src/main.tsx, App.tsx      Start: Thema, Anmeldung → Shell → Module → letztes Dokument; Router
-    src/theme.ts               Marken-Rampe Marine (#234f96) → hell/dunkel, IBM Plex Sans
+    src/theme.ts               Marken-Rampe Petrol (EduOrga, #164C55/#28747A) → hell/dunkel, IBM Plex Sans
+    src/stile/thema.css        Studio-Ergänzungen zu design/tokens.css: dunkle Rollen, Modusfarbe (data-modus), Seitenleiste
     src/api/                   client.ts (typisierte REST-Aufrufe), typen.ts
     src/kern/                  befehle, ansichten, modulsystem, ereignisse, zustand, dokument, laden, hilfen
     src/komponenten/           ansicht (Seitenrahmen, Werkzeuge), tabelle/ (TanStack), raster/ (Stundenpläne, dnd-kit),
-                               dialoge, menue, hinweise, ziehen (Drag & Drop), symbole
+                               dialoge, menue, hinweise, ziehen (Drag & Drop), symbole, marke (Monogramm, Slogan,
+                               rechtlicher Hinweis), eingaben (DatumFeld: Fluent DatePicker deutsch)
     src/shell/                 Kopfleiste, Seitenleiste (Fluent Nav), Befehlssuche, Seite, Arbeitsplatz, Anmeldung, Startseite
     src/module/register.ts     ◀ EINZIGE Registrierungsstelle der Oberflächen-Module
     src/module/<modul>/        index.ts (Ansichten, Befehle, Einträge) + Ansichten (*.tsx), optional <modul>.css
@@ -217,8 +219,10 @@ Logik in `UntPlan.Core.Vertretungsplanung.OnlineUnterricht`):
   (`npm run build` = `tsc --noEmit` + `vite build`). Das Ziel `StudioOberflaecheBauen` in `UntPlanStudio.csproj` baut die
   Oberfläche bei `dotnet build/publish/test` automatisch, sobald sich `studio/client` geändert hat (Node.js 22 nötig;
   abschaltbar mit `-p:StudioOberflaecheBauen=false`, das Dockerfile baut sie in einer eigenen Node-Stufe). Keine CDN-Quellen.
-* **Gestaltung** nach `design/DESIGN.md`: Fluent-Thema aus der Marken-Rampe Marine `#234f96` (`src/theme.ts`,
-  `createLightTheme/createDarkTheme`), Schrift IBM Plex Sans (lokal, `public/fonts`), Grundwerte aus `design/tokens.css`
+* **Gestaltung** nach `design/MARKE.md` und `design/DESIGN.md`: Fluent-Thema aus der Petrol-Rampe (`src/theme.ts`,
+  `createLightTheme/createDarkTheme` mit eigenen Neutraltönen für Kontrast), Modusfarbe über `data-modus` am `<html>`
+  (`--edo-modus`, Stundenplanung Petrol, Vertretungsplanung Indigo; `src/stile/thema.css`), Thema vor dem ersten Zeichnen aus
+  `public/thema.js` (CSP: kein Inline-Skript), Schrift IBM Plex Sans (lokal, `public/fonts`), Grundwerte aus `design/tokens.css`
   (Fachfarben, Statusflächen `--up-…`). Hell/Dunkel/Automatisch im Kontomenü. Keine Verläufe, keine Symbolkacheln.
 * **Shell:** Kopfleiste (Schuldatei-Menü, Modus Stundenplanung/Vertretungsplanung, Steuerelemente der Module wie Planungsdatum
   und aktive Benutzer, im Vertretungsmodus „An Web senden“ (`module/untplanweb/Senden.tsx`, Befehl `untplanweb.vertretungenSenden`,

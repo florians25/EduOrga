@@ -20,8 +20,8 @@ export const farben = {
 
 export interface StatusFarbe { main: string; flaeche: string }
 /** Flächen des Stundenplans: Kachel, kräftigere Kachellinie, Kopf/Zeitspalte, Überfahren, Pausenband. */
-export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string }
-/** Seitenleiste in der Primärfarbe: Fläche, Text, Zweittext, Überfahren, aktive Zeile, Markierung der aktiven Zeile, Linie. */
+export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string; raster: string }
+/** Seitenleiste in der Primärfarbe: Fläche, Text, Zweittext, Überfahren, aktive Zeile (leichte Tönung), 3-px-Kante der aktiven Zeile, Linie. */
 export interface NavFarben { flaeche: string; text: string; text2: string; hover: string; aktiv: string; marke: string; linie: string }
 /** Kopfbänder von Abschnitten und Tabellen (leichte Petrol-Tönung, damit nicht alles weiß ist). */
 export interface FlaechenFarben { kopf: string; band: string; rand: string }
@@ -72,8 +72,8 @@ export const theme = createTheme({
         divider: S[200],
         action: { hover: alpha(M[700], 0.06), selected: M[50] },
         status: status(false),
-        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', kopf: '#eef3f4', hover: '#e8eff0', pause: '#e9eef0' },
-        nav: { flaeche: M[700], text: '#ffffff', text2: 'rgba(255,255,255,.68)', hover: 'rgba(255,255,255,.08)', aktiv: M[500], marke: farben.logoAkzent, linie: 'rgba(255,255,255,.14)' },
+        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2' },
+        nav: { flaeche: M[700], text: '#ffffff', text2: 'rgba(255,255,255,.72)', hover: 'rgba(255,255,255,.05)', aktiv: 'rgba(255,255,255,.12)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.14)' },
         flaechen: { kopf: '#eef3f4', band: '#f2f6f7', rand: '#cfd9dc' },
         marine: farben.marine,
       },
@@ -91,8 +91,8 @@ export const theme = createTheme({
         divider: '#26393e',
         action: { hover: 'rgba(255,255,255,.06)', selected: '#173a3f' },
         status: status(true),
-        kachel: { flaeche: '#172a2e', rand: '#33494e', kopf: '#152629', hover: '#1d3337', pause: '#0f1e21' },
-        nav: { flaeche: '#0c2a2f', text: '#e8f1f2', text2: 'rgba(232,241,242,.62)', hover: 'rgba(255,255,255,.06)', aktiv: '#1d5f66', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.10)' },
+        kachel: { flaeche: '#172a2e', rand: '#33494e', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20' },
+        nav: { flaeche: '#0c2a2f', text: '#e8f1f2', text2: 'rgba(232,241,242,.66)', hover: 'rgba(255,255,255,.04)', aktiv: 'rgba(255,255,255,.09)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.10)' },
         flaechen: { kopf: '#172a2e', band: '#152629', rand: '#2c4146' },
         marine: farben.marine,
       },
@@ -203,7 +203,14 @@ export const theme = createTheme({
     },
     MuiTableRow: { styleOverrides: { root: ({ theme }) => ({ '&.MuiTableRow-hover:hover': { background: theme.vars.palette.action.hover } }) } },
     MuiTab: { styleOverrides: { root: { textTransform: 'none', fontWeight: 500, minHeight: 44 } } },
-    MuiListItemButton: { styleOverrides: { root: { borderRadius: 6 } } },
+    // Listen klassisch: volle Zeilenbreite, eckig; Auswahl = leichte Tönung, 3-px-Kante links in der Akzentfarbe, Schrift 600
+    MuiListItemButton: {
+      styleOverrides: {
+        root: ({ theme }) => ({ borderRadius: 0, '&.Mui-selected': { background: theme.vars.palette.action.selected, boxShadow: `inset 3px 0 0 ${theme.vars.palette.secondary.main}`, fontWeight: 600 },
+          '&.Mui-selected:hover': { background: theme.vars.palette.action.selected } }),
+      },
+    },
+    MuiMenuItem: { styleOverrides: { root: ({ theme }) => ({ '&.Mui-selected': { boxShadow: `inset 3px 0 0 ${theme.vars.palette.secondary.main}` } }) } },
     MuiMenu: { styleOverrides: { paper: { borderRadius: 6 } } },
     MuiAlert: { styleOverrides: { root: { borderRadius: 6 } } },
     MuiBadge: { styleOverrides: { badge: { fontWeight: 600 } } },

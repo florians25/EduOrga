@@ -64,8 +64,11 @@ public sealed class Arbeitsdokument
 
     /// <param name="speichern">schreibt Beschreibung und Inhalt der Schuldatei (*.up) in die Datenbank (Dokument, Inhalt, Sicherungspunkt, Benutzer)</param>
     /// <param name="geaendert">nach jeder Änderung (außerhalb der Dokumentsperre aufgerufen): Speichern vormerken, direkte Übertragung …</param>
-    internal Arbeitsdokument(DokumentInfo info, Dokument dokument, Action<Arbeitsdokument, byte[], bool, string> speichern, Action<Arbeitsdokument, AenderungsArt, string>? geaendert = null)
+    /// <param name="gespeichert">Zeitpunkt des letzten Speicherns laut Datenbank (Anzeige „Gespeichert · 14:32“ gleich nach dem Öffnen)</param>
+    internal Arbeitsdokument(DokumentInfo info, Dokument dokument, Action<Arbeitsdokument, byte[], bool, string> speichern, Action<Arbeitsdokument, AenderungsArt, string>? geaendert = null,
+        DateTime? gespeichert = null)
     {
+        Gespeichert = gespeichert;
         Info = info;
         Dokument = dokument;
         _speichern = speichern;

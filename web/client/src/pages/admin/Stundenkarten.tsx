@@ -163,7 +163,7 @@ export default function Stundenkarten() {
 
               <Abschnitt titel="Fachfarbe">
                 <Wahl label="Fachfarbe" wert={d.fachfarbe} onWahl={v => set('fachfarbe', v)}
-                  optionen={[['balken-flaeche', 'Balken links und Tönung'], ['balken-links', 'Balken links'], ['balken-oben', 'Balken oben'], ['quadrat', 'Quadrat'], ['flaeche', 'Fläche'], ['keine', 'Keine']]} />
+                  optionen={[['balken-innen', 'Streifen innen'], ['balken-flaeche', 'Balken links und Tönung'], ['balken-links', 'Balken links'], ['balken-oben', 'Balken oben'], ['quadrat', 'Quadrat'], ['flaeche', 'Fläche'], ['keine', 'Keine']]} />
                 {balken && (
                   <Feld titel={`Balkenbreite: ${d.balkenbreite} px`}>
                     <Slider size="small" min={2} max={6} step={1} marks value={d.balkenbreite} onChange={(_, v) => set('balkenbreite', v as number)} aria-label="Balkenbreite in Pixel" valueLabelDisplay="auto" sx={{ maxWidth: 320 }} />
@@ -179,26 +179,30 @@ export default function Stundenkarten() {
               <Abschnitt titel="Karte">
                 <Feld titel="Fläche"><Wahl label="Kartenfläche" wert={d.flaeche} onWahl={v => set('flaeche', v)} optionen={[['neutral', 'Neutral'], ['weiss', 'Weiß'], ['getoent', 'Getönt']]} /></Feld>
                 <Feld titel="Rahmen" hilfe={d.rahmen === 'keiner' ? 'Status-Linien (Änderung, Entfall, Prüfung, Termin) bleiben sichtbar.' : undefined}>
-                  <Wahl label="Rahmen" wert={d.rahmen} onWahl={v => set('rahmen', v)} optionen={[['fein', 'Fein'], ['kraeftig', 'Kräftig'], ['keiner', 'Keiner']]} />
+                  <Wahl label="Rahmen" wert={d.rahmen} onWahl={v => set('rahmen', v)} optionen={[['schatten', 'Schatten'], ['fein', 'Fein'], ['kraeftig', 'Kräftig'], ['keiner', 'Keiner']]} />
                 </Feld>
                 <Feld titel={`Eckenradius: ${d.eckenradius} px`}>
                   <Slider size="small" min={0} max={8} step={1} marks value={d.eckenradius} onChange={(_, v) => set('eckenradius', v as number)} aria-label="Eckenradius in Pixel" valueLabelDisplay="auto" sx={{ maxWidth: 320 }} />
                 </Feld>
+                <Feld titel="Raster"><Wahl label="Raster" wert={d.raster} onWahl={v => set('raster', v)} optionen={[['grau', 'Hellgrau'], ['weiss', 'Weiß']]} /></Feld>
                 <Feld titel="Dichte" hilfe="Innenabstand und Schriftgrößen der Kacheln.">
                   <Wahl label="Dichte" wert={d.dichte} onWahl={v => set('dichte', v)} optionen={[['kompakt', 'Kompakt'], ['normal', 'Normal'], ['grosszuegig', 'Großzügig']]} />
                 </Feld>
               </Abschnitt>
 
               <Abschnitt titel="Inhalt">
+                <Feld titel="Reihenfolge" hilfe="Untereinander braucht eine Karte mindestens 45 Minuten Höhe; kürzere Karten zeigen Fach und Lehrkraft bzw. Klasse in einer Zeile.">
+                  <Wahl label="Reihenfolge" wert={d.reihenfolge} onWahl={v => set('reihenfolge', v)} optionen={[['element', 'Lehrkraft/Klasse · Fach · Raum'], ['fach', 'Fach und Raum oben']]} />
+                </Feld>
                 <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
-                  <TextField select label="Zeile 1: Fach" value={d.fach} onChange={e => set('fach', e.target.value as Kartendarstellung['fach'])} sx={{ minWidth: 180 }}>
+                  <TextField select label="Fach als" value={d.fach} onChange={e => set('fach', e.target.value as Kartendarstellung['fach'])} sx={{ minWidth: 180 }}>
                     <MenuItem value="kuerzel">Kürzel</MenuItem><MenuItem value="name">Ausgeschrieben</MenuItem>
                   </TextField>
-                  <FormControlLabel control={<Switch checked={d.raum} onChange={e => set('raum', e.target.checked)} />} label="Raum rechts anzeigen" />
+                  <FormControlLabel control={<Switch checked={d.raum} onChange={e => set('raum', e.target.checked)} />} label="Raum anzeigen" />
                 </Stack>
                 <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
-                  <FormControlLabel control={<Switch checked={d.zeile2} onChange={e => set('zeile2', e.target.checked)} />} label="Zeile 2: Lehrkraft bzw. Klasse" />
-                  <TextField select label="Zeile 2 als" value={d.zeile2Text} disabled={!d.zeile2} onChange={e => set('zeile2Text', e.target.value as Kartendarstellung['zeile2Text'])} sx={{ minWidth: 180 }}>
+                  <FormControlLabel control={<Switch checked={d.zeile2} onChange={e => set('zeile2', e.target.checked)} />} label="Lehrkraft bzw. Klasse anzeigen" />
+                  <TextField select label="Lehrkraft bzw. Klasse als" value={d.zeile2Text} disabled={!d.zeile2} onChange={e => set('zeile2Text', e.target.value as Kartendarstellung['zeile2Text'])} sx={{ minWidth: 180 }}>
                     <MenuItem value="kuerzel">Kürzel</MenuItem><MenuItem value="name">Name</MenuItem>
                   </TextField>
                 </Stack>

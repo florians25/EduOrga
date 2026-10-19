@@ -151,7 +151,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
       </Box>
 
       {/* Raster */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: spalten, position: 'relative' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: spalten, position: 'relative', bgcolor: d.raster === 'grau' ? 'kachel.raster' : undefined }}>
         {/* Zeitachse */}
         <Box sx={{ position: 'relative', height: mass.hoehe + 8, borderRight: `1px solid ${linie}`, bgcolor: 'kachel.kopf' }}>
           {mass.abschnitte.map((a, j) => a.art === 'pause'

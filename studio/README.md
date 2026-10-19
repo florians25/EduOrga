@@ -1,7 +1,9 @@
-# UntPlan Studio
+# EduOrga Studio
 
-**Stunden-, Kurs- und Vertretungsplanung für Schulen – als Web-Anwendung.** UntPlan Studio ist das Planungswerkzeug
-von UntPlan: Stammdaten, Unterricht, Zeitwünsche, automatische und manuelle Stundenplanung, Vertretungsplanung,
+*Einfach mehr Schulalltag.*
+
+**Stunden-, Kurs- und Vertretungsplanung für Schulen – als Web-Anwendung.** EduOrga Studio (bisher UntPlan Studio) ist das
+Planungswerkzeug von EduOrga: Stammdaten, Unterricht, Zeitwünsche, automatische und manuelle Stundenplanung, Vertretungsplanung,
 Pausenaufsichten, Auswertungen, Druck und Datenaustausch – im Browser, mit mehreren Benutzern gleichzeitig. Alle
 Berechnungen laufen auf dem Server mit der Fachlogik aus `src/UntPlan.Core`.
 
@@ -10,6 +12,10 @@ Berechnungen laufen auf dem Server mit der Fachlogik aus `src/UntPlan.Core`.
 | Manuell planen | Tagesplanung | Suche |
 |---|---|---|
 | ![Planen](docs/bilder/planen.png) | ![Vertretung](docs/bilder/vertretung.png) | ![Suche](docs/bilder/suche.png) |
+
+| Anmeldung | Gruppen und Rechte | Dunkles Thema |
+|---|---|---|
+| ![Anmeldung](docs/bilder/anmeldung.png) | ![Gruppen und Rechte](docs/bilder/rechte.png) | ![Dunkel](docs/bilder/dunkel.png) |
 
 ## Oberfläche
 
@@ -38,7 +44,17 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   Änderung der Vertretungsplanung spätestens nach der eingestellten Zeit (Standard 30 s, Änderungen dazwischen in einem Paket) ohne
   Klick hinaus. Fehlgeschlagene automatische Übertragungen werden mit wachsendem Abstand wiederholt.
 * **Übersicht:** Kennzahlen der Schuldatei, Planqualität und häufige Aufgaben.
-* **Darstellung:** hell, dunkel oder wie das System (Kontomenü); Schrift IBM Plex Sans, Markenfarbe Marine.
+* **Darstellung:** Marke EduOrga (`design/MARKE.md`): Primärfarbe Petrol #164C55 (Logo, Seitenleiste, Knöpfe), Akzent #28747A
+  (aktive Bereiche, Links, Fokus), Seitenhintergrund #F5F7F8, Text #24363B; Fluent-Thema aus der Petrol-Reihe (`client/src/theme.ts`).
+  Kräftige Linien (#c9d1db), graue Seiten- und Tabellenköpfe, weiße Karten auf grauem Grund, sichtbarer Fokusring. Hell, dunkel
+  (eigene Schiefer-Petrol-Palette, kein weißes Aufblitzen beim Laden) oder wie das System (Kontomenü); Schrift IBM Plex Sans.
+* **Modusfarbe:** Stundenplanung Petrol, Vertretungsplanung Indigo #3b4a8f – als Unterstrich des gewählten Modus in der
+  Kopfleiste, schmale Linie über dem Seitenkopf und Kante des gewählten Navigationspunkts.
+* **Gruppen und Rechte** (MultiUser, Administratoren): Matrix *Gruppe × Bereich* mit farbigen Stufen (Bearbeiten, Ansichten,
+  Nur lesen, Kein Zugriff), Klick ändert die Stufe sofort; Einzelrechte und „Alle Bereiche: …“ je Gruppe; Benutzerliste mit
+  Suche, durchsuchbarer Gruppenwahl, „Nur lesen“, Abteilung und lesbaren wirksamen Rechten.
+* **Datumsfelder** überall mit Kalender (Fluent DatePicker, deutsch, Woche ab Montag mit Kalenderwochen); Eingabe auch als
+  „19.10.2026“, „19.10.“ oder „191026“. Lange Auswahllisten in Dialogen sind durchsuchbar.
 
 ## Lokal starten
 
@@ -191,7 +207,7 @@ zählt die Versionsnummer, z. B. `v1.5.0` oder `studio-v1.5.0`) und vergleicht s
 Fehlern erscheint einfach kein Hinweis. Ist eine neuere Version veröffentlicht, zeigt das Studio unter der Kopfleiste
 „Neue Version 1.5.0 verfügbar – Versionshinweise ansehen“ (je Version schließbar; danach bleibt ein Punkt am Konto-Symbol und
 ein Eintrag im Kontomenü). Der Dialog zeigt die Versionshinweise und den Update-Befehl `./update.sh studio` (siehe
-[installation/README.md](../installation/README.md)); *Konto → Über UntPlan Studio* zeigt den Stand mit „Erneut prüfen“.
+[installation/README.md](../installation/README.md)); *Konto → Über EduOrga Studio* zeigt den Stand mit „Erneut prüfen“.
 Schnittstelle: `GET /api/version[?neu=1]` (nur Administratoren) →
 `{version, neueste, updateVerfuegbar, releaseUrl, releaseName, veroeffentlicht, hinweise, geprueft, fehler, befehl}`.
 Die Prüflogik teilt sich das Studio mit UntPlan Web und Mobile (`web/src/UntPlanWeb/Dienste/Updatepruefung.cs`).
@@ -232,3 +248,9 @@ Die Prüflogik teilt sich das Studio mit UntPlan Web und Mobile (`web/src/UntPla
   wechseln, Strg+B Seitenleiste, Strg+Bild↑/↓ Planungsdatum (Vertretungsmodus).
 
 Für Entwickler: Aufbau, API-Konventionen und „Neues Modul anlegen“ stehen in [`ARCHITEKTUR.md`](ARCHITEKTUR.md).
+
+---
+
+EduOrga ist ein privates Hobbyprojekt eines Auszubildenden zum Fachinformatiker für Systemintegration, entwickelt mit
+Unterstützung von Claude (Anthropic). Jede Schule bzw. jeder Betreiber ist für Einsatz, Betrieb und Datenschutz selbst
+verantwortlich.

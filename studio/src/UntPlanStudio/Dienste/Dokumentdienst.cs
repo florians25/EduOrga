@@ -124,11 +124,12 @@ public sealed partial class Dokumentdienst
 
     private Arbeitsdokument Laden(string id)
     {
-        var info = _db.Dokument(id)?.Info ?? throw StudioFehler.NichtGefunden("Das Dokument");
+        var zeile = _db.Dokument(id) ?? throw StudioFehler.NichtGefunden("Das Dokument");
+        var info = zeile.Info;
         var inhalt = _db.DokumentInhalt(id) ?? throw StudioFehler.NichtGefunden("Das Dokument");
         var dok = Dokument.Laden(inhalt);
         _log.LogInformation("Dokument {Id} ({Name}) geöffnet", id, info.Name);
-        return new Arbeitsdokument(info, dok, Speichern, BeiAenderung);
+        return new Arbeitsdokument(info, dok, Speichern, BeiAenderung, zeile.Gespeichert);
     }
 
     /// <summary>Beschreibung und Inhalt eines geöffneten Dokuments in die Datenbank schreiben (eine Transaktion).</summary>
@@ -151,7 +152,7 @@ public sealed partial class Dokumentdienst
         var info = new DokumentInfo { Id = id, Name = string.IsNullOrWhiteSpace(name) ? "Neue Schuldatei" : name.Trim(), Besitzer = besitzer, Herkunft = herkunft };
         var dok = new Dokument(daten);
         dok.Speichern(inhalt => _db.DokumentAnlegen(info, inhalt));
-        var a = new Arbeitsdokument(info, dok, Speichern, BeiAenderung);
+        var a = new Arbeitsdokument(info, dok, Speichern, BeiAenderung, DateTime.Now);
         _offen[id] = new Lazy<Arbeitsdokument>(a);
         _log.LogInformation("Dokument {Id} ({Name}) angelegt: {Herkunft}", id, info.Name, herkunft);
         return a;
