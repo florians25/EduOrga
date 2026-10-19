@@ -4,11 +4,11 @@
 # demselben Server läuft unabhängig weiter.
 #
 # Jedes Programm läuft in einem eigenen Container und hat seine eigenen Daten:
-#   untplannext-studio      Planung im Browser       eigene Datenbank (SQLite) im Volume untplannext-studio-daten
+#   untplannext-studio      Planung im Browser       eigene Datenbank (SQLite im Volume untplannext-studio-daten oder MariaDB)
 #   untplannext-web         Portal für die Schule    eigene Datenbank (SQLite im Volume untplannext-web-daten oder MariaDB)
 #   untplannext-mobile      App fürs Telefon (PWA)   Geräteprofile im Volume untplannext-mobile-daten, Plandaten von Web
 #   untplannext-website     optional, Produkt-Website mit Ideenportal   eigene SQLite-Datenbank im Volume untplannext-website-daten
-#   untplannext-mariadb     optional, nur für UntPlan Web
+#   untplannext-mariadb     optional, für Web (Datenbank untplanweb) und/oder Studio (Datenbank eduorga_studio)
 #   untplannext-caddy       optional, HTTPS mit automatischem Zertifikat
 #   untplannext-watchtower  optional, Update aus der Administration von UntPlan Web
 #
@@ -43,6 +43,9 @@ services:
       STUDIO_ADMIN_PASSWORT: ${STUDIO_ADMIN_PASSWORT:-}
       STUDIO_SICHERE_COOKIES: ${STUDIO_SICHERE_COOKIES:-0}
       STUDIO_SICHERUNGEN_BEHALTEN: ${SICHERUNGEN_BEHALTEN:-14}
+      # sqlite (Standard) oder mysql – bei mysql läuft der Container „untplannext-mariadb“ (Profil mariadb), Datenbank eduorga_studio
+      STUDIO_DB: ${STUDIO_DB:-sqlite}
+      STUDIO_DB_CONNECTION: ${STUDIO_DB_CONNECTION:-}
     volumes:
       - untplannext-studio-daten:/data
 
@@ -120,6 +123,8 @@ services:
     command: ["--max-allowed-packet=256M", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     volumes:
       - untplannext-mariadb-daten:/var/lib/mysql
+      # legt beim ersten Start eines leeren Volumes zusätzlich die Datenbank eduorga_studio an (von install.sh erzeugt)
+      - ./mariadb-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s

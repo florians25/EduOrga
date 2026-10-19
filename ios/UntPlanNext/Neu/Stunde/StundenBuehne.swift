@@ -736,6 +736,11 @@ struct StundenBuehneInhalt: View {
                     }
                     .buttonStyle(ZeilenKnopfStil())
                     Divider().padding(.leading, Detailmass.rand)
+                    NavigationLink(value: Detailseite.sitzplan) {
+                        Detailzeile(titel: "Sitzplan", untertitel: "Anwesenheit am Platz antippen")
+                    }
+                    .buttonStyle(ZeilenKnopfStil())
+                    Divider().padding(.leading, Detailmass.rand)
                     NavigationLink(value: Detailseite.lehrstoff) {
                         Detailzeile(titel: "Lehrstoff", untertitel: thema.isEmpty ? "Noch nicht eingetragen" : thema) {
                             if !thema.isEmpty {
@@ -955,6 +960,8 @@ struct StundenBuehneInhalt: View {
             NotizSeite(art: .schueler)
         case .notizLehrer:
             NotizSeite(art: .lehrer)
+        case .sitzplan:
+            SitzplanStundeSeite()
         }
     }
 }

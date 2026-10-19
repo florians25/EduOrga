@@ -1,16 +1,19 @@
 // Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten): schulweite Einstellung aus der Sitzung, als Kontext für
-// Kachel, Legende, Startseite, Übersicht und Stundendetails. Standard ist „Klassisch“: kompakte Karten, die die Zelle füllen, Fachfarbe als
-// Balken links mit leichter Tönung, Fach fett oben links, Raum oben rechts, Lehrkraft bzw. Klasse darunter; Änderungen und Prüfungen
-// zusätzlich in der hellen Statusfläche (Vertretung violett). Die Statusdarstellung (Linie, Schraffur, Durchstreichung, Kürzel-Plaketten)
+// Kachel, Legende, Startseite, Übersicht und Stundendetails. Standard ist „Klassisch“: weiße, kompakte Karten mit leichtem Schatten auf
+// hellgrauem Raster, Fachfarbe als schmaler Streifen innen links (grau ohne Fachfarbe), drei kurze Zeilen Lehrkraft bzw. Klasse (fett) ·
+// Fach · Raum; Änderungen und Prüfungen zusätzlich in der hellen Statusfläche (Vertretung violett). Die Statusdarstellung (Linie, Schraffur, Durchstreichung, Kürzel-Plaketten)
 // bleibt in jeder Variante erhalten.
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Box } from '@mui/material';
 import type { Elemente } from '../../api/types';
 import { gueltigeFarbe } from './logik';
 
-export type Fachfarbe = 'quadrat' | 'balken-links' | 'balken-flaeche' | 'balken-oben' | 'flaeche' | 'keine';
+export type Fachfarbe = 'balken-innen' | 'quadrat' | 'balken-links' | 'balken-flaeche' | 'balken-oben' | 'flaeche' | 'keine';
 export type KartenFlaeche = 'neutral' | 'weiss' | 'getoent';
-export type Rahmen = 'fein' | 'kraeftig' | 'keiner';
+export type Rahmen = 'fein' | 'kraeftig' | 'schatten' | 'keiner';
+/** Zeilenfolge: Fach oben (Raum rechts, darunter Lehrkraft/Klasse) oder Lehrkraft/Klasse · Fach · Raum untereinander. */
+export type Reihenfolge = 'fach' | 'element';
+export type Raster = 'weiss' | 'grau';
 export type Dichte = 'kompakt' | 'normal' | 'grosszuegig';
 export type TextArt = 'kuerzel' | 'name';
 export type KuerzelStil = 'gefuellt' | 'umrandet' | 'text';
@@ -39,21 +42,28 @@ export interface Kartendarstellung {
   statuswoerter: boolean;
   /** Geänderte Stunden und Prüfungen zusätzlich in der hellen Statusfläche (Änderung violett, Prüfung bernstein). */
   statusflaeche: boolean;
+  /** Zeilenfolge der Karte. */
+  reihenfolge: Reihenfolge;
+  /** Fläche des Stundenrasters hinter den Karten (weiß oder hellgrau). */
+  raster: Raster;
 }
 
 export const STANDARD: Kartendarstellung = {
-  fachfarbe: 'balken-flaeche', balkenbreite: 4, deckkraft: 12, flaeche: 'weiss', rahmen: 'fein', eckenradius: 2, dichte: 'kompakt',
+  fachfarbe: 'balken-innen', balkenbreite: 4, deckkraft: 12, flaeche: 'weiss', rahmen: 'schatten', eckenradius: 2, dichte: 'kompakt',
   fach: 'kuerzel', raum: true, zeile2: true, zeile2Text: 'kuerzel', kuerzel: 'text', statuswoerter: false, statusflaeche: true,
+  reihenfolge: 'element', raster: 'grau',
 };
 
 /** Bisherige Grunddarstellung „Sachlich“ (Fachfarbe als Quadrat, neutrale Fläche) – als Vorlage weiter wählbar. */
 const SACHLICH: Kartendarstellung = {
   fachfarbe: 'quadrat', balkenbreite: 3, deckkraft: 12, flaeche: 'neutral', rahmen: 'fein', eckenradius: 3, dichte: 'normal',
   fach: 'kuerzel', raum: true, zeile2: true, zeile2Text: 'kuerzel', kuerzel: 'umrandet', statuswoerter: false, statusflaeche: false,
+  reihenfolge: 'fach', raster: 'weiss',
 };
 
 export const VORLAGEN: { id: string; name: string; hinweis: string; werte: Kartendarstellung }[] = [
-  { id: 'klassisch', name: 'Klassisch (Standard)', hinweis: 'Kompakte Karten im Raster: Fachfarbe als Balken links mit leichter Tönung, Fach fett, Raum rechts, Änderungen hinterlegt', werte: STANDARD },
+  { id: 'klassisch', name: 'Klassisch (Standard)', hinweis: 'Weiße Karten auf hellgrauem Raster, Fachfarbe als schmaler Streifen innen links, drei kurze Zeilen: Lehrkraft bzw. Klasse · Fach · Raum', werte: STANDARD },
+  { id: 'kompakt', name: 'Kompakt', hinweis: 'Kompakte Karten mit Fachfarbe als Balken links und leichter Tönung, Fach fett, Raum rechts', werte: { ...STANDARD, fachfarbe: 'balken-flaeche', rahmen: 'fein', reihenfolge: 'fach', raster: 'weiss' } },
   { id: 'sachlich', name: 'Sachlich', hinweis: 'Neutrale Fläche, Fachfarbe als kleines Quadrat', werte: SACHLICH },
   { id: 'akzent', name: 'Akzentbalken', hinweis: 'Weiße Karte mit Fachfarbe als Balken am linken Rand', werte: { ...SACHLICH, fachfarbe: 'balken-links', balkenbreite: 4, flaeche: 'weiss', eckenradius: 4, kuerzel: 'text' } },
   { id: 'flaeche', name: 'Farbfläche', hinweis: 'Leicht getönte Fläche in der Fachfarbe', werte: { ...SACHLICH, fachfarbe: 'flaeche', deckkraft: 14, flaeche: 'weiss', eckenradius: 4, kuerzel: 'gefuellt' } },
@@ -61,7 +71,7 @@ export const VORLAGEN: { id: string; name: string; hinweis: string; werte: Karte
 ];
 
 /** Fachfarbe als Balken (links bzw. oben, auch zusammen mit der Tönung)? */
-export const mitBalken = (f: Fachfarbe) => f === 'balken-links' || f === 'balken-oben' || f === 'balken-flaeche';
+export const mitBalken = (f: Fachfarbe) => f === 'balken-links' || f === 'balken-oben' || f === 'balken-flaeche' || f === 'balken-innen';
 /** Fachfarbe als Tönung der Fläche? */
 export const mitToenung = (f: Fachfarbe) => f === 'flaeche' || f === 'balken-flaeche';
 

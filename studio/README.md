@@ -26,8 +26,17 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   Datenaustausch, Schule* – im Vertretungsmodus *Vertretungsplanung, Ereignisse, Tagespläne, Auswertung und Ausgabe*.
   Strg+B blendet sie aus.
 * **Kopfleiste:** Schuldatei (zuletzt verwendet, alle Dateien, neu, hochladen), Modus *Stundenplanung /
-  Vertretungsplanung*, im Vertretungsmodus das Planungsdatum, Rückgängig/Wiederholen/Speichern mit Speicherstand,
-  aktive Benutzer, Suche (Strg+K – findet jede Funktion) und Konto.
+  Vertretungsplanung*, im Vertretungsmodus das Planungsdatum und „An Web senden“ (Vertretungen sofort an EduOrga Web),
+  Rückgängig/Wiederholen mit Speicherstand („Gespeichert · 14:32“), aktive Benutzer, Suche (Strg+K – findet jede Funktion) und Konto.
+* **Speichern gibt es nicht mehr als Schritt:** Jede Änderung (auch Rückgängig/Wiederholen) landet nach weniger als einer
+  Sekunde in der Datenbank. Die Kopfleiste zeigt ruhig den Stand: *Gespeichert · 14:32*, kurz *Speichert …* oder bei einem
+  Problem *Nicht gespeichert* mit *Erneut versuchen* (der Server versucht es ohnehin selbst wieder). **Strg+S** legt einen
+  *Sicherungspunkt* an – eine ältere Fassung, die nicht automatisch verdrängt wird.
+* **Vertretungen direkt an EduOrga Web:** „An Web senden“ in der Kopfleiste der Vertretungsplanung (oder Befehlssuche
+  „Vertretungen jetzt an EduOrga Web senden“) überträgt die geänderten Vertretungen mit einem Klick; daneben steht der Stand der
+  letzten Übertragung. In *EduOrga Web → Einstellungen* lässt sich „Vertretungen automatisch übertragen“ einschalten: dann geht jede
+  Änderung der Vertretungsplanung spätestens nach der eingestellten Zeit (Standard 30 s, Änderungen dazwischen in einem Paket) ohne
+  Klick hinaus. Fehlgeschlagene automatische Übertragungen werden mit wachsendem Abstand wiederholt.
 * **Übersicht:** Kennzahlen der Schuldatei, Planqualität und häufige Aufgaben.
 * **Darstellung:** hell, dunkel oder wie das System (Kontomenü); Schrift IBM Plex Sans, Markenfarbe Marine.
 
@@ -99,17 +108,32 @@ Der Container läuft ohne Root-Rechte (Benutzer `app`), alle Daten liegen im Vol
 
 ## Daten und Sicherung
 
-Das Studio hat eine **eigene Datenbank** (SQLite), unabhängig von UntPlan Web. Im Datenordner (`STUDIO_DATEN`,
-im Container `/data`) liegen:
+Das Studio hat eine **eigene Datenbank**, unabhängig von EduOrga Web: SQLite (Standard, keine Einrichtung nötig) oder
+MySQL/MariaDB (`STUDIO_DB=mysql`, siehe unten). Im Datenordner (`STUDIO_DATEN`, im Container `/data`) liegen:
 
 | Pfad | Inhalt |
 |---|---|
-| `studio.db` (+ `studio.db-wal`, `studio.db-shm`) | Schuldateien (Inhalt wie `.up`-Datei, je Dokument die letzten 10 Fassungen), Benutzer, Benutzereinstellungen, MultiUser-Gruppen, UntPlan-Web-Abgleich |
+| `studio.db` (+ `studio.db-wal`, `studio.db-shm`) | Schuldateien (Inhalt wie `.up`-Datei, gzip-komprimiert), ältere Fassungen (automatisch höchstens alle 10 Minuten, die letzten 10, dazu die letzten 20 Sicherungspunkte), Benutzer, Benutzereinstellungen, MultiUser-Gruppen, EduOrga-Web-Abgleich und direkte Übertragung |
 | `sicherungen/studio-<zeit>.db` | Sicherungen der Datenbank (vollständige SQLite-Datei) |
 | `schluessel/` | Schlüssel für das Anmeldecookie |
 | `alt-dateien-<datum>/` | nur nach einem Update von einer älteren Version: die übernommenen Dateien (siehe unten) |
 
 Schuldateien lassen sich weiterhin jederzeit als `.up` herunterladen (Datei → Herunterladen) und wieder hochladen.
+
+**Sofort gespeichert.** Jede Änderung wird nach `STUDIO_SPEICHERN_VERZOEGERUNG_MS` (800 ms) in einer Transaktion geschrieben;
+Änderungen in dieser Zeit werden zusammengefasst, beim Beenden wird alles geschrieben. Gemessen mit einer großen Schule
+(200 Lehrkräfte, 3000 Schülerinnen und Schüler, 4000 Unterrichte, 3000 Vertretungen; 11 MB JSON, komprimiert 0,4 MB):
+Datenbankteil typisch 30–60 ms (SQLite) bzw. 60–100 ms (MariaDB), insgesamt mit Erzeugen des Inhalts etwa 130–220 ms – ohne
+dass andere Benutzer warten (geschrieben wird außerhalb der Dokumentsperre). Ältere Fassungen: `GET /api/dokumente/{id}/fassungen`.
+
+**MySQL/MariaDB.** `STUDIO_DB=mysql` (oder `mariadb`) und `STUDIO_DB_CONNECTION` (`Server=…;Port=3306;Database=eduorga_studio;User
+ID=…;Password=…` oder `mysql://benutzer:passwort@host:3306/eduorga_studio`). Gleiches Schema wie SQLite (Migrationen beim Start);
+fehlt die Datenbank, legt das Studio sie an, sofern der Benutzer das darf (sonst als root: `CREATE DATABASE eduorga_studio CHARACTER
+SET utf8mb4; GRANT ALL ON eduorga_studio.* TO '<benutzer>'@'%';`). Liegt beim ersten Start mit leerer MySQL-Datenbank eine
+`studio.db` im Datenordner, wird sie vollständig übernommen (die Datei bleibt liegen). Der Server braucht `max_allowed_packet`
+≥ 64 MB (Gesamtinstallation: 256 MB). Gesichert wird mit `mariadb-dump`/`mysqldump --single-transaction` (die Gesamtinstallation
+erledigt das in `./update.sh`); `--sichern`, die tägliche Sicherung und `POST /api/sicherungen` gelten nur für SQLite
+(`--sichern` gibt bei MySQL nur einen Hinweis aus und endet mit 0).
 
 **Sicherung.** Das Studio sichert die Datenbank automatisch einmal täglich und beim Start nach jedem Update (vor
 Datenbank-Migrationen) als konsistente Kopie (`VACUUM INTO`) nach `sicherungen/studio-<zeit>.db`; die letzten 14 bleiben
@@ -179,7 +203,13 @@ Die Prüflogik teilt sich das Studio mit UntPlan Web und Mobile (`web/src/UntPla
 | `STUDIO_DATEN` | `./daten` (Container: `/data`) | Datenordner (Datenbank `studio.db`, Sicherungen, Cookie-Schlüssel) |
 | `STUDIO_ADMIN_BENUTZER` | `admin` | Name des Admin-Kontos beim ersten Start |
 | `STUDIO_ADMIN_PASSWORT` | – (zufällig, im Protokoll) | Passwort des Admin-Kontos beim ersten Start |
-| `STUDIO_AUTOSPEICHERN_SEKUNDEN` | `30` | Takt der Autospeicherung geänderter Dokumente |
+| `STUDIO_SPEICHERN_VERZOEGERUNG_MS` | `800` | jede Änderung wird nach dieser Zeit gespeichert (Änderungen dazwischen: ein Schreibvorgang) |
+| `STUDIO_FASSUNG_MINUTEN` | `10` | höchstens so oft entsteht beim Speichern eine ältere Fassung (zusätzlich Sicherungspunkte mit Strg+S) |
+| `STUDIO_DB_KOMPRIMIEREN` | `1` | Inhalte der Schuldateien gzip-komprimiert speichern (`0` = JSON wie `.up`) |
+| `STUDIO_DB` | `sqlite` | `sqlite` oder `mysql`/`mariadb` |
+| `STUDIO_DB_CONNECTION` | – | nur MySQL/MariaDB: Verbindung (siehe „Daten und Sicherung“) |
+| `STUDIO_DB_WARTEN_SEKUNDEN` | `60` | nur MySQL/MariaDB: so lange beim Start auf den Datenbankserver warten |
+| `STUDIO_AUTOSPEICHERN_SEKUNDEN` | `30` | Sicherheitsnetz: so oft wird zusätzlich alles noch Ungespeicherte geschrieben |
 | `STUDIO_LEERLAUF_MINUTEN` | `120` | unbenutzte Dokumente werden danach gespeichert und entladen |
 | `STUDIO_MAX_UPLOAD_MB` | `64` | Höchstgröße beim Hochladen |
 | `STUDIO_SICHERE_COOKIES` | automatisch | `1` = Anmeldecookie nur über HTTPS (hinter Caddy empfohlen) |
@@ -198,7 +228,7 @@ Die Prüflogik teilt sich das Studio mit UntPlan Web und Mobile (`web/src/UntPla
 * **Stundenplan**: Stunden per Drag & Drop verschieben oder tauschen; nicht verplante Stunden in den Plan ziehen.
   Beim Ziehen zeigt jedes Feld seinen Status (frei, Tausch möglich, Vorgabe verletzt, belegt), der Grund steht am
   Mauszeiger. Rechtsklick: fixieren, entplanen, Raum zuordnen, Tauschvorschläge.
-* **Tastatur**: Strg+K Befehlssuche, Strg+S Speichern, Strg+Z/Strg+Y Rückgängig/Wiederholen, Strg+Umschalt+V Modus
+* **Tastatur**: Strg+K Befehlssuche, Strg+S Sicherungspunkt anlegen (gespeichert wird ohnehin sofort), Strg+Z/Strg+Y Rückgängig/Wiederholen, Strg+Umschalt+V Modus
   wechseln, Strg+B Seitenleiste, Strg+Bild↑/↓ Planungsdatum (Vertretungsmodus).
 
 Für Entwickler: Aufbau, API-Konventionen und „Neues Modul anlegen“ stehen in [`ARCHITEKTUR.md`](ARCHITEKTUR.md).

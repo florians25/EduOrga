@@ -1,0 +1,27 @@
+# Build-Kontext ist die Wurzel des Repositorys; nur was website/Dockerfile braucht.
+**/bin
+**/obj
+**/node_modules
+**/daten
+**/*.db*
+.git
+archiv
+ios
+src
+tests
+installation
+studio/src
+studio/client
+studio/tests
+web/src
+web/client
+web/tests
+web/demo
+mobile/src
+mobile/tests
+website/src/EduOrgaWebsite/wwwroot
+website/tests
+website/docs
+website/client/public/bilder
+website/client/public/fonts
+website/client/public/logo

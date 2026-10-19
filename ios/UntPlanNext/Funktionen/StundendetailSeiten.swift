@@ -218,6 +218,8 @@ final class Stundendaten: ObservableObject {
         guard let u = karte.unterricht else { return }
         if let a = try? await api.anwesenheit(datum: karte.datum, stunde: karte.von, unterricht: u, einzelstunde: einzelstunde) {
             anwesenheit = a
+            // Stand vom Server gilt, sobald nichts mehr im Schreibpuffer wartet
+            if Schreibpuffer.shared.anzahl == 0 { lokalerStand = [:] }
         }
     }
 
@@ -250,9 +252,16 @@ final class Stundendaten: ObservableObject {
                                      anmerkung: anmerkung,
                                      lehrer: lehrerHinweis,
                                      einzelstunde: einzelstunde)
-        let neu = try await api.klassenbuchSpeichern(daten)
         var stand = klassenbuch ?? KlassenbuchStunde(eintrag: nil, darf: true)
-        stand.eintrag = neu
+        do {
+            stand.eintrag = try await api.klassenbuchSpeichern(daten)
+        } catch ApiFehler.nichtErreichbar(_) {
+            // Ohne Verbindung: merken und später senden; der Eintrag gilt bis dahin lokal
+            Schreibpuffer.shared.hinzufuegen(methode: "PUT", pfad: "/klassenbuch/stunde", koerper: try? api.encoder.encode(daten),
+                                             titel: "Klassenbuch \(karte.fach) \(kurzdatum(karte.datum))")
+            stand.eintrag = Klassenbucheintrag(lokal: daten, vorher: e)
+            hinweis = "Ohne Verbindung gespeichert – wird gesendet, sobald das Gerät online ist."
+        }
         klassenbuch = stand
         if let notizSchueler { notizSchuelerGespeichert = notizSchueler }
         if let notiz { notizLehrerGespeichert = notiz }
@@ -278,10 +287,14 @@ final class Stundendaten: ObservableObject {
 
     func hausaufgabeAnlegen(text: String, faellig: Date?, bemerkung: String) async throws {
         guard let u = karte.unterricht else { return }
-        _ = try await api.hausaufgabeAnlegen(HausaufgabeNeuDaten(datum: karte.datum, stunde: karte.von, unterricht: u, text: text,
-                                                                 faellig: faellig.map { Datumsformat.iso($0) }, bemerkung: bemerkung,
-                                                                 einzelstunde: einzelstunde))
-        await hausaufgabenLaden()
+        let daten = HausaufgabeNeuDaten(datum: karte.datum, stunde: karte.von, unterricht: u, text: text,
+                                        faellig: faellig.map { Datumsformat.iso($0) }, bemerkung: bemerkung, einzelstunde: einzelstunde)
+        if try await api.schreibenOderPuffern("POST", "/klassenbuch/hausaufgabenliste", daten: daten,
+                                              titel: "Hausaufgabe \(karte.fach) \(kurzdatum(karte.datum))") {
+            await hausaufgabenLaden()
+        } else {
+            hinweis = "Hausaufgabe ohne Verbindung gespeichert – wird gesendet, sobald das Gerät online ist."
+        }
     }
 
     func hausaufgabeAendern(_ id: Int, text: String? = nil, faellig: Date? = nil, bemerkung: String? = nil, erledigt: Bool? = nil) async throws {
@@ -310,21 +323,65 @@ final class Stundendaten: ObservableObject {
         return Datumsformat.kalender.date(bySettingHour: teile[0], minute: teile[1], second: 0, of: tag) ?? tag
     }
 
-    /// Wischgeste nach rechts: anwesend – die Abwesenheit in dieser Stunde wird entfernt.
-    func anwesendSetzen(_ s: Schueler) async throws {
-        guard let u = karte.unterricht, fehlzeit(s) != nil else { return }
-        try await api.abwesenheitEntfernen(AbwesenheitEntfernenDaten(datum: karte.datum, stunde: karte.von, unterricht: u, schuelerIds: [s.id],
-                                                                         einzelstunde: einzelstunde))
-        await anwesenheitLaden()
+    /// Offline gesetzter Stand je Schüler-ID (bis zum nächsten Laden vom Server).
+    @Published var lokalerStand: [Int: Anwesenheitsstand] = [:]
+
+    /// Angezeigter Stand: lokal (offline gespeichert) vor dem Server.
+    func stand(_ s: Schueler) -> Anwesenheitsstand {
+        if let l = lokalerStand[s.id] { return l }
+        guard let f = fehlzeit(s) else { return .anwesend }
+        switch f.art {
+        case "verspaetet": return .verspaetet(f.minuten)
+        case "vorzeitig": return .vorzeitig(f.minuten)
+        default: return .abwesend
+        }
     }
 
-    /// Wischgeste nach links: abwesend für den ganzen Block (minutengenau von Beginn bis Ende).
+    /// Wischgeste nach rechts bzw. Schnellwahl: anwesend – die Abwesenheit in dieser Stunde wird entfernt.
+    func anwesendSetzen(_ s: Schueler) async throws {
+        guard let u = karte.unterricht, fehlzeit(s) != nil || lokalerStand[s.id] != nil else { return }
+        let d = AbwesenheitEntfernenDaten(datum: karte.datum, stunde: karte.von, unterricht: u, schuelerIds: [s.id], einzelstunde: einzelstunde)
+        if try await api.schreibenOderPuffern("POST", "/klassenbuch/abwesenheit/loeschen", daten: d, titel: "Anwesend: \(s.anzeige)") {
+            lokalerStand[s.id] = nil
+            await anwesenheitLaden()
+        } else {
+            lokalerStand[s.id] = .anwesend
+            hinweis = "Ohne Verbindung gespeichert – wird gesendet, sobald das Gerät online ist."
+        }
+    }
+
+    /// Wischgeste nach links bzw. Schnellwahl: abwesend für den ganzen Block (minutengenau von Beginn bis Ende).
     func abwesendSetzen(_ s: Schueler) async throws {
-        guard let u = karte.unterricht, fehlzeit(s) == nil else { return }
-        try await api.abwesenheitErfassen(AbwesenheitZeitraumDaten(
-            schuelerIds: [s.id], von: Self.zeitpunkt(zeit(blockBeginn)), bis: Self.zeitpunkt(zeit(blockEnde)),
-            grund: nil, text: nil, datum: karte.datum, stunde: karte.von, unterricht: u, einzelstunde: einzelstunde))
-        await anwesenheitLaden()
+        try await fensterSetzen(s, von: zeit(blockBeginn), bis: zeit(blockEnde), stand: .abwesend)
+    }
+
+    /// Schnellwahl „verspätet“: abwesend ab Stundenbeginn für die angegebenen Minuten (der Server wertet das Fenster
+    /// als Verspätung bzw. Fehlstunden laut Verspätungsregeln).
+    func verspaetetSetzen(_ s: Schueler, minuten: Int) async throws {
+        let beginn = zeit(blockBeginn)
+        let ende = zeit(blockEnde)
+        let bis = min(ende, beginn.addingTimeInterval(TimeInterval(max(1, minuten) * 60)))
+        try await fensterSetzen(s, von: beginn, bis: bis, stand: .verspaetet(minuten))
+    }
+
+    /// Abwesenheit im Fenster erfassen (eine vorhandene Fehlzeit dieser Stunde wird ersetzt).
+    private func fensterSetzen(_ s: Schueler, von: Date, bis: Date, stand neu: Anwesenheitsstand) async throws {
+        guard let u = karte.unterricht else { return }
+        if fehlzeit(s) != nil {
+            // bisherige Fehlzeit dieser Stunde zuerst entfernen (gleiche Reihenfolge auch im Schreibpuffer)
+            let weg = AbwesenheitEntfernenDaten(datum: karte.datum, stunde: karte.von, unterricht: u, schuelerIds: [s.id], einzelstunde: einzelstunde)
+            _ = try await api.schreibenOderPuffern("POST", "/klassenbuch/abwesenheit/loeschen", daten: weg, titel: "Abwesenheit ändern: \(s.anzeige)")
+        }
+        let d = AbwesenheitZeitraumDaten(schuelerIds: [s.id], von: Self.zeitpunkt(von), bis: Self.zeitpunkt(bis),
+                                         grund: nil, text: nil, datum: karte.datum, stunde: karte.von, unterricht: u,
+                                         einzelstunde: einzelstunde)
+        if try await api.schreibenOderPuffern("POST", "/klassenbuch/abwesenheit", daten: d, titel: "\(neu.text): \(s.anzeige)") {
+            lokalerStand[s.id] = nil
+            await anwesenheitLaden()
+        } else {
+            lokalerStand[s.id] = neu
+            hinweis = "Ohne Verbindung gespeichert – wird gesendet, sobald das Gerät online ist."
+        }
     }
 
     /// Abwesenheit erfassen bzw. ändern (Abwesenheitsdialog). `ersetzen`: Fehlzeit-IDs der bisherigen Abwesenheit.
@@ -365,17 +422,26 @@ final class Stundendaten: ObservableObject {
     /// Neuer Klassenbucheintrag zu den gewählten Schüler*innen (je Person ein Eintrag) bzw. zur Klasse.
     func vermerkAnlegen(schueler: [Schueler], art: String, text: String) async throws {
         let zeit = karte.beginn.isEmpty ? nil : karte.beginn
+        var gepuffert = false
         if schueler.isEmpty {
             for klasse in klassen.prefix(1) {
-                try await api.vermerkAnlegen(VermerkNeuDaten(datum: karte.datum, klasse: klasse, schuelerId: nil, art: art, text: text, zeit: zeit))
+                let d = VermerkNeuDaten(datum: karte.datum, klasse: klasse, schuelerId: nil, art: art, text: text, zeit: zeit)
+                let gesendet = try await api.schreibenOderPuffern("POST", "/klassenbuch/vermerke", daten: d, titel: "\(art) \(klasse)")
+                if !gesendet { gepuffert = true }
             }
         } else {
             for s in schueler {
                 let klasse = s.klasse.isEmpty ? (klassen.first ?? "") : s.klasse
-                try await api.vermerkAnlegen(VermerkNeuDaten(datum: karte.datum, klasse: klasse, schuelerId: s.id, art: art, text: text, zeit: zeit))
+                let d = VermerkNeuDaten(datum: karte.datum, klasse: klasse, schuelerId: s.id, art: art, text: text, zeit: zeit)
+                let gesendet = try await api.schreibenOderPuffern("POST", "/klassenbuch/vermerke", daten: d, titel: "\(art) \(s.anzeige)")
+                if !gesendet { gepuffert = true }
             }
         }
-        await vermerkeLaden()
+        if gepuffert {
+            hinweis = "Klassenbucheintrag ohne Verbindung gespeichert – wird gesendet, sobald das Gerät online ist."
+        } else {
+            await vermerkeLaden()
+        }
     }
 
     // MARK: Raumbuchung
@@ -425,6 +491,8 @@ enum Detailseite: Hashable {
     case notizLehrer
     /// Prüfung (Zeile mit dem Fach als Untertitel)
     case pruefung
+    /// Sitzplan der Stunde (mit Anwesenheit zum Antippen)
+    case sitzplan
 }
 
 /// Untertitel der Unterseiten: Datum und Uhrzeit der Stunde.
@@ -1082,8 +1150,8 @@ struct SchuelerSeite: View {
         let alle = liste?.schueler ?? []
         switch filter {
         case .alle: return alle
-        case .abwesend: return alle.filter { daten.fehlzeit($0) != nil }
-        case .anwesend: return alle.filter { daten.fehlzeit($0) == nil }
+        case .abwesend: return alle.filter { !daten.stand($0).istAnwesend }
+        case .anwesend: return alle.filter { daten.stand($0).istAnwesend }
         }
     }
 
@@ -1138,7 +1206,7 @@ struct SchuelerSeite: View {
 
     private var inhalt: some View {
         let alle = liste?.schueler ?? []
-        let abwesend = alle.filter { daten.fehlzeit($0) != nil }.count
+        let abwesend = alle.filter { !daten.stand($0).istAnwesend }.count
         return VStack(spacing: 0) {
             Segmentschalter(auswahl: $filter, [
                 (Filter.alle, "Alle (\(alle.count))"),
@@ -1162,7 +1230,7 @@ struct SchuelerSeite: View {
                                     // Wischen: nach rechts anwesend (Haken), nach links abwesend (Uhr)
                                     // – bei abwesenden Schüler*innen nach links: „Entschuldigen“ (Klassenleitung bzw. Fachlehrkraft)
                                     let fehlzeit = daten.fehlzeit(s)
-                                    let abwesend = fehlzeit != nil
+                                    let abwesend = !daten.stand(s).istAnwesend
                                     WischZeile(rechtsMoeglich: bearbeitbar && abwesend,
                                                linksMoeglich: abwesend ? darfEntschuldigen(s) : bearbeitbar,
                                                rechts: { Task { await ausfuehren(s) { try await daten.anwesendSetzen(s) } } },
@@ -1264,22 +1332,51 @@ struct SchuelerSeite: View {
 
     private func zeile(_ s: Schueler) -> some View {
         let f = daten.fehlzeit(s)
+        let st = daten.stand(s)
         let hatVermerk = daten.vermerke.contains { $0.schuelerId == s.id }
         return HStack(spacing: 14) {
-            Group {
-                if speichert == s.id {
-                    ProgressView()
-                } else if f != nil {
-                    Image(systemName: "clock.fill")
-                        .foregroundStyle(Farben.entfall)
-                } else {
-                    Image(systemName: "checkmark.circle")
-                        .foregroundStyle(Farben.ok)
+            // Schnellwahl: anwesend · abwesend · verspätet (Minuten)
+            Menu {
+                Button {
+                    Task { await ausfuehren(s) { try await daten.anwesendSetzen(s) } }
+                } label: {
+                    Label("Anwesend", systemImage: "checkmark.circle")
                 }
+                .disabled(st.istAnwesend)
+                Button {
+                    Task { await ausfuehren(s) { try await daten.abwesendSetzen(s) } }
+                } label: {
+                    Label("Abwesend (ganze Stunde)", systemImage: "xmark.circle")
+                }
+                Section("Verspätet") {
+                    ForEach([5, 10, 15, 20, 30], id: \.self) { m in
+                        Button("\(m) Minuten") {
+                            Task { await ausfuehren(s) { try await daten.verspaetetSetzen(s, minuten: m) } }
+                        }
+                    }
+                }
+                Section {
+                    Button {
+                        abwesenheitenVon = s
+                    } label: {
+                        Label("Weitere Angaben …", systemImage: "clock")
+                    }
+                }
+            } label: {
+                Group {
+                    if speichert == s.id {
+                        ProgressView()
+                    } else {
+                        Image(systemName: st.symbol)
+                            .foregroundStyle(st.farbe)
+                    }
+                }
+                .font(.system(size: 22, weight: .regular))
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
             }
-            .font(.system(size: 20, weight: .regular))
-            .frame(width: 28, height: 28)
-            .accessibilityLabel(f == nil ? "Anwesend" : "Abwesend")
+            .disabled(!bearbeitbar)
+            .accessibilityLabel("\(st.text). Stand ändern")
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(s.anzeige)
@@ -1287,7 +1384,12 @@ struct SchuelerSeite: View {
                     .foregroundStyle(Farben.text)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                if let u = untertitel(s, f) {
+                if daten.lokalerStand[s.id] != nil {
+                    Text("\(st.text) · wartet auf Verbindung")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Farben.warnung)
+                        .lineLimit(1)
+                } else if let u = untertitel(s, f) {
                     Text(u.text)
                         .font(.system(size: 14, weight: u.warnung ? .medium : .regular))
                         .foregroundStyle(u.warnung ? Farben.entfall : Farben.text3)
@@ -1526,4 +1628,40 @@ struct WischZeile<Inhalt: View>: View {
                 if nachRechts { rechts() } else { links() }
             }
     }
+}
+
+/// Stand einer Schülerin bzw. eines Schülers in der Stunde (Anzeige und Schnellwahl).
+enum Anwesenheitsstand: Equatable {
+    case anwesend
+    case abwesend
+    case verspaetet(Int)
+    case vorzeitig(Int)
+
+    var text: String {
+        switch self {
+        case .anwesend: return "Anwesend"
+        case .abwesend: return "Abwesend"
+        case .verspaetet(let m): return m > 0 ? "Verspätet (\(m) Min.)" : "Verspätet"
+        case .vorzeitig(let m): return m > 0 ? "Vorzeitig gegangen (\(m) Min.)" : "Vorzeitig gegangen"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .anwesend: return "checkmark.circle"
+        case .abwesend: return "xmark.circle.fill"
+        case .verspaetet: return "clock.fill"
+        case .vorzeitig: return "figure.walk.departure"
+        }
+    }
+
+    var farbe: Color {
+        switch self {
+        case .anwesend: return Farben.ok
+        case .abwesend: return Farben.entfall
+        case .verspaetet, .vorzeitig: return Farben.warnung
+        }
+    }
+
+    var istAnwesend: Bool { self == .anwesend }
 }

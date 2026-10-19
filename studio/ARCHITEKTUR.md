@@ -11,7 +11,7 @@ Browser (studio/client → wwwroot)                  Server (UntPlanStudio)     
 │ Seiten und Arbeitsplätze      │                │   └─ Arbeitsdokument (Sperre, Undo)    │      │ Stammdaten,      │
 │ Module: src/module/<modul>/   │ ◀───────────── │ Dokumentdienst (Ablage, Autosave)      │      │ Planung, …       │
 │ Komponenten: Tabelle, Raster  │  SSE-Ereignisse│ Benutzerdienst, Benutzereinstellungen  │      └──────────────────┘
-└───────────────────────────────┘                │ StudioDatenbank (SQLite, studio.db)    │
+└───────────────────────────────┘                │ StudioDatenbank (SQLite oder MariaDB)  │
                                                  └───────────────────────────────────────┘
 ```
 
@@ -29,7 +29,7 @@ studio/
     Program.cs                 Aufbau: Dienste, Anmeldung (Cookie), Middleware, Routengruppen, Module
     Grundlagen/                StudioKonfiguration (Umgebungsvariablen), IStudioModul/StudioRouten, StudioFehler,
                                Fehlerbehandlung, Typnamen (Elementtyp ↔ Route)
-    Dienste/                   StudioDatenbank (SQLite studio.db, Sicherungsdienst), AltdatenUebernahme,
+    Dienste/                   StudioDatenbank (Sicherungsdienst), Datenbankanbieter (SQLite/MySQL), AltdatenUebernahme,
                                Arbeitsdokument, Dokumentdienst, Autospeicherung, Benutzerdienst, Benutzereinstellungen,
                                Felder (Stammdaten-Spalten), Unterrichtsspalten (dto.)
     Api/
@@ -55,21 +55,31 @@ studio/
 
 ## Server
 
-### Ablage: eigene Datenbank `studio.db`
+### Ablage: eigene Datenbank (SQLite `studio.db` oder MySQL/MariaDB)
 
-Das Studio hat eine eigene SQLite-Datenbank `<STUDIO_DATEN>/studio.db` (`Dienste/StudioDatenbank.cs`,
-`Microsoft.Data.Sqlite`), unabhängig von der Datenbank von UntPlan Web. WAL-Modus, `busy_timeout=5000`, eine Verbindung je
-Vorgang (Verbindungspool), Schreibvorgänge in Transaktionen (`BEGIN IMMEDIATE`) und zusätzlich prozessweit nacheinander.
+Das Studio hat eine eigene Datenbank (`Dienste/StudioDatenbank.cs`), unabhängig von der Datenbank von EduOrga Web:
+standardmäßig SQLite `<STUDIO_DATEN>/studio.db` (`Microsoft.Data.Sqlite`, WAL-Modus, `busy_timeout=5000`), mit
+`STUDIO_DB=mysql` + `STUDIO_DB_CONNECTION` MySQL/MariaDB (`MySqlConnector`, InnoDB, utf8mb4, READ COMMITTED). Die kleine
+Provider-Abstraktion `Dienste/Datenbankanbieter.cs` (`SqliteAnbieter`, `MySqlAnbieter`) kapselt Verbindung, Transaktion,
+Migrationen je Datenbank (gleiche Tabellen und Spalten), Schema-Version und die beiden Stellen mit eigenem SQL (Upsert,
+Reihenfolge der `ablage`); alles andere ist Standard-SQL über `DbConnection`. Eine Verbindung je Vorgang (Verbindungspool),
+Schreibvorgänge in Transaktionen (SQLite `BEGIN IMMEDIATE`) und zusätzlich prozessweit nacheinander.
 
 | Tabelle | Inhalt |
 |---|---|
-| `dokumente` | `id` (16 Hex-Zeichen), `name`, `besitzer`, `erstellt`, `geaendert`, `gespeichert`, `herkunft`, `info` (`DokumentInfo` als JSON), `inhalt` (BLOB = Schuldatei-JSON, Byte für Byte wie eine `.up`-Datei), `groesse` |
-| `dokument_sicherungen` | ältere Fassungen je Dokument (`nr`, `id`, `zeit`, `inhalt`, `groesse`) – ersetzt die frühere `.bak`-Datei; bei jedem Speichern mit geändertem Inhalt wandert der bisherige Inhalt hierher, die letzten 10 je Dokument bleiben |
-| `ablage` | JSON-Werte unter `bereich` + `schluessel` (`Ablagebereiche`): `benutzer` (je Benutzer ein `StudioBenutzer`), `einstellungen` (je Benutzer ein JSON-Objekt), `multiuser` (`konfiguration` = `MuKonfiguration`), `untplanweb` (je Dokument-Id ein `UpwAbgleich`) |
-| `meta` | `anwendungsversion` (erkennt Updates) |
+| `dokumente` | `id` (16 Hex-Zeichen), `name`, `besitzer`, `erstellt`, `geaendert`, `gespeichert`, `herkunft`, `info` (`DokumentInfo` als JSON), `inhalt` (BLOB), `format` (0 = Schuldatei-JSON Byte für Byte wie eine `.up`-Datei, 1 = dasselbe gzip-komprimiert; Standard, `STUDIO_DB_KOMPRIMIEREN`), `groesse` (Größe der `.up`-Datei) |
+| `dokument_sicherungen` | ältere Fassungen je Dokument (`nr`, `id`, `zeit`, `inhalt`, `format`, `groesse`, `art`, `benutzer`) – ersetzt die frühere `.bak`-Datei. `art = automatisch`: beim Speichern wandert der bisherige Inhalt hierher, aber höchstens alle `STUDIO_FASSUNG_MINUTEN` (10), die letzten 10 bleiben; `art = sicherungspunkt`: der aktuelle Stand (Strg+S, `POST …/sicherungspunkt`), die letzten 20 bleiben |
+| `ablage` | JSON-Werte unter `bereich` + `schluessel` (`Ablagebereiche`): `benutzer` (je Benutzer ein `StudioBenutzer`), `einstellungen` (je Benutzer ein JSON-Objekt), `multiuser` (`konfiguration` = `MuKonfiguration`), `untplanweb` (je Dokument-Id ein `UpwAbgleich`), `untplanweb-direkt` (je Dokument-Id ein `UpwDirekt`: Vertretungen automatisch übertragen) |
+| `meta` | `anwendungsversion` (erkennt Updates), bei MySQL zusätzlich `schemaversion` |
 
-* **Schema-Version** in `PRAGMA user_version`; Migrationen stehen in `StudioDatenbank.Migrationen` (Eintrag *i* hebt
-  Version *i* auf *i + 1*) und laufen beim Start. Neue Migration = neuen Eintrag anhängen, bestehende nie ändern.
+* **Schema-Version** (SQLite `PRAGMA user_version`, MySQL `meta.schemaversion`, derzeit 2); Migrationen stehen je Anbieter in
+  `Datenbankanbieter.Migrationen` (Eintrag *i* hebt Version *i* auf *i + 1*, beide Listen gleich lang) und laufen beim Start.
+  Neue Migration = bei beiden Anbietern einen Eintrag anhängen, bestehende nie ändern (MySQL: DDL ist nicht transaktional –
+  wiederholbar schreiben). Schema 2: Spalten `format`, `art`, `benutzer` (bei MySQL schon in Version 1 enthalten).
+* **MySQL/MariaDB:** fehlt die Datenbank, wird sie angelegt (wenn erlaubt); beim Start wird bis `STUDIO_DB_WARTEN_SEKUNDEN`
+  auf den Server gewartet. Ist sie leer und liegt im Datenordner eine `studio.db`, wird diese vollständig übernommen
+  (`SqliteUebernehmen`, eine Transaktion; die Datei bleibt). Sichern übernimmt der Datenbankserver (`installation/update.sh`:
+  `mariadb-dump`); `--sichern`, `Sicherungsdienst` und `POST /api/sicherungen` gelten nur für SQLite.
 * **Sicherung** (`VACUUM INTO`, konsistent auch im laufenden Betrieb) nach `<STUDIO_DATEN>/sicherungen/studio-<zeit>.db`:
   beim Start vor jedem Update (andere Programmversion oder Schema-Migration), täglich (`Sicherungsdienst`), über
   `POST /api/sicherungen` (Admin) und `dotnet UntPlanStudio.dll --sichern` (legt nichts an, migriert nichts). Die letzten
@@ -96,8 +106,20 @@ Vorgang (Verbindungspool), Schreibvorgänge in Transaktionen (`BEGIN IMMEDIATE`)
     Ereignis und liefert unter derselben Sperre das Ergebnis (z. B. die geänderte Tabellenzeile).
   * `AusfuehrenAsync(benutzer, doc => (ergebnis, art?, text))` – für Sonderfälle (Rückgängig, Optimierungsergebnis übernehmen …).
 * Rückgängig/Wiederholen kommen aus dem Core (50 Stufen, `POST …/rueckgaengig`, `…/wiederholen`).
-* `Autospeicherung` speichert geänderte Dokumente alle `STUDIO_AUTOSPEICHERN_SEKUNDEN` (Standard 30) und beim Beenden;
-  lange unbenutzte Dokumente ohne Ereignis-Abonnenten werden entladen (`STUDIO_LEERLAUF_MINUTEN`).
+* **Sofortiges Speichern (kein „Speichern“ mehr nötig):** `Arbeitsdokument` meldet jede gemeldete Änderung (`AendernAsync`,
+  `AusfuehrenAsync` mit Änderungsart – also auch Rückgängig/Wiederholen) nach dem Freigeben der Sperre an den `Dokumentdienst`
+  (`Vormerken`). Nach `STUDIO_SPEICHERN_VERZOEGERUNG_MS` (800 ms) wird gespeichert; weitere Änderungen in dieser Zeit gehören zum
+  selben Schreibvorgang, Änderungen während des Schreibens werden neu vorgemerkt. `SpeichernAsync` erzeugt den Inhalt unter
+  der Dokumentsperre (`Dokument.Speichern(Action<byte[]>)` setzt `IstGeaendert` zurück) und schreibt danach **außerhalb** der
+  Sperre (Komprimieren + eine Transaktion); eine eigene Speichersperre je Dokument hält die Reihenfolge. Schlägt das Schreiben
+  fehl: Dokument wieder „geändert“, `Speicherfehler` gesetzt, Ereignis `speicherfehler`, neuer Versuch nach 2, 4, 8 … höchstens 60 s.
+  `Autospeicherung` (alle `STUDIO_AUTOSPEICHERN_SEKUNDEN`, 30) ist nur noch Sicherheitsnetz, speichert beim Beenden alles
+  (`Dokumentdienst.BeendenAsync`, wartet laufende Vorgänge ab) und entlädt lange unbenutzte Dokumente ohne Ereignis-Abonnenten
+  (`STUDIO_LEERLAUF_MINUTEN`). Andere Dienste können `Dokumentdienst.Geaendert` abonnieren (z. B. `VertretungsUebertragung`).
+* **MultiUser** ist davon unberührt: alle Benutzer arbeiten weiterhin an demselben `Arbeitsdokument` im Speicher, Sperren je
+  Bereich, Exklusivbetrieb und Rechte prüft der Endpunktfilter vor jeder Änderung wie bisher. Gespeichert wird je Dokument
+  (nicht je Benutzer) – wie früher, als „Speichern“ eines Benutzers die Änderungen aller speicherte, nur jetzt sofort.
+  `speichern` und `sicherungspunkt` sind nie gesperrt (`MultiUserDienst.Frei`).
 * Fehlermeldungen des Core (`InvalidOperationException`, `FormatException`) werden als HTTP 400 `{ "fehler": "…" }`
   gemeldet als Hinweis. Eigene Fehler: `throw StudioFehler.Ungueltig(...)`, `.NichtGefunden(...)`, `.Verboten()`.
 * Lange Berechnungen (z. B. Optimierung) nicht unter der Sperre laufen lassen: Daten unter `LesenAsync` kopieren
@@ -106,7 +128,8 @@ Vorgang (Verbindungspool), Schreibvorgänge in Transaktionen (`BEGIN IMMEDIATE`)
 ### Ereignisse (Aktualisierung zwischen Fenstern und Benutzern)
 
 `GET /api/dokumente/{dok}/ereignisse` (Server-Sent Events): `hallo`, `aenderung` (`{ version, bereich, beschreibung, benutzer, zeit }`),
-`gespeichert`, `geschlossen`. Zusätzlich trägt jede Antwort eines Dokument-Endpunkts die Kopfzeilen `X-Dokument-Version`
+`gespeichert` (nach jedem Speichervorgang), `speicherfehler`, `untplanweb` (direkte Übertragung beendet, `beschreibung` = Ergebnis),
+`geschlossen`. Zusätzlich trägt jede Antwort eines Dokument-Endpunkts die Kopfzeilen `X-Dokument-Version`
 und `X-Dokument-Bereich`. `bereich` = `AenderungsArt` des Core: `Stammdaten`, `Unterricht`, `Stundenplan`, `Vertretung`,
 `Einstellungen`, `Alles`.
 
@@ -138,7 +161,7 @@ Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT
 | anmeldung | `GET /api/system`, `GET /api/sitzung`, `POST /api/anmeldung`, `POST /api/abmeldung`, `GET /api/ich`, `POST /api/ich/passwort` |
 | benutzer (Admin) | `GET/POST /api/benutzer`, `DELETE /api/benutzer/{name}`, `POST /api/benutzer/{name}/passwort`, `GET /api/benutzer/rollen`; Datenbanksicherungen: `GET /api/sicherungen` (Liste), `POST /api/sicherungen` (jetzt sichern) |
 | einstellungen | `GET/PUT/DELETE /api/einstellungen/{schluessel}` (JSON je Benutzer; Schlüssel mit Modulpräfix, z. B. `vertretung.ansicht`) |
-| dokumente | `GET /api/dokumente` (Liste + zuletzt), `POST /api/dokumente/neu`, `POST /api/dokumente/beispiel`, `POST /api/dokumente/hochladen` (multipart `datei`: .up oder BAL); je Dokument: `GET ""` (Stand), `GET /grunddaten` (Zeitraster, Perioden), `POST /speichern`, `GET /herunterladen`, `POST /schliessen`, `DELETE ""`, `PUT /name`, `POST /rueckgaengig`, `POST /wiederholen`, `POST /bal-import` (multipart + Optionen), `GET /ereignisse` |
+| dokumente | `GET /api/dokumente` (Liste + zuletzt), `POST /api/dokumente/neu`, `POST /api/dokumente/beispiel`, `POST /api/dokumente/hochladen` (multipart `datei`: .up oder BAL); je Dokument: `GET ""` (Stand), `GET /grunddaten` (Zeitraster, Perioden), `POST /speichern` (sofort schreiben, z. B. „Erneut versuchen“), `POST /sicherungspunkt` (Strg+S), `GET /fassungen` (ältere Fassungen `{nr, zeit, groesse, art, benutzer}`), Stand mit `geaendert`/`speichert`/`speicherfehler`, `GET /herunterladen`, `POST /schliessen`, `DELETE ""`, `PUT /name`, `POST /rueckgaengig`, `POST /wiederholen`, `POST /bal-import` (multipart + Optionen), `GET /ereignisse` |
 | stammdaten | `GET /stammdaten/{typ}`, `GET /stammdaten/{typ}/felder`, `POST /stammdaten/{typ}` (`{kurzname, werte}`), `PATCH /stammdaten/{typ}/{id}` (`{feld, wert}`), `POST /stammdaten/{typ}/aendern` (`{aenderungen:[{id,feld,wert}]}`), `POST /stammdaten/{typ}/loeschen` (`{ids}`), `DELETE /stammdaten/{typ}/{id}`, `GET /stammdaten/{typ}/verwendung?ids=`, `GET /elemente?typen=` (Auswahllisten `{k,l}`) |
 | unterricht | `GET /unterricht?sicht=klasse|lehrer|fach|alle&element=`, `GET /unterricht/spalten` (je Spalte `art`, `auswahl`), `POST /unterricht` (`{sicht, element, werte}`), `PATCH /unterricht/{uid}` (`{feld, wert, zeile}`), `POST /unterricht/aendern` (`{aenderungen:[{uid,feld,wert,zeile}]}`, eine Rückgängig-Stufe, alles oder nichts), `POST /unterricht/{uid}/zeilen`, `DELETE /unterricht/{uid}/zeilen/{nr}`, `POST /unterricht/{uid}/kopieren`, `POST /unterricht/loeschen`, `GET /unterricht/online`, `GET/PUT /unterricht/{uid}/online` (siehe „Findet online statt“) |
 | stundenplan | `GET /stundenplan/{typ}/{id}` (Zellen mit Einträgen je Kopplungszeile, nicht verplante Stunden), `GET /stundenplan/zielstatus?unterricht=&tag=&stunde=`, `POST /stundenplan/verplanen`, `POST /stundenplan/verschieben`, `POST /stundenplan/entplanen`, `POST /stundenplan/fixieren` |
@@ -148,7 +171,7 @@ Admin-Konto beim ersten Start aus `STUDIO_ADMIN_BENUTZER`/`STUDIO_ADMIN_PASSWORT
 | planung | `GET /planung/zielstatus?unterricht=&tag=&stunde=&einzeln=&laenge=` (`{status, gruende}` je Feld), `POST /planung/verschieben` (Block bzw. `einzeln`; `aktion` auto/entplanen/kollision – ohne Aktion bei Behinderung `{ok:false, frage}`), `POST /planung/verplanen` (`{unterricht, tag, stunde, laenge, aktion}`), `POST /planung/entplanen` / `POST /planung/fixieren` (`{stunden:[{unterricht,tag,stunde}]}`, Mehrfachauswahl), `POST /planung/alle-entplanen`, `POST /planung/alle-fixieren`, `GET/POST /planung/raum` (Raumliste bzw. zuordnen/löschen mit `umfang`, `loesung`), `GET /planung/tausch` (Tauschvorschläge), `POST /planung/tauschen` |
 | zeitwuensche | `GET /zeitwuensche/{typ}` (Elemente mit Anzahl), `GET/PUT /zeitwuensche/{typ}/{id}` (`{aenderungen:[{tag,stunde,wert}]}` bzw. `{alleLoeschen}`), `PUT /zeitwuensche/{typ}/{id}/unbestimmte` – typ: klasse, lehrer, raum, fach, unterricht |
 | austausch | `GET /austausch` (Übersicht), `POST /austausch/csv/{lehrer|klassen|schueler}` (multipart), `POST /austausch/gpu` (mehrere Dateien oder ZIP), `GET /austausch/gpu` (ZIP), `GET /austausch/unterricht.csv`, `GET /austausch/infostundenplan.zip`, `GET /austausch/ical/{lehrer}?von=&bis=`, `GET /austausch/untplanweb.json`, `GET/POST /austausch/abteilung/{id}` (Abteilungsdatei exportieren/zusammenführen) |
-| untplanweb | `GET /untplanweb` (Zeilen, Status, Anfangsdatum), `GET/PUT /untplanweb/einstellungen` (leerer API-Schlüssel = unverändert), `POST /untplanweb/pruefen`, `GET /untplanweb/schulname`, `PUT /untplanweb/anfangsdatum`, `POST /untplanweb/export/{stammdaten|unterricht|vertretungen|alles}` bzw. `POST /untplanweb/import/{absenzen|studenten|kurse}` (Hintergrundauftrag) + `GET /untplanweb/auftrag/{id}` (Fortschritt), `GET /untplanweb/stpl?von=&bis=&erledigte=&neu=`, `POST /untplanweb/stpl/uebernehmen|ignorieren` (`{ids}`), `PUT /untplanweb/stpl/einstellungen`, `GET/POST /untplanweb/klausuren`, `PUT/DELETE /untplanweb/klausuren/{id}`, `GET /untplanweb/schuelerabwesenheiten`, `GET /untplanweb/klassenbuch`, `GET/PUT /untplanweb/abgleich`, `POST /untplanweb/abgleich/jetzt` (automatischer Abgleich: Hintergrunddienst `UpwAbgleichDienst`, Einstellungen in der Datenbank, `ablage` Bereich `untplanweb`) |
+| untplanweb | `GET /untplanweb` (Zeilen, Status, Anfangsdatum), `GET/PUT /untplanweb/einstellungen` (leerer API-Schlüssel = unverändert), `POST /untplanweb/pruefen`, `GET /untplanweb/schulname`, `PUT /untplanweb/anfangsdatum`, `POST /untplanweb/export/{stammdaten|unterricht|vertretungen|alles}` bzw. `POST /untplanweb/import/{absenzen|studenten|kurse}` (Hintergrundauftrag) + `GET /untplanweb/auftrag/{id}` (Fortschritt), `GET /untplanweb/stpl?von=&bis=&erledigte=&neu=`, `POST /untplanweb/stpl/uebernehmen|ignorieren` (`{ids}`), `PUT /untplanweb/stpl/einstellungen`, `GET/POST /untplanweb/klausuren`, `PUT/DELETE /untplanweb/klausuren/{id}`, `GET /untplanweb/schuelerabwesenheiten`, `GET /untplanweb/klassenbuch`, `GET/PUT /untplanweb/abgleich`, `POST /untplanweb/abgleich/jetzt` (automatischer Abgleich: Hintergrunddienst `UpwAbgleichDienst`, Einstellungen in der Datenbank, `ablage` Bereich `untplanweb`); direkte Übertragung: `POST /untplanweb/vertretungen/senden` (ein Klick, wartet auf das Ergebnis; dasselbe Paket wie Export „Vertretungen*“: Stammdaten + Vertretungen, Tage mit `nurAenderungen`), `GET/PUT /untplanweb/direkt` (`{automatisch, sekunden}` → Stand `{eingerichtet, automatisch, sekunden, laufend, faellig, letzte: {zeit, ok, text, revision, automatisch, benutzer}, zuletztErfolgreich, revision}`; automatisch: `VertretungsUebertragung` sendet spätestens `sekunden` nach einer Änderung der Art `Vertretung`/`Alles`, Fehler werden mit 1, 2, 4 … 15 min wiederholt). Exporte vermerken Revision/Zeit ohne eigene Rückgängig-Stufe |
 | abrechnung | `GET /abrechnung/werte`, `PATCH /abrechnung/werte/{lehrer}` (`{feld: Wochensoll|Wertkorrektur, wert}`), `GET /abrechnung/matrix?art=0|1|2`, `GET/PUT /abrechnung/stundentafel`, `POST /abrechnung/stundentafel/jahrgang|nrw`, `GET /abrechnung/berichte`, `GET /abrechnung/statistik?bericht=0..6&von=&bis=&lehrer=` (+ `.html` mit `alle=true`, `.csv`), `GET /abrechnung/zaehler/{lehrer}?datum=` |
 | pausenaufsicht | `GET /pausenaufsicht`, `GET /pausenaufsicht/gang/{id}`, `GET /pausenaufsicht/lehrer/{id}`, `PUT /pausenaufsicht/zelle` (`{gang,tag,nach,lehrer:"AB, CD"}`), `GET /pausenaufsicht/vorschlag?gang=&tag=&nach=`, `POST /pausenaufsicht/zuordnen|teile|loeschen|optimieren`, `GET/PUT /pausenaufsicht/gewichtung`, `GET/POST /pausenaufsicht/vertretung/{datum}` (Aufsichtsvertretungen mit Kandidaten) |
 | kursplanung | `GET /kursplanung` (Klassen), `GET /kursplanung/{klasse}`, `PATCH /kursplanung/{klasse}/kurs/{uid}` (`{feld: band|kursname}`), `PUT /kursplanung/{klasse}/wahl`, `POST /kursplanung/{klasse}/zufall|bandbildung|baender` |
@@ -198,7 +221,9 @@ Logik in `UntPlan.Core.Vertretungsplanung.OnlineUnterricht`):
   `createLightTheme/createDarkTheme`), Schrift IBM Plex Sans (lokal, `public/fonts`), Grundwerte aus `design/tokens.css`
   (Fachfarben, Statusflächen `--up-…`). Hell/Dunkel/Automatisch im Kontomenü. Keine Verläufe, keine Symbolkacheln.
 * **Shell:** Kopfleiste (Schuldatei-Menü, Modus Stundenplanung/Vertretungsplanung, Steuerelemente der Module wie Planungsdatum
-  und aktive Benutzer, Rückgängig/Wiederholen, Speichern, Befehlssuche Strg+K, Konto), Seitenleiste (Fluent `NavDrawer`,
+  und aktive Benutzer, im Vertretungsmodus „An Web senden“ (`module/untplanweb/Senden.tsx`, Befehl `untplanweb.vertretungenSenden`,
+  einbindbar als `<VertretungenSendenKnopf />`), Rückgängig/Wiederholen, Speicherstand `shell/speicherstatus.tsx` – „Gespeichert · 14:32“ /
+  „Speichert …“ / „Nicht gespeichert · Erneut versuchen“; Strg+S = Sicherungspunkt –, Befehlssuche Strg+K, Konto), Seitenleiste (Fluent `NavDrawer`,
   fachliche Gruppen aus `src/shell/navigation.ts`; in schmalen Fenstern überlagernd) und darunter die **Seite**.
 * **Seiten und Adressen:** Jede Ansicht hat eine Adresse `/<pfad>?<parameter>` (z. B. `/stundenplan?typ=klasse&element=3`);
   Zurück/Vor des Browsers und Neuladen funktionieren (der Server liefert für alle Oberflächen-Adressen `index.html`).

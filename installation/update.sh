@@ -10,7 +10,8 @@
 #                                   z. B. per cron:  * * * * * cd /opt/untplannext && ./update.sh --wenn-angefordert >> update.log 2>&1
 #
 # Sicherungen:
-#   UntPlan Studio   eigene SQLite-Datenbank → Volume untplannext-studio-daten, Ordner /data/sicherungen
+#   UntPlan Studio   SQLite → Volume untplannext-studio-daten, Ordner /data/sicherungen
+#                    MariaDB (STUDIO_DB=mysql) → komprimierter SQL-Abzug der Datenbank eduorga_studio in ./sicherungen
 #   UntPlan Web      SQLite → Volume untplannext-web-daten, Ordner /data/sicherungen
 #                    MariaDB → komprimierter SQL-Abzug in ./sicherungen
 #   EduOrga Website  SQLite → Volume untplannext-website-daten, Ordner /data/sicherungen
@@ -20,6 +21,10 @@ cd "$(dirname "$0")"
 
 wert() { [ -f .env ] && sed -n "s/^$1=//p" .env | tail -n 1 | tr -d '"' || true; }
 UNTPLANWEB_DB=${UNTPLANWEB_DB:-$(wert UNTPLANWEB_DB)}
+STUDIO_DB=${STUDIO_DB:-$(wert STUDIO_DB)}
+# Name der Studio-Datenbank aus STUDIO_DB_CONNECTION (Database=…), Standard eduorga_studio
+STUDIO_DATENBANK=$(wert STUDIO_DB_CONNECTION | tr ';' '\n' | sed -n 's/^[[:space:]]*[Dd]atabase=//p' | head -n 1)
+STUDIO_DATENBANK=${STUDIO_DATENBANK:-eduorga_studio}
 SICHERUNGEN_BEHALTEN=${SICHERUNGEN_BEHALTEN:-$(wert SICHERUNGEN_BEHALTEN)}
 SICHERUNGEN=${SICHERUNGEN:-./sicherungen}
 BEHALTEN=${SICHERUNGEN_BEHALTEN:-14}
@@ -31,12 +36,21 @@ for a in "$@"; do
     --wenn-angefordert) ANGEFORDERT=1 ;;
     studio|web|mobile|website) NUR="$NUR untplannext-$a" ;;
     untplannext-studio|untplannext-web|untplannext-mobile|untplannext-website) NUR="$NUR $a" ;;
-    -h|--hilfe) sed -n '2,18p' "$0"; exit 0 ;;
+    -h|--hilfe) sed -n '2,19p' "$0"; exit 0 ;;
     *) echo "Unbekannte Option: $a" >&2; exit 2 ;;
   esac
 done
 
 laeuft() { docker compose ps --services --status running 2>/dev/null | grep -qx "$1"; }
+mariadb_abzug() { # mariadb_abzug <Datenbank> <Dateipräfix> → komprimierter SQL-Abzug in $SICHERUNGEN, alte aufräumen
+  mkdir -p "$SICHERUNGEN"
+  datei="$SICHERUNGEN/$2-$stempel.sql.gz"
+  docker compose exec -T -e DB="$1" untplannext-mariadb sh -c 'exec mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --single-transaction --quick \
+    --routines --default-character-set=utf8mb4 --max-allowed-packet=256M "$DB"' | gzip > "$datei"
+  [ "$(gzip -dc "$datei" 2>/dev/null | head -c 64 | wc -c)" -gt 0 ] || { rm -f "$datei"; return 1; }
+  echo "  $datei"
+  ls -1t "$SICHERUNGEN"/"$2"-*.sql.gz 2>/dev/null | tail -n +"$((BEHALTEN + 1))" | while read -r alt; do rm -f "$alt"; done
+}
 gewaehlt() { [ -z "$NUR" ] || echo "$NUR" | grep -qw "$1"; }
 
 if [ "$ANGEFORDERT" = 1 ]; then
@@ -47,9 +61,15 @@ fi
 if [ "$SICHERN" = 1 ]; then
   stempel=$(date +%Y%m%d-%H%M%S)
   if gewaehlt untplannext-studio && laeuft untplannext-studio; then
-    echo "Sichere UntPlan Studio …"
-    docker compose exec -T untplannext-studio dotnet UntPlanStudio.dll --sichern \
-      || { echo "Sicherung von UntPlan Studio fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
+    echo "Sichere EduOrga Studio …"
+    if [ "${STUDIO_DB:-sqlite}" = mysql ]; then
+      # MariaDB: das Studio sichert sich nicht selbst (kein mysqldump im Container) – Abzug aus dem MariaDB-Container
+      { laeuft untplannext-mariadb && mariadb_abzug "$STUDIO_DATENBANK" untplannext-studio; } \
+        || { echo "Sicherung der Studio-Datenbank ($STUDIO_DATENBANK) fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
+    else
+      docker compose exec -T untplannext-studio dotnet UntPlanStudio.dll --sichern \
+        || { echo "Sicherung von EduOrga Studio fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
+    fi
   fi
   if gewaehlt untplannext-web && laeuft untplannext-web; then
     echo "Sichere UntPlan Web …"
