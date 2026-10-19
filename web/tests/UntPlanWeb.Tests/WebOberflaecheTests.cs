@@ -180,7 +180,7 @@ public class WebOberflaecheTests
         var shell = Lesen("src", "app", "Shell.tsx");
         Assert.Contains("borderRadius: 0", shell);
         Assert.Contains("inset 3px 0 0 var(--mui-palette-nav-marke)", shell);
-        Assert.DoesNotContain("borderRadius: '6px'", shell);
+        Assert.Contains("const zeile = { color: 'nav.text', borderRadius: 0", shell);
         Assert.Contains("inset 3px 0 0 ${theme.vars.palette.secondary.main}", Lesen("src", "theme.ts"));
     }
 
