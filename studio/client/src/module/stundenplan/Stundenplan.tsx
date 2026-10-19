@@ -3,6 +3,7 @@
 // Werkzeugleiste und im Kontextmenü (fixieren, Raum, Tausch, entplanen) – Logik in module/planung/aktionen.tsx.
 // Umschalter „Einzelplan | Blockansicht“: mehrere Pläne kompakt als Kacheln (Blockansicht.tsx, Parameter block=true).
 import { useDraggable } from '@dnd-kit/core';
+import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
@@ -87,7 +88,6 @@ function StundenplanAnsicht({ p }: AnsichtProps) {
         <Trenner />
         {schreiben ? <>
           <Werkzeug text="Planen" titel="Planen-Modus: Stunden per Drag & Drop verschieben und setzen" gedrueckt={planen} aktion={() => a.parameterSetzen({ planen: !planen })} />
-          <Trenner />
           <Werkzeug text="Fixieren" titel="Markierte Stunden fixieren bzw. lösen (F)" aktion={() => planAktion(() => planung.fixieren(raster.current?.markierte() || [], a.id))} />
           <Werkzeug text="Raum" titel="Raum der Stunde zuordnen oder entfernen" aktion={() => mitStunde((x) => planung.raumDialog(x, a.id))} />
           <Werkzeug text="Tauschen" titel="Tauschvorschläge für die Stunde" aktion={() => mitStunde((x) => planung.tauschDialog(x, a.id))} />
@@ -95,7 +95,7 @@ function StundenplanAnsicht({ p }: AnsichtProps) {
           <Trenner />
         </> : null}
         {typ !== 'raum' ? <Werkzeug text="Unterricht" titel="Unterricht des Elements" aktion={unterrichtOeffnen} /> : null}
-        <MenueKnopf text="Weitere Aktionen" eintraege={() => [
+        <MenueKnopf text="" icon={<MoreHorizontal20Regular />} titel="Weitere Aktionen" eintraege={() => [
           { text: 'Kompakte Darstellung', haken: kompakt, aktion: () => a.parameterSetzen({ kompakt: !kompakt }) },
           null,
           { text: 'Zeitwünsche', aktion: () => a.oeffnen('zeitwuensche', { typ, element: element ?? undefined }) },

@@ -15,7 +15,8 @@ export function useModusBindung(seitenModus: Modus | undefined, kennung: string 
   }, [seitenModus, kennung]);
   // Moduswechsel durch den Benutzer: Seite gehört nicht zum neuen Modus → Übersicht
   useEffect(() => {
-    if (vorher.current === modus) return;
+    // veralteter Wert aus dieser Darstellung (z. B. gerade beim Öffnen umgestellt): nicht als Wechsel des Benutzers werten
+    if (modus !== zustand().modus || vorher.current === modus) return;
     vorher.current = modus;
     if (seitenModus && seitenModus !== modus) navigate('/');
   }, [modus]); // eslint-disable-line react-hooks/exhaustive-deps
