@@ -3,7 +3,7 @@
 # Datenbank-Migrationen laufen beim Start der Programme automatisch.
 #
 #   ./update.sh                     alle installierten Programme aktualisieren
-#   ./update.sh studio              nur UntPlan Studio (ebenso: web, mobile – auch mehrere)
+#   ./update.sh studio              nur UntPlan Studio (ebenso: web, mobile, website – auch mehrere)
 #   ./update.sh --nur-sichern       nur sichern, nichts aktualisieren
 #   ./update.sh --ohne-sicherung    ohne vorherige Sicherung (nicht empfohlen)
 #   ./update.sh --wenn-angefordert  nur, wenn in der Administration von UntPlan Web „Update installieren“ geklickt wurde,
@@ -13,6 +13,7 @@
 #   UntPlan Studio   eigene SQLite-Datenbank → Volume untplannext-studio-daten, Ordner /data/sicherungen
 #   UntPlan Web      SQLite → Volume untplannext-web-daten, Ordner /data/sicherungen
 #                    MariaDB → komprimierter SQL-Abzug in ./sicherungen
+#   EduOrga Website  SQLite → Volume untplannext-website-daten, Ordner /data/sicherungen
 #   Es bleiben jeweils die neuesten SICHERUNGEN_BEHALTEN (Standard 14).
 set -eu
 cd "$(dirname "$0")"
@@ -28,9 +29,9 @@ for a in "$@"; do
     --nur-sichern) AKTUALISIEREN=0 ;;
     --ohne-sicherung) SICHERN=0 ;;
     --wenn-angefordert) ANGEFORDERT=1 ;;
-    studio|web|mobile) NUR="$NUR untplannext-$a" ;;
-    untplannext-studio|untplannext-web|untplannext-mobile) NUR="$NUR $a" ;;
-    -h|--hilfe) sed -n '2,17p' "$0"; exit 0 ;;
+    studio|web|mobile|website) NUR="$NUR untplannext-$a" ;;
+    untplannext-studio|untplannext-web|untplannext-mobile|untplannext-website) NUR="$NUR $a" ;;
+    -h|--hilfe) sed -n '2,18p' "$0"; exit 0 ;;
     *) echo "Unbekannte Option: $a" >&2; exit 2 ;;
   esac
 done
@@ -64,6 +65,11 @@ if [ "$SICHERN" = 1 ]; then
       docker compose exec -T untplannext-web dotnet UntPlanWeb.dll --sichern \
         || { echo "Sicherung von UntPlan Web fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
     fi
+  fi
+  if gewaehlt untplannext-website && laeuft untplannext-website; then
+    echo "Sichere EduOrga Website …"
+    docker compose exec -T untplannext-website dotnet EduOrgaWebsite.dll --sichern \
+      || { echo "Sicherung der EduOrga Website fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
   fi
 fi
 

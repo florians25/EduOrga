@@ -83,14 +83,17 @@ struct WochenSeite: View {
     let tagOeffnen: (String) -> Void
 
     var body: some View {
-        ScrollView(.vertical) {
-            Wochenraster(modell: modell, montag: montag, raum: raum, antippen: antippen, tagOeffnen: tagOeffnen)
-                .padding(.bottom, 3 * Stilmass.raster)
-        }
-        .scrollIndicators(.hidden)
-        .refreshable {
-            await modell.laden(montag: montag, erzwingen: true)
-            Haptik.erfolg()
+        GeometryReader { geo in
+            ScrollView(.vertical) {
+                Wochenraster(modell: modell, montag: montag, raum: raum, antippen: antippen, tagOeffnen: tagOeffnen,
+                             verfuegbar: geo.size)
+                    .padding(.bottom, 4)
+            }
+            .scrollIndicators(.hidden)
+            .refreshable {
+                await modell.laden(montag: montag, erzwingen: true)
+                Haptik.erfolg()
+            }
         }
         .task(id: "\(modell.typ)|\(modell.element)|\(montag)") {
             await modell.laden(montag: montag)
@@ -106,16 +109,20 @@ struct Wochenraster: View {
     let raum: Namespace.ID?
     let antippen: (Kachel, Tagesansicht, String) -> Void
     let tagOeffnen: (String) -> Void
+    /// Verfügbare Fläche der Seite: die Zeilen werden so hoch, dass der ganze Schultag auf den Bildschirm passt
+    var verfuegbar: CGSize = .zero
 
     @AppStorage(Wochendichte.schluessel) private var dichte: Double = Wochendichte.normal
     @Environment(\.kartendarstellung) private var darstellung
-    @ScaledMetric(relativeTo: .caption) private var grundHoehe: CGFloat = 50
-    @ScaledMetric(relativeTo: .caption) private var zeitBreite: CGFloat = 40
+    @ScaledMetric(relativeTo: .caption) private var mindestHoehe: CGFloat = 34
+    @ScaledMetric(relativeTo: .caption) private var zeitBreite: CGFloat = 26
     /// Vorläufiger Faktor während des Aufziehens
     @State private var zoom: Double = 1
 
-    private let kopfHoehe: CGFloat = 40
+    private let kopfHoehe: CGFloat = 34
     private let spalt: CGFloat = 2
+    /// Abstand zwischen den Tagesspalten
+    private let spaltenLuecke: CGFloat = 2
 
     private var tage: [String] { modell.tage(montag: montag) }
 
@@ -126,14 +133,28 @@ struct Wochenraster: View {
         return []
     }
 
+    /// Summe der Spalten zwischen den Zeilen (große Pausen breiter).
+    private var spaltSumme: CGFloat {
+        var summe: CGFloat = 0
+        for i in raster.indices.dropFirst() {
+            summe += raster[i].beginn - raster[i - 1].ende >= 15 ? 10 : spalt
+        }
+        return summe
+    }
+
+    /// Zeilenhöhe: der ganze Schultag passt in die verfügbare Höhe (Dichte „Normal“), mindestens aber lesbar
+    /// (im Querformat etwas höher, damit drei Zeilen auf die Karte passen) – sonst wird gerollt.
     private var zeilenHoehe: CGFloat {
-        CGFloat(min(Wochendichte.bereich.upperBound, max(Wochendichte.bereich.lowerBound, dichte * zoom))) * grundHoehe
+        let n = CGFloat(max(raster.count, 1))
+        let quer = verfuegbar.width > verfuegbar.height && verfuegbar.height > 0
+        let minimum = quer ? max(mindestHoehe, 42) : mindestHoehe
+        let passend = verfuegbar.height > 0 ? (verfuegbar.height - kopfHoehe - spaltSumme - 12) / n : 50
+        let faktor = CGFloat(min(Wochendichte.bereich.upperBound, max(Wochendichte.bereich.lowerBound, dichte * zoom)))
+        return max(minimum, passend * faktor)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            kennzahlen
-                .padding(.horizontal, Stilmass.rand)
+        VStack(alignment: .leading, spacing: 6) {
             if let p = modell.plan(montag: montag) {
                 if p.gesperrt {
                     let hinweis = (p.sperrhinweis ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -147,7 +168,7 @@ struct Wochenraster: View {
                         .padding(.horizontal, Stilmass.rand)
                 } else {
                     rasterflaeche
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 2)
                 }
             } else if modell.fehler != nil && !modell.laedt(montag: montag) {
                 Hinweisfeld(titel: "Plan nicht geladen", text: "Zum Aktualisieren nach unten ziehen.", symbol: "wifi.exclamationmark",
@@ -157,7 +178,7 @@ struct Wochenraster: View {
                 Platzhaltertag()
             }
         }
-        .padding(.top, Stilmass.raster)
+        .padding(.top, 2)
     }
 
     // MARK: Kennzahlen
@@ -240,7 +261,7 @@ struct Wochenraster: View {
         GeometryReader { geo in
             let zl = zeilenLage()
             let spalten = max(tage.count, 1)
-            let breite = max(0, (geo.size.width - zeitBreite - CGFloat(spalten) * 3) / CGFloat(spalten))
+            let breite = max(0, (geo.size.width - zeitBreite - CGFloat(spalten) * spaltenLuecke) / CGFloat(spalten))
             ZStack(alignment: .topLeading) {
                 // Hellgrauer Grund mit feinen Stundenlinien
                 rastergrund(oben: zl.oben, hoehe: zl.hoehe)
@@ -254,14 +275,14 @@ struct Wochenraster: View {
                 }
                 // Tage
                 ForEach(Array(tage.enumerated()), id: \.element) { i, d in
-                    let x = zeitBreite + 3 + CGFloat(i) * (breite + 3)
+                    let x = zeitBreite + spaltenLuecke + CGFloat(i) * (breite + spaltenLuecke)
                     tagesSpalte(d, breite: breite, oben: zl.oben, hoehe: zl.hoehe)
                         .frame(width: breite, height: kopfHoehe + zl.hoehe, alignment: .topLeading)
                         .offset(x: x, y: 0)
                 }
                 // Jetzt-Linie über dem heutigen Tag
                 if let i = tage.firstIndex(where: { Datumsformat.istHeute($0) }) {
-                    let x = zeitBreite + 3 + CGFloat(i) * (breite + 3)
+                    let x = zeitBreite + spaltenLuecke + CGFloat(i) * (breite + spaltenLuecke)
                     TimelineView(.periodic(from: .now, by: 30)) { kontext in
                         if let y = lage(Uhr.minuten(kontext.date), oben: zl.oben) {
                             JetztLinie()
@@ -294,6 +315,8 @@ struct Wochenraster: View {
             Text(Uhr.uhrzeit(r.beginn))
                 .font(.caption2)
                 .foregroundStyle(Farben.text3)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
             if zeilenHoehe >= 58 {
                 Text(Uhr.uhrzeit(r.ende))
                     .font(.caption2)
@@ -562,9 +585,9 @@ struct JetztLinie: View {
 
 // MARK: - Karte im Raster
 
-/// Karte des Wochenrasters im klassischen Grunddesign (angelehnt an bekannte Stundenplanportale, aber eigenständig):
-/// weiße Karte ohne Rahmen, Radius 2, schmaler 3-pt-Balken innen am linken Rand (grau, mit Fachfarbe, falls
-/// vorhanden), oben links drei kurze Zeilen untereinander – Lehrkraft bzw. Klasse fett, Fach, Raum klein. Doppelstunden
+/// Karte des Wochenrasters im klassischen Grunddesign – in diese Richtung, aber eigenständig (eigene Proportionen,
+/// Schrift, Statusformen und Wörter): weiße Karte ohne Rahmen, Radius 2, schmaler 3-pt-Balken innen am linken Rand
+/// (grau, mit Fachfarbe, falls vorhanden), oben links drei kurze Zeilen – Fach halbfett, Lehrkraft bzw. Klasse, Raum. Doppelstunden
 /// als eine hohe Karte. Darüber der eigene Status: Entfall rot durchgestrichen und schraffiert, Änderung violett
 /// (Balken, Fläche, „alt → neu“), Prüfung Bernstein, offene Vertretung, Termin und Buchung gestrichelt.
 struct RasterKarte: View {
@@ -588,28 +611,27 @@ struct RasterKarte: View {
         let raum = kachel.zeile("raum").flatMap { $0.text.isEmpty ? nil : $0 }
         let zeilen = hoehe >= 44 ? 3 : (hoehe >= 30 ? 2 : 1)
         VStack(alignment: .leading, spacing: 0) {
-            if let person, zeilen >= 1 {
+            // Eigene Zeilenfolge: Fach fett, darunter Lehrkraft bzw. Klasse, dann der Raum
+            Text(kachel.fachText(darstellung))
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(entfall ? Farben.entfall : Farben.text)
+                .strikethrough(entfall, color: Farben.entfall)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            if zeilen >= 2, let person {
                 kachelText(person, karte: kachel.karte)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(entfall ? Farben.entfall : Farben.text)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Farben.text2)
                     .strikethrough(entfall, color: Farben.entfall)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
-            if person == nil || zeilen >= 2 {
-                Text(kachel.fachText(darstellung))
-                    .font(.system(size: person == nil ? 12 : 11, weight: person == nil ? .bold : .regular))
-                    .foregroundStyle(entfall ? Farben.entfall : (person == nil ? Farben.text : Farben.text2))
-                    .strikethrough(entfall, color: Farben.entfall)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            if zeilen >= 3 || (person == nil && zeilen >= 2) {
+            if zeilen >= 3 || (zeilen >= 2 && person == nil) {
                 if let raum {
                     kachelText(raum, karte: kachel.karte)
                         .font(.system(size: 11))
                         .monospacedDigit()
-                        .foregroundStyle(Farben.text2)
+                        .foregroundStyle(Farben.text3)
                         .strikethrough(entfall, color: Farben.entfall)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)

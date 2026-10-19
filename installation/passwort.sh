@@ -4,6 +4,7 @@
 #
 #   ./passwort.sh studio [benutzer]   Standard: STUDIO_ADMIN_BENUTZER aus .env, sonst admin
 #   ./passwort.sh web [login]         Standard: admin
+#   ./passwort.sh website [benutzer]  Verwaltung des Ideenportals; Standard: WEBSITE_ADMIN_BENUTZER aus .env, sonst admin
 #
 # Weitere Optionen:
 #   --anlegen              fehlenden Benutzer als Administrator anlegen
@@ -20,7 +21,7 @@ wert() { [ -f .env ] && sed -n "s/^$1=//p" .env | tail -n 1 | tr -d '"' || true;
 PROGRAMM=""; BENUTZER=""; OPTIONEN=""
 for a in "$@"; do
   case "$a" in
-    -h|--hilfe) sed -n '2,13p' "$0"; exit 0 ;;
+    -h|--hilfe) sed -n '2,14p' "$0"; exit 0 ;;
     --anlegen|--aenderungspflicht) OPTIONEN="$OPTIONEN $a" ;;
     -*) echo "Unbekannte Option: $a" >&2; exit 2 ;;
     *)
@@ -37,7 +38,11 @@ case "$PROGRAMM" in
     case "$OPTIONEN" in *--aenderungspflicht*) fehler "--aenderungspflicht gibt es nur für UntPlan Web." ;; esac ;;
   web)
     DIENST=untplannext-web; DLL=UntPlanWeb.dll; NAME="UntPlan Web" ;;
-  *) echo "Aufruf: ./passwort.sh studio|web [benutzer] [--anlegen] [--aenderungspflicht]" >&2; exit 2 ;;
+  website)
+    DIENST=untplannext-website; DLL=EduOrgaWebsite.dll; NAME="EduOrga Website"
+    [ -n "$BENUTZER" ] || BENUTZER=$(wert WEBSITE_ADMIN_BENUTZER)
+    case "$OPTIONEN" in *--aenderungspflicht*) fehler "--aenderungspflicht gibt es nur für UntPlan Web." ;; esac ;;
+  *) echo "Aufruf: ./passwort.sh studio|web|website [benutzer] [--anlegen] [--aenderungspflicht]" >&2; exit 2 ;;
 esac
 BENUTZER=${BENUTZER:-admin}
 

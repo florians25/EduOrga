@@ -121,12 +121,15 @@ struct PlanSeite: View {
         .background(Farben.grund.ignoresSafeArea())
         .weicheRollkante(.bottom)
         .safeAreaInset(edge: .bottom, spacing: 0) {
+            // Woche: Raster bis zum Rand (wischen = Woche, Tageskopf = Tag); Tag: schwebende Wochenleiste
+            if modus == .tag {
             Wochenschalter(modell: modell, montag: aktuelleWoche, gewaehlt: modus == .tag ? aktuellerTag : "",
                            wocheAktiv: modus == .woche,
                            waehlen: { tagWaehlen($0) }, blaettern: { blaettern($0) }, ansicht: { ansichtWechseln($0) })
                 .padding(.horizontal, Stilmass.rand)
                 .padding(.top, Stilmass.raster)
                 .padding(.bottom, Stilmass.raster)
+            }
         }
         .overlay(alignment: .top) {
             if let fehler = modell.fehler {
