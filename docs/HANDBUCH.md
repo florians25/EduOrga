@@ -863,7 +863,9 @@ Die Tabellen bedienen sich wie eine Tabellenkalkulation.
 - **Mehrere Werte** (z. B. Klassen „5a,5b“, Lehrkräfte einer Veranstaltung): In der Liste schaltet ein Klick einen
   Wert hinzu oder weg (Haken), Enter ergänzt den angefangenen Wert, Tab speichert.
 - **Freitext** (z. B. Text, Block): Beim Tippen erscheinen Vorschläge aus den vorhandenen Werten der Spalte.
-- **Datum:** Datumsfelder haben einen Kalender (Symbol im Feld); eingetippt wird TT.MM.JJJJ.
+- **Datum:** Beim Bearbeiten einer Datumszelle (Enter, F2, Doppelklick) öffnet sich der Kalender (Woche ab Montag,
+  Kalenderwochen, „Heute“); Klick auf einen Tag übernimmt ihn. Tippen geht ebenso: „19.10.2026“, „19.10.“ oder „191026“.
+  Alt+↓ bzw. F4 blendet den Kalender ein oder aus, Esc bricht ab.
 - **Markieren:** Klick markiert eine Zeile, Strg+Klick schaltet einzelne Zeilen dazu, Umschalt+Klick, Umschalt+Pfeil
   oder Ziehen mit der Maus markiert einen Bereich, Strg+A alles, Esc hebt die Auswahl auf. Auf Wunsch zeigt die Tabelle
   Auswahlkästchen vor jeder Zeile (Rechtsklick auf die Kopfzeile → *Auswahlkästchen*). Die Fußleiste der Tabelle zeigt,
