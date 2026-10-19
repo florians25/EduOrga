@@ -148,6 +148,20 @@ export function spuren<T extends { von: number; bis: number; status: string }>(k
   return res;
 }
 
+/** Gruppen gleichzeitiger (sich überschneidender) Karten eines Tages: jede Karte → alle Karten ihrer Gruppe (in Spur-Reihenfolge). */
+export function parallelGruppen<T extends { von: number; bis: number; status: string }>(karten: T[], lage: Map<T, { spur: number; anzahl: number }>): Map<T, T[]> {
+  const sortiert = [...karten].sort((a, b) => a.von - b.von || b.bis - a.bis);
+  const res = new Map<T, T[]>();
+  let gruppe: T[] = [], ende = -1;
+  const ab = () => { const g = [...gruppe].sort((a, b) => (lage.get(a)?.spur ?? 0) - (lage.get(b)?.spur ?? 0) || a.von - b.von); g.forEach(k => res.set(k, g)); };
+  for (const k of sortiert) {
+    if (gruppe.length && k.von > ende) { ab(); gruppe = []; }
+    gruppe.push(k); ende = Math.max(ende, k.bis);
+  }
+  if (gruppe.length) ab();
+  return res;
+}
+
 export const gueltigeFarbe = (f: string | null | undefined) => (/^#[0-9a-f]{6}$/i.test(f || '') ? f! : null);
 
 export const vergangen = (k: { datum: string; ende: string }, heute: string, jetzt: number) => k.datum < heute || (k.datum === heute && !!k.ende && minuten(k.ende) <= jetzt);

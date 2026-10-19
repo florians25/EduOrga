@@ -322,7 +322,17 @@ export default function Liste({ p }: AnsichtProps) {
       if (!z.m.pause) {
         const ids = markierteIds();
         e.push({
-          text: 'Vertretung zuweisen', menue: async () => {
+          text: ids.length > 1 ? `Vertretung zuweisen (${ids.length} Stunden)` : 'Vertretung zuweisen', menue: async () => {
+            if (ids.length > 1) {
+              // mehrere Stunden: gemeinsame Kandidaten (in allen markierten Stunden frei)
+              const { gemeinsamLaden } = await import('./ablauf/daten');
+              const g = await gemeinsamLaden(ids).catch(() => null);
+              const l: MenueListe = (g?.kandidaten || []).slice(0, 8).map((k) => ({
+                text: `${k.k} · in allen ${ids.length} Stunden frei · Woche ${k.woche}`, deaktiviert: !schreiben,
+                aktion: async () => { if (FA()) ids.forEach((i) => behalten.current.add(i)); await mitRueckfragen(vpfad(`/vorschlag/${ids[0]}/uebernehmen`), { lehrer: k.lehrer, ids }, { quelle: a.id }); await laden(); },
+              }));
+              return l.length ? l : [{ text: g?.gleicheZeit ? 'Stunden zur selben Zeit – nur Zusammenlegen möglich' : 'Keine Lehrkraft in allen Stunden frei', deaktiviert: true }];
+            }
             if (!vorschlagCache.current.has(z.m.v)) vorschlagCache.current.set(z.m.v, api.get(vpfad(`/vorschlag/${z.m.v}`)).catch(() => null));
             const v = await vorschlagCache.current.get(z.m.v);
             const k8: MenueListe = ((v?.kandidaten || []) as any[]).slice(0, 8).map((k) => ({

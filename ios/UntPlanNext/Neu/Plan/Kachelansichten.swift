@@ -93,7 +93,7 @@ struct ZeitKachel: View {
         .padding(.trailing, 8)
         .padding(.vertical, hoehe < 30 ? 2 : 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .klassikKarte(w, radius: 4)
+        .klassikKarte(w, radius: 5)
         .overlay(alignment: .topTrailing) {
             if laeuft {
                 Circle()

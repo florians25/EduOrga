@@ -177,6 +177,22 @@ const h = require('./hilfe.cjs');
       await page.waitForFunction(([s, id]) => !document.querySelector(`${s} [data-testid=arbeitsliste] .ta-karte[data-id="${id}"]`), [tp, id2], { timeout: 15000 });
       schritt(`Taste E: Nr. ${id2} entfällt`);
     }
+    // Mehrfachauswahl: mit gedrückter Maustaste über zwei Karten ziehen → gemeinsame Kandidaten für beide Stunden
+    if ((await zahlOffen()) > 1) {
+      const a1 = await page.locator(`${karten} .ta-kopf`).nth(0).boundingBox();
+      const a2 = await page.locator(`${karten} .ta-kopf`).nth(1).boundingBox();
+      await page.mouse.move(a1.x + 40, a1.y + 8);
+      await page.mouse.down();
+      await page.mouse.move(a2.x + 40, a2.y + 8, { steps: 6 });
+      await page.mouse.up();
+      await page.waitForSelector(`${tp} [data-testid=sammelleiste] :is(.ta-kandidat, .ta-leer)`, { timeout: 15000 });
+      if ((await page.locator(`${karten}.markiert`).count()) < 2) throw new Error('Ziehen markiert nicht mehrere Stunden');
+      await foto('10b-tagesablauf-mehrfach');
+      await page.keyboard.press('Escape');
+      await page.waitForSelector(`${tp} [data-testid=sammelleiste]`, { state: 'detached', timeout: 5000 });
+      schritt('Mehrfachauswahl durch Ziehen: gemeinsame Kandidaten');
+    }
+    if (!(await page.locator(`${tp} [data-testid=tageskopf-senden] [data-testid=untplanweb-senden]`).count())) throw new Error('„An Web senden“ fehlt im Tageskopf');
     // Kontext: Wer ist frei? (Matrix) und Pläne folgen der Auswahl
     await page.click(`${tp} [role=tab][data-kontext=frei]`);
     await page.waitForSelector(`${tp} [data-testid=wer-ist-frei] .ta-mzeile`, { timeout: 15000 });
@@ -226,6 +242,18 @@ const h = require('./hilfe.cjs');
     if (tagSpalten !== 1) throw new Error(`Tagesplan zeigt ${tagSpalten} Tage statt nur des Planungstags`);
     await page.locator(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile`).first().locator('.tb-zelle').first().click();
     await page.waitForSelector(`${tp} [data-testid=vorschlag-kopf]`, { timeout: 15000 });
+    // Liste: zwei Zeilen mit der Maus aufziehen → Vorschlag zeigt die gemeinsamen Kandidaten
+    {
+      const zl = page.locator(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile`);
+      if ((await zl.count()) > 1) {
+        const b1 = await zl.nth(0).locator('.tb-zelle').nth(1).boundingBox();
+        const b2 = await zl.nth(1).locator('.tb-zelle').nth(1).boundingBox();
+        await page.mouse.move(b1.x + 5, b1.y + 5); await page.mouse.down(); await page.mouse.move(b2.x + 5, b2.y + 5, { steps: 5 }); await page.mouse.up();
+        await page.waitForSelector(`${tp} [data-ansicht="vertretung.vorschlag"] [data-testid=sammelleiste]`, { timeout: 15000 });
+        schritt('Liste: zwei Stunden aufgezogen – gemeinsame Kandidaten im Vorschlag');
+        await zl.nth(0).locator('.tb-zelle').first().click();
+      }
+    }
     await foto('14-tagesplanung-experte');
     await page.click(`${tp} [data-testid=liste-filter]`);
     await page.waitForSelector('[role=switch], input[role=switch]', { timeout: 5000 }).catch(() => {});

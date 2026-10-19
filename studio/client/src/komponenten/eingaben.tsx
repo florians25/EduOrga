@@ -2,7 +2,7 @@
 // oder über den Kalender. Durchsuchbare Auswahllisten: komponenten/suchauswahl.tsx.
 import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import { DatePicker, type CalendarStrings } from '@fluentui/react-datepicker-compat';
-import { useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
 
 // ---------------------------------------------------------------------------------------------
 // Datum
@@ -108,7 +108,16 @@ export function DatumFeld({ wert, beiAenderung, size = 'small', disabled, wochen
   const s = useDatumStile();
   const datum = useMemo(() => ausIso(wert), [wert]);
   const format = useMemo(() => formatDatum(wochentag), [wochentag]);
+  // autoFocus nicht an den DatePicker geben (löst im Dialog beim ersten Zeichnen ein Fluent-Ereignis aus):
+  // nach dem Einhängen selbst fokussieren
+  const rahmen = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!autoFocus) return;
+    const t = setTimeout(() => rahmen.current?.querySelector('input')?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [autoFocus]);
   return (
+    <span ref={rahmen} style={{ display: 'contents' }}>
     <DatePicker
       id={id}
       size={size}
@@ -127,7 +136,6 @@ export function DatumFeld({ wert, beiAenderung, size = 'small', disabled, wochen
       minDate={ausIso(min) ?? undefined}
       maxDate={ausIso(max) ?? undefined}
       placeholder={placeholder ?? 'TT.MM.JJJJ'}
-      autoFocus={autoFocus}
       className={mergeClasses(wochentag ? (size === 'small' ? s.klein : s.normal) : s.ohneTag, className)}
       style={style}
       aria-label={rest['aria-label']}
@@ -137,5 +145,6 @@ export function DatumFeld({ wert, beiAenderung, size = 'small', disabled, wochen
         if (d) { const iso = alsIso(d); if (iso !== wert) beiAenderung(iso); } else if (leerErlaubt && wert) beiAenderung('');
       }}
     />
+    </span>
   );
 }

@@ -129,3 +129,12 @@ export const stundenText = (o: { stunde: number; block?: number[] | null }, bloc
   block && o.block && o.block.length > 1 ? `${o.block[0]}.–${o.block[o.block.length - 1]}.` : `${o.stunde}.`;
 
 export const mehrzahl = (n: number, eins: string, viele: string) => `${n} ${n === 1 ? eins : viele}`;
+
+// ---------------------------------------------------------------------------------------------
+// Mehrere Stunden auf einmal: gemeinsame Kandidaten (in allen Stunden frei)
+
+export interface Gemeinsam { ids: number[]; stunden: number[]; gleicheZeit: boolean; kandidaten: Kandidat[]; betreuung: KandidatenInfo['betreuung']; entfallSinnvoll: boolean }
+export const gemeinsamLaden = (ids: number[]) => api.get<Gemeinsam>(vpfad(`/tagesablauf/gemeinsam?ids=${ids.join(',')}`));
+/** Eine Lehrkraft für alle markierten Stunden (Rückfragen wie beim einzelnen Zuweisen). */
+export const alleZuweisen = (ids: number[], lehrer: number) => mitRueckfragen(vpfad(`/vorschlag/${ids[0]}/uebernehmen`), { lehrer, ids }, { quelle: QUELLE });
+export const alleBetreuen = (ids: number[], lehrer: number) => mitRueckfragen(vpfad(`/vorschlag/${ids[0]}/betreuung`), { lehrer, ids }, { quelle: QUELLE });

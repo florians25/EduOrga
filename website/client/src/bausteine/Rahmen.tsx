@@ -1,21 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Button } from "@fluentui/react-components";
-import { DismissRegular, NavigationRegular, OpenRegular } from "@fluentui/react-icons";
-import { ISSUES, RECHTLICHER_HINWEIS, RELEASES, REPO, SLOGAN } from "../inhalt";
+import { DISCUSSIONS, ISSUES, RECHTLICHER_HINWEIS, RELEASES, REPO, SLOGAN } from "../inhalt";
+import { STAND } from "../stand";
 
 const NAVIGATION = [
-  { pfad: "/", text: "Start" },
-  { pfad: "/module", text: "Module" },
-  { pfad: "/installation", text: "Installation" },
-  { pfad: "/portal", text: "Ideenportal" },
-  { pfad: "/hinweis", text: "Hinweis" },
+  { pfad: "/", text: "Überblick" },
+  { pfad: "/studio", text: "Studio" },
+  { pfad: "/web", text: "Web" },
+  { pfad: "/mobile", text: "Mobile" },
+  { pfad: "/handbuch", text: "Handbuch" },
 ];
 
 export function Marke({ hell = false }: { hell?: boolean }) {
   return (
     <span className={hell ? "marke marke-hell" : "marke"}>
-      <img src="/logo/edo-monogramm.svg" alt="" width={32} height={32} />
+      <img src="/logo/edo-monogramm.svg" alt="" width={26} height={26} />
       <span className="marke-wort">
         <b>Edu</b>Orga
       </span>
@@ -23,13 +22,20 @@ export function Marke({ hell = false }: { hell?: boolean }) {
   );
 }
 
-/** Seitengerüst der öffentlichen Website: Kopfzeile mit Navigation, Inhalt, Fußzeile. */
+/** Seitengerüst: Kopfzeile mit Navigation, Inhalt, Fußzeile. */
 export function Rahmen() {
   const [offen, setOffen] = useState(false);
   const ort = useLocation();
   useEffect(() => {
     setOffen(false);
-    if (!ort.hash) window.scrollTo(0, 0);
+    if (ort.hash) {
+      const ziel = document.getElementById(ort.hash.slice(1));
+      if (ziel) {
+        ziel.scrollIntoView();
+        return;
+      }
+    }
+    window.scrollTo(0, 0);
   }, [ort.pathname, ort.hash]);
 
   return (
@@ -39,27 +45,25 @@ export function Rahmen() {
       </a>
       <header className="kopf">
         <div className="kopf-innen breite">
-          <Link to="/" className="kopf-marke" aria-label="EduOrga – Startseite">
+          <Link to="/" className="kopf-marke" aria-label="EduOrga – Überblick">
             <Marke />
           </Link>
-          <nav className={offen ? "hauptnav offen" : "hauptnav"} aria-label="Hauptnavigation">
+          <nav id="hauptnav" className={offen ? "hauptnav offen" : "hauptnav"} aria-label="Hauptnavigation">
             {NAVIGATION.map((n) => (
               <NavLink key={n.pfad} to={n.pfad} end={n.pfad === "/"} className={({ isActive }) => (isActive ? "aktiv" : undefined)}>
                 {n.text}
               </NavLink>
             ))}
-            <a href={REPO} className="hauptnav-extern" rel="noopener noreferrer">
-              GitHub <OpenRegular aria-hidden />
+            <a href={REPO} className="hauptnav-mobil-extern" rel="noopener noreferrer">
+              Quellcode <span aria-hidden>↗</span>
             </a>
           </nav>
-          <Button
-            className="menueknopf"
-            appearance="subtle"
-            icon={offen ? <DismissRegular /> : <NavigationRegular />}
-            aria-expanded={offen}
-            aria-label={offen ? "Menü schließen" : "Menü öffnen"}
-            onClick={() => setOffen(!offen)}
-          />
+          <a href={REPO} className="kopf-extern" rel="noopener noreferrer">
+            Quellcode <span aria-hidden>↗</span>
+          </a>
+          <button type="button" className="menueknopf" aria-expanded={offen} aria-controls="hauptnav" onClick={() => setOffen(!offen)}>
+            {offen ? "Schließen" : "Menü"}
+          </button>
         </div>
       </header>
       <main id="inhalt">
@@ -67,51 +71,67 @@ export function Rahmen() {
       </main>
       <footer className="fuss">
         <div className="breite fuss-raster">
-          <div>
-            <Marke hell />
-            <p className="fuss-slogan">{SLOGAN}</p>
+          <div className="fuss-marke">
+            <Marke />
+            <p>{SLOGAN}</p>
           </div>
-          <div>
-            <h2>Produkt</h2>
-            <ul>
-              <li><Link to="/module">Module</Link></li>
-              <li><Link to="/installation">Installation</Link></li>
-              <li><Link to="/portal">Ideen, Wünsche und Fehler</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h2>Projekt</h2>
-            <ul>
-              <li><a href={REPO} rel="noopener noreferrer">Quellcode auf GitHub</a></li>
-              <li><a href={RELEASES} rel="noopener noreferrer">Versionen (Releases)</a></li>
-              <li><a href={ISSUES} rel="noopener noreferrer">Issues</a></li>
-            </ul>
-          </div>
-          <div>
-            <h2>Rechtliches</h2>
-            <ul>
-              <li><Link to="/hinweis">Hinweis</Link></li>
-              <li><Link to="/impressum">Impressum</Link></li>
-              <li><Link to="/datenschutz">Datenschutz</Link></li>
-            </ul>
-          </div>
+          <FussSpalte titel="Anwendungen">
+            <Link to="/studio">EduOrga Studio</Link>
+            <Link to="/web">EduOrga Web</Link>
+            <Link to="/mobile">EduOrga Mobile</Link>
+            <Link to="/mobile#ios">App für iPhone und iPad</Link>
+          </FussSpalte>
+          <FussSpalte titel="Projekt">
+            <Link to="/installation">Installation</Link>
+            <Link to="/handbuch">Handbuch</Link>
+            <a href={REPO} rel="noopener noreferrer">Quellcode auf GitHub</a>
+            <a href={RELEASES} rel="noopener noreferrer">Versionen</a>
+          </FussSpalte>
+          <FussSpalte titel="Rückmeldung">
+            <a href={ISSUES} rel="noopener noreferrer">Fehler melden (Issues)</a>
+            <a href={DISCUSSIONS} rel="noopener noreferrer">Ideen und Fragen (Discussions)</a>
+          </FussSpalte>
+          <FussSpalte titel="Rechtliches">
+            <Link to="/hinweis">Hinweis</Link>
+            <Link to="/impressum">Impressum</Link>
+            <Link to="/datenschutz">Datenschutz</Link>
+          </FussSpalte>
         </div>
-        <div className="breite fuss-hinweis">
+        <div className="breite fuss-unten">
           <p>{RECHTLICHER_HINWEIS}</p>
+          <p className="fuss-stand">
+            Entwicklungsstand {STAND.version}
+            {STAND.commit && <> · {STAND.commit}</>}
+          </p>
         </div>
       </footer>
     </div>
   );
 }
 
-/** Kopfbereich einer Unterseite: Brotkrumen-Zeile, Titel und Einleitung. */
-export function Seitenkopf({ titel, einleitung, ueber }: { titel: string; einleitung?: string; ueber?: string }) {
+function FussSpalte({ titel, children }: { titel: string; children: ReactNode }) {
+  const eintraege = Array.isArray(children) ? children : [children];
+  return (
+    <div>
+      <h2>{titel}</h2>
+      <ul>
+        {eintraege.map((e, i) => (
+          <li key={i}>{e}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Kopfbereich einer Unterseite: kleine Einordnung, Titel und Einleitung. */
+export function Seitenkopf({ titel, einleitung, ueber, children }: { titel: ReactNode; einleitung?: ReactNode; ueber?: string; children?: ReactNode }) {
   return (
     <section className="seitenkopf">
       <div className="breite">
-        {ueber && <p className="seitenkopf-ueber">{ueber}</p>}
+        {ueber && <p className="marke-klein">{ueber}</p>}
         <h1>{titel}</h1>
         {einleitung && <p className="seitenkopf-text">{einleitung}</p>}
+        {children}
       </div>
     </section>
   );

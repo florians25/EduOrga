@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UntPlanWeb.Tests", "tests\U
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UntPlan.Web.Contracts", "..\src\UntPlan.Web.Contracts\UntPlan.Web.Contracts.csproj", "{09672CCC-2C21-444F-B4D4-8894208027AF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UntPlan.Druck", "..\src\UntPlan.Druck\UntPlan.Druck.csproj", "{9F6D67DE-A71F-4698-A2D6-26B4D1E346A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +36,10 @@ Global
 		{09672CCC-2C21-444F-B4D4-8894208027AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09672CCC-2C21-444F-B4D4-8894208027AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09672CCC-2C21-444F-B4D4-8894208027AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F6D67DE-A71F-4698-A2D6-26B4D1E346A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F6D67DE-A71F-4698-A2D6-26B4D1E346A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F6D67DE-A71F-4698-A2D6-26B4D1E346A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F6D67DE-A71F-4698-A2D6-26B4D1E346A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A00DF30B-ABBF-48CF-9525-3E68DDA78DF2} = {6C29BAB8-674E-49EB-9CA6-7A5D277C0257}

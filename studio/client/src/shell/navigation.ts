@@ -101,6 +101,7 @@ export const NAVIGATION: NavGruppe[] = [
       { ref: 'stundenplaene.lehrer', text: 'Lehrkräfte' },
       { ref: 'stundenplaene.raum', text: 'Räume' },
       { ref: 'stundenplaene.fach', text: 'Fächer' },
+      { ref: 'stundenplaene.block', text: 'Blockansicht' },
       { ref: 'stundenplaene.uebersicht.klasse', text: 'Gesamtübersicht Klassen' },
       { ref: 'stundenplaene.uebersicht.lehrer', text: 'Gesamtübersicht Lehrkräfte' },
       { ref: 'stundenplaene.uebersicht.raum', text: 'Gesamtübersicht Räume' },

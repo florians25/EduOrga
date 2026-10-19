@@ -817,7 +817,8 @@ public sealed partial class VertretungApi : IStudioModul
             }
             else
             {
-                foreach (var k in VertretungsVorschlag.Berechnen(d, v, bl, alle == true, dislozMoeglich && disloz == true))
+                var dabei = v.VeranstaltungOffen && v.VeranstaltungId is int vid && d.Veranstaltungen.FirstOrDefault(x => x.Id == vid) is { } vaz ? vaz.LehrerAm(v.Datum).ToHashSet() : new HashSet<int>();
+                foreach (var k in VertretungsVorschlag.Berechnen(d, v, bl, alle == true, dislozMoeglich && disloz == true).Where(k => !dabei.Contains(k.Lehrer.Id)))
                     kandidaten.Add(new
                     {
                         lehrer = k.Lehrer.Id, name = langname ? k.Lehrer.VollerName : k.Lehrer.Kurzname, lang = k.Lehrer.VollerName, s = Zellen(k.Zellen), merker = k.Merker,
@@ -873,7 +874,13 @@ public sealed partial class VertretungApi : IStudioModul
             }
             var ids = await a.LesenAsync(doc => Ziele(doc.Daten, doc.Daten.Vertretungen.FirstOrDefault(x => x.Id == id) ?? throw StudioFehler.NichtGefunden($"Die Vertretung Nr. {id}"), u.Ids, u.Block));
             var nm = await a.LesenAsync(doc => doc.Index.KLehrer(u.Lehrer));
-            await Ausfuehren(a, p, $"Vertreter {nm}", ids, (d, v) => Vertretungen.VertreterSetzen(d, v, u.Lehrer, false, B(p)));
+            // offener Platz einer Veranstaltung: Ersatzlehrkraft der Veranstaltung eintragen (wie „Cer,?“ → „Cer,New“ in der Liste)
+            var va = await a.LesenAsync(doc => doc.Daten.Vertretungen.Where(v => ids.Contains(v.Id) && v.VeranstaltungOffen && v.VeranstaltungId.HasValue)
+                .Select(v => (Va: v.VeranstaltungId!.Value, v.Datum, v.ErsatzFuerLehrerId, v.Id)).ToList());
+            if (va.Count > 0)
+                await a.AendernAsync(B(p), $"Ersatzlehrkraft {nm} für Veranstaltung", V, d => { foreach (var x in va) VeranstaltungsLogik.ErsatzSetzen(d, x.Va, x.Datum, x.ErsatzFuerLehrerId, u.Lehrer); }, _ => true);
+            var rest = ids.Except(va.Select(x => x.Id)).ToList();
+            if (rest.Count > 0) await Ausfuehren(a, p, $"Vertreter {nm}", rest, (d, v) => Vertretungen.VertreterSetzen(d, v, u.Lehrer, false, B(p)));
             return Results.Ok(new { ok = true });
         });
 

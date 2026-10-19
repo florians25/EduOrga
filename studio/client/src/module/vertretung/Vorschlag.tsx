@@ -1,7 +1,8 @@
 // Vertretungsvorschlag: folgt der markierten Vertretung. Kopf „30.8. Mo-1 Se/Mu/05D“ mit Status (Details aufklappbar),
 // Optionen in einer aufklappbaren Fläche (Stundenblock, Wegzeiten ignorieren, Dauervertretung, danach nächste offene …),
 // Reiter Lehrkräfte / Betreuungen / Räume / Vorziehungen mit Anzahlen – zuerst die besten Vorschläge, der Rest aufklappbar.
-// Übernehmen (bzw. Vorziehen) per Doppelklick, Enter oder Knopf; danach wahlweise zur nächsten offenen.
+// Übernehmen (bzw. Vorziehen) per Doppelklick, Enter oder Knopf; danach wahlweise zur nächsten offenen. Sind mehrere Stunden
+// markiert (z. B. in der Liste mit der Maus aufgezogen), stehen oben die gemeinsamen Kandidaten (in allen Stunden frei) für alle.
 import { Button, Switch, Tab, TabList, makeStyles, tokens } from '@fluentui/react-components';
 import { ChevronDown16Regular, ChevronRight16Regular } from '@fluentui/react-icons';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
@@ -15,6 +16,7 @@ import { Tabelle, type Spalte, type TabelleApi } from '@/komponenten/tabelle/Tab
 import { aktuelleAuswahl, mitRueckfragen, vpfad } from './kern';
 import { OptionenKnopf, OptionenTitel } from './steuer';
 import { einstellungenDialog } from './weitere';
+import { Sammelleiste } from './ablauf/Sammelleiste';
 import './vertretung.css';
 
 const useStile = makeStyles({
@@ -201,6 +203,7 @@ export default function Vorschlag() {
           </div>
           {kopfOffen && daten ? <div className={s.details}>{daten.details.split('\n').map((z, i) => <div key={i}>{z}</div>)}</div> : null}
         </div>
+        {auswahl.ids && auswahl.ids.length > 1 ? <Sammelleiste ids={auswahl.ids} schreiben={schreiben} /> : null}
         <div className={s.reiterZeile}>
           <TabList className={s.reiter} size="small" selectedValue={String(reiter)} onTabSelect={(_, d) => { setReiter(Number(d.value)); setAlleZeigen(false); }}>
             {listen.map(([t, x], i) => <Tab key={t} value={String(i)}>{`${t} (${x.length})`}</Tab>)}

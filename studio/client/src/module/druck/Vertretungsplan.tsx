@@ -56,7 +56,7 @@ export default function Vertretungsplan() {
     if (!geaendert && betrifft(e, 'Einstellungen')) void neuLaden(true);
   });
 
-  const url = (ausgabe: string) => druckUrl('/vertretungsplan', { von, bis, version, ausgabe });
+  const url = (ausgabe: string, gross = false) => druckUrl('/vertretungsplan', { von, bis, version, ausgabe, gross });
   const lehrer = version === 'lehrer';
   const aendern = (teil: Partial<Layout>) => {
     setLayout((l) => (l ? { ...l, ...teil } : l));
@@ -91,6 +91,7 @@ export default function Vertretungsplan() {
         <Werkzeug text="PDF öffnen" titel="PDF in neuem Browser-Tab öffnen und dort drucken" aktion={() => imTab(url('pdf'))} />
         <Werkzeug text="Herunterladen" aktion={() => herunterladen(url('pdf'))} />
         <MenueKnopf text="Weitere Aktionen" eintraege={() => [
+          { text: 'Aushang mit großer Schrift (PDF, quer)', aktion: () => imTab(url('pdf', true)) },
           { text: 'Als HTML öffnen', aktion: () => imTab(url('html')) },
           { text: 'Monitoransicht öffnen (HTML)', aktion: () => imTab(url('monitor')) },
         ]} />

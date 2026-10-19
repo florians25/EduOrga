@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
 import { useDaten } from '@/kern/laden';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { AnsichtRahmen, FussText, Trenner, Werkzeug } from '@/komponenten/ansicht';
-import { druckUrl, herunterladen, imTab, TYPEN, type Auswahl as AuswahlDaten } from './kern';
+import { druckUrl, herunterladen, imTab, naechsterWochentag, TYPEN, type Auswahl as AuswahlDaten } from './kern';
 import './druck.css';
 
 type Typ = 'klasse' | 'lehrer' | 'raum' | 'fach';
@@ -18,6 +19,8 @@ export default function Auswahl() {
   const [format, setFormat] = useState('');
   const [kompakt, setKompakt] = useState(false);
   const [farbig, setFarbig] = useState(false);
+  const [mitAenderungen, setMitAenderungen] = useState(false);
+  const [woche, setWoche] = useState(naechsterWochentag());
   const [suche, setSuche] = useState('');
   const elemente = daten?.[typ] || [];
   // beim Wechsel der Planart bzw. beim Laden: alle wählen
@@ -27,7 +30,7 @@ export default function Auswahl() {
   const auswahl = gewaehlt || new Set<number>();
 
   const url = (ausgabe?: string) => druckUrl('/stundenplaene', {
-    typ, ids: auswahl.size === elemente.length ? 'alle' : [...auswahl].join(','), format: fmt, kompakt, farbig, ausgabe,
+    typ, ids: auswahl.size === elemente.length ? 'alle' : [...auswahl].join(','), format: fmt, kompakt, farbig, woche: mitAenderungen && typ !== 'fach' ? woche : undefined, ausgabe,
   });
   const treffer = useMemo(() => {
     const t = suche.trim().toLowerCase();
@@ -59,9 +62,11 @@ export default function Auswahl() {
             </Select>
           </Field>
           <Checkbox label="Kompakt (zwei Pläne je Seite)" checked={kompakt} onChange={(_, d) => setKompakt(!!d.checked)} />
-          <Checkbox label="Fachfarben statt Graustufen" checked={farbig} onChange={(_, d) => setFarbig(!!d.checked)} />
+          <Checkbox label="Fächer grau hinterlegen (Fachfarbe als Grauton)" checked={farbig} onChange={(_, d) => setFarbig(!!d.checked)} />
+          <Checkbox label="Woche mit Vertretungen und Änderungen" disabled={typ === 'fach'} checked={mitAenderungen && typ !== 'fach'} onChange={(_, d) => setMitAenderungen(!!d.checked)} />
+          {mitAenderungen && typ !== 'fach' ? <Field label="Woche mit dem Tag" orientation="horizontal"><DatumFeld size="small" wert={woche} beiAenderung={(x) => { if (x) setWoche(x); }} /></Field> : null}
           <Link as="button" onClick={() => a.oeffnen('formate.editor', { typ })}>Planformate bearbeiten</Link>
-          <p className="dr-leise">Ausgabe als Formular in A4 quer: Raster mit Pausen, Unterrichtsliste, Fußnoten zu Kopplungen und Fächerlegende.</p>
+          <p className="dr-leise">Schwarz-weiß in A4 quer: Raster mit Zeiten und Pausen, Unterrichtsliste mit Wochenstunden, Kopplungen und Fächer. Mit Änderungen: Entfall schraffiert, Vertretung mit „»“ (bisher durchgestrichen), Prüfungen doppelt umrandet – mit Legende.</p>
         </div>
         <div className="dr-elemente">
           <div className="dr-listenkopf">

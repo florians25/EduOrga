@@ -1,22 +1,23 @@
 import SwiftUI
 
-// Wochenansicht (Standard des Plans) im klassischen Grunddesign bekannter Stundenplanportale, aber eigenständig:
-// Spalten Montag bis Freitag (bzw. die Schultage der Woche), Zeilen = Stunden des Zeitrasters mit Nummer und Uhrzeit,
-// kompakte Karten nach der schulweiten Kartendarstellung (Fach fett oben links, Raum oben rechts, Lehrkraft bzw.
-// Klasse darunter, Fachfarbe als Balken bzw. Tönung). Heute ist hervorgehoben, darüber läuft die Jetzt-Linie. Große
-// Pausen stehen als schmaler Spalt im Raster. Waagrecht wischen = andere Woche (Seiten), Aufziehen mit zwei Fingern
-// bzw. Dichte im Menü = kompakter oder großzügiger, im Querformat breite Spalten. Antippen öffnet die Stunde groß,
-// langes Drücken zeigt die Aktionen der Stunde, Antippen des Tageskopfs öffnet den Tag.
+// Wochenansicht des Plans – dieselbe Rasterregel wie die PWA (mobile/README.md, „Planraster“): Spalten Montag bis
+// Freitag (bzw. die Schultage der Woche), Zeilen = Stunden des Zeitrasters. Jede Stunde hat dieselbe Höhe, Pausen stehen
+// als schmales Band dazwischen (ab 15 Minuten breiter), Doppelstunden reichen genau über zwei Zeilen samt Band. Die
+// Zeilen werden so hoch, dass der Schultag bis zur letzten belegten (mindestens der 6.) Stunde auf den Bildschirm passt.
+// Weiße Karten mit 4-pt-Balken (grau bzw. Fachfarbe), drei Zeilen Lehrkraft bzw. Klasse (fett) · Fach · Raum.
+// Gleichzeitige Stunden: keine Zählkarte – die vordere Stunde bleibt voll breit, oben rechts in ihrer Zelle steht „+X“;
+// Antippen öffnet ein Blatt mit allen Stunden dieser Zeit. Antippen einer Karte öffnet die Stunde, langes Drücken zeigt
+// die Aktionen, Antippen des Tageskopfs öffnet den Tag.
 
 // MARK: - Dichte
 
-/// Dichte des Wochenrasters (Faktor der Zeilenhöhe; Aufziehen mit zwei Fingern stellt stufenlos ein).
+/// Dichte des Wochenrasters (Faktor der Zeilenhöhe, im Menü des Plans bzw. unter Darstellung).
 enum Wochendichte {
     static let schluessel = "wocheDichte"
-    static let kompakt: Double = 0.82
+    static let kompakt: Double = 0.85
     static let normal: Double = 1.0
-    static let komfortabel: Double = 1.3
-    static let bereich: ClosedRange<Double> = 0.7...1.9
+    static let komfortabel: Double = 1.25
+    static let bereich: ClosedRange<Double> = 0.7...1.6
 }
 
 /// Auswahl der Dichte (Menü des Plans und Darstellung).
@@ -31,10 +32,21 @@ struct WochendichteAuswahl: View {
         }
     }
 
-    /// Nächste Stufe (nach dem Aufziehen liegt der Wert dazwischen).
+    /// Nächste Stufe (ältere Installationen haben stufenlose Werte gespeichert).
     private func naechste(_ wert: Double) -> Double {
         [Wochendichte.kompakt, Wochendichte.normal, Wochendichte.komfortabel].min { abs($0 - wert) < abs($1 - wert) } ?? Wochendichte.normal
     }
+}
+
+// MARK: - Gleichzeitige Stunden
+
+/// Stunden derselben Zeit (vordere Stunde zuerst) – Inhalt des Blatts hinter „+X“.
+struct Parallelgruppe: Identifiable {
+    let id = UUID()
+    let kacheln: [Kachel]
+    let tag: Tagesansicht
+
+    var datum: String { tag.datum }
 }
 
 // MARK: - Seiten (Wochen waagrecht)
@@ -47,6 +59,7 @@ struct WochenSeiten: View {
     let raum: Namespace.ID?
     let antippen: (Kachel, Tagesansicht, String) -> Void
     let tagOeffnen: (String) -> Void
+    let parallele: (Parallelgruppe) -> Void
 
     @State private var position: String? = nil
 
@@ -54,7 +67,8 @@ struct WochenSeiten: View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
                 ForEach(montage, id: \.self) { m in
-                    WochenSeite(modell: modell, montag: m, raum: raum, antippen: antippen, tagOeffnen: tagOeffnen)
+                    WochenSeite(modell: modell, montag: m, raum: raum, antippen: antippen, tagOeffnen: tagOeffnen,
+                                parallele: parallele)
                         .containerRelativeFrame(.horizontal)
                         .id(m)
                 }
@@ -74,20 +88,21 @@ struct WochenSeiten: View {
     }
 }
 
-/// Eine Woche: Kennzahlen und Raster, senkrecht rollbar, zum Aktualisieren nach unten ziehen.
+/// Eine Woche: Raster, senkrecht rollbar (nur bei sehr vielen Stunden nötig), zum Aktualisieren nach unten ziehen.
 struct WochenSeite: View {
     @ObservedObject var modell: Planmodell
     let montag: String
     let raum: Namespace.ID?
     let antippen: (Kachel, Tagesansicht, String) -> Void
     let tagOeffnen: (String) -> Void
+    let parallele: (Parallelgruppe) -> Void
 
     var body: some View {
         GeometryReader { geo in
             ScrollView(.vertical) {
                 Wochenraster(modell: modell, montag: montag, raum: raum, antippen: antippen, tagOeffnen: tagOeffnen,
-                             verfuegbar: geo.size)
-                    .padding(.bottom, 4)
+                             parallele: parallele, verfuegbar: geo.size)
+                    .padding(.bottom, 6)
             }
             .scrollIndicators(.hidden)
             .refreshable {
@@ -101,6 +116,30 @@ struct WochenSeite: View {
     }
 }
 
+// MARK: - Lage der Zeilen
+
+/// Pausenband zwischen zwei Rasterzeilen.
+struct Pausenband: Identifiable {
+    let id: Int
+    let y: CGFloat
+    let hoehe: CGFloat
+    let gross: Bool
+}
+
+/// Senkrechte Lage des Rasters: Oberkante jeder Zeile, Zeilenhöhe, Gesamthöhe und Pausenbänder.
+struct Rasterlage {
+    let oben: [CGFloat]
+    let zeile: CGFloat
+    let hoehe: CGFloat
+    let baender: [Pausenband]
+
+    /// Oberkante der Zeile `von` bis Unterkante der Zeile `bis` (inklusive der Bänder dazwischen).
+    func spanne(von: Int, bis: Int) -> (y: CGFloat, h: CGFloat) {
+        guard oben.indices.contains(von), oben.indices.contains(bis), bis >= von else { return (0, 0) }
+        return (oben[von], oben[bis] + zeile - oben[von])
+    }
+}
+
 // MARK: - Raster
 
 struct Wochenraster: View {
@@ -109,20 +148,23 @@ struct Wochenraster: View {
     let raum: Namespace.ID?
     let antippen: (Kachel, Tagesansicht, String) -> Void
     let tagOeffnen: (String) -> Void
-    /// Verfügbare Fläche der Seite: die Zeilen werden so hoch, dass der ganze Schultag auf den Bildschirm passt
+    let parallele: (Parallelgruppe) -> Void
+    /// Verfügbare Fläche der Seite: die Zeilen werden so hoch, dass der Schultag auf den Bildschirm passt
     var verfuegbar: CGSize = .zero
 
     @AppStorage(Wochendichte.schluessel) private var dichte: Double = Wochendichte.normal
-    @Environment(\.kartendarstellung) private var darstellung
-    @ScaledMetric(relativeTo: .caption) private var mindestHoehe: CGFloat = 34
-    @ScaledMetric(relativeTo: .caption) private var zeitBreite: CGFloat = 26
-    /// Vorläufiger Faktor während des Aufziehens
-    @State private var zoom: Double = 1
+    @ScaledMetric(relativeTo: .caption) private var zeitBreite: CGFloat = 32
 
-    private let kopfHoehe: CGFloat = 34
-    private let spalt: CGFloat = 2
+    private let kopfHoehe: CGFloat = 38
     /// Abstand zwischen den Tagesspalten
-    private let spaltenLuecke: CGFloat = 2
+    private let spaltenLuecke: CGFloat = 3
+    /// Band für kurze Pausen bzw. große Pausen (ab 15 Minuten)
+    private let bandKlein: CGFloat = 3
+    private let bandGross: CGFloat = 16
+    private let zeileMin: CGFloat = 44
+    private let zeileMax: CGFloat = 104
+    /// Abstand der Karte zum Zeilenrand (oben und unten)
+    private let einzug: CGFloat = 1
 
     private var tage: [String] { modell.tage(montag: montag) }
 
@@ -133,28 +175,8 @@ struct Wochenraster: View {
         return []
     }
 
-    /// Summe der Spalten zwischen den Zeilen (große Pausen breiter).
-    private var spaltSumme: CGFloat {
-        var summe: CGFloat = 0
-        for i in raster.indices.dropFirst() {
-            summe += raster[i].beginn - raster[i - 1].ende >= 15 ? 10 : spalt
-        }
-        return summe
-    }
-
-    /// Zeilenhöhe: der ganze Schultag passt in die verfügbare Höhe (Dichte „Normal“), mindestens aber lesbar
-    /// (im Querformat etwas höher, damit drei Zeilen auf die Karte passen) – sonst wird gerollt.
-    private var zeilenHoehe: CGFloat {
-        let n = CGFloat(max(raster.count, 1))
-        let quer = verfuegbar.width > verfuegbar.height && verfuegbar.height > 0
-        let minimum = quer ? max(mindestHoehe, 42) : mindestHoehe
-        let passend = verfuegbar.height > 0 ? (verfuegbar.height - kopfHoehe - spaltSumme - 12) / n : 50
-        let faktor = CGFloat(min(Wochendichte.bereich.upperBound, max(Wochendichte.bereich.lowerBound, dichte * zoom)))
-        return max(minimum, passend * faktor)
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        Group {
             if let p = modell.plan(montag: montag) {
                 if p.gesperrt {
                     let hinweis = (p.sperrhinweis ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -168,7 +190,7 @@ struct Wochenraster: View {
                         .padding(.horizontal, Stilmass.rand)
                 } else {
                     rasterflaeche
-                        .padding(.horizontal, 2)
+                        .padding(.horizontal, 4)
                 }
             } else if modell.fehler != nil && !modell.laedt(montag: montag) {
                 Hinweisfeld(titel: "Plan nicht geladen", text: "Zum Aktualisieren nach unten ziehen.", symbol: "wifi.exclamationmark",
@@ -181,66 +203,72 @@ struct Wochenraster: View {
         .padding(.top, 2)
     }
 
-    // MARK: Kennzahlen
+    // MARK: Maße
 
-    private var kennzahlen: some View {
-        let ansichten = tage.compactMap { modell.tag($0) }
-        let stunden = ansichten.reduce(0) { $0 + $1.anzahlStunden }
-        let entfall = ansichten.reduce(0) { $0 + $1.anzahlEntfall }
-        let aenderung = ansichten.reduce(0) { $0 + $1.anzahlAenderung }
-        let pruefung = ansichten.reduce(0) { $0 + $1.anzahlPruefung }
-        var text = Text("\(stunden) Std.").foregroundColor(Farben.text2)
-        if aenderung > 0 {
-            text = text + Text("  ·  ").foregroundColor(Farben.text3)
-                + Text("\(aenderung) Änd.").foregroundColor(Farben.aenderung).fontWeight(.bold)
-        }
-        if entfall > 0 {
-            text = text + Text("  ·  ").foregroundColor(Farben.text3)
-                + Text("\(entfall) Entf.").foregroundColor(Farben.entfall).fontWeight(.bold)
-        }
-        if pruefung > 0 {
-            text = text + Text("  ·  ").foregroundColor(Farben.text3)
-                + Text(pruefung == 1 ? "1 Prüfung" : "\(pruefung) Prüfungen").foregroundColor(Farben.pruefung).fontWeight(.bold)
-        }
-        return HStack {
-            text
-                .font(.subheadline)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Spacer(minLength: 0)
-        }
-        .accessibilityElement(children: .combine)
+    /// Band nach der Rasterzeile `i` (0 = Stunden schließen direkt aneinander an).
+    private func band(nach i: Int) -> CGFloat {
+        guard i + 1 < raster.count else { return 0 }
+        let pause = raster[i + 1].beginn - raster[i].ende
+        return pause >= 15 ? bandGross : (pause > 0 ? bandKlein : 0)
     }
 
-    // MARK: Lage der Zeilen
+    /// Letzte belegte Rasterzeile der Woche, mindestens die 6. Stunde.
+    private var letzteZeile: Int {
+        guard !raster.isEmpty else { return 0 }
+        var letzte = min(5, raster.count - 1)
+        for d in tage {
+            guard let t = modell.tag(d) else { continue }
+            for k in t.kacheln where !k.inPause && k.karte != nil {
+                if let z = zeilen(k) { letzte = max(letzte, z.bis) }
+            }
+        }
+        return min(letzte, raster.count - 1)
+    }
 
-    /// Oberkante jeder Rasterzeile (unter dem Kopf); große Pausen (ab 15 Minuten) als Spalt.
-    private func zeilenLage() -> (oben: [CGFloat], hoehe: CGFloat) {
+    /// Zeilenhöhe: alle Stunden bis zur letzten belegten passen in die Höhe (44–104 pt, im Querformat mindestens 52).
+    private var zeilenHoehe: CGFloat {
+        guard !raster.isEmpty else { return 57 }
+        let bis = letzteZeile
+        var baender: CGFloat = 0
+        for i in 0..<bis { baender += band(nach: i) }
+        let anzahl = CGFloat(bis + 1)
+        let quer = verfuegbar.width > verfuegbar.height && verfuegbar.height > 0
+        let passend = verfuegbar.height > 0 ? ((verfuegbar.height - kopfHoehe - 10 - baender) / anzahl).rounded(.down) : 57
+        let basis = min(zeileMax, max(quer ? 52 : zeileMin, passend))
+        let faktor = CGFloat(min(Wochendichte.bereich.upperBound, max(Wochendichte.bereich.lowerBound, dichte)))
+        return max(36, (basis * faktor).rounded())
+    }
+
+    private func lage() -> Rasterlage {
+        let z = zeilenHoehe
         var oben: [CGFloat] = []
+        var baender: [Pausenband] = []
         var y: CGFloat = 0
-        for (i, r) in raster.enumerated() {
-            if i > 0 {
-                let pause = r.beginn - raster[i - 1].ende
-                y += pause >= 15 ? 10 : spalt
-            }
+        for i in raster.indices {
             oben.append(y)
-            y += zeilenHoehe
+            y += z
+            let b = band(nach: i)
+            if b > 0 {
+                baender.append(Pausenband(id: i, y: y, hoehe: b, gross: b >= bandGross))
+                y += b
+            }
         }
-        return (oben, y)
+        return Rasterlage(oben: oben, zeile: z, hoehe: y, baender: baender)
     }
 
-    /// Senkrechte Lage einer Uhrzeit (Minuten) im Raster; nil außerhalb des Schultags.
-    private func lage(_ minute: Int, oben: [CGFloat]) -> CGFloat? {
-        guard let erste = raster.first, let letzte = raster.last, minute >= erste.beginn, minute <= letzte.ende else { return nil }
-        for (i, r) in raster.enumerated() {
-            if minute >= r.beginn && minute <= r.ende {
-                let anteil = CGFloat(minute - r.beginn) / CGFloat(max(1, r.ende - r.beginn))
-                return oben[i] + anteil * zeilenHoehe
+    /// Senkrechte Lage einer Uhrzeit (Minuten): in einer Stunde anteilig, in einer Pause anteilig im Band.
+    private func lageVon(_ minute: Int, _ l: Rasterlage) -> CGFloat? {
+        guard let erste = raster.first, let letzte = raster.last, minute >= erste.beginn, minute <= letzte.ende,
+              l.oben.count == raster.count else { return nil }
+        for (i, r) in raster.enumerated() where minute <= r.ende {
+            if minute >= r.beginn {
+                return l.oben[i] + CGFloat(minute - r.beginn) / CGFloat(max(1, r.ende - r.beginn)) * l.zeile
             }
-            if i + 1 < raster.count, minute > r.ende, minute < raster[i + 1].beginn {
-                return (oben[i] + zeilenHoehe + oben[i + 1]) / 2
-            }
+            guard i > 0 else { return l.oben[0] }
+            let vorEnde = raster[i - 1].ende
+            let a = l.oben[i - 1] + l.zeile
+            let b = l.oben[i]
+            return a + (b - a) * CGFloat(minute - vorEnde) / CGFloat(max(1, r.beginn - vorEnde))
         }
         return nil
     }
@@ -255,108 +283,155 @@ struct Wochenraster: View {
         return (a, b)
     }
 
+    private func spaltenX(_ i: Int, _ breite: CGFloat) -> CGFloat {
+        zeitBreite + spaltenLuecke + CGFloat(i) * (breite + spaltenLuecke)
+    }
+
     // MARK: Fläche
 
     private var rasterflaeche: some View {
-        GeometryReader { geo in
-            let zl = zeilenLage()
+        let l = lage()
+        return GeometryReader { geo in
             let spalten = max(tage.count, 1)
             let breite = max(0, (geo.size.width - zeitBreite - CGFloat(spalten) * spaltenLuecke) / CGFloat(spalten))
             ZStack(alignment: .topLeading) {
-                // Hellgrauer Grund mit feinen Stundenlinien
-                rastergrund(oben: zl.oben, hoehe: zl.hoehe)
-                    .frame(width: max(0, geo.size.width - zeitBreite), height: zl.hoehe)
-                    .offset(x: zeitBreite, y: kopfHoehe)
-                // Stundenspalte
+                rastergrund(l)
+                    .frame(width: geo.size.width, height: l.hoehe)
+                    .offset(y: kopfHoehe)
+                // Stundenspalte: Nummer, Beginn (bei hohen Zeilen auch das Ende) – bündig mit der Oberkante der Zeile
                 ForEach(Array(raster.enumerated()), id: \.offset) { i, r in
-                    zeitZelle(r)
-                        .frame(width: zeitBreite, height: zeilenHoehe)
-                        .offset(x: 0, y: kopfHoehe + zl.oben[i])
+                    zeitZelle(r, hoehe: l.zeile)
+                        .frame(width: zeitBreite, height: l.zeile, alignment: .top)
+                        .offset(x: 0, y: kopfHoehe + l.oben[i])
                 }
-                // Tage
+                // Jetzt-Linie hinter den Karten (sie soll nicht wie eine Durchstreichung wirken)
+                jetztLinie(l, breite: breite, gesamt: geo.size.width, nurPunkt: false)
                 ForEach(Array(tage.enumerated()), id: \.element) { i, d in
-                    let x = zeitBreite + spaltenLuecke + CGFloat(i) * (breite + spaltenLuecke)
-                    tagesSpalte(d, breite: breite, oben: zl.oben, hoehe: zl.hoehe)
-                        .frame(width: breite, height: kopfHoehe + zl.hoehe, alignment: .topLeading)
-                        .offset(x: x, y: 0)
+                    tagesSpalte(d, breite: breite, lage: l)
+                        .frame(width: breite, height: kopfHoehe + l.hoehe, alignment: .topLeading)
+                        .offset(x: spaltenX(i, breite), y: 0)
                 }
-                // Jetzt-Linie über dem heutigen Tag
-                if let i = tage.firstIndex(where: { Datumsformat.istHeute($0) }) {
-                    let x = zeitBreite + spaltenLuecke + CGFloat(i) * (breite + spaltenLuecke)
-                    TimelineView(.periodic(from: .now, by: 30)) { kontext in
-                        if let y = lage(Uhr.minuten(kontext.date), oben: zl.oben) {
-                            JetztLinie()
-                                .frame(width: breite + 6, height: 8)
-                                .offset(x: x - 4, y: kopfHoehe + y - 4)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                }
+                jetztLinie(l, breite: breite, gesamt: geo.size.width, nurPunkt: true)
             }
-            .frame(width: geo.size.width, height: kopfHoehe + zl.hoehe, alignment: .topLeading)
+            .frame(width: geo.size.width, height: kopfHoehe + l.hoehe, alignment: .topLeading)
         }
-        .frame(height: kopfHoehe + zeilenLage().hoehe)
-        .simultaneousGesture(
-            MagnifyGesture()
-                .onChanged { wert in zoom = Double(wert.magnification) }
-                .onEnded { wert in
-                    dichte = min(Wochendichte.bereich.upperBound, max(Wochendichte.bereich.lowerBound, dichte * Double(wert.magnification)))
-                    zoom = 1
-                }
-        )
+        .frame(height: kopfHoehe + l.hoehe)
         .animation(.snappy(duration: 0.2), value: dichte)
     }
 
-    private func zeitZelle(_ r: Rasterzeit) -> some View {
+    /// Hellgrauer Rastergrund, Pausen als etwas dunkleres Band über die ganze Breite, feine Linie zwischen Stunden ohne
+    /// Pause.
+    private func rastergrund(_ l: Rasterlage) -> some View {
+        ZStack(alignment: .topLeading) {
+            Rectangle().fill(Farben.rasterGrund)
+            ForEach(l.baender) { b in
+                Rectangle()
+                    .fill(Farben.rasterPause)
+                    .frame(height: b.hoehe)
+                    .offset(y: b.y)
+            }
+            ForEach(Array(l.oben.enumerated()), id: \.offset) { i, y in
+                if i > 0 && band(nach: i - 1) == 0 {
+                    Rectangle()
+                        .fill(Farben.rasterLinie)
+                        .frame(height: 0.5)
+                        .offset(y: y)
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .accessibilityHidden(true)
+    }
+
+    private func zeitZelle(_ r: Rasterzeit, hoehe: CGFloat) -> some View {
         VStack(spacing: 1) {
             Text("\(r.nr)")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Farben.text2)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Farben.text)
             Text(Uhr.uhrzeit(r.beginn))
-                .font(.caption2)
+                .font(.system(size: 10))
                 .foregroundStyle(Farben.text3)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-            if zeilenHoehe >= 58 {
+            if hoehe >= 52 {
                 Text(Uhr.uhrzeit(r.ende))
-                    .font(.caption2)
-                    .foregroundStyle(Farben.text3.opacity(0.8))
+                    .font(.system(size: 10))
+                    .foregroundStyle(Farben.text3.opacity(0.75))
             }
         }
         .monospacedDigit()
-        .dynamicTypeSize(...DynamicTypeSize.xLarge)
-        .accessibilityElement(children: .combine)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .padding(.top, 4)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(r.nr). Stunde, \(Uhr.uhrzeit(r.beginn)) bis \(Uhr.uhrzeit(r.ende))")
+    }
+
+    /// Jetzt-Linie: dünn über die ganze Woche, am heutigen Tag kräftiger; der Punkt am Rand der Stundenspalte liegt
+    /// über den Karten.
+    @ViewBuilder
+    private func jetztLinie(_ l: Rasterlage, breite: CGFloat, gesamt: CGFloat, nurPunkt: Bool) -> some View {
+        if let i = tage.firstIndex(where: { Datumsformat.istHeute($0) }) {
+            TimelineView(.periodic(from: .now, by: 30)) { kontext in
+                if let y = lageVon(Uhr.minuten(kontext.date), l) {
+                    ZStack(alignment: .topLeading) {
+                        if nurPunkt {
+                            Circle()
+                                .fill(Farben.akzent)
+                                .frame(width: 9, height: 9)
+                                .overlay { Circle().stroke(Farben.grund, lineWidth: 2) }
+                                .offset(x: zeitBreite - 5, y: y - 4.5)
+                        } else {
+                            Rectangle()
+                                .fill(Farben.akzent.opacity(0.35))
+                                .frame(width: max(0, gesamt - zeitBreite), height: 1)
+                                .offset(x: zeitBreite, y: y - 0.5)
+                            Rectangle()
+                                .fill(Farben.akzent)
+                                .frame(width: breite, height: 2)
+                                .offset(x: spaltenX(i, breite), y: y - 1)
+                        }
+                    }
+                    .offset(y: kopfHoehe)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+            }
+        }
     }
 
     // MARK: Tagesspalte
 
-    private func tagesSpalte(_ d: String, breite: CGFloat, oben: [CGFloat], hoehe: CGFloat) -> some View {
+    private func tagesSpalte(_ d: String, breite: CGFloat, lage l: Rasterlage) -> some View {
         let heute = Datumsformat.istHeute(d)
         let t = modell.tag(d)
+        let bloecke = t.map { erstelleBloecke($0) } ?? []
         return ZStack(alignment: .topLeading) {
-            // Heute: Spalte leicht in Petrol getönt
-            Rectangle()
-                .fill(heute ? Farben.akzent.opacity(0.08) : Color.clear)
-                .frame(width: breite, height: hoehe)
-                .offset(y: kopfHoehe)
-                .accessibilityHidden(true)
+            if heute {
+                Rectangle()
+                    .fill(Farben.akzent.opacity(0.06))
+                    .frame(width: breite, height: l.hoehe)
+                    .offset(y: kopfHoehe)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
             kopf(d, heute: heute, breite: breite)
             if let t, let f = t.freiText {
-                freiFeld(f.titel, breite: breite, hoehe: hoehe)
+                freiFeld(f.titel, breite: breite, hoehe: l.hoehe)
                     .offset(y: kopfHoehe)
             } else if let t {
-                ForEach(bloecke(t, breite: breite)) { b in
-                    karte(b, tag: t, oben: oben, breite: breite)
+                ForEach(bloecke) { b in
+                    karte(b, tag: t, lage: l, breite: breite)
                 }
-                ForEach(aufsichten(t, oben: oben)) { a in
+                ForEach(bloecke.filter { !$0.verdeckt.isEmpty }) { b in
+                    plusZeichen(b, tag: t, lage: l, breite: breite)
+                }
+                ForEach(aufsichten(t, lage: l)) { a in
                     aufsichtZeichen(a, tag: t, breite: breite)
                 }
             }
         }
     }
 
-    /// Tageskopf: schlicht grau und mittig („Mo 19.10.“), heute in Petrol mit feiner Linie; Antippen öffnet den Tag.
+    /// Tageskopf: Wochentag und Datum, heute in Petrol mit feiner Linie; Antippen öffnet den Tag.
     private func kopf(_ d: String, heute: Bool, breite: CGFloat) -> some View {
         let t = modell.tag(d)
         let entfall = (t?.anzahlEntfall ?? 0) > 0
@@ -367,10 +442,10 @@ struct Wochenraster: View {
         } label: {
             VStack(spacing: 1) {
                 Text(Datumsformat.anzeige(d, "EE").replacingOccurrences(of: ".", with: ""))
-                    .font(.caption.weight(heute ? .bold : .semibold))
+                    .font(.system(size: 13, weight: heute ? .bold : .semibold))
                 HStack(spacing: 3) {
                     Text(Datumsformat.anzeige(d, "d.M."))
-                        .font(.caption2)
+                        .font(.system(size: 11))
                         .monospacedDigit()
                     if entfall || aenderung {
                         Circle()
@@ -380,7 +455,8 @@ struct Wochenraster: View {
                 }
             }
             .foregroundStyle(heute ? Farben.akzent : Farben.text2)
-            .dynamicTypeSize(...DynamicTypeSize.xLarge)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
             .frame(width: breite, height: kopfHoehe - 4)
             .overlay(alignment: .bottom) {
                 if heute {
@@ -392,25 +468,6 @@ struct Wochenraster: View {
         .buttonStyle(.plain)
         .accessibilityLabel((heute ? "Heute, " : "") + Datumsformat.anzeige(d, "EEEE, d. MMMM") + ". Tag öffnen")
         .accessibilityAddTraits(.isHeader)
-    }
-
-    /// Hellgrauer Grund des Rasters mit feinen Linien an den Stundengrenzen.
-    private func rastergrund(oben: [CGFloat], hoehe: CGFloat) -> some View {
-        ZStack(alignment: .topLeading) {
-            Rectangle().fill(Farben.rasterGrund)
-            ForEach(Array(oben.enumerated()), id: \.offset) { _, y in
-                Rectangle()
-                    .fill(Farben.rasterLinie)
-                    .frame(height: 0.5)
-                    .offset(y: y)
-                Rectangle()
-                    .fill(Farben.rasterLinie)
-                    .frame(height: 0.5)
-                    .offset(y: y + zeilenHoehe - 0.5)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .accessibilityHidden(true)
     }
 
     private func freiFeld(_ titel: String, breite: CGFloat, hoehe: CGFloat) -> some View {
@@ -426,27 +483,24 @@ struct Wochenraster: View {
         .foregroundStyle(Farben.frei)
         .padding(4)
         .frame(width: breite, height: hoehe)
-        .background(Farben.freiFlaeche, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .background(Farben.freiFlaeche, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
     // MARK: Blöcke
 
-    /// Karte im Raster: Zeilen, Spur (gleichzeitige Stunden nebeneinander) und weitere verdeckte Stunden.
+    /// Vordere Stunde einer Zeit (voll breit) mit den dahinterliegenden gleichzeitigen Stunden.
     private struct Block: Identifiable {
         let kachel: Kachel
         let von: Int
         let bis: Int
-        let spur: Int
-        let spuren: Int
-        let weitere: Int
+        var verdeckt: [Kachel]
         var id: UUID { kachel.id }
     }
 
-    /// Gleichzeitige Stunden nebeneinander (je nach Spaltenbreite bis zu 3 Spuren); passen nicht alle, steht die
-    /// wichtigste (Änderungen zuerst) vorn mit „+n“.
-    private func bloecke(_ t: Tagesansicht, breite: CGFloat) -> [Block] {
-        let maxSpuren = breite >= 150 ? 3 : (breite >= 84 ? 2 : 1)
+    /// Je Zeit eine vordere Stunde: Änderungen zuerst, dann die längere, dann der Rang. Jede weitere Stunde, die sich mit
+    /// einer vorderen überschneidet, liegt dahinter (Zahl „+X“ an der vorderen).
+    private func erstelleBloecke(_ t: Tagesansicht) -> [Block] {
         let liste = t.kacheln
             .filter { !$0.inPause && $0.karte != nil }
             .compactMap { k -> (Kachel, Int, Int)? in
@@ -456,73 +510,68 @@ struct Wochenraster: View {
             .sorted { a, b in
                 if a.1 != b.1 { return a.1 < b.1 }
                 if a.0.vorrang != b.0.vorrang { return a.0.vorrang }
+                if a.2 != b.2 { return a.2 > b.2 }
                 return a.0.rang < b.0.rang
             }
-        // Gruppen sich überschneidender Stunden
-        var gruppen: [[(Kachel, Int, Int)]] = []
-        var ende = -1
-        for e in liste {
-            if var letzte = gruppen.last, e.1 <= ende {
-                letzte.append(e)
-                gruppen[gruppen.count - 1] = letzte
-                ende = max(ende, e.2)
-            } else {
-                gruppen.append([e])
-                ende = e.2
-            }
-        }
         var ergebnis: [Block] = []
-        for g in gruppen {
-            // Spuren verteilen (erste freie Spur)
-            var spurEnde: [Int] = []
-            var zuordnung: [(Kachel, Int, Int, Int)] = []
-            for e in g {
-                if let s = spurEnde.firstIndex(where: { $0 < e.1 }) {
-                    spurEnde[s] = e.2
-                    zuordnung.append((e.0, e.1, e.2, s))
-                } else {
-                    spurEnde.append(e.2)
-                    zuordnung.append((e.0, e.1, e.2, spurEnde.count - 1))
-                }
-            }
-            let spuren = spurEnde.count
-            if spuren <= maxSpuren {
-                for z in zuordnung {
-                    ergebnis.append(Block(kachel: z.0, von: z.1, bis: z.2, spur: z.3, spuren: spuren, weitere: 0))
-                }
+        for e in liste {
+            if let i = ergebnis.firstIndex(where: { $0.von <= e.2 && e.1 <= $0.bis }) {
+                ergebnis[i].verdeckt.append(e.0)
             } else {
-                // Nur die ersten Spuren zeigen; die letzte sichtbare Spur zählt die übrigen Stunden mit
-                let sichtbar = max(1, maxSpuren)
-                for z in zuordnung where z.3 < sichtbar {
-                    let verdeckt = zuordnung.filter { $0.3 >= sichtbar && $0.1 <= z.2 && z.1 <= $0.2 }.count
-                    ergebnis.append(Block(kachel: z.0, von: z.1, bis: z.2, spur: z.3, spuren: sichtbar,
-                                          weitere: z.3 == sichtbar - 1 ? verdeckt : 0))
-                }
+                ergebnis.append(Block(kachel: e.0, von: e.1, bis: e.2, verdeckt: []))
             }
         }
         return ergebnis
     }
 
-    @ViewBuilder
-    private func karte(_ b: Block, tag: Tagesansicht, oben: [CGFloat], breite: CGFloat) -> some View {
+    private func karte(_ b: Block, tag: Tagesansicht, lage l: Rasterlage, breite: CGFloat) -> some View {
         let quelle = "woche-\(b.kachel.id.uuidString)"
-        let y = kopfHoehe + oben[b.von]
-        let h = oben[b.bis] + zeilenHoehe - oben[b.von]
-        let luecke: CGFloat = 2
-        let spuren = CGFloat(max(b.spuren, 1))
-        let kw = max(0, (breite - (spuren - 1) * luecke) / spuren)
-        let x = CGFloat(b.spur) * (kw + luecke)
-        Button {
+        let s = l.spanne(von: b.von, bis: b.bis)
+        let h = max(0, s.h - 2 * einzug)
+        return Button {
             antippen(b.kachel, tag, quelle)
         } label: {
-            RasterKarte(kachel: b.kachel, weitere: b.weitere, hoehe: h,
+            RasterKarte(kachel: b.kachel, weitere: b.verdeckt.count, hoehe: h,
                         vergangen: Tagesansicht.vergangen(b.kachel, jetzt: Date()))
                 .zoomQuelle(quelle, in: raum)
         }
         .buttonStyle(KachelDruckStil())
         .stundenMenue(b.kachel) { antippen(b.kachel, tag, quelle) }
-        .frame(width: kw, height: max(0, h))
-        .offset(x: x, y: y)
+        .frame(width: breite, height: h)
+        .offset(x: 0, y: kopfHoehe + s.y + einzug)
+    }
+
+    /// „+X“ oben rechts in der Zelle der vorderen Stunde (rot bei Entfall, violett bei Änderungen dahinter).
+    private func plusZeichen(_ b: Block, tag: Tagesansicht, lage l: Rasterlage, breite: CGFloat) -> some View {
+        let alle = [b.kachel] + b.verdeckt
+        let entfall = alle.contains { $0.art == .entfall }
+        let aenderung = alle.contains { $0.vorrang }
+        let farbe = entfall ? Farben.entfall : (aenderung ? Farben.aenderung : Farben.text2)
+        let anzahl = b.verdeckt.count
+        let vorbei = alle.allSatisfy { Tagesansicht.vergangen($0, jetzt: Date()) }
+        let s = l.spanne(von: b.von, bis: b.bis)
+        return Button {
+            Haptik.tippen()
+            parallele(Parallelgruppe(kacheln: alle, tag: tag))
+        } label: {
+            Text("+\(anzahl)")
+                .font(.system(size: 10.5, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(Farben.karte)
+                .padding(.horizontal, 4)
+                .frame(minWidth: 20, minHeight: 16)
+                .background(farbe, in: Capsule())
+                .padding(1.5)
+                .background(Farben.karte, in: Capsule())
+                .opacity(vorbei ? 0.7 : 1)
+                .padding(6)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .frame(width: breite + 6, alignment: .topTrailing)
+        .offset(x: 0, y: kopfHoehe + s.y + einzug + 1.5 - 6)
+        .accessibilityLabel(anzahl == 1 ? "1 weitere Stunde zur selben Zeit" : "\(anzahl) weitere Stunden zur selben Zeit")
+        .accessibilityHint("Zeigt alle Stunden dieser Zeit")
     }
 
     // MARK: Pausenaufsichten
@@ -533,9 +582,9 @@ struct Wochenraster: View {
         var id: UUID { kachel.id }
     }
 
-    private func aufsichten(_ t: Tagesansicht, oben: [CGFloat]) -> [AufsichtLage] {
+    private func aufsichten(_ t: Tagesansicht, lage l: Rasterlage) -> [AufsichtLage] {
         t.kacheln.filter { $0.inPause && $0.aufsicht != nil }.compactMap { k in
-            guard let y = lage((k.beginn + k.ende) / 2, oben: oben) else { return nil }
+            guard let y = lageVon((k.beginn + k.ende) / 2, l) else { return nil }
             return AufsichtLage(kachel: k, y: y)
         }
     }
@@ -558,7 +607,7 @@ struct Wochenraster: View {
             .foregroundStyle(a.kachel.aufsichtsstand == .vertretung ? Farben.aenderung : Farben.text2)
             .padding(.horizontal, 4)
             .frame(height: 12)
-            .background(Farben.flaeche, in: Capsule())
+            .background(Farben.karte, in: Capsule())
             .overlay { Capsule().strokeBorder(m?.betont == true ? (m?.farbe ?? Farben.randStark) : Farben.randStark, lineWidth: 1) }
             .zoomQuelle(quelle, in: raum)
         }
@@ -568,7 +617,7 @@ struct Wochenraster: View {
     }
 }
 
-/// Jetzt-Linie: Punkt links und eine Linie in der Akzentfarbe.
+/// Jetzt-Linie: Punkt links und eine Linie in der Akzentfarbe (Zeitachse, Tagesliste).
 struct JetztLinie: View {
     var body: some View {
         HStack(spacing: 0) {
@@ -585,98 +634,192 @@ struct JetztLinie: View {
 
 // MARK: - Karte im Raster
 
-/// Karte des Wochenrasters im klassischen Grunddesign – in diese Richtung, aber eigenständig (eigene Proportionen,
-/// Schrift, Statusformen und Wörter): weiße Karte ohne Rahmen, Radius 2, schmaler 3-pt-Balken innen am linken Rand
-/// (grau, mit Fachfarbe, falls vorhanden), oben links drei kurze Zeilen – Fach halbfett, Lehrkraft bzw. Klasse, Raum. Doppelstunden
-/// als eine hohe Karte. Darüber der eigene Status: Entfall rot durchgestrichen und schraffiert, Änderung violett
-/// (Balken, Fläche, „alt → neu“), Prüfung Bernstein, offene Vertretung, Termin und Buchung gestrichelt.
+/// Karte des Wochenrasters (wie die PWA): weiße Karte, Radius 5, 4-pt-Balken innen links (grau bzw. Fachfarbe), drei
+/// Zeilen – Lehrkraft bzw. Klasse fett, Fach, Raum (Reihenfolge nach der Kartendarstellung der Schule); geänderte Werte
+/// violett unterstrichen bzw. „alt → neu“. Status über Linie, Fläche, Schraffur und Durchstreichung; das Statuswort steht
+/// unten links, wo unter den Zeilen Platz ist.
 struct RasterKarte: View {
     let kachel: Kachel
+    /// Dahinterliegende gleichzeitige Stunden (rechts oben steht dann „+X“)
     let weitere: Int
     let hoehe: CGFloat
     let vergangen: Bool
 
     @Environment(\.kartendarstellung) private var darstellung
 
-    private var art: Kartenart { kachel.kartenart }
-    private var entfall: Bool { art == .entfall }
+    private var entfall: Bool { kachel.kartenart == .entfall }
 
-    /// Erste Personenzeile (im Klassenplan die Lehrkraft, im Lehrerplan die Klasse).
-    private var person: Kachelzeile? {
-        kachel.personenzeilen.first { !$0.text.isEmpty }
+    private struct Zeile: Identifiable {
+        let id: Int
+        let text: Text
+    }
+
+    /// Zeilen nach der Kartendarstellung: Lehrkraft bzw. Klasse · Fach · Raum (bzw. Fach zuerst); geänderte Werte
+    /// stehen immer da.
+    private var zeilen: [Zeile] {
+        let person = kachel.personenzeilen.first { !$0.text.isEmpty }
+        let raum = kachel.zeile("raum").flatMap { $0.text.isEmpty ? nil : $0 }
+        let mitPerson = person.map { darstellung.zeile2 || !$0.nurText } ?? false
+        let mitRaum = raum.map { darstellung.raum || !$0.nurText } ?? false
+        let fach = Text(kachel.fachText(darstellung))
+        var liste: [Text] = []
+        if darstellung.reihenfolge == "fach" {
+            liste.append(fach)
+            if mitPerson, let person { liste.append(kachelText(person, karte: kachel.karte)) }
+        } else {
+            if mitPerson, let person { liste.append(kachelText(person, karte: kachel.karte)) }
+            liste.append(fach)
+        }
+        if mitRaum, let raum { liste.append(kachelText(raum, karte: kachel.karte)) }
+        return liste.enumerated().map { Zeile(id: $0.offset, text: $0.element) }
     }
 
     var body: some View {
         let stil = Klassikstil.fuer(kachel, darstellung)
-        let raum = kachel.zeile("raum").flatMap { $0.text.isEmpty ? nil : $0 }
-        let zeilen = hoehe >= 44 ? 3 : (hoehe >= 30 ? 2 : 1)
+        let alle = zeilen
+        let platz = max(1, Int((hoehe - 7) / 14))
+        let sichtbar = Array(alle.prefix(platz))
+        let wortPlatz = hoehe - 7 - CGFloat(sichtbar.count) * 14 >= 13
         VStack(alignment: .leading, spacing: 0) {
-            // Eigene Zeilenfolge: Fach fett, darunter Lehrkraft bzw. Klasse, dann der Raum
-            Text(kachel.fachText(darstellung))
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundStyle(entfall ? Farben.entfall : Farben.text)
-                .strikethrough(entfall, color: Farben.entfall)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            if zeilen >= 2, let person {
-                kachelText(person, karte: kachel.karte)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Farben.text2)
-                    .strikethrough(entfall, color: Farben.entfall)
+            ForEach(sichtbar) { z in
+                z.text
+                    .font(.system(size: z.id == 0 ? 12.5 : 12, weight: z.id == 0 ? .semibold : .regular))
+                    .foregroundStyle(z.id == 0 ? (entfall ? Farben.entfall : stil.titel) : (z.id == 1 ? Farben.text : Farben.text2))
+                    .strikethrough(entfall, color: Farben.entfall.opacity(0.75))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            if zeilen >= 3 || (zeilen >= 2 && person == nil) {
-                if let raum {
-                    kachelText(raum, karte: kachel.karte)
-                        .font(.system(size: 11))
-                        .monospacedDigit()
-                        .foregroundStyle(Farben.text3)
-                        .strikethrough(entfall, color: Farben.entfall)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                } else if kachel.online {
-                    Image(systemName: "video.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(Farben.akzent)
-                }
+                    .minimumScaleFactor(0.75)
+                    .frame(height: 14, alignment: .leading)
+                    .padding(.trailing, z.id == 0 && weitere > 0 ? 20 : 0)
             }
             Spacer(minLength: 0)
-            if hoehe >= 64, let m = Statuslehre.kartenwort(kachel, darstellung) {
+            if wortPlatz, let m = Statuslehre.kartenwort(kachel, darstellung) {
                 Statuswort(merkmal: m)
             }
         }
+        .monospacedDigit()
         .dynamicTypeSize(...DynamicTypeSize.xLarge)
-        .padding(.leading, 9)
+        .padding(.leading, 11)
         .padding(.trailing, 3)
-        .padding(.top, 3)
-        .padding(.bottom, 2)
+        .padding(.top, 4)
+        .padding(.bottom, 3)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .klassikKarte(stil)
-        .overlay(alignment: .bottomTrailing) {
-            if weitere > 0 {
-                Text("+\(weitere)")
-                    .font(.system(size: 9, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(Farben.aufAkzent)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Farben.akzent, in: Capsule())
-                    .padding(2)
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            if let m = Statuslehre.merkmal(kachel), m.betont, hoehe < 64 || Statuslehre.kartenwort(kachel, darstellung) == nil {
-                Circle()
-                    .fill(m.farbe)
-                    .frame(width: 5, height: 5)
-                    .padding(3)
-            }
-        }
-        .opacity(vergangen ? 0.6 : (stil.gedaempft && !entfall ? 0.75 : 1))
+        .opacity(vergangen ? 0.62 : (stil.gedaempft && !entfall ? 0.8 : 1))
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(kachel.vorlesetext + (weitere > 0 ? ", \(weitere) weitere Stunden zur selben Zeit" : ""))
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+// MARK: - Blatt „Stunden zur selben Zeit“
+
+/// Blatt hinter „+X“: alle Stunden dieser Zeit als Liste (Balken in der Fachfarbe, Fach, Lehrkraft bzw. Klasse, Raum,
+/// Status); Antippen öffnet die Stunde.
+struct ParalleleStundenBlatt: View {
+    let gruppe: Parallelgruppe
+    let oeffnen: (Kachel) -> Void
+
+    @Environment(\.dismiss) private var schliessen
+    @Environment(\.kartendarstellung) private var darstellung
+
+    private var zeitraum: String {
+        let beginn = gruppe.kacheln.map(\.beginn).min() ?? 0
+        let ende = gruppe.kacheln.map(\.ende).max() ?? 0
+        let von = gruppe.kacheln.map(\.von).min() ?? 0
+        let bis = gruppe.kacheln.map(\.bis).max() ?? 0
+        let stunden = von > 0 ? (von == bis ? " · \(von). Std." : " · \(von).–\(bis). Std.") : ""
+        return "\(Datumsformat.anzeige(gruppe.datum, "EEEE, d. MMMM")) · \(Uhr.uhrzeit(beginn))–\(Uhr.uhrzeit(ende))" + stunden
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(gruppe.kacheln) { k in
+                        Button {
+                            Haptik.tippen()
+                            oeffnen(k)
+                        } label: {
+                            zeile(k)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } footer: {
+                    Text(zeitraum)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle(gruppe.kacheln.count == 1 ? "1 Stunde" : "\(gruppe.kacheln.count) Stunden zur selben Zeit")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig") { schliessen() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func zeile(_ k: Kachel) -> some View {
+        let stil = Klassikstil.fuer(k, darstellung)
+        let entfall = k.kartenart == .entfall
+        let raum = k.zeile("raum").flatMap { $0.text.isEmpty ? nil : $0 }
+        return HStack(alignment: .center, spacing: 12) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(stil.mitBalken ? stil.balken : Farben.balkenGrau)
+                .frame(width: 4)
+                .padding(.vertical, 2)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(k.fachText(darstellung))
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(entfall ? Farben.entfall : Farben.text)
+                        .strikethrough(entfall, color: Farben.entfall)
+                    if !k.fachname.isEmpty {
+                        Text(k.fachname)
+                            .font(.subheadline)
+                            .foregroundStyle(Farben.text3)
+                            .lineLimit(1)
+                    }
+                }
+                let personen = k.personenzeilen.filter { !$0.text.isEmpty }
+                if !personen.isEmpty {
+                    personen.dropFirst().reduce(kachelText(personen[0], karte: k.karte)) { t, z in
+                        t + Text(" · ") + kachelText(z, karte: k.karte)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(Farben.text2)
+                    .lineLimit(2)
+                }
+                if let m = Statuslehre.merkmal(k) {
+                    Text(m.text)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(m.farbe)
+                }
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 3) {
+                if let raum {
+                    kachelText(raum, karte: k.karte)
+                        .font(.subheadline.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Farben.text)
+                }
+                Text(k.zeitText)
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(Farben.text3)
+            }
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Farben.pfeil)
+                .accessibilityHidden(true)
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Öffnet die Stunde")
     }
 }

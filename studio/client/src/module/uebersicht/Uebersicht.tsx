@@ -8,6 +8,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
+import { seiteOeffnen } from '@/kern/befehle';
 import { melden, useEreignis } from '@/kern/ereignisse';
 import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben } from '@/kern/zustand';
@@ -46,7 +47,7 @@ const ZellenEintrag = memo(function ZellenEintrag({ z, i, links, breite, ziehbar
   return (
     <div ref={setNodeRef} {...(ziehbar ? listeners : {})} {...(ziehbar ? attributes : {})} role={ziehbar ? 'button' : undefined}
       className={`ue-zelle${fix ? ' fix' : ''}${ziehbar ? ' ziehbar' : ''}${isDragging ? ' zieht' : ''}`} title={titel} data-i={i}
-      style={{ left: links, width: breite, background: farbe || undefined, color: textfarbe(farbe) }}>{text}</div>
+      style={{ left: links, width: breite, background: farbe || undefined, color: textfarbe(farbe), borderColor: farbe ? `color-mix(in srgb, ${farbe} 70%, #000)` : undefined }}>{text}</div>
   );
 });
 
@@ -156,6 +157,8 @@ export default function Uebersicht() {
             optionen={[['Standard', 'Standard'], ['Fach', 'Fach'], ['Lehrer', 'Lehrkräfte'], ['Klasse', 'Klassen'], ['Raum', 'Räume']].map(([w, t]) => ({ wert: w!, text: t! }))} />
         </Feld>
         <Input type="search" size="small" placeholder={`${TITEL[typ]} filtern`} aria-label="Filtern" style={{ width: 160 }} value={filter} onChange={(_, d) => setFilter(d.value)} />
+        <Trenner />
+        {typ !== 'fach' ? <Werkzeug text="Blockansicht" titel={`Pläne der ${TITEL[typ]} als Kacheln neben- und untereinander`} aktion={() => seiteOeffnen('stundenplan', { typ, block: true, elemente: 'alle' })} /> : null}
         <Trenner />
         <Werkzeug text="Drucken" titel="Druckvorschau" aktion={() => a.oeffnen('druck.vorschau', { url: druckUrl('/uebersicht', { typ, inhalt }), titel: `Gesamtübersicht ${TITEL[typ]}` })} />
         <Werkzeug text="PDF" titel="Als PDF herunterladen" aktion={() => herunterladen(druckUrl('/uebersicht', { typ, inhalt }))} />

@@ -87,7 +87,16 @@ enum Farben {
     /// Feine Linie der Stundenkarten (wie im Web #c3ced2)
     static let kachelRand = Color(hell: 0xC3CED2, dunkel: 0x33494E)
     /// Hellgrauer Grund des Wochenrasters (Karten liegen weiß darauf)
-    static let rasterGrund = Color(hell: 0xEDF0F2, dunkel: 0x11171C)
+    static let rasterGrund = Color(hell: 0xEDF1F2, dunkel: 0x0B0F13)
+    /// Pausenband im Raster (etwas dunkler als der Rastergrund)
+    static let rasterPause = Color(hell: 0xE2E8EA, dunkel: 0x080B0E)
+    /// Stundenkarte im Raster und in der Tagesliste (weiß bzw. dunkles Schiefer)
+    static let karte = Color(hell: 0xFFFFFF, dunkel: 0x1A2128)
+    /// Linker Balken ohne Fachfarbe
+    static let balkenGrau = Color(hell: 0xB4BEC4, dunkel: 0x56626C)
+    /// Feiner Schatten der Karte (hell) bzw. Kontur (dunkel)
+    static let karteSchatten = Color(hell: 0x0C2C31, dunkel: 0x000000, deckkraftHell: 0.16, deckkraftDunkel: 0)
+    static let karteKontur = Color(hell: 0x0C2C31, dunkel: 0x262F38, deckkraftHell: 0.06, deckkraftDunkel: 1)
     /// Feine Stundenlinien im Wochenraster
     static let rasterLinie = Color(hell: 0xD7DDE1, dunkel: 0x26313A)
     /// Eigene Abwesenheit hinter den Stunden

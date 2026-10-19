@@ -14,7 +14,7 @@ import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf, menue } from '@/komponenten/menue';
 import { Stundenplanraster, type NichtVerplant, type Stundenplan, type StundenplanrasterApi } from '@/komponenten/raster/Stundenplanraster';
 import type { ZiehDaten } from '@/komponenten/ziehen';
-import { befehl } from '@/kern/befehle';
+import { befehl, seiteOeffnen } from '@/kern/befehle';
 import { ersterOder, useElemente } from '../gemeinsam';
 import * as planung from '../planung/aktionen';
 import Blockansicht from './Blockansicht';
@@ -79,11 +79,10 @@ function StundenplanAnsicht({ p }: AnsichtProps) {
   return (
     <AnsichtRahmen titel={titel} laden={laedt && !plan}
       werkzeuge={<>
-        {a.lage === 'seite' ? <>
-          <Segmente titel="Darstellung" testid="plan-darstellung" wert="einzel" beiWahl={() => a.parameterSetzen({ block: true })}
-            optionen={[{ wert: 'einzel', text: 'Einzelplan', titel: 'Ein Plan mit allen Angaben' }, { wert: 'block', text: 'Blockansicht', titel: 'Mehrere Pläne kompakt neben- und untereinander' }]} />
-          <Trenner />
-        </> : null}
+        <Segmente titel="Darstellung" testid="plan-darstellung" wert="einzel"
+          beiWahl={() => (a.lage === 'seite' ? a.parameterSetzen({ block: true }) : seiteOeffnen('stundenplan', { typ, block: true, element: element ?? undefined }))}
+          optionen={[{ wert: 'einzel', text: 'Einzelplan', titel: 'Ein Plan mit allen Angaben' }, { wert: 'block', text: 'Blockansicht', titel: a.lage === 'seite' ? 'Mehrere Pläne kompakt neben- und untereinander' : 'Blockansicht als eigene Seite öffnen' }]} />
+        <Trenner />
         <ElementAuswahl typ={typ} liste={liste} wert={element} beiWahl={(id) => { a.parameterSetzen({ element: id }); melden('element', { typ: typ, id, quelle: a.id }); }} />
         <Trenner />
         {schreiben ? <>

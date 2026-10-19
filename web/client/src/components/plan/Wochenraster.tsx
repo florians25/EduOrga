@@ -3,13 +3,14 @@
 // mit Uhrzeit an der Zeitachse. Ferien und freie Tage als Fläche, ganztägige Termine und
 // Hinweise im Tageskopf, eigene Abwesenheiten als graue Fläche hinter den Stunden.
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { alpha, Box, Stack, Tooltip, Typography, useTheme } from '@mui/material';
+import { alpha, Box, ButtonBase, Popover, Stack, Tooltip, Typography, useTheme } from '@mui/material';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import type { Aufsicht, Karte, Tageskopf, Wochenplan, Zeit } from '../../api/types';
 import { heuteIso, hhmm, jetztMinuten, minuten, wochentagKurz, datumKurz } from '../../lib/datum';
 import { Kachel } from './Kachel';
 import { DICHTE, useDarstellung } from './darstellung';
-import { artVon, aufsichtOrt, aufsichtTitel, aufsichtVertretung, freiText, spuren, tagHinweise, vergangen, type Art } from './logik';
+import { artVon, aufsichtOrt, aufsichtTitel, aufsichtVertretung, freiText, kuerzel, parallelGruppen, spuren, statusText, tagHinweise, vergangen, type Art } from './logik';
+import { FachMarke } from './darstellung';
 
 export type Aufsichtsmodus = 'normal' | 'kompakt' | 'aus';
 
@@ -95,6 +96,9 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
   const mass = useMemo(() => zeitmassstab(zeiten, pausenMitAufsicht), [zeiten, pausenMitAufsicht]);
   const tage = plan.tage.map((tag, i) => ({ tag, i })).filter(x => nurTag === null || x.i === nurTag);
   const alleKarten = useMemo(() => plan.karten.filter(k => !k.ereignis), [plan.karten]);
+  // Liste gleichzeitiger Stunden (Klick auf „+X“)
+  const [parallel, setParallel] = useState<{ el: HTMLElement; karten: Karte[] } | null>(null);
+
   const proTag = useMemo(() => new Map(plan.tage.map(tag => {
     const karten = plan.karten.filter(k => k.datum === tag.datum && mass.stunde.has(k.von));
     return [tag.datum, [...karten, ...ereignisKarten(tag, karten, zeiten)]];
@@ -172,6 +176,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
           const heute = tag.datum === jetzt.tag;
           const karten = proTag.get(tag.datum) ?? [];
           const lage = spuren(karten);
+          const gruppen = parallelGruppen(karten, lage);
           const frei = tag.frei;
           const ft = frei ? freiText(tag) : null;
           const aufs = aufsichtModus === 'aus' ? [] : plan.aufsichten.filter(a => a.datum === tag.datum && mass.pause.has(a.nachStunde));
@@ -209,7 +214,15 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
               )}
               {/* Kacheln */}
               {karten.map((k, j) => {
-                const { spur, anzahl } = lage.get(k)!;
+                const { spur: spurRoh, anzahl: anzahlRoh } = lage.get(k)!;
+                // Gleichzeitige Stunden: in der Woche (bzw. ab fünf in der Tagesansicht) nur die erste Spur über die volle Breite,
+                // dazu ein kleines „+X“ rechts oben; ein Klick darauf listet alle gleichzeitigen Stunden.
+                const gruppe = gruppen.get(k) ?? [k];
+                const sammeln = anzahlRoh > 1 && (nurTag === null || anzahlRoh > 4);
+                if (sammeln && spurRoh !== 0) return null;
+                const spur = sammeln ? 0 : spurRoh, anzahl = sammeln ? 1 : anzahlRoh;
+                const versteckt = sammeln ? gruppe.filter(x => (lage.get(x)?.spur ?? 0) !== 0) : [];
+                const mitZahl = sammeln && versteckt.length > 0 && gruppe.find(x => (lage.get(x)?.spur ?? 0) === 0) === k;
                 const sv = mass.stunde.get(k.von), sb = mass.stunde.get(k.bis) ?? mass.stunde.get(Math.min(k.bis, zeiten[zeiten.length - 1].nr)) ?? sv;
                 if (!sv || !sb) return null;
                 const y0 = sv.y + Math.min(2, luecke), h = sb.y + sb.h - sv.y - 2 * Math.min(2, luecke);
@@ -218,10 +231,21 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
                 const art = artVon(k, plan.typ);
                 const gedimmt = !!fokus?.size && !fokus.has(art);
                 return (
-                  <Kachel key={j} k={k} typ={plan.typ} hoehe={h} zeit={zeit} gedimmt={gedimmt} vorbei={k.status === 'regulaer' && vergangen(k, jetzt.tag, jetzt.min)}
-                    gross={nurTag !== null}
-                    onOpen={k.ereignis ? undefined : x => onOpen(x, alleKarten)}
-                    style={{ position: 'absolute', top: y0, height: h, left: `calc(${spur * breite}% + ${luecke}px)`, width: `calc(${breite}% - ${2 * luecke}px)`, zIndex: 2 }} />
+                  <Fragment key={j}>
+                    <Kachel k={k} typ={plan.typ} hoehe={h} zeit={zeit} gedimmt={gedimmt} vorbei={k.status === 'regulaer' && vergangen(k, jetzt.tag, jetzt.min)}
+                      gross={nurTag !== null}
+                      onOpen={k.ereignis ? undefined : x => onOpen(x, alleKarten)}
+                      style={{ position: 'absolute', top: y0, height: h, left: `calc(${spur * breite}% + ${luecke}px)`, width: `calc(${breite}% - ${2 * luecke}px)`, zIndex: 2, ...(mitZahl ? { paddingRight: '30px' } : {}) }} />
+                    {mitZahl && (
+                      <Tooltip title={`${versteckt.length} weitere ${versteckt.length === 1 ? 'Stunde' : 'Stunden'} gleichzeitig: ${versteckt.map(x => [x.fach || x.text, kuerzel(plan.typ === 'lehrer' ? x.klassen : x.lehrer).join(', ')].filter(Boolean).join(' ')).join(' · ')}`}>
+                        <ButtonBase data-parallel="" aria-label={`${versteckt.length} weitere ${versteckt.length === 1 ? 'Stunde' : 'Stunden'} gleichzeitig – alle anzeigen`} aria-haspopup="dialog"
+                          onClick={e => { e.stopPropagation(); setParallel({ el: e.currentTarget, karten: gruppe }); }}
+                          sx={{ position: 'absolute', top: y0 + 3, left: `calc(100% - ${luecke + 3 + 25}px)`, zIndex: 4, minWidth: 25, height: 18, px: 0.5, borderRadius: '3px', fontSize: 11, fontWeight: 600,
+                            fontVariantNumeric: 'tabular-nums', color: 'text.primary', bgcolor: 'background.paper', border: 1, borderColor: 'kachel.rand', '&:hover': { borderColor: 'primary.light', bgcolor: 'action.hover' },
+                            '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 } }}>+{versteckt.length}</ButtonBase>
+                      </Tooltip>
+                    )}
+                  </Fragment>
                 );
               })}
               {/* Pausenaufsichten */}
@@ -266,6 +290,27 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
         )}
       </Box>
       {linie && null}
+      <Popover open={!!parallel} anchorEl={parallel?.el} onClose={() => setParallel(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { sx: { width: 300, maxHeight: 420, borderRadius: 2 } } }}>
+        {parallel && (
+          <Box role="dialog" aria-label="Gleichzeitige Stunden">
+            <Typography sx={{ px: 2, py: 1.25, fontWeight: 600, fontSize: 13.5, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}>
+              {parallel.karten.length} Stunden gleichzeitig · {wochentagKurz(parallel.karten[0].datum)} {datumKurz(parallel.karten[0].datum)}
+            </Typography>
+            {parallel.karten.map((x, i) => (
+              <ButtonBase key={i} disabled={!!x.ereignis} onClick={() => { setParallel(null); onOpen(x, alleKarten); }}
+                sx={{ width: '100%', textAlign: 'left', display: 'grid', gridTemplateColumns: '14px minmax(0, 1fr) auto', columnGap: 1, alignItems: 'baseline', px: 2, py: 1, borderTop: i ? 1 : 0, borderColor: 'divider', '&:hover': { bgcolor: 'action.hover' } }}>
+                <FachMarke farbe={x.farbe} />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography noWrap sx={{ fontSize: 13.5, fontWeight: 600, textDecoration: x.status === 'entfall' ? 'line-through' : 'none', color: x.status === 'entfall' ? 'status.entfall.main' : 'text.primary' }}>
+                    {x.fach || x.text || x.art || 'Stunde'} <Box component="span" sx={{ fontWeight: 400, color: 'text.secondary' }}>{kuerzel(plan.typ === 'lehrer' ? x.klassen : x.lehrer).join(', ')}</Box></Typography>
+                  <Typography noWrap variant="caption" color="text.secondary" sx={{ display: 'block' }}>{x.von === x.bis ? `${x.von}. Std.` : `${x.von}.–${x.bis}. Std.`}{kuerzel(x.raeume).length ? ` · ${kuerzel(x.raeume).join(', ')}` : ''}{x.status !== 'regulaer' ? ` · ${statusText(x)}` : ''}</Typography>
+                </Box>
+              </ButtonBase>
+            ))}
+          </Box>
+        )}
+      </Popover>
     </Box>
   );
 }

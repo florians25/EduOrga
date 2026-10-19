@@ -7,7 +7,7 @@
 import { Button, Checkbox, Spinner, Switch, Tooltip, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Keyboard20Regular } from '@fluentui/react-icons';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent, type MouseEvent as RMouseEvent } from 'react';
 import { api } from '@/api/client';
 import { useEreignis } from '@/kern/ereignisse';
 import { useDaten } from '@/kern/laden';
@@ -16,13 +16,14 @@ import { AnsichtRahmen, FussText, Leer, Rechts, Trenner, Werkzeug } from '@/komp
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf, type MenueListe } from '@/komponenten/menue';
 import { raumDialog } from '../dialoge';
-import { tpKontextSetzen, tpSchrittSetzen, usePlanungsdatum, vpfad } from '../kern';
+import { auswahlMelden, tpKontextSetzen, tpSchrittSetzen, usePlanungsdatum, vpfad } from '../kern';
 import { Umschalter } from '../steuer';
 import {
   QUELLE, arbeitslisteLaden, auswahlSetzen, betreuen, blockSetzen, entfallen, kandidatenAnfordern, mehrzahl, ohneLehrkraft, probeLaden, raumZuweisen,
   stundenText, useKandidaten, vormerken, vorschlaegeAnwenden, zuruecksetzen, zuweisen,
-  type BearbeiteteStunde, type Kandidat, type KandidatenInfo, type OffeneStunde, type Probe,
+  alleBetreuen, alleZuweisen, type BearbeiteteStunde, type Gemeinsam, type Kandidat, type KandidatenInfo, type OffeneStunde, type Probe,
 } from './daten';
+import { Sammelleiste } from './Sammelleiste';
 import './ablauf.css';
 
 const useStile = makeStyles({
@@ -73,16 +74,17 @@ function KandidatZeile({ k, nr, aktiv, beiWahl }: { k: Kandidat; nr: number; akt
 }
 
 interface KarteProps {
-  o: OffeneStunde; info: KandidatenInfo | null | undefined; gewaehlt: boolean; block: boolean; schreiben: boolean;
-  waehlen: (id: number) => void; aktion: (o: OffeneStunde, f: () => Promise<unknown>) => void; mehr: (o: OffeneStunde) => MenueListe;
+  o: OffeneStunde; info: KandidatenInfo | null | undefined; gewaehlt: boolean; markiert: boolean; block: boolean; schreiben: boolean;
+  waehlen: (id: number, e: RMouseEvent) => void; maus: { runter: (id: number, e: RMouseEvent) => void; rein: (id: number, e: RMouseEvent) => void }; aktion: (o: OffeneStunde, f: () => Promise<unknown>) => void; mehr: (o: OffeneStunde) => MenueListe;
 }
 
 /** Karte einer offenen Stunde mit den besten Kandidaten; Nebenaktionen nur auf der gewählten Karte. */
-const Karte = memo(function Karte({ o, info, gewaehlt, block, schreiben, waehlen, aktion, mehr }: KarteProps) {
+const Karte = memo(function Karte({ o, info, gewaehlt, markiert, block, schreiben, waehlen, maus, aktion, mehr }: KarteProps) {
   const std = stundenText(o, block);
   const geladen = info !== undefined;
   return (
-    <div className={mergeClasses('ta-karte', gewaehlt && 'gewaehlt', o.klausur && 'klausur')} role="option" aria-selected={gewaehlt} data-id={o.id} onClick={() => waehlen(o.id)}>
+    <div className={mergeClasses('ta-karte', gewaehlt && 'gewaehlt', markiert && 'markiert', o.klausur && 'klausur')} role="option" aria-selected={gewaehlt || markiert} data-id={o.id}
+      onClick={(e) => waehlen(o.id, e)} onMouseDown={(e) => maus.runter(o.id, e)} onMouseEnter={(e) => maus.rein(o.id, e)}>
       <div className="ta-kopf">
         <span className="ta-std">{std}</span>
         <span className="ta-zeit">{o.zeit}</span>
@@ -113,7 +115,7 @@ const Karte = memo(function Karte({ o, info, gewaehlt, block, schreiben, waehlen
             )) : <span className="ta-leer">Keine Lehrkraft frei.{info.entfallSinnvoll ? ' Entfall ist hier sinnvoll (Randstunde).' : ''}</span>}
         {geladen && info && info.weitere > 0 ? <span className="ta-weitere">{`+ ${info.weitere} weitere`}</span> : null}
       </div>
-      {gewaehlt && schreiben ? (
+      {gewaehlt && !markiert && schreiben ? (
         <div className="ta-aktionen" onClick={(e) => e.stopPropagation()}>
           {o.offen ? <>
             <button type="button" className={mergeClasses('ta-aktion', info?.entfallSinnvoll && 'empfohlen')} onClick={() => aktion(o, () => entfallen([o.id]))} title={info?.entfallSinnvoll ? 'Entfall ist hier sinnvoll (Randstunde bzw. Regel der Stunde)' : 'Unterricht entfällt'}>Entfall <kbd>E</kbd></button>
@@ -220,10 +222,15 @@ export default function Arbeitsliste() {
   const [probe, setProbe] = useState<Probe | null>(null);
   const [probeLaeuft, setProbeLaeuft] = useState(false);
   const indexNach = useRef<number | null>(null);
+  // Mehrfachauswahl: Strg+Klick, Umschalt+Klick oder mit gedrückter Maustaste über mehrere Karten ziehen
+  const [markiert, setMarkiert] = useState<number[]>([]);
+  const gemeinsamRef = useRef<Gemeinsam | null>(null);
+  const zug = useRef<{ start: number; gezogen: boolean } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { daten, laedt } = useDaten(() => arbeitslisteLaden(datum!), [datum], { bereiche: ['Vertretung', 'Stundenplan', 'Unterricht', 'Stammdaten', 'Einstellungen'], aktiv: !!datum });
-  useEffect(() => { setProbe(null); setGewaehlt(null); }, [datum]);
+  useEffect(() => { setProbe(null); setGewaehlt(null); setMarkiert([]); }, [datum]);
+  useEffect(() => { const ende = () => { setTimeout(() => { zug.current = null; }); }; document.addEventListener('mouseup', ende); return () => document.removeEventListener('mouseup', ende); }, []);
   const offen = daten?.offen || [];
   const bearbeitet = daten?.bearbeitet || [];
   const ids = useMemo(() => (filter === 'offen' ? offen.map((o) => o.id) : bearbeitet.map((b) => b.id)), [filter, offen, bearbeitet]);
@@ -238,11 +245,18 @@ export default function Arbeitsliste() {
     setGewaehlt(neu);
   }, [daten, ids]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => { setMarkiert((m) => { const n = m.filter((id) => ids.includes(id)); return n.length === m.length ? m : n.length > 1 ? n : []; }); }, [ids]);
+  const mehrere = markiert.length > 1;
+  useEffect(() => {
+    if (!mehrere) return;
+    const o = offenNachId.get(markiert[0]!);
+    if (o) auswahlMelden({ id: o.id, ids: markiert, quelle: QUELLE, text: `${markiert.length} Stunden`, zeile: { v: o.id, klasse: o.klasse, lehrer: o.lehrerId, datum, stunde: o.stunde } });
+  }, [markiert.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
   // gewählte Stunde melden: Pläne und Vorschlag folgen
   const offenNachId = useMemo(() => new Map(offen.map((o) => [o.id, o])), [offen]);
   const bearbeitetNachId = useMemo(() => new Map(bearbeitet.map((b) => [b.id, b])), [bearbeitet]);
   useEffect(() => {
-    if (gewaehlt == null) return;
+    if (gewaehlt == null || markiert.length > 1) return;
     const o = offenNachId.get(gewaehlt);
     const b = bearbeitetNachId.get(gewaehlt);
     if (o) auswahlSetzen(o, datum);
@@ -268,7 +282,33 @@ export default function Arbeitsliste() {
   const index = gewaehlt != null ? ids.indexOf(gewaehlt) : -1;
   useEffect(() => { if (index >= 0) virt.scrollToIndex(index, { align: 'auto' }); }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const waehlen = (id: number) => setGewaehlt(id);
+  const bereich = (a: number, b: number) => { const i = ids.indexOf(a), j = ids.indexOf(b); return i < 0 || j < 0 ? [b] : ids.slice(Math.min(i, j), Math.max(i, j) + 1); };
+  const waehlen = (id: number, e?: RMouseEvent) => {
+    if (zug.current?.gezogen) return;
+    if (e && (e.ctrlKey || e.metaKey) && filter === 'offen') {
+      setMarkiert((m) => { const basis = m.length ? m : gewaehlt != null ? [gewaehlt] : []; return basis.includes(id) ? basis.filter((x) => x !== id) : [...basis, id]; });
+      setGewaehlt(id);
+      return;
+    }
+    if (e?.shiftKey && gewaehlt != null && filter === 'offen') { setMarkiert(bereich(gewaehlt, id)); return; }
+    setMarkiert([]);
+    setGewaehlt(id);
+  };
+  const maus = {
+    runter: (id: number, e: RMouseEvent) => {
+      if (e.button !== 0 || e.ctrlKey || e.shiftKey || e.metaKey || filter !== 'offen' || (e.target as HTMLElement).closest('button')) return;
+      zug.current = { start: id, gezogen: false };
+    },
+    rein: (id: number, e: RMouseEvent) => {
+      const z = zug.current;
+      if (!z || e.buttons !== 1 || id === z.start) return;
+      z.gezogen = true;
+      window.getSelection()?.removeAllRanges();
+      setMarkiert(bereich(z.start, id));
+      setGewaehlt(z.start);
+    },
+  };
+  const sammelFertig = () => { indexNach.current = ids.indexOf(markiert[0] ?? -1); setMarkiert([]); scrollRef.current?.focus({ preventScroll: true }); };
   const blaettern = (r: number) => {
     if (!ids.length) return;
     const i = index < 0 ? 0 : Math.max(0, Math.min(ids.length - 1, index + r));
@@ -311,6 +351,17 @@ export default function Arbeitsliste() {
     if (k === 'f') { tpKontextSetzen('frei'); return true; }
     if (k === 'p') { tpKontextSetzen('plaene'); return true; }
     if (k === 'a' && schreiben && offen.length) { void automatik(); return true; }
+    if (e.key === 'Escape' && markiert.length) { setMarkiert([]); return true; }
+    if (mehrere && schreiben) {
+      const g = gemeinsamRef.current;
+      const nach = (f: () => Promise<unknown>) => { f().then((r) => { if (r !== null) sammelFertig(); }).catch(fehlerMelden); };
+      if (/^[1-3]$/.test(e.key)) { const c = g?.kandidaten[Number(e.key) - 1]; if (c && g) nach(() => alleZuweisen(g.ids, c.lehrer)); return true; }
+      if (k === 'e') { nach(() => entfallen(markiert)); return true; }
+      if (k === 'o') { nach(() => ohneLehrkraft(markiert)); return true; }
+      if (k === 'b' && g?.betreuung) { nach(() => alleBetreuen(g.ids, g.betreuung!.lehrer)); return true; }
+      if (k === 'r') { nach(async () => ((await raumDialog(markiert[0]!, markiert, QUELLE)) ? true : null)); return true; }
+      return false;
+    }
     if (gewaehlt == null || !schreiben) return false;
     const o = offenNachId.get(gewaehlt);
     if (filter === 'bearbeitet' || !o) {
@@ -356,6 +407,8 @@ export default function Arbeitsliste() {
     { text: 'Pläne von Klasse und Lehrkraft', taste: 'P', aktion: () => tpKontextSetzen('plaene') },
     { text: 'Automatisch vorschlagen', taste: 'A', aktion: () => void automatik() },
     { text: 'Bearbeitete: zurücksetzen', taste: 'Entf', aktion: () => {} },
+    null,
+    { text: 'Mehrere Stunden markieren: Strg+Klick, Umschalt+Klick oder mit gedrückter Maustaste ziehen', aktion: () => {} },
   ];
 
   const nOffen = offen.length;
@@ -384,7 +437,8 @@ export default function Arbeitsliste() {
             {daten.unterrichtstag ? <Button appearance="primary" onClick={() => tpSchrittSetzen('pruefen')}>Weiter: Prüfen und veröffentlichen</Button> : null}
           </Leer>
         ) : <Leer text="Heute wurde noch keine Stunde bearbeitet." />
-      ) : (
+      ) : (<>
+        {mehrere ? <Sammelleiste ids={markiert} schreiben={schreiben} aufheben={() => setMarkiert([])} fertig={sammelFertig} beiDaten={(g) => { gemeinsamRef.current = g; }} /> : null}
         <div ref={scrollRef} className={s.liste} tabIndex={0} role="listbox" aria-label={filter === 'offen' ? 'Offene Stunden' : 'Bearbeitete Stunden'} onKeyDown={listenTaste} data-testid="arbeitsliste">
           <div className={s.innen} style={{ height: virt.getTotalSize() }}>
             {sichtbar.map((v) => {
@@ -392,7 +446,7 @@ export default function Arbeitsliste() {
               return (
                 <div key={v.key} ref={virt.measureElement} data-index={v.index} style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${v.start}px)`, paddingBottom: 8 }}>
                   {filter === 'offen' ? (
-                    <Karte o={offenNachId.get(id)!} info={werte[id]} gewaehlt={id === gewaehlt} block={block} schreiben={schreiben} waehlen={waehlen} aktion={aktion} mehr={mehr} />
+                    <Karte o={offenNachId.get(id)!} info={werte[id]} gewaehlt={id === gewaehlt} markiert={mehrere && markiert.includes(id)} block={block} schreiben={schreiben} waehlen={waehlen} maus={maus} aktion={aktion} mehr={mehr} />
                   ) : (
                     <ErledigtKarte b={bearbeitetNachId.get(id)!} gewaehlt={id === gewaehlt} schreiben={schreiben} waehlen={() => waehlen(id)} zurueck={() => aktion({ id }, () => zuruecksetzen([id]))} />
                   )}
@@ -401,7 +455,7 @@ export default function Arbeitsliste() {
             })}
           </div>
         </div>
-      )}
+      </>)}
     </AnsichtRahmen>
   );
 }

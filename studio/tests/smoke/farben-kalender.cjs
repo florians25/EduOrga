@@ -82,8 +82,6 @@ const h = require('./hilfe.cjs');
     schritt(`Blockansicht mit ${kacheln} Kacheln, Kachelkopf öffnet den Einzelplan`);
 
     // ---- Periodenwechsel ----
-    const anzahlPerioden = async () => (await (await h.api(`/api/dokumente/${await page.evaluate(() => location.href) && ''}`, { headers: { cookie } }).catch(() => null)) ? 0 : 0);
-    void anzahlPerioden;
     await page.locator('[data-testid=periode-knopf]').click();
     await page.locator('[data-testid=periode-neu-knopf]').click();
     await page.waitForSelector('[data-testid=periode-neu]');

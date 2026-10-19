@@ -36,12 +36,14 @@ struct Kartendarstellung: Decodable, Equatable, Sendable {
     var statuswoerter = false
     /// Geänderte Stunden und Prüfungen zusätzlich in der hellen Statusfläche
     var statusflaeche = true
+    /// element (Lehrkraft bzw. Klasse oben, Standard) | fach (Fach oben)
+    var reihenfolge = "element"
 
     init() {}
 
     enum CodingKeys: String, CodingKey {
         case fachfarbe, balkenbreite, deckkraft, flaeche, rahmen, eckenradius, dichte, fach, raum, zeile2, zeile2Text, kuerzel, statuswoerter
-        case statusflaeche
+        case statusflaeche, reihenfolge
     }
 
     init(from decoder: Decoder) throws {
@@ -62,6 +64,7 @@ struct Kartendarstellung: Decodable, Equatable, Sendable {
         statuswoerter = c.wahr(.statuswoerter)
         // wie im Web: fehlende Angaben (ältere Server) erhalten den Standard
         statusflaeche = c.contains(.statusflaeche) ? c.wahr(.statusflaeche) : standard.statusflaeche
+        reihenfolge = c.textOderNil(.reihenfolge) ?? standard.reihenfolge
     }
 
     /// Fachfarbe als Balken links (auch „balken-flaeche“), oben, als Quadrat, als Tönung oder keine.

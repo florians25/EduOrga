@@ -16,6 +16,8 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /quelle
 COPY Directory.Build.props ./
 COPY src/UntPlan.Web.Contracts/ src/UntPlan.Web.Contracts/
+# gemeinsame PDF-Ausgabe (Druckdesign, Schrift IBM Plex Sans)
+COPY src/UntPlan.Druck/ src/UntPlan.Druck/
 COPY web/src/UntPlanWeb/UntPlanWeb.csproj web/src/UntPlanWeb/
 RUN dotnet restore web/src/UntPlanWeb/UntPlanWeb.csproj
 COPY web/src/UntPlanWeb/ web/src/UntPlanWeb/

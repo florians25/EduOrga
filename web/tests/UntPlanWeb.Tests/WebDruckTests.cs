@@ -158,7 +158,7 @@ public class WebDruckTests
         var pdf = PdfBericht.Vertretungsplan(Schule, tage, true, false, "admin");
         Muster("web-vertretungsplan-lehrkraefte", pdf);
         var text = Pruefen(pdf, false, 2, "Mittwoch, 14. Oktober 2026", "Donnerstag, 15. Oktober 2026", "Vertretungsplan Lehrkräfte", "A-Woche", "Mitteilungen",
-            "Abwesende Lehrkräfte", "entfällt", "E statt F", "R204 statt R203", "Std.", "Fach", "Lehrkraft", "Vertretung", "Raum", "Art", "Bemerkung");
+            "Abwesende Lehrkräfte", "entfällt", "E statt F", "R204 statt", "R203", "Std.", "Fach", "Lehrkraft", "Vertretung", "Raum", "Art", "Bemerkung");
         pdf = PdfBericht.Vertretungsplan(Schule, tage.Take(1).ToList(), false, true, "7a");
         Muster("web-vertretungsplan-aushang-gross", pdf);
         text = Pruefen(pdf, true, 1, "Vertretungsplan", "entfällt");

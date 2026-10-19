@@ -82,7 +82,10 @@ export default function Vertretungen({ teile }: SeitenProps) {
   const [filter, setFilter] = useState('');
   const g = useLaden(s => holen<{ tage: VTag[] }>(`/api/app/vertretungen?datum=${datum}&tage=${tage}`, s), [datum, tage]);
   return (
-    <Seite titel="Vertretungsplan" untertitel={ich.kollegium ? 'Lehrerversion' : undefined} aktionen={<Button variant="outlined" startIcon={<PrintOutlined />} onClick={() => window.print()}>Drucken</Button>}
+    <Seite titel="Vertretungsplan" untertitel={ich.kollegium ? 'Lehrerversion' : undefined} aktionen={<Stack direction="row" gap={1}>
+      <Button variant="outlined" startIcon={<PrintOutlined />} onClick={() => window.open(`/api/app/vertretungen.pdf?datum=${datum}&tage=${tage}`, '_blank', 'noopener')}>PDF</Button>
+      <Button variant="outlined" title="Aushang für das Schwarze Brett: große Schrift, Querformat" onClick={() => window.open(`/api/app/vertretungen.pdf?datum=${datum}&tage=${tage}&gross=true`, '_blank', 'noopener')}>Aushang groß</Button>
+    </Stack>}
       filter={<>
         <SuchFeld wert={filter} onWert={setFilter} platzhalter={ich.kollegium ? 'Klasse oder Lehrkraft filtern' : 'Klasse filtern'} breite={240} />
         <Box sx={{ flex: 1 }} />

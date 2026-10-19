@@ -1,6 +1,7 @@
 name: EduOrga Website
 
-# Eigener Ablauf für die Produkt-Website mit Ideenportal (Ordner website/). Commits mit [skip ci] bzw. [ci skip]
+# Eigener Ablauf für die Produkt-Website (Ordner website/, Image untplannext-website). Die Website gehört nicht zur
+# Installation der Schulen; betrieben wird sie getrennt über installation/intern/ (nur für den Betreiber des Projekts). Commits mit [skip ci] bzw. [ci skip]
 # im Text lösen keinen Lauf aus (GitHub überspringt sie von selbst); zusätzlich prüft jeder Job die Commit-Nachricht.
 on:
   push:
@@ -12,6 +13,7 @@ on:
       - 'studio/docs/bilder/**'
       - 'web/docs/bilder/**'
       - 'mobile/docs/bilder/**'
+      - 'docs/HANDBUCH.md'
       - 'VERSION'
       - '.github/workflows/website.yml'
   pull_request:
@@ -40,13 +42,15 @@ jobs:
           cache-dependency-path: website/client/package-lock.json
       - name: Oberfläche bauen (Typprüfung + Vite)
         working-directory: website/client
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm ci --no-audit --no-fund
           npm run build
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Tests (API)
+      - name: Tests (Auslieferung der Seiten, Gesundheit, Betreiberangaben)
         run: dotnet test website/tests/EduOrgaWebsite.Tests -c Release
 
   docker:
@@ -68,6 +72,18 @@ jobs:
         run: |
           if [ "${GITHUB_REF_TYPE}" = tag ]; then v="${GITHUB_REF_NAME#v}"; else v="$(cat VERSION)-dev.${GITHUB_RUN_NUMBER}"; fi
           echo "wert=$v" >> "$GITHUB_OUTPUT"
+      - name: Stand für die Statusleiste (letzte Änderung, neueste Veröffentlichung)
+        id: stand
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "commit_datum=$(git log -1 --format=%cI)" >> "$GITHUB_OUTPUT"
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name + " " + .published_at' > release.txt 2>/dev/null; then
+            echo "release=$(cut -d' ' -f1 release.txt)" >> "$GITHUB_OUTPUT"
+            echo "release_datum=$(cut -d' ' -f2 release.txt)" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=-" >> "$GITHUB_OUTPUT"
+          fi
       - id: meta
         uses: docker/metadata-action@v5
         with:
@@ -83,7 +99,12 @@ jobs:
           context: .
           file: website/Dockerfile
           platforms: linux/amd64,linux/arm64
-          build-args: VERSION=${{ steps.version.outputs.wert }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.wert }}
+            WEBSITE_COMMIT=${{ github.sha }}
+            WEBSITE_COMMIT_DATUM=${{ steps.stand.outputs.commit_datum }}
+            WEBSITE_RELEASE=${{ steps.stand.outputs.release }}
+            WEBSITE_RELEASE_DATUM=${{ steps.stand.outputs.release_datum }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

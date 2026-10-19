@@ -19,10 +19,12 @@ WORKDIR /quelle
 COPY Directory.Build.props ./
 COPY src/UntPlan.Web.Contracts/UntPlan.Web.Contracts.csproj src/UntPlan.Web.Contracts/
 COPY src/UntPlan.Core/UntPlan.Core.csproj src/UntPlan.Core/
+COPY src/UntPlan.Druck/UntPlan.Druck.csproj src/UntPlan.Druck/
 COPY studio/src/UntPlanStudio/UntPlanStudio.csproj studio/src/UntPlanStudio/
 RUN dotnet restore studio/src/UntPlanStudio/UntPlanStudio.csproj
 COPY src/UntPlan.Web.Contracts/ src/UntPlan.Web.Contracts/
 COPY src/UntPlan.Core/ src/UntPlan.Core/
+COPY src/UntPlan.Druck/ src/UntPlan.Druck/
 COPY studio/src/UntPlanStudio/ studio/src/UntPlanStudio/
 # gemeinsame Update-Prüfung mit UntPlan Web und Mobile (in UntPlanStudio.csproj eingebunden)
 COPY web/src/UntPlanWeb/Dienste/Updatepruefung.cs web/src/UntPlanWeb/Dienste/

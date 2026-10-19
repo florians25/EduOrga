@@ -15,6 +15,7 @@ import {
   aktuelleAuswahl, blaettern, datumSetzen, isoAus, planVergroessern, seitenansichtSetzen, tagKurz, tpAnsichtSetzen, tpKontextSetzen, tpSchrittSetzen, useTagesplanung,
   usePlanungsdatum, vpfad, type TpAnsicht, type TpKontext, type TpSchritt, type Zeitansicht,
 } from './kern';
+import { VertretungenSendenKnopf, vertretungenSenden } from '../untplanweb/Senden';
 import { Umschalter } from './steuer';
 import './ablauf/ablauf.css';
 
@@ -36,6 +37,7 @@ const useStile = makeStyles({
   rechts: { marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' },
   ansicht: { display: 'inline-flex', alignItems: 'center', gap: '8px' },
   streifen: { display: 'inline-flex', alignItems: 'stretch', gap: '2px' },
+  senden: { display: 'inline-flex', alignItems: 'center', gap: '4px', paddingLeft: '10px', borderLeft: `1px solid ${tokens.colorNeutralStroke2}` },
 });
 
 /** Wochenstreifen im Tageskopf: Tage der Woche mit der Zahl offener Vertretungen; Klick wechselt den Planungstag. */
@@ -139,6 +141,7 @@ function Tageskopf() {
         ))}
       </span>
       <span className={s.rechts}>
+        {schreiben ? <span className={s.senden} data-testid="tageskopf-senden"><Link onClick={() => { void vertretungenSenden(); }} title="Vertretungen jetzt an EduOrga Web übertragen">An Web senden</Link><VertretungenSendenKnopf kompakt /></span> : null}
         {ablauf ? null : <>
         {modusWahl}
         <span className={schreiben ? s.breit : undefined} style={schreiben ? undefined : { display: 'inline-flex', gap: 12 }}>
@@ -270,6 +273,8 @@ export function Tagesplanung() {
     return () => document.removeEventListener('keydown', taste);
   }, [gross]);
   useEffect(() => () => planVergroessern(null), []);
+  // offene Änderungen aus EduOrga Web beim Öffnen anbieten (Rückmeldungen, Stundenplanänderungen)
+  useEffect(() => { void import('./ablauf/WebImport').then((m) => m.webAenderungenAnbieten()); }, []);
   const k = woche ? 'tagesplanung.woche' : 'tagesplanung.v2';
   return (
     <div className={s.seite} data-ansicht-art={woche ? 'woche' : 'tag'} data-tp-ansicht={ansicht}>

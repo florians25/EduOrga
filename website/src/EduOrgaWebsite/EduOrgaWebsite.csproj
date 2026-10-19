@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <!-- EduOrga Website: Produkt-Website mit Ideen-, Wunsch- und Fehlerportal. Server (ASP.NET Core 8, SQLite) + Oberfläche (website/client). -->
+  <!-- EduOrga Website: Produkt-Website. Kleiner Server (ASP.NET Core 8, liefert den statischen Build aus) + Oberfläche (website/client). -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>EduOrgaWebsite</RootNamespace>
@@ -9,13 +9,10 @@
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
-  </ItemGroup>
-  <ItemGroup>
     <InternalsVisibleTo Include="EduOrgaWebsite.Tests" />
   </ItemGroup>
   <!--
-    Oberfläche (React + Fluent UI, Quelle in website/client) mit Vite nach wwwroot bauen. wwwroot ist reine Build-Ausgabe.
+    Oberfläche (React + TypeScript, Quelle in website/client) mit Vite nach wwwroot bauen. wwwroot ist reine Build-Ausgabe.
     Abschalten mit -p:WebsiteOberflaecheBauen=false (Dockerfile und Tests bauen die Oberfläche getrennt).
   -->
   <PropertyGroup>
@@ -36,7 +33,7 @@
   </Target>
   <Target Name="WebsiteClientQuellenSammeln">
     <ItemGroup>
-      <WebsiteClientQuelle Include="$(WebsiteClient)/src/**;$(WebsiteClient)/public/**;$(WebsiteClient)/index.html;$(WebsiteClient)/package.json;$(WebsiteClient)/vite.config.ts;$(WebsiteClient)/tsconfig.json" />
+      <WebsiteClientQuelle Include="$(WebsiteClient)/src/**;$(WebsiteClient)/public/**;$(WebsiteClient)/index.html;$(WebsiteClient)/package.json;$(WebsiteClient)/vite.config.ts;$(WebsiteClient)/tsconfig.json;$(WebsiteClient)/scripts/**" />
     </ItemGroup>
   </Target>
 </Project>

@@ -49,7 +49,7 @@ public static partial class PdfBericht
             var by = oben + dr * (zh + luecke);
             if (p.Name is null) { s.Rahmen(bx, by, sw, zh, Formular.LinieNormal, 0.5f, 2, 2); continue; }
             s.Rahmen(bx, by, sw, zh, Formular.LinieStark);
-            var groesse = zh < 30 ? 7.5f : 9.5f;
+            var groesse = zh < 30 ? 7.5f : zh < 45 ? 9.5f : 10.5f;
             var teile = Satz.Umbrechen(p.Name, sw - 8, groesse, true);
             if (teile.Count > 2) teile = new List<string> { teile[0], Satz.Kuerzen(string.Join(" ", teile.Skip(1)), sw - 8, groesse, true) };
             var zeilenGesamt = teile.Count + (p.Klasse is null ? 0 : 1);

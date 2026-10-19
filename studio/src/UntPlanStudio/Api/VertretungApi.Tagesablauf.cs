@@ -129,6 +129,12 @@ public sealed partial class VertretungApi
                 }
                 var bl = block == true && VertretungsVorschlag.Block(d, v).Count > 1;
                 var alle = VertretungsVorschlag.Berechnen(d, v, bl);
+                // offener Platz einer Veranstaltung: wer schon teilnimmt, kommt als Ersatz nicht in Frage
+                if (v.VeranstaltungOffen && v.VeranstaltungId is int vid && d.Veranstaltungen.FirstOrDefault(x => x.Id == vid) is { } vaz)
+                {
+                    var dabei = vaz.LehrerAm(v.Datum).ToHashSet();
+                    alle = alle.Where(k => !dabei.Contains(k.Lehrer.Id)).ToList();
+                }
                 var betreuung = VertretungsVorschlag.Betreuungen(d, v).FirstOrDefault();
                 res[v.Id.ToString()] = new
                 {
@@ -144,6 +150,41 @@ public sealed partial class VertretungApi
                 };
             }
             return res;
+        }));
+
+        // Gemeinsame Kandidaten für mehrere markierte Stunden: Lehrkräfte, die in allen Stunden frei sind (Schnittmenge), gereiht nach
+        // der Summe der Schlechtpunkte; dazu die gemeinsame Betreuung und ob Entfall in allen Stunden sinnvoll ist
+        g.MapGet("/tagesablauf/gemeinsam", (Arbeitsdokument a, string ids) => a.LesenAsync(doc =>
+        {
+            var d = doc.Daten;
+            var menge = ids.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => int.TryParse(x, out var n) ? n : 0).Where(n => n > 0).Distinct().Take(30).ToHashSet();
+            var liste = d.Vertretungen.Where(v => menge.Contains(v.Id) && v.Offen && v.Art != VertretungsArt.Pausenaufsicht).OrderBy(v => v.Datum).ThenBy(v => v.Stunde).ToList();
+            var gleicheZeit = liste.GroupBy(v => (v.Datum, v.Stunde)).Any(x => x.Count() > 1);
+            var kandidaten = new List<object>();
+            object? betreuung = null;
+            if (liste.Count > 0 && !gleicheZeit)
+            {
+                var je = liste.Select(v => VertretungsVorschlag.Berechnen(d, v).ToDictionary(k => k.Lehrer.Id)).ToList();
+                var gemeinsam = je[0].Keys.Where(l => je.All(x => x.ContainsKey(l)))
+                    .Select(l => (l, punkte: je.Sum(x => x[l].Punkte), rot: je.Any(x => x[l].Rot), k: je[0][l]))
+                    .OrderBy(x => x.punkte).ThenBy(x => x.k.Lehrer.Kurzname).Take(8).ToList();
+                foreach (var (l, _, rot, k) in gemeinsam)
+                    kandidaten.Add(new
+                    {
+                        lehrer = l, k = k.Lehrer.Kurzname, name = k.Lehrer.VollerName, lage = string.Join(" / ", je.Select(x => x[l].Lage).Distinct()),
+                        gruende = je.SelectMany(x => x[l].Kriterien).Distinct().ToList(), woche = k.ZaehlerWoche, monat = k.ZaehlerMonat,
+                        maxWoche = k.Lehrer.VertretungenMaxWoche, maxMonat = k.Lehrer.VertretungenMaxMonat, mehrarbeit = je.Any(x => x[l].Mehrarbeit), rot,
+                        mehrarbeitMonat = new { geleistet = 0, grenze = 3, verguetung = 0 },
+                    });
+                var bet = liste.Select(v => VertretungsVorschlag.Betreuungen(d, v).Select(b => b.Lehrer.Id).ToList()).ToList();
+                if (bet.Count > 0 && bet[0].FirstOrDefault(l => bet.All(x => x.Contains(l))) is int bl && bl > 0)
+                    betreuung = new { lehrer = bl, k = doc.Index.KLehrer(bl), naehe = "", kopplung = false, klassen = "" };
+            }
+            return new
+            {
+                ids = liste.Select(v => v.Id).ToList(), stunden = liste.Select(v => v.Stunde).ToList(), gleicheZeit, kandidaten, betreuung,
+                entfallSinnvoll = liste.Count > 0 && liste.All(v => VertretungsVorschlag.EntfallSinnvoll(d, v)),
+            };
         }));
 
         // „Wer ist frei?“: Lehrkräfte × Stunden des Tages (U Unterricht, V vertritt, A abwesend, B Bereitschaft, X freigesetzt, H Hohlstunde, leer frei)
@@ -281,6 +322,7 @@ public sealed partial class VertretungApi
                 {
                     var v = d.Vertretungen.FirstOrDefault(x => x.Id == e.Id);
                     if (v is null || v.Fixiert || !v.OffenOderRaumOffen) continue;
+                    if (e.Lehrer is int lv && v.VeranstaltungOffen && v.VeranstaltungId is int vaId) { VeranstaltungsLogik.ErsatzSetzen(d, vaId, v.Datum, v.ErsatzFuerLehrerId, lv); continue; }
                     if (e.Lehrer is int l && v.Offen) Vertretungen.VertreterSetzen(d, v, l, false, B(p));
                     else if (e.Entfall && v.Offen) Vertretungen.EntfallUmschalten(d, v, B(p));
                     else if (e.Raum is int r && v.RaumOffen) Raumvertretungen.Zuordnen(d, v, r, false, RaumKollisionsLoesung.MitKollision, B(p));

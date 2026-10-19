@@ -170,7 +170,7 @@ export default function PeriodenWahl() {
             {!treffer.length ? <div className={s.leer}>Keine passende Periode.</div> : null}
           </div>
           <div className={s.fuss}>
-            <Button size="small" appearance="primary" disabled={!schreiben} onClick={() => { setOffen(false); los(() => neuePeriodeDialog()); }} data-testid="periode-neu-knopf">Neue Periode ab …</Button>
+            <Button size="small" appearance="primary" disabled={!schreiben} onClick={() => { setOffen(false); setTimeout(() => los(() => neuePeriodeDialog()), 60); }} data-testid="periode-neu-knopf">Neue Periode ab …</Button>
             <Button size="small" appearance="subtle" onClick={() => { setOffen(false); seiteOeffnen('einstellungen.perioden'); }}>Perioden verwalten</Button>
           </div>
         </PopoverSurface>

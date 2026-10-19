@@ -33,11 +33,12 @@
 .ra-eintrag {
   /* ohne Fachfarbe: neutrale hellgraue Karte mit Linie (wirkt nicht leer); mit Fachfarbe: leichte Tönung + Linie in der Farbe */
   flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 3px 5px; border-radius: 3px;
-  background: var(--edo-karte-neutral); border: 1px solid var(--edo-karte-rand);
+  background: var(--edo-karte-neutral); border: 1px solid var(--edo-karte-rand); border-left: 4px solid var(--edo-karte-balken); padding-left: 4px;
   cursor: default; overflow: hidden; pointer-events: auto; position: relative; user-select: none; touch-action: none;
 }
 .ra-eintrag[style*="--fachfarbe"] {
   background: color-mix(in srgb, var(--fachfarbe) 16%, var(--colorNeutralBackground1)); border-color: color-mix(in srgb, var(--fachfarbe) 42%, var(--colorNeutralStroke2));
+  border-left-color: var(--fachfarbe);
 }
 .ra-eintrag.ziehbar { cursor: grab; }
 .ra-eintrag.zieht { opacity: 0.35; }

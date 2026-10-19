@@ -7,12 +7,11 @@
 #   untplannext-studio      Planung im Browser       eigene Datenbank (SQLite im Volume untplannext-studio-daten oder MariaDB)
 #   untplannext-web         Portal für die Schule    eigene Datenbank (SQLite im Volume untplannext-web-daten oder MariaDB)
 #   untplannext-mobile      App fürs Telefon (PWA)   Geräteprofile im Volume untplannext-mobile-daten, Plandaten von Web
-#   untplannext-website     optional, Produkt-Website mit Ideenportal   eigene SQLite-Datenbank im Volume untplannext-website-daten
 #   untplannext-mariadb     optional, für Web (Datenbank untplanweb) und/oder Studio (Datenbank eduorga_studio)
 #   untplannext-caddy       optional, HTTPS mit automatischem Zertifikat
 #   untplannext-watchtower  optional, Update aus der Administration von UntPlan Web
 #
-# Welche Container laufen, steht in .env unter COMPOSE_PROFILES (studio, web, mobile, website, mariadb, https, updater).
+# Welche Container laufen, steht in .env unter COMPOSE_PROFILES (studio, web, mobile, mariadb, https, updater).
 # Einrichtung:   ./install.sh          (fragt alles ab, schreibt .env und Caddyfile, startet die Container)
 # Update:        ./update.sh           (sichert beide Datenbanken, lädt neue Images, startet neu)
 #                ./update.sh studio    (nur ein Programm aktualisieren)
@@ -85,29 +84,6 @@ services:
     volumes:
       - untplannext-mobile-daten:/data
 
-  # EduOrga Website: Produktseiten und Ideen-/Wunsch-/Fehlerportal (optional, Profil „website“).
-  # Wird wie Studio mit ./update.sh website aktualisiert (nicht über Watchtower).
-  untplannext-website:
-    restart: unless-stopped
-    image: ghcr.io/florians25/untplannext-website:${UNTPLAN_VERSION:-latest}
-    container_name: untplannext-website
-    profiles: ["website"]
-    ports:
-      - "${BIND_ADRESSE:-0.0.0.0}:${WEBSITE_PORT:-8200}:8080"
-    environment:
-      TZ: ${ZEITZONE:-Europe/Berlin}
-      WEBSITE_ADMIN_BENUTZER: ${WEBSITE_ADMIN_BENUTZER:-admin}
-      WEBSITE_ADMIN_PASSWORT: ${WEBSITE_ADMIN_PASSWORT:-}
-      WEBSITE_SICHERE_COOKIES: ${WEBSITE_SICHERE_COOKIES:-0}
-      # hinter Caddy (HTTPS): Absenderadresse für die Ratenbegrenzung aus X-Forwarded-For
-      WEBSITE_HINTER_PROXY: ${WEBSITE_HINTER_PROXY:-0}
-      WEBSITE_BETREIBER_NAME: ${WEBSITE_BETREIBER_NAME:-}
-      WEBSITE_BETREIBER_ANSCHRIFT: ${WEBSITE_BETREIBER_ANSCHRIFT:-}
-      WEBSITE_BETREIBER_EMAIL: ${WEBSITE_BETREIBER_EMAIL:-}
-      WEBSITE_SICHERUNGEN_BEHALTEN: ${SICHERUNGEN_BEHALTEN:-14}
-    volumes:
-      - untplannext-website-daten:/data
-
   untplannext-mariadb:
     image: mariadb:11.4
     container_name: untplannext-mariadb
@@ -168,8 +144,6 @@ volumes:
   untplannext-web-daten:
   untplannext-mobile-daten:
     name: untplannext-mobile-daten
-  untplannext-website-daten:
-    name: untplannext-website-daten
   untplannext-mariadb-daten:
   untplannext-caddy-daten:
     name: untplannext-caddy-daten

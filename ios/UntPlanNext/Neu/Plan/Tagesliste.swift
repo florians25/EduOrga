@@ -25,6 +25,11 @@ struct Tageseintrag: Identifiable {
         if case .stunden = art { return true }
         return false
     }
+
+    var istAufsicht: Bool {
+        if case .aufsicht = art { return true }
+        return false
+    }
 }
 
 enum Tageslistenbau {
@@ -109,6 +114,7 @@ struct Tagesliste: View {
             let sichtbar = einklappen ? alle.filter { e in !vorbei.contains { $0.id == e.id } } : alle
             let ziel = ankerZiel(sichtbar, jetzt: jetzt)
             let bald = baldBeginn(jetzt)
+            let jetztVor = jetztPosition(sichtbar, jetzt: jetzt)
 
             VStack(alignment: .leading, spacing: Stilmass.raster) {
                 ForEach(kacheln.filter { $0.art == .ganztagTermin }) { g in
@@ -129,6 +135,9 @@ struct Tagesliste: View {
                     .buttonStyle(.plain)
                 }
                 ForEach(sichtbar) { e in
+                    if e.id == jetztVor, let m = jetzt {
+                        jetztZeile(m)
+                    }
                     zeile(e, jetzt: jetzt, bald: bald)
                         .id(e.id == ziel ? (ankerID ?? e.id) : e.id)
                 }
@@ -140,6 +149,31 @@ struct Tagesliste: View {
     private func ankerZiel(_ liste: [Tageseintrag], jetzt: Int?) -> String? {
         if let m = jetzt, let e = liste.first(where: { $0.istStunde && $0.ende > m }) { return e.id }
         return liste.first(where: \.istStunde)?.id
+    }
+
+    /// Jetzt-Linie vor dem ersten Eintrag, der noch nicht begonnen hat – nur zwischen Unterrichtsbeginn (eine Stunde
+    /// vorher) und dem Ende des letzten Eintrags und nur, wenn gerade weder eine Stunde noch eine Lücke läuft (die zeigen
+    /// die Restzeit selbst).
+    private func jetztPosition(_ liste: [Tageseintrag], jetzt: Int?) -> String? {
+        guard let m = jetzt, let erste = liste.first(where: \.istStunde), m >= erste.beginn - 60 else { return nil }
+        if liste.contains(where: { !$0.istAufsicht && $0.beginn <= m && m < $0.ende }) { return nil }
+        return liste.first(where: { $0.beginn > m && !$0.istAufsicht })?.id
+    }
+
+    /// „10:42 ——●——“ zwischen zwei Einträgen.
+    private func jetztZeile(_ m: Int) -> some View {
+        HStack(spacing: 12) {
+            Text(Uhr.uhrzeit(m))
+                .font(.caption.weight(.bold))
+                .monospacedDigit()
+                .foregroundStyle(Farben.akzent)
+                .frame(width: zeitBreite, alignment: .trailing)
+            JetztLinie()
+                .frame(height: 8)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Jetzt, \(Uhr.uhrzeit(m)) Uhr")
     }
 
     /// Nächste stattfindende Stunde (wenn gerade keine läuft) und die Minuten bis zu ihrem Beginn.
@@ -328,7 +362,7 @@ struct ListenKachel: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(kachel.fachText(darstellung))
                     .font(.headline)
-                    .foregroundStyle(entfall ? Farben.entfall : Farben.text)
+                    .foregroundStyle(entfall ? Farben.entfall : w.titel)
                     .strikethrough(entfall, color: Farben.entfall)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -370,21 +404,21 @@ struct ListenKachel: View {
                     .accessibilityHidden(true)
             }
         }
-        .padding(.leading, 14)
+        .padding(.leading, 17)
         .padding(.trailing, 12)
         .padding(.top, abstand)
         .padding(.bottom, abstand)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .klassikKarte(w, radius: 4)
+        .frame(minHeight: 60, alignment: .topLeading)
+        .klassikKarte(w, radius: 6)
         .overlay {
             if laeuft {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(Farben.akzent, lineWidth: 2)
             }
         }
-        .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
         .opacity(vorbei ? 0.55 : 1)
-        .contentShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(kachel.vorlesetext + (laeuft ? ", läuft gerade" : (vorbei ? ", vorbei" : "")))
         .accessibilityAddTraits(.isButton)

@@ -38,7 +38,7 @@ import { frage } from '../dialoge';
 import { fehlerMelden, hinweis } from '../hinweise';
 import { menue, type MenueListe } from '../menue';
 import { mehrfachDialog, mehrfachWert } from './mehrfach';
-import { Calendar } from '@fluentui/react-datepicker-compat';
+import { Calendar } from '@fluentui/react-calendar-compat';
 import { DATUMSFORMAT, KALENDER_DE, ausIso } from '../eingaben';
 import { auswahlOptionen, filterPasst, istListenart, pruefeWert, tsvLesen, tsvSchreiben } from './pruefung';
 import { Vorschlagsliste, type VorschlagslisteApi } from './vorschlagsliste';
@@ -1185,7 +1185,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
                   <div className="tb-kalenderflaeche" data-testid="tabelle-kalender" onMouseDown={(e) => { if (!(e.target as HTMLElement).closest('input')) e.preventDefault(); }}>
                     <Calendar value={ausIso(kalender.wert) ?? undefined} firstDayOfWeek={1} firstWeekOfYear={2} showWeekNumbers showGoToToday highlightSelectedMonth
                       strings={KALENDER_DE} dateTimeFormatter={DATUMSFORMAT}
-                      onSelectDate={(d) => {
+                      onSelectDate={(d: Date | undefined) => {
                         if (!d || !eingabe.current) return;
                         eingabe.current.value = textAusIso(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
                         setKalender(null);

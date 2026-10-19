@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3C1DC670
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UntPlanStudio.Tests", "tests\UntPlanStudio.Tests\UntPlanStudio.Tests.csproj", "{516929F4-54A6-4614-A01B-318B95A394B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UntPlan.Druck", "..\src\UntPlan.Druck\UntPlan.Druck.csproj", "{0AB3609D-3B62-4156-A879-C6CEB9160EC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{516929F4-54A6-4614-A01B-318B95A394B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{516929F4-54A6-4614-A01B-318B95A394B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{516929F4-54A6-4614-A01B-318B95A394B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AB3609D-3B62-4156-A879-C6CEB9160EC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AB3609D-3B62-4156-A879-C6CEB9160EC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AB3609D-3B62-4156-A879-C6CEB9160EC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AB3609D-3B62-4156-A879-C6CEB9160EC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A3D666D4-93C9-4AB1-8FEC-86A6812D46FD} = {5A6904A3-09DA-4530-BC2E-22B220989A31}

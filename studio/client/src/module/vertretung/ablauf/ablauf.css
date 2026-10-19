@@ -190,3 +190,15 @@
 .ta-legende span { display: inline-flex; align-items: center; gap: 4px; }
 .ta-legende .ta-z { width: 14px; height: 10px; margin: 0; display: inline-block; }
 @media (max-width: 1400px) { .ta-legende span:nth-child(n+5) { display: none; } }
+
+/* ---- Mehrfachauswahl ---- */
+.ta-karte { user-select: none; }
+.ta-karte.markiert { border-color: var(--edo-modus); background: color-mix(in srgb, var(--edo-modus-flaeche) 75%, var(--colorNeutralBackground1)); box-shadow: inset 3px 0 0 var(--edo-modus); }
+.ta-sammel { flex-shrink: 0; padding: 8px 12px 10px 12px; border-bottom: 1px solid var(--colorNeutralStroke1); background: color-mix(in srgb, var(--edo-modus-flaeche) 55%, var(--colorNeutralBackground1)); }
+.ta-sammel-kopf { display: flex; align-items: baseline; gap: 10px; }
+
+/* ---- Änderungen aus EduOrga Web (Dialog) ---- */
+.ta-webliste { max-height: 320px; overflow-y: auto; border: 1px solid var(--colorNeutralStroke2); border-radius: 4px; font-size: 12px; }
+.ta-webzeile { display: grid; grid-template-columns: 78px 36px 90px 110px 70px minmax(0, 1fr); gap: 8px; padding: 4px 8px; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.ta-webzeile > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ta-webzeile.kopf { position: sticky; top: 0; background: var(--colorNeutralBackground3); color: var(--colorNeutralForeground2); font-weight: 500; }

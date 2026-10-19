@@ -1,10 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Button, Dialog, DialogBody, DialogSurface, DialogTitle, Tooltip } from "@fluentui/react-components";
-import { CheckmarkRegular, CopyRegular, DismissRegular } from "@fluentui/react-icons";
 import type { Bild } from "../inhalt";
-import type { Status } from "../api";
-import { STATUS } from "../inhalt";
 
 /** Befehlsblock mit Knopf „Kopieren“. */
 export function Befehle({ text, titel }: { text: string; titel?: string }) {
@@ -22,11 +18,9 @@ export function Befehle({ text, titel }: { text: string; titel?: string }) {
     <div className="befehle">
       <div className="befehle-kopf">
         <span>{titel ?? "Shell"}</span>
-        <Tooltip content={kopiert ? "Kopiert" : "In die Zwischenablage kopieren"} relationship="label">
-          <Button size="small" appearance="subtle" icon={kopiert ? <CheckmarkRegular /> : <CopyRegular />} onClick={kopieren}>
-            {kopiert ? "Kopiert" : "Kopieren"}
-          </Button>
-        </Tooltip>
+        <button type="button" className="befehle-knopf" onClick={kopieren} aria-live="polite">
+          {kopiert ? "Kopiert" : "Kopieren"}
+        </button>
       </div>
       <pre>
         <code>{text}</code>
@@ -35,53 +29,92 @@ export function Befehle({ text, titel }: { text: string; titel?: string }) {
   );
 }
 
-/** Bildschirmfoto mit Rahmen und Bildunterschrift; Klick öffnet die große Ansicht. */
-export function Bildschirmfoto({ bild, laden = "lazy" }: { bild: Bild; laden?: "lazy" | "eager" }) {
-  const [gross, setGross] = useState(false);
+/** Schlichtes Browserfenster um ein Bildschirmfoto (Adresszeile als Orientierung, keine Bedienelemente). */
+export function Browserfenster({ bild, adresse, laden = "lazy" }: { bild: Bild; adresse?: string; laden?: "lazy" | "eager" }) {
+  return (
+    <div className="fenster">
+      <div className="fenster-leiste" aria-hidden>
+        <span className="fenster-punkte">
+          <i />
+          <i />
+          <i />
+        </span>
+        {adresse && <span className="fenster-adresse">{adresse}</span>}
+      </div>
+      <img src={bild.datei} alt={bild.titel} loading={laden} width={1600} height={950} />
+    </div>
+  );
+}
+
+/** Telefonrahmen um ein Bildschirmfoto im Hochformat. */
+export function Telefon({ bild, laden = "lazy", klasse }: { bild: Bild; laden?: "lazy" | "eager"; klasse?: string }) {
+  return (
+    <div className={klasse ? `telefon ${klasse}` : "telefon"}>
+      <img src={bild.datei} alt={bild.titel} loading={laden} width={390} height={844} />
+    </div>
+  );
+}
+
+/** Bildschirmfoto mit Bildunterschrift; Klick öffnet die große Ansicht (natives dialog-Element). */
+export function Bildschirmfoto({ bild }: { bild: Bild }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [offen, setOffen] = useState(false);
+  useEffect(() => {
+    const d = dialog.current;
+    if (!d) return;
+    if (offen && !d.open) d.showModal();
+    if (!offen && d.open) d.close();
+  }, [offen]);
   return (
     <figure className={bild.telefon ? "foto foto-telefon" : "foto"}>
-      <button type="button" className="foto-knopf" onClick={() => setGross(true)} aria-label={`${bild.titel} – vergrößern`}>
-        <img src={bild.datei} alt={bild.titel} loading={laden} />
+      <button type="button" className="foto-knopf" onClick={() => setOffen(true)} aria-label={`${bild.titel} – vergrößern`}>
+        <img src={bild.datei} alt={bild.titel} loading="lazy" />
       </button>
       <figcaption>{bild.titel}</figcaption>
-      <Dialog open={gross} onOpenChange={(_, d) => setGross(d.open)}>
-        <DialogSurface className={bild.telefon ? "foto-dialog foto-dialog-telefon" : "foto-dialog"}>
-          <DialogBody>
-            <DialogTitle
-              action={<Button appearance="subtle" aria-label="Schließen" icon={<DismissRegular />} onClick={() => setGross(false)} />}
-            >
-              {bild.titel}
-            </DialogTitle>
-            <img className="foto-gross" src={bild.datei} alt={bild.titel} />
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+      <dialog
+        ref={dialog}
+        className={bild.telefon ? "lupe lupe-telefon" : "lupe"}
+        onClose={() => setOffen(false)}
+        onClick={(e) => e.target === e.currentTarget && setOffen(false)}
+      >
+        <div className="lupe-kopf">
+          <span>{bild.titel}</span>
+          <button type="button" className="textknopf" onClick={() => setOffen(false)}>
+            Schließen
+          </button>
+        </div>
+        {offen && <img src={bild.datei} alt={bild.titel} />}
+      </dialog>
     </figure>
   );
 }
 
-/** Stand als kleine Plakette mit Farbmarke. */
-export function StatusMarke({ status, text }: { status: Status; text?: string }) {
+/** Text-Link mit Pfeil; interne Adressen über den Router, externe als normaler Link mit ↗. */
+export function Pfeillink({ zu, children, klasse }: { zu: string; children: ReactNode; klasse?: string }) {
+  const k = klasse ? `pfeillink ${klasse}` : "pfeillink";
+  if (zu.startsWith("http"))
+    return (
+      <a href={zu} className={k} rel="noopener noreferrer">
+        {children} <span aria-hidden>↗</span>
+      </a>
+    );
   return (
-    <span className={`status status-${status}`}>
-      <span className="status-punkt" aria-hidden />
-      {text ?? STATUS[status]}
-    </span>
+    <Link to={zu} className={k}>
+      {children} <span aria-hidden>→</span>
+    </Link>
   );
 }
 
-/** Link in Knopfgestalt (interne Adressen über den Router, externe als normaler Link). */
-export function KnopfLink({ zu, primaer, gross, children, symbol }: { zu: string; primaer?: boolean; gross?: boolean; children: ReactNode; symbol?: ReactNode }) {
-  const klasse = ["knopf", primaer ? "knopf-primaer" : "", gross ? "knopf-gross" : ""].join(" ").trim();
-  const inhalt = (
-    <>
-      {symbol && <span className="knopf-symbol" aria-hidden>{symbol}</span>}
-      {children}
-    </>
-  );
+/** Knopf in Linkgestalt. */
+export function Knopf({ zu, children, zweitrangig }: { zu: string; children: ReactNode; zweitrangig?: boolean }) {
+  const k = zweitrangig ? "knopf knopf-zweit" : "knopf";
   return zu.startsWith("http") ? (
-    <a href={zu} className={klasse} rel="noopener noreferrer">{inhalt}</a>
+    <a href={zu} className={k} rel="noopener noreferrer">
+      {children}
+    </a>
   ) : (
-    <Link to={zu} className={klasse}>{inhalt}</Link>
+    <Link to={zu} className={k}>
+      {children}
+    </Link>
   );
 }

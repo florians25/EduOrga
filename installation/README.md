@@ -14,7 +14,6 @@ in einem eigenen Volume – Studio kann ohne Web betrieben, gesichert und aktual
 | `untplannext-studio` | Stundenplanung im Browser (EduOrga Studio) | SQLite-Datenbank `studio.db` im Volume `untplannext-studio-daten` **oder** MariaDB (Datenbank `eduorga_studio`) |
 | `untplannext-web` | Portal für Lehrkräfte, Schüler und Eltern | SQLite im Volume `untplannext-web-daten` **oder** MariaDB |
 | `untplannext-mobile` | App fürs Telefon (PWA), nutzt UntPlan Web | Geräteprofile im Volume `untplannext-mobile-daten` |
-| `untplannext-website` | optional, Produkt-Website mit Ideen-, Wunsch- und Fehlerportal (Port 8200) | SQLite-Datenbank `website.db` im Volume `untplannext-website-daten` |
 | `untplannext-mariadb` | optional, Datenbanken für Web (`untplanweb`) und/oder Studio (`eduorga_studio`) | Volume `untplannext-mariadb-daten` |
 | `untplannext-caddy` | optional, HTTPS mit automatischem Zertifikat | Volumes `untplannext-caddy-daten`, `untplannext-caddy-config` |
 | `untplannext-watchtower` | optional, Update aus der Administration von UntPlan Web (nur Web und Mobile) | – |
@@ -41,19 +40,13 @@ die angezeigten Zugangsdaten auch dann, wenn die Volumes schon Daten enthalten (
 Installation). Gelingt das nicht, erscheint eine Warnung mit dem Befehl zum Nachholen. Am Ende stehen Adressen und
 Zugangsdaten auf dem Bildschirm.
 
-**Ports:** Auf Wunsch fragt das Skript eigene Ports ab (Studio, Web, Mobile, Website und bei HTTPS die Ports von Caddy). Sie
-stehen danach in `.env` (`STUDIO_PORT`, `WEB_PORT`, `MOBILE_PORT`, `WEBSITE_PORT`, `HTTP_PORT`, `HTTPS_PORT`) und lassen sich dort
+**Ports:** Auf Wunsch fragt das Skript eigene Ports ab (Studio, Web, Mobile und bei HTTPS die Ports von Caddy). Sie
+stehen danach in `.env` (`STUDIO_PORT`, `WEB_PORT`, `MOBILE_PORT`, `HTTP_PORT`, `HTTPS_PORT`) und lassen sich dort
 jederzeit ändern (`docker compose up -d`). Für das automatische Zertifikat müssen 80 und 443 aus dem Internet erreichbar
 sein – andere Ports nur mit Weiterleitung im Router.
 
 Ohne HTTPS sind die Programme unter `http://<server>:8190` (Studio), `:8180` (Web) und `:8181` (Mobile) erreichbar –
 gedacht für einen vorhandenen Reverse-Proxy. Für die Installation von UntPlan Mobile als App ist HTTPS nötig.
-
-**Produkt-Website (optional):** Auf die Frage „Produkt-Website mit Ideenportal installieren? j/n [n]“ mit `j` antworten
-(Profil `website`). Mit HTTPS fragt das Skript eine eigene Domain ab und ergänzt den Caddy-Block. Die Verwaltung des
-Portals liegt unter `/verwaltung` (Benutzer `admin`, Passwort `WEBSITE_ADMIN_PASSWORT`). Für Impressum und Datenschutz
-`WEBSITE_BETREIBER_NAME`, `WEBSITE_BETREIBER_ANSCHRIFT` und `WEBSITE_BETREIBER_EMAIL` in `.env` eintragen. Einzelheiten:
-[`website/README.md`](../website/README.md).
 
 ### Datenbank für EduOrga Studio (SQLite oder MariaDB)
 
@@ -97,7 +90,6 @@ cd /opt/untplannext
 ./update.sh              # alles: Studio und Web sichern, neue Images laden, neu starten
 ./update.sh studio       # nur UntPlan Studio
 ./update.sh web mobile   # nur UntPlan Web und Mobile
-./update.sh website      # nur die Produkt-Website
 ./update.sh --nur-sichern
 ```
 
@@ -110,7 +102,6 @@ Datenbank-Migrationen laufen beim Start der Programme automatisch.
 | Studio (MariaDB, `STUDIO_DB=mysql`) | `mariadb-dump` der Datenbank `eduorga_studio` → `./sicherungen/untplannext-studio-<zeit>.sql.gz` |
 | Web (SQLite) | `dotnet UntPlanWeb.dll --sichern` → `/data/sicherungen` im Volume `untplannext-web-daten` |
 | Web (MariaDB) | `mariadb-dump` → `./sicherungen/untplannext-web-<zeit>.sql.gz` |
-| Website | `dotnet EduOrgaWebsite.dll --sichern` → `/data/sicherungen` im Volume `untplannext-website-daten` |
 
 Es bleiben jeweils die neuesten 14 Sicherungen (`SICHERUNGEN_BEHALTEN` in `.env`).
 
@@ -144,7 +135,6 @@ cd /opt/untplannext
 ./passwort.sh web                 # Konto admin von UntPlan Web
 ./passwort.sh web mueller --aenderungspflicht   # bei der nächsten Anmeldung muss ein neues Passwort gewählt werden
 ./passwort.sh web chefin --anlegen              # fehlendes Konto als Administrator anlegen
-./passwort.sh website             # Administrator der Produkt-Website (Verwaltung des Ideenportals)
 ```
 
 Das Skript fragt das Passwort verdeckt zweimal ab und gibt es über die Standardeingabe an

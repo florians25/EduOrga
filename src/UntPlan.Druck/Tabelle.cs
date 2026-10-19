@@ -146,13 +146,13 @@ public sealed class Tabelle
 
     private static bool IstZahl(string s)
     {
-        var t = s.Replace("%", "").Replace("+", "").Replace("−", "-").Replace(" ", "").Trim();
-        return t.Length > 0 && double.TryParse(t, NumberStyles.Number, De, out _);
+        // Zahl im deutschen Format (1.234,5 bzw. 12,5 %, Vorzeichen) – kein Datum, keine Uhrzeit
+        return System.Text.RegularExpressions.Regex.IsMatch(s.Trim(), @"^[+\-−]?(\d{1,3}(\.\d{3})+|\d+)(,\d+)?\s?%?\*?$");
     }
 
     private Ausrichtung[] Ausrichtungen()
     {
-        var daten = Zeilen.Where(z => z.Art == Zeilenart.Daten).ToList();
+        var daten = Zeilen.Where(z => z.Art is Zeilenart.Daten or Zeilenart.Zwischensumme or Zeilenart.Summe).ToList();
         return Spalten.Select((sp, i) => sp.Ausrichtung ?? (daten.Count > 0 && daten.All(z => Wert(z, i).Length == 0 || IstZahl(Wert(z, i))) && daten.Any(z => Wert(z, i).Length > 0)
             ? Druck.Ausrichtung.Rechts : Druck.Ausrichtung.Links)).ToArray();
     }
@@ -346,16 +346,30 @@ public sealed class Tabelle
             s.Linie(x, y + sz.Hoehe, x + b, y + sz.Hoehe, Formular.LinieFein, Senkrechte || z.Art == Zeilenart.Leer ? 0.25f : Formular.GrauLinie);
     }
 
+    /// <summary>Gruppenzeilen (oben, unten) im aktuellen Abschnitt – dort keine inneren senkrechten Linien.</summary>
+    private readonly List<(float Oben, float Unten)> _gruppenLagen = new();
+
     private void Senkrecht(Seite s, float x, float oben, float unten, float[] w)
     {
-        if (!Senkrechte || unten <= oben) return;
+        if (!Senkrechte || unten <= oben) { _gruppenLagen.Clear(); return; }
         var cx = x;
         s.Linie(x, oben, x, unten, Formular.LinieNormal);
+        // innere Linien abschnittsweise, unterbrochen an Gruppenzeilen
+        var stuecke = new List<(float, float)>();
+        var y = oben;
+        foreach (var (go, gu) in _gruppenLagen.OrderBy(g => g.Oben))
+        {
+            if (go > y) stuecke.Add((y, go));
+            y = Math.Max(y, gu);
+        }
+        if (unten > y) stuecke.Add((y, unten));
         for (var i = 0; i < w.Length; i++)
         {
             cx += w[i];
-            s.Linie(cx, oben, cx, unten, i == w.Length - 1 ? Formular.LinieNormal : Formular.LinieFein, i == w.Length - 1 ? 0 : 0.25f);
+            if (i == w.Length - 1) s.Linie(cx, oben, cx, unten, Formular.LinieNormal);
+            else foreach (var (a, b) in stuecke) s.Linie(cx, a, cx, b, Formular.LinieFein, 0.25f);
         }
+        _gruppenLagen.Clear();
     }
 
     /// <summary>Tabelle im Fluss eines Formulars setzen (Seitenumbruch mit wiederholtem Kopf).</summary>
@@ -404,12 +418,14 @@ public sealed class Tabelle
                 Beginnen(true);
                 if (gruppe != null && sz.Zeile.Art != Zeilenart.Gruppe)
                 {
+                    _gruppenLagen.Add((f.Y, f.Y + gruppe.Hoehe));
                     ZeileZeichnen(f.Seite, x, f.Y, w, gruppe, ausr, false, " (Fortsetzung)");
                     f.Y += gruppe.Hoehe;
                 }
             }
             if (sz.Zeile.Art == Zeilenart.Gruppe) { gruppe = sz; nr = 0; }
             var wechsel = Wechselzeilen && sz.Zeile.Art == Zeilenart.Daten && nr++ % 2 == 1;
+            if (sz.Zeile.Art == Zeilenart.Gruppe) _gruppenLagen.Add((f.Y, f.Y + sz.Hoehe));
             ZeileZeichnen(f.Seite, x, f.Y, w, sz, ausr, wechsel);
             f.Y += sz.Hoehe;
         }
@@ -440,7 +456,7 @@ public sealed class Tabelle
         {
             var sz = Vorbereiten(z, w);
             if (y + sz.Hoehe > unten) break;
-            if (z.Art == Zeilenart.Gruppe) nr = 0;
+            if (z.Art == Zeilenart.Gruppe) { nr = 0; _gruppenLagen.Add((y, y + sz.Hoehe)); }
             ZeileZeichnen(s, x, y, w, sz, ausr, Wechselzeilen && z.Art == Zeilenart.Daten && nr++ % 2 == 1);
             y += sz.Hoehe;
             n++;

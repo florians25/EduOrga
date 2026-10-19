@@ -108,13 +108,12 @@ echo "Jedes Programm läuft in einem eigenen Container mit eigener Datenbank."
 echo
 
 profile=""
-STUDIO=0; WEB=0; MOBILE=0; WEBSITE=0
+STUDIO=0; WEB=0; MOBILE=0
 ja "UntPlan Studio installieren (Stundenplanung im Browser)? j/n" j && { STUDIO=1; profile="studio"; }
 ja "UntPlan Web installieren (Portal für Lehrkräfte, Schüler und Eltern)? j/n" j && { WEB=1; profile="${profile:+$profile,}web"; }
 if [ "$WEB" = 1 ]; then
   ja "UntPlan Mobile installieren (App fürs Telefon, nutzt UntPlan Web)? j/n" j && { MOBILE=1; profile="$profile,mobile"; }
 fi
-ja "Produkt-Website mit Ideenportal installieren? j/n" n && { WEBSITE=1; profile="${profile:+$profile,}website"; }
 [ -n "$profile" ] || fehler "Kein Programm ausgewählt."
 
 DB=sqlite; STUDIO_DB=sqlite
@@ -138,7 +137,6 @@ if ja "HTTPS mit automatischem Zertifikat einrichten (Server ist aus dem Interne
   [ "$STUDIO" = 1 ] && STUDIO_DOMAIN=$(frage "Domain für UntPlan Studio" "studio.meine-schule.de")
   [ "$WEB" = 1 ] && WEB_DOMAIN=$(frage "Domain für UntPlan Web" "plan.meine-schule.de")
   [ "$MOBILE" = 1 ] && MOBILE_DOMAIN=$(frage "Domain für UntPlan Mobile" "app.meine-schule.de")
-  [ "$WEBSITE" = 1 ] && WEBSITE_DOMAIN=$(frage "Domain für die Produkt-Website" "eduorga.meine-schule.de")
   ACME_MAIL=$(frage "E-Mail für Hinweise zum Zertifikat (leer lassen möglich)" "")
 fi
 
@@ -156,12 +154,11 @@ port() { # port <Text> <Vorschlag> → geprüfte Portnummer
     echo "Bitte eine Zahl zwischen 1 und 65535 eingeben." >&2
   done
 }
-STUDIO_PORT=8190; WEB_PORT=8180; MOBILE_PORT=8181; WEBSITE_PORT=8200; HTTP_PORT=80; HTTPS_PORT=443
-if ja "Ports selbst festlegen (sonst Studio 8190, Web 8180, Mobile 8181$( [ "$WEBSITE" = 1 ] && echo ", Website 8200")$( [ "$HTTPS" = 1 ] && echo ", HTTP 80, HTTPS 443"))? j/n" n; then
+STUDIO_PORT=8190; WEB_PORT=8180; MOBILE_PORT=8181; HTTP_PORT=80; HTTPS_PORT=443
+if ja "Ports selbst festlegen (sonst Studio 8190, Web 8180, Mobile 8181$( [ "$HTTPS" = 1 ] && echo ", HTTP 80, HTTPS 443"))? j/n" n; then
   [ "$STUDIO" = 1 ] && STUDIO_PORT=$(port "Port für UntPlan Studio" 8190)
   [ "$WEB" = 1 ] && WEB_PORT=$(port "Port für UntPlan Web" 8180)
   [ "$MOBILE" = 1 ] && MOBILE_PORT=$(port "Port für UntPlan Mobile" 8181)
-  [ "$WEBSITE" = 1 ] && WEBSITE_PORT=$(port "Port für die Produkt-Website" 8200)
   if [ "$HTTPS" = 1 ]; then
     echo "Hinweis: Für das automatische Zertifikat müssen die Ports 80 und 443 aus dem Internet erreichbar sein –"
     echo "andere Ports nur, wenn der Router 80/443 auf diese Ports weiterleitet."
@@ -169,7 +166,7 @@ if ja "Ports selbst festlegen (sonst Studio 8190, Web 8180, Mobile 8181$( [ "$WE
     HTTPS_PORT=$(port "HTTPS-Port (Caddy)" 443)
   fi
   belegt=$(printf '%s\n' $( [ "$STUDIO" = 1 ] && echo "$STUDIO_PORT") $( [ "$WEB" = 1 ] && echo "$WEB_PORT") \
-    $( [ "$MOBILE" = 1 ] && echo "$MOBILE_PORT") $( [ "$WEBSITE" = 1 ] && echo "$WEBSITE_PORT") $( [ "$HTTPS" = 1 ] && echo "$HTTP_PORT $HTTPS_PORT") | sort | uniq -d)
+    $( [ "$MOBILE" = 1 ] && echo "$MOBILE_PORT") $( [ "$HTTPS" = 1 ] && echo "$HTTP_PORT $HTTPS_PORT") | sort | uniq -d)
   [ -z "$belegt" ] || fehler "Port $belegt ist mehrfach vergeben."
 fi
 
@@ -190,7 +187,6 @@ pruefen() { # pruefen <Variable> <Text>
 [ "$STUDIO" = 1 ] && pruefen STUDIO_PORT "Port für UntPlan Studio"
 [ "$WEB" = 1 ] && pruefen WEB_PORT "Port für UntPlan Web"
 [ "$MOBILE" = 1 ] && pruefen MOBILE_PORT "Port für UntPlan Mobile"
-[ "$WEBSITE" = 1 ] && pruefen WEBSITE_PORT "Port für die Produkt-Website"
 if [ "$HTTPS" = 1 ]; then
   pruefen HTTP_PORT "HTTP-Port (Caddy)"
   pruefen HTTPS_PORT "HTTPS-Port (Caddy)"
@@ -218,14 +214,13 @@ passwort_festlegen() { # passwort_festlegen <Programm> → Passwort auf stdout
     echo "Die Eingaben stimmen nicht überein." >&2
   done
 }
-STUDIO_PW=""; WEB_PW=""; WEBSITE_PW=""; STUDIO_BENUTZER=admin
+STUDIO_PW=""; WEB_PW=""; STUDIO_BENUTZER=admin
 if [ "$STUDIO" = 1 ]; then
   STUDIO_BENUTZER=$(frage "Benutzername des Administrators von UntPlan Studio" admin)
   case "$STUDIO_BENUTZER" in ''|*[!A-Za-z0-9._-]*) fehler "Benutzername bitte nur aus Buchstaben, Ziffern, Punkt, Binde- und Unterstrich." ;; esac
   STUDIO_PW=$(passwort_festlegen "UntPlan Studio")
 fi
 [ "$WEB" = 1 ] && WEB_PW=$(passwort_festlegen "UntPlan Web (Benutzer admin)")
-[ "$WEBSITE" = 1 ] && WEBSITE_PW=$(passwort_festlegen "der Produkt-Website (Benutzer admin)")
 
 # --- .env schreiben ----------------------------------------------------------------------------------------------
 umask 077
@@ -244,7 +239,6 @@ umask 077
   echo "STUDIO_PORT=$STUDIO_PORT"
   echo "WEB_PORT=$WEB_PORT"
   echo "MOBILE_PORT=$MOBILE_PORT"
-  echo "WEBSITE_PORT=$WEBSITE_PORT"
   echo "HTTP_PORT=$HTTP_PORT"
   echo "HTTPS_PORT=$HTTPS_PORT"
   if [ "$STUDIO" = 1 ]; then
@@ -278,18 +272,6 @@ umask 077
       echo "WATCHTOWER_TOKEN=$(passwort)"
     fi
   fi
-  if [ "$WEBSITE" = 1 ]; then
-    echo
-    echo "# EduOrga Website mit Ideenportal (eigene Datenbank im Volume untplannext-website-daten)"
-    echo "WEBSITE_ADMIN_BENUTZER=admin"
-    echo "WEBSITE_ADMIN_PASSWORT=$WEBSITE_PW"
-    echo "WEBSITE_SICHERE_COOKIES=$HTTPS"
-    echo "WEBSITE_HINTER_PROXY=$HTTPS"
-    echo "# Angaben für Impressum und Datenschutz (leer = Platzhalter auf der Website)"
-    echo "WEBSITE_BETREIBER_NAME="
-    echo "WEBSITE_BETREIBER_ANSCHRIFT="
-    echo "WEBSITE_BETREIBER_EMAIL="
-  fi
   if [ "$MOBILE" = 1 ] && [ -n "${ACME_MAIL:-}" ]; then
     echo "UNTPLANMOBILE_VAPID_KONTAKT=mailto:$ACME_MAIL"
   fi
@@ -309,9 +291,6 @@ umask 022
   if [ "$HTTPS" = 1 ] && [ "$MOBILE" = 1 ]; then
     printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy untplannext-mobile:8081\n\theader Strict-Transport-Security "max-age=31536000"\n}\n' "$MOBILE_DOMAIN"
   fi
-  if [ "$HTTPS" = 1 ] && [ "$WEBSITE" = 1 ]; then
-    printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy untplannext-website:8080\n\trequest_body {\n\t\tmax_size 1MB\n\t}\n\theader Strict-Transport-Security "max-age=31536000"\n}\n' "$WEBSITE_DOMAIN"
-  fi
 } > Caddyfile
 
 # --- starten -----------------------------------------------------------------------------------------------------
@@ -320,7 +299,7 @@ echo "Lade Images und starte Container …"
 if ! docker compose pull; then
   echo >&2
   echo "Die Images konnten nicht geladen werden. Häufigste Ursache: die Pakete auf ghcr.io sind nicht öffentlich." >&2
-  echo "  • Auf GitHub unter Profil → Packages → untplannext-studio / untplannext-web / untplannext-mobile / untplannext-website" >&2
+  echo "  • Auf GitHub unter Profil → Packages → untplannext-studio / untplannext-web / untplannext-mobile" >&2
   echo "    → Package settings → Change visibility → Public stellen, oder" >&2
   echo "  • auf dem Server anmelden: docker login ghcr.io -u <GitHub-Benutzer>  (Token mit Recht read:packages)" >&2
   echo "Danach ./install.sh erneut aufrufen (die Einstellungen bleiben erhalten)." >&2
@@ -353,7 +332,6 @@ admin_passwort() { # admin_passwort <Dienst> <dll> <Benutzer> <Passwort> <Progra
 }
 [ "$STUDIO" = 1 ] && admin_passwort untplannext-studio UntPlanStudio.dll "$STUDIO_BENUTZER" "$STUDIO_PW" "UntPlan Studio" studio
 [ "$WEB" = 1 ] && admin_passwort untplannext-web UntPlanWeb.dll admin "$WEB_PW" "UntPlan Web" web
-[ "$WEBSITE" = 1 ] && admin_passwort untplannext-website EduOrgaWebsite.dll admin "$WEBSITE_PW" "der Produkt-Website" website
 
 adresse() { # adresse <Domain> <Port>
   if [ "$HTTPS" = 1 ]; then
@@ -365,8 +343,6 @@ echo "Fertig. Zugangsdaten stehen in $(pwd)/.env – bitte sicher aufbewahren un
 [ "$STUDIO" = 1 ] && echo "  UntPlan Studio  $(adresse "${STUDIO_DOMAIN:-}" "$STUDIO_PORT")   Benutzer $STUDIO_BENUTZER, Passwort $STUDIO_PW"
 [ "$WEB" = 1 ]    && echo "  UntPlan Web     $(adresse "${WEB_DOMAIN:-}" "$WEB_PORT")   Benutzer admin, Passwort $WEB_PW"
 [ "$MOBILE" = 1 ] && echo "  UntPlan Mobile  $(adresse "${MOBILE_DOMAIN:-}" "$MOBILE_PORT")   Anmeldung mit dem Konto von UntPlan Web"
-[ "$WEBSITE" = 1 ] && echo "  Website         $(adresse "${WEBSITE_DOMAIN:-}" "$WEBSITE_PORT")   Verwaltung unter /verwaltung: Benutzer admin, Passwort $WEBSITE_PW"
-[ "$WEBSITE" = 1 ] && echo "                  Impressum/Datenschutz: WEBSITE_BETREIBER_NAME, _ANSCHRIFT, _EMAIL in .env eintragen, dann docker compose up -d"
 if [ "$STUDIO" = 1 ] && [ "$WEB" = 1 ]; then
   echo
   echo "Pläne von Studio nach Web übertragen: in Studio „UntPlan Web“ → „Einstellungen“ öffnen und eintragen:"
@@ -375,4 +351,4 @@ if [ "$STUDIO" = 1 ] && [ "$WEB" = 1 ]; then
 fi
 echo
 echo "Update: ./update.sh   (sichert vorher die Datenbanken von Studio und Web)"
-echo "Passwort vergessen: ./passwort.sh studio|web|website [benutzer]"
+echo "Passwort vergessen: ./passwort.sh studio|web [benutzer]"

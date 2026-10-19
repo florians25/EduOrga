@@ -1,5 +1,3 @@
-import { OpenRegular } from "@fluentui/react-icons";
-import { MessageBar, MessageBarBody, MessageBarTitle } from "@fluentui/react-components";
 import { Befehle } from "../bausteine/Bausteine";
 import { Seitenkopf } from "../bausteine/Rahmen";
 import { CONTAINER, INSTALLATION, ISSUES, RELEASES, REPO } from "../inhalt";
@@ -51,14 +49,14 @@ export function Installation() {
               eingerichtet werden soll. Es erzeugt zufällige Passwörter, schreibt <code>.env</code> (nur für root lesbar) und{" "}
               <code>Caddyfile</code> und startet die Container. Am Ende stehen Adressen und Zugangsdaten auf dem Bildschirm.
             </p>
-            <MessageBar intent="info" layout="multiline" className="hinweisbalken">
-              <MessageBarBody>
-                <MessageBarTitle>Ohne HTTPS</MessageBarTitle>
+            <div className="hinweiskasten">
+              <strong>Ohne HTTPS</strong>
+              <p>
                 Die Programme sind dann unter <code>http://&lt;server&gt;:8190</code> (Studio), <code>:8180</code> (Web) und{" "}
                 <code>:8181</code> (Mobile) erreichbar – gedacht für einen vorhandenen Reverse-Proxy. Für die Installation von
                 EduOrga Mobile als App ist HTTPS nötig.
-              </MessageBarBody>
-            </MessageBar>
+              </p>
+            </div>
           </section>
 
           <section id="container">
@@ -66,7 +64,7 @@ export function Installation() {
             <p>
               Welche Container laufen, steht in <code>.env</code> unter <code>COMPOSE_PROFILES</code>. Eigene Ports fragt das
               Skript auf Wunsch ab (<code>STUDIO_PORT</code>, <code>WEB_PORT</code>, <code>MOBILE_PORT</code>,{" "}
-              <code>WEBSITE_PORT</code>, <code>HTTP_PORT</code>, <code>HTTPS_PORT</code>).
+              <code>HTTP_PORT</code>, <code>HTTPS_PORT</code>).
             </p>
             <div className="tabellenrahmen">
               <table className="tabelle">
@@ -135,17 +133,17 @@ export function Installation() {
             <ul className="linkliste">
               <li>
                 <a href={RELEASES} rel="noopener noreferrer">
-                  Versionen und Versionshinweise (GitHub Releases) <OpenRegular aria-hidden />
+                  Versionen und Versionshinweise (GitHub Releases) <span aria-hidden>↗</span>
                 </a>
               </li>
               <li>
                 <a href={ISSUES} rel="noopener noreferrer">
-                  Bekannte Fehler und Aufgaben (GitHub Issues) <OpenRegular aria-hidden />
+                  Bekannte Fehler und Aufgaben (GitHub Issues) <span aria-hidden>↗</span>
                 </a>
               </li>
               <li>
                 <a href={`${REPO}/blob/master/installation/README.md`} rel="noopener noreferrer">
-                  Vollständige Installationsanleitung im Repository <OpenRegular aria-hidden />
+                  Vollständige Installationsanleitung im Repository <span aria-hidden>↗</span>
                 </a>
               </li>
             </ul>

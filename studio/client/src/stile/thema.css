@@ -20,6 +20,7 @@
   --edo-karte-neutral: #f1f4f6;
   --edo-karte-neutral-hover: #e8edf0;
   --edo-karte-rand: #c3cbd4;
+  --edo-karte-balken: #98a2af;   /* Balken links an Stunden ohne Fachfarbe */
 
   /* Modusfarben */
   --edo-stundenplan: #28747a;
@@ -85,6 +86,7 @@
   --edo-karte-neutral: #222d33;
   --edo-karte-neutral-hover: #2a363d;
   --edo-karte-rand: #46545d;
+  --edo-karte-balken: #7d8b95;
   --edo-stundenplan: #4f9298;
   --edo-stundenplan-flaeche: #173338;
   --edo-stundenplan-navi: #7fc9c9;
@@ -138,6 +140,7 @@
     --edo-karte-neutral: #222d33;
     --edo-karte-neutral-hover: #2a363d;
     --edo-karte-rand: #46545d;
+  --edo-karte-balken: #7d8b95;
     --edo-stundenplan: #4f9298;
     --edo-stundenplan-flaeche: #173338;
     --edo-vertretung: #7f8fe0;

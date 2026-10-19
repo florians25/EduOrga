@@ -1,52 +1,15 @@
-import type { Prioritaet, Status, Typ } from "./api";
-
 export const REPO = "https://github.com/florians25/UntPlanNext";
 export const RELEASES = `${REPO}/releases`;
 export const ISSUES = `${REPO}/issues`;
+export const DISCUSSIONS = `${REPO}/discussions`;
+export const COMMITS = `${REPO}/commits/master`;
+export const DATEI = (pfad: string) => `${REPO}/blob/master/${pfad}`;
 
 export const SLOGAN = "Einfach mehr Schulalltag.";
 
 /** Rechtlicher Hinweis – Wortlaut aus design/MARKE.md (verbindlich). */
 export const RECHTLICHER_HINWEIS =
   "EduOrga ist ein privates Hobbyprojekt eines Auszubildenden zum Fachinformatiker für Systemintegration, entwickelt mit Unterstützung von Claude (Anthropic). Jede Schule bzw. jeder Betreiber ist für Einsatz, Betrieb und Datenschutz selbst verantwortlich.";
-
-export const TYPEN: Record<Typ, string> = { idee: "Idee", wunsch: "Wunsch", fehler: "Fehler" };
-export const TYP_HILFE: Record<Typ, string> = {
-  idee: "Ein neuer Ansatz oder eine Verbesserung, die Sie anregen möchten.",
-  wunsch: "Eine konkrete Funktion, die Ihnen im Schulalltag fehlt.",
-  fehler: "Etwas funktioniert nicht wie beschrieben.",
-};
-
-export const MODULE: Record<string, string> = {
-  studio: "EduOrga Studio",
-  web: "EduOrga Web",
-  mobile: "EduOrga Mobile",
-  ios: "EduOrga für iPhone und iPad",
-  installation: "Installation und Betrieb",
-  website: "Website und Ideenportal",
-  allgemein: "Allgemein",
-};
-
-export const STATUS: Record<Status, string> = {
-  eingereicht: "Eingereicht",
-  in_pruefung: "In Prüfung",
-  abgelehnt: "Abgelehnt",
-  backlog: "Im Backlog",
-  in_arbeit: "In Arbeit",
-  erledigt: "Erledigt",
-};
-export const STATUS_REIHENFOLGE: Status[] = ["eingereicht", "in_pruefung", "abgelehnt", "backlog", "in_arbeit", "erledigt"];
-export const STATUS_HILFE: Record<Status, string> = {
-  eingereicht: "Ihre Einreichung ist eingegangen.",
-  in_pruefung: "Wir sehen uns das Anliegen genauer an.",
-  abgelehnt: "Wird nicht umgesetzt – mit Begründung.",
-  backlog: "Angenommen und für eine spätere Version vorgemerkt.",
-  in_arbeit: "Wird gerade umgesetzt.",
-  erledigt: "In einer veröffentlichten Version enthalten.",
-};
-
-export const PRIORITAETEN: Record<Prioritaet, string> = { keine: "Keine", niedrig: "Niedrig", mittel: "Mittel", hoch: "Hoch", kritisch: "Kritisch" };
-export const PRIORITAET_RANG: Record<Prioritaet, number> = { kritisch: 0, hoch: 1, mittel: 2, niedrig: 3, keine: 4 };
 
 export interface Bild {
   datei: string;
@@ -56,6 +19,12 @@ export interface Bild {
 
 export interface Modul {
   kennung: string;
+  /** Seite der Website, auf der das Modul ausführlich steht */
+  pfad: string;
+  /** kurze Einordnung über dem Namen */
+  rolle: string;
+  /** drei bis vier Kernpunkte für die Startseite */
+  kernpunkte: string[];
   name: string;
   kurz: string;
   fuerWen: string;
@@ -69,6 +38,9 @@ export interface Modul {
 export const MODUL_LISTE: Modul[] = [
   {
     kennung: "studio",
+    pfad: "/studio",
+    rolle: "Planung im Schulbüro",
+    kernpunkte: ["Stunden-, Kurs- und Vertretungsplanung", "Automatische Planung mit Ergebnisvergleich", "Pausenaufsichten, Auswertungen, Druck", "Mehrere Planende gleichzeitig"],
     name: "EduOrga Studio",
     kurz: "Stunden-, Kurs- und Vertretungsplanung im Browser",
     fuerWen: "Schulleitung und Planungsteam",
@@ -99,10 +71,13 @@ export const MODUL_LISTE: Modul[] = [
       ["Daten", "eigene SQLite-Datenbank im Volume untplannext-studio-daten"],
       ["Oberfläche", "React, TypeScript, Fluent UI"],
     ],
-    readme: `${REPO}/blob/master/studio/README.md`,
+    readme: DATEI("studio/README.md"),
   },
   {
     kennung: "web",
+    pfad: "/web",
+    rolle: "Portal für die Schulgemeinschaft",
+    kernpunkte: ["Stunden- und Vertretungspläne", "Digitales Klassenbuch", "Mitteilungen und Monitore im Schulhaus", "Abwesenheiten melden, Räume buchen"],
     name: "EduOrga Web",
     kurz: "Portal für Lehrkräfte, Schülerinnen, Schüler und Eltern",
     fuerWen: "Kollegium, Schulleitung, Klassen und Eltern",
@@ -132,10 +107,13 @@ export const MODUL_LISTE: Modul[] = [
       ["Daten", "SQLite im Volume untplannext-web-daten oder MariaDB"],
       ["Oberfläche", "React, TypeScript, MUI"],
     ],
-    readme: `${REPO}/blob/master/web/README.md`,
+    readme: DATEI("web/README.md"),
   },
   {
     kennung: "mobile",
+    pfad: "/mobile",
+    rolle: "Für unterwegs",
+    kernpunkte: ["Installierbare App ohne App-Store", "Heute, Plan, Postfach, Klassenbuch", "Benachrichtigungen bei Planänderungen", "Offline verfügbar"],
     name: "EduOrga Mobile",
     kurz: "Installierbare App fürs Telefon (PWA)",
     fuerWen: "Lehrkräfte, Schülerinnen und Schüler unterwegs",
@@ -163,10 +141,13 @@ export const MODUL_LISTE: Modul[] = [
       ["Daten", "Geräteprofile im Volume untplannext-mobile-daten, Plandaten von EduOrga Web"],
       ["Voraussetzung", "EduOrga Web; für die Installation als App HTTPS"],
     ],
-    readme: `${REPO}/blob/master/mobile/README.md`,
+    readme: DATEI("mobile/README.md"),
   },
   {
     kennung: "ios",
+    pfad: "/mobile#ios",
+    rolle: "iPhone und iPad",
+    kernpunkte: ["Native App in SwiftUI", "Heute mit laufender Stunde", "Deutliche Kennzeichnung von Änderungen", "Liquid Glass ab iOS 26"],
     name: "EduOrga für iPhone und iPad",
     kurz: "Native App zu EduOrga Web (SwiftUI)",
     fuerWen: "Lehrkräfte, Schülerinnen und Schüler mit iPhone oder iPad",
@@ -187,7 +168,7 @@ export const MODUL_LISTE: Modul[] = [
       ["Daten", "von EduOrga Web, Zugangsdaten im Schlüsselbund"],
       ["Technik", "SwiftUI"],
     ],
-    readme: `${REPO}/blob/master/ios/README.md`,
+    readme: DATEI("ios/README.md"),
   },
 ];
 
@@ -220,5 +201,4 @@ export const CONTAINER: [string, string, string][] = [
   ["untplannext-mariadb", "optional, Datenbank für EduOrga Web", "–"],
   ["untplannext-caddy", "optional, HTTPS mit automatischem Zertifikat", "80 / 443"],
   ["untplannext-watchtower", "optional, Update aus der Administration von EduOrga Web", "–"],
-  ["untplannext-website", "optional, diese Website mit Ideenportal", "8200"],
 ];

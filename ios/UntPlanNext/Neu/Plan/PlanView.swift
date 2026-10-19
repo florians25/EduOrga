@@ -50,6 +50,8 @@ struct PlanSeite: View {
     @State private var auswahlOffen = false
     @State private var datumOffen = false
     @State private var bereit = false
+    /// Blatt „Stunden zur selben Zeit“ (hinter „+X“ im Wochenraster)
+    @State private var parallelGruppe: Parallelgruppe? = nil
 
     init(fest: PlanAuswahl?) {
         self.fest = fest
@@ -97,27 +99,30 @@ struct PlanSeite: View {
 
     // MARK: Ansicht
 
+    /// Übergang zwischen Tag und Woche: die Woche „zoomt“ in den Tag hinein (und umgekehrt).
+    private static let wechsel = Animation.snappy(duration: 0.34)
+
     var body: some View {
-        if istReiter {
-            inhalt.profilWerkzeug()
-        } else {
-            inhalt
-        }
+        inhalt
     }
 
     private var inhalt: some View {
         ZStack {
             if modus == .tag {
                 tagesBlaetter
-                    .transition(.opacity)
+                    .transition(.asymmetric(insertion: .scale(scale: 0.94).combined(with: .opacity),
+                                            removal: .scale(scale: 0.94).combined(with: .opacity)))
             } else {
                 WochenSeiten(modell: modell, montage: montage, montag: wocheBindung, raum: zoom,
                              antippen: { k, t, quelle in oeffnen(k, in: t, quelle: quelle) },
-                             tagOeffnen: { tagWaehlen($0) })
-                    .transition(.opacity)
+                             tagOeffnen: { tagWaehlen($0) },
+                             parallele: { parallelGruppe = $0 })
+                    .transition(.asymmetric(insertion: .scale(scale: 1.06).combined(with: .opacity),
+                                            removal: .scale(scale: 1.06).combined(with: .opacity)))
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: modusRoh)
+        .animation(PlanSeite.wechsel, value: modusRoh)
+        .simultaneousGesture(zoomGeste)
         .background(Farben.grund.ignoresSafeArea())
         .weicheRollkante(.bottom)
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -144,6 +149,16 @@ struct PlanSeite: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { werkzeuge }
         .stundenBuehne($wahl, raum: zoom, zustand: zustand)
+        .sheet(item: $parallelGruppe) { g in
+            ParalleleStundenBlatt(gruppe: g) { k in
+                parallelGruppe = nil
+                // erst das Blatt schließen, dann die Stunde groß öffnen
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    oeffnen(k, in: g.tag, quelle: "woche-\(k.id.uuidString)")
+                }
+            }
+            .environment(\.kartendarstellung, zustand.darstellung)
+        }
         .sheet(isPresented: $auswahlOffen) {
             PlanAuswahlView(auswahl: Binding(get: { modell.auswahl }, set: { neu in
                 modell.waehlen(neu)
@@ -182,9 +197,37 @@ struct PlanSeite: View {
 
     // MARK: Werkzeuge
 
+    /// Zwei Finger: zusammenziehen = Woche, aufziehen = Tag.
+    private var zoomGeste: some Gesture {
+        MagnifyGesture(minimumScaleDelta: 0.04)
+            .onEnded { wert in
+                if modus == .woche && wert.magnification > 1.15 {
+                    tagWaehlen(aktuellerTag)
+                } else if modus == .tag && wert.magnification < 0.87 {
+                    ansichtWechseln(true)
+                }
+            }
+    }
+
+    /// Tag | Woche als Segmentschalter in der Navigationsleiste (ohne Untermenü).
+    private var modusBindung: Binding<Planmodus> {
+        Binding(get: { modus }, set: { neu in
+            if neu == .tag { tagWaehlen(aktuellerTag) } else { ansichtWechseln(true) }
+        })
+    }
+
     @ToolbarContentBuilder
     private var werkzeuge: some ToolbarContent {
         ToolbarItem(placement: .principal) {
+            Picker("Ansicht", selection: modusBindung) {
+                Text("Tag").tag(Planmodus.tag)
+                Text("Woche").tag(Planmodus.woche)
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 132)
+            .accessibilityLabel("Ansicht: Tag oder Woche")
+        }
+        ToolbarItem(placement: .topBarLeading) {
             if istReiter {
                 Menu {
                     planMenue
@@ -212,19 +255,20 @@ struct PlanSeite: View {
             }
             .fontWeight(.semibold)
             Menu {
-                Picker("Ansicht", selection: $modusRoh) {
-                    ForEach(Planmodus.allCases) { m in
-                        Label(m.titel, systemImage: m == .tag ? "rectangle.portrait" : "calendar").tag(m.rawValue)
-                    }
-                }
                 if modus == .woche {
                     Section("Dichte der Woche") {
                         WochendichteAuswahl()
                     }
-                }
-                Picker("Tag als", selection: $darstellungRoh) {
-                    ForEach(Tagesdarstellung.allCases) { d in
-                        Label(d.titel, systemImage: d == .liste ? "list.bullet.rectangle" : "calendar.day.timeline.left").tag(d.rawValue)
+                } else {
+                    Picker("Tag als", selection: $darstellungRoh) {
+                        ForEach(Tagesdarstellung.allCases) { d in
+                            Label(d.titel, systemImage: d == .liste ? "list.bullet.rectangle" : "calendar.day.timeline.left").tag(d.rawValue)
+                        }
+                    }
+                    if darstellung == .zeitachse {
+                        Section("Höhe der Zeitachse") {
+                            ZeitachsenDichteAuswahl()
+                        }
                     }
                 }
                 Button {
@@ -232,9 +276,13 @@ struct PlanSeite: View {
                 } label: {
                     Label("Gehe zu Datum", systemImage: "calendar")
                 }
-                if darstellung == .zeitachse {
-                    Section("Höhe der Zeitachse") {
-                        ZeitachsenDichteAuswahl()
+                if istReiter {
+                    Section {
+                        Button {
+                            zustand.mehrOffen = true
+                        } label: {
+                            Label("Profil und Einstellungen", systemImage: "person.crop.circle")
+                        }
                     }
                 }
             } label: {
@@ -246,10 +294,10 @@ struct PlanSeite: View {
 
     /// Planname mit Woche („KW 43 · A-Woche“) als Titel.
     private func titelBlock(mitPfeil: Bool) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 3) {
                 Text(modell.planname)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Farben.text)
                     .lineLimit(1)
                 if mitPfeil {
@@ -260,10 +308,12 @@ struct PlanSeite: View {
                 }
             }
             Text(wochentitel)
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(Farben.text2)
                 .lineLimit(1)
         }
+        .frame(maxWidth: fest == nil ? 118 : 92, alignment: .leading)
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 
     @ViewBuilder
@@ -308,10 +358,10 @@ struct PlanSeite: View {
         }
     }
 
-    /// „Okt. 2026 · KW 43 · A-Woche“
+    /// „KW 43 · A-Woche“
     private var wochentitel: String {
         let m = Datumsformat.datum(aktuelleWoche) ?? Date()
-        var t = Datumsformat.anzeige(m, "MMM yyyy") + " · KW \(Datumsformat.kalenderwoche(m))"
+        var t = "KW \(Datumsformat.kalenderwoche(m))"
         if let w = modell.plan(montag: aktuelleWoche)?.woche, !w.isEmpty {
             t += w.count == 1 ? " · \(w)-Woche" : " · \(w)"
         }
@@ -361,9 +411,14 @@ struct PlanSeite: View {
         anfragenAusfuehren()
     }
 
+    /// Tag öffnen (aus der Woche mit Übergang: Tageskopf, Aufziehen, Segmentschalter).
     private func tagWaehlen(_ d: String) {
-        if modus == .woche { modusRoh = Planmodus.tag.rawValue }
-        withAnimation(.snappy) { tag = d }
+        if modus == .woche {
+            tag = d
+            withAnimation(PlanSeite.wechsel) { modusRoh = Planmodus.tag.rawValue }
+        } else {
+            withAnimation(.snappy) { tag = d }
+        }
     }
 
     /// Andere Woche: gleicher Wochentag (bzw. erster Schultag) der Nachbarwoche.
@@ -383,7 +438,7 @@ struct PlanSeite: View {
     private func ansichtWechseln(_ woche: Bool) {
         let neu = woche ? Planmodus.woche.rawValue : Planmodus.tag.rawValue
         guard neu != modusRoh else { return }
-        withAnimation(.easeInOut(duration: 0.2)) { modusRoh = neu }
+        withAnimation(PlanSeite.wechsel) { modusRoh = neu }
     }
 
     /// Zu einem Datum springen (Wochenende: der folgende Montag bzw. der nächste Tag im Plan).
