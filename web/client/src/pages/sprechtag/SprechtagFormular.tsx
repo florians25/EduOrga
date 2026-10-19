@@ -151,7 +151,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
           }}>Zeitblock</Button>)}
           {karte('Ankündigung, Einladungen und Anmeldung', (
             <Stack gap={2}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(232px, 1fr))', gap: 2, alignItems: 'start' }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 2, alignItems: 'start' }}>
                 {zeitFeld('Einladungen der Lehrkräfte bis', 'einladungBis', 'Leer = bis zum Ende der Anmeldung.')}
                 {zeitFeld('Anmeldung für Eltern ab', 'anmeldungVon')}
                 {zeitFeld('Anmeldung für Eltern bis', 'anmeldungBis')}

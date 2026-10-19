@@ -96,11 +96,15 @@ public class WebOberflaecheTests
         // Änderungen und Prüfungen in der hellen Statusfläche (Vertretung violett), Entfall nie getönt, sondern schraffiert
         Assert.Contains("s.aenderung.flaeche", kachel);
         Assert.Contains("repeating-linear-gradient(135deg", kachel);
-        // Standard ist „Klassisch“: Balken links mit leichter Tönung, weiße kompakte Karte, Raum als Text, Statusfläche
         var darstellung = Lesen("src", "components", "plan", "darstellung.tsx");
-        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'balken-flaeche', balkenbreite: 4,[^}]*flaeche: 'weiss', rahmen: 'fein', eckenradius: 2, dichte: 'kompakt',[^}]*kuerzel: 'text', statuswoerter: false, statusflaeche: true", darstellung);
+        // Standard „Klassisch“: weiße Karte mit leichtem Schatten auf hellgrauem Raster, Streifen innen links, Lehrkraft/Klasse · Fach · Raum
+        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'balken-innen', balkenbreite: 4,[^}]*flaeche: 'weiss', rahmen: 'schatten', eckenradius: 2, dichte: 'kompakt',[^}]*kuerzel: 'text', statuswoerter: false, statusflaeche: true,\s*reihenfolge: 'element', raster: 'grau'", darstellung);
+        Assert.Contains("data-fachbalken=\"innen\"", kachel);
+        Assert.Contains("d.reihenfolge === 'element'", kachel);
+        Assert.Contains("d.raster === 'grau'", Lesen("src", "components", "plan", "Wochenraster.tsx"));
+        Assert.Contains("'Lehrkraft/Klasse · Fach · Raum'", Lesen("src", "pages", "admin", "Stundenkarten.tsx"));
         Assert.Contains("{ id: 'klassisch', name: 'Klassisch (Standard)'", darstellung);
-        foreach (var v in new[] { "'sachlich'", "'akzent'", "'flaeche'", "'minimal'" }) Assert.Contains($"id: {v}", darstellung);
+        foreach (var v in new[] { "'kompakt'", "'sachlich'", "'akzent'", "'flaeche'", "'minimal'" }) Assert.Contains($"id: {v}", darstellung);
         // kompakte Karten füllen die Rasterzelle (Abstand je Dichte)
         Assert.Contains("luecke: 1", darstellung);
         Assert.Contains("DICHTE[d.dichte].luecke", Lesen("src", "components", "plan", "Wochenraster.tsx"));
@@ -170,6 +174,17 @@ public class WebOberflaecheTests
     }
 
     [Fact]
+    public void Navigation_klassisch_ohne_Pillen()
+    {
+        // aktive Zeile: volle Breite, eckig, leichte Tönung und 3-px-Kante links – keine abgerundete „Pille“ mit Einzug
+        var shell = Lesen("src", "app", "Shell.tsx");
+        Assert.Contains("borderRadius: 0", shell);
+        Assert.Contains("inset 3px 0 0 var(--mui-palette-nav-marke)", shell);
+        Assert.DoesNotContain("borderRadius: '6px'", shell);
+        Assert.Contains("inset 3px 0 0 ${theme.vars.palette.secondary.main}", Lesen("src", "theme.ts"));
+    }
+
+    [Fact]
     public void Eigene_Menuestruktur_mit_alten_Adressen_als_Alias()
     {
         var menue = Lesen("src", "app", "menue.tsx");
@@ -195,12 +210,12 @@ public class WebOberflaecheTests
         var auswahl = Lesen("src", "components", "Auswahl.tsx");
         Assert.Contains("const label = { shrink: true }", auswahl);
         Assert.Equal(3, Regex.Matches(auswahl, "InputLabelProps: label").Count);
-        Assert.Contains("FELD_MIN = { datum: 168, zeit: 112, datumZeit: 232 }", auswahl);
+        Assert.Contains("FELD_MIN = { datum: 168, zeit: 112, datumZeit: 220 }", auswahl);
         Assert.Contains("deDE.components.MuiLocalizationProvider", Lesen("src", "main.tsx"));   // „TT.MM.JJJJ“ statt „DD.MM.YYYY“
         var nativ = new Regex("type=[\"'](date|time|datetime-local)[\"']");
         foreach (var (pfad, inhalt) in Quellen()) Assert.False(nativ.IsMatch(inhalt), pfad);
         // Sprechtag: die drei Zeitpunkte nebeneinander im Raster statt gequetscht
-        Assert.Contains("minmax(232px, 1fr)", Lesen("src", "pages", "sprechtag", "SprechtagFormular.tsx"));
+        Assert.Contains("minmax(220px, 1fr)", Lesen("src", "pages", "sprechtag", "SprechtagFormular.tsx"));
     }
     [Fact]
     public void Darstellung_der_Stundenkarten_mit_Editor_und_Live_Vorschau()

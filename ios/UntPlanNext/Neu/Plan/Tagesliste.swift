@@ -281,9 +281,9 @@ struct Tagesliste: View {
 
 // MARK: - Kachel der Liste
 
-/// Stundenkarte der Tagesliste im klassischen Grunddesign (wie die Karten im Web, nach der schulweiten
-/// Kartendarstellung): Fach fett oben links, Raum oben rechts, darunter Lehrkraft bzw. Klasse; Fachfarbe als Balken
-/// links mit leichter Tönung (bzw. Quadrat, Fläche, keine). Status sachlich, aber nicht zu übersehen: Entfall rot
+/// Stundenkarte der Tagesliste im klassischen Grundstil wie das Wochenraster (eigenständig, nicht nachgebaut): weiße
+/// Karte ohne Rahmen, schmaler 3-pt-Balken innen links (grau bzw. Fachfarbe), Fach halbfett oben links, Raum oben
+/// rechts, darunter Lehrkraft bzw. Klasse; Inhalte nach der schulweiten Kartendarstellung. Status sachlich, aber nicht zu übersehen: Entfall rot
 /// durchgestrichen und schraffiert, Vertretung/Raumänderung violett (Linie, helle Fläche, „alt → neu“), Prüfung
 /// Bernstein, Termin und Buchung gestrichelt; dazu das Statuswort oben rechts. Läuft die Stunde, steht „Jetzt · noch …“
 /// und unten der Fortschritt.
@@ -320,16 +320,12 @@ struct ListenKachel: View {
     private var abstand: CGFloat { darstellung.grosszuegig ? 12 : (darstellung.kompakt ? 8 : 10) }
 
     var body: some View {
-        let w = Kartenstilwerte.berechnen(kachel, darstellung)
+        let w = Klassikstil.fuer(kachel, darstellung)
         VStack(alignment: .leading, spacing: 3) {
             if laeuft || bald != nil {
                 jetztZeile
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                if let q = w.quadrat {
-                    FachQuadrat(farbe: q, groesse: 9)
-                        .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 1 }
-                }
                 Text(kachel.fachText(darstellung))
                     .font(.headline)
                     .foregroundStyle(entfall ? Farben.entfall : Farben.text)
@@ -374,20 +370,21 @@ struct ListenKachel: View {
                     .accessibilityHidden(true)
             }
         }
-        .padding(.leading, w.balken != nil && !w.balkenOben ? w.balkenBreite + 10 : 12)
+        .padding(.leading, 14)
         .padding(.trailing, 12)
-        .padding(.top, abstand + (w.balkenOben && w.balken != nil ? w.balkenBreite : 0))
+        .padding(.top, abstand)
         .padding(.bottom, abstand)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .kartenStil(w)
+        .klassikKarte(w, radius: 4)
         .overlay {
             if laeuft {
-                RoundedRectangle(cornerRadius: w.radius, style: .continuous)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .strokeBorder(Farben.akzent, lineWidth: 2)
             }
         }
+        .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
         .opacity(vorbei ? 0.55 : 1)
-        .contentShape(RoundedRectangle(cornerRadius: w.radius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(kachel.vorlesetext + (laeuft ? ", läuft gerade" : (vorbei ? ", vorbei" : "")))
         .accessibilityAddTraits(.isButton)

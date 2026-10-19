@@ -158,6 +158,7 @@ final class AppZustand: ObservableObject {
         notizAenderung = nil
         Kachelspeicher.leeren()
         Heutespeicher.leeren()
+        Stammdaten.leeren()
     }
 
     /// In ein anderes angemeldetes Konto wechseln, ohne abzumelden: Sitzung des bisherigen Kontos sichern, die des

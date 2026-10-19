@@ -82,18 +82,18 @@ struct ZeitKachel: View {
     private var merkmal: Statusmerkmal? { Statuslehre.merkmal(kachel) }
     private var entfall: Bool { kachel.art == .entfall || (kachel.art == .aufsicht && kachel.aufsichtsstand == .entfall) }
     var body: some View {
-        let w = Kartenstilwerte.berechnen(kachel, darstellung)
-        let form = RoundedRectangle(cornerRadius: w.radius, style: .continuous)
+        let w = Klassikstil.fuer(kachel, darstellung)
+        let form = RoundedRectangle(cornerRadius: 4, style: .continuous)
         ViewThatFits(in: .vertical) {
             gross
             mittel
             klein
         }
-        .padding(.leading, w.balken != nil && !w.balkenOben ? w.balkenBreite + 6 : 8)
+        .padding(.leading, 11)
         .padding(.trailing, 8)
         .padding(.vertical, hoehe < 30 ? 2 : 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .kartenStil(w)
+        .klassikKarte(w, radius: 4)
         .overlay(alignment: .topTrailing) {
             if laeuft {
                 Circle()
@@ -128,9 +128,6 @@ struct ZeitKachel: View {
 
     private var titelText: some View {
         HStack(spacing: 5) {
-            if darstellung.quadrat, let farbe = Fachfarbe.voll(kachel.balkenHex), kachel.art == .normal || kachel.art == .aenderung {
-                FachQuadrat(farbe: farbe, groesse: 7)
-            }
             Text(kachel.fachText(darstellung))
                 .font(.headline)
                 .foregroundStyle(entfall ? Farben.text2 : Farben.text)

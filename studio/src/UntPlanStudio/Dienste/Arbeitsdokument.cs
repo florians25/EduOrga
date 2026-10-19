@@ -192,7 +192,7 @@ public sealed class Arbeitsdokument
                 finally { _sperre.Release(); }
                 Speichert = false;
                 Fehlversuche++;
-                Speicherfehler = Datenbankanbieter.IstDatenbankfehler(ex) ? "Die Datenbank ist nicht erreichbar – Änderungen sind noch nicht gespeichert." : ex.Message;
+                Speicherfehler = ex is System.Data.Common.DbException or IOException or TimeoutException ? "Die Datenbank ist nicht erreichbar – Änderungen sind noch nicht gespeichert." : ex.Message;
                 Senden(new StudioEreignis("speicherfehler", Version, "", Speicherfehler, benutzer, DateTime.Now));
                 throw;
             }

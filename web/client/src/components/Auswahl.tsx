@@ -51,7 +51,7 @@ export function ZeitNavi({ datum, onDatum, art = 'woche', tage = 5 }: { datum: s
     return d;
   };
   return (
-    <Stack direction="row" alignItems="center" gap={0.5}>
+    <Stack direction="row" alignItems="center" gap={0.5} flexWrap="wrap" sx={{ minWidth: 0 }}>
       <Tooltip title={art === 'woche' ? 'Vorherige Woche' : 'Vorheriger Tag'}><IconButton size="small" onClick={() => onDatum(art === 'woche' ? plusTage(basis, -schritt) : tagWeiter(-1))} aria-label={art === 'woche' ? 'Vorherige Woche' : 'Vorheriger Tag'}><ChevronLeftRounded /></IconButton></Tooltip>
       <Button variant="outlined" onClick={e => setAnker(e.currentTarget)} startIcon={<CalendarTodayOutlined sx={{ fontSize: '16px !important' }} />} aria-haspopup="dialog"
         sx={{ fontWeight: 600, gap: 0.5, whiteSpace: 'nowrap' }}>
@@ -69,7 +69,7 @@ export function ZeitNavi({ datum, onDatum, art = 'woche', tage = 5 }: { datum: s
 
 // Datums- und Zeitfelder (MUI-Picker): Beschriftung steht immer oben im Rahmen (sonst läge eine lange Beschriftung im leeren Feld unter
 // dem Kalendersymbol), Mindestbreite je Art, damit „TT.MM.JJJJ hh:mm“, Löschen-Knopf und Kalendersymbol nebeneinander passen.
-const FELD_MIN = { datum: 168, zeit: 112, datumZeit: 232 } as const;
+const FELD_MIN = { datum: 168, zeit: 112, datumZeit: 220 } as const;
 const feldSx = (breite: number | string | undefined, min: number) => ({ width: breite ?? min, minWidth: min, maxWidth: '100%', flex: 'none',
   '& .MuiInputBase-input': { textOverflow: 'clip' }, '& .MuiInputAdornment-root': { ml: 0.25 }, '& .MuiInputAdornment-root .MuiIconButton-root': { p: 0.5 } });
 const label = { shrink: true } as const;

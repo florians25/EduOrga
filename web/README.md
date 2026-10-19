@@ -1,34 +1,53 @@
-# UntPlanWeb
+# EduOrga Web
 
-**Stundenplan, Vertretungsplan und Rückmeldungen im Browser – der Webbegleiter zu UntPlan.**
-UntPlan (Desktop) überträgt Stammdaten, Stundenpläne und Vertretungen an UntPlanWeb. Lehrkräfte, Schulleitung und Klassen sehen dort
-ihre Pläne auf PC, Tablet und Smartphone. Abwesenheiten, Raumbuchungen und Klausuren, die im Browser eingetragen werden, holt
-UntPlan beim nächsten Datenaustausch ab.
+**Einfach mehr Schulalltag.** EduOrga Web ist das Portal der Schule für Lehrkräfte, Schulleitung, Schüler*innen und Eltern:
+Stundenpläne, Vertretungen, Klassenbuch, Kommunikation, Termine und Buchungen im Browser. EduOrga Studio (Planung) überträgt
+Stammdaten, Stundenpläne und Vertretungen an EduOrga Web; Abwesenheiten, Raumbuchungen und Prüfungen, die im Browser eingetragen
+werden, holt EduOrga Studio beim nächsten Datenaustausch ab. (Bis Oktober 2026 hieß das Produkt „UntPlan Web“. Technische
+Kennungen – Docker-Image `untplannext-web`, Umgebungsvariablen `UNTPLANWEB_*`, Programmdatei `UntPlanWeb.dll`, Kopf
+`X-UntPlanWeb` – bleiben unverändert, damit laufende Installationen ohne Umzug weiterarbeiten.)
 
 ![Stundenplan](docs/bilder/stundenplan.png)
 
+> EduOrga ist ein privates Hobbyprojekt eines Auszubildenden zum Fachinformatiker für Systemintegration, entwickelt mit
+> Unterstützung von Claude (Anthropic). Jede Schule bzw. jeder Betreiber ist für Einsatz, Betrieb und Datenschutz selbst verantwortlich.
+
 ## Oberfläche
 
-Eigenständige Gestaltung nach dem UntPlan-Designsystem (`design/DESIGN.md`, Farben aus `design/tokens.css`): Marine (#234f96)
-als Akzentfarbe, Schiefergrau für Flächen und Linien, Statusfarben für Entfall, Änderung, Prüfung, Termin und Vertretung – ohne
-Orange. Aufgebaut als **React-18-Anwendung mit TypeScript (strict) und MUI v7** in `web/client`; der Build landet in
-`src/UntPlanWeb/wwwroot` und wird von ASP.NET Core als statische Dateien ausgeliefert (Hash-Routing, z. B. `#/plan/klasse/5a`).
-Schrift ist **IBM Plex Sans** (SIL Open Font License, lokal unter `wwwroot/fonts`); Symbole sind die mitgebündelten
-Material-Symbole von MUI. Es werden keine Schriften oder Skripte aus dem Internet geladen. Marke: Zeichen „UP“ und Wortmarke
-„UntPlan“ als Text; Favicon und App-Symbole (`img/…`) aus dem Monogramm.
+Gestaltung nach der Marke EduOrga (`design/MARKE.md`) und dem Designsystem (`design/DESIGN.md`, Farben aus `design/tokens.css`):
+Primärfarbe Petrol **#164C55** (Logo, Navigation, Knöpfe), Akzent **#28747A** (aktive Bereiche, Links, Fokus), Hintergrund
+**#F5F7F8**, Text **#24363B**; Statusfarben Entfall Rot, Änderung/Vertretung **Violett #6d4fc2**, Prüfung Bernstein,
+Termin **#a3347c**, Frei Blau. Sachlich wie ein Schulsystem: klare Linien, Abschnitte mit getöntem Kopfband, Tabellenköpfe
+getönt, kein „alles weiß“. Hell und dunkel (Kontomenü: *Hell*, *Dunkel*, *Wie das System*). Aufgebaut als
+**React-18-Anwendung mit TypeScript (strict) und MUI v7** in `web/client`; der Build landet in `src/UntPlanWeb/wwwroot` und wird
+von ASP.NET Core als statische Dateien ausgeliefert (Hash-Routing, z. B. `#/plan/klasse/5a`). Schrift ist **IBM Plex Sans**
+(SIL Open Font License, lokal unter `wwwroot/fonts`); Symbole sind die mitgebündelten Material-Symbole von MUI. Es werden keine
+Schriften oder Skripte aus dem Internet geladen. Marke: Monogramm „E“ (`design/logo/edo-*.svg`) und Wortmarke „**Edu**Orga“;
+Favicon, Manifest und PWA-Symbole (`wwwroot/img/…`, erzeugt mit `design/logo/icons_rendern.cjs`), Themenfarbe #164C55.
 
-- **Seitenleiste links** (`client/src/app`): Zeichen, Wortmarke, Schulname und Schuljahr-Auswahl; Bereiche (*Heute*, *Übersicht*,
-  *Mitteilungen*, *Stundenplan*, *Unterricht*, *Klassenbuch*, *Melden*, *Buchen*, *Sprechtag*, *Stammdaten*, *Administration*)
-  je nach Rolle und Rechten, Unterpunkte eingerückt; unten Konto (Profil, Konto wechseln, weiteres Konto, Abmelden) und
-  *Navigation einklappen*. Auf Telefon und Tablet als Schublade über die Kopfleiste.
+- **Seitenleiste links in Petrol** (`client/src/app`): Marke, Schulname und Schuljahr-Auswahl; Bereiche je nach Rolle und Rechten
+  (Kollegium: *Start · Mein Tag · Stundenpläne · Vertretungen · Unterricht & Prüfungen · Klassenbuch · Kommunikation ·
+  Termine & Buchungen · Stammdaten · Verwaltung*; Familien: *Start · Mein Tag · Mein Stundenplan · Stundenpläne ·
+  Abwesenheit melden · Hausaufgaben · Kommunikation*). Klassische Zeilen über die volle Breite, aktive Zeile leicht getönt mit
+  3-px-Kante links; unten Konto (Profil, Neuigkeiten, Erscheinungsbild, Konto wechseln, Über EduOrga, Abmelden) und
+  *Navigation einklappen*. Auf Telefon und Tablet als Schublade über die Petrol-Kopfleiste.
+- **Adressen:** alle bisherigen Adressen (`#/heute`, `#/uebersicht`, `#/melden/…`, `#/buchen/…`, `#/sprechtag`, …) bleiben gültig;
+  zusätzlich sprechende Aliase wie `#/start`, `#/mein-tag`, `#/elternsprechtag`, `#/abwesenheit-melden`, `#/raum-buchen`.
 - **Stundenplan** (`client/src/components/plan`, `client/src/pages/plan`): eigenes Wochen-/Tagesraster mit Zeitachse, Jetzt-Linie,
-  Kacheln in der Fachfarbe, Status (Entfall, Änderung, Vertretung, Prüfung, Termin, Buchung) mit Legende, Stundendetails als
-  Seitenbereich. Online-Unterricht wird nur angezeigt (Schild und Link „Online-Unterricht beitreten“); umgeschaltet wird in
-  UntPlan Studio bzw. der App.
-- **Klassenbuch-Seiten**, **Übrige Seiten** (Heute, Übersicht, Mitteilungen, Unterricht, Melden, Buchen, Stammdaten,
-  Administration, Profil, Sprechtag): gemeinsame Bausteine (`client/src/components`: Seite, Tabelle, Auswahl, Formulardialoge).
-- **Anmeldung** und **Einrichtungsassistent:** zweigeteilt – links Marke, Schulname, Datum und Hinweise, rechts das Formular.
-- **Monitor** (`monitor.html`, `client/src/monitor`): Vertretungsplan für Bildschirme im Schulhaus auf dunkler Marine-Fläche.
+  Status-Legende und Stundendetails. Standard-Darstellung der Karten **„Klassisch“**: weiße, kompakte Karten mit leichtem Schatten
+  auf hellgrauem Raster, Fachfarbe als schmaler Streifen innen links (grau ohne Fachfarbe), drei kurze Zeilen *Lehrkraft bzw.
+  Klasse* (fett) · *Fach* · *Raum*, Doppelstunden als eine Karte; Entfall rot durchgestrichen und schraffiert, Vertretung/Änderung
+  violett hinterlegt mit violetten Kürzel-Plaketten, offene Vertretung „?“, Prüfung bernstein. Weitere Vorlagen und alle
+  Einzelwerte unter *Verwaltung | Darstellung der Stundenkarten* (mit Live-Vorschau). Online-Unterricht wird nur angezeigt;
+  umgeschaltet wird in EduOrga Studio bzw. der App.
+- **Datums- und Zeitfelder:** einheitlich MUI-Picker (`components/Auswahl.tsx`), Beschriftung steht immer oben im Rahmen, deutsche
+  Platzhalter („TT.MM.JJJJ“), Mindestbreite je Art – das Kalendersymbol überdeckt keinen Text.
+- **Klassenbuch-Seiten**, **Übrige Seiten** (Mein Tag, Start, Kommunikation, Unterricht, Vertretungen, Termine & Buchungen,
+  Stammdaten, Verwaltung, Profil, Elternsprechtag): gemeinsame Bausteine (`client/src/components`: Seite, Tabelle, Auswahl,
+  Formulardialoge).
+- **Anmeldung** und **Einrichtungsassistent:** zweigeteilt – links Marke, Schulname, Datum, Slogan „Einfach mehr Schulalltag.“ und
+  Hinweise der Schule auf Petrol, rechts das Formular; darunter *Über EduOrga* mit dem rechtlichen Hinweis.
+- **Monitor** (`monitor.html`, `client/src/monitor`): Vertretungsplan für Bildschirme im Schulhaus auf dunkler Petrol-Fläche.
 
 Ist die Oberfläche nicht gebaut (`wwwroot/index.html` fehlt), zeigt der Server eine kurze Hinweisseite. Docker-Image und CI bauen
 die Oberfläche selbst; `index.html`, `monitor.html` und `assets/` werden nicht eingecheckt.

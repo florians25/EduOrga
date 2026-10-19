@@ -434,7 +434,7 @@ struct VertretungsplanView: View {
                             Plakette(text: z.art.isEmpty ? (z.entfall ? "Entfall" : "Änderung") : z.art,
                                      farbe: z.entfall ? Farben.entfall : Farben.aenderung)
                         }
-                        Text(wechsel(z))
+                        wechsel(z)
                             .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                         if !z.text.isEmpty {
@@ -450,22 +450,19 @@ struct VertretungsplanView: View {
         }
     }
 
-    /// „M · MEI → SCH · R204“ (alt → neu).
-    private func wechsel(_ z: Vertretungszeile) -> AttributedString {
-        func teil(_ neu: String, _ alt: String) -> AttributedString {
+    /// „M · MEI → SCH · R204“ (alt durchgestrichen → neu violett).
+    private func wechsel(_ z: Vertretungszeile) -> Text {
+        func teil(_ neu: String, _ alt: String) -> Text {
             if !alt.isEmpty && alt != neu {
-                var a = AttributedString(alt)
-                a.strikethroughStyle = .single
-                a.foregroundColor = Farben.text3
-                var n = AttributedString(neu.isEmpty ? "—" : neu)
-                n.foregroundColor = Farben.aenderung
-                return a + AttributedString(" → ") + n
+                return Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
+                    + Text(" → ").foregroundColor(Farben.text3)
+                    + Text(neu.isEmpty ? "—" : neu).foregroundColor(Farben.aenderung)
             }
-            return AttributedString(neu)
+            return Text(neu)
         }
         var e = teil(z.fach, z.fachAlt)
         for (neu, alt) in [(z.lehrer, z.lehrerAlt), (z.raum, z.raumAlt)] where !(neu.isEmpty && alt.isEmpty) {
-            e += AttributedString(" · ") + teil(neu, alt)
+            e = e + Text(" · ") + teil(neu, alt)
         }
         return e
     }
