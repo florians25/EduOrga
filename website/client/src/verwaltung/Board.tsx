@@ -35,7 +35,11 @@ export function Board({ eintraege, alle, sortierung, onOeffnen, onVerschieben, o
   const [aktiv, setAktiv] = useState<AdminEintrag | null>(null);
   const sensoren = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+      // Leertaste greift und legt ab, Eingabetaste öffnet die Karte
+      keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space", "Enter"] },
+    }),
   );
   const spalten = useMemo(() => {
     const m = new Map<Status, AdminEintrag[]>(STATUS_REIHENFOLGE.map((s) => [s, []]));

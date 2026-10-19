@@ -98,7 +98,7 @@ public sealed class SchuelerImport
         new("geburtsdatum", "Geburtsdatum", "Schüler*in", new[] { "geburtsdatum", "geburtstag", "gebdatum", "gebdat", "geb", "geboren", "birthday", "dateofbirth" }),
         new("geschlecht", "Geschlecht", "Schüler*in", new[] { "geschlecht", "sex", "gender", "mw" }),
         new("klasse", "Klasse", "Schüler*in", new[] { "klasse", "kl", "klassenbezeichnung", "class", "lerngruppe" }),
-        new("id", "Schüler-ID (UntPlan/Web)", "Schüler*in", new[] { "id", "schuelerid", "schueler_id" }),
+        new("id", "Schüler-ID (Studio/Web)", "Schüler*in", new[] { "id", "schuelerid", "schueler_id" }),
         new("extern", "Externe Nummer", "Schüler*in", new[] { "externenummer", "extern", "externeid", "schuelernummer", "schuelernr", "nummer", "nr", "sid", "kennung" }),
         new("email", "E-Mail", "Schüler*in", new[] { "email", "mail", "emailadresse" }),
         new("eintritt", "Eintritt", "Schüler*in", new[] { "eintritt", "eintrittsdatum", "aufnahme", "aufnahmedatum", "zugang" }),
@@ -496,7 +496,7 @@ public sealed class SchuelerImport
     /// <summary>Trockenlauf: Ergebnis je Zeile, ohne etwas zu speichern.</summary>
     public object Pruefen(ImportAnfrage a)
     {
-        var s = _pakete.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus UntPlan übertragen (Klassen fehlen).");
+        var s = _pakete.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus EduOrga Studio übertragen (Klassen fehlen).");
         var p = Planen(s, a);
         return Zusammenfassung(p.Ergebnisse, null);
     }
@@ -514,7 +514,7 @@ public sealed class SchuelerImport
     /// <summary>Übernehmen: Zeilen mit Fehlern werden übersprungen. Liefert die Zusammenfassung samt neu angelegter Konten.</summary>
     public object Uebernehmen(Benutzer ich, ImportAnfrage a)
     {
-        var s = _pakete.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus UntPlan übertragen (Klassen fehlen).");
+        var s = _pakete.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus EduOrga Studio übertragen (Klassen fehlen).");
         var o = a.Optionen ?? new AbgleichOptionen();
         var p = Planen(s, a);
         var jetzt = _uhr.Jetzt.ToString("yyyy-MM-dd HH:mm");

@@ -20,7 +20,7 @@ public static class FamilieApi
     {
         var b = c.Ich() ?? throw new NichtAngemeldetException();
         if (!b.Familie) throw new UnauthorizedAccessException("Diese Seiten stehen Schüler*innen und Erziehungsberechtigten zur Verfügung.");
-        var s = p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus UntPlan übertragen.");
+        var s = p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus EduOrga Studio übertragen.");
         if (b.SchuelerIds.Count == 0) throw new UnauthorizedAccessException("Ihrem Konto ist keine Schülerin bzw. kein Schüler zugeordnet. Bitte wenden Sie sich an die Schule.");
         var id = schueler ?? b.SchuelerIds[0];
         if (!b.SchuelerIds.Contains(id)) throw new UnauthorizedAccessException("Diese Daten sind für Ihr Konto nicht freigegeben.");

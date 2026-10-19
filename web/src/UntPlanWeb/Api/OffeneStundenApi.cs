@@ -21,7 +21,7 @@ public static class OffeneStundenApi
         return b.Kollegium ? b : throw new UnauthorizedAccessException("Nur für das Kollegium.");
     }
 
-    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus UntPlan übertragen.");
+    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus EduOrga Studio übertragen.");
     private static DateOnly? D(string? s) => DateOnly.TryParse(s, out var d) ? d : null;
     private static string? Leer(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 

@@ -1,6 +1,6 @@
 // Vertretungsstatistik: Abrechnung, Einzelnachweis, Mehrarbeit NRW, Monatsabrechnung, Entfalltage, Vertretungsübersicht und
 // Wochenwerte – als Tabelle, HTML-Dokument und CSV.
-import { Input, Select } from '@fluentui/react-components';
+import { Select } from '@fluentui/react-components';
 import { useEffect, useState } from 'react';
 import { api, dateiHerunterladen } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';

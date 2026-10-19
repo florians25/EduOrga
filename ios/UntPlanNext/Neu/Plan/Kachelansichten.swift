@@ -77,67 +77,23 @@ struct ZeitKachel: View {
     /// Läuft gerade
     var laeuft: Bool = false
 
+    @Environment(\.kartendarstellung) private var darstellung
+
     private var merkmal: Statusmerkmal? { Statuslehre.merkmal(kachel) }
     private var entfall: Bool { kachel.art == .entfall || (kachel.art == .aufsicht && kachel.aufsichtsstand == .entfall) }
-    private var ohneFlaeche: Bool { [.abgegeben, .bereitschaftAbwesend].contains(kachel.art) || (kachel.art == .aufsicht && kachel.aufsichtsstand == .abgegeben) }
-
-    private var flaeche: Color {
-        switch kachel.art {
-        case .entfall: return Farben.entfallFlaeche
-        case .klausur: return Farben.pruefungFlaeche
-        case .termin, .veranstaltung, .ganztagTermin: return Farben.terminFlaeche
-        case .abgegeben, .bereitschaftAbwesend: return Farben.flaeche
-        case .bereitschaft, .aufsicht: return Farben.flaeche2
-        case .normal, .aenderung:
-            return Fachfarbe.ton(kachel.balkenHex) ?? Farben.flaeche2
-        }
-    }
-
-    private var randFarbe: Color {
-        switch kachel.art {
-        case .aenderung: return Farben.aenderung
-        case .klausur: return Farben.pruefung.opacity(0.6)
-        case .termin, .veranstaltung, .ganztagTermin: return Farben.termin.opacity(0.7)
-        case .entfall: return Farben.entfall.opacity(0.35)
-        case .aufsicht where kachel.aufsichtsstand == .vertretung: return Farben.aenderung
-        default:
-            if kachel.raumAenderung { return Farben.aenderung }
-            return Fachfarbe.anteile(kachel.balkenHex) == nil ? Farben.randStark : Color.clear
-        }
-    }
-
-    private var randStil: StrokeStyle {
-        switch kachel.art {
-        case .termin, .veranstaltung, .ganztagTermin, .bereitschaft: return StrokeStyle(lineWidth: 1.2, dash: [4, 3])
-        case .abgegeben, .bereitschaftAbwesend: return StrokeStyle(lineWidth: 1.2, dash: [1.5, 2.5])
-        case .aenderung: return StrokeStyle(lineWidth: 1.5)
-        default: return StrokeStyle(lineWidth: kachel.raumAenderung ? 1.5 : 1)
-        }
-    }
-
     var body: some View {
-        let form = RoundedRectangle(cornerRadius: Stilmass.kachelRadius, style: .continuous)
+        let w = Kartenstilwerte.berechnen(kachel, darstellung)
+        let form = RoundedRectangle(cornerRadius: w.radius, style: .continuous)
         ViewThatFits(in: .vertical) {
             gross
             mittel
             klein
         }
-        .padding(.horizontal, 8)
+        .padding(.leading, w.balken != nil && !w.balkenOben ? w.balkenBreite + 6 : 8)
+        .padding(.trailing, 8)
         .padding(.vertical, hoehe < 30 ? 2 : 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background {
-            ZStack {
-                if !ohneFlaeche { form.fill(flaeche) }
-                if entfall {
-                    Streifenmuster(abstand: 7)
-                        .stroke(Farben.entfall.opacity(0.16), lineWidth: 1)
-                        .clipShape(form)
-                }
-            }
-        }
-        .overlay {
-            form.strokeBorder(randFarbe, style: randStil)
-        }
+        .kartenStil(w)
         .overlay(alignment: .topTrailing) {
             if laeuft {
                 Circle()
@@ -172,13 +128,10 @@ struct ZeitKachel: View {
 
     private var titelText: some View {
         HStack(spacing: 5) {
-            if let farbe = Fachfarbe.voll(kachel.balkenHex), kachel.art == .normal || kachel.art == .aenderung {
-                Circle()
-                    .fill(farbe)
-                    .frame(width: 7, height: 7)
-                    .accessibilityHidden(true)
+            if darstellung.quadrat, let farbe = Fachfarbe.voll(kachel.balkenHex), kachel.art == .normal || kachel.art == .aenderung {
+                FachQuadrat(farbe: farbe, groesse: 7)
             }
-            Text(kachel.anzeigeTitel)
+            Text(kachel.fachText(darstellung))
                 .font(.headline)
                 .foregroundStyle(entfall ? Farben.text2 : Farben.text)
                 .strikethrough(entfall, color: Farben.entfall)

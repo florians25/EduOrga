@@ -1,5 +1,5 @@
 // Berichte: Listen und Auswertungen als PDF (Vorschau), HTML oder CSV; bei Bedarf mit Zeitraum.
-import { Button, Input } from '@fluentui/react-components';
+import { Button } from '@fluentui/react-components';
 import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';

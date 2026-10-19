@@ -82,7 +82,7 @@ public sealed class Systemwartung
     public static string Geraet(string ua)
     {
         if (string.IsNullOrWhiteSpace(ua)) return "";
-        var app = ua.Contains("UntPlanMobile", StringComparison.OrdinalIgnoreCase) ? "UntPlanMobile"
+        var app = ua.Contains("UntPlanMobile", StringComparison.OrdinalIgnoreCase) ? "EduOrga Mobile"
             : ua.Contains("Edg/") ? "Edge" : ua.Contains("Firefox/") ? "Firefox" : ua.Contains("Chrome/") ? "Chrome" : ua.Contains("Safari/") ? "Safari" : "";
         var os = ua.Contains("iPhone") || ua.Contains("iPad") ? "iOS" : ua.Contains("Android") ? "Android" : ua.Contains("Windows") ? "Windows"
             : ua.Contains("Mac OS X") ? "macOS" : ua.Contains("Linux") ? "Linux" : "";

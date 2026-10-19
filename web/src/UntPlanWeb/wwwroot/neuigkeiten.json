@@ -1,5 +1,16 @@
 [
   {
+    "datum": "2026-10-19",
+    "titel": "Aus UntPlan Web wird EduOrga Web",
+    "punkte": [
+      "Neuer Name und neues Erscheinungsbild: EduOrga Web – Einfach mehr Schulalltag. Petrol als Hausfarbe, Navigation links in Petrol, deutlichere Abschnitte und Tabellenköpfe.",
+      "Neue Menüstruktur: Start · Mein Tag · Stundenpläne · Vertretungen · Unterricht & Prüfungen · Klassenbuch · Kommunikation · Termine & Buchungen · Verwaltung. Alle bisherigen Adressen funktionieren weiter.",
+      "Stundenkarten im klassischen Rasterlook: kompakte Karten, Fach fett, Raum rechts, Fachfarbe als Balken links; Vertretungen violett hinterlegt, Entfall rot schraffiert.",
+      "Datums- und Zeitfelder: Beschriftung steht immer über dem Feld, das Kalendersymbol überdeckt keinen Text mehr.",
+      "Dunkles Erscheinungsbild wählbar (Kontomenü: Hell, Dunkel, wie das System)."
+    ]
+  },
+  {
     "datum": "2026-10-16",
     "titel": "Offene Vertretungen, Koppelklassen und gleiche Schrift überall",
     "punkte": [
@@ -15,7 +26,7 @@
     "titel": "Einheitliches Design und bereinigte Prüfungen",
     "punkte": [
       "Mein Unterricht, Unterricht der Klasse und Klassendienste im neuen Listendesign.",
-      "Doppelt oder mehrfach übertragene Prüfungen werden beim nächsten Hochladen aus UntPlan bereinigt und im Plan nur einmal gezeigt.",
+      "Doppelt oder mehrfach übertragene Prüfungen werden beim nächsten Hochladen aus EduOrga Studio bereinigt und im Plan nur einmal gezeigt.",
       "Verlegungen haben ein eigenes Symbol (grün an der neuen, rot an der alten Stelle).",
       "Vergangene Pausenaufsichten sind ausgegraut, Ferienfelder kaum noch gerundet.",
       "Fehlzeiten-Seite ohne Reiter, mit Hinweis zum Unterschied zwischen Abwesenheit und Fehlstunden.",
@@ -26,7 +37,7 @@
     "datum": "2026-10-16",
     "titel": "Prüfungen verlegen und löschen, minutengenaue Verspätungen",
     "punkte": [
-      "Prüfungen lassen sich in den Stundendetails verlegen und löschen; übernommene Prüfungen löscht UntPlan beim nächsten Import.",
+      "Prüfungen lassen sich in den Stundendetails verlegen und löschen; übernommene Prüfungen löscht EduOrga Studio beim nächsten Import.",
       "Prüfungen liegen auf der Unterrichtsstunde: die Karte zeigt Lehrkraft, Fach und Raum – kein zusätzlicher Block.",
       "Wer als abwesend eingetragen ist und auf „anwesend“ geklickt wird, bekommt direkt die Verspätung minutengenau erfasst.",
       "Ein entfernter ursprünglicher Raum kann wieder hinzugefügt werden.",

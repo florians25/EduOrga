@@ -1,9 +1,10 @@
 import SwiftUI
 
-// Der Tag als Liste großer Kacheln (Standard in „Heute“ und „Plan“): links Beginn, Ende und Stunde, rechts die Kachel
-// mit Fach groß, Raum groß, darunter Lehrkraft bzw. Klasse. Änderungen fallen sofort auf (gefüllte Plakette, Rahmen
-// und Tönung in der Statusfarbe, „alt → neu“), Entfall durchgestrichen und schraffiert. Pausen und Freistunden nur als
-// kompakte Zeile. Heute: laufende Stunde mit Fortschritt und Restzeit, vergangene Stunden blass.
+// Der Tag als Liste klassischer Stundenkarten (in „Heute“ und in der Tagesansicht des Plans): links Beginn, Ende und
+// Stunde, rechts die Karte nach der schulweiten Kartendarstellung – Fach fett oben links, Raum oben rechts, darunter
+// Lehrkraft bzw. Klasse. Änderungen fallen sofort auf (violette Linie und Fläche, „alt → neu“), Entfall durchgestrichen
+// und schraffiert. Pausen und Freistunden nur als kompakte Zeile. Heute: laufende Stunde mit Fortschritt und Restzeit,
+// vergangene Stunden blass.
 
 // MARK: - Einträge
 
@@ -280,10 +281,12 @@ struct Tagesliste: View {
 
 // MARK: - Kachel der Liste
 
-/// Große Stundenkachel: Fach groß und fett, Raum groß rechts, darunter Fachname und Lehrkraft bzw. Klasse; links ein
-/// Balken in der Fachfarbe. Änderungen: gefüllte Plakette oben, Balken, Rahmen und Tönung in der Statusfarbe, „alt → neu“
-/// in den Zeilen. Entfall durchgestrichen und schraffiert. Läuft die Stunde, steht oben „Jetzt · noch … Min.“ und unten
-/// der Fortschritt.
+/// Stundenkarte der Tagesliste im klassischen Grunddesign (wie die Karten im Web, nach der schulweiten
+/// Kartendarstellung): Fach fett oben links, Raum oben rechts, darunter Lehrkraft bzw. Klasse; Fachfarbe als Balken
+/// links mit leichter Tönung (bzw. Quadrat, Fläche, keine). Status sachlich, aber nicht zu übersehen: Entfall rot
+/// durchgestrichen und schraffiert, Vertretung/Raumänderung violett (Linie, helle Fläche, „alt → neu“), Prüfung
+/// Bernstein, Termin und Buchung gestrichelt; dazu das Statuswort oben rechts. Läuft die Stunde, steht „Jetzt · noch …“
+/// und unten der Fortschritt.
 struct ListenKachel: View {
     let kachel: Kachel
     /// Aktuelle Minute (nur heute)
@@ -291,12 +294,10 @@ struct ListenKachel: View {
     /// Minuten bis zum Beginn (nächste Stunde heute)
     var bald: Int? = nil
 
+    @Environment(\.kartendarstellung) private var darstellung
+
     private var merkmal: Statusmerkmal? { Statuslehre.merkmal(kachel) }
-    private var betont: Bool { merkmal?.betont ?? false }
-    private var entfall: Bool {
-        kachel.art == .entfall || (kachel.art == .aufsicht && kachel.aufsichtsstand == .entfall)
-    }
-    private var ohneFlaeche: Bool { [.abgegeben, .bereitschaftAbwesend].contains(kachel.art) }
+    private var entfall: Bool { kachel.kartenart == .entfall }
     private var laeuft: Bool {
         guard let m = jetzt else { return false }
         return Statuslehre.findetStatt(kachel) && kachel.beginn <= m && m < kachel.ende
@@ -306,99 +307,87 @@ struct ListenKachel: View {
         return kachel.ende <= m
     }
 
-    private var balken: Color {
-        if let merkmal, betont { return merkmal.farbe }
-        switch kachel.art {
-        case .termin, .veranstaltung, .ganztagTermin: return Farben.termin
-        case .abgegeben, .bereitschaft, .bereitschaftAbwesend, .aufsicht: return Farben.randStark
-        default: return Fachfarbe.voll(kachel.balkenHex) ?? Farben.randStark
-        }
+    /// Raum- bzw. Personenzeile anzeigen (Änderungen stehen immer da).
+    private var raumZeile: Kachelzeile? {
+        guard let r = kachel.zeile("raum"), !r.text.isEmpty else { return nil }
+        return darstellung.raum || !r.nurText ? r : nil
     }
 
-    private var flaeche: Color {
-        if let merkmal, betont { return merkmal.flaeche }
-        if ohneFlaeche { return Color.clear }
-        return Farben.flaeche
+    private var personen: [Kachelzeile] {
+        kachel.personenzeilen.filter { darstellung.zeile2 || !$0.nurText }
     }
 
-    private var randFarbe: Color {
-        if let merkmal, betont { return merkmal.farbe }
-        if laeuft { return Farben.akzent }
-        switch kachel.art {
-        case .termin, .veranstaltung, .ganztagTermin: return Farben.termin.opacity(0.7)
-        case .abgegeben, .bereitschaftAbwesend, .bereitschaft: return Farben.randStark
-        default: return Color.clear
-        }
-    }
-
-    private var randStil: StrokeStyle {
-        if betont || laeuft { return StrokeStyle(lineWidth: 2) }
-        switch kachel.art {
-        case .termin, .veranstaltung, .ganztagTermin, .bereitschaft: return StrokeStyle(lineWidth: 1.5, dash: [5, 3])
-        case .abgegeben, .bereitschaftAbwesend: return StrokeStyle(lineWidth: 1.5, dash: [2, 3])
-        default: return StrokeStyle(lineWidth: 1)
-        }
-    }
+    private var abstand: CGFloat { darstellung.grosszuegig ? 12 : (darstellung.kompakt ? 8 : 10) }
 
     var body: some View {
-        let form = RoundedRectangle(cornerRadius: Stilmass.kachelRadius, style: .continuous)
-        VStack(alignment: .leading, spacing: 4) {
-            if betont || laeuft || bald != nil {
-                kopfzeile
-                    .padding(.bottom, 2)
+        let w = Kartenstilwerte.berechnen(kachel, darstellung)
+        VStack(alignment: .leading, spacing: 3) {
+            if laeuft || bald != nil {
+                jetztZeile
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(kachel.anzeigeTitel)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(entfall ? Farben.text2 : Farben.text)
+                if let q = w.quadrat {
+                    FachQuadrat(farbe: q, groesse: 9)
+                        .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 1 }
+                }
+                Text(kachel.fachText(darstellung))
+                    .font(.headline)
+                    .foregroundStyle(entfall ? Farben.entfall : Farben.text)
                     .strikethrough(entfall, color: Farben.entfall)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-                Spacer(minLength: 8)
-                raumText
+                    .minimumScaleFactor(0.8)
+                if !kachel.fachname.isEmpty && darstellung.fach != "name" {
+                    Text(kachel.fachname)
+                        .font(.subheadline)
+                        .foregroundStyle(Farben.text3)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 6)
+                if let r = raumZeile {
+                    kachelText(r, karte: kachel.karte)
+                        .font(.subheadline.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(w.gedaempft ? Farben.text2 : Farben.text)
+                        .strikethrough(entfall, color: Farben.entfall)
+                        .lineLimit(1)
+                        .layoutPriority(1)
+                } else if kachel.online {
+                    Image(systemName: "video.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(Farben.akzent)
+                        .accessibilityHidden(true)
+                }
             }
-            if !kachel.fachname.isEmpty {
-                Text(kachel.fachname)
-                    .font(.subheadline)
-                    .foregroundStyle(Farben.text2)
-                    .lineLimit(1)
-            }
-            if !kachel.personenzeilen.isEmpty {
-                personenText
-            }
-            if hatZeichen {
-                zeichenZeile
-                    .padding(.top, 2)
+            if !personen.isEmpty || merkmal != nil || kachel.online || kachel.hausaufgabe || kachel.info {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    if !personen.isEmpty {
+                        personenText
+                    }
+                    Spacer(minLength: 4)
+                    zeichen
+                }
             }
             if laeuft {
                 ProgressView(value: anteil)
                     .tint(Farben.akzentHell)
-                    .padding(.top, 4)
+                    .padding(.top, 3)
                     .accessibilityHidden(true)
             }
         }
-        .padding(.leading, 20)
-        .padding(.trailing, 16)
-        .padding(.vertical, 12)
+        .padding(.leading, w.balken != nil && !w.balkenOben ? w.balkenBreite + 10 : 12)
+        .padding(.trailing, 12)
+        .padding(.top, abstand + (w.balkenOben && w.balken != nil ? w.balkenBreite : 0))
+        .padding(.bottom, abstand)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            ZStack {
-                form.fill(flaeche)
-                if entfall {
-                    Streifenmuster(abstand: 8)
-                        .stroke(Farben.entfall.opacity(0.14), lineWidth: 1)
-                }
+        .kartenStil(w)
+        .overlay {
+            if laeuft {
+                RoundedRectangle(cornerRadius: w.radius, style: .continuous)
+                    .strokeBorder(Farben.akzent, lineWidth: 2)
             }
         }
-        .overlay(alignment: .leading) {
-            balken.frame(width: 6)
-        }
-        .clipShape(form)
-        .overlay {
-            form.strokeBorder(randFarbe, style: randStil)
-        }
-        .opacity(vorbei ? 0.5 : 1)
-        .contentShape(form)
+        .opacity(vorbei ? 0.55 : 1)
+        .contentShape(RoundedRectangle(cornerRadius: w.radius, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(kachel.vorlesetext + (laeuft ? ", läuft gerade" : (vorbei ? ", vorbei" : "")))
         .accessibilityAddTraits(.isButton)
@@ -410,48 +399,24 @@ struct ListenKachel: View {
         return min(1, max(0, Double(m - kachel.beginn) / Double(kachel.ende - kachel.beginn)))
     }
 
-    private var kopfzeile: some View {
-        HStack(spacing: 8) {
-            if let merkmal, betont {
-                Statusabzeichen(merkmal: merkmal, gefuellt: true)
-            }
-            if laeuft, let m = jetzt {
-                Text("JETZT · noch \(Uhr.dauer(kachel.ende - m))")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Farben.akzent)
-                    .lineLimit(1)
-            } else if let bald {
-                Text("in \(Uhr.dauer(bald))")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Farben.akzent)
-                    .lineLimit(1)
-            }
-        }
-    }
-
     @ViewBuilder
-    private var raumText: some View {
-        if let raum = kachel.zeile("raum"), !raum.text.isEmpty {
-            kachelText(raum, karte: kachel.karte)
-                .font(.title3.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(entfall ? Farben.text2 : Farben.text)
-                .strikethrough(entfall, color: Farben.entfall)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .layoutPriority(1)
-        } else if kachel.online {
-            Image(systemName: "video.fill")
-                .font(.body)
+    private var jetztZeile: some View {
+        if laeuft, let m = jetzt {
+            Text("JETZT · noch \(Uhr.dauer(kachel.ende - m))")
+                .font(.caption2.weight(.bold))
                 .foregroundStyle(Farben.akzent)
-                .accessibilityHidden(true)
+                .lineLimit(1)
+        } else if let bald {
+            Text("IN \(Uhr.dauer(bald).uppercased())")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Farben.akzent)
+                .lineLimit(1)
         }
     }
 
     private var personenText: some View {
-        let zeilen = kachel.personenzeilen
         var t = Text("")
-        for (i, z) in zeilen.enumerated() {
+        for (i, z) in personen.enumerated() {
             if i > 0 { t = t + Text("  ·  ") }
             t = t + kachelText(z, karte: kachel.karte)
         }
@@ -462,26 +427,28 @@ struct ListenKachel: View {
             .lineLimit(2)
     }
 
-    private var hatZeichen: Bool {
-        (merkmal != nil && !betont) || kachel.online || kachel.hausaufgabe || kachel.info
-    }
-
-    private var zeichenZeile: some View {
-        HStack(spacing: 8) {
-            if let merkmal, !betont { Statusabzeichen(merkmal: merkmal, klein: true) }
-            if kachel.online { Statusabzeichen(merkmal: Statuslehre.online, klein: true) }
+    /// Statuswort und kleine Zeichen rechts unten (Online, Hausaufgabe, Info).
+    private var zeichen: some View {
+        HStack(spacing: 6) {
+            if let merkmal {
+                Statuswort(merkmal: merkmal, klein: false)
+            }
+            if kachel.online {
+                Image(systemName: "video")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Farben.akzent)
+            }
             if kachel.hausaufgabe {
-                Label("Hausaufgabe", systemImage: "checklist")
-                    .font(.caption.weight(.medium))
+                Image(systemName: "checklist")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Farben.text2)
             }
             if kachel.info {
-                Label("Info", systemImage: "info.circle")
-                    .font(.caption.weight(.medium))
+                Image(systemName: "info.circle")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Farben.text2)
             }
         }
-        .labelStyle(.titleAndIcon)
-        .lineLimit(1)
+        .accessibilityHidden(true)
     }
 }

@@ -62,7 +62,7 @@ public static class SsoApi
             if (bd.Holen(e.BenutzerId) is not { Gesperrt: false } b)
                 return Results.Json(new { fehler = "Dieses Konto ist gesperrt." }, statusCode: 403);
             await c.AnmeldenAsync(b);
-            prot.Schreiben(b.Login, "Anmeldung (UntPlanMobile, SSO)");
+            prot.Schreiben(b.Login, "Anmeldung (EduOrga Mobile, SSO)");
             return Results.Json(new { ok = true });
         });
     }

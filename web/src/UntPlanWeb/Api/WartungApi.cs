@@ -102,7 +102,7 @@ public static class WartungApi
             };
             return Results.Json(new
             {
-                produkt = "UntPlanWeb", version = Updatepruefung.VersionVon(typeof(WartungApi).Assembly),
+                produkt = "EduOrga Web", version = Updatepruefung.VersionVon(typeof(WartungApi).Assembly),
                 laufzeit = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
                 datenbank = db.Art == Datenbankart.MySql ? "MySQL/MariaDB" : "SQLite", schemastand = db.Version(),
                 schule = e.Schulname.Length > 0 ? e.Schulname : s?.Paket.Schule.Name ?? "", schulId = e.SchulId,

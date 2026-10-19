@@ -19,7 +19,7 @@ namespace UntPlanWeb.Api;
 public static class ErweiterungApi
 {
     /// <summary>Hinweis für ältere Apps, die „Findet online statt“ noch setzen wollen.</summary>
-    public const string OnlineHinweis = "„Findet online statt“ wird in UntPlan Studio festgelegt.";
+    public const string OnlineHinweis = "„Findet online statt“ wird in EduOrga Studio festgelegt.";
     /// <summary>„Findet online statt“ einer Stunde (ältere Apps) – wird ignoriert, siehe PUT /klassenbuch/online.</summary>
     public sealed record OnlineDaten(DateOnly Datum, int Stunde, int Unterricht, bool Online, string? Link = null, string? OnlineLink = null, int? Einzelstunde = null);
     public sealed record AbwesenheitNeuDaten(int SchuelerId, DateOnly Von, DateOnly Bis, int? StundeVon, int? StundeBis, string? Grund, string? Status, string? Bemerkung,
@@ -44,7 +44,7 @@ public static class ErweiterungApi
     private const string Geraetecookie = "untplan-geraet";
 
     private static Benutzer Ich(HttpContext c) => c.Ich() ?? throw new NichtAngemeldetException();
-    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus UntPlan übertragen.");
+    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus EduOrga Studio übertragen.");
     private static Benutzer Kollegium(HttpContext c) { var b = Ich(c); return b.Kollegium ? b : throw new UnauthorizedAccessException("Nur für das Kollegium."); }
     private static Benutzer Admin(HttpContext c) { var b = Ich(c); return b.IstAdmin ? b : throw new UnauthorizedAccessException("Nur für die Administration."); }
     private static DateOnly D(string? s, DateOnly vorgabe) => DateOnly.TryParse(s, out var d) ? d : vorgabe;
@@ -458,7 +458,7 @@ public static class ErweiterungApi
             var basis = $"{c.Request.Scheme}://{c.Request.Host}{c.Request.PathBase}";
             static string X(string s) => SecurityElement.Escape(s) ?? "";
             sb.Append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\"><channel>");
-            sb.Append($"<title>{X("Nachrichten zum Tag – " + e.Schulname)}</title><link>{X(basis)}/</link><description>Öffentliche Nachrichten zum Tag (UntPlanWeb)</description><language>de-de</language>");
+            sb.Append($"<title>{X("Nachrichten zum Tag – " + e.Schulname)}</title><link>{X(basis)}/</link><description>Öffentliche Nachrichten zum Tag (EduOrga Web)</description><language>de-de</language>");
             for (var d = uhr.Heute; d <= uhr.Heute.AddDays(6); d = d.AddDays(1))
                 foreach (var n in vp.NachrichtenDetails(p.Aktuell, d, false, "oeffentlich"))
                     sb.Append($"<item><title>{X(n.Betreff.Length > 0 ? n.Betreff : n.Text.Length > 60 ? n.Text[..60] + " …" : n.Text)}</title><description>{X(n.Text)}</description>")

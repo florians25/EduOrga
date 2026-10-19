@@ -15,7 +15,7 @@ public static partial class OberflaecheApi
     public sealed record RaumaenderungDaten(DateOnly Datum, int StundeVon, int? StundeBis, int Unterricht, List<string>? Raeume);
 
     private static Benutzer Ich(HttpContext c) => c.Ich() ?? throw new NichtAngemeldetException();
-    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus UntPlan übertragen.");
+    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus EduOrga Studio übertragen.");
     private static Benutzer Kollegium(HttpContext c) { var b = Ich(c); return b.Kollegium ? b : throw new UnauthorizedAccessException("Nur für das Kollegium."); }
 
     public static void Abbilden(WebApplication app)

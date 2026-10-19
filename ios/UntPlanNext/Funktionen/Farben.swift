@@ -82,6 +82,10 @@ enum Farben {
     static let blatt = Color(uiColor: .systemBackground)
     /// Neutrale Fläche für Zahl-Plaketten, Eingabefelder und stille Knöpfe
     static let neutralFlaeche = Color(hell: 0xEBEEF2, dunkel: 0x222A34)
+    /// Neutrale Fläche der Stundenkarten („neutral“ der Kartendarstellung, wie im Web #f7f9fa)
+    static let kachelFlaeche = Color(hell: 0xF7F9FA, dunkel: 0x172A2E)
+    /// Feine Linie der Stundenkarten (wie im Web #c3ced2)
+    static let kachelRand = Color(hell: 0xC3CED2, dunkel: 0x33494E)
     /// Eigene Abwesenheit hinter den Stunden
     static let abwesendFlaeche = Color(hell: 0xDCE1E7, dunkel: 0x2A323D)
 

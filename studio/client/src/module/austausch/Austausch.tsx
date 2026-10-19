@@ -1,5 +1,5 @@
 // Import und Export: alles in einer Seite (Schuldatei, Import, Export, Abteilungsplanung, Protokoll des letzten Imports).
-import { Button, Input, Select, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Select, makeStyles, tokens } from '@fluentui/react-components';
 import { useState, type ReactNode } from 'react';
 import { api, dateiHerunterladen } from '@/api/client';
 import { befehl } from '@/kern/befehle';

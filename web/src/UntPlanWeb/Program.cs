@@ -207,8 +207,8 @@ public class Program
     }
 
     static IResult OhneOberflaeche() => Results.Content("""
-        <!doctype html><html lang="de"><head><meta charset="utf-8"><title>UntPlanWeb</title></head>
-        <body style="font-family:system-ui,sans-serif;margin:3rem;color:#1d2530"><h1>UntPlanWeb</h1>
+        <!doctype html><html lang="de"><head><meta charset="utf-8"><title>EduOrga Web</title></head>
+        <body style="font-family:system-ui,sans-serif;margin:3rem;color:#1d2530"><h1>EduOrga Web</h1>
         <p>Die Oberfläche ist noch nicht gebaut. Bitte im Ordner <code>web/client</code> <code>npm ci</code> und <code>npm run build</code> ausführen
         (die Ausgabe landet in <code>wwwroot</code>). Die Programmierschnittstelle unter <code>/api</code> ist bereit.</p></body></html>
         """, "text/html; charset=utf-8");

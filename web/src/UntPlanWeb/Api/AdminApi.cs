@@ -183,7 +183,7 @@ public static class AdminApi
         api.MapPost("/benutzer/stammdaten", (StammdatenDaten d, HttpContext c, Benutzerdienst bd, Paketdienst p, Protokoll prot, Verwaltungsdienst vw) =>
         {
             var ich = Benutzerverwaltung(c);
-            var s = p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Stammdaten aus UntPlan übertragen.");
+            var s = p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Stammdaten aus EduOrga Studio übertragen.");
             var neu = bd.AusStammdaten(s.Paket, d.Lehrer, d.Klassen, vw.Text("zuordnung", "leitungKuerzel").Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries));
             prot.Schreiben(ich.Login, "Konten aus Stammdaten angelegt", neu.Count.ToString());
             var csv = new StringBuilder("Benutzername;Startpasswort;Rolle;Kürzel;Name\r\n");

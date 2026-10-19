@@ -92,7 +92,7 @@ public static class Recht
         new(AdminImport, "Administration", "Import", "Benutzer und Schüler*innen aus CSV-Dateien importieren.", false, true, S(J, N, N, N, N)),
         new(AdminExport, "Administration", "Export", "Daten als CSV exportieren.", false, true, S(J, N, N, N, N)),
         new(AdminEinstellungen, "Administration", "Einstellungen", "Einstellungen der Administration ändern.", false, true, S(J, N, N, N, N)),
-        new(AdminWartung, "Administration", "Systemwartung", "Aktive Benutzer ansehen, den Zugriff sperren bzw. freigeben (Wartungsmodus) und „Über UntPlan“ aufrufen; bei gesperrtem Zugriff weiterhin anmelden.", false, true, S(J, N, N, N, N)),
+        new(AdminWartung, "Administration", "Systemwartung", "Aktive Benutzer ansehen, den Zugriff sperren bzw. freigeben (Wartungsmodus) und „Über EduOrga“ aufrufen; bei gesperrtem Zugriff weiterhin anmelden.", false, true, S(J, N, N, N, N)),
     };
 
     public static readonly Dictionary<string, RechtInfo> NachId = Katalog.ToDictionary(r => r.Id);

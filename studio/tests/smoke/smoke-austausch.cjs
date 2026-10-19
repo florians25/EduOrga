@@ -92,7 +92,7 @@ function attrappe(rueckmeldungen) {
 
     // Einstellungen: Verbindung prüfen
     await h.werkzeug(page, 'untplanweb', 'Einstellungen');
-    await page.waitForSelector('[role=dialog]:has-text("Einstellungen für UntPlan Web")');
+    await page.waitForSelector('[role=dialog]:has-text("Einstellungen für")');
     await page.locator('[role=dialog] button', { hasText: 'Verbindung prüfen' }).click();
     await page.waitForSelector('[role=dialog] [data-pruefung=ok]', { timeout: 15000 });
     await foto('05-untplanweb-einstellungen');

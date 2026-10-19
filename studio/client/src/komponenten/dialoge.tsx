@@ -13,6 +13,7 @@ import { Dismiss24Regular } from '@fluentui/react-icons';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { create } from 'zustand';
 import type { ElementOption } from '@/api/typen';
+import { DatumFeld } from './eingaben';
 import { SuchAuswahl } from './suchauswahl';
 
 type Render<T> = (schliessen: (wert: T | null) => void) => JSX.Element;
@@ -180,11 +181,13 @@ function FormularInhalt({ titel, felder, okText, breite, schliessen }: { titel: 
                 <SuchAuswahl name={f.name} wert={String(werte[f.name] ?? '')} beiWahl={(w) => setzen(f.name, w)} autoFocus={autofokus} ariaLabel={f.titel}
                   mehrfach={f.art === 'elemente'} platzhalter="Suchen …"
                   optionen={(f.elemente || []).map((e) => ({ wert: e.k, kurz: e.k, text: e.l ? `${e.k} – ${e.l}` : e.k }))} />
+              ) : f.art === 'datum' ? (
+                <DatumFeld size="medium" aria-label={f.titel} autoFocus={autofokus} wert={String(werte[f.name] ?? '')} beiAenderung={(w) => setzen(f.name, w)} leerErlaubt={!f.pflicht} />
               ) : f.art === 'textfeld' ? (
                 <Textarea name={f.name} value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} rows={4} autoFocus={autofokus} resize="vertical" />
               ) : (
                 <Input name={f.name} value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} autoFocus={autofokus}
-                  type={f.art === 'passwort' ? 'password' : f.art === 'zahl' ? 'number' : f.art === 'datum' ? 'date' : 'text'}
+                  type={f.art === 'passwort' ? 'password' : f.art === 'zahl' ? 'number' : 'text'}
                   autoComplete={f.art === 'passwort' ? 'new-password' : 'off'} />
               )}
             </Field>

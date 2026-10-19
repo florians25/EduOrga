@@ -29,10 +29,11 @@ const useStile = makeStyles({
     position: 'relative', zIndex: 2,
   },
   marke: { display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '8px', userSelect: 'none' },
-  logo: { width: '24px', height: '24px', display: 'block' },
-  wortmarke: { fontSize: '15px', whiteSpace: 'nowrap', '@media (max-width: 1440px)': { display: 'none' } },
+  logo: { width: '28px', height: '28px', display: 'block' },
+  wortmarke: { fontSize: '17px', whiteSpace: 'nowrap', letterSpacing: '-0.005em', '@media (max-width: 1440px)': { display: 'none' } },
   wortmarkeFett: { fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
-  zusatz: { color: tokens.colorNeutralForeground3, marginLeft: '5px', fontWeight: tokens.fontWeightRegular },
+  wortmarkeLeicht: { fontWeight: tokens.fontWeightRegular, color: tokens.colorNeutralForeground1 },
+  zusatz: { color: tokens.colorNeutralForeground3, marginLeft: '6px', fontWeight: tokens.fontWeightRegular },
   modi: { flexShrink: 0, alignSelf: 'stretch', alignItems: 'stretch' },
   modusTab: {
     padding: '0 12px', borderRadius: 0,
@@ -203,7 +204,7 @@ export function Kopfleiste() {
       </Tooltip>
       <div className={s.marke}>
         <img src={logo} alt="" className={s.logo} />
-        <span className={s.wortmarke}><span className={s.wortmarkeFett}>EduOrga</span><span className={s.zusatz}>Studio</span></span>
+        <span className={s.wortmarke} aria-label="EduOrga Studio"><span className={s.wortmarkeFett}>Edu</span><span className={s.wortmarkeLeicht}>Orga</span><span className={s.zusatz}>Studio</span></span>
       </div>
       <span className={s.trenner} />
       <DokumentMenue />

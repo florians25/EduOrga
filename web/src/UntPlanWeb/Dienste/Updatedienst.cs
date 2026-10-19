@@ -129,7 +129,7 @@ public sealed class Updatedienst
                 zeit = DateTime.Now.ToString("O"), benutzer, version = stand.Version, neueste = stand.Neueste, sicherung,
             }), ct);
             _protokoll.Schreiben(benutzer, "Update angefordert", $"{stand.Version} → {stand.Neueste ?? "neueste"} (Anforderungsdatei)");
-            return new Updateanstoss(true, "Update angefordert. Das Update-Skript auf dem Server übernimmt es beim nächsten Lauf (in der Regel innerhalb einer Minute); danach startet UntPlanWeb neu.", sicherung);
+            return new Updateanstoss(true, "Update angefordert. Das Update-Skript auf dem Server übernimmt es beim nächsten Lauf (in der Regel innerhalb einer Minute); danach startet EduOrga Web neu.", sicherung);
         }
 
         // Watchtower: der Aufruf blockiert, bis das Update fertig ist – oft wird dabei dieser Container ersetzt.

@@ -40,7 +40,7 @@ public static class SyncApi
             {
                 var stand = p.Speichern(paket);
                 if (e.Schulname.Length == 0 && stand.Paket.Schule.Name.Length > 0) e.Schreiben("schulname", stand.Paket.Schule.Name);
-                prot.Schreiben("UntPlan", "Paket empfangen", $"Revision {paket.Revision}, Teile: {(paket.Teile.Count == 0 ? "alle" : string.Join(", ", paket.Teile))}");
+                prot.Schreiben("EduOrga Studio", "Paket empfangen", $"Revision {paket.Revision}, Teile: {(paket.Teile.Count == 0 ? "alle" : string.Join(", ", paket.Teile))}");
                 return Results.Json(new WebAntwort(true, paket.Revision, null), UntPlanWebSchema.Json);
             }
             catch (Paketdienst.VeralteteRevisionException ex)
@@ -61,7 +61,7 @@ public static class SyncApi
             var knoten = await JsonNode.ParseAsync(ctx.Request.Body);
             var ids = (knoten as JsonArray ?? knoten?["ids"] as JsonArray)?.Select(x => x?.GetValue<string>()).OfType<string>().ToList() ?? new();
             var n = r.Quittieren(ids) + bu.Quittieren(ids);
-            if (n > 0) prot.Schreiben("UntPlan", "Rückmeldungen quittiert", n.ToString());
+            if (n > 0) prot.Schreiben("EduOrga Studio", "Rückmeldungen quittiert", n.ToString());
             return Results.Json(new { ok = true, quittiert = n });
         });
 

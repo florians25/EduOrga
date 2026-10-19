@@ -1,5 +1,5 @@
 // Vertretung der Pausenaufsichten eines Tages (Vertretungsmodus): abwesende Aufsichten, Auswahl der Vertretung.
-import { Input, Select } from '@fluentui/react-components';
+import { Select } from '@fluentui/react-components';
 import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';

@@ -1,5 +1,5 @@
 // Dialoge des Druckmoduls: Aushang (HTML/ZIP) und Kalender der Lehrkräfte (iCalendar).
-import { Field, Input, Select } from '@fluentui/react-components';
+import { Field, Select } from '@fluentui/react-components';
 import { useState } from 'react';
 import { api } from '@/api/client';
 import { vergleich } from '@/kern/hilfen';

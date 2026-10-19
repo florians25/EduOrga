@@ -24,7 +24,7 @@ public static class EntschuldigungApi
         return b.Kollegium ? b : throw new UnauthorizedAccessException("Nur für das Kollegium.");
     }
 
-    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus UntPlan übertragen.");
+    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus EduOrga Studio übertragen.");
     private static DateOnly Datum(string? s, DateOnly vorgabe) => DateOnly.TryParse(s, out var d) ? d : vorgabe;
     private static string? Leer(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
     private static string? Status(string? s) => Leer(s) is "offen" or "entschuldigt" or "unentschuldigt" ? s!.Trim() : null;

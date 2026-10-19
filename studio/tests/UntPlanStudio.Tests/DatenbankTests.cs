@@ -280,7 +280,13 @@ public sealed class DatenbankTests : IDisposable
         await c.PostJsonAsync($"/api/dokumente/{id}/stammdaten/klasse", new { kurzname = "9z" });
         await c.PostJsonAsync($"/api/dokumente/{id}/speichern");
         Assert.False(Directory.Exists(Path.Combine(ordner, "dokumente")));
-        Assert.Equal(2, db.DokumentSicherungen(id).Count);
+        // automatische Fassungen höchstens alle 10 Minuten (die übernommene .bak ist gerade erst entstanden) – Sicherungspunkt ausdrücklich
+        Assert.Single(db.DokumentSicherungen(id));
+        await c.PostJsonAsync($"/api/dokumente/{id}/sicherungspunkt");
+        var fassungen = db.DokumentSicherungen(id);
+        Assert.Equal(2, fassungen.Count);
+        Assert.Equal(Fassungsarten.Sicherungspunkt, fassungen[0].Art);
+        Assert.Equal("planerin", fassungen[0].Benutzer, ignoreCase: true);
         Assert.Equal(db.DokumentInhalt(id), await c.GetByteArrayAsync($"/api/dokumente/{id}/herunterladen"));
     }
 }

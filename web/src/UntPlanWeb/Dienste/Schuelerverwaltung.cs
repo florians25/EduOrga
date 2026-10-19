@@ -61,7 +61,7 @@ public sealed class Schuelerverwaltung
                 gespeichert.TryGetValue(x.Id, out var z);
                 var bearbeiten = DarfBearbeiten(b, s, x.Klasse);
                 return new Schuelerdaten(x.Id, x.Vorname, x.Name, x.Klasse, z?.Geschlecht ?? "", bearbeiten ? z?.Geburtsdatum ?? "" : "", bearbeiten ? z?.Email ?? "" : "",
-                    bearbeiten ? z?.Bemerkung ?? "" : "", z?.Eigen == true ? "UntPlanWeb" : z != null ? "UntPlan (geändert)" : "UntPlan", z?.Geaendert ?? "", bearbeiten);
+                    bearbeiten ? z?.Bemerkung ?? "" : "", z?.Eigen == true ? "EduOrga Web" : z != null ? "Studio (geändert)" : "Studio", z?.Geaendert ?? "", bearbeiten);
             }).ToList();
     }
 

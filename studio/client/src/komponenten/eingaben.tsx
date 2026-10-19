@@ -1,9 +1,8 @@
-// Eingabebausteine: Datumsfeld (Fluent DatePicker, deutsch, Woche ab Montag, Eingabe „19.10.2026“, „19.10.“, „191026“
-// oder per Kalender) und durchsuchbare Auswahl (Fluent Combobox mit Filter – auch in Dialogen, für lange Listen wie
-// Lehrkräfte, Klassen oder Gruppen).
-import { Combobox, Option, makeStyles, mergeClasses, tokens, type ComboboxProps } from '@fluentui/react-components';
+// Datumsfeld (Fluent DatePicker): deutsch, Woche ab Montag mit Kalenderwochen, Eingabe „19.10.2026“, „19.10.“, „191026“
+// oder über den Kalender. Durchsuchbare Auswahllisten: komponenten/suchauswahl.tsx.
+import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import { DatePicker, type CalendarStrings } from '@fluentui/react-datepicker-compat';
-import { useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 
 // ---------------------------------------------------------------------------------------------
 // Datum
@@ -139,85 +138,5 @@ export function DatumFeld({ wert, beiAenderung, size = 'small', disabled, wochen
         if (d) { const iso = alsIso(d); if (iso !== wert) beiAenderung(iso); } else if (leerErlaubt && wert) beiAenderung('');
       }}
     />
-  );
-}
-
-// ---------------------------------------------------------------------------------------------
-// Durchsuchbare Auswahl
-
-export interface AuswahlOption { wert: string; text: string; nebentext?: string; deaktiviert?: boolean }
-
-const useAuswahlStile = makeStyles({
-  wurzel: { minWidth: '160px' },
-  neben: { color: tokens.colorNeutralForeground3, marginLeft: '8px', fontSize: tokens.fontSizeBase200 },
-  liste: { maxHeight: '360px' },
-});
-
-const norm = (t: string) => t.toLocaleLowerCase('de').normalize('NFD').replace(/[̀-ͯ]/g, '');
-
-export interface SuchauswahlProps {
-  optionen: AuswahlOption[];
-  wert: string | null | undefined;
-  beiWahl: (wert: string) => void;
-  size?: ComboboxProps['size'];
-  disabled?: boolean;
-  placeholder?: string;
-  id?: string;
-  className?: string;
-  style?: CSSProperties;
-  'aria-label'?: string;
-  'data-testid'?: string;
-  autoFocus?: boolean;
-  /** höchstens so viele Treffer zeigen (große Schulen) */
-  grenze?: number;
-  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
-}
-
-/** Auswahlliste mit Suche: Tippen filtert (Kürzel, Name, Nebentext; ohne Groß-/Kleinschreibung und Akzente). */
-export function Suchauswahl({ optionen, wert, beiWahl, size = 'small', disabled, placeholder, id, className, style, autoFocus, grenze = 400, onKeyDown, ...rest }: SuchauswahlProps) {
-  const s = useAuswahlStile();
-  const [suche, setSuche] = useState<string | null>(null);
-  const gewaehlt = optionen.find((o) => o.wert === (wert ?? ''));
-  const treffer = useMemo(() => {
-    if (!suche) return optionen;
-    const q = norm(suche.trim());
-    const anfang: AuswahlOption[] = [], sonst: AuswahlOption[] = [];
-    for (const o of optionen) {
-      const t = norm(o.text), n = norm(o.nebentext || '');
-      if (t.startsWith(q)) anfang.push(o); else if (t.includes(q) || n.includes(q)) sonst.push(o);
-    }
-    return [...anfang, ...sonst];
-  }, [optionen, suche]);
-  return (
-    <Combobox
-      id={id}
-      size={size}
-      disabled={disabled}
-      autoFocus={autoFocus}
-      placeholder={placeholder ?? 'Suchen …'}
-      className={mergeClasses(s.wurzel, className)}
-      style={style}
-      listbox={{ className: s.liste }}
-      aria-label={rest['aria-label']}
-      data-testid={rest['data-testid']}
-      value={suche ?? gewaehlt?.text ?? ''}
-      selectedOptions={wert != null && wert !== '' ? [wert] : gewaehlt ? [gewaehlt.wert] : []}
-      onChange={(e) => setSuche(e.target.value)}
-      onOptionSelect={(_, d) => {
-        setSuche(null);
-        if (d.optionValue !== undefined && d.optionValue !== '__leer' && d.optionValue !== '__mehr' && d.optionValue !== wert) beiWahl(d.optionValue);
-      }}
-      onOpenChange={(_, d) => { if (!d.open) setSuche(null); }}
-      onKeyDown={onKeyDown}
-      onFocus={(e) => (e.target as HTMLInputElement).select?.()}
-    >
-      {treffer.slice(0, grenze).map((o) => (
-        <Option key={o.wert} value={o.wert} text={o.text} disabled={o.deaktiviert}>
-          {o.text}{o.nebentext ? <span className={s.neben}>{o.nebentext}</span> : null}
-        </Option>
-      ))}
-      {!treffer.length ? <Option value="__leer" text="" disabled>Keine Treffer</Option> : null}
-      {treffer.length > grenze ? <Option value="__mehr" text="" disabled>{`… ${treffer.length - grenze} weitere – bitte genauer suchen`}</Option> : null}
-    </Combobox>
   );
 }

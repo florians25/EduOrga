@@ -14,7 +14,7 @@ import { initialen } from '@/kern/hilfen';
 import { useDaten } from '@/kern/laden';
 import { AnsichtRahmen, Werkzeug } from '@/komponenten/ansicht';
 import { dialogZeigen, formular, frage, StandardDialog } from '@/komponenten/dialoge';
-import { Suchauswahl } from '@/komponenten/eingaben';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import './rechte.css';
 
@@ -70,6 +70,7 @@ const useStile = makeStyles({
   hinweis: { margin: 0, padding: '8px 16px', color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, borderBottom: `1px solid ${tokens.colorNeutralStroke3}` },
   leer: { padding: '24px 16px', color: tokens.colorNeutralForeground3 },
   tabelle: { minWidth: '980px' },
+  gruppenwahl: { width: '210px', minWidth: '210px' },
   kopfzelle: { backgroundColor: tokens.colorNeutralBackground3, fontWeight: tokens.fontWeightSemibold, position: 'sticky', top: 0, zIndex: 1 },
   person: { display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 },
   personText: { display: 'flex', flexDirection: 'column', minWidth: 0, lineHeight: '16px' },
@@ -176,7 +177,7 @@ function BenutzerZeile({ b, v, setzen }: { b: VBenutzer; v: Verwaltungsdaten; se
     try { setzen(await api.put<Verwaltungsdaten>(`/api/multiuser/benutzer/${encodeURIComponent(b.name)}`, z)); hinweis('Zuordnung gespeichert.', 'ok', 2000); } catch (e) { fehlerMelden(e); }
   };
   const rolle = ROLLE[b.rolle] || { text: b.rolle, farbe: 'subtle' as const };
-  const optionen = useMemo(() => [{ wert: '0', text: 'Keine Gruppe', nebentext: 'alle Bereiche' }, ...v.gruppen.map((g) => ({ wert: String(g.id), text: g.name }))], [v.gruppen]);
+  const optionen = useMemo(() => [{ wert: '0', text: 'Keine Gruppe (alle Bereiche)', kurz: 'keine' }, ...v.gruppen.map((g) => ({ wert: String(g.id), text: g.name, kurz: g.name }))], [v.gruppen]);
   return (
     <TableRow>
       <TableCell>
@@ -188,8 +189,8 @@ function BenutzerZeile({ b, v, setzen }: { b: VBenutzer; v: Verwaltungsdaten; se
       <TableCell><Badge appearance="tint" color={rolle.farbe} shape="rounded">{rolle.text}</Badge></TableCell>
       <TableCell>
         {planer ? (
-          <Suchauswahl optionen={optionen} wert={String(b.zuordnung?.gruppeId || 0)} aria-label={`Gruppe von ${b.anzeigename}`} style={{ width: 200 }}
-            beiWahl={(w) => { void speichern({ gruppeId: Number(w) }); }} />
+          <SuchAuswahl optionen={optionen} wert={String(b.zuordnung?.gruppeId || 0)} ariaLabel={`Gruppe von ${b.anzeigename}`} size="small" className={s.gruppenwahl}
+            platzhalter="Gruppe suchen …" beiWahl={(w) => { if (w !== String(b.zuordnung?.gruppeId || 0)) void speichern({ gruppeId: Number(w) }); }} />
         ) : <span className={s.anzahl}>{b.rolle === 'Admin' ? 'alle Rechte' : '–'}</span>}
       </TableCell>
       <TableCell><Switch disabled={!planer} aria-label={`Nur lesen für ${b.anzeigename}`} checked={!!b.zuordnung?.nurLesen} onChange={(_, d) => { void speichern({ nurLesen: !!d.checked }); }} /></TableCell>

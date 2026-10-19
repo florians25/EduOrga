@@ -85,7 +85,7 @@ public static class AppApi
         return res.OrderBy(x => x.Datum, StringComparer.Ordinal).ThenBy(x => x.Von, StringComparer.Ordinal).ToList();
     }
 
-    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus UntPlan übertragen.");
+    private static Stand Paket(Paketdienst p) => p.Aktuell ?? throw new ArgumentException("Es wurden noch keine Daten aus EduOrga Studio übertragen.");
 
     private static DateOnly Datum(string? s, Uhr uhr) => DateOnly.TryParse(s, out var d) ? d : uhr.Heute;
 
@@ -196,7 +196,7 @@ public static class AppApi
 
         api.MapPost("/einrichten", async (EinrichtungsDaten d, HttpContext c, Benutzerdienst bd, Einstellungen e, Protokoll prot) =>
         {
-            if (!bd.Keiner) return Results.Json(new { fehler = "UntPlanWeb ist bereits eingerichtet." }, statusCode: 409);
+            if (!bd.Keiner) return Results.Json(new { fehler = "EduOrga Web ist bereits eingerichtet." }, statusCode: 409);
             if (string.IsNullOrWhiteSpace(d.Schulname)) throw new ArgumentException("Bitte den Namen der Schule eingeben.");
             var b = bd.Anlegen(string.IsNullOrWhiteSpace(d.Login) ? "admin" : d.Login, d.Passwort, Rollen.Admin, "", "Administration");
             e.Schreiben("schulname", d.Schulname.Trim());
@@ -396,7 +396,7 @@ public static class AppApi
         });
 
         api.MapDelete("/meldungen/{id}", (string id, HttpContext c, Rueckmeldungsdienst r) =>
-            r.Zurueckziehen(id, Ich(c).Id) ? Results.Json(new { ok = true }) : Results.Json(new { fehler = "Die Meldung wurde bereits von UntPlan übernommen." }, statusCode: 409));
+            r.Zurueckziehen(id, Ich(c).Id) ? Results.Json(new { ok = true }) : Results.Json(new { fehler = "Die Meldung wurde bereits von EduOrga Studio übernommen." }, statusCode: 409));
 
         // ---------------------------------------------------------------- Mitteilungen
 
@@ -776,7 +776,7 @@ public static class AppApi
         static string T(string s) => s.Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\n", "\\n");
         Z("BEGIN:VCALENDAR");
         Z("VERSION:2.0");
-        Z("PRODID:-//UntPlanWeb//DE");
+        Z("PRODID:-//EduOrga Web//DE");
         Z($"X-WR-CALNAME:{T($"Stundenplan {element} – {schule}")}");
         Z("CALSCALE:GREGORIAN");
         if (element != null)
