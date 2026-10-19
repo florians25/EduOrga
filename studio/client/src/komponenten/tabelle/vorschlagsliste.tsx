@@ -8,7 +8,7 @@
 // Reihenfolge der Treffer: gleicher Kurzname, Kurzname beginnt mit der Eingabe, Langname beginnt damit, Kurz- oder Langname
 // enthält die Eingabe. Tastatur: ↑/↓ wählen, Enter/Tab übernehmen, Alt+↓ bzw. F4 alle zeigen, Esc schließen.
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
-import { createPortal } from 'react-dom';
+import { Portal } from '@fluentui/react-components';
 import type { ElementOption } from '@/api/typen';
 
 export interface VorschlagslisteApi {
@@ -179,8 +179,8 @@ export const Vorschlagsliste = forwardRef<VorschlagslisteApi, Props>(function Vo
   }));
 
   if (!offen) return null;
-  return createPortal(
-    <div className="vs-liste" role="listbox" id={id} aria-multiselectable={liste || undefined} ref={listeRef}
+  return (
+    <Portal><div className="vs-liste" role="listbox" id={id} aria-multiselectable={liste || undefined} ref={listeRef}
       style={{ left: pos.left, top: pos.top, bottom: pos.bottom, minWidth: pos.minWidth }} onPointerDown={(e) => e.preventDefault()}>
       {eintraege.length === 0 ? <div className="vs-leer">Kein passender Eintrag</div> : null}
       {eintraege.map((e, i) => {
@@ -194,7 +194,6 @@ export const Vorschlagsliste = forwardRef<VorschlagslisteApi, Props>(function Vo
         );
       })}
       {liste ? <div className="vs-fuss">Klick schaltet um · Enter ergänzt · Tab bzw. Strg+Enter speichert</div> : null}
-    </div>,
-    document.body,
+    </div></Portal>
   );
 });

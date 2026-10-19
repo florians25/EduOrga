@@ -181,6 +181,7 @@ export default function Liste({ p }: AnsichtProps) {
       return {
         schluessel: s.schluessel, titel: sl ? sl[1] : spaltenTitel(s), hinweis: spaltenFeld(s), breite: sl ? sl[2] : Math.max(s.breite, BREITE[s.schluessel] || 0),
         art: s.schluessel in ELEMENT ? 'Element' : s.nurLesen ? 'NurLesen' : 'Text', refTyp: ELEMENT[s.schluessel],
+        zusatzWerte: s.schluessel === 'Vertreter' ? ['-', '+', '---', '+++', '???'] : s.schluessel === 'NRaum' ? ['???'] : undefined,
         editierbar: EDITIERBAR.has(s.schluessel) && schreiben, editierbarFuer: (z) => editierbar(z, s.schluessel),
         ausrichtung: ['Nr', 'Std', 'Entf', 'Fix', 'ND', 'Mitb', 'Neu', 'Ben', 'Zaehler'].includes(s.schluessel) ? 'rechts' : undefined,
         standard: s.standard, farbe: schlank && s.schluessel === 'Art' ? undefined : (z) => farbe(z, s.schluessel), klasse: (z) => zellKlasse(z, s.schluessel),
@@ -302,6 +303,8 @@ export default function Liste({ p }: AnsichtProps) {
     // bearbeitete Zeilen verschwinden erst beim Wechsel in eine andere Zeile, wenn sie nicht mehr zum Filter passen
     if (z && letzteAktiv.current && z.id !== letzteAktiv.current && behalten.current.size && !behalten.current.has(z.m.v)) { behalten.current.clear(); entprelltLaden(); }
     letzteAktiv.current = z?.id ?? null;
+    // die gewählte Zeile bleibt sichtbar, auch wenn sie anderswo bearbeitet wird (Vorschlag, Tagesplan) und nicht mehr zum Filter passt
+    if (z?.m.v && FA()) behalten.current.add(z.m.v);
     if (z?.m.v) auswahlMelden({ id: z.m.v, ids: markierteIds(), zeile: z.m, quelle: a.id, text: `${z.Datum} ${z.Std}. Std. ${z.Klassen || ''}` });
     vorschlagVorladen(z);
   }
@@ -484,8 +487,18 @@ export default function Liste({ p }: AnsichtProps) {
       <Tabelle<VZeile> ref={tabelle} name="vertretungen" spalten={spalten} zeilen={zeilen} zeilenHoehe={schlank ? 34 : 30}
         leerText="Im gewählten Zeitraum gibt es keine Vertretungen."
         sortierbar={!nachTagen}
-        zeilenKlasse={(z) => z.m.tageskopf ? `vt-tageskopf${z.m.datum === planungsdatum() ? ' vt-planungstag' : ''}` : [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.current.has(z.m.v) ? 'vt-behalten' : ''].filter(Boolean).join(' ')}
+        zeilenKlasse={(z) => z.m.tageskopf ? `vt-tageskopf${z.m.datum === planungsdatum() ? ' vt-planungstag' : ''}` : [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.current.has(z.m.v) ? (filter.offen && !z.m.offen && !z.m.raumOffen ? 'vt-behalten vt-erledigt' : 'vt-behalten') : ''].filter(Boolean).join(' ')}
         aendern={schreiben ? async (z, s, wert) => { await aktion('/aendern', { spalte: s.schluessel, wert }, zielIds(z)); } : undefined}
+        aendernMehrere={schreiben ? async (liste) => {
+          // Einfügen, Ausfüllen, Mehrfach ändern: je Spalte und Wert ein Aufruf mit allen betroffenen Vertretungen
+          const gruppen = new Map<string, { spalte: string; wert: string; ids: number[] }>();
+          for (const x of liste) {
+            const k = `${x.spalte.schluessel}\u0001${x.wert}`;
+            if (!gruppen.has(k)) gruppen.set(k, { spalte: x.spalte.schluessel, wert: x.wert, ids: [] });
+            gruppen.get(k)!.ids.push(...(x.zeile.m.gruppe?.length ? x.zeile.m.gruppe : [x.zeile.m.v]).filter((i: number) => i > 0));
+          }
+          for (const g of gruppen.values()) await aktion('/aendern', { spalte: g.spalte, wert: g.wert }, [...new Set(g.ids)]);
+        } : undefined}
         optionen={(s) => {
           const z = tabelle.current?.aktiveZeile();
           if (!z?.m.v) return elemente(ELEMENT[s.schluessel] || 'lehrer');

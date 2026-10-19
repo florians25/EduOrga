@@ -36,7 +36,7 @@ const useStile = makeStyles({
   },
 });
 
-/** Umschalter mit zwei oder mehr Möglichkeiten („Tag | Woche“): eine ist gewählt (Marine). */
+/** Umschalter mit zwei oder mehr Möglichkeiten („Tag | Woche“): eine ist gewählt (Markenfarbe). */
 export function Umschalter<T extends string>({ wert, optionen, beiWahl, titel, testid }: {
   wert: T; optionen: { wert: T; text: string; titel?: string }[]; beiWahl: (w: T) => void; titel: string; testid?: string;
 }) {

@@ -118,10 +118,10 @@ export default function Veranstaltungen() {
   const rot = (z: VZeile) => (z.offen ? 'vt-rot' : null);
   const spalten: Spalte<VZeile>[] = [
     { schluessel: 'nr', titel: 'Nr.', breite: 56, art: 'NurLesen', ausrichtung: 'rechts', klasse: rot },
-    { schluessel: 'k', titel: 'Klassen', breite: 110, hinweis: 'Klassen – ihr Unterricht entfällt', art: 'ElementListe', refTyp: 'klasse', editierbarFuer: ed },
-    { schluessel: 'kt', titel: 'Klassenteil', breite: 90, hinweis: 'Klassenteil – der übrige Unterricht findet parallel statt', art: 'ElementListe', refTyp: 'klasse', editierbarFuer: ed },
-    { schluessel: 'l', titel: 'Lehrkräfte', breite: 130, art: 'ElementListe', refTyp: 'lehrer', editierbarFuer: ed, farbe: (z) => (z.offen ? 'var(--up-entfall-flaeche)' : null), klasse: rot },
-    { schluessel: 'r', titel: 'Räume', breite: 80, art: 'ElementListe', refTyp: 'raum', editierbarFuer: ed },
+    { schluessel: 'k', titel: 'Klassen', pruefen: false, breite: 110, hinweis: 'Klassen – ihr Unterricht entfällt', art: 'ElementListe', refTyp: 'klasse', editierbarFuer: ed },
+    { schluessel: 'kt', titel: 'Klassenteil', pruefen: false, breite: 90, hinweis: 'Klassenteil – der übrige Unterricht findet parallel statt', art: 'ElementListe', refTyp: 'klasse', editierbarFuer: ed },
+    { schluessel: 'l', titel: 'Lehrkräfte', pruefen: false, breite: 130, art: 'ElementListe', refTyp: 'lehrer', editierbarFuer: ed, farbe: (z) => (z.offen ? 'var(--up-entfall-flaeche)' : null), klasse: rot },
+    { schluessel: 'r', titel: 'Räume', pruefen: false, breite: 80, art: 'ElementListe', refTyp: 'raum', editierbarFuer: ed },
     { schluessel: 'v', titel: 'Von', breite: 96, editierbarFuer: ed },
     { schluessel: 'sv', titel: 'ab Std.', breite: 60, art: 'Ganzzahl', ausrichtung: 'rechts', editierbarFuer: ed },
     { schluessel: 'b', titel: 'Bis', breite: 96, editierbarFuer: ed },

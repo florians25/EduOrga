@@ -45,7 +45,7 @@
 .tb-zeile.vt-tageskopf.vt-planungstag { box-shadow: inset 3px 0 0 var(--colorBrandStroke1); }
 .tb-zeile.vt-tageskopf.vt-planungstag .tb-zelle.vt-tageskopf-text { color: var(--colorBrandForeground1); }
 
-/* Wochenpläne: Planungstag mit Marine-Linie oben und heller Fläche; Köpfe anderer Tage wechseln den Planungstag */
+/* Wochenpläne: Planungstag mit Linie in der Markenfarbe oben und heller Fläche; Köpfe anderer Tage wechseln den Planungstag */
 .ra-kopf.vt-planungstag { color: var(--colorBrandForeground1); font-weight: 600; background: var(--colorBrandBackground2); box-shadow: inset 0 3px 0 var(--colorBrandStroke1); }
 .ra-feld.vt-planungstag { background: color-mix(in srgb, var(--colorBrandBackground2) 70%, transparent); }
 .ra-kopf .vt-tagwahl {
@@ -58,7 +58,7 @@
 
 /* Wochenstreifen im Tageskopf */
 .vt-wtag {
-  all: unset; box-sizing: border-box; display: inline-flex; align-items: baseline; justify-content: center; gap: 5px; min-width: 50px; padding: 2px 8px;
+  all: unset; box-sizing: border-box; display: inline-flex; align-items: baseline; justify-content: center; gap: 4px; min-width: 44px; padding: 2px 6px;
   border-radius: 4px; cursor: pointer; font-size: 12px; line-height: 20px; color: var(--colorNeutralForeground2); border: 1px solid transparent;
   font-variant-numeric: tabular-nums;
 }
@@ -81,3 +81,16 @@
 .ra.vt-flach .ra-eintrag .fusszeile .plakette { font-size: 9px; line-height: 13px; padding: 0 3px; }
 .tb-zeile.vt-tageskopf .tb-zelle.vt-tageskopf-zahl { overflow: visible; padding-left: 34px; }
 .tb-zeile.vt-tageskopf .tb-zelle.vt-tageskopf-zahl > span.t { max-width: none; overflow: visible; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+/* niedrige Fenster (z. B. 1366×768): einzeilige Stunden, damit beide Wochenpläne die ganze Woche zeigen; Einzelheiten im Tooltip */
+@media (max-height: 860px) {
+  .ra.vt-flach .ra-gitter { grid-template-rows: 28px !important; grid-auto-rows: minmax(24px, auto); }
+  .ra.vt-flach .ra-eintrag { padding: 1px 4px; }
+  .ra.vt-flach .ra-eintrag .fusszeile { display: none; }
+  .ra.vt-flach .ra-feld.pause-danach, .ra.vt-flach .ra-stunde.pause-danach { border-bottom-width: 3px; }
+}
+/* Pläne der Tagesplanung: der Typ steht an der Auswahl (Klasse, Lehrkraft) – der Kopf hat Platz für Umschalter und Knöpfe */
+.vt-plan-tp > div:first-child > span:first-child { visibility: hidden; }
+
+/* bearbeitete Zeile, die nicht mehr zum Filter „Nur offene“ passt: bleibt bis zum Zeilenwechsel bzw. Filterwechsel sichtbar */
+.tb-zeile.vt-erledigt .tb-zelle { color: var(--colorNeutralForeground3); }
+.tb-zeile.vt-erledigt .tb-zelle:first-child::after { content: ' ✓'; color: var(--up-ok); }

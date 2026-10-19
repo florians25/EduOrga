@@ -11,7 +11,7 @@ import { AnsichtRahmen, ElementAuswahl, FussText, Rechts, Schalter, Trenner, Wer
 import { frage } from '@/komponenten/dialoge';
 import { hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
-import { Tabelle, type Spalte, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
+import { Tabelle, type Spalte, type Spaltenart, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
 import { ersterOder, titelBreite, useElemente } from '../gemeinsam';
 import { onlineDialog } from './online';
 
@@ -25,7 +25,7 @@ const SPALTENTITEL: Record<string, string> = {
   Online: 'Online', OnlineLink: 'Online-Link',
 };
 
-interface SpaltenInfo { schluessel: string; titel: string; breite: number; zeile: boolean; standard: boolean; bool: boolean; editierbar: boolean; karte: string; refTyp: string | null; liste: boolean }
+interface SpaltenInfo { schluessel: string; titel: string; breite: number; zeile: boolean; standard: boolean; bool: boolean; editierbar: boolean; karte: string; refTyp: string | null; liste: boolean; art?: Spaltenart; auswahl?: string[] | null }
 interface UnterrichtDto { id: number; nvpl: number; wst: number; zeilen: string[][] }
 interface Antwort { titel: string; spalten: SpaltenInfo[]; unterrichte: UnterrichtDto[] }
 export interface UZeile { id: string; uid: number; zeile: number; erste: boolean; anzahl: number; werte: string[]; nvpl: number; wst: number }
@@ -55,7 +55,8 @@ export default function Unterricht({ p }: AnsichtProps) {
     const titel = SPALTENTITEL[s.schluessel] || s.titel;
     return {
       schluessel: s.schluessel, titel, hinweis: s.titel, breite: titelBreite(titel, s.breite), standard: s.standard, karteikarte: s.karte,
-      art: s.bool ? 'Bool' : s.refTyp ? (s.liste ? 'ElementListe' : 'Element') : s.editierbar ? (s.schluessel === 'Wst' ? 'Ganzzahl' : 'Text') : 'NurLesen',
+      art: s.art || (s.bool ? 'Bool' : s.refTyp ? (s.liste ? 'ElementListe' : 'Element') : s.editierbar ? (s.schluessel === 'Wst' ? 'Ganzzahl' : 'Text') : 'NurLesen'),
+      auswahl: s.auswahl || undefined,
       ausrichtung: ['UNr', 'Nvpl', 'Wst', 'Jst', 'Wert'].includes(s.schluessel) ? 'rechts' : undefined,
       refTyp: s.refTyp || undefined, editierbar: s.editierbar && schreiben,
       editierbarFuer: (z) => s.editierbar && schreiben && (s.zeile || z.erste),
@@ -154,6 +155,12 @@ export default function Unterricht({ p }: AnsichtProps) {
           hinweis(`Unterricht Nr. ${u.id} angelegt – Strg+Z macht die Anlage rückgängig.`, 'ok');
         } : undefined}
         aendern={schreiben ? async (z, s, wert) => ersetzen(await api.patch<UnterrichtDto>(api.dok(`/unterricht/${z.uid}`), { feld: s.schluessel, wert, zeile: z.zeile }, { quelle: a.id })) : undefined}
+        aendernMehrere={schreiben ? async (liste) => {
+          const geaendert = await api.post<UnterrichtDto[]>(api.dok('/unterricht/aendern'), {
+            aenderungen: liste.map((x) => ({ uid: x.zeile.uid, feld: x.spalte.schluessel, wert: x.wert, zeile: x.zeile.zeile })),
+          }, { quelle: a.id });
+          for (const u of geaendert) ersetzen(u);
+        } : undefined}
         optionen={async (s) => (s.refTyp === 'raum' ? [...await elemente('raum'), ...await elemente('raumgruppe')] : elemente(s.refTyp || ''))}
         beiAuswahl={(_, aktiv) => { if (aktiv) melden('unterricht', { id: aktiv.uid, quelle: a.id }); }}
         beiEntf={() => void loeschen()}

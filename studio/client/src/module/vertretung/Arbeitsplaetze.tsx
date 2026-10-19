@@ -24,7 +24,7 @@ const useStile = makeStyles({
   datum: { display: 'inline-flex', alignItems: 'center', gap: '2px' },
   datumFeld: { width: '150px', fontVariantNumeric: 'tabular-nums' },
   tag: { fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', marginLeft: '6px', '@media (max-width: 1799px)': { display: 'none' } },
-  breit: { '@media (max-width: 1599px)': { display: 'none' } },
+  breit: { display: 'inline-flex', gap: '12px', '@media (max-width: 1699px)': { display: 'none' } },
   woche: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap' },
   frei: { color: 'var(--up-frei)', fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap' },
   summe: { display: 'inline-flex', alignItems: 'center', gap: '6px', color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase300, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
@@ -96,7 +96,7 @@ function Tageskopf() {
   if (daten) {
     teile.push({ text: `${t?.offen ?? 0} offen`, klasse: t?.offen ? s.offen : undefined, titel: 'Offene Vertretungen des Tages' });
     teile.push({ text: mehrzahl(abw, 'Abwesenheit', 'Abwesenheiten'), titel: abwTitel });
-    if (liste) teile.push({ text: mehrzahl(liste.entfall, 'Entfall', 'Entfälle') });
+    if (liste?.entfall) teile.push({ text: mehrzahl(liste.entfall, 'Entfall', 'Entfälle') });
     if (t && t.kollL + t.kollR > 0) teile.push({ text: mehrzahl(t.kollL + t.kollR, 'Kollision', 'Kollisionen'), klasse: s.offen, titel: `Lehrkräfte ${t.kollL} · Räume ${t.kollR}` });
     if (t?.tagestexte) teile.push({ text: mehrzahl(t.tagestexte, 'Tagestext', 'Tagestexte') });
   }
@@ -129,7 +129,7 @@ function Tageskopf() {
         ))}
       </span>
       <span className={s.rechts}>
-        <span className={schreiben ? s.breit : undefined} style={{ display: 'inline-flex', gap: 12 }}>
+        <span className={schreiben ? s.breit : undefined} style={schreiben ? undefined : { display: 'inline-flex', gap: 12 }}>
           <Link onClick={() => seiteOeffnen('vertretung.absenzen')} title="Abwesenheiten von Lehrkräften, Klassen und Räumen bearbeiten (Strg+M)">Abwesenheiten</Link>
           <Link onClick={() => seiteOeffnen('vertretung.kalender')} title="Wochenübersicht mit Kennzahlen, Tagestexte und Kalendertag">Kalender</Link>
         </span>

@@ -1,11 +1,12 @@
 // Tagespläne im Vertretungsmodus: Woche des Planungsdatums für Klasse, Lehrkraft, Raum oder Fach mit allen Vertretungen –
 // Änderungen hervorgehoben, Entfälle durchgestrichen, offene Stunden mit Plakette „Offen“, Online-Stunden gekennzeichnet.
-// Umschalter Tag | Woche im Kopf: nur der Planungstag oder die ganze Woche (Planungstag mit Marine-Linie und heller Fläche
+// Umschalter Tag | Woche im Kopf: nur der Planungstag oder die ganze Woche (Planungstag mit Linie in der Markenfarbe und heller Fläche
 // hervorgehoben; Klick auf eine Stunde bzw. den Kopf eines anderen Tages macht ihn zum Planungstag). In der Tagesplanung
 // (Parameter tagesplanung) gilt die je Benutzer gemerkte Ansicht, sonst der Parameter tag. Drag & Drop
 // (dnd-kit): Verlegen, Tauschen (mit Rückfrage), Verdrängen; Vormerkungen in den Plan ziehen. Kontextmenü: Stunde entfallen
 // lassen, Entfall aufheben (auch Block), findet online statt, als Vormerkung beiseitelegen, Text, Änderungen zurücknehmen,
-// Vertretungsvorschlag, Sondereinsatz, Lehrkraft abwesend melden.
+// Vertretungsvorschlag, Sondereinsatz, Lehrkraft abwesend melden. Klick auf eine Stunde: der verknüpfte Plan des anderen Typs
+// folgt (Klassenplan → Lehrkraft der Stunde, Lehrkräfteplan → Klasse).
 import { useDndMonitor, useDraggable } from '@dnd-kit/core';
 import { Button, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import { ArrowMaximize16Regular, ArrowMinimize16Regular } from '@fluentui/react-icons';
@@ -15,7 +16,7 @@ import type { Stunde } from '@/api/typen';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
 import { melden, useEreignis } from '@/kern/ereignisse';
 import { useDaten } from '@/kern/laden';
-import { useDarfSchreiben } from '@/kern/zustand';
+import { elemente, useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, ElementAuswahl, Trenner } from '@/komponenten/ansicht';
 import { formular } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
@@ -85,6 +86,15 @@ function Eintrag({ e, t, stunde, typ, kompakt, ziehbar, planId, gewaehlt, waehle
   );
 }
 
+/** ISO-Kalenderwoche eines Datums (ISO). */
+function kalenderwoche(iso: string): number {
+  const d = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return 0;
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const j = new Date(d.getFullYear(), 0, 4, 12);
+  return 1 + Math.round(((d.getTime() - j.getTime()) / 864e5 - 3 + ((j.getDay() + 6) % 7)) / 7);
+}
+
 export default function Tagesplan({ p }: AnsichtProps) {
   const s = useStile();
   const a = useAnsicht();
@@ -100,6 +110,20 @@ export default function Tagesplan({ p }: AnsichtProps) {
   const gross = useTagesplanung((x) => x.gross === typ);
   const nurTag = tagesplanung ? gemerkt !== 'woche' : !!p.tag;
   const ansichtSetzen = (w: Zeitansicht) => { if (tagesplanung) planansichtSetzen(typ, w); else a.parameterSetzen({ tag: w === 'tag' }); };
+  /**
+   * Stunde gewählt: der verknüpfte Plan des anderen Typs folgt – im Klassenplan die Lehrkraft der Stunde (bei Vertretungen
+   * die ursprüngliche wie in der Liste), im Lehrkräfte- bzw. Raumplan die (erste) Klasse.
+   */
+  const gegenstueckMelden = (e: TEintrag) => {
+    if (!verknuepft) return;
+    const ziel = typ === 'klasse' ? 'lehrer' : typ === 'lehrer' || typ === 'raum' ? 'klasse' : null;
+    const kurz = (ziel === 'lehrer' ? e.lehrerAlt || e.lehrer : e.klassen)?.split(/[,\s]+/).map((x) => x.replace(/[()*?]/g, '')).find(Boolean);
+    if (!ziel || !kurz) return;
+    void elemente(ziel).then((l) => {
+      const x = l.find((y) => y.k === kurz);
+      if (x) melden('element', { typ: ziel, id: x.id, quelle: a.id });
+    }).catch(() => {});
+  };
   /** Tag eines anderen Datums gewählt: wird zum Planungstag (Tageskopf, Liste und Vorschlag folgen). */
   const zumTag = (d: string) => { if (d !== datum) datumSetzen(d).catch(fehlerMelden); };
   const planId = `tp-${a.id}`;
@@ -221,7 +245,7 @@ export default function Tagesplan({ p }: AnsichtProps) {
           return (
             <Eintrag key={k} e={e} t={t} stunde={z.stunde} typ={typ} kompakt={kompakt} planId={planId} gewaehlt={gewaehlt === k}
               ziehbar={schreiben && !e.durch && !!e.u && e.status !== 'Entfall'}
-              waehlen={() => { setGewaehlt(k); zumTag(t.datum); if (e.vtr) auswahlMelden({ id: e.vtr, ids: [e.vtr], zeile: { v: e.vtr, datum: t.datum, stunde: z.stunde, u: e.u }, quelle: a.id }); }}
+              waehlen={() => { setGewaehlt(k); zumTag(t.datum); gegenstueckMelden(e); if (e.vtr) auswahlMelden({ id: e.vtr, ids: [e.vtr], zeile: { v: e.vtr, datum: t.datum, stunde: z.stunde, u: e.u }, quelle: a.id }); }}
               doppel={() => { if (e.vtr) a.oeffnen('vertretung.vorschlag', {}); }}
               kontext={(ev) => kontext(e, z.tag, z.stunde, ev)} />
           );
@@ -255,11 +279,12 @@ export default function Tagesplan({ p }: AnsichtProps) {
     { text: 'Vormerkungen …', aktion: () => a.oeffnen('vertretung.vormerkungen', {}) },
     { text: 'Online-Stunden …', aktion: () => a.oeffnen('vertretung.online', {}) },
   ]} />;
-  const titel = !plan ? 'Tagesplan' : flach ? `Woche ${plan.woche}` : `${nurTag ? 'Tagesplan' : 'Wochenplan'} ${TYPEN[typ]} ${plan.element.kurz}${lang}`;
+  const titel = !plan ? 'Tagesplan' : flach ? `KW ${kalenderwoche(plan.tage[0]?.datum || datum || '')}`
+    : tagesplanung ? `${TYPEN[typ]} ${plan.element.kurz}` : `${nurTag ? 'Tagesplan' : 'Wochenplan'} ${TYPEN[typ]} ${plan.element.kurz}${lang}`;
 
   return (
     <AnsichtRahmen titel={titel} laden={laedt && !plan}
-      className={nurTag ? undefined : 'vt-plan-woche'}
+      className={`${nurTag ? '' : 'vt-plan-woche'}${tagesplanung ? ' vt-plan-tp' : ''}`}
       aktionen={kompakt ? undefined : <>
         {flach ? <>{elementWahl}{optionen}</> : null}
         <Umschalter<Zeitansicht> wert={nurTag ? 'tag' : 'woche'} titel="Nur den Planungstag oder die ganze Woche zeigen" testid={`plan-ansicht-${typ}`} beiWahl={ansichtSetzen}

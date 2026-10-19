@@ -64,6 +64,8 @@ export interface Spalte<Z> {
   pruefen?: boolean;
   /** weitere zulässige Werte einer Elementspalte (z. B. „-“ für Entfall) */
   zusatzWerte?: string[];
+  /** weitere zulässige Teile einer Elementspalte (z. B. „Alle Klassen außer 5a“) */
+  zulassen?: (teil: string) => boolean;
   /** Freitext: Vorschläge aus vorhandenen Werten der Spalte (Standard: ja) */
   vorschlaege?: boolean;
   wert?: (z: Z) => unknown;
@@ -146,6 +148,8 @@ interface GespeicherterZustand {
   mk?: boolean;
   /** Filterzeile */
   fz?: boolean;
+  /** kompakte Zeilen (24 px) */
+  kp?: boolean;
 }
 interface Rechteck { r1: number; r2: number; c1: number; c2: number }
 interface Editor { r: number; c: number; start?: string; wert?: string; fehler?: string; nr: number }
@@ -165,7 +169,7 @@ const zahlText = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigit
 
 function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   const {
-    spalten, zeilen, zeilenHoehe: H = 30, zustandSchluessel, leerText = 'Keine Einträge', sortierbar = true, name,
+    spalten, zeilen, zustandSchluessel, leerText = 'Keine Einträge', sortierbar = true, name,
   } = props;
   const idVon = useCallback((z: Z) => (props.id ? props.id(z) : (z as { id: string | number }).id), [props.id]);
   const propsRef = useRef(props);
@@ -181,6 +185,8 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   const [mitKaestchen, setMitKaestchen] = useState<boolean>(() => gespeichert.current?.mk ?? !!props.auswahlSpalte);
   const [filterZeile, setFilterZeile] = useState<boolean>(() => !!gespeichert.current?.fz);
   const [filter, setFilter] = useState<Record<string, string>>({});
+  const [kompakt, setKompakt] = useState<boolean>(() => !!gespeichert.current?.kp);
+  const H = kompakt ? 24 : props.zeilenHoehe ?? 28;
   const geladen = useRef(!zustandSchluessel);
 
   const schluesselListe = spalten.map((s) => s.schluessel).join('|');
@@ -225,6 +231,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
       if (z.sort !== undefined) setSort(z.sort);
       if (z.mk !== undefined) setMitKaestchen(z.mk);
       if (z.fz !== undefined) setFilterZeile(z.fz);
+      if (z.kp !== undefined) setKompakt(z.kp);
     }).catch(() => { geladen.current = true; });
     return () => { aktiv = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -239,8 +246,8 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   useEffect(() => {
     if (!zustandMerken.current) return;
     zustandMerken.current = false;
-    speichern({ spalten: reihenfolge.map((k) => ({ s: k, b: breiten[k], v: !!sichtbarkeit[k] })), sort, mk: mitKaestchen, fz: filterZeile });
-  }, [reihenfolge, sichtbarkeit, breiten, sort, mitKaestchen, filterZeile, speichern]);
+    speichern({ spalten: reihenfolge.map((k) => ({ s: k, b: breiten[k], v: !!sichtbarkeit[k] })), sort, mk: mitKaestchen, fz: filterZeile, kp: kompakt });
+  }, [reihenfolge, sichtbarkeit, breiten, sort, mitKaestchen, filterZeile, kompakt, speichern]);
   const geaendert = () => { zustandMerken.current = true; };
 
   // ---- TanStack: Spaltenmodell ----
@@ -268,9 +275,14 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   }, []);
   const filterAktiv = Object.entries(filter).filter(([k, f]) => f.trim() && spaltenMap.has(k));
   const filterText = filterAktiv.map(([k, f]) => `${k}=${f}`).join('\u0001');
+  // Zeilen, die durch eine Bearbeitung aus dem Filter fallen, bleiben bis zur nächsten Filteränderung sichtbar
+  const behalten = useRef(new Set<string | number>());
+  const [behaltenNr, setBehaltenNr] = useState(0);
+  useEffect(() => { behalten.current.clear(); setBehaltenNr((n) => n + 1); }, [filterText]);
+  const behaltenMerken = (z: Z) => { if (filterAktivRef.current && !behalten.current.has(idVon(z))) { behalten.current.add(idVon(z)); setBehaltenNr((n) => n + 1); } };
   const gefiltert = useMemo(() => {
     if (!filterAktiv.length) return zeilen;
-    const passt = (z: Z, k: string, f: string) => filterPasst(text(z, spaltenMap.get(k)), f);
+    const passt = (z: Z, k: string, f: string) => behalten.current.has(idVon(z)) || filterPasst(text(z, spaltenMap.get(k)), f);
     if (props.gruppiert) {
       const gruppen = new Map<unknown, Z[]>();
       for (const z of zeilen) { const g = props.gruppiert(z); if (!gruppen.has(g)) gruppen.set(g, []); gruppen.get(g)!.push(z); }
@@ -278,7 +290,8 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     }
     return zeilen.filter((z) => filterAktiv.every(([k, f]) => passt(z, k, f)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zeilen, filterText, spaltenMap, text]);
+  }, [zeilen, filterText, spaltenMap, text, behaltenNr]);
+  const filterAktivRef = useRef(false); filterAktivRef.current = filterAktiv.length > 0;
   const ansicht = useMemo(() => {
     const s = sort && spaltenMap.get(sort.schluessel);
     if (!s || !sortierbar) return gefiltert.slice();
@@ -449,6 +462,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   const speichernWert = async (z: Z, s: Spalte<Z>, wert: string): Promise<boolean> => {
     try {
       if (istNeu(z)) { await propsRef.current.neu?.(s, wert); return true; }
+      behaltenMerken(z);
       if (s.aendern) await s.aendern(z, wert);
       else await propsRef.current.aendern?.(z, s, wert);
       fehlerSetzen(z, s, null);
@@ -525,7 +539,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     if (!el) return;
     el.focus();
     if (editor.start === undefined && editor.wert === undefined) el.select(); else el.setSelectionRange(el.value.length, el.value.length);
-    if (editor.start !== undefined || editor.wert !== undefined) vorschlag.current?.zeigen();
+    if (editor.start !== undefined) vorschlag.current?.zeigen();
   }, [editor]);
 
   // ---- Werte anwenden (Einfügen, Ausfüllen, Inhalte löschen, Mehrfach ändern) ----
@@ -548,6 +562,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
       const einzeln = sammel ? aenderungen.filter((x) => x.spalte.aendern) : aenderungen;
       try {
         const rest = aenderungen.filter((x) => !einzeln.includes(x));
+        for (const x of rest) behaltenMerken(x.zeile);
         if (sammel && rest.length) await sammel(rest);
       } catch (f) {
         fehlerMelden(f);
@@ -709,7 +724,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     const n = ansichtRef.current.length + (propsRef.current.neu ? 1 : 0);
     const sh = e.shiftKey;
     switch (e.key) {
-      case 'ArrowDown': gehe(strg ? n - 1 : r + 1, c, sh); break;
+      case 'ArrowDown': if (e.altKey && istListenart(s?.art)) bearbeiten(); else gehe(strg ? n - 1 : r + 1, c, sh); break;
       case 'ArrowUp': gehe(strg ? 0 : r - 1, c, sh); break;
       case 'ArrowRight': gehe(r, strg ? nSp - 1 : c + 1, sh); break;
       case 'ArrowLeft': gehe(r, strg ? 0 : c - 1, sh); break;
@@ -752,7 +767,6 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
         if (strg && (e.key === 'a' || e.key === 'A')) { allesMarkieren(); break; }
         if (strg && (e.key === 'd' || e.key === 'D') && aenderbar()) { void ausfuellen(); break; }
         if (strg && sh && (e.key === 'l' || e.key === 'L')) { filterZeileSetzen(!filterZeile); break; }
-        if (e.key === 'ArrowDown' || (e.altKey && e.key === 'ArrowDown')) break;
         tippen(e);
         return;
     }
@@ -877,6 +891,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     if (sort) liste.push({ text: 'Sortierung aufheben', aktion: () => { setSort(null); geaendert(); } });
     liste.push({ text: 'Auswahlkästchen', haken: mitKaestchen, aktion: () => { setMitKaestchen(!mitKaestchen); geaendert(); } });
     liste.push({ text: 'Filterzeile', haken: filterZeile, aktion: () => filterZeileSetzen(!filterZeile) });
+    liste.push({ text: 'Kompakte Zeilen', haken: kompakt, aktion: () => { setKompakt(!kompakt); geaendert(); } });
     liste.push(null, { titel: 'Spalten ein-/ausblenden' });
     for (const k of karten) {
       const punkte = spalten.filter((s) => (s.karteikarte || '') === k).map((s) => ({
@@ -927,15 +942,27 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     geaendert();
   };
 
+  /** Spalte „von“ an die Stelle von „nach“ schieben (nach rechts: hinter, nach links: vor die Zielspalte) */
   const spalteVerschieben = (von: string, nach: string) => {
     if (!von || von === nach) return;
     setReihenfolge((alt) => {
-      const l = alt.filter((x) => x !== von);
-      l.splice(l.indexOf(nach), 0, von);
+      const basis = alt.length ? alt : spalten.map((x) => x.schluessel);
+      const vi = basis.indexOf(von), ni = basis.indexOf(nach);
+      if (vi < 0 || ni < 0) return basis;
+      const l = basis.filter((x) => x !== von);
+      l.splice(vi < ni ? l.indexOf(nach) + 1 : l.indexOf(nach), 0, von);
       return l;
     });
     geaendert();
   };
+  // Ziehen am Rand ändert die Breite – darf kein Verschieben der Spalte (HTML-Ziehen des Kopfes) auslösen
+  const breiteZieht = useRef(false);
+  useEffect(() => {
+    const los = () => { setTimeout(() => { breiteZieht.current = false; }, 0); };
+    window.addEventListener('mouseup', los);
+    window.addEventListener('touchend', los);
+    return () => { window.removeEventListener('mouseup', los); window.removeEventListener('touchend', los); };
+  }, []);
   const [ziehtUeber, setZiehtUeber] = useState<string | null>(null);
 
   useImperativeHandle(ref, () => ({
@@ -1012,9 +1039,10 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
                 <div key={h.id} role="columnheader" className={`tb-kz${rechts ? ' rechts' : ''}${ziehtUeber === s.schluessel ? ' zieht' : ''}`} style={{ width: h.getSize() }}
                   title={s.hinweis || s.titel} draggable data-spalte={s.schluessel}
                   aria-sort={sort?.schluessel === s.schluessel ? (sort.ab ? 'descending' : 'ascending') : undefined}
-                  onClick={(e) => { if (!(e.target as HTMLElement).classList.contains('tb-breite')) sortieren(s.schluessel); }}
+                  onClick={(e) => { if (!breiteZieht.current && !(e.target as HTMLElement).classList.contains('tb-breite')) sortieren(s.schluessel); }}
                   onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); spaltenKopfMenue(s, e.clientX, e.clientY); }}
-                  onDragStart={(e) => { e.dataTransfer.setData('text/x-spalte', s.schluessel); e.dataTransfer.effectAllowed = 'move'; }}
+                  onDragStart={(e) => { if (breiteZieht.current) { e.preventDefault(); return; } e.dataTransfer.setData('text/x-spalte', s.schluessel); e.dataTransfer.effectAllowed = 'move'; }}
+                  onDragEnd={() => setZiehtUeber(null)}
                   onDragOver={(e) => { if (e.dataTransfer.types.includes('text/x-spalte')) { e.preventDefault(); setZiehtUeber(s.schluessel); } }}
                   onDragLeave={() => setZiehtUeber(null)}
                   onDrop={(e) => { e.preventDefault(); setZiehtUeber(null); spalteVerschieben(e.dataTransfer.getData('text/x-spalte'), s.schluessel); }}>
@@ -1022,7 +1050,8 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
                   {gefiltertSp ? <span className="tb-filtersymbol" title={`Gefiltert: ${filter[s.schluessel]}`}><Filter12Filled /></span> : null}
                   {sort?.schluessel === s.schluessel ? <span className="tb-sort">{sort.ab ? <ArrowSortDown16Regular /> : <ArrowSortUp16Regular />}</span> : null}
                   <span className={`tb-breite${h.column.getIsResizing() ? ' aktiv' : ''}`} draggable={false}
-                    onMouseDown={(e) => { e.stopPropagation(); h.getResizeHandler()(e); }} onTouchStart={h.getResizeHandler()}
+                    onMouseDown={(e) => { e.stopPropagation(); breiteZieht.current = true; h.getResizeHandler()(e); }}
+                    onTouchStart={(e) => { breiteZieht.current = true; h.getResizeHandler()(e); }}
                     onDoubleClick={(e) => { e.stopPropagation(); spaltenAnpassen(s.schluessel); }}
                     onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }} onClick={(e) => e.stopPropagation()} />
                 </div>
@@ -1061,6 +1090,8 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
             if (neu) kl.push('tb-neu');
             else {
               if (markiert) kl.push('gewaehlt');
+              if (r % 2 === 1) kl.push('ungerade');
+              if (filterAktiv.length && behalten.current.has(id) && !filterAktiv.every(([fk, fv]) => filterPasst(text(z, spaltenMap.get(fk)), fv))) kl.push('tb-ausserfilter');
               const k = props.zeilenKlasse?.(z, r);
               if (k) kl.push(k);
             }

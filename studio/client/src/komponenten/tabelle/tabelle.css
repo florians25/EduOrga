@@ -44,7 +44,7 @@
 .tb-haken.an { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
 .tb-haken.an::after { content: ''; width: 7px; height: 4px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
 .tb-farbpunkt { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--colorNeutralStroke1); flex-shrink: 0; }
-.tb-leer { position: absolute; top: 56px; left: 0; right: 0; text-align: center; color: var(--colorNeutralForeground3); pointer-events: none; }
+.tb-leer { position: absolute; left: 0; right: 0; text-align: center; color: var(--colorNeutralForeground3); pointer-events: none; }
 .tb-editor {
   position: absolute; z-index: 4; box-sizing: border-box; border: 2px solid var(--colorBrandStroke1); padding: 0 6px;
   font: inherit; font-size: 13px; outline: none; background: var(--colorNeutralBackground1); color: var(--colorNeutralForeground1);
@@ -65,3 +65,62 @@ select.tb-editor { padding: 0 2px; }
 .vs-eintrag .k { font-weight: 600; min-width: 48px; }
 .vs-eintrag .l { color: var(--colorNeutralForeground3); }
 .vs-leer { padding: 6px 8px; color: var(--colorNeutralForeground3); }
+
+/* Kopfbereich (Spaltenköpfe + Filterzeile) bleibt beim Rollen oben */
+.tb-kopfbereich { position: sticky; top: 0; z-index: 3; min-width: 100%; background: var(--colorNeutralBackground2); }
+.tb-kopfbereich .tb-kopf { position: static; }
+.tb-filterzeile { display: flex; height: 30px; border-bottom: 1px solid var(--colorNeutralStroke2); background: var(--colorNeutralBackground1); }
+.tb-filterzelle { flex-shrink: 0; position: relative; display: flex; align-items: center; padding: 0 3px; border-right: 1px solid var(--colorNeutralStroke3); box-sizing: border-box; }
+.tb-filterzelle input {
+  width: 100%; min-width: 0; height: 22px; box-sizing: border-box; border: 1px solid var(--colorNeutralStroke2); border-radius: 3px;
+  padding: 0 18px 0 5px; font: inherit; font-size: 12px; background: var(--colorNeutralBackground1); color: var(--colorNeutralForeground1); outline: none;
+}
+.tb-filterzelle input:focus { border-color: var(--colorBrandStroke1); }
+.tb-filterzelle input::placeholder { color: var(--colorNeutralForeground4); }
+.tb-filterweg { position: absolute; right: 6px; border: 0; background: none; padding: 0; color: var(--colorNeutralForeground3); cursor: pointer; display: inline-flex; }
+.tb-kz .tb-filtersymbol { color: var(--colorBrandForeground1); display: inline-flex; }
+
+/* Auswahlkästchen */
+.tb-mk {
+  flex-shrink: 0; width: 30px; display: flex; align-items: center; justify-content: center; position: sticky; left: 0; z-index: 2;
+  background: inherit; border-right: 1px solid var(--colorNeutralStroke3); box-sizing: border-box;
+}
+.tb-mk-kopf { height: 32px; cursor: pointer; background: var(--colorNeutralBackground2); }
+.tb-haken.teil { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
+.tb-haken.teil::after { content: ''; width: 8px; height: 2px; background: #fff; }
+
+/* Bereichsauswahl und Fehler */
+.tb-zelle.imbereich { background-image: linear-gradient(color-mix(in srgb, var(--colorBrandBackground) 16%, transparent), color-mix(in srgb, var(--colorBrandBackground) 16%, transparent)); }
+.tb-zelle.fehler { box-shadow: inset 0 0 0 2px var(--colorPaletteRedBorder2); background-color: var(--colorPaletteRedBackground1) !important; }
+.tb-zelle.fehler.aktiv { box-shadow: inset 0 0 0 2px var(--colorPaletteRedForeground1); }
+
+/* Editor mit Auswahlknopf und Fehlermeldung */
+.tb-editbox { position: absolute; z-index: 4; display: flex; box-sizing: border-box; }
+.tb-editbox .tb-editor { position: static; flex: 1; min-width: 0; height: 100%; }
+.tb-editbox.fehler .tb-editor { border-color: var(--colorPaletteRedBorder2); background: var(--colorPaletteRedBackground1); }
+.tb-editor-knopf {
+  position: absolute; right: 2px; top: 2px; bottom: 2px; width: 20px; border: 0; padding: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--colorNeutralBackground1); color: var(--colorNeutralForeground2); cursor: pointer;
+}
+.tb-editor-knopf:hover { background: var(--colorNeutralBackground1Hover); }
+.tb-editbox:has(.tb-editor-knopf) .tb-editor { padding-right: 24px; }
+.tb-editor-fehler {
+  position: absolute; left: 0; top: 100%; margin-top: 2px; z-index: 5; max-width: 360px; width: max-content; padding: 4px 8px; border-radius: 4px;
+  background: var(--colorPaletteRedBackground3); color: #fff; font-size: 12px; box-shadow: var(--shadow8); white-space: normal;
+}
+.tb-editor-fehler .leise { opacity: .8; }
+
+/* Fußleiste der Tabelle (Auswahl, Summe, Filter, Sammelaktionen) */
+.tb-status {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 30px; padding: 0 8px; font-size: 12px;
+  border-top: 1px solid var(--colorNeutralStroke2); background: var(--colorBrandBackground2); color: var(--colorNeutralForeground1);
+}
+.tb-status-anzahl { font-weight: 600; }
+.tb-status-rest { flex: 1; }
+
+/* Mehrfachauswahl in Auswahllisten */
+.vs-eintrag { align-items: center; }
+.vs-haken { width: 12px; height: 12px; border: 1px solid var(--colorNeutralStrokeAccessible); border-radius: 2px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+.vs-haken.an { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
+.vs-haken.an::after { content: ''; width: 6px; height: 3px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.vs-fuss { padding: 4px 8px 2px; color: var(--colorNeutralForeground3); font-size: 11px; border-top: 1px solid var(--colorNeutralStroke3); margin-top: 4px; }
