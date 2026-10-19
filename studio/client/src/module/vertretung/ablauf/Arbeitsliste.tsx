@@ -245,6 +245,8 @@ export default function Arbeitsliste() {
     setGewaehlt(neu);
   }, [daten, ids]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const offenNachId = useMemo(() => new Map(offen.map((o) => [o.id, o])), [offen]);
+  const bearbeitetNachId = useMemo(() => new Map(bearbeitet.map((b) => [b.id, b])), [bearbeitet]);
   useEffect(() => { setMarkiert((m) => { const n = m.filter((id) => ids.includes(id)); return n.length === m.length ? m : n.length > 1 ? n : []; }); }, [ids]);
   const mehrere = markiert.length > 1;
   // mit „Blöcke gemeinsam“ gehören die übrigen Stunden eines Blocks dazu
@@ -255,8 +257,6 @@ export default function Arbeitsliste() {
     if (o) auswahlMelden({ id: o.id, ids: markiert, quelle: QUELLE, text: `${markiert.length} Stunden`, zeile: { v: o.id, klasse: o.klasse, lehrer: o.lehrerId, datum, stunde: o.stunde } });
   }, [markiert.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
   // gewählte Stunde melden: Pläne und Vorschlag folgen
-  const offenNachId = useMemo(() => new Map(offen.map((o) => [o.id, o])), [offen]);
-  const bearbeitetNachId = useMemo(() => new Map(bearbeitet.map((b) => [b.id, b])), [bearbeitet]);
   useEffect(() => {
     if (gewaehlt == null || markiert.length > 1) return;
     const o = offenNachId.get(gewaehlt);
