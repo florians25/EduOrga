@@ -247,6 +247,8 @@ export default function Arbeitsliste() {
 
   useEffect(() => { setMarkiert((m) => { const n = m.filter((id) => ids.includes(id)); return n.length === m.length ? m : n.length > 1 ? n : []; }); }, [ids]);
   const mehrere = markiert.length > 1;
+  // mit „Blöcke gemeinsam“ gehören die übrigen Stunden eines Blocks dazu
+  const sammelIds = useMemo(() => [...new Set(markiert.flatMap((id) => [id, ...(block ? offenNachId.get(id)?.blockIds || [] : [])]))], [markiert, block, offenNachId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!mehrere) return;
     const o = offenNachId.get(markiert[0]!);
@@ -356,10 +358,10 @@ export default function Arbeitsliste() {
       const g = gemeinsamRef.current;
       const nach = (f: () => Promise<unknown>) => { f().then((r) => { if (r !== null) sammelFertig(); }).catch(fehlerMelden); };
       if (/^[1-3]$/.test(e.key)) { const c = g?.kandidaten[Number(e.key) - 1]; if (c && g) nach(() => alleZuweisen(g.ids, c.lehrer)); return true; }
-      if (k === 'e') { nach(() => entfallen(markiert)); return true; }
-      if (k === 'o') { nach(() => ohneLehrkraft(markiert)); return true; }
+      if (k === 'e') { nach(() => entfallen(sammelIds)); return true; }
+      if (k === 'o') { nach(() => ohneLehrkraft(sammelIds)); return true; }
       if (k === 'b' && g?.betreuung) { nach(() => alleBetreuen(g.ids, g.betreuung!.lehrer)); return true; }
-      if (k === 'r') { nach(async () => ((await raumDialog(markiert[0]!, markiert, QUELLE)) ? true : null)); return true; }
+      if (k === 'r') { nach(async () => ((await raumDialog(sammelIds[0]!, sammelIds, QUELLE)) ? true : null)); return true; }
       return false;
     }
     if (gewaehlt == null || !schreiben) return false;
@@ -438,7 +440,7 @@ export default function Arbeitsliste() {
           </Leer>
         ) : <Leer text="Heute wurde noch keine Stunde bearbeitet." />
       ) : (<>
-        {mehrere ? <Sammelleiste ids={markiert} schreiben={schreiben} aufheben={() => setMarkiert([])} fertig={sammelFertig} beiDaten={(g) => { gemeinsamRef.current = g; }} /> : null}
+        {mehrere ? <Sammelleiste ids={sammelIds} schreiben={schreiben} aufheben={() => setMarkiert([])} fertig={sammelFertig} beiDaten={(g) => { gemeinsamRef.current = g; }} /> : null}
         <div ref={scrollRef} className={s.liste} tabIndex={0} role="listbox" aria-label={filter === 'offen' ? 'Offene Stunden' : 'Bearbeitete Stunden'} onKeyDown={listenTaste} data-testid="arbeitsliste">
           <div className={s.innen} style={{ height: virt.getTotalSize() }}>
             {sichtbar.map((v) => {
