@@ -9,7 +9,6 @@ import {
 import AssessmentOutlined from '@mui/icons-material/AssessmentOutlined';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import GroupsOutlined from '@mui/icons-material/GroupsOutlined';
 import RestartAltRounded from '@mui/icons-material/RestartAltRounded';
 import { holen, loeschen, senden, speichern } from '../../api/client';
 import type { Element } from '../../api/types';
@@ -310,7 +309,7 @@ function Unterrichtswechsel({ klassen, vorgabe, onClose, fertig }: { klassen: El
                   <TableRow key={u.id} hover onClick={() => setUnterrichte(s => umschalten(s, u.id, !s.has(u.id)))} sx={{ cursor: 'pointer' }}>
                     <TableCell padding="checkbox"><Checkbox checked={unterrichte.has(u.id)} /></TableCell>
                     <TableCell>{u.klassen.join(', ')}</TableCell><TableCell>{u.lehrer.join(', ')}</TableCell><TableCell><b>{u.fach}</b></TableCell><TableCell align="right">{u.wochenstunden}</TableCell>
-                    <TableCell>{u.gruppen ? <Plakette><GroupsOutlined sx={{ fontSize: 14 }} />{u.gruppen}</Plakette> : null}</TableCell>
+                    <TableCell>{u.gruppen ? <Plakette>{u.gruppen}</Plakette> : null}</TableCell>
                   </TableRow>
                 ))}</TableBody>
               </Table>

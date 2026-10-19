@@ -54,8 +54,8 @@ export function Notenschemen() {
         const ids = d.schemen.map(s => s.id);
         const gw = gesamt ?? d.gesamt ?? '';
         return (
-          <Stack gap={2.5}>
-            <Paper variant="outlined" sx={{ p: 2.5 }}>
+          <Stack gap={2}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="h3" sx={{ mb: 1.5 }}>Gesamtnotenschema</Typography>
               <Stack direction="row" gap={1.5} alignItems="center">
                 <TextField select label="Schema für Gesamtnoten" value={gw} onChange={e => setGesamt(e.target.value === '' ? '' : Number(e.target.value))} sx={{ width: 300 }}>
@@ -73,7 +73,7 @@ export function Notenschemen() {
                 { id: 'name', kopf: 'Name', zelle: s => <b>{s.name}</b> },
                 { id: 'noten', kopf: 'Noten', zelle: s => <Stack direction="row" gap={0.5} flexWrap="wrap">{s.noten.map((n, i) => <Plakette key={i}>{n.text}{n.wert !== null && n.wert !== undefined && <Box component="span" sx={{ opacity: 0.6, ml: 0.5 }}>{String(n.wert).replace('.', ',')}</Box>}</Plakette>)}</Stack> },
                 { id: 'ds', kopf: 'Durchschnitt', zelle: s => (s.mitDurchschnitt ? <Plakette ton="ok">ja</Plakette> : <Plakette>ohne Werte</Plakette>) },
-                { id: 'aktiv', kopf: 'aktiv', zelle: s => (s.aktiv ? <CheckRounded color="success" fontSize="small" /> : null) },
+                { id: 'aktiv', kopf: 'aktiv', zelle: s => (s.aktiv ? <CheckRounded fontSize="small" sx={{ color: 'text.secondary' }} /> : null) },
                 { id: 'akt', kopf: '', rechts: true, nowrap: true, zelle: (s, i) => <Stack direction="row" justifyContent="flex-end"><Reihenfolge pfad="/api/app/notenschemen" ids={ids} i={i} neu={neu} />
                   <IconButton size="small" color="error" aria-label="Löschen" onClick={e => { e.stopPropagation(); void loeschen([s.id], d.schemen); }}><DeleteOutlineRounded fontSize="small" /></IconButton></Stack> },
               ]} />
@@ -175,7 +175,7 @@ export function Pruefungsarten() {
                 { id: 'frei', kopf: 'Keine Prüfung nach', zelle: a => (a.freieTage ? `${a.freieTage} ${a.freieTage === 1 ? 'Tag' : 'Tagen'}` : '–'), verbergenMobil: true },
                 { id: 'gr', kopf: 'Gruppierung', rechts: true, zelle: a => zahl(a.gruppierung), verbergenMobil: true },
                 { id: 'ns', kopf: 'Notenschema', zelle: a => a.notenschema || <Typography variant="body2" color="text.secondary">individuell</Typography> },
-                { id: 'aktiv', kopf: 'aktiv', zelle: a => (a.aktiv ? <CheckRounded color="success" fontSize="small" /> : null) },
+                { id: 'aktiv', kopf: 'aktiv', zelle: a => (a.aktiv ? <CheckRounded fontSize="small" sx={{ color: 'text.secondary' }} /> : null) },
                 { id: 'akt', kopf: '', rechts: true, nowrap: true, zelle: a => <Stack direction="row" justifyContent="flex-end"><Reihenfolge pfad="/api/app/pruefungsarten" ids={ids} i={ids.indexOf(a.id)} neu={neu} />
                   <IconButton size="small" color="error" aria-label="Löschen" onClick={e => { e.stopPropagation(); void loeschen([a.id], d.arten); }}><DeleteOutlineRounded fontSize="small" /></IconButton></Stack> },
               ]} />

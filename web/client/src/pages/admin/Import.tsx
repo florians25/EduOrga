@@ -74,7 +74,7 @@ export function SchuelerImport() {
       const q = quelle ?? gr.quelle;
       const gruppen = [...new Set(gr.felder.map(f => f.gruppe))];
       return (
-        <Stack gap={2.5}>
+        <Stack gap={2}>
           {gr.darfQuelle ? <QuelleKarte nachher={setQuelle} /> : <Alert severity="info">Quelle der Schülerdaten: {QUELLE[q]}.</Alert>}
           <Karte titel="1 · Datei wählen">
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>CSV- oder TXT-Datei (Trennzeichen ; , oder Tab, UTF-8 oder Windows-1252 – beides wird erkannt). Aktuell {gr.schueler} Schüler*innen.</Typography>

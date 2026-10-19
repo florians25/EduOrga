@@ -63,7 +63,7 @@ function Feld({ titel, hilfe, children }: { titel: string; hilfe?: string; child
 function Wahl<T extends string>({ wert, optionen, onWahl, label }: { wert: T; optionen: [T, string][]; onWahl: (v: T) => void; label: string }) {
   return (
     <ToggleButtonGroup exclusive size="small" value={wert} onChange={(_, v) => v && onWahl(v as T)} aria-label={label}
-      sx={{ display: 'flex', flexWrap: 'wrap', '& .MuiToggleButton-root': { flex: '1 1 auto', px: 1.25, whiteSpace: 'nowrap' } }}>
+      sx={{ display: 'flex', flexWrap: 'wrap', '& .MuiToggleButton-root': { flex: '1 1 auto', px: 1, whiteSpace: 'nowrap' } }}>
       {optionen.map(([v, t]) => <ToggleButton key={v} value={v}>{t}</ToggleButton>)}
     </ToggleButtonGroup>
   );
@@ -96,11 +96,11 @@ function Vorschau({ d }: { d: Kartendarstellung }) {
       <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1 }}>
         Beispiele: Doppelstunde, Vertretung (BEC statt HOF), Raumänderung, Entfall, offene Vertretung, Prüfung, Online-Unterricht, Termin.
       </Typography>
-      <Typography variant="h4" component="h3" sx={{ mt: 2.5, mb: 1 }}>Listen und Stundendetails</Typography>
+      <Typography variant="h4" component="h3" sx={{ mt: 2, mb: 1 }}>Listen und Stundendetails</Typography>
       <Paper variant="outlined" sx={{ p: 1.5 }}>
         <Stack gap={1}>
           {BEISPIELE.slice(1, 3).map((k, i) => (
-            <Stack key={i} direction="row" alignItems="center" gap={1.25} sx={{ minHeight: 28 }}>
+            <Stack key={i} direction="row" alignItems="center" gap={1} sx={{ minHeight: 28 }}>
               <Typography variant="body2" color="text.secondary" sx={{ width: 48, fontVariantNumeric: 'tabular-nums' }}>{k.beginn}</Typography>
               <FachMarke farbe={k.farbe} />
               <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{d.fach === 'name' ? k.fachName : k.fach}</Typography>
@@ -156,7 +156,7 @@ export default function Stundenkarten() {
               </Typography>
               <Feld titel="Vorlage" hilfe={vorlage ? VORLAGEN.find(v => v.id === vorlage)?.hinweis : 'Eigene Einstellung'}>
                 <ToggleButtonGroup exclusive size="small" value={vorlage} onChange={(_, v) => { const x = VORLAGEN.find(y => y.id === v); if (x) setEntwurf({ ...x.werte }); }} aria-label="Vorlage"
-                  sx={{ display: 'flex', flexWrap: 'wrap', '& .MuiToggleButton-root': { flex: '1 1 auto', px: 1.25, whiteSpace: 'nowrap' } }}>
+                  sx={{ display: 'flex', flexWrap: 'wrap', '& .MuiToggleButton-root': { flex: '1 1 auto', px: 1, whiteSpace: 'nowrap' } }}>
                   {VORLAGEN.map(v => <ToggleButton key={v.id} value={v.id}>{v.name}</ToggleButton>)}
                 </ToggleButtonGroup>
               </Feld>

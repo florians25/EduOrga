@@ -32,7 +32,7 @@ const FILTER: Record<string, [string, string, Record<string, string>?][]> = {
 };
 
 function anzeige(k: string, w: Zeile[string]) {
-  if (typeof w === 'boolean') return w ? <CheckRounded color="success" fontSize="small" /> : null;
+  if (typeof w === 'boolean') return w ? <CheckRounded fontSize="small" sx={{ color: 'text.secondary' }} /> : null;
   if (k === 'farbe' && typeof w === 'string' && /^#[0-9a-f]{6}$/i.test(w)) return <Stack direction="row" gap={1} alignItems="center"><Box sx={{ width: 14, height: 14, borderRadius: 1, bgcolor: w }} />{w}</Stack>;
   if (k === 'art') return w === 'befreiung' ? 'Befreiung' : 'Abwesenheit';
   if ((k === 'von' || k === 'bis') && typeof w === 'string' && /^\d{4}-/.test(w)) return datumDe(w);

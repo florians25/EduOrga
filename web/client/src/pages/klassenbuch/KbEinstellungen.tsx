@@ -5,11 +5,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
   Alert, Box, Button, FormControlLabel, InputAdornment, MenuItem, Paper, Radio, RadioGroup, Stack, Switch, Tab, Tabs, TextField, Typography,
 } from '@mui/material';
-import AssignmentTurnedInOutlined from '@mui/icons-material/AssignmentTurnedInOutlined';
-import EmojiEventsOutlined from '@mui/icons-material/EmojiEventsOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
-import TuneOutlined from '@mui/icons-material/TuneOutlined';
-import WebOutlined from '@mui/icons-material/WebOutlined';
 import { holen, senden } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Seite } from '../../components/Seite';
@@ -24,7 +20,7 @@ import type { SeitenProps } from '../register';
 type W = Record<string, string | number | boolean | null>;
 interface Daten { einstellungen: W; darf: boolean; gruende: { kurz: string; name: string; entschuldigt: boolean }[]; loeschsperreHoechstens: number }
 interface Noten { schemen: { id: number; name: string; noten: { text: string }[]; mitDurchschnitt: boolean; aktiv: boolean }[]; gesamt: number | null }
-const REITER: [string, string, ReactNode][] = [['hauptseite', 'Hauptseite', <WebOutlined key="h" />], ['allgemein', 'Allgemein', <TuneOutlined key="a" />], ['unterricht', 'Unterricht', <AssignmentTurnedInOutlined key="u" />], ['noten', 'Noten', <EmojiEventsOutlined key="n" />]];
+const REITER: [string, string][] = [['hauptseite', 'Hauptseite'], ['allgemein', 'Allgemein'], ['unterricht', 'Unterricht'], ['noten', 'Noten']];
 const STATUS: [string, string][] = [['offen', 'offen'], ['entschuldigt', 'entschuldigt'], ['unentschuldigt', 'nicht entschuldigt']];
 const AB: [string, string][] = [['woche', 'Beginn der aktuellen Woche'], ['schuljahr', 'Beginn des Schuljahres'], ['datum', 'Fixes Datum'], ['tage', 'Tage zurück']];
 
@@ -40,7 +36,7 @@ export default function KbEinstellungen({ teile }: SeitenProps) {
 
 function Zeile({ label, children, hilfe }: { label: string; children: ReactNode; hilfe?: ReactNode }) {
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: '300px minmax(0, 1fr)' }, gap: { xs: 1, md: 3 }, py: 1.75, borderTop: 1, borderColor: 'divider', '&:first-of-type': { borderTop: 0 } }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: '300px minmax(0, 1fr)' }, gap: { xs: 1, md: 3 }, py: 2, borderTop: 1, borderColor: 'divider', '&:first-of-type': { borderTop: 0 } }}>
       <Typography sx={{ fontWeight: 500, pt: { md: 1 } }}>{label}</Typography>
       <Box>{children}{hilfe && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>{hilfe}</Typography>}</Box>
     </Box>
@@ -65,7 +61,7 @@ function Formular({ d, noten, reiterStart, nurUnterricht }: { d: Daten; noten: N
 
   // ------------------------------------------------ Bausteine
   const schalter = (n: string, label: string, hilfe?: string) => (
-    <Box sx={{ py: 1.25, borderTop: 1, borderColor: 'divider', '&:first-of-type': { borderTop: 0 } }}>
+    <Box sx={{ py: 1, borderTop: 1, borderColor: 'divider', '&:first-of-type': { borderTop: 0 } }}>
       <FormControlLabel control={<Switch checked={!!w[n]} onChange={e => set(n, e.target.checked)} disabled={!darf} />} label={<Typography sx={{ fontWeight: 500 }}>{label}</Typography>} />
       {hilfe && <Typography variant="body2" color="text.secondary" sx={{ ml: 6.5 }}>{hilfe}</Typography>}
     </Box>
@@ -208,14 +204,14 @@ function Formular({ d, noten, reiterStart, nurUnterricht }: { d: Daten; noten: N
   return (
     <Seite titel={nurUnterricht ? 'Unterricht-Einstellungen' : 'Klassenbuch-Einstellungen'}>
       {!nurUnterricht && (
-        <Tabs value={reiter} onChange={(_, v) => { setReiter(v); navigieren(`#/kbeinstellungen/${v}/r`, true); }} variant="scrollable" sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider' }}>
-          {REITER.map(([r, t, s]) => <Tab key={r} value={r} label={t} icon={s as React.ReactElement} iconPosition="start" sx={{ minHeight: 48 }} />)}
+        <Tabs value={reiter} onChange={(_, v) => { setReiter(v); navigieren(`#/kbeinstellungen/${v}/r`, true); }} variant="scrollable" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
+          {REITER.map(([r, t]) => <Tab key={r} value={r} label={t} />)}
         </Tabs>
       )}
       {!darf && <Alert severity="info" icon={<LockOutlined />} sx={{ mb: 2 }}>Die Einstellungen ändert die Administration (Recht „Klassenbuch-Einstellungen“). Sie sehen die aktuellen Werte.</Alert>}
-      <Stack gap={2.5} sx={{ maxWidth: 1000, pb: darf ? 10 : 0 }}>{inhalt[nurUnterricht ? 'unterricht' : reiter]}</Stack>
+      <Stack gap={2} sx={{ maxWidth: 1000, pb: darf ? 10 : 0 }}>{inhalt[nurUnterricht ? 'unterricht' : reiter]}</Stack>
       {darf && reiter !== 'noten' && (
-        <Paper elevation={6} className="nicht-drucken" sx={{ position: 'sticky', bottom: 16, mt: 2, maxWidth: 1000, px: 2, py: 1.25, display: 'flex', alignItems: 'center', gap: 1, borderRadius: 1.5 }}>
+        <Paper elevation={6} className="nicht-drucken" sx={{ position: 'sticky', bottom: 16, mt: 2, maxWidth: 1000, px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1, borderRadius: 1.5 }}>
           <Typography variant="body2" color={geaendert ? 'warning.main' : 'text.secondary'} sx={{ flex: 1, pl: 1 }}>{geaendert ? 'Nicht gespeicherte Änderungen' : 'Alle Änderungen gespeichert'}</Typography>
           <Button disabled={!geaendert} onClick={() => setW(gespeichert)}>Verwerfen</Button>
           <Button variant="contained" disabled={!geaendert || laeuft} onClick={async () => {

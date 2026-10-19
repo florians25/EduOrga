@@ -10,11 +10,10 @@ import {
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import LockOutlined from '@mui/icons-material/LockOutlined';
 import { holen, loeschen, senden, speichern } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen } from '../../components/Seite';
-import { FormDialog, Kennzahl, Plakette, SuchFeld, Wahl, type Ton } from '../../components/Bausteine';
+import { FormDialog, Kennzahl, Kennzahlen, Plakette, SuchFeld, Wahl, type Ton } from '../../components/Bausteine';
 import { Tabelle } from '../../components/Tabelle';
 import { heuteIso } from '../../lib/datum';
 import { bestaetigen, fehler, toast } from '../../lib/meldungen';
@@ -147,20 +146,20 @@ export function Benutzer({ weitere = [] }: { weitere?: string[] }) {
             <Button variant="outlined" href="#/admin/personen">Personen & Konten</Button>
             <Button variant="contained" onClick={() => setPanel({ b: null })}>Benutzer anlegen</Button>
           </Stack>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(124px, 1fr))', gap: 1.25, mb: 2 }}>
+          <Kennzahlen>
             <Kennzahl wert={liste.length} text="alle" ton="neutral" onClick={() => setF({ ...f, rolle: '', status: '', zuordnung: '' })} />
             {Object.entries(ROLLEN).map(([r, n]) => anzahl(r) ? <Kennzahl key={r} wert={anzahl(r)} text={n} ton={f.rolle === r ? 'primaer' : 'neutral'} onClick={() => setF({ ...f, rolle: r, status: '', zuordnung: '' })} /> : null)}
             <Kennzahl wert={liste.filter(b => b.gesperrt).length} text="gesperrt" ton="entfall" onClick={() => setF({ ...f, status: f.status === 'gesperrt' ? '' : 'gesperrt' })} />
             <Kennzahl wert={liste.filter(b => !zuordnung(b) && b.rolle !== 'admin').length} text="ohne Zuordnung" ton="pruefung" onClick={() => setF({ ...f, zuordnung: f.zuordnung === 'ohne' ? '' : 'ohne' })} />
-          </Box>
+          </Kennzahlen>
           <Tabelle zeilen={sichtbar} schluessel={b => b.id} auswahl={auswahl} setAuswahl={setAuswahl} onZeile={b => setPanel({ b })} sortierung={{ id: 'name', richtung: 'asc' }} max={300}
             zeilenSx={b => (b.gesperrt ? { opacity: 0.65 } : {})} leer="Keine Benutzer gefunden."
             spalten={[
-              { id: 'name', kopf: 'Benutzer', sortWert: b => (b.anzeigename || b.login).toLowerCase(), zelle: b => <Stack direction="row" gap={1.25} alignItems="center">
+              { id: 'name', kopf: 'Benutzer', sortWert: b => (b.anzeigename || b.login).toLowerCase(), zelle: b => <Stack direction="row" gap={1} alignItems="center">
                 <Box sx={{ minWidth: 0 }}><Typography sx={{ fontWeight: 500 }} noWrap>{b.anzeigename || b.login}</Typography><Typography variant="caption" color="text.secondary" noWrap>{b.login}{b.email ? ` · ${b.email}` : ''}</Typography></Box></Stack> },
               { id: 'rolle', kopf: 'Rolle', sortWert: b => Object.keys(ROLLEN).indexOf(b.rolle), zelle: b => <Stack direction="row" gap={0.5} flexWrap="wrap"><Plakette>{b.rollenname}</Plakette>{(b.zusatzrechte ?? []).map(r => <Plakette key={r} ton="termin" title="Zusatzrecht">+ {grundlagen.zusatzrechte.find(x => x.id === r)?.name ?? r}</Plakette>)}</Stack> },
               { id: 'zuordnung', kopf: 'Zuordnung', sortWert: b => zuordnung(b)?.text?.toLowerCase() ?? '~', zelle: b => { const z = zuordnung(b); return z ? <Box><Typography variant="body2">{z.text}</Typography><Typography variant="caption" color="text.secondary">{z.unter}</Typography></Box> : b.rolle === 'admin' ? '–' : <Plakette ton="pruefung">ohne Zuordnung</Plakette>; }, verbergenMobil: true },
-              { id: 'status', kopf: 'Status', sortWert: b => (b.gesperrt ? 2 : b.passwortAendern ? 1 : 0), zelle: b => <Stack direction="row" gap={0.5}>{b.gesperrt ? <Plakette ton="entfall"><LockOutlined sx={{ fontSize: 13 }} />gesperrt</Plakette> : <Plakette ton="ok">aktiv</Plakette>}{b.passwortAendern && <Plakette ton="pruefung" title="Das Startpasswort muss bei der nächsten Anmeldung geändert werden">Startpasswort</Plakette>}</Stack> },
+              { id: 'status', kopf: 'Status', sortWert: b => (b.gesperrt ? 2 : b.passwortAendern ? 1 : 0), zelle: b => <Stack direction="row" gap={0.5}>{b.gesperrt ? <Plakette ton="entfall">gesperrt</Plakette> : <Plakette>aktiv</Plakette>}{b.passwortAendern && <Plakette ton="pruefung" title="Das Startpasswort muss bei der nächsten Anmeldung geändert werden">Startpasswort</Plakette>}</Stack> },
               { id: 'anmeldung', kopf: 'Letzte Anmeldung', nowrap: true, sortWert: b => b.letzteAnmeldung ?? '', zelle: b => <span title={kurzZeit(b.letzteAnmeldung)}>{seit(b.letzteAnmeldung)}</span>, verbergenMobil: true },
             ]} />
           <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center" sx={{ mt: 1.5 }}>
@@ -249,7 +248,7 @@ function KontoPanel({ b, personen, klassen, zusatzrechte, ichId, onClose, fertig
   );
   return (
     <Drawer anchor="right" open onClose={onClose} slotProps={{ paper: { sx: { width: mobil ? '100%' : 520, display: 'flex' } } }}>
-      <Stack direction="row" gap={1.5} alignItems="center" sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider' }}>
+      <Stack direction="row" gap={1.5} alignItems="center" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="h3" noWrap>{b ? k.anzeigename || k.login : 'Benutzer anlegen'}</Typography>
           <Typography variant="body2" color="text.secondary">{b ? `${k.login} · ${k.rollenname}` : 'Neues Konto mit Rolle und Personenzuordnung'}</Typography>
@@ -257,7 +256,7 @@ function KontoPanel({ b, personen, klassen, zusatzrechte, ichId, onClose, fertig
         </Box>
         <IconButton onClick={onClose} aria-label="Schließen"><CloseRounded /></IconButton>
       </Stack>
-      <Box sx={{ flex: 1, overflow: 'auto', px: 2.5 }}>
+      <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
         {!w ? <Geladen g={d}>{() => null}</Geladen> : <>
           {abschnitt('Stammdaten', <>
             <Stack direction="row" gap={1.5}>
@@ -367,7 +366,7 @@ export function Personen({ weitere = [] }: { weitere?: string[] }) {
           <Tabelle zeilen={sichtbar} schluessel={p => p.schluessel} auswahl={auswahl} setAuswahl={s => setAuswahl(new Set([...s].filter(x => !liste.find(p => p.schluessel === x)?.konto)))} max={400}
             leer={liste.length ? 'Keine Personen gefunden.' : art === 'eltern' ? 'Noch keine Erziehungsberechtigten erfasst.' : art === 'personal' ? 'Noch kein sonstiges Personal erfasst.' : 'Keine Personen – bitte zuerst Daten aus EduOrga Studio übertragen.'}
             spalten={[
-              { id: 'name', kopf: 'Name', sortWert: p => `${p.name} ${p.vorname}`, zelle: p => <Stack direction="row" gap={1.25} alignItems="center"><Typography sx={{ fontWeight: 500 }}>{art === 'schueler' ? `${p.name}, ${p.vorname}` : personName(p) || p.kurz}</Typography></Stack> },
+              { id: 'name', kopf: 'Name', sortWert: p => `${p.name} ${p.vorname}`, zelle: p => <Stack direction="row" gap={1} alignItems="center"><Typography sx={{ fontWeight: 500 }}>{art === 'schueler' ? `${p.name}, ${p.vorname}` : personName(p) || p.kurz}</Typography></Stack> },
               { id: 'z', kopf: art === 'schueler' ? 'Klasse' : art === 'lehrer' ? 'Kürzel' : art === 'eltern' ? 'Kinder' : 'Funktion', sortWert: p => p.klasse || p.kurz || p.funktion,
                 zelle: p => art === 'schueler' ? <Plakette>{p.klasse}</Plakette> : art === 'lehrer' ? <b>{p.kurz}</b> : art === 'eltern' ? (p.kinder.length ? <Box>{p.kinder.map(i => <Typography key={i} variant="body2">{sNach[i] ? `${personName(sNach[i])} · ${sNach[i].klasse}` : `#${i}`}</Typography>)}</Box> : '–') : p.funktion },
               { id: 'e', kopf: art === 'schueler' ? 'Elternkonten' : 'E-Mail', zelle: p => art === 'schueler' ? (p.elternkonten.length ? <Stack direction="row" gap={0.5} flexWrap="wrap">{p.elternkonten.map(x => <Plakette key={x.id}><a href={`#/admin/benutzer/-/${x.id}`}>{x.login}</a></Plakette>)}</Stack> : '–') : p.email, verbergenMobil: true },

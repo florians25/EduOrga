@@ -60,7 +60,7 @@ export function Markdown({ text }: { text: string }) {
     if ((m = z.match(/^(#{1,6})\s+(.*)$/))) {
       listeZu();
       const g = m[1].length;
-      bloecke.push(<Box key={bloecke.length} sx={{ fontWeight: 600, fontSize: g === 1 ? 20 : g === 2 ? 17 : 15, mt: 1.25, mb: 0.5 }}>{inline(m[2])}</Box>);
+      bloecke.push(<Box key={bloecke.length} sx={{ fontWeight: 600, fontSize: g === 1 ? 20 : g === 2 ? 17 : 15, mt: 1, mb: 0.5 }}>{inline(m[2])}</Box>);
       continue;
     }
     if ((m = z.match(/^\s*(?:[-*•])\s+(.*)$/)) || (m = z.match(/^\s*\d+[.)]\s+(.*)$/))) {

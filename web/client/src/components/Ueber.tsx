@@ -5,7 +5,7 @@ import { Marke, PRODUKT, RECHTSHINWEIS, SLOGAN } from './Marke';
 /** Rechtlicher Hinweis als Block (auch in Administration | Über EduOrga). */
 export function Rechtshinweis() {
   return (
-    <Box sx={{ borderLeft: '3px solid', borderColor: 'secondary.main', bgcolor: 'flaechen.band', px: 1.75, py: 1.25, borderRadius: 1 }}>
+    <Box sx={{ borderLeft: '3px solid', borderColor: 'secondary.main', bgcolor: 'flaechen.band', px: 2, py: 1, borderRadius: 1 }}>
       <Typography variant="subtitle2" sx={{ mb: 0.25 }}>Rechtlicher Hinweis</Typography>
       <Typography variant="body2" color="text.secondary">{RECHTSHINWEIS}</Typography>
     </Box>

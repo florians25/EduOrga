@@ -1,12 +1,12 @@
 // Infocenter: Glocke mit Zahl ungelesener Einträge (Infos der Schule, Neuigkeiten zu EduOrga Web), Liste als Seitenleiste rechts.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Badge, Box, Button, Chip, Drawer, IconButton, InputAdornment, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
+import { Badge, Box, Button, Drawer, IconButton, InputAdornment, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import NotificationsNoneOutlined from '@mui/icons-material/NotificationsNoneOutlined';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import { holen, senden } from '../api/client';
 import { fehler } from '../lib/meldungen';
-import { MONATE } from '../lib/datum';
+import { datumDe } from '../lib/datum';
 import { Leer } from '../components/Seite';
 
 export interface InfoEintrag {
@@ -62,32 +62,28 @@ export function InfocenterKnopf({ hell = false }: { hell?: boolean }) {
   );
 }
 
-const KAT_FARBE: Record<string, 'error' | 'primary' | 'success' | 'default'> = { Wichtig: 'error', Info: 'primary', Update: 'success' };
-
+/** Eintrag als Listenzeile: Datum als Text links, Kategorie als Wort, Titel (ungelesen halbfett mit Punkt), Text darunter – keine Karte, keine Datumskachel. */
 export function InfoKarte({ x, onClick, werkzeuge }: { x: InfoEintrag; onClick?: () => void; werkzeuge?: ReactNode }) {
   const [auf, setAuf] = useState(false);
-  const d = new Date(String(x.datum).slice(0, 10) + 'T12:00');
   const lang = (x.text?.length ?? 0) > 220 || (x.punkte?.length ?? 0) > 3;
+  const datum = String(x.datum).slice(0, 10);
   return (
-    <Box onClick={onClick} sx={{ display: 'flex', gap: 2, p: 2, borderRadius: 1.5, border: 1, borderColor: x.gelesen ? 'divider' : 'primary.light', bgcolor: x.gelesen ? 'background.paper' : 'action.selected',
-      cursor: onClick && !x.gelesen ? 'pointer' : 'default', position: 'relative' }}>
-      <Box sx={{ textAlign: 'center', minWidth: 40 }}>
-        <Typography sx={{ fontSize: 20, fontWeight: 600, lineHeight: 1 }}>{Number.isNaN(d.getTime()) ? '' : d.getDate()}</Typography>
-        <Typography variant="caption" color="text.secondary">{Number.isNaN(d.getTime()) ? '' : MONATE[d.getMonth()].slice(0, 3)}</Typography>
-      </Box>
-      <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 0.5 }}>
-          <Chip size="small" label={x.kategorie} color={KAT_FARBE[x.kategorie] ?? 'default'} variant="outlined" />
+    <Box onClick={onClick} sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: '88px minmax(0, 1fr)' }, columnGap: 2, px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider',
+      '&:last-of-type': { borderBottom: 0 }, cursor: onClick && !x.gelesen ? 'pointer' : 'default' }}>
+      <Typography variant="body2" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', lineHeight: '22px' }}>{/^\d{4}-\d{2}-\d{2}$/.test(datum) ? datumDe(datum) : ''}</Typography>
+      <Box sx={{ minWidth: 0 }}>
+        <Stack direction="row" gap={1} alignItems="baseline" flexWrap="wrap">
+          {!x.gelesen && <Box component="span" aria-label="ungelesen" sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'secondary.main', flex: 'none', alignSelf: 'center' }} />}
+          <Typography sx={{ fontWeight: x.gelesen ? 500 : 600 }}>{x.titel}</Typography>
+          <Typography component="span" variant="body2" sx={{ color: x.kategorie === 'Wichtig' ? 'status.entfall.main' : 'text.secondary' }}>{x.kategorie}</Typography>
           {werkzeuge}
         </Stack>
-        <Typography sx={{ fontWeight: 600 }}>{x.titel}</Typography>
-        <Box sx={{ maxHeight: auf || !lang ? 'none' : 96, overflow: 'hidden', color: 'text.secondary', fontSize: 13, mt: 0.5 }}>
+        <Box sx={{ maxHeight: auf || !lang ? 'none' : 96, overflow: 'hidden', color: 'text.secondary', fontSize: 13, mt: 0.25 }}>
           {x.text && <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>{x.text}</Typography>}
-          {!!x.punkte?.length && <Box component="ul" sx={{ pl: 2.5, my: 0.5 }}>{x.punkte.map((p, i) => <li key={i}>{p}</li>)}</Box>}
+          {!!x.punkte?.length && <Box component="ul" sx={{ pl: 2, my: 0.5 }}>{x.punkte.map((p, i) => <li key={i}>{p}</li>)}</Box>}
         </Box>
-        {lang && <Button size="small" onClick={e => { e.stopPropagation(); setAuf(!auf); }} sx={{ mt: 0.5, ml: -1 }}>{auf ? 'weniger' : 'mehr'}</Button>}
+        {lang && <Button size="small" onClick={e => { e.stopPropagation(); setAuf(!auf); }} sx={{ mt: 0.25, ml: -1 }}>{auf ? 'weniger' : 'mehr'}</Button>}
       </Box>
-      {!x.gelesen && <Box sx={{ width: 8, height: 8, borderRadius: 1.5, bgcolor: 'primary.main', position: 'absolute', top: 14, right: 14 }} aria-label="ungelesen" />}
     </Box>
   );
 }
@@ -99,7 +95,7 @@ function InfocenterPanel({ offen, zu }: { offen: boolean; zu: () => void }) {
   const liste = ic.eintraege.filter(x => (art === 'alle' || x.art === art) && (!suche || `${x.titel} ${x.text ?? ''} ${x.kategorie} ${(x.punkte ?? []).join(' ')}`.toLowerCase().includes(suche.toLowerCase())));
   return (
     <Drawer anchor="right" open={offen} onClose={zu} slotProps={{ paper: { sx: { width: { xs: '100%', sm: 440 }, bgcolor: 'background.default' } } }}>
-      <Stack direction="row" alignItems="center" sx={{ px: 2.5, py: 1.5, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
+      <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.5, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h3" component="h2" sx={{ flex: 1 }}>Infocenter</Typography>
         <Button size="small" disabled={!ic.ungelesen} onClick={() => ic.gelesen()}>Alle als gelesen markieren</Button>
         <IconButton onClick={zu} aria-label="Infocenter schließen"><CloseRounded /></IconButton>
@@ -110,9 +106,9 @@ function InfocenterPanel({ offen, zu }: { offen: boolean; zu: () => void }) {
         <ToggleButtonGroup exclusive size="small" value={art} onChange={(_, v) => v && setArt(v)} sx={{ alignSelf: 'flex-start' }}>
           <ToggleButton value="alle">Alle</ToggleButton><ToggleButton value="info">Infos der Schule</ToggleButton><ToggleButton value="neuigkeit">Updates</ToggleButton>
         </ToggleButtonGroup>
-        {liste.length ? liste.slice(0, 40).map(x => <InfoKarte key={x.schluessel} x={x} onClick={() => !x.gelesen && ic.gelesen([x.schluessel])} />)
+        {liste.length ? <Paper variant="outlined">{liste.slice(0, 40).map(x => <InfoKarte key={x.schluessel} x={x} onClick={() => !x.gelesen && ic.gelesen([x.schluessel])} />)}</Paper>
           : <Leer text={suche ? 'Keine Treffer' : 'Keine Einträge'} unter={suche ? 'Kein Eintrag passt zur Suche.' : 'Sobald es etwas Neues gibt, erscheint es hier.'} />}
-        <Stack direction="row" gap={1} justifyContent="center">
+        <Stack direction="row" gap={1}>
           <Button href="#/neuigkeiten" onClick={zu}>Alle Neuigkeiten</Button>
           {ic.darfVerwalten && <Button href="#/neuigkeiten/verwalten" onClick={zu}>Infos verwalten</Button>}
         </Stack>

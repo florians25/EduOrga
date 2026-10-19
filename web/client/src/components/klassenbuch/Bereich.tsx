@@ -5,7 +5,7 @@
 // Menü (Rechte wie auf dem Server) aufrufen darf; die bisherigen Adressen bleiben unverändert. Die zuletzt gewählte Klasse gilt für die
 // Links mit Klasse (Wochenübersicht, Fehlzeiten, Inhalte, Klassendienste, Sitzplan).
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Box, Link, Stack, Tab, Tabs, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Link, Tab, Tabs, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { holen } from '../../api/client';
 import { allePunkte, menue } from '../../app/menue';
 import { useSitzung } from '../../app/sitzung';
@@ -78,8 +78,8 @@ export function KlassenbuchRahmen({ nav, children }: { nav: string; children: Re
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: '212px minmax(0, 1fr)', gap: 3, alignItems: 'start' }}>
       <Box component="nav" aria-label="Klassenbuch" className="nicht-drucken" sx={{ position: 'sticky', top: 16, border: 1, borderColor: 'divider', borderRadius: 1.5, bgcolor: 'background.paper', overflow: 'hidden' }}>
-        <Box sx={{ px: 2, py: 1.5, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}>
-          <Typography sx={{ fontWeight: 600, fontSize: 15 }}>Klassenbuch</Typography>
+        <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+          <Typography sx={{ fontWeight: 600, fontSize: 14 }}>Klassenbuch</Typography>
           {klasse && <Typography variant="caption" color="text.secondary">Zuletzt gewählt: Klasse {klasse}</Typography>}
         </Box>
         {gruppen.map(g => (
@@ -92,7 +92,7 @@ export function KlassenbuchRahmen({ nav, children }: { nav: string; children: Re
                   sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.75, fontSize: 13.5, color: an ? 'primary.main' : 'text.primary', fontWeight: an ? 600 : 400,
                     bgcolor: an ? 'action.selected' : 'transparent', boxShadow: an ? `inset 3px 0 0 ${t.palette.secondary.main}` : 'none', '&:hover': { bgcolor: an ? 'action.selected' : 'action.hover' } }}>
                   <Box component="span" sx={{ flex: 1 }}>{text(p)}</Box>
-                  {zahl(p) > 0 && <Stack component="span" sx={{ px: 0.75, minWidth: 20, height: 18, borderRadius: '3px', bgcolor: 'status.frei.flaeche', color: 'status.frei.main', fontSize: 11.5, fontWeight: 600, alignItems: 'center', justifyContent: 'center' }} title="Abwesenheitsmeldungen zu bestätigen">{zahl(p)}</Stack>}
+                  {zahl(p) > 0 && <Box component="span" sx={{ color: 'secondary.main', fontSize: 12.5, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }} title="Abwesenheitsmeldungen zu bestätigen">{zahl(p)}</Box>}
                 </Link>
               );
             })}

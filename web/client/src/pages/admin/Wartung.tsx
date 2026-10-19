@@ -47,7 +47,7 @@ function Aktive({ stunden }: { stunden: string }) {
           </Stack>
           <Tabelle zeilen={l} schluessel={(s, i) => `${s.benutzerId}-${i}`} leer="In diesem Zeitraum war niemand angemeldet."
             spalten={[
-              { id: 'b', kopf: 'Benutzer', sortWert: s => s.anzeigename || s.login, zelle: s => <Stack direction="row" gap={1.25} alignItems="center"><Box><Typography sx={{ fontWeight: 500 }}>{s.anzeigename || s.login}{s.aktiv && <Plakette ton="ok" sx={{ ml: 1 }}>aktiv</Plakette>}</Typography><Typography variant="caption" color="text.secondary">{s.login}</Typography></Box></Stack> },
+              { id: 'b', kopf: 'Benutzer', sortWert: s => s.anzeigename || s.login, zelle: s => <Stack direction="row" gap={1} alignItems="center"><Box><Typography sx={{ fontWeight: 500 }}>{s.anzeigename || s.login}{s.aktiv && <Plakette ton="ok" sx={{ ml: 1 }}>aktiv</Plakette>}</Typography><Typography variant="caption" color="text.secondary">{s.login}</Typography></Box></Stack> },
               { id: 'r', kopf: 'Rolle', zelle: s => s.rollenname },
               { id: 'g', kopf: 'Gerät', zelle: s => s.geraet || '–', verbergenMobil: true },
               { id: 'a', kopf: 'Adresse', zelle: s => s.adresse || '–', verbergenMobil: true },
@@ -67,8 +67,8 @@ function Zugriff() {
   useEffect(() => { if (g.daten) setW({ gesperrt: g.daten.gesperrt, hinweis: g.daten.hinweis }); }, [g.daten]);
   return (
     <Geladen g={g}>{d => w && (
-      <Stack gap={2.5} sx={{ maxWidth: 820 }}>
-        <Paper variant="outlined" sx={{ p: 2.5, display: 'flex', gap: 2, alignItems: 'center', borderColor: d.gesperrt ? 'warning.main' : 'divider' }}>
+      <Stack gap={2} sx={{ maxWidth: 820 }}>
+        <Paper variant="outlined" sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'center', borderColor: d.gesperrt ? 'warning.main' : 'divider' }}>
           <Box><Typography variant="h3">{d.gesperrt ? 'Zugriff gesperrt' : 'Zugriff freigegeben'}</Typography>
             <Typography variant="body2" color="text.secondary">{d.gesperrt ? `Seit ${kurzZeit(d.seit)}${d.von ? ` (${d.von})` : ''} können sich nur Konten der Administration anmelden.` : 'Alle Benutzer können sich anmelden.'}</Typography></Box>
         </Paper>
@@ -99,7 +99,7 @@ function Ueber() {
     <Geladen g={g}>{d => {
       const wert = (t: string, w: string) => <Box key={t}><Typography variant="caption" color="text.secondary">{t}</Typography><Typography sx={{ fontWeight: 500 }}>{w}</Typography></Box>;
       return (
-        <Stack gap={2.5}>
+        <Stack gap={2}>
           <Karte titel={`${d.produkt} ${d.version}`}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
               {wert('Version', d.version)}{wert('Datenbank', `${d.datenbank} · Schema ${d.schemastand}`)}{wert('Laufzeit', d.laufzeit)}{wert('Schule', d.schule || '–')}
@@ -121,7 +121,7 @@ function Ueber() {
           <Karte titel="Module">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))', xl: 'repeat(3, minmax(0, 1fr))' }, gap: 1.5 }}>
               {d.module.map(m => (
-                <Stack key={m.name} direction="row" gap={1.25} alignItems="center" sx={{ opacity: m.aktiv ? 1 : 0.6 }}>
+                <Stack key={m.name} direction="row" gap={1} alignItems="center" sx={{ opacity: m.aktiv ? 1 : 0.6 }}>
                   {m.aktiv ? <CheckCircleOutlineRounded color="success" /> : <RemoveCircleOutlineRounded color="disabled" />}
                   <Box><Typography sx={{ fontWeight: 500 }}>{m.name}</Typography><Typography variant="caption" color="text.secondary">{m.aktiv ? 'freigeschaltet' : 'nicht eingerichtet'}{m.hinweis ? ` · ${m.hinweis}` : ''}</Typography></Box>
                 </Stack>

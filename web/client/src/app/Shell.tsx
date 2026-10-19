@@ -101,7 +101,7 @@ export function Shell({ abmelden, neuStarten }: { abmelden: () => void; neuStart
         {mobil ? (
           <>
             <AppBar position="fixed" color="inherit" className="nicht-drucken" sx={{ bgcolor: 'nav.flaeche', color: 'nav.text', boxShadow: 'none', borderBottom: '3px solid', borderColor: 'primary.light', zIndex: t => t.zIndex.drawer - 1 }}>
-              <Toolbar sx={{ gap: 1.25, minHeight: { xs: 54 } }}>
+              <Toolbar sx={{ gap: 1, minHeight: { xs: 54 } }}>
                 <IconButton edge="start" onClick={() => setMobilOffen(true)} aria-label="Menü öffnen" sx={{ color: 'inherit' }}><MenuRounded /></IconButton>
                 <Box sx={{ display: 'flex', borderRadius: '4px', boxShadow: '0 0 0 1px rgba(255,255,255,.22)' }}><Monogramm groesse={24} /></Box>
                 <Typography sx={{ fontWeight: 600, flex: 1, minWidth: 0 }} noWrap>{titel}</Typography>
@@ -157,7 +157,7 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
   const aktivZeile = { bgcolor: 'nav.aktiv', color: 'nav.text', fontWeight: 600, boxShadow: 'inset 3px 0 0 var(--mui-palette-nav-marke)', '&:hover': { bgcolor: 'nav.aktiv' } };
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', color: 'nav.text' }}>
-      <Stack direction="row" alignItems="center" sx={{ px: schmal ? 0 : 2, pt: 1.75, pb: 1.25, minHeight: 60, justifyContent: schmal ? 'center' : 'space-between' }}>
+      <Stack direction="row" alignItems="center" sx={{ px: schmal ? 0 : 2, pt: 2, pb: 1, minHeight: 60, justifyContent: schmal ? 'center' : 'space-between' }}>
         <Box component="a" href="#/" onClick={schliessen} sx={{ textDecoration: 'none', color: 'inherit', minWidth: 0 }} title={`${PRODUKT} – Startseite`}>
           {schmal ? <Box sx={{ display: 'flex', borderRadius: '5px', boxShadow: '0 0 0 1px rgba(255,255,255,.22)' }}><Monogramm groesse={30} /></Box> : <Marke hell groesse={28} />}
         </Box>
@@ -171,7 +171,7 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
               <Typography variant="caption" sx={{ color: 'nav.text2' }}>Schuljahr</Typography>
               <Tooltip title={`Aktuelles Schuljahr: ${s.schuljahre[0].text}`} placement="right">
                 <Select value={s.schuljahr.von} onChange={e => { s.schuljahrWaehlen(e.target.value); toast(`Schuljahr ${s.schuljahre.find(x => x.von === e.target.value)?.text} gewählt.`); }}
-                  variant="outlined" size="small" sx={{ fontSize: 13, fontWeight: 600, borderRadius: '6px', color: 'nav.text', bgcolor: 'nav.hover', '& .MuiSelect-select': { py: 0.4, pl: 1.25 },
+                  variant="outlined" size="small" sx={{ fontSize: 13, fontWeight: 600, borderRadius: '6px', color: 'nav.text', bgcolor: 'nav.hover', '& .MuiSelect-select': { py: 0.5, pl: 1 },
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: 'nav.linie' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'nav.text2' }, '& .MuiSvgIcon-root': { color: 'nav.text2' },
                     ...(s.schuljahr.aktuell ? {} : { bgcolor: 'status.pruefung.flaeche', color: 'status.pruefung.main' }) }}>
                   {s.schuljahre.map(x => <MenuItem key={x.von} value={x.von}>{x.text}</MenuItem>)}
@@ -211,7 +211,7 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
                         sx={{ ...zeile, color: 'nav.text2', minHeight: 30, py: 0.25, pl: 6.25, pr: 2, '&:hover': { bgcolor: 'nav.hover', color: 'nav.text' }, '&.Mui-selected': aktivZeile }}>
                         <ListItemText primary={p.text} slotProps={{ primary: { sx: { fontSize: 13.5, fontWeight: 'inherit' } } }} />
                         {zahl(p.zaehler)}
-                        {update && p.nav === 'admin-sync' && <Badge badgeContent="Update" color="warning" sx={{ mr: 2.5, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} />}
+                        {update && p.nav === 'admin-sync' && <Badge badgeContent="Update" color="warning" sx={{ mr: 2, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} />}
                       </ListItemButton>
                     ))}
                   </List>
@@ -263,7 +263,7 @@ function Konto({ schmal, abmelden, neuStarten, schliessen }: { schmal: boolean; 
   const modi: ['light' | 'dark' | 'system', string, ReactNode][] = [['light', 'Hell', <LightModeOutlined fontSize="small" />], ['dark', 'Dunkel', <DarkModeOutlined fontSize="small" />], ['system', 'Wie das System', <ContrastOutlined fontSize="small" />]];
   return (
     <>
-      <ListItemButton onClick={e => oeffnen(e.currentTarget)} aria-haspopup="menu" sx={{ flex: 'none', py: 1, px: schmal ? 0 : 2, justifyContent: schmal ? 'center' : 'flex-start', gap: 1.25, borderRadius: 0, color: 'nav.text', '&:hover': { bgcolor: 'nav.hover' } }}>
+      <ListItemButton onClick={e => oeffnen(e.currentTarget)} aria-haspopup="menu" sx={{ flex: 'none', py: 1, px: schmal ? 0 : 2, justifyContent: schmal ? 'center' : 'flex-start', gap: 1, borderRadius: 0, color: 'nav.text', '&:hover': { bgcolor: 'nav.hover' } }}>
         <Badge variant="dot" color="error" invisible={!ic.ungelesen || !schmal} overlap="circular">
           <Avatar sx={{ width: 32, height: 32, fontSize: 13, fontWeight: 600, bgcolor: 'secondary.main', color: '#fff', border: '1px solid', borderColor: 'nav.linie' }}>{initialen(ich.anzeigename || ich.login)}</Avatar>
         </Badge>

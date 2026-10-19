@@ -14,16 +14,16 @@ export function Seite({ titel, untertitel, aktionen, filter, children, breit = t
     <Box sx={{ maxWidth: breit ? 'none' : 1100, mx: breit ? 0 : 'auto', width: '100%' }}>
       {(titel || aktionen) && (
         <Stack direction="row" alignItems="flex-end" justifyContent="space-between" gap={2} flexWrap="wrap" className="seitenkopf"
-          sx={{ mb: filter ? 1.5 : 2.5, pb: 1.5, borderBottom: '1px solid', borderColor: 'flaechen.rand' }}>
+          sx={{ mb: 2, pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Box sx={{ minWidth: 0 }}>
             {titel && <Typography variant="h1" component="h1">{titel}</Typography>}
-            {untertitel && <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5, maxWidth: 900 }}>{untertitel}</Typography>}
+            {untertitel && <Typography color="text.secondary" variant="body2" sx={{ mt: 0.25, maxWidth: 900 }}>{untertitel}</Typography>}
           </Box>
           {aktionen && <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center" className="nicht-drucken">{aktionen}</Stack>}
         </Stack>
       )}
       {filter && (
-        <Paper variant="outlined" className="nicht-drucken" sx={{ px: 1.5, py: 1.25, mb: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'flaechen.band' }}>{filter}</Paper>
+        <Box className="nicht-drucken" sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>{filter}</Box>
       )}
       {children}
     </Box>
@@ -61,12 +61,12 @@ export function Geladen<T>({ g, children, hoehe }: { g: { daten: T | undefined; 
   return <>{children(g.daten)}</>;
 }
 
-/** Karte (Paper) mit Kopfzeile. */
+/** Abschnitt (Fläche mit 1-px-Rahmen) mit schlichter Kopfzeile: Titel als Text, Linie darunter, keine Tönung. */
 export function Abschnitt({ titel, aktion, children, sx, kein_rand }: { titel?: ReactNode; aktion?: ReactNode; children: ReactNode; sx?: object; kein_rand?: boolean }) {
   return (
     <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden', ...sx }}>
       {(titel || aktion) && (
-        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ px: 2, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider', mb: kein_rand ? 0 : 0.5 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ px: 2, py: 1, minHeight: 40, borderBottom: 1, borderColor: 'divider', mb: kein_rand ? 0 : 0.5 }}>
           {typeof titel === 'string' ? <Typography variant="h4" component="h2">{titel}</Typography> : titel}
           {aktion}
         </Stack>

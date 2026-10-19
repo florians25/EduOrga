@@ -5,8 +5,6 @@ import { useEffect, useState } from 'react';
 import { alpha, Box, Button, ButtonBase, Chip, FormControlLabel, IconButton, MenuItem, Paper, Stack, Switch, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useTheme } from '@mui/material';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined';
-import MeetingRoomOutlined from '@mui/icons-material/MeetingRoomOutlined';
 import { holen, senden } from '../../api/client';
 import { Geladen, Leer, Seite } from '../../components/Seite';
 import { FormDialog, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
@@ -112,17 +110,18 @@ export function Ressourcenuebersicht({ rest }: { rest: string[] }) {
       <Stack direction="row" gap={1}><Box sx={{ width: 22 }} />{achse}</Stack>
     </Stack>
   ) : tag ? <Stack gap={0.25}>{strahl(r, tag)}{achse}</Stack> : null);
-  const ort = (r: Res) => (r.mobil ? <Stack direction="row" gap={0.5} alignItems="center"><LocationOnOutlined sx={{ fontSize: 16 }} />{r.standort || 'kein Standort'}</Stack>
-    : <Stack direction="row" gap={0.5} alignItems="center"><MeetingRoomOutlined sx={{ fontSize: 16 }} />fest in {r.raum}</Stack>);
+  const ort = (r: Res) => (r.mobil ? <span>{r.standort || 'kein Standort'}</span>
+    : <span>fest in {r.raum}</span>);
   const knopf = (r: Res, zz: ReturnType<typeof zustand>) => {
     if (tag?.frei) return null;
     const [v, b] = zz.wahl;
     if (!r.mobil) return opt?.raumBuchen === false || datum < heute || zz.v <= 0 ? null : <Button size="small" variant="outlined" href={`#/buchen/raum/${datum}/${v}/${b}/${encodeURIComponent(r.raum ?? '')}`}>Raum buchen</Button>;
     if (!darfBuchen(r, datum)) return null;
-    return zz.v > 0 ? <Button size="small" variant="contained" onClick={() => setBuchen({ r, datum, von: v, bis: b })}>Buchen</Button>
+    return zz.v > 0 ? <Button size="small" variant="outlined" onClick={() => setBuchen({ r, datum, von: v, bis: b })}>Buchen</Button>
       : <Button size="small" variant="outlined" onClick={() => setBuchen({ r, datum, von: v, bis: b })}>Andere Zeit</Button>;
   };
-  const symbol = (r: Res) => <Box sx={{ width: 40, height: 40, borderRadius: 1.5, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main', flexShrink: 0 }}><ResSymbol r={r} /></Box>;
+  // Geräteart als einfarbiges Symbol ohne Kachel (Erkennung in langen Listen)
+  const symbol = (r: Res) => <Box sx={{ display: 'flex', color: 'text.secondary', flexShrink: 0, '& svg': { fontSize: 20 } }}><ResSymbol r={r} /></Box>;
 
   return (
     <Seite titel="Gerätebelegung" aktionen={opt && <>
@@ -159,7 +158,7 @@ export function Ressourcenuebersicht({ rest }: { rest: string[] }) {
             <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center" sx={{ mb: 1.5 }}>
               {arten.length > 1 && <>
                 <Chip label={`Alle ${u.ressourcen.length}`} color={!f.arten.size ? 'primary' : 'default'} variant={!f.arten.size ? 'filled' : 'outlined'} onClick={() => setF({ arten: new Set() })} />
-                {arten.map(a => <Chip key={a.id} icon={<ResSymbol r={a.r} />} label={`${a.name} ${u.ressourcen.filter(r => (r.artId ?? 0) === a.id).length}`} color={f.arten.has(a.id) ? 'primary' : 'default'} variant={f.arten.has(a.id) ? 'filled' : 'outlined'}
+                {arten.map(a => <Chip key={a.id} label={`${a.name} ${u.ressourcen.filter(r => (r.artId ?? 0) === a.id).length}`} color={f.arten.has(a.id) ? 'primary' : 'default'} variant={f.arten.has(a.id) ? 'filled' : 'outlined'}
                   onClick={() => { const x = new Set(f.arten); if (x.has(a.id)) x.delete(a.id); else x.add(a.id); setF({ arten: x }); }} />)}
               </>}
               <Box sx={{ flex: 1 }} />
@@ -184,8 +183,8 @@ export function Ressourcenuebersicht({ rest }: { rest: string[] }) {
               ) : (
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(auto-fill, minmax(340px, 1fr))' }, gap: 1.5 }}>
                   {sichtbar.map(r => { const zz = zustand(r); const n = (r.belegung[datum] ?? []).length; return (
-                    <Paper key={r.id} variant="outlined" sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-                      <Stack direction="row" gap={1.5} alignItems="center">{symbol(r)}<Box sx={{ flex: 1, minWidth: 0 }}><Typography sx={{ fontWeight: 600 }} noWrap>{r.name}</Typography><Typography variant="caption" color="text.secondary">{r.art || 'Ohne Art'}</Typography></Box><Plakette ton={zz.ton}>{zz.text}</Plakette></Stack>
+                    <Paper key={r.id} variant="outlined" sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Stack direction="row" gap={1.5} alignItems="center">{symbol(r)}<Box sx={{ flex: 1, minWidth: 0 }}><Typography sx={{ fontWeight: 500 }} noWrap>{r.name}</Typography><Typography variant="caption" color="text.secondary">{r.art || 'Ohne Art'}</Typography></Box><Plakette ton={zz.ton}>{zz.text}</Plakette></Stack>
                       <Stack direction="row" gap={2} flexWrap="wrap" sx={{ fontSize: 13, color: 'text.secondary' }}>{ort(r)}<span>{r.anzahl} Stück</span>
                         {!tag?.frei && (ganzerTag() ? zz.frei && zz.frei !== 'ganztägig' && <span>frei: <b>{zz.frei}</b> Std.</span> : r.mobil && <span><b>{zz.v}</b>/{r.anzahl} frei · {zrText()}</span>)}</Stack>
                       {r.bemerkung && <Typography variant="body2">{r.bemerkung}</Typography>}

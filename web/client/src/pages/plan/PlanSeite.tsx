@@ -58,7 +58,7 @@ export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
         <Grid container spacing={4}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h4" sx={{ mb: 1.5 }}>Darstellung</Typography>
-            <Stack gap={1.25}>
+            <Stack gap={1}>
               <Stack direction="row" gap={1.5} alignItems="center"><Muster art="regulaer" gross /><Typography variant="body2"><b>Unterricht</b> – {unterrichtHinweis(d)}</Typography></Stack>
               {ARTEN.map(a => <Stack key={a.art} direction="row" gap={1.5} alignItems="center"><Muster art={a.art} gross /><Typography variant="body2"><b>{a.text}</b> – {a.hinweis}</Typography></Stack>)}
               <Typography variant="body2" color="text.secondary">Geänderte Kürzel stehen als petrolfarbene Plakette, das bisherige grau durchgestrichen davor (z. B. <s>HOF</s> <b>BEC</b>); eine offene Vertretung zeigt „?“. Die Kurzinfo beim Überfahren nennt die Art der Änderung. „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext.</Typography>
@@ -66,7 +66,7 @@ export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h4" sx={{ mb: 1.5 }}>Bedienung</Typography>
-            <Box component="ul" sx={{ pl: 2.5, m: 0, '& li': { mb: 0.75, fontSize: 14 } }}>
+            <Box component="ul" sx={{ pl: 2, m: 0, '& li': { mb: 0.75, fontSize: 14 } }}>
               <li>Der Zeitraum öffnet den Kalender, „Heute“ springt zur aktuellen Woche.</li>
               <li>Klasse, Lehrkraft oder Raum wählen Sie links (Alt+← / Alt+→ blättert).</li>
               <li>„Woche“ und „Tag“ schalten zwischen Wochen- und Tagesansicht.</li>
@@ -199,7 +199,7 @@ export default function PlanSeite({ teile }: SeitenProps) {
 
   return (
     <Seite dokumentTitel={titel}>
-      <Box ref={leiste} className="nicht-drucken" sx={{ position: 'sticky', top: oben, zIndex: 8, bgcolor: 'background.default', pt: { xs: 0.5, lg: 0 }, pb: 1.25, mt: { lg: -1 } }}>
+      <Box ref={leiste} className="nicht-drucken" sx={{ position: 'sticky', top: oben, zIndex: 8, bgcolor: 'background.default', pt: { xs: 0.5, lg: 0 }, pb: 1, mt: { lg: -1 } }}>
         <Box role="toolbar" aria-label="Stundenplan" sx={{ py: 1, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, rowGap: 1, borderBottom: 1, borderColor: 'divider' }}>
           {istMein ? (
             <Box sx={{ px: 1, minWidth: 0 }}>
@@ -230,7 +230,7 @@ export default function PlanSeite({ teile }: SeitenProps) {
         )}
         {p && einst.ansicht === 'tag' && (
           <ToggleButtonGroup exclusive size="small" value={tagIndex} onChange={(_, v) => v !== null && setTagWahl(v)} aria-label="Tag wählen"
-            sx={{ mt: 1.25, display: 'flex', width: { xs: '100%', md: 'fit-content' }, overflowX: 'auto' }}>
+            sx={{ mt: 1, display: 'flex', width: { xs: '100%', md: 'fit-content' }, overflowX: 'auto' }}>
             {p.tage.map((x, i) => {
               const n = p.karten.filter(k => k.datum === x.datum && k.status !== 'regulaer').length;
               return (

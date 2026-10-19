@@ -134,7 +134,7 @@ function Postfach({ ordner, verfassen, oeffnenId }: { ordner: Ordner; verfassen:
                       return (
                         <Box key={m.id}>
                           {i > 0 && <Divider component="li" />}
-                          <ListItemButton onClick={() => oeffnen(m)} sx={{ gap: 1.5, py: 1.25, alignItems: 'center', position: 'relative', bgcolor: neu ? 'action.hover' : undefined }}>
+                          <ListItemButton onClick={() => oeffnen(m)} sx={{ gap: 1.5, py: 1, alignItems: 'center', position: 'relative', bgcolor: neu ? 'action.hover' : undefined }}>
                             {neu && <Box sx={{ position: 'absolute', left: 4, top: '50%', mt: '-4px', width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main' }} />}
                             <Box sx={{ minWidth: 0, flex: 1, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(140px, 220px) minmax(0, 1fr)' }, columnGap: 2, alignItems: 'baseline' }}>
                               <Typography noWrap sx={{ fontWeight: neu ? 600 : 500, fontSize: 14 }} title={kopfName(m)}>{kopfName(m)}</Typography>
@@ -147,7 +147,7 @@ function Postfach({ ordner, verfassen, oeffnenId }: { ordner: Ordner; verfassen:
                             </Box>
                             <Stack direction="row" gap={0.75} alignItems="center" sx={{ flexShrink: 0, color: 'text.secondary' }}>
                               {ordner === 'gesendet' && m.lesebestaetigung && (
-                                <Tooltip title="Lesebestätigungen anzeigen"><Chip size="small" icon={<MarkEmailReadOutlined />} label={`${m.bestaetigtAnzahl} | ${m.anzahl}`}
+                                <Tooltip title="Lesebestätigungen anzeigen"><Chip size="small" label={`${m.bestaetigtAnzahl} | ${m.anzahl}`}
                                   onClick={e => { e.stopPropagation(); setLb(m); }} color={m.bestaetigtAnzahl >= m.anzahl ? 'success' : 'default'} variant="outlined" /></Tooltip>
                               )}
                               {offenBestaetigen(m) && <Tooltip title="Lesebestätigung erforderlich"><MarkEmailUnreadOutlined fontSize="small" color="warning" /></Tooltip>}
@@ -197,7 +197,7 @@ function LesenDialog({ m, ordner, optionen, onClose, onSchreiben, onBestaetigt, 
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth fullScreen={mobil} className="mt-lesen">
       <DialogTitle sx={{ pr: 6 }}>
-        <Stack direction="row" gap={1} alignItems="center">{m.wichtig && <Plakette ton="entfall" fest><PriorityHighRounded sx={{ fontSize: 14 }} />wichtig</Plakette>}<span>{m.betreff || '(ohne Betreff)'}</span></Stack>
+        <Stack direction="row" gap={1} alignItems="center">{m.wichtig && <Plakette ton="entfall">wichtig</Plakette>}<span>{m.betreff || '(ohne Betreff)'}</span></Stack>
         <IconButton onClick={onClose} aria-label="Schließen" sx={{ position: 'absolute', right: 10, top: 10 }} className="nicht-drucken"><CloseRounded /></IconButton>
       </DialogTitle>
       <DialogContent dividers>
@@ -219,7 +219,7 @@ function LesenDialog({ m, ordner, optionen, onClose, onSchreiben, onBestaetigt, 
         </Stack>
         <Markdown text={m.text} />
         {!!m.anhaenge?.length && (
-          <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mt: 2.5 }}>
+          <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mt: 2 }}>
             {m.anhaenge.map(x => (
               <Chip key={x.id} component="a" href={`${BASIS}/anhang/${x.id}`} clickable icon={<InsertDriveFileOutlined />} variant="outlined"
                 label={<>{x.name} <Box component="span" sx={{ color: 'text.secondary', ml: 0.5 }}>{groesse(x.groesse)}</Box></>} {...{ download: x.name }} />
@@ -232,7 +232,7 @@ function LesenDialog({ m, ordner, optionen, onClose, onSchreiben, onBestaetigt, 
         {kannAntworten && knopf('Antworten', <ReplyRounded />, () => void antworten(false))}
         {kannAntworten && m.empfaenger.length > 1 && knopf('Allen antworten', <ReplyAllRounded />, () => void antworten(true))}
         {optionen.darfSenden && knopf('Weiterleiten', <ForwardOutlined />, () => void aktion(async () => onSchreiben({ entwurf: await senden<Mitteilung>(`${BASIS}/${m.id}/weiterleiten`, {}), titel: 'Weiterleiten' })))}
-        {!eingang && m.lesebestaetigung && <Chip icon={<MarkEmailReadOutlined />} label={`${m.bestaetigtAnzahl} | ${m.anzahl} bestätigt`} onClick={onLb} variant="outlined" sx={{ mx: 0.5 }} />}
+        {!eingang && m.lesebestaetigung && <Chip label={`${m.bestaetigtAnzahl} | ${m.anzahl} bestätigt`} onClick={onLb} variant="outlined" sx={{ mx: 0.5 }} />}
         {eingang && knopf('Als ungelesen markieren', <MarkEmailUnreadOutlined />, () => void aktion(async () => { await senden(`${BASIS}/${m.id}/ungelesen`, {}); toast('Als ungelesen markiert.'); onGeaendert('#/mitteilungen'); }))}
         {knopf('Löschen', <DeleteOutlineRounded />, () => void aktion(async () => {
           if (!(await bestaetigen('Mitteilung löschen', `„${m.betreff}“ wirklich löschen?`))) return;
@@ -244,7 +244,7 @@ function LesenDialog({ m, ordner, optionen, onClose, onSchreiben, onBestaetigt, 
             <Button variant="contained" disabled={laeuft}
               onClick={() => void aktion(async () => { const r = await senden<{ bestaetigt: string }>(`${BASIS}/${m.id}/bestaetigen`, {}); toast('Lesebestätigung gesendet.'); onBestaetigt(r.bestaetigt); })}>Lesebestätigung senden</Button>
           )}
-          {m.bestaetigt && <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><CheckCircleOutlineRounded fontSize="small" />Lesebestätigung gesendet am {zeitLang(m.bestaetigt)}</Typography>}
+          {m.bestaetigt && <Typography variant="body2" color="text.secondary">Lesebestätigung gesendet am {zeitLang(m.bestaetigt)}</Typography>}
         </Box>
       </DialogActions>
     </Dialog>
@@ -424,7 +424,7 @@ function SchreibDialog({ an, vorgabe, entwurf, titel, onClose, fertig }: Schreib
           <Alert severity="info">{nurAntwort ? 'Ihr Konto darf keine Mitteilungen senden.' : 'Für Ihr Konto sind keine Empfänger verfügbar.'}</Alert>
         ) : (
           <Stack gap={2}>
-            <Stack direction="row" gap={1} alignItems="center" sx={{ borderBottom: 1, borderColor: 'divider', pb: 1.25 }}>
+            <Stack direction="row" gap={1} alignItems="center" sx={{ borderBottom: 1, borderColor: 'divider', pb: 1 }}>
               <Typography color="text.secondary" sx={{ width: 64, flexShrink: 0 }}>An</Typography>
               <Stack direction="row" gap={0.75} flexWrap="wrap" sx={{ flex: 1 }}>
                 {[...gewaehlt].map(([id, name]) => <Chip key={id} label={name.replace(/\s*\(.*?\)\s*/, ' ').replace(/\s+–.*/, '').trim()} title={name} color="primary" size="small"
@@ -449,7 +449,7 @@ function SchreibDialog({ an, vorgabe, entwurf, titel, onClose, fertig }: Schreib
         )}</Geladen>
       </DialogContent>
       {o && !gesperrt && (
-        <DialogActions sx={{ px: 2, py: 1.25, gap: 0.75, flexWrap: 'wrap' }}>
+        <DialogActions sx={{ px: 2, py: 1, gap: 0.75, flexWrap: 'wrap' }}>
           <Button variant="outlined" onClick={() => void los(async () => { await speichernEntwurf(); toast('Entwurf gespeichert.'); fertig('#/mitteilungen/entwuerfe'); })} disabled={laeuft}>Speichern</Button>
           <Tooltip title="Lesebestätigung anfordern"><ToggleButton value="lb" size="small" selected={lesebestaetigung} onChange={() => setLb(!lesebestaetigung)} aria-label="Lesebestätigung anfordern"><MarkEmailReadOutlined fontSize="small" /></ToggleButton></Tooltip>
           {o.wichtig && <Tooltip title="Als wichtig markieren"><ToggleButton value="w" size="small" selected={wichtig} onChange={() => setWichtig(!wichtig)} aria-label="Als wichtig markieren"><PriorityHighRounded fontSize="small" /></ToggleButton></Tooltip>}
@@ -597,8 +597,8 @@ function Einstellungen() {
       try { await senden(`${BASIS}/einstellungen`, { ...x, gesperrt: [...gesperrt] }, 'PUT'); toast('Einstellungen gespeichert.'); } catch (err) { fehler(err); } finally { setLaeuft(false); }
     }}>Speichern</Button>}>
       <Geladen g={g}>{() => x && (
-        <Stack gap={2.5} sx={{ maxWidth: 880 }}>
-          <Paper variant="outlined" sx={{ p: 2.5 }}>
+        <Stack gap={2} sx={{ maxWidth: 880 }}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="h3" sx={{ mb: 1 }}>Wer darf an wen schreiben?</Typography>
             {SCHALTER.map((sch, i) => typeof sch === 'string'
               ? <Typography key={i} variant="overline" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>{sch}</Typography>
@@ -607,7 +607,7 @@ function Einstellungen() {
                   label={<Box sx={{ pt: 0.75 }}><Typography sx={{ fontWeight: 500 }}>{sch[1]}</Typography>{sch[2] && <Typography variant="body2" color="text.secondary">{sch[2]}</Typography>}</Box>} />
               ))}
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2.5 }}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="h3" sx={{ mb: 2 }}>Anhänge und Aufbewahrung</Typography>
             <Stack direction="row" gap={2} flexWrap="wrap">
               {zahl('maxAnhangMb', 'Größe je Anhang (MB)', 1, 25)}
@@ -615,7 +615,7 @@ function Einstellungen() {
               {zahl('aufbewahrungTage', 'Automatisch löschen nach (Tagen)', 30, 3650)}
             </Stack>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2.5 }}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
             <Stack direction="row" alignItems="center" sx={{ mb: 1 }}><Typography variant="h3">Sperren</Typography><Box sx={{ flex: 1 }} /><Plakette ton={gesperrt.size ? 'entfall' : 'neutral'}>{gesperrt.size} gesperrt</Plakette></Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Gesperrte Konten können Mitteilungen lesen, aber keine senden.</Typography>
             <SuchFeld wert={suche} onWert={setSuche} platzhalter="Konto suchen" />

@@ -3,14 +3,14 @@
 // Abwesenheitsmeldungen.tsx) und „Meine Abwesenheiten“ (eigene Meldungen der Lehrkraft).
 // Schüler*innen und Erziehungsberechtigte sehen ihre eigenen Seiten (FamilieAbwesenheiten).
 import { useEffect, useState } from 'react';
-import { Autocomplete, Box, Button, ButtonBase, FormControlLabel, MenuItem, Paper, Stack, Switch, Tab, Tabs, TextField, Tooltip, Typography } from '@mui/material';
+import { Autocomplete, Box, Button, FormControlLabel, MenuItem, Paper, Stack, Switch, Tab, Tabs, TextField, Tooltip, Typography } from '@mui/material';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import { holen, senden, qs, speichern } from '../../api/client';
 import type { Elemente } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
-import { DatumKachel, FormDialog, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
+import { DatumKachel, FormDialog, Kennzahl, Kennzahlen, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
 import { DatumFeld, ZeitFeld } from '../../components/Auswahl';
 import { Tabelle } from '../../components/Tabelle';
 import { abwZeitraum, DetailFelder, detailsVon, DetailSymbole, NACHWEISE, StatusLabel, STATUS_TEXT, type Details } from '../../components/klassenbuch/fehlzeiten';
@@ -164,9 +164,7 @@ function AbwesenheitenKollegium({ teile }: SeitenProps) {
     ...liste.map(z => [z.schueler, z.klasse, `${z.vonDatum} ${z.vonZeit}`, `${z.bisDatum} ${z.bisZeit}`, z.fehlstunden, z.art, z.art === 'fehlt' ? z.fehlminuten : z.minuten, grundName(z.grund), z.faecher.join(', '), z.status, z.text,
       NACHWEISE[z.nachweis ?? ''] ?? '', z.entschuldigtAm ?? '', z.elternInformiert ? 'ja' : '', z.lehrer.join(', ')].map(x => `"${String(x ?? '').replace(/"/g, '""')}"`).join(';'))].join('\r\n'), `abwesenheiten-${von}-${bis}.csv`);
   const kz = (text: string, n: number | string, an: boolean, onClick?: () => void, ton?: 'entfall' | 'pruefung' | 'termin') => (
-    <ButtonBase onClick={onClick} disabled={!onClick} sx={{ px: 1.5, py: 0.75, borderRadius: 1, border: 1, borderColor: an ? 'primary.main' : 'divider', bgcolor: an ? 'action.selected' : 'background.paper', gap: 0.75, fontSize: 13 }}>
-      <Box component="b" sx={{ color: ton ? `status.${ton}.main` : 'text.primary' }}>{n}</Box>{text}
-    </ButtonBase>
+    <Kennzahl wert={n} text={text} ton={an ? 'primaer' : ton ?? 'neutral'} onClick={onClick} />
   );
   return (
     <Seite titel="Abwesenheiten" untertitel={reiter === 'schueler' && d?.zr ? `${liste.length} ${liste.length === 1 ? 'Abwesenheit' : 'Abwesenheiten'}` : undefined}
@@ -179,7 +177,7 @@ function AbwesenheitenKollegium({ teile }: SeitenProps) {
         {ich.element && <Tab value="meine" label="Meine Abwesenheiten" />}
       </Tabs>
       {reiter === 'schueler' && !!offeneMeldungen && (
-        <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 2, px: 2, py: 1.25, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'status.frei.flaeche' }}>
+        <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 2, px: 2, py: 1, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'status.frei.flaeche' }}>
           <Typography variant="body2" sx={{ flex: 1 }}><b>{offeneMeldungen}</b> {offeneMeldungen === 1 ? 'Abwesenheitsmeldung wartet' : 'Abwesenheitsmeldungen warten'} auf Ihre Bestätigung.</Typography>
           <Button size="small" variant="outlined" onClick={() => navigieren(ziel('meldungen'))}>Meldungen ansehen</Button>
         </Stack>
@@ -207,7 +205,7 @@ function AbwesenheitenKollegium({ teile }: SeitenProps) {
             <DatumFeld label="Von" wert={von} onWert={v => v && navigieren(ziel(reiter, v))} pflicht />
             <DatumFeld label="Bis" wert={bis} onWert={b => b && navigieren(ziel(reiter, von, b))} pflicht />
           </Paper>
-          <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mb: 2 }}>
+          <Kennzahlen sx={{ mb: 2 }}>
             {kz('offen', roh.filter(z => z.status === 'offen').length, status === 'offen', () => navigieren(ziel(reiter, von, bis, klasse, status === 'offen' ? '' : 'offen')), 'pruefung')}
             {kz('nicht entschuldigt', roh.filter(z => z.status === 'unentschuldigt').length, status === 'unentschuldigt', () => navigieren(ziel(reiter, von, bis, klasse, status === 'unentschuldigt' ? '' : 'unentschuldigt')), 'entfall')}
             {kz('Verspätungen', roh.filter(z => z.art === 'verspaetet').length, art === 'verspaetet', () => navigieren(ziel(reiter, von, bis, klasse, '', grund, art === 'verspaetet' ? '' : 'verspaetet')), 'pruefung')}
@@ -215,12 +213,12 @@ function AbwesenheitenKollegium({ teile }: SeitenProps) {
             {kz('Minuten', roh.filter(z => z.art !== 'fehlt').reduce((n, z) => n + z.minuten, 0), false)}
             <Box sx={{ flex: 1 }} />
             <Button size="small" href={`#/klassenbuch/${encodeURIComponent(klasse || dd.el.klassen[0]?.kurz || '-')}/fehlzeiten/${bis}/${von}`}>Fehlzeiten je Stunde</Button>
-          </Stack>
+          </Kennzahlen>
           <Tabelle zeilen={liste} schluessel={z => z.schluessel} auswahl={verwalten ? auswahl : undefined} setAuswahl={setAuswahl} leer="Keine Abwesenheiten im Zeitraum."
             spalten={[
               { id: 'name', kopf: 'Name', sortWert: z => z.schueler, zelle: z => (
-                <Stack direction="row" gap={1.25} alignItems="center">
-                  <Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{z.schueler}</Typography><Typography variant="caption" color="text.secondary">{z.klasse}{z.lehrer.length ? ` · erfasst von ${z.lehrer.join(', ')}` : ''}</Typography></Box></Stack>) },
+                <Stack direction="row" gap={1} alignItems="center">
+                  <Box><Typography variant="body2" sx={{ fontWeight: 500 }}>{z.schueler}</Typography><Typography variant="caption" color="text.secondary">{z.klasse}{z.lehrer.length ? ` · erfasst von ${z.lehrer.join(', ')}` : ''}</Typography></Box></Stack>) },
               { id: 'zeit', kopf: 'Zeitraum', sortWert: z => z.vonDatum + z.vonZeit, nowrap: true, zelle: z => (
                 <Box><Typography variant="body2">{wochentagKurz(z.vonDatum)} {datumKurz(z.vonDatum)} <Box component="span" sx={{ color: 'text.secondary' }}>{z.vonZeit}</Box> – {z.bisDatum !== z.vonDatum ? `${wochentagKurz(z.bisDatum)} ${datumKurz(z.bisDatum)} ` : ''}<Box component="span" sx={{ color: 'text.secondary' }}>{z.bisZeit}</Box></Typography>
                   <Typography variant="caption" color="text.secondary">{z.fehlstunden} {z.fehlstunden === 1 ? 'Fehlstunde' : 'Fehlstunden'} · {z.fehlminuten} min</Typography></Box>) },

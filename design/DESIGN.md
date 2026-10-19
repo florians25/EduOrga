@@ -16,8 +16,8 @@ Gestaltung anderer Stundenplanprogramme.
   keine dunkle Seitenleiste mit Symbolspalte. Vorbild sind nüchterne Fachanwendungen (Verwaltung, Finanzen, ERP).
 * **Keine Effekte um der Effekte willen:** keine Farbverläufe, kein Glas/Blur, keine Emojis, keine Illustrationen,
   keine „Hero“-Flächen, keine verspielten Animationen. Übergänge höchstens 120 ms (Farbe/Deckkraft).
-* **Klare Kanten:** Radius 6 px (Steuerelemente), 8 px (Karten, Dialoge), 4 px (Rasterrahmen), 3 px (Plaketten,
-  Stundenkacheln). Keine Pillenform für Knöpfe, Felder oder Plaketten.
+* **Klare Kanten:** Radius höchstens 6 px – 6 px (Steuerelemente, Karten, Dialoge, Menüs), 4 px (Rasterrahmen), 3 px
+  (Schilder, Stundenkacheln). Keine Pillenform für Knöpfe, Felder oder Plaketten. Prüfliste: Abschnitt 9.
   1-px-Linien statt Schatten; Schatten nur für schwebende Ebenen (Menüs, Dialoge).
 * **Typografie trägt die Hierarchie**, nicht Farbe: IBM Plex Sans 400/500/600, Ziffern tabellarisch
   (`font-variant-numeric: tabular-nums`) in Tabellen, Zeiten und Rastern.
@@ -120,16 +120,18 @@ Leitbild: nüchterner Fachkalender – gerade Linien, weiße Flächen, Farbe nur
 * **Tabellen:** Kopf 12 px/500 `--up-text-2` auf `--up-flaeche-2`, Zeilen 32 px (dicht 28 px), Zeilenwechsel ohne
   Zebrastreifen, Hover `--up-flaeche-hover`, Auswahl `--up-primaer-flaeche`.
 * **Segmentschalter** für Ansichtswechsel (Tag/Woche, Klasse/Lehrkraft/Raum).
-* **Plaketten:** 11 px/600, Radius 3 px, helle Fläche der Statusfarbe, Text der Statusfarbe; in Stundenkacheln nur Text
-  (Abschnitt 5).
-* **Leere Zustände:** ein Linien-Symbol 24 px in `--up-text-3`, ein Satz, optional ein Knopf. Keine Illustrationen.
+* **Statuswörter (Plaketten):** Web: nur Text 12 px/500 in der Statusfarbe, ohne Fläche und Rahmen; der Normalzustand
+  („aktiv“, „anwesend“, „dokumentiert“) bleibt neutral grau. Ein gefülltes Schild (Radius 3 px) nur für „Heute“/„Jetzt“.
+  In Stundenkacheln nur Text (Abschnitt 5).
+* **Leere Zustände:** ein sachlicher Satz links in `--up-text-2` (13 px), optional ein kleiner Knopf. Kein Symbol, keine
+  Illustration, nicht zentriert, keine großen Leerflächen.
 
 ## 7. Aufbau je Produkt
 
 | Produkt | Navigation |
 |---|---|
 | **Studio** | **EduOrga Studio**: React 18 + TypeScript + Fluent UI v9 (`studio/client`). Fluent-Thema aus der Petrol-Rampe (`studio/client/src/theme.ts`, Stufe 80 = Primär #164C55, 100 = Akzent #28747A), Neutraltöne Schiefer mit kräftigen Linien (#c9d1db, Stroke1 #b4bec8), Seitenhintergrund #F5F7F8, Text #24363B; eigenes dunkles Thema (Schiefer mit Petrolstich, Flächen #10161a/#141b1f/#182126, Linien #37434b, Text #e7ecee), Thema wird vor dem ersten Zeichnen gesetzt (`public/thema.js`, kein weißes Aufblitzen). Studio-Ergänzungen zu den Tokens in `studio/client/src/stile/thema.css`. Seitenbasierte Web-Anwendung (eine Seite je Aufgabe, Adresse in der URL). **Seitenleiste in Primärfarbe** (dunkel: #0e2a2f) mit weißer Schrift, Linien-Symbolen nur vor den Bereichen; Zeilen über die ganze Breite, eckig, gewählt = leicht hellere Zeile + 3-px-Kante links in der Modusfarbe + Schrift 600, keine Pillen. **Kopfleiste** weiß: Monogramm + Wortmarke „**Edu**Orga Studio“, Schuldatei, Modus als zwei schlichte Textreiter mit 3-px-Unterstrich in der Modusfarbe (keine Symbole, kein Rahmen), Rückgängig/Speicherstand, Suche (Strg+K), Konto. **Modusfarbe:** Stundenplanung Petrol #28747a, Vertretungsplanung Indigo #3b4a8f (dunkel #4f9298 / #7f8fe0) – Unterstrich des Modusreiters, 2-px-Linie über dem Seitenkopf, Kante des gewählten Navigationspunkts; sonst keine Flächen in Modusfarbe. **Seitenkopf** grau (#eef1f4) mit Bereich als schlichter Text (12 px, `--up-text-3`, ohne Quadrat/Großbuchstaben) und Titel 20 px, darunter die Werkzeugleiste auf derselben Fläche; Inhalt weiß; Kopfzeilen der Bereiche (#e6eaee) und Tabellenköpfe (#e9edf0) deutlich grau; Karten weiß mit 1-px-Linie auf grauem Grund. Umschalter (Tag/Woche) flach: 1-px-Rahmen, gewählt grau mit 2-px-Linie in Modusfarbe; Wochenstreifen als Text, Planungstag unterstrichen. Datumsfelder als Fluent DatePicker (deutsch, Woche ab Montag, Kalenderwochen, Eingabe „19.10.2026“), lange Auswahllisten als durchsuchbare Combobox. Rechteverwaltung als Matrix Gruppe × Bereich mit farbigen Stufen-Kennzeichen (Text, ohne Symbole). Arbeitsplätze (Tagesplanung, manuelles Planen, Verlegen und Tauschen) sind fest gestaltete Seiten mit verschiebbaren Trennern. Keine Verläufe, keine Symbolkacheln, keine Großbuchstaben-Plaketten als Dekoration. |
-| **Web** (EduOrga Web) | React 18 + TypeScript + MUI v7 (`web/client`), Thema nach `MARKE.md`: Primär Petrol #164C55 (Logo, Navigation, Knöpfe), Akzent #28747A (aktive Bereiche, Links, Fokus), Hintergrund #F5F7F8, Text #24363B, Statusfarben aus diesen Tokens (Änderung Violett #6d4fc2, Termin #a3347c), hell und dunkel (Petrol-Palette, wählbar im Kontomenü). Sachlich wie ein Schulsystem: Knöpfe und Felder Radius 6 px (Höhe 32 px), Karten 8 px mit getöntem Kopfband und Trennlinie, Tabellenköpfe getönt, Seitenkopf mit Linie, Segmentschalter mit 1-px-Rahmen, Bearbeiten in Dialogen. **Seitenleiste in Petrol** mit Monogramm und Wortmarke „EduOrga Web“, Linien-Symbolen vor den Bereichen und Unterpunkten als eingerücktem Text; Zeilen über die volle Breite, eckig, aktive Zeile leicht getönt mit 3-px-Kante links und Schrift 600 (keine Pillen, kein Einzug); einklappbar zur Symbolleiste; mobil als Schublade unter einer Petrol-Kopfleiste. Eigene Gliederung: Start · Mein Tag · Stundenpläne · Vertretungen · Unterricht & Prüfungen · Klassenbuch · Kommunikation · Termine & Buchungen · Stammdaten · Verwaltung (alte Adressen bleiben, sprechende Aliase). Datums-/Zeitfelder nur als MUI-Picker mit Beschriftung oben und Mindestbreite. Anmeldung zweigeteilt mit Slogan „Einfach mehr Schulalltag.“ und „Über EduOrga“ (rechtlicher Hinweis). Eigener Stundenplan (Abschnitt 5, Standard „Klassisch“; ohne Fachfarbe immer grauer Balken – Themenfarbe `kachel.balken`, hell #a9b6bb, dunkel #6b8287; gleichzeitige Stunden: erste Stunde über die volle Breite mit kleinem „+X“ rechts oben, Klick listet alle – keine Zählerkarten). Klassenbuch als eigener Bereich mit Unternavigation (Unterricht · Schüler*innen · Klasse; am Desktop Spalte links, sonst Reiterleiste) und Fenster „Unterrichtsstunde“: großes zentriertes Fenster (≈ 94 % × 90 %, Telefon Vollbild), weißer Kopf mit Angaben als Schlüssel/Wert nebeneinander, Stand der Dokumentation als Häkchen-Text, Reiter Stunde · Anwesenheit · Einträge · Prüfungen · Verlauf, Inhalt auf grauer Fläche in Karten mit getöntem Kopfband, Fuß mit Speicherstand (automatisches Speichern). Anwesenheit als Segmentschalter je Schüler*in (Anwesend/Abwesend/Verspätet/Früher weg in Status-Farben). Online-Unterricht nur als Schild mit Link. Keine Namen, Symbole oder Grafiken anderer Produkte. |
+| **Web** (EduOrga Web) | React 18 + TypeScript + MUI v7 (`web/client`), Thema nach `MARKE.md`: Primär Petrol #164C55 (Logo, Navigation, Knöpfe), Akzent #28747A (aktive Bereiche, Links, Fokus), Hintergrund #F5F7F8, Text #24363B, Statusfarben aus diesen Tokens (Änderung Violett #6d4fc2, Termin #a3347c), hell und dunkel (Petrol-Palette, wählbar im Kontomenü). Sachlich wie ein Schulsystem: Knöpfe und Felder Radius 6 px (Höhe 32 px), Karten 6 px mit schlichter Kopfzeile (Titel als Text, 1-px-Linie darunter, keine Tönung), Tabellenköpfe neutral grau, Seitenkopf mit Linie, Segmentschalter mit 1-px-Rahmen, Bearbeiten in Dialogen. **Seitenleiste in Petrol** mit Monogramm und Wortmarke „EduOrga Web“, Linien-Symbolen vor den Bereichen und Unterpunkten als eingerücktem Text; Zeilen über die volle Breite, eckig, aktive Zeile leicht getönt mit 3-px-Kante links und Schrift 600 (keine Pillen, kein Einzug); einklappbar zur Symbolleiste; mobil als Schublade unter einer Petrol-Kopfleiste. Eigene Gliederung: Start · Mein Tag · Stundenpläne · Vertretungen · Unterricht & Prüfungen · Klassenbuch · Kommunikation · Termine & Buchungen · Stammdaten · Verwaltung (alte Adressen bleiben, sprechende Aliase). Datums-/Zeitfelder nur als MUI-Picker mit Beschriftung oben und Mindestbreite. Anmeldung zweigeteilt mit Slogan „Einfach mehr Schulalltag.“ und „Über EduOrga“ (rechtlicher Hinweis). Eigener Stundenplan (Abschnitt 5, Standard „Klassisch“; ohne Fachfarbe immer grauer Balken – Themenfarbe `kachel.balken`, hell #a9b6bb, dunkel #6b8287; gleichzeitige Stunden: erste Stunde über die volle Breite mit kleinem „+X“ rechts oben, Klick listet alle – keine Zählerkarten). Klassenbuch als eigener Bereich mit Unternavigation (Unterricht · Schüler*innen · Klasse; am Desktop Spalte links, sonst Reiterleiste) und Fenster „Unterrichtsstunde“: großes zentriertes Fenster (≈ 94 % × 90 %, Telefon Vollbild), weißer Kopf mit Angaben als Schlüssel/Wert nebeneinander, Stand der Dokumentation als Text („Thema eingetragen · Anwesenheit offen“, Fehlendes in Bernstein, keine Häkchen-Symbole), Reiter Stunde · Anwesenheit · Einträge · Prüfungen · Verlauf (Anzahl als Zweittext-Ziffer, keine Plakette), Inhalt auf grauer Fläche in Bereichen mit schlichter Kopfzeile, Fuß mit Speicherstand (automatisches Speichern, als Text). Anwesenheit als Liste ohne Initialen-Avatare, je Schüler*in ein Segmentschalter mit Text (Anwesend/Abwesend/Verspätet/Früher weg; „Anwesend“ gewählt = neutral grau, nur Abweichungen in Statusfarbe; Symbole nur auf schmalen Bildschirmen statt der nicht gewählten Wörter). Online-Unterricht nur als Schild mit Link. Keine Namen, Symbole oder Grafiken anderer Produkte. |
 | **Mobile (PWA)** | Untere Leiste *Heute · Plan · Postfach · Mehr* (Linien-Symbol + Beschriftung, das ist auf Telefonen Standard), große Seitentitel, Listen statt Karten-Kacheln, keine Logo-Kachel. |
 | **iOS** (EduOrga, `ios/`; technisch UntPlanNext) | Tab-Leiste des Systems *Heute · Plan · Postfach · Schule · Suche* (Suche mit der Rolle „Suche“), Profil und Einstellungen als Blatt hinter dem Avatar oben rechts. Marke EduOrga: Monogramm und Wortmarke, Primär **Petrol** `#164C55`, Akzent/`AccentColor` `#28747A` (dunkel `#5FB0B5`), Hintergrund `#F5F7F8`, Text `#24363B`; Statusfarben wie `tokens.css` (Änderung/Vertretung Violett `#6d4fc2`, Termin Magenta `#a3347c`, Prüfung Bernstein, Entfall Rot, Ferien Blau). Einrichtung als ruhige Einstiegsseite (Logo, Slogan, Adresse mit Prüfung beim Tippen, QR-Code, zuletzt verwendete Schulen). **Plan öffnet mit der Woche als Raster** über die ganze Breite (Mo–Fr, schmale Stundenspalte, Zeilen passen den Schultag in die Bildschirmhöhe, Jetzt-Linie, wischen = Woche, Aufziehen = Dichte); Karten im klassischen Grundstil – in diese Richtung bekannter Portale, aber eigenständig: hellgrauer Rastergrund mit feinen Stundenlinien, weiße Karten ohne Rahmen, Radius 2, 3-pt-Balken innen links (grau bzw. Fachfarbe), Fach halbfett, darunter Lehrkraft/Klasse und Raum; eigener Status (Entfall rot durchgestrichen und schraffiert, Änderung violett, Prüfung Bernstein, offen/Termin/Buchung gestrichelt); Inhalte nach der schulweiten Kartendarstellung. Tag als Liste bzw. Zeitachse mit denselben Karten. **Liquid Glass** (iOS 26) nur auf der Bedienebene; iOS 18 mit Material. Systemschrift SF Pro mit Dynamic Type, 8-pt-Raster. Die frühere App „UntPlan für iOS“ liegt nur noch als Archiv in `archiv/ios-alt/`. |
 
@@ -139,3 +141,66 @@ Leitbild: nüchterner Fachkalender – gerade Linien, weiße Flächen, Farbe nur
   wörtlich übernommenen Bezeichnungen anderer Hersteller.
 * Dateiformate anderer Programme (z. B. GPU-Textdateien) werden nur als **Import/Export-Format** neutral benannt.
 * Keine Formulierungen wie „wie im Original“, „Vorbild“ (für fremde Produkte), „vertraute Optik“ in Oberfläche, Code-Kommentaren oder Doku.
+
+## 9. Keine KI-Anmutung – Prüfliste
+
+Verbindlich für Web, Studio, Mobile und iOS. Ziel: wirkt wie eine etablierte, sachliche Fachanwendung (Verwaltung,
+Schulsoftware), nicht wie ein generiertes Dashboard. Jede neue Seite und jede Überarbeitung wird mit dieser Liste geprüft
+(hell und dunkel, 1440 px und 390 px). In Klammern: wie es in EduOrga Web umgesetzt ist.
+
+**Symbole**
+- [ ] Symbole nur, wo sie eine Funktion tragen: Navigation (Seitenleiste, untere Leiste), Symbolknöpfe ohne Text in
+      Werkzeugleisten und Tabellenzeilen, Pfeile/Chevrons, Schließen, Suchen, Kalender im Datumsfeld, Dateianhang.
+- [ ] **Keine** Symbole vor Überschriften, in Kartenköpfen, vor Beschriftungen („📍 Raum“, „🕑 Zeit“), in Menüeinträgen,
+      in Reitern, in Statuswörtern oder in Knöpfen mit Text (kein „+ Neu“, kein „⬇ Bericht“). Ausnahme: „Zurück“-Pfeil.
+- [ ] Keine Symbol-Kacheln (Symbol auf farbigem Quadrat/Kreis), keine „Sparkle“-/Konfetti-/Kaffeetassen-Symbole.
+- [ ] Symbole einfarbig (`currentColor`, Zweittext); Rot nur beim Überfahren eines Löschknopfs (Thema: `MuiIconButton.colorError`).
+- [ ] Keine Häkchen-Kreise als Status („✓ Thema eingetragen“) – Status ist Text; Wahr/Falsch-Spalten dürfen ein neutrales Häkchen zeigen.
+
+**Personen**
+- [ ] Keine Initialen-Avatare in Listen, Tabellen, Anwesenheit, Sitzplan, Postfach oder Empfängerauswahl. Einziger Ort:
+      Kontomenü der Kopf-/Seitenleiste (und iOS-Profil). Namen als Text, Zusatz (Login, Klasse) als Zweittext.
+
+**Flächen, Karten, Abstände**
+- [ ] Radius ≤ 6 px überall (Karten, Dialoge, Menüs, Knöpfe, Felder); nie Pillenform.
+- [ ] Eine Schattenstufe – nur für schwebende Ebenen (Menü, Popover, Dialog, Hinweis-Toast). Karten, Tabellen und
+      Kacheln haben 1-px-Linien, keinen Schatten, keinen Hover-Schatten, kein „Anheben“.
+- [ ] Abschnitte: Titel als Text (14–15 px/600) mit 1-px-Linie darunter, **ohne** getöntes Kopfband und ohne Symbol
+      (`Abschnitt`, `Bereichskarte`, `Karte`). Tabellenköpfe neutral grau (`flaechen.kopf`), keine Petrol-/Pastelltönung.
+- [ ] Keine Karten in Karten; Filterleisten sind eine Zeile über der Tabelle, keine eigene Karte (`Seite filter`).
+- [ ] Keine Kennzahl-Kacheln (große Zahl in Kasten). Zahlen als Textzeile über der Tabelle: „**5** alle · **2** Lehrkraft“
+      (`Kennzahl`/`Kennzahlen`), klickbar als Filter mit 2-px-Unterstrich für die Auswahl.
+- [ ] Keine Startkacheln mit Symbol, Titel und Pfeil („Was möchten Sie tun?“) – stattdessen eine Linkliste mit Beschreibung.
+- [ ] Keine Kalenderblatt-Datumskacheln („19 / Okt“) in Listen; Datum als Text in fester Spalte („Mo 19.10.“, `DatumKachel`).
+- [ ] 8-px-Raster: Abstände 4 / 8 / 12 / 16 / 24 px (MUI-Einheiten 0,5 / 1 / 1,5 / 2 / 3); keine 5-, 10-, 20-px-Werte.
+      Innenabstand von Abschnitten 16 px, Zeilenhöhe Tabellen 32–36 px.
+- [ ] Leere Zustände: ein Satz links, kein großes Symbol, keine zentrierte Leerfläche (`Leer`).
+- [ ] Erfolgsseiten (z. B. nach dem Buchen): Überschrift, Angaben, Knöpfe – kein großer Haken, nichts zentriert.
+
+**Farbe**
+- [ ] Neutrale Grautöne für Flächen und Linien; Petrol nur für Bedienung (Primärknopf, Link, Fokus) und Auswahl
+      (gewählte Zeile, gewählter Reiter/Segment).
+- [ ] Statusfarben sparsam und nur als **Text** (Statuswort, Zahl): keine bunten Pillen, keine Pastellflächen
+      für Hinweise; der Normalzustand ist grau („aktiv“, „Anwesend“, „Vollzugriff“), nur Abweichungen sind farbig.
+- [ ] Höchstens eine Statusfarbe pro Zeile; nie mehrere farbige Plaketten nebeneinander.
+- [ ] Hinweise (`Alert`): weiße Fläche, 1-px-Linie, 3-px-Kante links in der Statusfarbe; keine vollflächig getönten Kästen.
+- [ ] Mehrere gefüllte Primärknöpfe auf einer Seite vermeiden – in Listen/Karten „Buchen“ usw. als umrandeter Knopf.
+
+**Zahlen, Plaketten, Reiter**
+- [ ] Keine Zähler-Plaketten in Überschriften und Reitern; Anzahl als Zweittext-Ziffer („Einträge 2“), Warnzahl rot als Text.
+- [ ] Kein „offen“-Schild an jeder Zeile; offener Zustand als kurzes Wort in Bernstein, nur wo es eine Entscheidung auslöst.
+- [ ] Glocke/Posteingang dürfen eine kleine Zahl als Badge zeigen (Funktion: ungelesen).
+
+**Schrift und Ton**
+- [ ] Seitentitel 20 px/600, Abschnitte 14–15 px/600, Text 13–14 px/400–500; kein 700, keine Großbuchstaben-Überschriften
+      (auch nicht als „Overline“), keine Laufweite für Überschriften.
+- [ ] Namen in Tabellen 500, nicht 600; Hervorhebung über Position und Spalte, nicht über Fettdruck.
+- [ ] Keine Begrüßung („Guten Morgen, …“), kein Marketington, keine Ausrufezeichen, kein „Alles erledigt“, kein Emoji.
+      Seitentitel ist der Name der Seite („Start“), darunter eine sachliche Tageszeile.
+- [ ] Meldungen sachlich im Perfekt/Passiv: „Gespeichert.“, „Keine offenen Stunden.“, „3 Termine gespeichert.“
+
+**Aufbau**
+- [ ] Linksbündig, kein zentrierter Inhalt, keine Hero-Köpfe, keine schwebenden Aktionsknöpfe (FAB).
+- [ ] Segmentschalter (1-px-Rahmen, Radius 6 px, Auswahl leicht getönt) nur für Ansichtswechsel – nie als Pille.
+- [ ] Keine Verläufe, kein Glas/Weichzeichner, keine Animation über 120 ms (Farbe/Deckkraft).
+- [ ] Dunkelmodus: Farben ausschließlich über Thema-Variablen (`theme.vars`/Palettenpfade in `sx`), nie feste Hellwerte.

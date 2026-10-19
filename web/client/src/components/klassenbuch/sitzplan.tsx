@@ -9,7 +9,6 @@ import {
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import RemoveRounded from '@mui/icons-material/RemoveRounded';
 import AddRounded from '@mui/icons-material/AddRounded';
-import CoPresentOutlined from '@mui/icons-material/CoPresentOutlined';
 import { holen, senden, api } from '../../api/client';
 import type { Karte } from '../../api/types';
 import { lesen, schreiben } from '../../lib/speicher';
@@ -91,14 +90,14 @@ export function EinstellungenPanel({ offen, zu, onAendern, sitzplan }: { offen: 
   useEffect(() => { if (offen) setW(kbEinstellungen()); }, [offen]);
   const setzen = (n: Partial<KbEinstellungen>) => { const neu = { ...w, ...n }; setW(neu); kbEinstellungenSpeichern(neu); onAendern(neu); };
   const beispiel: Schueler[] = [{ id: 3, vorname: 'Emma', name: 'Schulz', klasse: '7a' }, { id: 1, vorname: 'Ben', name: 'Aydin', klasse: '7b' }];
-  const gruppe = (titel: string, kinder: ReactNode) => <Box sx={{ mb: 2.5 }}><Typography variant="overline" color="text.secondary">{titel}</Typography>{kinder}</Box>;
+  const gruppe = (titel: string, kinder: ReactNode) => <Box sx={{ mb: 2 }}><Typography variant="overline" color="text.secondary">{titel}</Typography>{kinder}</Box>;
   return (
     <Drawer anchor="right" open={offen} onClose={zu} sx={{ zIndex: t => t.zIndex.modal + 2 }} slotProps={{ paper: { sx: { width: { xs: '100%', sm: 380 } } } }}>
-      <Stack direction="row" alignItems="center" sx={{ px: 2.5, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+      <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h3" component="h2" sx={{ flex: 1 }}>Klassenbuch-Einstellungen</Typography>
         <IconButton onClick={zu} aria-label="Schließen"><CloseRounded /></IconButton>
       </Stack>
-      <Box sx={{ p: 2.5, overflowY: 'auto', flex: 1 }}>
+      <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
         {gruppe('Schüler*innen anzeigen als', (
           <ToggleButtonGroup exclusive value={w.ansicht} onChange={(_, v) => v && setzen({ ansicht: v })} sx={{ mt: 0.5 }}>
             <ToggleButton value="liste">Liste</ToggleButton><ToggleButton value="sitzplan">Sitzplan</ToggleButton>
@@ -153,7 +152,7 @@ export function SitzplanAnordnung({ d, schueler, kachel, w }: { d: SitzDaten | n
   }
   const gesetzt = new Set(Object.values(plan.belegung));
   const rest = sortieren(schueler.filter(s => !gesetzt.has(s.id)), w);
-  const pult = <Box sx={{ mx: 'auto', my: 1, px: 3, py: 0.5, borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12, fontWeight: 600, width: 'fit-content', display: 'flex', gap: 0.75, alignItems: 'center' }}><CoPresentOutlined sx={{ fontSize: 16 }} />Lehrerpult</Box>;
+  const pult = <Box sx={{ mx: 'auto', my: 1, px: 3, py: 0.5, borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12, fontWeight: 600, width: 'fit-content', display: 'flex', gap: 0.75, alignItems: 'center' }}>Lehrerpult</Box>;
   return (
     <Box>
       <Box sx={{ overflowX: 'auto' }}>
@@ -368,7 +367,7 @@ export function SitzplanEditor({ offen, zu, d, kontext, titel = 'Sitzplan', unte
       </Box>,
     );
   }
-  const pult = <Box sx={{ mx: 'auto', my: 1.5, px: 4, py: 0.75, borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12.5, fontWeight: 600, width: 'fit-content', display: 'flex', gap: 0.75, alignItems: 'center' }}><CoPresentOutlined sx={{ fontSize: 18 }} />Lehrerpult</Box>;
+  const pult = <Box sx={{ mx: 'auto', my: 1.5, px: 4, py: 0.75, borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12.5, fontWeight: 600, width: 'fit-content', display: 'flex', gap: 0.75, alignItems: 'center' }}>Lehrerpult</Box>;
   const zahl = (n: 'zeilen' | 'spalten', text: string) => (
     <Stack direction="row" alignItems="center" gap={0.5}>
       <Typography variant="body2" color="text.secondary">{text}</Typography>

@@ -74,7 +74,7 @@ export function Tabelle<T>({ zeilen, spalten, schluessel, onZeile, auswahl, setA
       </Table>
       {!zeilen.length && <Leer text={leer} unter={leerUnter} />}
       {sortiert.length > anzahl && (
-        <Box sx={{ textAlign: 'center', py: 1.5 }}><Button onClick={() => setAnzahl(anzahl + max)}>Weitere {Math.min(max, sortiert.length - anzahl)} von {sortiert.length - anzahl} anzeigen</Button></Box>
+        <Box sx={{ px: 1, py: 1 }}><Button size="small" onClick={() => setAnzahl(anzahl + max)}>Weitere {Math.min(max, sortiert.length - anzahl)} von {sortiert.length - anzahl} anzeigen</Button></Box>
       )}
     </TableContainer>
   );

@@ -30,7 +30,7 @@ export function Monogramm({ groesse = 28, invers = false }: { groesse?: number; 
 
 export function Marke({ zusatz = 'Web', groesse = 28, hell = false }: { zusatz?: string; groesse?: number; hell?: boolean }) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }} aria-label={zusatz ? `EduOrga ${zusatz}` : 'EduOrga'} role="img">
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} aria-label={zusatz ? `EduOrga ${zusatz}` : 'EduOrga'} role="img">
       <Box sx={{ borderRadius: `${groesse * 12 / 64}px`, boxShadow: hell ? '0 0 0 1px rgba(255,255,255,.22)' : 'none', display: 'flex' }}><Monogramm groesse={groesse} /></Box>
       <Typography component="span" aria-hidden sx={{ fontWeight: 600, fontSize: groesse * 0.66, lineHeight: 1, color: hell ? '#fff' : 'text.primary', letterSpacing: '-0.005em', whiteSpace: 'nowrap' }}>
         Edu<Box component="span" sx={{ fontWeight: 400 }}>Orga</Box>

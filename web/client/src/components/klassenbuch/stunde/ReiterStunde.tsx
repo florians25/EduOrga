@@ -6,7 +6,6 @@ import { Box, Button, ButtonBase, Chip, Collapse, IconButton, ListItemIcon, Menu
 import AddRounded from '@mui/icons-material/AddRounded';
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import SwapHorizRounded from '@mui/icons-material/SwapHorizRounded';
 import { holen, senden } from '../../../api/client';
@@ -104,7 +103,7 @@ export function ReiterStunde(p: StundeProps & { unterrichtKarte: boolean; mitKla
 
   // ------------------------------------------------------------------ Hausaufgaben
   const hwZeile = (h: Hausaufgabe, darfH: boolean) => (
-    <ButtonBase key={h.id} onClick={() => setDialog({ art: 'hw', h, darf: darfH })} sx={{ width: '100%', textAlign: 'left', justifyContent: 'flex-start', gap: 1.5, px: 1.25, py: 1, mb: 0.75, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}>
+    <ButtonBase key={h.id} onClick={() => setDialog({ art: 'hw', h, darf: darfH })} sx={{ width: '100%', textAlign: 'left', justifyContent: 'flex-start', gap: 1.5, px: 1, py: 1, mb: 0.75, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}>
       <Box sx={{ width: 92, flex: 'none' }}>
         <Typography variant="caption" sx={{ display: 'block', color: h.faellig && h.faellig < heuteIso() && !h.erledigt ? 'status.entfall.main' : 'text.secondary', fontWeight: 600 }}>{h.faellig ? `bis ${wochentagKurz(h.faellig)} ${datumDe(h.faellig).slice(0, 6)}` : 'ohne Fälligkeit'}</Typography>
       </Box>
@@ -112,7 +111,7 @@ export function ReiterStunde(p: StundeProps & { unterrichtKarte: boolean; mitKla
         <Typography variant="body2" sx={{ textDecoration: h.erledigt ? 'line-through' : 'none', whiteSpace: 'pre-line' }}>{h.text}</Typography>
         {h.bemerkung && <Typography variant="caption" color="text.secondary">{h.bemerkung}</Typography>}
       </Box>
-      {h.erledigt && <CheckCircleRounded sx={{ color: 'status.ok.main', fontSize: 18 }} />}
+      {h.erledigt && <Typography component="span" variant="body2" color="text.secondary">erledigt</Typography>}
       <ChevronRightRounded sx={{ color: 'text.disabled' }} />
     </ButtonBase>
   );

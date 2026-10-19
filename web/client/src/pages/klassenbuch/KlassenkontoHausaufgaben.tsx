@@ -17,7 +17,7 @@ export default function KlassenkontoHausaufgaben() {
   return (
     <Seite titel="Hausaufgaben" untertitel={`Klasse ${klasse}`}>
       <Geladen g={g}>{([ha, verlauf]) => (
-        <Stack gap={2.5}>
+        <Stack gap={2}>
           <Abschnitt titel="Offene Hausaufgaben">
             {ha.length ? <Table size="small"><TableHead><TableRow><TableCell>Fällig</TableCell><TableCell>Fach</TableCell><TableCell>Aufgabe</TableCell><TableCell>Gestellt</TableCell></TableRow></TableHead>
               <TableBody>{ha.map((x, i) => <TableRow key={i}><TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{x.faellig ? datumLang(x.faellig) : '–'}</TableCell><TableCell>{x.fach}</TableCell><TableCell>{x.hausaufgabe}</TableCell>

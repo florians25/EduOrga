@@ -95,7 +95,7 @@ export function MeineBuchungen({ rest }: { rest: string[] }) {
       bloecke.push(
         <Box key={'s' + b.id}>
           <Zeile b={b} />
-          <Stack direction="row" gap={1} alignItems="center" sx={{ px: 2, pb: 1.25, pl: 10 }}>
+          <Stack direction="row" gap={1} alignItems="center" sx={{ px: 2, pb: 1, pl: 10 }}>
             <Button size="small" endIcon={<ExpandMoreRounded sx={{ transform: auf ? 'rotate(180deg)' : 'none' }} />} aria-expanded={auf}
               onClick={() => setOffen(s => { const x = new Set(s); if (x.has(b.serie!)) x.delete(b.serie!); else x.add(b.serie!); return x; })}>
               Serie · {gr.length === serien.get(b.serie!) ? `${gr.length} Termine` : `${gr.length} von ${serien.get(b.serie!)} Terminen`} · bis {tagKurz(gr[gr.length - 1].datum)}

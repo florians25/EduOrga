@@ -9,7 +9,6 @@ import {
   alpha, Autocomplete, Box, Button, ButtonBase, Checkbox, Collapse, IconButton, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField,
   ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
-import CheckRounded from '@mui/icons-material/CheckRounded';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
@@ -21,7 +20,6 @@ import HomeWorkOutlined from '@mui/icons-material/HomeWorkOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
-import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import { api, holen, senden, qs } from '../../api/client';
 import type { Elemente, Karte } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
@@ -64,7 +62,7 @@ export function AbwesenheitTags({ s, kommend }: { s: UStunde; kommend: boolean }
     const [ton, text] = unent ? ['entfall', 'nicht entschuldigt'] as const : offen ? ['pruefung', 'offen'] as const : ['ok', 'entschuldigt'] as const;
     teile.push(<Tooltip key="a" title={`${s.abwesend} abwesend: ${s.entschuldigt} entschuldigt, ${offen} offen, ${unent} nicht entschuldigt`}><span><Plakette ton={ton}><b>{offen + unent}</b>/{s.abwesend} {text}</Plakette></span></Tooltip>);
   }
-  if (s.verspaetet) teile.push(<Plakette key="v" ton="pruefung"><AccessTimeRounded sx={{ fontSize: 13 }} />{s.verspaetet} verspätet</Plakette>);
+  if (s.verspaetet) teile.push(<Plakette key="v" ton="pruefung">{s.verspaetet} verspätet</Plakette>);
   if (teile.length) return <Stack direction="row" gap={0.5} flexWrap="wrap">{teile}</Stack>;
   return s.geprueft ? <Plakette ton="ok">Keine Abwesenheiten</Plakette> : <Plakette ton="warnung">Abwesenheiten prüfen</Plakette>;
 }
@@ -134,7 +132,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
   let letzteKw = -1;
   return (
     <Seite titel={suchModus ? 'Stunden suchen' : 'Meine Stunden'} untertitel={suchModus ? 'Unterrichte nach Klasse, Lehrkraft oder Fach – mit Thema, Anwesenheitskontrolle und Hausaufgaben.' : 'Ihre Unterrichte des Schuljahres je Tag – offene Dokumentation ist markiert.'} dokumentTitel="Klassenbuch – Stunden">
-      <Paper variant="outlined" sx={{ p: 1.5, mb: 2.5, borderRadius: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', position: 'sticky', top: { xs: 60, lg: 8 }, zIndex: 5 }} className="nicht-drucken">
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', position: 'sticky', top: { xs: 60, lg: 8 }, zIndex: 5 }} className="nicht-drucken">
         {suchModus ? (
           <Autocomplete multiple options={optionen} value={optionen.filter(o => kriterien.some(k => k.typ === o.typ && k.kurz === o.kurz))} groupBy={o => GRUPPE[o.typ]}
             getOptionLabel={o => o.kurz} isOptionEqualToValue={(a, b) => a.typ === b.typ && a.kurz === b.kurz}
@@ -168,7 +166,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
       {!abfrage ? <Leer text={kriterien.length ? 'Nur ein Fach genügt nicht – bitte zusätzlich eine Klasse oder Lehrkraft angeben.' : 'Benutzen Sie die Suche, um das Ergebnis mit zumindest einer Lehrkraft und/oder Klasse einzuschränken.'} />
         : daten.fehler ? <Fehler fehler={daten.fehler} neu={daten.neu} /> : !daten.daten ? <Laden /> : (
           <>
-            {bereich.von <= sjVon ? <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}><FlagOutlined sx={{ fontSize: 16, verticalAlign: -3, mr: 0.5 }} />Beginn des Schuljahres · {datumDe(sjVon)}</Typography>
+            {bereich.von <= sjVon ? <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>Beginn des Schuljahres · {datumDe(sjVon)}</Typography>
               : <Box sx={{ textAlign: 'center', mb: 2 }}><Button onClick={() => setBereich({ von: grenze(plusTage(bereich.von, -21)), bis: bereich.bis })} disabled={daten.laedt}>Frühere Unterrichte laden</Button></Box>}
             {tage.map(tag => {
               const sicht = tag.stunden.filter(x => passt(x, tag.datum));
@@ -176,7 +174,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
               const kw = kalenderwoche(tag.datum), kwNeu = kw !== letzteKw; letzteKw = kw;
               const d = ausIso(tag.datum);
               return (
-                <Box key={tag.datum} sx={{ mb: 2.5 }}>
+                <Box key={tag.datum} sx={{ mb: 2 }}>
                   <Stack direction="row" alignItems="center" gap={1.5} sx={{ mb: 1 }}>
                     <Typography variant="caption" sx={{ width: 48, color: 'text.secondary', fontWeight: 600 }}>{kwNeu ? `KW ${kw}` : ''}</Typography>
                     <Typography sx={{ fontWeight: 600, color: tag.datum === heute ? 'primary.main' : 'text.primary' }}>{wochentag(tag.datum)} · {d.getDate()}. {MONATE[d.getMonth()]} {d.getFullYear()}</Typography>
@@ -283,7 +281,7 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
         const st = doku(s, d);
         return (
           <Stack direction="row" gap={0.75} alignItems="center" sx={{ minWidth: 0 }}>
-            <Plakette ton={DOKU[st].ton}>{st === 'dokumentiert' && <CheckRounded sx={{ fontSize: 13 }} />}{DOKU[st].text}</Plakette>
+            <Plakette ton={DOKU[st].ton}>{DOKU[st].text}</Plakette>
             {st === 'offen' && <Typography variant="caption" noWrap sx={{ color: 'status.pruefung.main', fontWeight: 600 }}>{fehlt(s)}</Typography>}
           </Stack>
         );
@@ -315,7 +313,7 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
             <Typography variant="caption" sx={{ pl: 0.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: entfall ? 'status.entfall.main' : 'text.primary', minHeight: 18 }} title={s.thema}>
               {entfall ? s.art || 'Entfall' : s.thema}</Typography>
             <Box sx={{ mt: 'auto', pl: 0.5, display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-              <Plakette ton={DOKU[st].ton} title={st === 'offen' ? fehlt(s) : undefined}>{st === 'dokumentiert' && <CheckRounded sx={{ fontSize: 13 }} />}{st === 'offen' ? (eng ? 'Offen' : s.thema ? 'Anwesenheit offen' : 'Thema fehlt') : DOKU[st].text}</Plakette>
+              <Plakette ton={DOKU[st].ton} title={st === 'offen' ? fehlt(s) : undefined}>{st === 'offen' ? (eng ? 'Offen' : s.thema ? 'Anwesenheit offen' : 'Thema fehlt') : DOKU[st].text}</Plakette>
               {!entfall && !komm && symbole(s)}
             </Box>
           </ButtonBase>
@@ -372,7 +370,7 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
               <Box sx={{ display: 'grid', gridTemplateColumns: `56px repeat(${tage.length}, minmax(150px, 1fr))`, minWidth: 56 + tage.length * 150 }}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'flaechen.band' }} />
                 {tage.map(x => (
-                  <Stack key={x.datum} direction="row" alignItems="center" sx={{ px: 1.25, py: 0.75, borderBottom: 1, borderLeft: 1, borderColor: 'divider', bgcolor: x.datum === heute ? alpha(t.palette.primary.main, 0.07) : 'flaechen.band', boxShadow: x.datum === heute ? `inset 0 2px 0 ${t.palette.primary.main}` : 'none' }}>
+                  <Stack key={x.datum} direction="row" alignItems="center" sx={{ px: 1, py: 0.75, borderBottom: 1, borderLeft: 1, borderColor: 'divider', bgcolor: x.datum === heute ? alpha(t.palette.primary.main, 0.07) : 'flaechen.band', boxShadow: x.datum === heute ? `inset 0 2px 0 ${t.palette.primary.main}` : 'none' }}>
                     <Typography sx={{ fontWeight: 600, flex: 1, color: x.datum === heute ? 'primary.main' : 'text.primary' }}>{wochentagKurz(x.datum)} <Box component="span" sx={{ fontWeight: 400, color: 'text.secondary' }}>{datumKurz(x.datum)}</Box></Typography>
                     {!x.frei && <Tooltip title={`Klassenbucheintrag am ${datumKurz(x.datum)}`}><IconButton size="small" onClick={() => setVermerk(x.datum)} aria-label={`Klassenbucheintrag am ${datumKurz(x.datum)}`}><AddRounded fontSize="small" /></IconButton></Tooltip>}
                   </Stack>
@@ -513,7 +511,7 @@ function Fehlzeiten({ klasse, bis, vonParam, ziel }: { klasse: string; bis: stri
                     <Fragment key={x.id}>
                       <TableRow hover onClick={() => setAuf(a => { const n = new Set(a); if (n.has(x.id)) n.delete(x.id); else n.add(x.id); return n; })} sx={{ cursor: 'pointer' }}>
                         {f.verwalten && <TableCell padding="checkbox" onClick={e => e.stopPropagation()}><Checkbox size="small" checked={alleGewaehlt} indeterminate={!alleGewaehlt && ids.some(id => wahl.has(id))} onChange={() => setWahl(w => { const n = new Set(w); ids.forEach(id => (alleGewaehlt ? n.delete(id) : n.add(id))); return n; })} inputProps={{ 'aria-label': 'alle Fehlstunden auswählen' }} /></TableCell>}
-                        <TableCell><Stack direction="row" gap={1.25} alignItems="center"><Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{x.name} {x.vorname}</Typography>{x.hinweis && <Typography variant="caption" color="status.entfall.main">{x.hinweis}</Typography>}</Box></Stack></TableCell>
+                        <TableCell><Stack direction="row" gap={1} alignItems="center"><Box><Typography variant="body2" sx={{ fontWeight: 500 }}>{x.name} {x.vorname}</Typography>{x.hinweis && <Typography variant="caption" color="status.entfall.main">{x.hinweis}</Typography>}</Box></Stack></TableCell>
                         <TableCell align="right">{zahl(x.stunden)}</TableCell><TableCell align="right">{zahl(x.tage)}</TableCell><TableCell align="right">{zahl(x.offen, 'pruefung')}</TableCell>
                         <TableCell align="right">{zahl(x.entschuldigt, 'ok')}</TableCell><TableCell align="right">{zahl(x.unentschuldigt, 'entfall')}</TableCell>
                         <TableCell align="right"><ExpandMoreRounded sx={{ transform: auf.has(x.id) ? 'rotate(180deg)' : 'none', color: 'text.secondary' }} /></TableCell>

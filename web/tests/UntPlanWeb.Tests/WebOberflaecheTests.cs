@@ -279,4 +279,49 @@ public class WebOberflaecheTests
         Assert.Contains("Stunden gleichzeitig", raster);
         Assert.Contains("<Popover", raster);
     }
+
+    [Fact]
+    public void Keine_KI_Anmutung_nach_Pruefliste()
+    {
+        // Prüfliste in design/DESIGN.md (Abschnitt 9) – gilt für alle Oberflächen
+        var design = File.ReadAllText(Path.Combine(Directory.GetParent(Client())!.Parent!.FullName, "design", "DESIGN.md"));
+        Assert.Contains("Keine KI-Anmutung – Prüfliste", design);
+        var bausteine = Lesen("src", "components", "Bausteine.tsx");
+        var seite = Lesen("src", "components", "Seite.tsx");
+        foreach (var (pfad, inhalt) in Quellen())
+        {
+            var datei = Path.GetFileName(pfad);
+            // Initialen-Avatare nur im Kontomenü der Seitenleiste
+            if (datei != "Shell.tsx") Assert.False(Regex.IsMatch(inhalt, @"<Avatar\b|NamensAvatar|avatarFarbe"), pfad);
+            // Knöpfe mit Text ohne Symbol (nur „Zurück“-Pfeil)
+            foreach (Match m in Regex.Matches(inhalt, @"startIcon=\{<(\w+)")) Assert.True(m.Groups[1].Value == "ArrowBackRounded", $"{pfad}: startIcon {m.Groups[1].Value}");
+            // keine dekorativen Symbole, keine Pillen, Radius höchstens 6 px (sx-Einheit 4 px → höchstens 1,5)
+            Assert.False(Regex.IsMatch(inhalt, @"AutoAwesome|Celebration|LocalCafe|WbSunny|EmojiEvents"), pfad);
+            Assert.False(Regex.IsMatch(inhalt, @"borderRadius: ?(2|2\.5|3|3\.5|4|5|8|10|12|16|24|999)[,\s}]") && datei != "theme.ts", pfad);
+            Assert.False(Regex.IsMatch(inhalt, @"borderRadius: ?'([7-9]|\d\d+)px'"), pfad);
+            // kein Marketington
+            Assert.False(Regex.IsMatch(inhalt, @"Guten (Morgen|Tag|Abend)|Alles erledigt|Willkommen zurück"), pfad);
+            Assert.False(Regex.IsMatch(inhalt, @"backdropFilter|blur\("), pfad);
+        }
+        // Thema: Karten, Dialoge, Menüs höchstens 6 px; Tooltip ohne Pfeil; Kopfzeilen ohne Tönung
+        var thema = Lesen("src", "theme.ts");
+        foreach (Match m in Regex.Matches(thema, @"borderRadius: (\d+)")) Assert.True(int.Parse(m.Groups[1].Value) <= 6, m.Value);
+        Assert.DoesNotContain("arrow: true", thema);
+        Assert.DoesNotContain("flaechen.band", Regex.Match(thema, @"MuiCardHeader: \{[^\n]*").Value);
+        // Statuswort als Text ohne Fläche; Kennzahlen als Text statt Kacheln; Datum als Text; leere Zustände ohne Symbol
+        Assert.DoesNotContain("alpha(", bausteine);
+        Assert.DoesNotContain("<Paper", bausteine);
+        Assert.Contains("export function Kennzahlen", bausteine);
+        Assert.DoesNotContain("symbol", Regex.Match(seite, @"export function Leer[^\n]*").Value);
+        Assert.DoesNotContain("flaechen.band", Regex.Match(seite, @"export function Abschnitt[\s\S]*?\n}").Value);
+        // Übersicht: Seitentitel statt Begrüßung, keine Kennzahl-Kacheln, keine Symbole in den Kartenköpfen
+        var start = Lesen("src", "pages", "Uebersicht.tsx");
+        Assert.Contains("<Typography variant=\"h1\">Start</Typography>", start);
+        Assert.DoesNotContain("aria-label=\"Kennzahlen\"", start);
+        Assert.DoesNotContain("symbol=", start);
+        // Stunde: Stand der Dokumentation als Text, Anwesend neutral, Löschsymbole erst beim Überfahren rot
+        Assert.DoesNotContain("CheckCircle", Lesen("src", "components", "plan", "Stundendetails.tsx"));
+        Assert.Contains("v === 'da' ? { bgcolor: 'action.selected', color: 'text.primary' }", Lesen("src", "components", "klassenbuch", "stunde", "ReiterAnwesenheit.tsx"));
+        Assert.Contains("colorError:", thema);
+    }
 }

@@ -60,7 +60,7 @@ export function KopierFeld({ wert, anzeige, label }: { wert: string; anzeige?: s
 export function Karte({ titel, aktion, children, sx }: { titel?: ReactNode; aktion?: ReactNode; children: ReactNode; sx?: object }) {
   return (
     <Paper variant="outlined" sx={{ overflow: 'hidden', ...sx }}>
-      {(titel || aktion) && <Stack direction="row" alignItems="center" gap={1} sx={{ px: { xs: 2, sm: 2.5 }, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>{aktion}</Stack>}
+      {(titel || aktion) && <Stack direction="row" alignItems="center" gap={1} sx={{ px: { xs: 2, sm: 2.5 }, py: 1, minHeight: 40, borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>{aktion}</Stack>}
       <Box sx={{ p: { xs: 2, sm: 2.5 } }}>{children}</Box>
     </Paper>
   );
@@ -93,7 +93,7 @@ export default function Admin({ teile }: SeitenProps) {
       { name: 'minutenProFehlstunde', typ: 'zahl', label: 'Minuten je Fehlstunde', min: 1, max: 240 },
       { name: 'vorzeitigRestTag', typ: 'schalter', label: 'Beim vorzeitigen Gehen standardmäßig für den Rest des Tages abwesend eintragen' },
       { typ: 'hinweis', text: 'Verspätungen werden ab der ersten, vorzeitiges Gehen bis zur letzten Stunde eines Blocks gerechnet; ganz verpasste Stunden zählen immer als Fehlstunden. Der Entschuldigungsstatus bleibt beim Bearbeiten erhalten.' }]} />,
-    ansicht: () => <Stack gap={2.5}>
+    ansicht: () => <Stack gap={2}>
       <Einstellung bereich="ansicht" titel="Globale Einstellungen der Oberfläche" sitzungNeu felder={[
         { name: 'nachrichtenAnzeigen', typ: 'schalter', label: 'Nachrichten zum Tag auf der Startseite anzeigen' },
         { name: 'rss', typ: 'schalter', label: 'Öffentliche Nachrichten zum Tag als RSS-Feed veröffentlichen (/rss/nachrichten.xml)' },
@@ -159,9 +159,9 @@ function Sync() {
       const sw = schule ?? { schulname: u.schulname, schulId: u.schulId };
       const zeile = (t: string, w: ReactNode) => <Stack direction="row" gap={2} sx={{ py: 0.75, borderTop: 1, borderColor: 'divider' }}><Typography variant="body2" color="text.secondary" sx={{ width: 130, flexShrink: 0 }}>{t}</Typography><Typography variant="body2" component="div">{w}</Typography></Stack>;
       return (
-        <Stack gap={2.5}>
+        <Stack gap={2}>
           {frisch && <Alert severity="success"><b>EduOrga Web ist eingerichtet.</b> Tragen Sie die Verbindungsdaten in EduOrga Studio unter <em>EduOrga Web → Einstellungen</em> ein. Der API-Schlüssel wird nur einmal angezeigt.</Alert>}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', xl: 'repeat(2, minmax(0, 1fr))' }, gap: 2.5 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', xl: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
             <Karte titel="Verbindung mit EduOrga Studio">
               <Stack gap={2}>
                 <KopierFeld label="Adresse" wert={u.adresse} />
@@ -232,7 +232,7 @@ function UpdateKarte() {
             <Button variant={u.updateVerfuegbar ? 'contained' : 'outlined'} onClick={async () => { if (await updateInstallieren()) void g.neu(); }}>Update installieren</Button>
           ) : <>
             <Typography variant="caption" color="text.secondary">Update auf dem Server (Sicherung vorher, Migrationen laufen beim Start automatisch):</Typography>
-            <Box component="code" sx={{ display: 'block', p: 1.25, mt: 0.5, bgcolor: 'action.hover', borderRadius: 1.5, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
+            <Box component="code" sx={{ display: 'block', p: 1, mt: 0.5, bgcolor: 'action.hover', borderRadius: 1.5, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
           </>}</Box>
           <UpdateDialog stand={u} offen={hinweise} schliessen={() => setHinweise(false)} />
         </Stack>
@@ -339,7 +339,7 @@ function Monitore() {
   const g = useLaden(sig => holen<Monitor[]>('/api/app/admin/monitore', sig), []);
   const [form, setForm] = useState<Partial<Monitor> | null>(null);
   return (
-    <Stack gap={2.5}>
+    <Stack gap={2}>
       <Einstellung bereich="monitor" titel="Darstellung" felder={[
         { name: 'ticker', typ: 'schalter', label: 'Nachrichten zum Tag als Laufschrift (Ticker)' }, { name: 'kopfzeile', typ: 'schalter', label: 'Nachrichten zum Tag in der Kopfzeile' },
         { name: 'nurOeffentlich', typ: 'schalter', label: 'Nur öffentliche Nachrichten anzeigen' }, { name: 'aktualisierung', typ: 'zahl', label: 'Aktualisierung [Sekunden]', min: 15, max: 3600 }]} />
@@ -409,7 +409,7 @@ function FreieTage() {
   const g = useLaden(sig => holen<{ eigene: Frei[]; ausUntPlan: { name: string; feiertag: boolean; von: string; bis: string }[] }>('/api/app/admin/freietage', sig), []);
   const [form, setForm] = useState<Partial<Frei> | null>(null);
   return (
-    <Stack gap={2.5}>
+    <Stack gap={2}>
       <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
         <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 280 }}>Ferien und Feiertage kommen aus EduOrga Studio. Hier lassen sich zusätzliche unterrichtsfreie Tage eintragen (z. B. pädagogischer Tag, beweglicher Ferientag) – sie erscheinen sofort in allen Plänen, im Vertretungsplan und im Klassenbuch.</Typography>
         <Button variant="contained" onClick={() => setForm({})}>Neu</Button>
@@ -464,12 +464,12 @@ function Import({ teil }: { teil?: string }) {
   const [ergebnis, setErgebnis] = useState<{ neu: unknown[]; aktualisiert: number; uebersprungen: number; csv: string } | null>(null);
   return (
     <>
-      <Stack direction="row" gap={1} sx={{ mb: 2.5 }}>
+      <Stack direction="row" gap={1} sx={{ mb: 2 }}>
         <Button variant={reiter === 'benutzer' ? 'contained' : 'outlined'} href="#/admin/import">Benutzer</Button>
         <Button variant={reiter === 'schueler' ? 'contained' : 'outlined'} href="#/admin/import/schueler">Schüler*innen</Button>
       </Stack>
       {reiter === 'schueler' ? <SchuelerImport /> : (
-        <Stack gap={2.5}>
+        <Stack gap={2}>
           <Karte titel="Benutzer importieren (CSV)">
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Spalten: <code>Benutzername;Name;Rolle;Kürzel;E-Mail;Passwort</code> (Semikolon oder Komma, UTF-8 oder Windows-1252, erste Zeile darf eine Kopfzeile sein). Rolle: Administration, Schulleitung, Lehrkraft oder Klasse. Ohne Passwort wird ein Startpasswort erzeugt, das bei der ersten Anmeldung geändert werden muss.</Typography>
             <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">

@@ -1,7 +1,8 @@
 // MUI-Thema nach dem EduOrga-Designsystem (design/MARKE.md, design/tokens.css): Petrol #164c55 als Primärfarbe (Logo, Navigation, Knöpfe),
 // Akzent #28747a (aktive Bereiche, Links, Fokus), Hintergrund #f5f7f8, Text #24363b; fachliche Statusfarben (Entfall rot, Änderung violett,
-// Prüfung bernstein, Termin magenta, frei blau). Sachlich wie ein Schulsystem: Knöpfe und Felder Radius 6, Karten 8, Plaketten 3,
-// Segmentschalter mit 1-px-Rahmen, deutliche Linien statt Schatten; sx-Radien rechnen mit 4 px je Einheit. Hell und dunkel.
+// Prüfung bernstein, Termin magenta, frei blau). Sachlich wie ein Schulsystem: Radius höchstens 6 px (Knöpfe, Felder, Karten, Dialoge),
+// Segmentschalter mit 1-px-Rahmen, Linien statt Schatten (Schatten nur für schwebende Ebenen), neutrale Grautöne für Köpfe und Flächen,
+// Petrol nur für Bedienung und Auswahl; sx-Radien rechnen mit 4 px je Einheit. Hell und dunkel. Prüfliste: design/DESIGN.md, „Keine KI-Anmutung“.
 import { createTheme, alpha } from '@mui/material/styles';
 
 export const farben = {
@@ -23,7 +24,7 @@ export interface StatusFarbe { main: string; flaeche: string }
 export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string; raster: string; /** Balken links ohne Fachfarbe (grau, hell und dunkel deutlich sichtbar). */ balken: string }
 /** Seitenleiste in der Primärfarbe: Fläche, Text, Zweittext, Überfahren, aktive Zeile (leichte Tönung), 3-px-Kante der aktiven Zeile, Linie. */
 export interface NavFarben { flaeche: string; text: string; text2: string; hover: string; aktiv: string; marke: string; linie: string }
-/** Kopfbänder von Abschnitten und Tabellen (leichte Petrol-Tönung, damit nicht alles weiß ist). */
+/** Tabellenköpfe und leicht abgesetzte Flächen (neutrales Grau, keine Pastelltönung). */
 export interface FlaechenFarben { kopf: string; band: string; rand: string }
 declare module '@mui/material/styles' {
   interface Palette {
@@ -74,7 +75,7 @@ export const theme = createTheme({
         status: status(false),
         kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2', balken: '#a9b6bb' },
         nav: { flaeche: M[700], text: '#ffffff', text2: 'rgba(255,255,255,.72)', hover: 'rgba(255,255,255,.05)', aktiv: 'rgba(255,255,255,.12)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.14)' },
-        flaechen: { kopf: '#eef3f4', band: '#f2f6f7', rand: '#cfd9dc' },
+        flaechen: { kopf: '#f1f3f4', band: '#f7f8f9', rand: '#d3dbde' },
         marine: farben.marine,
       },
     },
@@ -93,7 +94,7 @@ export const theme = createTheme({
         status: status(true),
         kachel: { flaeche: '#172a2e', rand: '#33494e', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20', balken: '#6b8287' },
         nav: { flaeche: '#0c2a2f', text: '#e8f1f2', text2: 'rgba(232,241,242,.66)', hover: 'rgba(255,255,255,.04)', aktiv: 'rgba(255,255,255,.09)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.10)' },
-        flaechen: { kopf: '#172a2e', band: '#152629', rand: '#2c4146' },
+        flaechen: { kopf: '#17262a', band: '#152327', rand: '#2c3f44' },
         marine: farben.marine,
       },
     },
@@ -103,18 +104,18 @@ export const theme = createTheme({
     fontFamily: SCHRIFT,
     fontSize: 14,
     htmlFontSize: 16,
-    h1: { fontSize: 22, fontWeight: 600, letterSpacing: '-0.005em', lineHeight: 1.25 },
-    h2: { fontSize: 19, fontWeight: 600, lineHeight: 1.3 },
-    h3: { fontSize: 16, fontWeight: 600, lineHeight: 1.35 },
-    h4: { fontSize: 15, fontWeight: 600 },
-    h5: { fontSize: 15, fontWeight: 600 },
+    h1: { fontSize: 20, fontWeight: 600, lineHeight: 1.3 },
+    h2: { fontSize: 18, fontWeight: 600, lineHeight: 1.3 },
+    h3: { fontSize: 15, fontWeight: 600, lineHeight: 1.35 },
+    h4: { fontSize: 14, fontWeight: 600 },
+    h5: { fontSize: 14, fontWeight: 600 },
     h6: { fontSize: 14, fontWeight: 600 },
     subtitle1: { fontSize: 14, fontWeight: 500 },
     subtitle2: { fontSize: 13, fontWeight: 600 },
     body1: { fontSize: 14 },
     body2: { fontSize: 13 },
     caption: { fontSize: 12 },
-    overline: { fontSize: 11, fontWeight: 600, letterSpacing: '0.06em' },
+    overline: { fontSize: 12, fontWeight: 500, letterSpacing: 0, textTransform: 'none' },
     button: { textTransform: 'none', fontWeight: 500, fontSize: 14 },
   },
   components: {
@@ -150,17 +151,18 @@ export const theme = createTheme({
         lastButton: { borderTopRightRadius: 6, borderBottomRightRadius: 6 },
       },
     },
-    MuiIconButton: { styleOverrides: { root: { borderRadius: 6 } } },
+    // Symbolknöpfe einfarbig; „Löschen“ (color="error") erst beim Überfahren rot, damit Tabellen nicht voller roter Symbole sind
+    MuiIconButton: { styleOverrides: { root: { borderRadius: 6 }, colorError: ({ theme }) => ({ color: theme.vars.palette.text.secondary, '&:hover': { color: theme.vars.palette.error.main } }) } },
     MuiPaper: {
       defaultProps: { elevation: 0 },
-      styleOverrides: { rounded: { borderRadius: 8 }, outlined: ({ theme }) => ({ borderColor: theme.vars.palette.flaechen.rand }) },
+      styleOverrides: { rounded: { borderRadius: 6 }, outlined: ({ theme }) => ({ borderColor: theme.vars.palette.flaechen.rand }) },
     },
     MuiCard: {
       defaultProps: { variant: 'outlined' },
-      styleOverrides: { root: { borderRadius: 8 } },
+      styleOverrides: { root: { borderRadius: 6 } },
     },
     MuiCardHeader: {
-      styleOverrides: { root: ({ theme }) => ({ paddingBlock: 10, background: theme.vars.palette.flaechen.band, borderBottom: `1px solid ${theme.vars.palette.divider}` }), title: { fontSize: 15, fontWeight: 600 }, subheader: { fontSize: 13 } },
+      styleOverrides: { root: ({ theme }) => ({ paddingBlock: 10, borderBottom: `1px solid ${theme.vars.palette.divider}` }), title: { fontSize: 14, fontWeight: 600 }, subheader: { fontSize: 13 } },
     },
     MuiOutlinedInput: {
       styleOverrides: {
@@ -184,16 +186,19 @@ export const theme = createTheme({
     MuiFormControl: { defaultProps: { size: 'small' } },
     MuiAutocomplete: { defaultProps: { size: 'small' } },
     MuiChip: {
-      styleOverrides: { root: { fontWeight: 500, borderRadius: 4 }, sizeSmall: { height: 22, fontSize: 12 } },
+      // Auswahl-Chips (Filter): gewählt leicht getönt mit Akzentrand statt vollflächig Petrol
+      styleOverrides: { root: ({ theme }) => ({ fontWeight: 500, borderRadius: 3,
+        '&.MuiChip-filled.MuiChip-colorPrimary': { background: theme.vars.palette.action.selected, color: theme.vars.palette.primary.main, boxShadow: `inset 0 0 0 1px ${theme.vars.palette.secondary.main}` },
+        '&.MuiChip-filled.MuiChip-colorPrimary.MuiChip-clickable:hover': { background: theme.vars.palette.action.selected } }), sizeSmall: { height: 22, fontSize: 12 } },
     },
     MuiTooltip: {
-      defaultProps: { arrow: true, enterDelay: 250 },
+      defaultProps: { enterDelay: 250 },
       styleOverrides: { tooltip: { fontSize: 12, background: farben.schiefer[800], borderRadius: 4, padding: '6px 10px' }, arrow: { color: farben.schiefer[800] } },
     },
     MuiDialog: {
-      styleOverrides: { paper: { borderRadius: 8 } },
+      styleOverrides: { paper: { borderRadius: 6, boxShadow: '0 12px 32px rgba(12,28,32,.22)' } },
     },
-    MuiDialogTitle: { styleOverrides: { root: { fontSize: 18, fontWeight: 600 } } },
+    MuiDialogTitle: { styleOverrides: { root: { fontSize: 16, fontWeight: 600, paddingBlock: 14 } } },
     MuiDrawer: { styleOverrides: { paper: { backgroundImage: 'none' } } },
     MuiTableCell: {
       styleOverrides: {
@@ -211,8 +216,21 @@ export const theme = createTheme({
       },
     },
     MuiMenuItem: { styleOverrides: { root: ({ theme }) => ({ '&.Mui-selected': { boxShadow: `inset 3px 0 0 ${theme.vars.palette.secondary.main}` } }) } },
-    MuiMenu: { styleOverrides: { paper: { borderRadius: 6 } } },
-    MuiAlert: { styleOverrides: { root: { borderRadius: 6 } } },
+    // Schwebende Ebenen (Menüs, Listen von Auswahlfeldern, Popover): eine Schattenstufe mit 1-px-Linie
+    MuiMenu: { styleOverrides: { paper: ({ theme }) => ({ borderRadius: 6, border: `1px solid ${theme.vars.palette.divider}`, boxShadow: '0 6px 20px rgba(12,28,32,.12)' }) } },
+    MuiPopover: { styleOverrides: { paper: ({ theme }) => ({ border: `1px solid ${theme.vars.palette.divider}`, boxShadow: '0 6px 20px rgba(12,28,32,.12)' }) } },
+    // Hinweise sachlich: weiße Fläche, 1-px-Linie, 3-px-Kante links in der Statusfarbe; Text in der Grundfarbe
+    MuiAlert: {
+      styleOverrides: {
+        root: { borderRadius: 6, paddingBlock: 2, alignItems: 'flex-start' },
+        standard: ({ theme }) => ({ background: theme.vars.palette.background.paper, color: theme.vars.palette.text.primary, border: `1px solid ${theme.vars.palette.divider}` }),
+        standardInfo: ({ theme }) => ({ boxShadow: `inset 3px 0 0 ${theme.vars.palette.secondary.main}`, '& .MuiAlert-icon': { color: theme.vars.palette.text.secondary } }),
+        standardSuccess: ({ theme }) => ({ boxShadow: `inset 3px 0 0 ${theme.vars.palette.status.ok.main}`, '& .MuiAlert-icon': { color: theme.vars.palette.status.ok.main } }),
+        standardWarning: ({ theme }) => ({ boxShadow: `inset 3px 0 0 ${theme.vars.palette.status.pruefung.main}`, '& .MuiAlert-icon': { color: theme.vars.palette.status.pruefung.main } }),
+        standardError: ({ theme }) => ({ boxShadow: `inset 3px 0 0 ${theme.vars.palette.status.entfall.main}`, '& .MuiAlert-icon': { color: theme.vars.palette.status.entfall.main } }),
+        icon: { fontSize: 18, opacity: 1 },
+      },
+    },
     MuiBadge: { styleOverrides: { badge: { fontWeight: 600 } } },
     MuiLink: { defaultProps: { underline: 'hover', color: 'secondary' } },
     MuiTabs: { styleOverrides: { root: { minHeight: 44 }, indicator: ({ theme }) => ({ background: theme.vars.palette.secondary.main }) } },

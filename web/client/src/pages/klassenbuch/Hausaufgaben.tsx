@@ -2,7 +2,7 @@
 // gruppiert mit Reiter „Lehrstoff“; Schüler*innen und Eltern – eigene Seite (FamilieHausaufgaben). Auch unter „Unterricht → Aufgaben“.
 import { useState } from 'react';
 import { Box, Button, Paper, Stack, Tab, Tabs, Typography } from '@mui/material';
-import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
+import CheckRounded from '@mui/icons-material/CheckRounded';
 import { holen, qs } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
@@ -55,7 +55,7 @@ function Liste({ bereichP, basis }: { bereichP?: string; basis: string }) {
             { id: 'klasse', kopf: 'Klasse', zelle: h => (h.klassen ?? []).join(', ') },
             { id: 'lehrer', kopf: 'Erstellt von', zelle: h => h.lehrer, verbergenMobil: true },
             { id: 'text', kopf: 'Hausaufgabe', zelle: h => <Typography variant="body2" sx={{ maxWidth: 380, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={h.text}>{h.text}</Typography> },
-            { id: 'st', kopf: '', zelle: h => (h.erledigt ? <CheckCircleRounded sx={{ color: 'status.ok.main', fontSize: 18 }} aria-label="Erledigt" /> : null), breite: 32 },
+            { id: 'st', kopf: '', zelle: h => (h.erledigt ? <CheckRounded sx={{ color: 'text.secondary', fontSize: 18 }} aria-label="Erledigt" /> : null), breite: 32 },
           ]} />
       )}</Geladen>
       {dialog?.art === 'neu' && <HausaufgabeFormular lehrer={ich.element} onClose={() => setDialog(null)} geaendert={() => void g.neu()} />}
@@ -110,7 +110,7 @@ function Gefiltert({ teile }: { teile: string[] }) {
             {[...gruppen.entries()].map(([datum, hs]) => (
               <Stack key={datum} direction="row" gap={2} sx={{ p: 2, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 }, opacity: datum < heute ? 0.7 : 1 }}>
                 <DatumKachel datum={datum} />
-                <Stack gap={1.25} sx={{ flex: 1 }}>{hs.map((h, i) => (
+                <Stack gap={1} sx={{ flex: 1 }}>{hs.map((h, i) => (
                   <Box key={i}><Typography sx={{ fontWeight: 600 }}>{h.fach} <Typography component="span" color="text.secondary">· {h.klassen.join(', ')} · {h.lehrer}</Typography></Typography>
                     <Typography>{h.hausaufgabe}</Typography><Typography variant="caption" color="text.secondary">erteilt am {datumKurz(h.datum)} ({h.stunde}. Std.){h.faellig ? '' : ' · ohne Fälligkeit'}</Typography></Box>))}</Stack>
                 <Box><Plakette ton={datum < heute ? 'neutral' : datum <= plusTage(heute, 1) ? 'pruefung' : 'primaer'}>{datum < heute ? 'fällig gewesen' : 'fällig'}</Plakette></Box>

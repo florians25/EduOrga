@@ -172,7 +172,7 @@ export function ReiterAnwesenheit(p: StundeProps & { onSpeichern: (z: 'speichert
     const gemeldet = meldungen.find(m => m.schuelerId === x.id);
     const an = auswahl.has(x.id);
     return (
-      <Box key={x.id} role="row" sx={{ display: 'grid', gridTemplateColumns: schmal ? '36px minmax(0, 1fr) auto' : '36px minmax(170px, 1.1fr) auto 96px minmax(120px, 1fr) 40px', alignItems: 'center', columnGap: 1.25, rowGap: 0.75,
+      <Box key={x.id} role="row" sx={{ display: 'grid', gridTemplateColumns: schmal ? '36px minmax(0, 1fr) auto' : '36px minmax(170px, 1.1fr) auto 96px minmax(120px, 1fr) 40px', alignItems: 'center', columnGap: 1, rowGap: 0.75,
         px: 1, py: 0.5, borderBottom: 1, borderColor: 'divider', bgcolor: an ? 'action.selected' : st === 'fehlt' ? alpha(t.palette.status.entfall.main, 0.04) : 'transparent' }}>
         <Checkbox size="small" checked={an} onChange={() => umschalten(x.id)} disabled={!darf} inputProps={{ 'aria-label': `${x.vorname} ${x.name} auswählen` }} />
         <Stack direction="row" alignItems="center" sx={{ minWidth: 0, opacity: d.befreit.has(x.id) ? 0.6 : 1 }}>

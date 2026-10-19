@@ -152,7 +152,7 @@ export default function Dienste({ teile }: SeitenProps) {
                       return (
                         <TableRow key={i} hover selected={auswahl.has(i)} sx={{ opacity: x.bis < heute ? 0.65 : 1 }}>
                           {darf && <TableCell padding="checkbox"><Checkbox size="small" checked={auswahl.has(i)} onChange={() => setAuswahl(s => { const n = new Set(s); if (n.has(i)) n.delete(i); else n.add(i); return n; })} inputProps={{ 'aria-label': 'auswählen' }} /></TableCell>}
-                          <TableCell><Stack direction="row" gap={1.25} alignItems="center"><BadgeOutlined color="action" /><Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{x.dienst}</Typography>{!klasse && <Typography variant="caption" color="text.secondary">Klasse {x.klasse}</Typography>}</Box></Stack></TableCell>
+                          <TableCell><Stack direction="row" gap={1} alignItems="center"><BadgeOutlined color="action" /><Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{x.dienst}</Typography>{!klasse && <Typography variant="caption" color="text.secondary">Klasse {x.klasse}</Typography>}</Box></Stack></TableCell>
                           <TableCell><Stack direction="row" gap={0.5} flexWrap="wrap">{x.eintraege.map(z => <Chip key={z.id} size="small" label={z.schueler} variant="outlined" />)}</Stack></TableCell>
                           <TableCell sx={{ whiteSpace: 'nowrap' }}><Typography variant="body2">{x.von === x.bis ? datumDe(x.von) : `${datumKurz(x.von)} – ${datumDe(x.bis)}`}</Typography><Plakette ton={phase[1]}>{phase[0]}</Plakette></TableCell>
                           <TableCell>{x.text || <Typography component="span" color="text.disabled">–</Typography>}</TableCell>

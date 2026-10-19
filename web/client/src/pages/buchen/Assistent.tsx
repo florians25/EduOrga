@@ -7,11 +7,7 @@ import {
   Alert, Autocomplete, Box, Button, ButtonBase, Checkbox, Chip, FormControlLabel, MenuItem, Paper, Stack, Step, StepButton, Stepper, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
-import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
 import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
-import CheckRounded from '@mui/icons-material/CheckRounded';
-import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
-import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
 import { holen, senden } from '../../api/client';
 import type { Elemente } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
@@ -71,17 +67,17 @@ export function Assistent({ art, rest }: { art: Art; rest: string[] }) {
 
 function UnterrichtKopf({ u }: { u: EigenerUnterricht }) {
   return (
-    <Paper variant="outlined" sx={{ px: 2, py: 1.25, mb: 2, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+    <Paper variant="outlined" sx={{ px: 2, py: 1, mb: 2, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
       <b>{u.fach}</b><span>{u.klassen.join(', ') || 'ohne Klasse'}</span><Plakette>{u.lehrer}</Plakette>{u.gruppe && <Typography variant="body2" color="text.secondary">{u.gruppe}</Typography>}
       <Box sx={{ flex: 1 }} /><Plakette>{u.gebuchteStunden} Stunden gebucht</Plakette>
     </Paper>
   );
 }
 
-function Karte({ titel, icon, rechts, children }: { titel: string; icon?: ReactNode; rechts?: ReactNode; children: ReactNode }) {
+function Karte({ titel, rechts, children }: { titel: string; rechts?: ReactNode; children: ReactNode }) {
   return (
     <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, mb: 2 }}>
-      <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 2 }}><Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box><Typography variant="h3" sx={{ flex: 1 }}>{titel}</Typography>{rechts}</Stack>
+      <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 2 }}><Typography variant="h3" sx={{ flex: 1 }}>{titel}</Typography>{rechts}</Stack>
       {children}
     </Paper>
   );
@@ -221,7 +217,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
 
   const n = suche?.termine.length ?? vorschau?.termine.length ?? 0;
   const zeitLeiste = (
-    <ButtonBase onClick={() => setSchritt(0)} sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.5, px: 2, py: 1.25, mb: 2, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'background.paper', textAlign: 'left' }}>
+    <ButtonBase onClick={() => setSchritt(0)} sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.5, px: 2, py: 1, mb: 2, borderRadius: 1.5, border: 1, borderColor: 'divider', bgcolor: 'background.paper', textAlign: 'left' }}>
       <CalendarMonthOutlined color="primary" /><Typography sx={{ fontWeight: 500 }}>{zeitText(z)}</Typography><Typography variant="body2" color="text.secondary">{n} {n === 1 ? 'Termin' : 'Termine'}</Typography>
       <Box sx={{ flex: 1 }} /><Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>Ändern</Typography>
     </ButtonBase>
@@ -237,8 +233,8 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
   let inhalt: ReactNode;
   if (schritt === 0) {
     inhalt = (
-      <Karte titel="Wann?" icon={<CalendarMonthOutlined />}>
-        <Stack gap={2.5}>
+      <Karte titel="Wann?">
+        <Stack gap={2}>
           <ToggleButtonGroup exclusive value={z.wiederholung} onChange={(_, v) => {
             if (!v) return;
             if (einmalig && v !== 'einmalig') zSet({ wiederholung: v, von: z.datum, wochentage: [Math.min(tagIndex(z.datum), opt.tageProWoche - 1)], bis: z.bis <= z.datum ? plusTage(z.datum, 56) : z.bis });
@@ -258,11 +254,10 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
               {tage.map((t, i) => <Chip key={t} label={t} color={z.wochentage.includes(i) ? 'primary' : 'default'} variant={z.wochentage.includes(i) ? 'filled' : 'outlined'}
                 onClick={() => zSet({ wochentage: z.wochentage.includes(i) ? z.wochentage.filter(x => x !== i) : [...z.wochentage, i] })} aria-pressed={z.wochentage.includes(i)} />)}</Stack>
           )}
-          <Box sx={{ bgcolor: 'action.hover', borderRadius: 1.5, p: 2 }}>
+          <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5, px: 2, py: 1.5 }}>
             {vorschauFehler ? <Typography color="error.main">{vorschauFehler}</Typography> : vorschau ? (
               <>
-                <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap" sx={{ mb: vorschau.termine.length ? 1.25 : 0 }}>
-                  {vorschau.termine.length ? <CheckRounded color="success" fontSize="small" /> : <EventBusyOutlined color="error" fontSize="small" />}
+                <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap" sx={{ mb: vorschau.termine.length ? 1 : 0 }}>
                   <Typography sx={{ fontWeight: 600 }}>{vorschau.termine.length ? `${vorschau.termine.length} ${vorschau.termine.length === 1 ? 'Termin' : 'Termine'}` : 'Kein Unterrichtstag im gewählten Zeitbereich'}</Typography>
                   {vorschau.beginn && vorschau.termine.length > 0 && <Typography variant="body2" color="text.secondary">{vorschau.beginn}–{vorschau.ende} Uhr</Typography>}
                   {vorschau.uebersprungen.length > 0 && <Plakette title={vorschau.uebersprungen.map(tagKurz).join(', ')}>{vorschau.uebersprungen.length} unterrichtsfreie {vorschau.uebersprungen.length === 1 ? 'Tag' : 'Tage'} ausgelassen</Plakette>}
@@ -290,7 +285,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
             leerText={n > 1 ? 'Kein Raum ist an allen Terminen frei – schalten Sie „Nur an allen Terminen frei“ aus und wählen Sie für belegte Termine einen anderen Raum.' : 'Zu dieser Zeit ist kein passender Raum frei.'} />
         </Karte>
         {r && r.belegtIdx.length > 0 && (
-          <Karte titel={`${r.kurz} ist an ${r.belegtIdx.length} ${r.belegtIdx.length === 1 ? 'Termin' : 'Terminen'} belegt`} icon={<WarningAmberRounded />}>
+          <Karte titel={`${r.kurz} ist an ${r.belegtIdx.length} ${r.belegtIdx.length === 1 ? 'Termin' : 'Terminen'} belegt`}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Wählen Sie für diese Termine einen anderen freien Raum{optional ? ', buchen Sie ohne Raum' : ''} oder lassen Sie den Termin aus.</Typography>
             <Stack gap={1}>{r.belegtIdx.map(i => { const t = suche.termine[i]; return (
               <Stack key={i} direction="row" gap={2} alignItems="center">
@@ -325,7 +320,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
             const aus = r.belegt.length >= n;
             const maxMenge = Math.max(1, ...r.verfuegbar);
             return (
-              <Stack key={r.id} direction="row" gap={1.5} alignItems="center" sx={{ p: 1.25, borderRadius: 1.5, border: 1, borderColor: an ? 'primary.main' : 'divider', bgcolor: an ? 'action.selected' : 'transparent', opacity: aus ? 0.5 : 1, cursor: aus ? 'default' : 'pointer' }}
+              <Stack key={r.id} direction="row" gap={1.5} alignItems="center" sx={{ p: 1, borderRadius: 1.5, border: 1, borderColor: an ? 'primary.main' : 'divider', bgcolor: an ? 'action.selected' : 'transparent', opacity: aus ? 0.5 : 1, cursor: aus ? 'default' : 'pointer' }}
                 onClick={() => !aus && setResWahl(m => { const x = new Map(m); if (x.has(r.id)) x.delete(r.id); else x.set(r.id, 1); return x; })}>
                 <Checkbox checked={an} disabled={aus} sx={{ p: 0.5 }} />
                 <Box sx={{ width: 36, height: 36, borderRadius: 1.5, display: 'grid', placeItems: 'center', bgcolor: 'action.hover', color: 'primary.main' }}><ResSymbol r={r} /></Box>
@@ -368,7 +363,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
             </Stack>
           </Karte>
         )}
-        <Paper variant="outlined" sx={{ p: 2.5, position: { lg: 'sticky' }, top: { lg: 16 } }}>
+        <Paper variant="outlined" sx={{ p: 2, position: { lg: 'sticky' }, top: { lg: 16 } }}>
           <Stack direction="row" alignItems="center" sx={{ mb: 1 }}><Typography variant="h3" sx={{ flex: 1 }}>Zusammenfassung</Typography><Plakette ton={ART_TON[art]}>{ART_NAME[art]}</Plakette></Stack>
           {zf('Titel', d.titel || (u ? u.gruppe || 'Zusätzlicher Unterricht' : ART_NAME[art]))}
           {zf('Zeitbereich', zeitText(z))}
@@ -396,7 +391,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
       {inhalt}
       <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
         {schritt > 0 ? <Button variant="outlined" size="large" startIcon={<ArrowBackRounded />} onClick={() => setSchritt(schritt - 1)}>Zurück</Button> : <span />}
-        <Button variant="contained" size="large" disabled={laeuft} endIcon={schritt === 2 ? <CheckRounded /> : <ArrowForwardRounded />} onClick={weiter}>
+        <Button variant="contained" size="large" disabled={laeuft} onClick={weiter}>
           {schritt === 0 ? (art === 'ressource' ? 'Ressourcen wählen' : 'Raum wählen') : schritt === 1 ? 'Weiter' : termineGewaehlt.length > 1 ? `${termineGewaehlt.length} Termine buchen` : 'Jetzt buchen'}
         </Button>
       </Stack>

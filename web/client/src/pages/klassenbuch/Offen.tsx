@@ -56,8 +56,8 @@ function LehrstoffLeiste({ liste, start, onClose }: { liste: Zeile[]; start: num
   };
   return (
     <Drawer anchor="right" open onClose={() => onClose(gespeichert)} slotProps={{ paper: { sx: { width: { xs: '100%', sm: 440 }, display: 'flex', flexDirection: 'column' } } }}>
-      <Stack direction="row" alignItems="center" sx={{ px: 2.5, py: 1.5, borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" sx={{ flex: 1 }}>Lehrstoff</Typography><IconButton onClick={() => onClose(gespeichert)} aria-label="Schließen"><CloseRounded /></IconButton></Stack>
-      <Box sx={{ p: 2.5, flex: 1, overflowY: 'auto' }}>
+      <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" sx={{ flex: 1 }}>Lehrstoff</Typography><IconButton onClick={() => onClose(gespeichert)} aria-label="Schließen"><CloseRounded /></IconButton></Stack>
+      <Box sx={{ p: 2, flex: 1, overflowY: 'auto' }}>
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
           <Typography sx={{ fontWeight: 600 }}>{datumDe(z.datum)}</Typography><Typography color="text.secondary">{z.beginn} – {z.ende}</Typography>
           <Box sx={{ flex: 1 }} />
@@ -184,10 +184,10 @@ export default function Offen({ teile }: SeitenProps) {
                 { id: 'datum', kopf: 'Datum', zelle: z => `${datumDe(z.datum)} ${z.beginn} – ${z.ende}`, sortWert: z => z.datum + z.beginn, nowrap: true },
                 { id: 'art', kopf: 'Art', zelle: z => z.art, verbergenMobil: true },
                 { id: 'raum', kopf: 'Raum', zelle: z => z.raeume.join(', '), verbergenMobil: true },
-                { id: 'kontrolle', kopf: 'Abwesenheitskontrolle', zelle: z => (z.geprueft ? <Tooltip title="Abwesenheiten kontrolliert"><CheckRounded sx={{ color: 'status.ok.main' }} /></Tooltip> : <Button size="small" variant="outlined" onClick={e => { e.stopPropagation(); const i = liste.indexOf(z); setDetails({ k: karten[i], liste: karten }); }}>Prüfen</Button>) },
-                { id: 'lehrstoff', kopf: 'Lehrstoff', zelle: z => (z.lehrstoff ? <Tooltip title="Lehrstoff eingetragen"><CheckRounded sx={{ color: 'status.ok.main' }} /></Tooltip> : <Button size="small" variant="outlined" onClick={e => { e.stopPropagation(); setLeiste({ liste, start: liste.indexOf(z) }); }}>Eingeben</Button>) },
+                { id: 'kontrolle', kopf: 'Abwesenheitskontrolle', zelle: z => (z.geprueft ? <Tooltip title="Abwesenheiten kontrolliert"><CheckRounded sx={{ color: 'text.secondary' }} /></Tooltip> : <Button size="small" variant="outlined" onClick={e => { e.stopPropagation(); const i = liste.indexOf(z); setDetails({ k: karten[i], liste: karten }); }}>Prüfen</Button>) },
+                { id: 'lehrstoff', kopf: 'Lehrstoff', zelle: z => (z.lehrstoff ? <Tooltip title="Lehrstoff eingetragen"><CheckRounded sx={{ color: 'text.secondary' }} /></Tooltip> : <Button size="small" variant="outlined" onClick={e => { e.stopPropagation(); setLeiste({ liste, start: liste.indexOf(z) }); }}>Eingeben</Button>) },
               ]} />
-          ) : <Leer text={r.gesamt ? 'Alles erledigt' : 'Keine gehaltenen Stunden'} unter={r.gesamt ? (q ? 'Keine Stunde passt zur Suche.' : 'Im gewählten Zeitraum sind Abwesenheiten und Lehrstoff vollständig eingetragen.') : 'Im gewählten Zeitraum gibt es keine gehaltenen Stunden.'} />}
+          ) : <Leer text={r.gesamt ? (q ? 'Keine Stunde passt zur Suche.' : 'Keine offenen Stunden. Abwesenheiten und Lehrstoff sind im gewählten Zeitraum eingetragen.') : 'Keine gehaltenen Stunden'} unter={r.gesamt ? undefined : 'Im gewählten Zeitraum gibt es keine gehaltenen Stunden.'} />}
           {!r.alle && r.klassenleitung.length > 0 && !zustand.klasse && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>Als Klassenleitung können Sie über die Suche alle Stunden {r.klassenleitung.length === 1 ? 'Ihrer Klasse' : 'Ihrer Klassen'} anzeigen.</Typography>}
           {details && <Stundendetails karte={details.k} liste={details.liste} typ="lehrer" onClose={() => setDetails(null)} onGeaendert={() => void g.neu()} />}
           {leiste && <LehrstoffLeiste liste={leiste.liste} start={leiste.start} onClose={x => { setLeiste(null); if (x) void g.neu(); }} />}

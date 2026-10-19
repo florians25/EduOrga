@@ -21,7 +21,7 @@ import VideocamOutlined from '@mui/icons-material/VideocamOutlined';
 import { holen, loeschen, senden } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Leer, Seite } from '../../components/Seite';
-import { FormDialog, Kennzahl, Plakette } from '../../components/Bausteine';
+import { FormDialog, Kennzahl, Kennzahlen, Plakette } from '../../components/Bausteine';
 import { Tabelle } from '../../components/Tabelle';
 import { bestaetigen, fehler, toast } from '../../lib/meldungen';
 import { navigieren } from '../../lib/router';
@@ -104,10 +104,10 @@ function Start({ id }: { id: number }) {
         return (
           <>
             <Kopf t={t} />
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(5, minmax(0, 1fr))' }, gap: 1.25, mb: 2.5 }}>
+            <Kennzahlen>
               <Kennzahl wert={d.uebersicht.length} text="Lehrkräfte" ton="neutral" /><Kennzahl wert={summe('gebucht')} text="Termine" ton="pruefung" />
               <Kennzahl wert={summe('frei')} text="frei" ton="ok" /><Kennzahl wert={summe('gesperrt')} text="gesperrt" ton="entfall" /><Kennzahl wert={summe('einladungen')} text="Einladungen" ton="termin" />
-            </Box>
+            </Kennzahlen>
             <Tabelle zeilen={d.uebersicht} schluessel={l => l.lehrer} onZeile={l => navigieren(`#/sprechtag/${t.id}/lehrer/${encodeURIComponent(l.lehrer)}`)}
               spalten={[
                 { id: 'name', kopf: 'Lehrkraft', sortWert: l => l.name, zelle: l => <><b>{l.name}</b> <Plakette>{l.lehrer}</Plakette>{abgesagt.has(l.lehrer) && <Plakette ton="entfall" sx={{ ml: 0.5 }}>abgesagt</Plakette>}</> },
@@ -174,10 +174,10 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
           <>
             <Kopf t={t} zusatz={`${d.lehrer.name}${d.lehrer.raum ? ` · Raum ${d.lehrer.raum}` : ''}`} />
             {d.lehrer.abgesagt && <Alert severity="error" sx={{ mb: 2 }}>Die Teilnahme wurde am {zeitDe(d.lehrer.abgesagt.replace(' ', 'T'))} abgesagt{d.lehrer.absageGrund ? ` (${d.lehrer.absageGrund})` : ''}. Es können keine Termine gebucht werden.</Alert>}
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 5fr) minmax(0, 7fr)' }, gap: 2.5, alignItems: 'start' }}>
-              <Stack gap={2.5}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 5fr) minmax(0, 7fr)' }, gap: 2, alignItems: 'start' }}>
+              <Stack gap={2}>
                 {d.darfRaum ? (
-                  <Paper variant="outlined" sx={{ p: 2.5 }}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="h3" sx={{ mb: 2 }}>Raum und Online-Gespräche</Typography>
                     <TextField select fullWidth label="Raum" value={d.lehrer.raum ?? ''} onChange={e => tue(() => senden(`${BASIS}/${id}/raum`, mit({ raum: e.target.value }), 'PUT'), 'Raum gespeichert.')}>
                       <MenuItem value="">– kein Raum –</MenuItem>{d.raeume.map(r => <MenuItem key={r.kurz} value={r.kurz}>{r.kurz}<Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>{r.name}</Typography></MenuItem>)}
@@ -192,7 +192,7 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
                   </Paper>
                 ) : d.lehrer.online && <Alert icon={<VideocamOutlined />} severity="info">Ihre Gespräche finden online statt{d.lehrer.link ? `: ${d.lehrer.link}` : ''}.</Alert>}
                 {!!d.warteliste?.length && (
-                  <Paper variant="outlined" sx={{ p: 2.5 }}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="h3" sx={{ mb: 1 }}>Warteliste <Plakette>{d.warteliste.length}</Plakette></Typography>
                     <Table size="small"><TableBody>{d.warteliste.map(w => (
                       <TableRow key={w.id}><TableCell>{w.schueler.klasse}</TableCell><TableCell sx={{ fontWeight: 500 }}>{schuelerName(w.schueler)}</TableCell>
@@ -201,7 +201,7 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
                     ))}</TableBody></Table>
                   </Paper>
                 )}
-                <Paper variant="outlined" sx={{ p: 2.5 }}>
+                <Paper variant="outlined" sx={{ p: 2 }}>
                   <Stack direction="row" alignItems="center" sx={{ mb: 1.5 }}><Typography variant="h3" sx={{ flex: 1 }}>Gespräche wünschen</Typography><Plakette ton="termin">{d.einladungen.length} Einladungen</Plakette></Stack>
                   {d.einladenMoeglich ? (
                     <Stack gap={1.5} sx={{ mb: 2 }}>
@@ -238,7 +238,7 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
                   ) : <Typography variant="body2" color="text.secondary">Noch keine Einladungen.</Typography>}
                 </Paper>
               </Stack>
-              <Paper variant="outlined" sx={{ p: 2.5 }}>
+              <Paper variant="outlined" sx={{ p: 2 }}>
                 <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" sx={{ mb: 1.5 }}>
                   <Typography variant="h3" sx={{ flex: 1 }}>Meine Termine</Typography>
                   <Plakette ton="pruefung">{gebucht} gebucht</Plakette>{gesperrt > 0 && <Plakette ton="entfall">{gesperrt} gesperrt</Plakette>}
@@ -375,10 +375,10 @@ function Eltern({ id }: { id: number }) {
           );
         };
         return (
-          <Stack gap={2.5}>
+          <Stack gap={2}>
             <Kopf t={t} familie />
             {t.status === 'angekuendigt' && (
-              <Paper variant="outlined" sx={{ p: 2.5 }}>
+              <Paper variant="outlined" sx={{ p: 2 }}>
                 <Typography variant="h3" sx={{ mb: 1.5 }}>Angekündigt</Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 2 }}>
                   {[['Datum', [t.datumText, ...(t.reihe ?? []).filter(r => r.id !== t.id).map(r => r.datumText)].join(' · ')], ['Uhrzeit', `${t.beginn}–${t.ende} Uhr`], ...(t.ort ? [['Ort', t.ort]] : []),
@@ -388,7 +388,7 @@ function Eltern({ id }: { id: number }) {
               </Paper>
             )}
             {optionen && !lesen && <Alert severity="info">{optionen}</Alert>}
-            <Paper variant="outlined" sx={{ p: 2.5 }}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
               <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 1.5 }}><Typography variant="h3">{lesen ? 'Termine' : 'Meine Termine'}</Typography><Plakette ton="pruefung">{termine.length}</Plakette></Stack>
               {termine.length ? (
                 <Box sx={{ overflowX: 'auto' }}><Table size="small"><TableHead><TableRow><TableCell>Zeit</TableCell><TableCell>Lehrkraft</TableCell><TableCell>Ort</TableCell><TableCell>Kind</TableCell><TableCell /></TableRow></TableHead>
@@ -404,14 +404,14 @@ function Eltern({ id }: { id: number }) {
               ) : <Typography variant="body2" color="text.secondary">Noch keine Termine gebucht.</Typography>}
             </Paper>
             {d.kinder.length ? d.kinder.map(k => (
-              <Paper key={k.id} variant="outlined" sx={{ p: 2.5 }}>
+              <Paper key={k.id} variant="outlined" sx={{ p: 2 }}>
                 <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 1.5 }}><Typography variant="h3">{lesen ? 'Beteiligte Lehrkräfte' : `Lehrkräfte von ${k.vorname} ${k.name}`}</Typography><Plakette>{k.klasse}</Plakette></Stack>
                 {k.lehrkraefte.length ? (
                   <Box sx={{ overflowX: 'auto' }}><Table size="small"><TableHead><TableRow><TableCell>Lehrkraft</TableCell><TableCell>Fächer</TableCell><TableCell>Ort</TableCell><TableCell>Termin</TableCell></TableRow></TableHead>
                     <TableBody>{k.lehrkraefte.map(l => (
                       <TableRow key={l.kurz}>
                         <TableCell><Stack direction="row" gap={0.75} alignItems="center" flexWrap="wrap"><Typography sx={{ fontWeight: 500 }}>{l.name}</Typography>
-                          {l.klassenleitung && <Plakette>Klassenleitung</Plakette>}{l.online && <Plakette><VideocamOutlined sx={{ fontSize: 13 }} />online</Plakette>}
+                          {l.klassenleitung && <Plakette>Klassenleitung</Plakette>}{l.online && <Plakette>online</Plakette>}
                           {l.eingeladen && <Plakette ton="termin" title={l.einladungText}>Einladung</Plakette>}</Stack></TableCell>
                         <TableCell><Typography variant="body2" color="text.secondary">{l.faecher.join(', ')}{l.dauer !== t.dauer ? ` · ${l.dauer} Min.` : ''}</Typography></TableCell>
                         <TableCell>{l.online ? 'online' : l.raum || '–'}</TableCell>

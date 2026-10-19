@@ -17,13 +17,15 @@ export type Ton = 'entfall' | 'aenderung' | 'pruefung' | 'termin' | 'frei' | 'ok
  * gezeigt, nicht über bunte Pillen. „neutral“ ist Zweittext. „fest“ (sparsam, z. B. „Heute“) ist ein kleines gefülltes Schild.
  */
 export function Plakette({ ton = 'neutral', children, fest = false, sx, title }: { ton?: Ton; children: ReactNode; fest?: boolean; sx?: SxProps; title?: string }) {
-  const t = useTheme();
-  const farbe = ton === 'neutral' ? t.palette.text.secondary : ton === 'primaer' ? t.palette.primary.main : ton === 'warnung' ? t.palette.status.pruefung.main : t.palette.status[ton].main;
+  const farbe = tonFarbe(ton);
   return (
-    <Box component="span" title={title} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, verticalAlign: 'baseline', fontSize: 12, fontWeight: 500, lineHeight: '18px', whiteSpace: 'nowrap',
-      color: fest ? t.palette.getContrastText(farbe) : farbe, ...(fest ? { bgcolor: farbe, px: 0.625, borderRadius: '3px' } : {}), '& svg': { fontSize: 14 }, ...sx }}>{children}</Box>
+    <Box component="span" title={title} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, verticalAlign: 'baseline', fontSize: 12.5, fontWeight: 500, lineHeight: '18px', whiteSpace: 'nowrap',
+      color: fest ? 'background.paper' : farbe, ...(fest ? { bgcolor: farbe, px: 0.625, borderRadius: '3px' } : {}), '& svg': { fontSize: 14 }, ...sx }}>{children}</Box>
   );
 }
+
+/** Farbe eines Tons als Thema-Pfad (über CSS-Variablen, damit hell und dunkel stimmen). */
+export const tonFarbe = (ton: Ton) => (ton === 'neutral' ? 'text.secondary' : ton === 'primaer' ? 'primary.main' : ton === 'warnung' ? 'status.pruefung.main' : `status.${ton}.main`);
 
 export function SuchFeld({ wert, onWert, platzhalter = 'Suchen', breite = 260, autoFocus }: { wert: string; onWert: (s: string) => void; platzhalter?: string; breite?: number | string; autoFocus?: boolean }) {
   return (
@@ -88,9 +90,8 @@ export function FormDialog({ offen, titel, untertitel, children, onClose, aktion
 
 /** Kennzahl als Text („5 Lehrkräfte“) für Zusammenfassungen über Tabellen – keine Kacheln. Mit onClick als Filter; ton „primaer“ = gewählt. */
 export function Kennzahl({ wert, text, ton = 'neutral', onClick, unter }: { wert: ReactNode; text: string; ton?: Ton; onClick?: () => void; unter?: ReactNode }) {
-  const t = useTheme();
   const gewaehlt = ton === 'primaer';
-  const farbe = ton === 'neutral' || gewaehlt || wert === 0 ? t.palette.text.primary : ton === 'warnung' ? t.palette.status.pruefung.main : t.palette.status[ton].main;
+  const farbe = ton === 'neutral' || gewaehlt || wert === 0 ? 'text.primary' : tonFarbe(ton);
   return (
     <Box component={onClick ? 'button' : 'span'} type={onClick ? 'button' : undefined} onClick={onClick}
       sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.5, p: 0, border: 0, bgcolor: 'transparent', font: 'inherit', fontSize: 13, color: 'text.secondary', cursor: onClick ? 'pointer' : 'default',
@@ -101,8 +102,8 @@ export function Kennzahl({ wert, text, ton = 'neutral', onClick, unter }: { wert
 }
 
 /** Zeile mit Kennzahlen (Text, durch Abstand getrennt). */
-export function Kennzahlen({ children, sx }: { children: ReactNode; sx?: SxProps }) {
-  return <Stack direction="row" flexWrap="wrap" columnGap={2.5} rowGap={0.5} alignItems="baseline" sx={{ mb: 1.5, ...sx }}>{children}</Stack>;
+export function Kennzahlen({ children, sx }: { children: ReactNode; sx?: object }) {
+  return <Stack direction="row" flexWrap="wrap" columnGap={2} rowGap={0.5} alignItems="baseline" sx={{ mb: 1.5, ...sx }}>{children}</Stack>;
 }
 
 /** Datum für Listen als schlichter Text („Mo 19.10.“), heute in der Akzentfarbe – keine Kalenderkachel. */

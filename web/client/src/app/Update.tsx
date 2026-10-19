@@ -82,7 +82,7 @@ export function Versionshinweise({ text }: { text: string }) {
   let absatz: string[] = [];
   const fertig = () => {
     if (absatz.length) bloecke.push(<Typography key={bloecke.length} variant="body2" sx={{ my: 0.75 }}>{inline(absatz.join(' '))}</Typography>);
-    if (liste.length) bloecke.push(<Box component="ul" key={bloecke.length} sx={{ my: 0.5, pl: 2.5, typography: 'body2' }}>{liste.map((x, i) => <li key={i}>{inline(x)}</li>)}</Box>);
+    if (liste.length) bloecke.push(<Box component="ul" key={bloecke.length} sx={{ my: 0.5, pl: 2, typography: 'body2' }}>{liste.map((x, i) => <li key={i}>{inline(x)}</li>)}</Box>);
     absatz = []; liste = [];
   };
   for (const roh of text.split('\n')) {
@@ -128,7 +128,7 @@ export function UpdateDialog({ stand: u, offen, schliessen }: { stand: Updatesta
         {!u.installierbar && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary">Update auf dem Server (Sicherung vorher, Migrationen laufen beim Start automatisch):</Typography>
-            <Box component="code" sx={{ display: 'block', p: 1.25, mt: 0.5, bgcolor: 'action.hover', borderRadius: 1.5, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
+            <Box component="code" sx={{ display: 'block', p: 1, mt: 0.5, bgcolor: 'action.hover', borderRadius: 1.5, fontSize: 12.5, userSelect: 'all', overflowWrap: 'anywhere' }}>{u.befehl}</Box>
           </Box>
         )}
       </DialogContent>

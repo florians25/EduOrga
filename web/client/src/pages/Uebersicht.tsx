@@ -1,17 +1,9 @@
-// Übersicht für alle Rollen: Begrüßung mit Tageszeile (Datum, nächste Stunde bzw. „Heute kein Unterricht“, Ferienhinweis), eine Leiste
-// mit wenigen anklickbaren Kennzahlen und ein Raster aus vier Karten – „Heute & nächste Tage“ (Stunden mit Änderungen), „Zu erledigen“
+// Übersicht für alle Rollen: Seitentitel „Start“ mit Tageszeile (Datum, nächste Stunde bzw. „Heute kein Unterricht“, Ferienhinweis als Text)
+// und ein Raster aus vier Bereichen mit schlichter Kopfzeile (keine Begrüßung, keine Kennzahl-Kacheln, keine Symbole) – „Heute & nächste Tage“ (Stunden mit Änderungen), „Zu erledigen“
 // (Klassenbuch, offene Abwesenheiten, Hausaufgaben), „Termine“ (Prüfungen, Aufsichten, Sprechtag) und „Mitteilungen & Infos“.
-// Jede Gruppe zeigt höchstens fünf Zeilen („Alle anzeigen“); leere Gruppen werden in einer ruhigen Zeile zusammengefasst.
-import { useState, type ReactNode } from 'react';
+// Jede Gruppe zeigt höchstens fünf Zeilen („Alle anzeigen“); leere Gruppen werden in einer Textzeile zusammengefasst.
+import { Fragment, useState, type ReactNode } from 'react';
 import { alpha, Box, ButtonBase, Link, Paper, Stack, Typography, useTheme } from '@mui/material';
-import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
-import CheckRounded from '@mui/icons-material/CheckRounded';
-import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import EventOutlined from '@mui/icons-material/EventOutlined';
-import LockOutlined from '@mui/icons-material/LockOutlined';
-import MailOutline from '@mui/icons-material/MailOutline';
-import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
-import WbSunnyOutlined from '@mui/icons-material/WbSunnyOutlined';
 import { holen } from '../api/client';
 import type { Karte, Tageskopf, Wochenplan } from '../api/types';
 import { istFamilie, useSitzung } from '../app/sitzung';
@@ -35,7 +27,6 @@ const tagTitel = (iso: string, heute: string) => `${iso === heute ? 'Heute · ' 
 const datumVoll = (iso: string) => { const d = ausIso(iso); return `${wtLang(iso)}, ${d.getDate()}. ${MONATE[d.getMonth()]} ${d.getFullYear()}`; };
 const stdText = (v: number, b: number) => (v === b ? `${v}.` : `${v}.–${b}.`);
 const anzahl = (n: number) => (n > 99 ? '99+' : String(n));
-const gruss = () => { const h = new Date().getHours(); return h < 11 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend'; };
 const chipTon = (k: Karte): Ton => (ENTFALL.includes(k.status) ? 'entfall' : k.status === 'klausur' ? 'pruefung' : k.status === 'offen' || k.vertretungOffen ? 'pruefung' : k.status === 'veranstaltung' || k.status === 'buchung' ? 'termin' : 'aenderung');
 
 function ferienAb(tage: Tageskopf[], heute: string) {
@@ -52,7 +43,7 @@ interface GruppeDaten { titel: string; href?: string; zeilen: ZeileDaten[]; zahl
 
 function Zeile({ z }: { z: ZeileDaten }) {
   const inhalt = (
-    <Stack direction="row" alignItems="center" gap={1.25} sx={{ width: '100%', minHeight: 34, px: 1, borderRadius: '4px', opacity: z.blass ? 0.55 : 1 }}>
+    <Stack direction="row" alignItems="center" gap={1} sx={{ width: '100%', minHeight: 34, px: 1, borderRadius: '4px', opacity: z.blass ? 0.55 : 1 }}>
       <Typography variant="body2" color="text.secondary" sx={{ width: 78, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }} noWrap>{z.links}</Typography>
       {z.farbe !== undefined && <FachMarke farbe={z.farbe} />}
       <Box sx={{ minWidth: 0, flex: 1, display: 'flex', gap: 1, alignItems: 'baseline' }}>
@@ -67,22 +58,21 @@ function Zeile({ z }: { z: ZeileDaten }) {
   return inhalt;
 }
 
-function UKarte({ symbol, titel, href, linkText, gruppen, vorne, leerSymbol }: { symbol: ReactNode; titel: string; href?: string; linkText?: string; gruppen: GruppeDaten[]; vorne?: ReactNode; leerSymbol?: ReactNode }) {
+function UKarte({ titel, href, linkText, gruppen, vorne }: { titel: string; href?: string; linkText?: string; gruppen: GruppeDaten[]; vorne?: ReactNode }) {
   const voll = gruppen.filter(g => g.zeilen.length);
   const leer = gruppen.filter(g => !g.zeilen.length && g.leer).map(g => g.leer!);
   return (
-    <Paper variant="outlined" component="section" aria-label={titel} sx={{ p: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%', overflow: 'hidden' }}>
-      <Stack direction="row" alignItems="center" gap={1} sx={{ mx: -2, px: 2, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider', '& svg': { fontSize: 20 } }}>
-        <Box sx={{ color: 'primary.main', display: 'flex' }}>{symbol}</Box>
+    <Paper variant="outlined" component="section" aria-label={titel} sx={{ px: 1, pb: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%', overflow: 'hidden' }}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ mx: -1, px: 2, py: 1, minHeight: 40, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>
-        {href && <Link href={href} underline="hover" sx={{ display: 'flex', alignItems: 'center', fontSize: 13, fontWeight: 500 }}>{linkText ?? 'Öffnen'}<ChevronRightRounded fontSize="small" /></Link>}
+        {href && <Link href={href} underline="hover" sx={{ fontSize: 13 }}>{linkText ?? 'Öffnen'}</Link>}
       </Stack>
       {vorne}
       {voll.map(g => (
         <Box key={g.titel}>
           <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.25, px: 1 }}>
-            <Typography variant="overline" sx={{ color: 'text.secondary', lineHeight: 2 }}>{g.href ? <Link href={g.href} color="inherit" underline="hover">{g.titel}</Link> : g.titel}</Typography>
-            {(g.zahl ?? g.zeilen.length) > 0 && <Plakette>{anzahl(g.zahl ?? g.zeilen.length)}</Plakette>}
+            <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600, lineHeight: 2 }}>{g.href ? <Link href={g.href} color="inherit" underline="hover">{g.titel}</Link> : g.titel}</Typography>
+            {(g.zahl ?? g.zeilen.length) > 0 && <Typography component="span" variant="body2" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>{anzahl(g.zahl ?? g.zeilen.length)}</Typography>}
             <Box sx={{ flex: 1 }} />
             {g.zeilen.length > MAX && g.href && <Link href={g.href} underline="hover" sx={{ fontSize: 12.5 }}>Alle anzeigen ({anzahl(g.zeilen.length)})</Link>}
           </Stack>
@@ -90,9 +80,7 @@ function UKarte({ symbol, titel, href, linkText, gruppen, vorne, leerSymbol }: {
         </Box>
       ))}
       {leer.length > 0 && (
-        <Stack direction="row" gap={1} alignItems="center" sx={{ color: 'text.secondary', bgcolor: 'action.hover', borderRadius: 1.5, px: 1.5, py: 1, fontSize: 13.5 }}>
-          {leerSymbol ?? <CheckRounded fontSize="small" />}<span>{leer.map((x, i) => (i ? x.charAt(0).toLowerCase() + x.slice(1) : x)).join(' · ')}</span>
-        </Stack>
+        <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>{leer.map((x, i) => (i ? x.charAt(0).toLowerCase() + x.slice(1) : x)).join(' · ')}</Typography>
       )}
     </Paper>
   );
@@ -170,7 +158,6 @@ export default function Uebersicht() {
         const jetzt = jetztMinuten();
 
         // Tageszeile
-        const name = familie ? (ich.rolle === 'eltern' ? ich.anzeigename || '' : kind!.vorname) : ich.anzeigename || ich.login || '';
         const teile: ReactNode[] = [datumVoll(heute)];
         if (familie && ich.rolle === 'eltern' && d.kinder.length < 2) teile.push(<><b>{kind!.vorname} {kind!.name}</b> · Klasse {kind!.klasse}</>);
         if (element && !gesperrt) {
@@ -186,16 +173,6 @@ export default function Uebersicht() {
           else teile.push(<><b>Heute kein Unterricht</b>{folgetag ? ` · nächster Unterricht ${tagRel(folgetag, heute)}${ab(folgetag)}` : ''}</>);
         }
         const ferienPille = !!ferien && (ferien.laeuft || ferien.von <= plusTage(heute, 14));
-
-        // Kennzahlen
-        const zahlen: { zahl: number; titel: string; href: string }[] = [];
-        if (kollegium && element) zahlen.push({ zahl: d.offen.length, titel: 'Offene Klassenbuch-Einträge', href: '#/offen' });
-        if (zeigeAbw) zahlen.push({ zahl: d.abwesenheiten.length, titel: 'Offene Abwesenheiten', href: '#/abwesenheiten' });
-        if (element && !kollegium) zahlen.push({ zahl: aenderungen.length, titel: 'Änderungen', href: '#/plan/mein' });
-        if (familie) zahlen.push({ zahl: d.hausaufgaben.length, titel: 'Hausaufgaben', href: '#/hausaufgaben' });
-        zahlen.push({ zahl: d.pruefungen.length, titel: 'Prüfungen', href: '#/pruefungen' });
-        if (!element) zahlen.push({ zahl: infosNeu.length, titel: 'Neue Infos', href: '#/neuigkeiten/infos' });
-        zahlen.push({ zahl: ungelesen.length, titel: 'Ungelesene Mitteilungen', href: '#/mitteilungen' });
 
         // Karten
         const karten: ReactNode[] = [];
@@ -218,8 +195,8 @@ export default function Uebersicht() {
           gruppen.push({ titel: 'Weitere Änderungen', href: kollegium ? '#/vertretungen' : '#/plan/mein', zeilen: weitere.map(k => stundeZeile(k, true, weitere)) });
           if (!unterrichtstage.length) gruppen.unshift({ titel: 'leer', zeilen: [], leer: gesperrt ? 'Die Anzeige des Stundenplans ist beschränkt' : ferien?.laeuft ? undefined : 'Kein Unterricht in den nächsten Tagen' });
           const ferienVorne = !!ferien && (!unterrichtstage.length || unterrichtstage[0] > ferien.bis);
-          karten.push(<UKarte key="heute" symbol={<CalendarMonthOutlined />} titel="Heute & nächste Tage" href="#/plan/mein" linkText="Stundenplan" gruppen={gruppen} leerSymbol={gesperrt ? <LockOutlined fontSize="small" /> : undefined}
-            vorne={ferien && ferienVorne ? <Stack direction="row" gap={1} alignItems="center" sx={{ bgcolor: t.palette.status.frei.flaeche, borderRadius: 1.5, px: 1.5, py: 1, fontSize: 14 }}><WbSunnyOutlined fontSize="small" />{ferien.text}</Stack> : null} />);
+          karten.push(<UKarte key="heute" titel="Heute & nächste Tage" href="#/plan/mein" linkText="Stundenplan" gruppen={gruppen}
+            vorne={ferien && ferienVorne ? <Typography variant="body2" sx={{ px: 1, color: 'status.frei.main', fontWeight: 500 }}>{ferien.text}</Typography> : null} />);
         }
         const erledigen: GruppeDaten[] = [];
         if (kollegium && element) erledigen.push({ titel: 'Klassenbuch · Lehrstoff fehlt', href: '#/offen', leer: 'Klassenbuch vollständig',
@@ -232,15 +209,15 @@ export default function Uebersicht() {
           } : { links: tagKurz(z.vonDatum), titel: z.schueler ?? '', neben: z.klasse, rechts: z.bisDatum && z.bisDatum !== z.vonDatum ? `bis ${datumKurz(z.bisDatum)}` : z.vonZeit && z.bisZeit ? `${z.vonZeit}–${z.bisZeit}` : '', href: '#/abwesenheiten' }) });
         if (element) erledigen.push({ titel: familie ? 'Hausaufgaben' : 'Hausaufgaben · fällig', href: '#/hausaufgaben', leer: 'Keine Hausaufgaben',
           zeilen: d.hausaufgaben.map(h => ({ links: h.faellig ? tagKurz(h.faellig) : '', titel: h.fach, neben: h.hausaufgabe, rechts: !familie && h.klassen?.length ? h.klassen.join(', ') : '', fett: !!h.faellig && h.faellig <= plusTage(heute, 1) })) });
-        if (erledigen.length) karten.push(<UKarte key="erl" symbol={<TaskAltRounded />} titel="Zu erledigen" gruppen={erledigen} />);
+        if (erledigen.length) karten.push(<UKarte key="erl" titel="Zu erledigen" gruppen={erledigen} />);
         const termine: GruppeDaten[] = [{ titel: 'Prüfungen · 4 Wochen', href: '#/pruefungen', leer: 'Keine Prüfungen',
           zeilen: d.pruefungen.map(p => ({ links: tagKurz(p.datum), titel: p.titel, neben: (p.klassen ?? []).join(', '), rechts: <>{stdText(p.stundeVon, p.stundeBis)} Std.{p.raeume?.length ? ` · ${p.raeume.join(', ')}` : ''}{p.status === 'vorgemerkt' && <Plakette>vorgemerkt</Plakette>}</> })) }];
         if (kollegium && element) termine.push({ titel: 'Aufsichten · 7 Tage', href: '#/plan/mein', leer: 'Keine Aufsichten',
           zeilen: aufsichten.map(a => ({ links: tagKurz(a.datum), titel: a.gangName || a.gang, rechts: <>{a.beginn}–{a.ende}{a.status === 'vertretung' && <Plakette ton="aenderung">Vertretung</Plakette>}</> })) });
         termine.push({ titel: 'Elternsprechtag', href: '#/sprechtag', zeilen: d.sprechtage.map(s => ({ links: s.datum ? tagKurz(s.datum) : '', titel: s.name, neben: s.text, href: `#/sprechtag/${s.id}` })) });
-        karten.push(<UKarte key="term" symbol={<EventOutlined />} titel="Termine" gruppen={termine} />);
+        karten.push(<UKarte key="term" titel="Termine" gruppen={termine} />);
         const sortiert = [...ungelesen, ...d.mitteilungen.filter(m => m.gelesen)];
-        karten.push(<UKarte key="mt" symbol={<MailOutline />} titel="Mitteilungen & Infos" href="#/mitteilungen" linkText="Posteingang" gruppen={[
+        karten.push(<UKarte key="mt" titel="Mitteilungen & Infos" href="#/mitteilungen" linkText="Posteingang" gruppen={[
           { titel: 'Mitteilungen', href: '#/mitteilungen', zahl: ungelesen.length, leer: 'Keine Mitteilungen',
             zeilen: sortiert.map(m => ({ links: m.erstellt ? tagKurz(m.erstellt.slice(0, 10)) : '', titel: <>{!m.gelesen && <Box component="span" sx={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', bgcolor: 'primary.main', mr: 0.75, verticalAlign: 'middle' }} />}{m.absender}</>,
               neben: m.betreff || '(ohne Betreff)', rechts: m.wichtig ? <Plakette ton="entfall">wichtig</Plakette> : null, fett: !m.gelesen, href: `#/mitteilungen/eingang/${m.id}` })) },
@@ -249,26 +226,17 @@ export default function Uebersicht() {
         ]} />);
 
         return (
-          <Stack gap={2.5}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} alignItems={{ sm: 'flex-end' }} sx={{ pb: 1.5, borderBottom: '1px solid', borderColor: 'flaechen.rand' }}>
+          <Stack gap={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} alignItems={{ sm: 'flex-end' }} sx={{ pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Box sx={{ flex: 1 }}>
-                <Typography variant="h1">{gruss()}{name ? `, ${name}` : ''}</Typography>
-                <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center" sx={{ mt: 0.75, color: 'text.secondary', fontSize: 14.5 }}>
-                  {teile.map((x, i) => <Box component="span" key={i} sx={{ display: 'flex', gap: 1 }}>{i > 0 && <span aria-hidden>·</span>}<span>{x}</span></Box>)}
-                  {ferienPille && <Plakette ton="frei" sx={{ ml: 0.5 }}><WbSunnyOutlined sx={{ fontSize: 14 }} />{ferien!.text}</Plakette>}
-                </Stack>
+                <Typography variant="h1">Start</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                  {teile.map((x, i) => <Fragment key={i}>{i > 0 && ' · '}{x}</Fragment>)}
+                  {ferienPille && <> · <Box component="span" sx={{ color: 'status.frei.main' }}>{ferien!.text}</Box></>}
+                </Typography>
               </Box>
               {familie && kind && <KindWahl liste={d.kinder} kind={kind} onWahl={() => setNeu(n => n + 1)} />}
             </Stack>
-            <Box component="nav" aria-label="Kennzahlen" sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: `repeat(${zahlen.length}, minmax(0, 1fr))` }, gap: 1.25 }}>
-              {zahlen.map(z => (
-                <Paper key={z.titel} variant="outlined" component="a" href={z.href} sx={{ p: 1.75, textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: 0.25, transition: 'box-shadow .12s, border-color .12s',
-                  '&:hover': { borderColor: 'primary.main', boxShadow: '0 4px 14px rgba(21,26,33,.06)' } }}>
-                  <Typography sx={{ fontSize: 26, fontWeight: 600, lineHeight: 1.1, color: z.zahl > 0 ? 'primary.main' : 'text.disabled', fontVariantNumeric: 'tabular-nums' }}>{anzahl(z.zahl)}</Typography>
-                  <Typography variant="body2" color="text.secondary">{z.titel}</Typography>
-                </Paper>
-              ))}
-            </Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'repeat(2, minmax(0, 1fr))' }, gap: 2, '& > :last-child': karten.length % 2 ? { gridColumn: { lg: '1 / -1' } } : {} }}>{karten}</Box>
             {details && <Stundendetails karte={details.k} liste={details.liste} typ={typ as 'lehrer'} onClose={() => setDetails(null)} onGeaendert={() => void g.neu()} />}
           </Stack>

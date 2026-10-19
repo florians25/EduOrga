@@ -4,7 +4,6 @@
 import { useMemo, useState } from 'react';
 import { Alert, Box, Button, Checkbox, Chip, FormControlLabel, IconButton, Link, MenuItem, Paper, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import LocalCafeOutlined from '@mui/icons-material/LocalCafeOutlined';
 import { holen, senden } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Geladen, Seite } from '../../components/Seite';
@@ -92,7 +91,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
 
   const schalter = (k: keyof typeof f, text: React.ReactNode) => <FormControlLabel sx={{ alignItems: 'flex-start', m: 0 }} control={<Switch checked={!!f[k]} onChange={e => set({ [k]: e.target.checked } as Partial<typeof f>)} />} label={<Box sx={{ pt: 1 }}>{text}</Box>} />;
   const karte = (titel: string, kinder: React.ReactNode, rechts?: React.ReactNode) => (
-    <Paper variant="outlined" sx={{ overflow: 'hidden' }}><Stack direction="row" alignItems="center" gap={1} sx={{ px: 2.5, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>{rechts}</Stack><Box sx={{ p: 2.5 }}>{kinder}</Box></Paper>
+    <Paper variant="outlined" sx={{ overflow: 'hidden' }}><Stack direction="row" alignItems="center" gap={1} sx={{ px: 2, py: 1, minHeight: 40, borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>{rechts}</Stack><Box sx={{ p: 2 }}>{kinder}</Box></Paper>
   );
   const zeitFeld = (label: string, k: 'einladungBis' | 'anmeldungVon' | 'anmeldungBis', hilfe?: string) => (
     <DatumZeitFeld label={label} wert={f[k] ?? ''} onWert={v => set({ [k]: v } as Partial<typeof f>)} hilfe={hilfe} breite="100%" />
@@ -108,8 +107,8 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
       <Button variant="outlined" href={`#/sprechtag${id ? '/' + id : ''}`}>Abbrechen</Button>
       <Button variant="contained" disabled={laeuft} onClick={speichern}>Speichern</Button>
     </>}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 340px' }, gap: 2.5, alignItems: 'start' }}>
-        <Stack gap={2.5}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 340px' }, gap: 2, alignItems: 'start' }}>
+        <Stack gap={2}>
           {karte('Allgemein', (
             <Stack direction="row" gap={2} flexWrap="wrap">
               <TextField label="Name" value={f.name} onChange={e => set({ name: e.target.value })} required sx={{ flex: '2 1 280px' }} slotProps={{ htmlInput: { maxLength: 200 } }} />
@@ -200,7 +199,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
             <Button size="small" onClick={() => lehrer.forEach(l => !lk.has(l.kurz) && lkSetzen(l.kurz, {}))}>Alle</Button>
             <Button size="small" onClick={() => lehrer.forEach(l => lkSetzen(l.kurz, null))}>Keine</Button></Stack>)}
         </Stack>
-        <Paper variant="outlined" sx={{ p: 2.5, position: { lg: 'sticky' }, top: { lg: 16 } }} aria-label="Vorschau">
+        <Paper variant="outlined" sx={{ p: 2, position: { lg: 'sticky' }, top: { lg: 16 } }} aria-label="Vorschau">
           <Typography variant="h3" sx={{ mb: 1.5 }}>Vorschau</Typography>
           <Stack direction="row" gap={1} sx={{ mb: 1.5 }} flexWrap="wrap"><Plakette ton="primaer">{vorschau.fenster.length} Termine je Lehrkraft</Plakette><Plakette ton="pruefung">{vorschau.kapazitaet} Termine gesamt</Plakette></Stack>
           <Typography sx={{ fontWeight: 600 }}>{f.datum ? datumLang(f.datum) : <Typography component="span" color="text.secondary">Datum fehlt</Typography>}{tage.length > 0 && <Typography component="span" variant="body2" color="text.secondary"> + {tage.length} weitere{tage.length === 1 ? 'r Tag' : ' Tage'}</Typography>}</Typography>
@@ -213,7 +212,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
               const pause = i > 0 ? vorschau.pausen.find(([pv, pb]) => pv >= vorschau.fenster[i - 1][1] - f.puffer && pb <= v) : null;
               return (
                 <Box key={v} sx={{ display: 'contents' }}>
-                  {pause && <Stack direction="row" gap={0.75} alignItems="center" sx={{ gridColumn: '1 / -1', color: 'text.secondary', fontSize: 12.5, py: 0.5 }}><LocalCafeOutlined sx={{ fontSize: 16 }} />Pause {zeitText(pause[0])}–{zeitText(pause[1])}</Stack>}
+                  {pause && <Stack direction="row" gap={0.75} alignItems="center" sx={{ gridColumn: '1 / -1', color: 'text.secondary', fontSize: 12.5, py: 0.5 }}>Pause {zeitText(pause[0])}–{zeitText(pause[1])}</Stack>}
                   <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5, px: 1, py: 0.5, textAlign: 'center' }}><Typography sx={{ fontWeight: 600, fontSize: 13 }}>{zeitText(v)}</Typography><Typography variant="caption" color="text.secondary">bis {zeitText(b)}</Typography></Box>
                 </Box>
               );

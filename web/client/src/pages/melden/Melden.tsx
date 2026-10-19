@@ -3,14 +3,7 @@
 // Zurückziehen offener Meldungen und Löschen eingetragener Prüfungen. Raum buchen führt in das Buchungsmodul.
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Alert, Autocomplete, Box, Button, Chip, MenuItem, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import ChatOutlined from '@mui/icons-material/ChatOutlined';
-import ChecklistRounded from '@mui/icons-material/ChecklistRounded';
-import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import FactCheckOutlined from '@mui/icons-material/FactCheckOutlined';
-import HighlightOffRounded from '@mui/icons-material/HighlightOffRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
-import MeetingRoomOutlined from '@mui/icons-material/MeetingRoomOutlined';
-import PersonRemoveOutlined from '@mui/icons-material/PersonRemoveOutlined';
 import { holen, loeschen, senden } from '../../api/client';
 import type { Element, Zeit } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
@@ -65,7 +58,7 @@ function MeldungZeile({ m, aktionen, neu }: { m: Meldung; aktionen?: boolean; ne
       try { await loeschen(`/api/app/meldungen/${encodeURIComponent(m.id)}`); toast('Meldung zurückgezogen.'); neu?.(); } catch (err) { fehler(err); }
     }}>Zurückziehen</Button> : null;
   return (
-    <Stack direction="row" gap={1.5} alignItems="center" sx={{ py: 1.25, px: 2, borderTop: 1, borderColor: 'divider', '&:first-of-type': { borderTop: 0 }, opacity: m.status === 'abgelehnt' ? 0.75 : 1 }}>
+    <Stack direction="row" gap={1.5} alignItems="center" sx={{ py: 1, px: 2, borderTop: 1, borderColor: 'divider', '&:first-of-type': { borderTop: 0 }, opacity: m.status === 'abgelehnt' ? 0.75 : 1 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontWeight: 500 }} noWrap>{titelVon(m)}</Typography>
         <Typography variant="body2" color="text.secondary" noWrap>{a.text}{erstelltText(m) && ` · gemeldet ${erstelltText(m)}`}{m.text && m.typ !== 'nachricht' ? ` · ${m.text}` : ''}</Typography>
@@ -81,7 +74,7 @@ function Uebersicht() {
   const offen = (g.daten ?? []).filter(m => m.status === 'offen').length;
   // Einstiege als schlichte Linkliste (eine Zeile je Aufgabe, Beschreibung daneben) – keine Symbolkacheln.
   const kachel = (href: string, titel: string, text: string, zahl = 0) => (
-    <Box component="a" href={href} sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr) auto', md: '220px minmax(0, 1fr) auto' }, columnGap: 2, alignItems: 'baseline', px: 2, py: 1.25,
+    <Box component="a" href={href} sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr) auto', md: '220px minmax(0, 1fr) auto' }, columnGap: 2, alignItems: 'baseline', px: 2, py: 1,
       textDecoration: 'none', color: 'inherit', borderBottom: 1, borderColor: 'divider', '&:last-of-type': { borderBottom: 0 }, '&:hover': { bgcolor: 'action.hover' } }}>
       <Typography sx={{ fontWeight: 500, color: 'secondary.main' }}>{titel}</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>{text}</Typography>
@@ -98,7 +91,7 @@ function Uebersicht() {
         {kachel('#/melden/meine', 'Meine Meldungen', 'Status verfolgen, offene Meldungen zurückziehen', offen)}
       </Paper>
       <Paper variant="outlined">
-        <Stack direction="row" alignItems="center" sx={{ px: 2, pt: 1.75, pb: 1 }}><Typography variant="h3" sx={{ flex: 1 }}>Zuletzt gemeldet</Typography>{!!g.daten?.length && <Button size="small" href="#/melden/meine">Alle anzeigen</Button>}</Stack>
+        <Stack direction="row" alignItems="center" sx={{ px: 2, pt: 2, pb: 1 }}><Typography variant="h3" sx={{ flex: 1 }}>Zuletzt gemeldet</Typography>{!!g.daten?.length && <Button size="small" href="#/melden/meine">Alle anzeigen</Button>}</Stack>
         <Geladen g={g}>{l => l.length ? <Box>{l.slice(0, 4).map(m => <MeldungZeile key={m.id} m={m} />)}</Box> : <Leer text="Noch keine Meldungen" unter="Ihre Meldungen erscheinen hier mit ihrem Status." />}</Geladen>
       </Paper>
     </Stack>
@@ -142,7 +135,7 @@ function Abwesenheit({ stunden }: { stunden: Zeit[] }) {
           toast('Abwesenheit gemeldet.'); navigieren('#/melden/meine');
         } catch (err) { fehler(err); } finally { setLaeuft(false); }
       }}>Abwesenheit melden</Button></>}>
-      <Stack gap={2.5}>
+      <Stack gap={2}>
         <Stack direction="row" gap={2} flexWrap="wrap">
           <DatumFeld label="Von" wert={von} onWert={v => { if (v) { setVon(v); if (bis < v) setBis(v); } }} pflicht />
           <DatumFeld label="Bis" wert={bis} onWert={v => v && setBis(v)} min={von} pflicht />
@@ -189,7 +182,7 @@ function Klausur({ stunden, klassen, lehrer }: { stunden: Zeit[]; klassen: Eleme
           toast('Prüfung eingetragen.'); navigieren('#/melden/meine');
         } catch (err) { fehler(err); } finally { setLaeuft(false); }
       }}>Prüfung eintragen</Button></>}>
-      <Stack gap={2.5}>
+      <Stack gap={2}>
         <TextField label="Titel" value={titel} onChange={e => setTitel(e.target.value)} required placeholder="z. B. Deutsch Klassenarbeit" slotProps={{ htmlInput: { maxLength: 200 } }} />
         <Stack direction="row" gap={2} flexWrap="wrap">
           <DatumFeld label="Datum" wert={datum} onWert={v => v && setDatum(v)} min={heuteIso()} pflicht />

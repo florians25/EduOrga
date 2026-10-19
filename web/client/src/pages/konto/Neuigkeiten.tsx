@@ -1,7 +1,7 @@
 // Neuigkeiten: Infos der Schule und Neuerungen in EduOrga Web als ruhige Liste (wie im Infocenter), Filter nach Art.
 // #/neuigkeiten/verwalten: Infos anlegen, bearbeiten, löschen (Administration, Schulleitung).
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Box, Button, FormControlLabel, IconButton, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, FormControlLabel, IconButton, MenuItem, Paper, Stack, Switch, TextField, Typography } from '@mui/material';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import { holen, loeschen, senden } from '../../api/client';
@@ -53,9 +53,9 @@ function Liste({ filter }: { filter: string }) {
           optionen={[['infos', optionText('Infos der Schule', 'info')], ['updates', optionText('Neuerungen in EduOrga Web', 'neuigkeit')]]} />
       </>}>
       {liste.length ? (
-        <Stack gap={1.25} sx={{ maxWidth: 900 }}>
+        <Paper variant="outlined" sx={{ maxWidth: 960 }}>
           {liste.map(x => <InfoKarte key={x.schluessel} x={{ ...x, gelesen: !neu.has(x.schluessel) }} />)}
-        </Stack>
+        </Paper>
       ) : (
         <Leer text={filter === 'infos' ? 'Keine Infos der Schule' : 'Keine Neuigkeiten'}
           unter={filter === 'infos' ? 'Die Schule hat aktuell keine Infos veröffentlicht.' : 'Sobald es etwas Neues gibt, erscheint es hier.'} />

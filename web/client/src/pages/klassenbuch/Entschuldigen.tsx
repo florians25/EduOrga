@@ -49,7 +49,7 @@ export function StundenDialog({ zeilen, onClose, fertig }: { zeilen: FeZeile[]; 
           helperText={gesperrt ? undefined : 'Der Text ist für andere Lehrkräfte mit einer Fehlstunde in derselben Abwesenheit sichtbar.'} slotProps={{ htmlInput: { maxLength: 1000 } }} />
         {zeilen.length === 1 && !!z.texte?.length && (
           <Box><Typography variant="subtitle2" sx={{ mb: 1 }}>Zuletzt eingegebene Entschuldigungstexte</Typography>
-            {z.texte.map((t, i) => <Box key={i} sx={{ p: 1.25, mb: 1, borderRadius: 1.5, bgcolor: 'action.hover' }}>
+            {z.texte.map((t, i) => <Box key={i} sx={{ p: 1, mb: 1, borderRadius: 1.5, bgcolor: 'action.hover' }}>
               <Typography variant="caption" color="text.secondary"><b>{t.lehrer || '–'}</b>{t.rolle === 'klassenleitung' ? ' (Klassenleitung)' : ''} · {zeitstempel(t.zeit)}{t.fach ? ` · ${t.fach}, ${t.stunde}. Std.` : ''} · {STATUS_TEXT[t.status]?.[0] ?? t.status}</Typography>
               <Typography variant="body2">{t.text}</Typography></Box>)}
           </Box>
@@ -63,8 +63,8 @@ export function FehlzeitenLeiste({ a, grundName, onClose }: { a: FeAbwesenheit; 
   const tage = [...new Set(a.stunden.map(x => x.datum))];
   return (
     <Drawer anchor="right" open onClose={onClose} slotProps={{ paper: { sx: { width: { xs: '100%', sm: 420 } } } }}>
-      <Stack direction="row" alignItems="center" sx={{ px: 2.5, py: 1.5, borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" sx={{ flex: 1 }}>Fehlzeiten</Typography><IconButton onClick={onClose} aria-label="Schließen"><CloseRounded /></IconButton></Stack>
-      <Box sx={{ p: 2.5, overflowY: 'auto' }}>
+      <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" sx={{ flex: 1 }}>Fehlzeiten</Typography><IconButton onClick={onClose} aria-label="Schließen"><CloseRounded /></IconButton></Stack>
+      <Box sx={{ p: 2, overflowY: 'auto' }}>
         <Typography sx={{ fontWeight: 600 }}>{a.schueler}</Typography><Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>{a.klasse}</Typography>
         <Typography variant="body2">Beginn: {datumDe(a.vonDatum)} {a.vonZeit}</Typography><Typography variant="body2">Ende: {datumDe(a.bisDatum)} {a.bisZeit}</Typography>
         {a.grund && <Typography variant="body2">Abwesenheitsgrund: {grundName(a.grund)}</Typography>}
@@ -73,7 +73,7 @@ export function FehlzeitenLeiste({ a, grundName, onClose }: { a: FeAbwesenheit; 
         {tage.map(t => (
           <Box key={t} sx={{ mt: 2 }}><Typography variant="subtitle2" sx={{ mb: 1 }}>{datumLang(t)}</Typography>
             {a.stunden.filter(x => x.datum === t).sort((x, y) => (y.stunde ?? 0) - (x.stunde ?? 0)).map(x => (
-              <Box key={x.id} sx={{ p: 1.25, mb: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
+              <Box key={x.id} sx={{ p: 1, mb: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
                 <Stack direction="row" justifyContent="space-between"><Typography variant="body2" sx={{ fontWeight: 500 }}>{x.beginn} – {x.ende}</Typography><StatusLabel s={x.status} /></Stack>
                 <Typography variant="caption" color="text.secondary">{x.fach}{x.lehrer ? ` – ${x.lehrer}` : ''}{x.entschuldigung ? ` · ${x.entschuldigung.rolle === 'klassenleitung' ? 'Klassenleitung' : 'Fachlehrkraft'} ${x.entschuldigung.lehrer}, ${zeitstempel(x.entschuldigung.zeit)}` : ''}</Typography>
                 {x.entschuldigung?.text && <Typography variant="body2" sx={{ mt: 0.5 }}>{x.entschuldigung.text}</Typography>}

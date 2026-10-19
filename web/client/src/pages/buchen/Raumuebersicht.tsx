@@ -4,10 +4,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { alpha, Box, Button, ButtonBase, Chip, IconButton, MenuItem, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material';
 import AddRounded from '@mui/icons-material/AddRounded';
-import ApartmentOutlined from '@mui/icons-material/ApartmentOutlined';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import ScheduleRounded from '@mui/icons-material/ScheduleRounded';
 import { holen, senden } from '../../api/client';
 import type { Elemente } from '../../api/types';
 import { useSitzung } from '../../app/sitzung';
@@ -163,7 +161,7 @@ export function Raumuebersicht({ rest }: { rest: string[] }) {
             {reihe.map(d => {
               const geb = d.r.gebaeude || 'Ohne Gebäude';
               const kopf = gruppieren && geb !== gruppe ? (
-                <tr key={'g' + geb}><th colSpan={n + 1} style={{ textAlign: 'left', position: 'sticky', left: 0 }}><Stack direction="row" gap={1} alignItems="center" sx={{ px: 1.5, py: 0.75, bgcolor: 'background.default', color: 'text.secondary', fontWeight: 600 }}><ApartmentOutlined fontSize="small" />{geb}<Typography variant="caption">{reihe.filter(x => (x.r.gebaeude || 'Ohne Gebäude') === geb).length} Räume</Typography></Stack></th></tr>
+                <tr key={'g' + geb}><th colSpan={n + 1} style={{ textAlign: 'left', position: 'sticky', left: 0 }}><Stack direction="row" gap={1} alignItems="center" sx={{ px: 1.5, py: 0.75, bgcolor: 'background.default', color: 'text.secondary', fontWeight: 600 }}>{geb}<Typography variant="caption">{reihe.filter(x => (x.r.gebaeude || 'Ohne Gebäude') === geb).length} Räume</Typography></Stack></th></tr>
               ) : null;
               gruppe = geb;
               return [kopf, (
@@ -207,10 +205,10 @@ export function Raumuebersicht({ rest }: { rest: string[] }) {
     const { u } = daten!;
     let gruppe: string | null = null;
     return (
-      <Stack gap={1.25}>
+      <Stack gap={1}>
         {reihe.map(d => {
           const geb = d.r.gebaeude || 'Ohne Gebäude';
-          const kopf = gruppieren && geb !== gruppe ? <Typography key={'g' + geb} variant="overline" color="text.secondary" sx={{ display: 'flex', gap: 0.75, alignItems: 'center', mt: 1 }}><ApartmentOutlined fontSize="small" />{geb}</Typography> : null;
+          const kopf = gruppieren && geb !== gruppe ? <Typography key={'g' + geb} variant="overline" color="text.secondary" sx={{ display: 'flex', gap: 0.75, alignItems: 'center', mt: 1 }}>{geb}</Typography> : null;
           gruppe = geb;
           return [kopf, (
             <Paper key={d.r.kurz} variant="outlined" sx={{ p: 1.5 }}>
@@ -268,10 +266,10 @@ export function Raumuebersicht({ rest }: { rest: string[] }) {
           <>
             <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap" sx={{ mb: 1.5 }}>
               <Typography variant="body2"><b>{reihe.length}</b> {reihe.length === 1 ? 'Raum' : 'Räume'}{reihe.length < daten.u.raeume.length ? ` von ${daten.u.raeume.length}` : ''}</Typography>
-              {daten.u.tage.some(tg => tg.datum === heute) && daten.jetztStd && <Chip size="small" icon={<ScheduleRounded />} label={`${reihe.filter(d => d.jetztFrei).length} jetzt frei (${daten.jetztStd}. Std.)`} />}
+              {daten.u.tage.some(tg => tg.datum === heute) && daten.jetztStd && <Chip size="small" label={`${reihe.filter(d => d.jetztFrei).length} jetzt frei (${daten.jetztStd}. Std.)`} />}
               {!woche && daten.u.tage[0]?.frei && <Plakette ton="frei">{daten.u.tage[0].grund || 'unterrichtsfrei'}</Plakette>}
               <Box sx={{ flex: 1 }} />
-              <Stack direction="row" gap={1.25} flexWrap="wrap" sx={{ fontSize: 12.5, color: 'text.secondary' }} aria-label="Legende">
+              <Stack direction="row" gap={1} flexWrap="wrap" sx={{ fontSize: 12.5, color: 'text.secondary' }} aria-label="Legende">
                 {['unterricht', 'buchung', 'klausur', 'termin', 'vorgemerkt', 'gesperrt', 'frei'].map(a => (
                   <Stack key={a} direction="row" gap={0.5} alignItems="center"><Box sx={{ width: 12, height: 12, borderRadius: 0.75, bgcolor: farbe(a).bg, border: 1, borderColor: farbe(a).rand, borderStyle: a === 'frei' ? 'dashed' : 'solid' }} />{a === 'frei' ? 'frei – anklicken zum Buchen' : BELEGT_TEXT[a]}</Stack>
                 ))}

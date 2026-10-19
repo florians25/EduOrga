@@ -98,8 +98,8 @@ export function Ressourcenverwaltung() {
         const q = suche.toLowerCase();
         const sichtbar = liste.filter(r => (!q || `${r.name} ${r.art} ${r.raum} ${r.standort}`.toLowerCase().includes(q)) && (!artFilter || String(r.artId ?? '') === artFilter) && (!zuordnung || (r.raum ? 'fest' : 'mobil') === zuordnung));
         return (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '340px minmax(0, 1fr)' }, gap: 2.5, alignItems: 'start' }}>
-            <Paper variant="outlined" sx={{ p: 2.5 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '340px minmax(0, 1fr)' }, gap: 2, alignItems: 'start' }}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="h3" sx={{ mb: 0.5 }}>Ressourcenarten</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Nach diesen Arten filtern Lehrkräfte bei der Raum- und Ressourcensuche (z. B. Beamer, Internet, Laptop tragbar).</Typography>
               {arten.map(a => (
@@ -133,7 +133,7 @@ export function Ressourcenverwaltung() {
               {liste.length ? (
                 <Tabelle zeilen={sichtbar} schluessel={r => r.id} onZeile={r => setFormular(r)}
                   spalten={[
-                    { id: 'name', kopf: 'Ressource', sortWert: r => r.name, zelle: r => <Stack direction="row" gap={1.25} alignItems="center"><Box sx={{ color: 'primary.main', display: 'flex' }}><ResSymbol r={r} /></Box><Box><Typography sx={{ fontWeight: 500 }}>{r.name}</Typography>{r.bemerkung && <Typography variant="caption" color="text.secondary">{r.bemerkung}</Typography>}</Box></Stack> },
+                    { id: 'name', kopf: 'Ressource', sortWert: r => r.name, zelle: r => <Stack direction="row" gap={1} alignItems="center"><Box sx={{ color: 'primary.main', display: 'flex' }}><ResSymbol r={r} /></Box><Box><Typography sx={{ fontWeight: 500 }}>{r.name}</Typography>{r.bemerkung && <Typography variant="caption" color="text.secondary">{r.bemerkung}</Typography>}</Box></Stack> },
                     { id: 'art', kopf: 'Art', sortWert: r => r.art ?? '', zelle: r => r.art ? <Plakette>{r.art}</Plakette> : null },
                     { id: 'zu', kopf: 'Zuordnung', zelle: r => (r.raum ? <Plakette>fest in {r.raum}</Plakette> : <Plakette ton="termin">mobil</Plakette>) },
                     { id: 'ort', kopf: 'Standort', zelle: r => (r.mobil ? r.standort : ''), verbergenMobil: true },

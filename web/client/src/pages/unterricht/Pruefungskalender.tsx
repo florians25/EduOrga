@@ -58,7 +58,7 @@ export default function Pruefungskalender() {
       <Geladen g={g}>{d => {
         const istFerien = (iso: string) => (d.el.ferien ?? []).some(f => iso >= f.von && iso <= f.bis);
         return (
-          <Stack direction={{ xs: 'column', xl: 'row' }} gap={2.5} alignItems="flex-start">
+          <Stack direction={{ xs: 'column', xl: 'row' }} gap={2} alignItems="flex-start">
             <Paper variant="outlined" sx={{ p: 2, width: { xs: '100%', xl: 280 }, flexShrink: 0 }}>
               <Stack gap={2}>
                 <TextField select label="Prüfungsart" value={art} onChange={e => setArt(e.target.value)}><MenuItem value="alle">Alle Prüfungsarten</MenuItem>{d.arten.map(a => <MenuItem key={a} value={a}>{a}</MenuItem>)}</TextField>

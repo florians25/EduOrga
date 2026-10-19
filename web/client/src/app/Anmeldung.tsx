@@ -5,7 +5,6 @@ import { Alert, Box, Button, Collapse, IconButton, InputAdornment, Link, Paper, 
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
-import CampaignOutlined from '@mui/icons-material/CampaignOutlined';
 import { holen, senden } from '../api/client';
 import type { Sitzung } from '../api/types';
 import { Marke, PRODUKT, SLOGAN } from '../components/Marke';
@@ -28,22 +27,18 @@ function Rahmen({ sitzung, titel, untertitel, children }: { sitzung: Sitzung | n
       {/* links: Marke auf Petrol, Schule, Slogan, öffentliche Hinweise – ruhig, ohne Grafik */}
       <Box component="section" aria-label={schule} sx={{
         display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 4, p: { md: 6, lg: 8 }, color: '#fff', bgcolor: 'nav.flaeche',
-        borderRight: '4px solid', borderColor: 'primary.light',
       }}>
-        <Marke hell groesse={34} />
+        <Marke hell groesse={32} />
         <Box sx={{ mt: 'auto' }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.7)', mb: 1.5 }}>{datumText(heuteIso())}</Typography>
-          <Typography component="h2" sx={{ fontSize: { md: 28, lg: 32 }, fontWeight: 600, lineHeight: 1.2, letterSpacing: '-0.01em' }}>{schule}</Typography>
-          <Box sx={{ width: 48, height: 3, bgcolor: 'nav.marke', my: 2.5 }} />
-          <Typography sx={{ fontSize: 20, fontWeight: 500 }}>{SLOGAN}</Typography>
-          <Typography sx={{ mt: 1, color: 'rgba(255,255,255,.72)', fontSize: 15, maxWidth: 460 }}>Stundenplan, Vertretungen, Klassenbuch und Kommunikation der Schule an einem Ort.</Typography>
+          <Typography sx={{ fontSize: 13, color: 'rgba(255,255,255,.7)', mb: 1 }}>{datumText(heuteIso())}</Typography>
+          <Typography component="h2" sx={{ fontSize: { md: 24, lg: 28 }, fontWeight: 600, lineHeight: 1.25 }}>{schule}</Typography>
+          <Typography sx={{ mt: 1, fontSize: 16, color: 'rgba(255,255,255,.82)' }}>{SLOGAN}</Typography>
         </Box>
         {hinweise.length > 0 && (
-          <Stack gap={1.25} sx={{ maxWidth: 500 }}>
-            <Typography sx={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,.7)' }} component="h2">Hinweise der Schule</Typography>
+          <Stack gap={1} sx={{ maxWidth: 500 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.7)' }} component="h2">Hinweise der Schule</Typography>
             {hinweise.map(h => (
-              <Box key={h.id} sx={{ display: 'flex', gap: 1.5, p: 1.75, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,.07)', borderLeft: '3px solid', borderColor: 'nav.marke' }}>
-                <CampaignOutlined sx={{ color: 'rgba(255,255,255,.8)', fontSize: 20 }} />
+              <Box key={h.id} sx={{ px: 2, py: 1.5, borderRadius: 1.5, border: '1px solid rgba(255,255,255,.16)' }}>
                 <Box><Typography sx={{ fontWeight: 600 }}>{h.titel}</Typography>{h.text && <Typography sx={{ color: 'rgba(255,255,255,.78)', whiteSpace: 'pre-line', fontSize: 13, mt: 0.25 }}>{h.text}</Typography>}</Box>
               </Box>
             ))}
@@ -51,20 +46,20 @@ function Rahmen({ sitzung, titel, untertitel, children }: { sitzung: Sitzung | n
         )}
         <Typography sx={{ mt: 'auto', fontSize: 12, color: 'rgba(255,255,255,.55)' }}>{PRODUKT}</Typography>
       </Box>
-      <Box component="section" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: { xs: 2, sm: 4 }, gap: 2.5 }}>
+      <Box component="section" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: { xs: 2, sm: 4 }, gap: 2 }}>
         <Box sx={{ display: { xs: 'block', md: 'none' }, textAlign: 'center', mt: 2 }}>
           <Box sx={{ display: 'inline-flex' }}><Marke groesse={32} /></Box>
-          <Typography sx={{ mt: 1.25, fontWeight: 500 }}>{SLOGAN}</Typography>
+          <Typography sx={{ mt: 1, fontWeight: 500 }}>{SLOGAN}</Typography>
           <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>{schule}</Typography>
         </Box>
-        <Paper variant="outlined" sx={{ width: '100%', maxWidth: 420, p: { xs: 3, sm: 4 }, borderTop: '3px solid', borderTopColor: 'primary.main' }}>
+        <Paper variant="outlined" sx={{ width: '100%', maxWidth: 400, p: { xs: 2, sm: 3 } }}>
           <Typography variant="h2" component="h1">{titel}</Typography>
-          {untertitel && <Typography color="text.secondary" sx={{ mt: 0.75 }}>{untertitel}</Typography>}
+          {untertitel && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{untertitel}</Typography>}
           <Box sx={{ mt: 3 }}>{children}</Box>
         </Paper>
         {hinweise.length > 0 && (
           <Stack gap={1} sx={{ width: '100%', maxWidth: 420, display: { md: 'none' } }}>
-            {hinweise.map(h => <Alert key={h.id} severity="info" icon={<CampaignOutlined />}><b>{h.titel}</b>{h.text ? <> – {h.text}</> : null}</Alert>)}
+            {hinweise.map(h => <Alert key={h.id} severity="info" icon={false}><b>{h.titel}</b>{h.text ? <> – {h.text}</> : null}</Alert>)}
           </Stack>
         )}
         <Stack direction="row" gap={1} alignItems="center" sx={{ color: 'text.secondary' }}>
@@ -115,7 +110,7 @@ export function Anmeldung({ sitzung, fertig }: { sitzung: Sitzung | null; fertig
     } finally { setLaeuft(false); }
   };
   return (
-    <Rahmen sitzung={sitzung} titel="Anmelden" untertitel="Mit Ihrem Schulkonto weiter zu Stundenplan und Klassenbuch.">
+    <Rahmen sitzung={sitzung} titel="Anmelden" untertitel="Mit dem Benutzernamen und Passwort Ihres Schulkontos.">
       <Stack component="form" gap={2.25} onSubmit={absenden} autoComplete="on">
         {wartung && <Alert severity="warning" icon={<LockOutlined />}>{wartung}</Alert>}
         <TextField label="Benutzername" name="login" autoComplete="username" autoFocus required fullWidth size="medium" placeholder="z. B. mustermann"

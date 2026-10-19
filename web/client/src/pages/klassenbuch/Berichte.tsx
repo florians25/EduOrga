@@ -4,15 +4,9 @@
 // Adresse: #/berichte/<Bericht|->/<Klasse|->/<von>/<bis>/<Schüler|->/<n1>/<n2>
 import { useEffect, useState } from 'react';
 import { Box, Button, ButtonBase, Chip, IconButton, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import PersonOffOutlined from '@mui/icons-material/PersonOffOutlined';
-import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined';
-import FactCheckOutlined from '@mui/icons-material/FactCheckOutlined';
-import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
-import GridViewOutlined from '@mui/icons-material/GridViewOutlined';
 import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
 import TableViewOutlined from '@mui/icons-material/TableViewOutlined';
 import CloseRounded from '@mui/icons-material/CloseRounded';
-import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { ApiFehler, holen, speichern } from '../../api/client';
 import { useSitzung } from '../../app/sitzung';
 import { Fehler, Geladen, Laden, Leer, Seite } from '../../components/Seite';
@@ -97,7 +91,7 @@ export default function Berichte({ teile }: SeitenProps) {
   const reihe = (a: Art) => {
     const fehlt = !!a.klasseNoetig && !klasse;
     return (
-      <Stack key={a.id} direction="row" alignItems="center" gap={1.5} sx={{ px: 2, py: 1.25, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 }, bgcolor: a.id === art ? 'action.selected' : undefined }}>
+      <Stack key={a.id} direction="row" alignItems="center" gap={1.5} sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 }, bgcolor: a.id === art ? 'action.selected' : undefined }}>
         <ButtonBase onClick={() => setPanel(a)} sx={{ flex: 1, minWidth: 0, justifyContent: 'flex-start', textAlign: 'left', flexDirection: 'column', alignItems: 'flex-start', borderRadius: 1 }}>
           <Typography sx={{ fontWeight: 500 }}>{a.titel}</Typography>
           <Typography variant="body2" color="text.secondary">{BESCHREIBUNG[a.id] ?? a.gruppe}</Typography>
@@ -129,7 +123,7 @@ export default function Berichte({ teile }: SeitenProps) {
           {art && <Vorschau a={arten.find(x => x.id === art)!} p={standard(arten.find(x => x.id === art)!)} schule={s.sitzung.schule.name} zuHref={ziel(null)} exportieren={exportieren} />}
           {!sicht.length ? <Leer text="Kein Bericht gefunden" unter={`Für „${suche}“ gibt es keinen passenden Bericht.`} />
             : gruppe === 'alle' && !q ? gruppen.map(x => (
-              <Box key={x} sx={{ mb: 2.5 }} className="nicht-drucken"><Typography variant="overline" color="text.secondary">{x}</Typography>
+              <Box key={x} sx={{ mb: 2 }} className="nicht-drucken"><Typography variant="overline" color="text.secondary">{x}</Typography>
                 <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>{arten.filter(a => a.gruppe === x).map(reihe)}</Paper></Box>))
             : <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }} className="nicht-drucken">{sicht.map(reihe)}</Paper>}
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }} className="nicht-drucken">Notfallliste, BAföG- und Fahrkostenbescheinigungen benötigen Adress- bzw. Kontaktdaten, die EduOrga Studio nicht überträgt.</Typography>

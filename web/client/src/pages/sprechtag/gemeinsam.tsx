@@ -58,8 +58,8 @@ export function Kopf({ t, zusatz, familie = false }: { t: Sprechtag; zusatz?: st
     abgesagt: `Der Sprechtag wurde abgesagt${t.absageGrund ? ` (${t.absageGrund})` : ''}. Alle Termine entfallen.`,
   } as Record<string, string>)[t.phase] ?? '';
   return (
-    <Box sx={{ mb: 2.5 }}>
-      <Stack direction="row" gap={1.25} alignItems="center" flexWrap="wrap">
+    <Box sx={{ mb: 2 }}>
+      <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap">
         <Typography sx={{ fontWeight: 600, fontSize: 16 }}>{t.datumText}</Typography><PhasenPlakette t={t} familie={familie} />
         {phaseText && <Typography variant="body2" color="text.secondary">{phaseText}</Typography>}
       </Stack>

@@ -4,18 +4,13 @@
 // Katalog des Servers – neue Rechte und Gruppen erscheinen automatisch.
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  Alert, alpha, Box, Button, Divider, IconButton, List, ListItemButton, ListItemText, MenuItem, Paper, Stack, Tab, Tabs, TextField, ToggleButton, ToggleButtonGroup,
+  Alert, Box, Button, Divider, IconButton, List, ListItemButton, ListItemText, MenuItem, Paper, Stack, Tab, Tabs, TextField, ToggleButton, ToggleButtonGroup,
   Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
-import BlockRounded from '@mui/icons-material/BlockRounded';
 import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
-import DoneAllRounded from '@mui/icons-material/DoneAllRounded';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import EditRounded from '@mui/icons-material/EditRounded';
-import CheckRounded from '@mui/icons-material/CheckRounded';
 import RestartAltRounded from '@mui/icons-material/RestartAltRounded';
-import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import { holen, loeschen, senden } from '../../api/client';
 import { Geladen } from '../../components/Seite';
 import { FormDialog, Plakette, SuchFeld, Wahl } from '../../components/Bausteine';
@@ -41,7 +36,7 @@ export default function Rechte({ teil }: { teil?: string; weitere?: string[] }) 
   const reiter = teil === 'benutzer' || teil === 'passwort' ? teil : 'rollen';
   return (
     <>
-      <Tabs value={reiter} onChange={(_, v) => navigieren(`#/admin/rechte/${v}`, true)} sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs value={reiter} onChange={(_, v) => navigieren(`#/admin/rechte/${v}`, true)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Tab value="rollen" label="Rollen & Rechte" /><Tab value="benutzer" label="Rechte einzelner Benutzer" /><Tab value="passwort" label="Passwortregeln" />
       </Tabs>
       {reiter === 'rollen' ? <Rollen /> : reiter === 'benutzer' ? <Benutzerrechte /> : (
@@ -55,16 +50,15 @@ export default function Rechte({ teil }: { teil?: string; weitere?: string[] }) 
   );
 }
 
+// Stufen als Segmentschalter mit kurzen Wörtern (keine Symbole); gewählt: „kein Zugriff“ neutral, Zugriff in der Akzentfarbe
 function StufenWahl({ r, wert, onWert, geaendert }: { r: Recht; wert: number; onWert: (v: number) => void; geaendert?: boolean }) {
   const t = useTheme();
-  const pillen: [number, string, ReactNode][] = r.zweistufig ? [[0, 'Kein Zugriff', <BlockRounded key="0" />], [1, 'Lesen', <VisibilityOutlined key="1" />], [2, 'Schreiben', <EditRounded key="2" />]]
-    : [[0, 'Kein Zugriff', <BlockRounded key="0" />], [2, 'Zugriff', <CheckRounded key="2" />]];
-  const farbe = (v: number) => (v === 2 ? t.palette.status.ok.main : v === 1 ? t.palette.primary.main : t.palette.text.secondary);
+  const stufen: [number, string, string][] = r.zweistufig ? [[0, 'Kein', 'Kein Zugriff'], [1, 'Lesen', 'Lesen'], [2, 'Schreiben', 'Schreiben']] : [[0, 'Kein Zugriff', 'Kein Zugriff'], [2, 'Zugriff', 'Zugriff']];
   return (
     <ToggleButtonGroup exclusive size="small" value={wert} onChange={(_, v) => v !== null && onWert(v)} aria-label={r.name}
-      sx={{ outline: geaendert ? `2px solid ${t.palette.primary.main}` : 'none', outlineOffset: 1, borderRadius: 1.5, '& .MuiToggleButton-root': { px: 1, py: 0.25, gap: 0.5, fontSize: 12, '& svg': { fontSize: 15 } },
-        '& .Mui-selected': { color: `${farbe(wert)} !important`, bgcolor: `${alpha(farbe(wert), 0.12)} !important` } }}>
-      {pillen.map(([v, text, icon]) => <Tooltip key={v} title={text}><ToggleButton value={v}>{icon}<Box component="span" sx={{ display: v === wert ? 'inline' : { xs: 'none', xl: 'inline' } }}>{text}</Box></ToggleButton></Tooltip>)}
+      sx={{ outline: geaendert ? `2px solid ${t.palette.secondary.main}` : 'none', outlineOffset: 1, borderRadius: 1.5, '& .MuiToggleButton-root': { px: 1, py: 0.25, fontSize: 12 },
+        '& .Mui-selected': wert === 0 ? { color: 'text.primary !important', bgcolor: 'action.hover !important' } : {} }}>
+      {stufen.map(([v, text, titel]) => <ToggleButton key={v} value={v} title={titel}>{text}</ToggleButton>)}
     </ToggleButtonGroup>
   );
 }
@@ -105,7 +99,7 @@ function Rollen() {
         if (v === (p.rechte[r.id] ?? r.standard?.[p.basis] ?? 0)) delete a[r.id]; else a[r.id] = v;
         return { ...alt, [p.id]: a };
       });
-      const zelle = (p: Profil, r: Recht) => !p.aenderbar ? <Plakette ton="ok"><DoneAllRounded sx={{ fontSize: 14 }} />Vollzugriff</Plakette>
+      const zelle = (p: Profil, r: Recht) => !p.aenderbar ? <Plakette>Vollzugriff</Plakette>
         : gesperrt(p, r) ? <Typography variant="caption" color="text.disabled" title="Nur für Konten des Kollegiums">nicht verfügbar</Typography>
         : <StufenWahl r={r} wert={istWert(p, r)} onWert={v => setzen(p, r, v)} geaendert={aenderungen[p.id]?.[r.id] !== undefined} />;
       const fensterZelle = (p: Profil, f: 'planWochenZurueck' | 'planWochenVor', titel: string) => {
@@ -168,8 +162,8 @@ function Rollen() {
                     <Box sx={{ gridColumn: '1 / -1', position: 'sticky', left: 0, px: 2, pt: 2, pb: 1, bgcolor: 'background.default', borderTop: 1, borderColor: 'divider' }}><Typography variant="overline" color="text.secondary">{a.titel} · {a.zeilen.length}</Typography></Box>
                     {a.zeilen.map(z => (
                       <Fragment key={z.key}>
-                        <Box sx={{ position: 'sticky', left: 0, zIndex: 1, bgcolor: 'background.paper', px: 2, py: 1.25, borderTop: 1, borderRight: 1, borderColor: 'divider' }}>{z.text}</Box>
-                        {profile.map(p => <Box key={p.id} sx={{ px: 1.5, py: 1.25, borderTop: 1, borderColor: 'divider', display: 'flex', alignItems: 'center' }}>{z.zelle(p)}</Box>)}
+                        <Box sx={{ position: 'sticky', left: 0, zIndex: 1, bgcolor: 'background.paper', px: 2, py: 1, borderTop: 1, borderRight: 1, borderColor: 'divider' }}>{z.text}</Box>
+                        {profile.map(p => <Box key={p.id} sx={{ px: 1.5, py: 1, borderTop: 1, borderColor: 'divider', display: 'flex', alignItems: 'center' }}>{z.zelle(p)}</Box>)}
                       </Fragment>
                     ))}
                   </Fragment>
@@ -187,7 +181,7 @@ function Rollen() {
                 {abschnitte.map(a => (
                   <Box key={a.titel}>
                     <Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 2, pt: 1.5, bgcolor: 'background.default' }}>{a.titel} · {a.zeilen.length}</Typography>
-                    {a.zeilen.map(z => <Stack key={z.key} direction={{ xs: 'column', sm: 'row' }} gap={1} justifyContent="space-between" alignItems={{ sm: 'center' }} sx={{ px: 2, py: 1.25, borderTop: 1, borderColor: 'divider' }}>{z.text}{z.zelle(gewaehlt)}</Stack>)}
+                    {a.zeilen.map(z => <Stack key={z.key} direction={{ xs: 'column', sm: 'row' }} gap={1} justifyContent="space-between" alignItems={{ sm: 'center' }} sx={{ px: 2, py: 1, borderTop: 1, borderColor: 'divider' }}>{z.text}{z.zelle(gewaehlt)}</Stack>)}
                   </Box>
                 ))}
                 {!abschnitte.length && <Typography sx={{ p: 5, textAlign: 'center' }} color="text.secondary">Kein Recht passt zur Suche bzw. zum Filter.</Typography>}
@@ -290,7 +284,7 @@ function Benutzerrechte() {
   const [gewaehlt, setGewaehlt] = useState<number | null>(() => Number(new URLSearchParams(location.hash.split('?')[1] ?? '').get('id')) || null);
   return (
     <Geladen g={g}>{({ liste, k }) => (
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '320px minmax(0, 1fr)' }, gap: 2.5, alignItems: 'start' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '320px minmax(0, 1fr)' }, gap: 2, alignItems: 'start' }}>
         <Paper variant="outlined" sx={{ p: 1.5 }}>
           <SuchFeld wert={suche} onWert={setSuche} platzhalter="Benutzer suchen …" breite="100%" />
           <List dense sx={{ maxHeight: '65vh', overflow: 'auto', mt: 1 }}>
@@ -346,7 +340,7 @@ function BenutzerDetail({ id, k }: { id: number; k: Katalog }) {
                 const r = katalog[x.recht];
                 const optionen: [string, string][] = [['', 'Wie Rolle'], ...((r.zweistufig ? [['0', 'Nein'], ['1', 'Lesen'], ['2', 'Schreiben']] : [['0', 'Nein'], ['2', 'Ja']]) as [string, string][])];
                 return (
-                  <Stack key={x.recht} direction={{ xs: 'column', md: 'row' }} gap={1.5} alignItems={{ md: 'center' }} sx={{ px: 2, py: 1.25, borderTop: 1, borderColor: 'divider' }}>
+                  <Stack key={x.recht} direction={{ xs: 'column', md: 'row' }} gap={1.5} alignItems={{ md: 'center' }} sx={{ px: 2, py: 1, borderTop: 1, borderColor: 'divider' }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}><Typography sx={{ fontWeight: 500, fontSize: 14 }}>{r.name}</Typography><Typography variant="caption" color="text.secondary">{r.beschreibung}</Typography></Box>
                     <Box sx={{ width: 90 }}><Wert s={Math.max(x.profil, x.zusatz)} r={r} /></Box>
                     <ToggleButtonGroup exclusive size="small" disabled={admin} value={ueber[x.recht] === undefined ? '' : String(ueber[x.recht])}

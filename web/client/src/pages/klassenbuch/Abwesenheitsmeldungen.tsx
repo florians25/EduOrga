@@ -31,7 +31,7 @@ export function Abwesenheitsmeldungen({ klasse, grundName, geaendert }: { klasse
             const [st, ton] = MELDUNG_STATUS[m.status] ?? [m.status, 'neutral'];
             return (
               <Box key={m.id} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(200px, 1fr) 230px minmax(0, 1.4fr) auto' }, gap: 1.5, px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', '&:last-of-type': { borderBottom: 0 }, alignItems: 'center' }}>
-                <Stack direction="row" gap={1.25} alignItems="center">
+                <Stack direction="row" gap={1} alignItems="center">
                   <Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{m.schueler || `Schüler*in ${m.schuelerId}`}</Typography><Typography variant="caption" color="text.secondary">Klasse {m.klasse}</Typography></Box></Stack>
                 <Box><Typography variant="body2" sx={{ fontWeight: 500 }}>{zeitraum(m)}</Typography><Typography variant="caption" color="text.secondary">gemeldet {zeitstempel(m.gemeldet)} · {m.gemeldetVon}</Typography></Box>
                 <Box sx={{ minWidth: 0 }}>

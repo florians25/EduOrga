@@ -20,7 +20,7 @@ export default function ProfilSeite({ teile }: SeitenProps) {
   const g = useLaden(sig => holen<Profil>('/api/app/profil', sig), []);
   return (
     <Seite titel="Mein Profil">
-      <Tabs value={reiter} onChange={(_, v) => navigieren(v === 'freigaben' ? '#/profil/freigaben' : '#/profil', true)} sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs value={reiter} onChange={(_, v) => navigieren(v === 'freigaben' ? '#/profil/freigaben' : '#/profil', true)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Tab value="allgemein" label="Allgemein" /><Tab value="freigaben" label="Freigaben" />
       </Tabs>
       <Geladen g={g}>{p => (reiter === 'allgemein' ? <Allgemein p={p} /> : <Freigaben p={p} />)}</Geladen>
@@ -93,9 +93,9 @@ function Freigaben({ p }: { p: Profil }) {
   const laden = () => holen<Konto[]>('/api/app/konten').then(setKonten).catch(() => setKonten([]));
   useEffect(() => { void laden(); }, []);
   return (
-    <Stack direction={{ xs: 'column', lg: 'row' }} gap={2.5} sx={{ maxWidth: 1100 }} alignItems="flex-start">
+    <Stack direction={{ xs: 'column', lg: 'row' }} gap={2} sx={{ maxWidth: 1100 }} alignItems="flex-start">
       {p.element && (
-        <Paper variant="outlined" sx={{ p: 2.5, flex: 7, width: '100%' }}>
+        <Paper variant="outlined" sx={{ p: 2, flex: 7, width: '100%' }}>
           <Typography variant="h3" sx={{ mb: 1 }}>Stundenplan im Kalender abonnieren</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Persönlicher Link für Outlook, Google Kalender oder das Smartphone (Stunden und Vertretungen der nächsten vier Wochen). Bitte nicht weitergeben.</Typography>
           <TextField fullWidth value={ical} slotProps={{ input: { readOnly: true, sx: { fontFamily: 'monospace', fontSize: 13 }, endAdornment: (
@@ -107,7 +107,7 @@ function Freigaben({ p }: { p: Profil }) {
           }}>Neuen Link erzeugen</Button>
         </Paper>
       )}
-      <Paper variant="outlined" sx={{ p: 2.5, flex: 5, width: '100%' }}>
+      <Paper variant="outlined" sx={{ p: 2, flex: 5, width: '100%' }}>
         <Typography variant="h3" sx={{ mb: 1.5 }}>Konten auf diesem Gerät</Typography>
         {konten.length ? konten.map(k => (
           <Stack key={k.id} direction="row" gap={1.5} alignItems="center" sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
