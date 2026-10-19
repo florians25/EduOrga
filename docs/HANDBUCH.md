@@ -157,9 +157,9 @@ nicht verplant), Farbe.
 - **Zufallsfarben:** **Farben → Zufallsfarben für … ohne Farbe** vergibt gut unterscheidbare Farben an alle Elemente
   ohne Farbe – sie heben sich auch von den schon vergebenen ab. **… für alle (ersetzen)** färbt alle neu (mit
   Rückfrage). Jede Farbänderung ist eine Rückgängig-Stufe; der Hinweis unten rechts hat dafür den Knopf **Rückgängig**.
-- Im Stundenplan bestimmt die **Fachfarbe** die Farbe der Stunde (leichte Tönung mit Linie in der Farbe). Stunden ohne
-  Fachfarbe erscheinen als neutrale hellgraue Karte mit Linie – in allen Plänen (Stundenplan, Blockansicht, Manuell
-  planen, Gesamtübersichten, Tagespläne).
+- Im Stundenplan bestimmt die **Fachfarbe** die Farbe der Stunde (leichte Tönung, Balken links in der Farbe). Stunden ohne
+  Fachfarbe erscheinen als neutrale hellgraue Karte mit grauem Balken links – in allen Plänen (Stundenplan, Blockansicht,
+  Manuell planen, Gesamtübersichten, Tagespläne), hell wie dunkel.
 
 ### Räume
 
@@ -395,7 +395,9 @@ In der **Gesamtübersicht Räume** verlegen Sie Räume per Drag & Drop in eine a
 *Stundenpläne → Klassen, Lehrkräfte, Räume, Fächer*.
 
 - **Element wählen:** Auswahl oben; die Pfeile wechseln zum vorherigen bzw. nächsten Element.
-- **Einzelplan / Blockansicht:** Der Umschalter links in der Werkzeugleiste zeigt statt eines Plans **mehrere Pläne als
+- **Einzelplan / Blockansicht:** Der Umschalter links in der Werkzeugleiste jedes Stundenplans (auch in *Manuell planen*;
+  dort öffnet er die Blockansicht als eigene Seite), *Stundenpläne → Blockansicht* in der Navigation und **Blockansicht**
+  in den Gesamtübersichten. Die Blockansicht zeigt statt eines Plans **mehrere Pläne als
   Kacheln** neben- und untereinander (z. B. alle Klassen eines Jahrgangs oder alle Lehrkräfte einer Abteilung) – mit
   dichten Feldern, Doppel- und Blockstunden als ein Feld, Kopplungen nebeneinander; Stunden nach der letzten belegten
   Stunde werden weggelassen. Die Pläne wählen Sie in der durchsuchbaren Liste (Mehrfachauswahl) oder über
