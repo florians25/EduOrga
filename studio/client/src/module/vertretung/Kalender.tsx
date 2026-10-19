@@ -14,6 +14,7 @@ import { useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, Feld, Rechts, Werkzeug } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { Tabelle, type Spalte } from '@/komponenten/tabelle/Tabelle';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { useElemente } from '../gemeinsam';
 import { blaettern, datumLesen, datumSetzen, datumText, isoAus, montag, plusTage, usePlanungsdatum, vpfad } from './kern';
 
@@ -111,7 +112,7 @@ export default function Kalender({ p }: AnsichtProps) {
       </>}
       filter={<>
         <Feld titel="Kalenderwoche"><Input size="small" type="number" min={1} max={53} style={{ width: 80 }} value={daten ? String(daten.kw) : ''} onChange={(_, x) => kwSetzen(Number(x.value))} /></Feld>
-        <Feld titel="Datum"><Input size="small" type="date" value={datum || ''} onChange={(_, x) => { if (x.value) void datumSetzen(x.value); }} /></Feld>
+        <Feld titel="Datum"><DatumFeld size="small" wert={datum || ''} beiAenderung={(datum) => { if (datum) void datumSetzen(datum); }} /></Feld>
         {daten ? <Text size={200} className={daten.unterrichtstag ? undefined : s.frei}>{`${daten.wochentyp}-Woche${daten.unterrichtstag ? '' : ' · kein Unterrichtstag'}`}</Text> : null}
       </>}>
       <div className={s.aufbau}>

@@ -1158,6 +1158,36 @@ struct Klassenbucheintrag: Decodable, Sendable {
         onlineLink = Karte.linkText(c.textOderNil(.onlineLink) ?? c.textOderNil(.onlineUrl) ?? c.textOderNil(.onlinelink))
         einzelstunde = c.zahl(.einzelstunde)
     }
+
+    /// Lokaler Stand eines offline gespeicherten Eintrags (wird gesendet, sobald das Gerät online ist).
+    init(lokal d: KlassenbuchDaten, vorher: Klassenbucheintrag?) {
+        id = vorher?.id ?? 0
+        datum = d.datum
+        stunde = d.stunde
+        thema = d.thema
+        hausaufgabe = d.hausaufgabe
+        notiz = d.notiz
+        notizSchueler = d.notizSchueler ?? vorher?.notizSchueler ?? ""
+        online = vorher?.online ?? false
+        lehrform = d.lehrform ?? vorher?.lehrform ?? ""
+        anmerkung = d.anmerkung ?? vorher?.anmerkung ?? ""
+        anwesenheit = vorher?.anwesenheit
+        lehrer = d.lehrer ?? vorher?.lehrer ?? ""
+        faellig = d.faellig
+        onlineLink = vorher?.onlineLink ?? ""
+        einzelstunde = d.einzelstunde
+    }
+}
+
+/// PUT /api/app/klassenbuch/stunde nur mit dem Lehrstoff (fehlende Felder behält der Server bei).
+struct LehrstoffDaten: Encodable, Sendable {
+    var datum: String
+    var stunde: Int
+    var unterricht: Int
+    var thema: String
+    var lehrform: String?
+    var lehrer: String?
+    var einzelstunde: Int? = nil
 }
 
 /// Zeiten eines Blocks bzw. einer Einzelstunde ({ von, bis, beginn, ende }).

@@ -4,7 +4,7 @@ using Xunit;
 namespace UntPlanWeb.Tests;
 
 /// <summary>
-/// Quelltext der Oberfläche (web/client, React + TypeScript + MUI): Aufbau, Adressen und Gestaltungsregeln.
+/// Quelltext der Oberfläche (web/client, React + TypeScript + MUI): Aufbau, Adressen, Marke EduOrga und Gestaltungsregeln.
 /// Die Tests lesen die Quellen, nicht die Build-Ausgabe – sie laufen also auch ohne „npm run build“.
 /// </summary>
 public class WebOberflaecheTests
@@ -58,7 +58,7 @@ public class WebOberflaecheTests
     {
         var details = Lesen("src", "components", "plan", "Stundendetails.tsx");
         Assert.Contains("Online-Unterricht beitreten", details);
-        Assert.Contains("UntPlan Studio", details);          // Hinweis: festgelegt wird es im Studio
+        Assert.Contains("EduOrga Studio", details);          // Hinweis: festgelegt wird es im Studio
         Assert.DoesNotContain("role=\"switch\"", details);
         // Sprechtag hat eigene Online-Gespräche (Einstellung der Lehrkraft) – das ist kein Online-Unterricht.
         foreach (var (pfad, inhalt) in Quellen().Where(q => !q.Pfad.Contains($"{Path.DirectorySeparatorChar}sprechtag{Path.DirectorySeparatorChar}")))
@@ -84,17 +84,26 @@ public class WebOberflaecheTests
     }
 
     [Fact]
-    public void Stundenplan_sachlich_ohne_Pastellflaechen_und_ohne_Pillen()
+    public void Stundenplan_klassisch_kompakt_mit_klarem_Status_und_ohne_Pillen()
     {
-        // Kachel: neutrale Fläche, Fachfarbe nur als kleines Quadrat; Status über Linie/Schraffur/Kürzel-Plaketten statt Wörtern
+        // Kachel: Status über Linie/Schraffur/Kürzel-Plaketten statt Wörtern; Fachfarbe je nach Darstellung als Balken, Quadrat oder Tönung
         var kachel = Lesen("src", "components", "plan", "Kachel.tsx");
         Assert.Contains("FachQuadrat", kachel);
         Assert.Contains("kachel.flaeche", kachel);
         Assert.Contains("KACHEL_PLAKETTEN", kachel);
-        // Fachfarbe als Fläche gibt es nur als ausdrückliche Wahl der Administration (Darstellung der Stundenkarten); Standard bleibt das Quadrat
-        Assert.Contains("d.fachfarbe === 'flaeche'", kachel);
+        Assert.Contains("mitToenung(d.fachfarbe)", kachel);
+        Assert.Contains("data-fachbalken", kachel);
+        // Änderungen und Prüfungen in der hellen Statusfläche (Vertretung violett), Entfall nie getönt, sondern schraffiert
+        Assert.Contains("s.aenderung.flaeche", kachel);
+        Assert.Contains("repeating-linear-gradient(135deg", kachel);
+        // Standard ist „Klassisch“: Balken links mit leichter Tönung, weiße kompakte Karte, Raum als Text, Statusfläche
         var darstellung = Lesen("src", "components", "plan", "darstellung.tsx");
-        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'quadrat',[^}]*flaeche: 'neutral', rahmen: 'fein', eckenradius: 3,[^}]*statuswoerter: false", darstellung);
+        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'balken-flaeche', balkenbreite: 4,[^}]*flaeche: 'weiss', rahmen: 'fein', eckenradius: 2, dichte: 'kompakt',[^}]*kuerzel: 'text', statuswoerter: false, statusflaeche: true", darstellung);
+        Assert.Contains("{ id: 'klassisch', name: 'Klassisch (Standard)'", darstellung);
+        foreach (var v in new[] { "'sachlich'", "'akzent'", "'flaeche'", "'minimal'" }) Assert.Contains($"id: {v}", darstellung);
+        // kompakte Karten füllen die Rasterzelle (Abstand je Dichte)
+        Assert.Contains("luecke: 1", darstellung);
+        Assert.Contains("DICHTE[d.dichte].luecke", Lesen("src", "components", "plan", "Wochenraster.tsx"));
         var logik = Lesen("src", "components", "plan", "logik.ts");
         var erlaubt = Regex.Match(logik, @"KACHEL_PLAKETTEN = new Set\(\[([^\]]*)\]").Groups[1].Value;
         Assert.NotEmpty(erlaubt);
@@ -118,7 +127,80 @@ public class WebOberflaecheTests
             Assert.False(Regex.IsMatch(inhalt, @"font-?weight:\s*['""]?(700|800|900|bold)", RegexOptions.IgnoreCase), pfad);
             Assert.False(Regex.IsMatch(inhalt, @"\borange\b", RegexOptions.IgnoreCase), pfad);
         }
-        Assert.Contains("#234f96", Lesen("src", "theme.ts"));
+        Assert.Contains("#164c55", Lesen("src", "theme.ts"));
+    }
+
+    [Fact]
+    public void Marke_EduOrga_Web_mit_Slogan_Logo_und_Rechtshinweis()
+    {
+        // Seitentitel, Manifest, Symbole und Themenfarbe
+        var index = Lesen("index.html");
+        Assert.Contains("<title>EduOrga Web</title>", index);
+        Assert.Contains("content=\"#164c55\"", index);
+        var wwwroot = Path.Combine(Client(), "..", "src", "UntPlanWeb", "wwwroot");
+        var manifest = File.ReadAllText(Path.Combine(wwwroot, "manifest.webmanifest"));
+        Assert.Contains("\"name\": \"EduOrga Web\"", manifest);
+        Assert.Contains("\"theme_color\": \"#164c55\"", manifest);
+        Assert.Contains("#164c55", File.ReadAllText(Path.Combine(wwwroot, "img", "logo.svg")));
+        foreach (var png in new[] { "icon-192.png", "icon-512.png", "maskable-192.png", "maskable-512.png", "apple-touch-icon.png" })
+            Assert.True(File.Exists(Path.Combine(wwwroot, "img", png)), png);
+        // Marke, Slogan und rechtlicher Hinweis (design/MARKE.md) – Anmeldeseite und „Über EduOrga“
+        var marke = Lesen("src", "components", "Marke.tsx");
+        Assert.Contains("Einfach mehr Schulalltag.", marke);
+        Assert.Contains("privates Hobbyprojekt eines Auszubildenden zum Fachinformatiker für Systemintegration", marke);
+        Assert.Contains("Unterstützung von Claude (Anthropic)", marke);
+        var anmeldung = Lesen("src", "app", "Anmeldung.tsx");
+        Assert.Contains("SLOGAN", anmeldung);
+        Assert.Contains("UeberDialog", anmeldung);
+        Assert.Contains("UeberDialog", Lesen("src", "app", "Shell.tsx"));
+        Assert.Contains("Rechtshinweis", Lesen("src", "pages", "admin", "Wartung.tsx"));
+        // in der Oberfläche heißt das Produkt EduOrga – technische Kennungen (Kopf X-UntPlanWeb, Feldnamen) bleiben
+        foreach (var (pfad, inhalt) in Quellen())
+        {
+            var ohneTechnik = inhalt.Replace("X-UntPlanWeb", "").Replace("UntPlanNext", "").Replace("ausUntPlan", "").Replace("kapazitaetUntPlan", "");
+            Assert.False(ohneTechnik.Contains("UntPlan"), pfad);
+        }
+        // Farben: Primär Petrol, Akzent, Hintergrund, Text; Statusfarbe Änderung violett, Termin magenta
+        var thema = Lesen("src", "theme.ts");
+        foreach (var f in new[] { "#28747a", "#f5f7f8", "#24363b", "#6d4fc2", "#a3347c" }) Assert.Contains(f, thema);
+        Assert.Contains("nav: {", thema);                                // Seitenleiste in der Primärfarbe
+        Assert.Contains("dark: {", thema);                               // Dunkelmodus mit eigener Petrol-Palette
+        Assert.Contains("useColorScheme", Lesen("src", "app", "Shell.tsx"));
+        Assert.Contains("defaultMode=\"system\"", Lesen("src", "main.tsx"));
+    }
+
+    [Fact]
+    public void Eigene_Menuestruktur_mit_alten_Adressen_als_Alias()
+    {
+        var menue = Lesen("src", "app", "menue.tsx");
+        foreach (var bereich in new[] { "'Start'", "'Mein Tag'", "'Stundenpläne'", "'Vertretungen'", "'Unterricht & Prüfungen'", "'Klassenbuch'", "'Kommunikation'", "'Termine & Buchungen'", "'Stammdaten'", "'Verwaltung'" })
+            Assert.Contains($"text: {bereich}", menue);
+        foreach (var punkt in new[] { "'Abwesenheit melden'", "'Raum buchen'", "'Geräte & Medien buchen'", "'Elternsprechtag'", "'Termin eintragen'", "'Raumbelegung'", "'Über EduOrga'" })
+            Assert.Contains($"text: {punkt}", menue);
+        // keine Bezeichnungen wie „Melden“, „Buchen“, „Übersicht“ oder „Sprechtag“ als Menüpunkt
+        foreach (var alt in new[] { "'Melden'", "'Buchen'", "'Übersicht'", "'Sprechtag'", "'Ressource buchen'", "'Neue Aktivität'" })
+            Assert.DoesNotContain($"text: {alt}", menue);
+        // bisherige Adressen bleiben (Lesezeichen, Links aus Mitteilungen); neue sprechende Adressen als Alias
+        foreach (var adresse in new[] { "#/heute", "#/uebersicht", "#/melden/abwesenheit", "#/buchen/raum", "#/buchen/ressource", "#/sprechtag", "#/mitteilungen", "#/admin/sync" })
+            Assert.Contains($"'{adresse}'", menue);
+        Assert.Contains("export const ALIASE", menue);
+        Assert.Contains("elternsprechtag: ['sprechtag']", menue);
+        Assert.Contains("ohneAlias(useHash())", Lesen("src", "app", "Shell.tsx"));
+    }
+
+    [Fact]
+    public void Datumsfelder_mit_Beschriftung_oben_und_Mindestbreite()
+    {
+        // Datums- und Zeitfelder nur über die gemeinsamen MUI-Picker; Beschriftung immer oben, damit das Kalendersymbol keinen Text verdeckt
+        var auswahl = Lesen("src", "components", "Auswahl.tsx");
+        Assert.Contains("const label = { shrink: true }", auswahl);
+        Assert.Equal(3, Regex.Matches(auswahl, "InputLabelProps: label").Count);
+        Assert.Contains("FELD_MIN = { datum: 168, zeit: 112, datumZeit: 232 }", auswahl);
+        Assert.Contains("deDE.components.MuiLocalizationProvider", Lesen("src", "main.tsx"));   // „TT.MM.JJJJ“ statt „DD.MM.YYYY“
+        var nativ = new Regex("type=[\"'](date|time|datetime-local)[\"']");
+        foreach (var (pfad, inhalt) in Quellen()) Assert.False(nativ.IsMatch(inhalt), pfad);
+        // Sprechtag: die drei Zeitpunkte nebeneinander im Raster statt gequetscht
+        Assert.Contains("minmax(232px, 1fr)", Lesen("src", "pages", "sprechtag", "SprechtagFormular.tsx"));
     }
     [Fact]
     public void Darstellung_der_Stundenkarten_mit_Editor_und_Live_Vorschau()

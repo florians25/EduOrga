@@ -1,7 +1,7 @@
 // Steuerelemente der Vertretungsplanung: Zeitraum (Tag / Woche / frei), Datumsauswahl in der Kopfleiste und ein Knopf mit
 // aufklappbarer Fläche für Optionen bzw. Filter (Schalter und Auswahlfelder, die nicht ständig sichtbar sein müssen).
 import {
-  Button, Input, Popover, PopoverSurface, PopoverTrigger, Select, ToolbarButton, Tooltip, makeStyles, mergeClasses, tokens,
+  Button, Popover, PopoverSurface, PopoverTrigger, Select, ToolbarButton, Tooltip, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import {
   ArrowPrevious20Regular, ArrowNext20Regular, ChevronDown16Regular, ChevronLeft20Regular, ChevronRight20Regular,
@@ -9,11 +9,12 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useEreignis } from '@/kern/ereignisse';
 import { fehlerMelden } from '@/komponenten/hinweise';
-import { blaettern, datumSetzen, montag, planungsdatum, plusTage, tagKurz, usePlanungsdatum } from './kern';
+import { DatumFeld } from '@/komponenten/eingaben';
+import { blaettern, datumSetzen, montag, planungsdatum, plusTage, usePlanungsdatum } from './kern';
 
 const useStile = makeStyles({
   zeitraum: { display: 'inline-flex', alignItems: 'center', gap: '4px' },
-  datum: { width: '140px' },
+  datum: { width: '150px' },
   bis: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, padding: '0 2px' },
   kopf: { display: 'inline-flex', alignItems: 'center', gap: '2px', padding: '0 4px', flexShrink: 0 },
   kopfDatum: { width: '150px', fontVariantNumeric: 'tabular-nums' },
@@ -21,22 +22,24 @@ const useStile = makeStyles({
   flaecheTitel: { fontSize: tokens.fontSizeBase200, fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground2, margin: '4px 0 0 0' },
   anzahl: { marginLeft: '4px', color: tokens.colorBrandForeground1, fontVariantNumeric: 'tabular-nums' },
   umschalter: {
-    display: 'inline-flex', alignItems: 'stretch', flexShrink: 0, padding: '2px', gap: '2px', borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground3, border: `1px solid ${tokens.colorNeutralStroke2}`,
+    display: 'inline-flex', alignItems: 'stretch', flexShrink: 0, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden',
+    backgroundColor: tokens.colorNeutralBackground1, border: `1px solid ${tokens.colorNeutralStroke1}`,
   },
   umschalterWahl: {
-    border: 'none', margin: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: tokens.fontSizeBase200, fontWeight: tokens.fontWeightSemibold,
-    lineHeight: '20px', padding: '0 10px', borderRadius: tokens.borderRadiusSmall, backgroundColor: 'transparent', color: tokens.colorNeutralForeground2,
+    border: 'none', margin: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: tokens.fontSizeBase200, fontWeight: tokens.fontWeightRegular,
+    lineHeight: '22px', padding: '0 10px', backgroundColor: 'transparent', color: tokens.colorNeutralForeground2,
+    ':not(:first-child)': { borderLeft: `1px solid ${tokens.colorNeutralStroke2}` },
     ':hover': { color: tokens.colorNeutralForeground1, backgroundColor: tokens.colorNeutralBackground1Hover },
-    ':focus-visible': { outline: `2px solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
+    ':focus-visible': { outline: `2px solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
   },
   umschalterAn: {
-    backgroundColor: tokens.colorBrandBackground, color: tokens.colorNeutralForegroundOnBrand,
-    ':hover': { backgroundColor: tokens.colorBrandBackgroundHover, color: tokens.colorNeutralForegroundOnBrand },
+    backgroundColor: tokens.colorNeutralBackground3, color: tokens.colorNeutralForeground1, fontWeight: tokens.fontWeightSemibold,
+    boxShadow: 'inset 0 -2px 0 var(--edo-modus)', cursor: 'default',
+    ':hover': { backgroundColor: tokens.colorNeutralBackground3, color: tokens.colorNeutralForeground1 },
   },
 });
 
-/** Umschalter mit zwei oder mehr Möglichkeiten („Tag | Woche“): eine ist gewählt (Markenfarbe). */
+/** Umschalter mit zwei oder mehr Möglichkeiten („Tag | Woche“): flache Segmente, das gewählte grau hinterlegt mit Linie in der Modusfarbe. */
 export function Umschalter<T extends string>({ wert, optionen, beiWahl, titel, testid }: {
   wert: T; optionen: { wert: T; text: string; titel?: string }[]; beiWahl: (w: T) => void; titel: string; testid?: string;
 }) {
@@ -113,12 +116,11 @@ export function ZeitraumAuswahl({ z }: { z: ReturnType<typeof useZeitraum> }) {
         <option value="tag">Tag</option><option value="woche">Woche</option><option value="vonbis">Zeitraum</option>
       </Select>
       <Tooltip content="Zurück" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={() => schritt(-1)} /></Tooltip>
-      <Input size="small" type="date" className={s.datum} value={z.von || ''} aria-label="Von"
-        onChange={(_, x) => { if (!x.value) return; if (z.art === 'tag') void datumSetzen(x.value); else z.setzen(x.value, z.bis); }} />
+      <DatumFeld size="small" className={s.datum} wert={z.von || ''} aria-label="Von" beiAenderung={(datum) => { if (!datum) return; if (z.art === 'tag') void datumSetzen(datum); else z.setzen(datum, z.bis); }} />
       <Tooltip content="Weiter" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={() => schritt(1)} /></Tooltip>
       {z.art !== 'tag' ? <>
         <span className={s.bis}>bis</span>
-        <Input size="small" type="date" className={s.datum} value={z.bis || ''} disabled={z.art !== 'vonbis'} aria-label="Bis" onChange={(_, x) => { if (x.value) z.setzen(z.von, x.value); }} />
+        <DatumFeld size="small" className={s.datum} wert={z.bis || ''} disabled={z.art !== 'vonbis'} aria-label="Bis" beiAenderung={(datum) => { if (datum) z.setzen(z.von, datum); }} />
       </> : null}
     </span>
   );
@@ -133,8 +135,7 @@ export function DatumsAuswahl() {
     <span className={s.kopf} title="Planungsdatum – Tag blättern mit Strg+Bild↑ / Strg+Bild↓, Woche mit Strg+Umschalt+Bild↑ / Strg+Umschalt+Bild↓" data-testid="planungsdatum">
       <Tooltip content="Eine Woche zurück (Strg+Umschalt+Bild↑)" relationship="label"><Button size="small" appearance="subtle" icon={<ArrowPrevious20Regular />} onClick={los(() => blaettern(-1, true))} /></Tooltip>
       <Tooltip content="Vorheriger Unterrichtstag (Strg+Bild↑)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={los(() => blaettern(-1))} /></Tooltip>
-      <Input size="small" type="date" className={s.kopfDatum} value={d || ''} contentBefore={d ? <span style={{ fontSize: 12 }}>{tagKurz(d)}</span> : undefined}
-        aria-label="Planungsdatum" onChange={(_, x) => { if (x.value) void datumSetzen(x.value); }} />
+      <DatumFeld size="small" className={s.kopfDatum} wert={d || ''} aria-label="Planungsdatum" beiAenderung={(datum) => { if (datum) void datumSetzen(datum); }} />
       <Tooltip content="Nächster Unterrichtstag (Strg+Bild↓)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={los(() => blaettern(1))} /></Tooltip>
       <Tooltip content="Eine Woche weiter (Strg+Umschalt+Bild↓)" relationship="label"><Button size="small" appearance="subtle" icon={<ArrowNext20Regular />} onClick={los(() => blaettern(1, true))} /></Tooltip>
     </span>

@@ -28,7 +28,7 @@ const h = require('./hilfe.cjs');
   const t = await h.starten('studio-shots-vertretung');
   const { page, foto } = t;
   const schritt = (s) => console.log(`✓ ${s}`);
-  const datumImKopf = () => page.inputValue('[data-testid=planungsdatum] input[type=date]');
+  const datumImKopf = () => page.getAttribute('[data-testid=planungsdatum] input[data-datum]', 'data-datum');
 
   await h.abschliessen('Oberflächentest Vertretungsplanung', t, async () => {
     await h.anmelden(page);
@@ -36,7 +36,7 @@ const h = require('./hilfe.cjs');
 
     // Vertretungsmodus mit Planungsdatum
     await h.modus(page, 'vertretung');
-    await page.waitForFunction((d) => document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value === d, datum, { timeout: 15000 });
+    await page.waitForFunction((d) => document.querySelector('[data-testid=planungsdatum] input[data-datum]')?.dataset.datum === d, datum, { timeout: 15000 });
     await foto('01-vertretungsmodus');
     schritt(`Vertretungsmodus, Datum ${datum}, Lehrkraft ${kurz}`);
 
@@ -141,7 +141,7 @@ const h = require('./hilfe.cjs');
     // Tag blättern mit Strg+Bild↓
     await page.locator('[data-arbeitsplatz=tagesplanung] [data-ansicht="vertretung.liste"] .tb-zeile').first().click().catch(() => {});
     await page.keyboard.press('Control+PageDown');
-    await page.waitForFunction((d) => (document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value || '') > d, datum, { timeout: 10000 });
+    await page.waitForFunction((d) => (document.querySelector('[data-testid=planungsdatum] input[data-datum]')?.dataset.datum || '') > d, datum, { timeout: 10000 });
     await page.waitForTimeout(600);
     await foto('10-naechster-tag');
     schritt(`Tag gewechselt: ${await datumImKopf()}`);
@@ -154,7 +154,7 @@ const h = require('./hilfe.cjs');
     if ((await page.locator(`${tp} [data-bereich=plan-lehrer] .ra-kopf`).count()) !== 1) throw new Error('Lehrkräfteplan sollte in der Tagesansicht bleiben');
     const d0 = await datumImKopf();
     await page.locator(`${planK} .ra-kopf button.vt-tagwahl`).first().click();
-    await page.waitForFunction((d) => document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value !== d, d0, { timeout: 10000 });
+    await page.waitForFunction((d) => document.querySelector('[data-testid=planungsdatum] input[data-datum]')?.dataset.datum !== d, d0, { timeout: 10000 });
     await page.waitForTimeout(500);
     const d1 = await datumImKopf();
     if (!(await page.locator(`${tp} [data-testid=wochenstreifen] [data-datum="${d1}"][aria-pressed=true]`).count())) throw new Error('Wochenstreifen folgt dem Planungstag nicht');
@@ -175,17 +175,17 @@ const h = require('./hilfe.cjs');
     const streifen = page.locator(`${tp} [data-testid=wochenstreifen] button[aria-pressed=false]:not(.frei)`);
     const ziel = await streifen.first().getAttribute('data-datum');
     await streifen.first().click();
-    await page.waitForFunction((d) => document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value === d, ziel, { timeout: 10000 });
+    await page.waitForFunction((d) => document.querySelector('[data-testid=planungsdatum] input[data-datum]')?.dataset.datum === d, ziel, { timeout: 10000 });
     const zielText = `${ziel.slice(8, 10)}.${ziel.slice(5, 7)}.`;
     if (tageImListe.some((x) => x.includes(zielText))) await page.waitForSelector(`${tp} .tb-zeile.vt-tageskopf.vt-planungstag`, { timeout: 10000 });
     schritt(`Liste der Woche nach Tagen: ${tageImListe.length} Tag(e); Wochenstreifen → ${ziel}`);
     // Woche blättern mit Strg+Umschalt+Bild↓ / Bild↑
     await page.locator(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile`).first().click().catch(() => {});
     await page.keyboard.press('Control+Shift+PageDown');
-    await page.waitForFunction((d) => (document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value || '') >= new Date(new Date(d).getTime() + 5 * 864e5).toISOString().slice(0, 10), ziel, { timeout: 10000 });
+    await page.waitForFunction((d) => (document.querySelector('[data-testid=planungsdatum] input[data-datum]')?.dataset.datum || '') >= new Date(new Date(d).getTime() + 5 * 864e5).toISOString().slice(0, 10), ziel, { timeout: 10000 });
     const naechste = await datumImKopf();
     await page.keyboard.press('Control+Shift+PageUp');
-    await page.waitForFunction((d) => (document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value || '') < d, naechste, { timeout: 10000 });
+    await page.waitForFunction((d) => (document.querySelector('[data-testid=planungsdatum] input[data-datum]')?.dataset.datum || '') < d, naechste, { timeout: 10000 });
     schritt(`Woche blättern: ${naechste} → ${await datumImKopf()}`);
     // Plan vergrößern und mit Esc zurück
     await page.click(`${tp} [data-testid=plan-gross-klasse]`);

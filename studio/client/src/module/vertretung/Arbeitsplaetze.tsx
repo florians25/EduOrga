@@ -1,5 +1,5 @@
 // Arbeitsplätze der Vertretungsplanung.
-import { Button, Input, Link, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Link, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import { ChevronLeft20Regular, ChevronRight20Regular } from '@fluentui/react-icons';
 import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
@@ -10,6 +10,7 @@ import { useDarfSchreiben, useStudio } from '@/kern/zustand';
 import { fehlerMelden } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import { Bereich, Teilung } from '@/shell/arbeitsplatz';
+import { DatumFeld } from '@/komponenten/eingaben';
 import {
   aktuelleAuswahl, blaettern, datumSetzen, isoAus, planVergroessern, seitenansichtSetzen, tagKurz, useTagesplanung, usePlanungsdatum, vpfad, type Zeitansicht,
 } from './kern';
@@ -111,7 +112,7 @@ function Tageskopf() {
         <Tooltip content="Vorheriger Unterrichtstag (Strg+Bild↑, Woche: Strg+Umschalt+Bild↑)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={los(() => blaettern(-1))} /></Tooltip>
         <Button size="small" appearance="subtle" onClick={los(() => datumSetzen(isoAus(new Date())))}>Heute</Button>
         <Tooltip content="Nächster Unterrichtstag (Strg+Bild↓, Woche: Strg+Umschalt+Bild↓)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={los(() => blaettern(1))} /></Tooltip>
-        <Input size="small" type="date" className={s.datumFeld} value={datum || ''} aria-label="Datum der Tagesplanung" contentBefore={datum ? <span style={{ fontSize: 12 }}>{tagKurz(datum)}</span> : undefined} onChange={(_, x) => { if (x.value) void datumSetzen(x.value); }} />
+        <DatumFeld size="small" className={s.datumFeld} wert={datum || ''} aria-label="Datum der Tagesplanung" beiAenderung={(datum) => { if (datum) void datumSetzen(datum); }} />
         {datum ? <span className={s.tag}>{tagLang(datum)}</span> : null}
       </span>
       {daten?.wochentyp ? <span className={s.woche}>{`${daten.wochentyp}-Woche`}</span> : null}

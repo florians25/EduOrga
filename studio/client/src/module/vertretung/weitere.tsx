@@ -9,6 +9,7 @@ import { api } from '@/api/client';
 import { darfSchreiben } from '@/kern/zustand';
 import { StandardDialog, dialogZeigen, formular, meldung } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { datumLesen, datumText, planungsdatum, vpfad } from './kern';
 
 const useStile = makeStyles({
@@ -115,8 +116,8 @@ function Automatik({ von0, bis0, info, schliessen }: { von0: string; bis0: strin
     <StandardDialog<boolean> titel="Automatische Vertretung" breite="540px" knoepfe={[{ text: 'Starten', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }]}
       beiKnopf={(w) => schliessen(w ? { von, bis: bis || von, methode } : null)}>
       <div className={s.formular}>
-        <span>Von</span><Input type="date" value={von} onChange={(_, x) => setVon(x.value)} />
-        <span>Bis</span><Input type="date" value={bis} onChange={(_, x) => setBis(x.value)} />
+        <span>Von</span><DatumFeld size="medium" wert={von} beiAenderung={(datum) => setVon(datum)} />
+        <span>Bis</span><DatumFeld size="medium" wert={bis} beiAenderung={(datum) => setBis(datum)} />
         <span>Verfahren</span><Select value={methode} onChange={(_, x) => setMethode(x.value)}>{info.methoden.map((m) => <option key={m.wert} value={m.wert}>{m.text}</option>)}</Select>
         <span>Offen im Zeitraum</span>
         <div className={s.offen}>

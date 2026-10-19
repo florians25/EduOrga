@@ -214,7 +214,7 @@ public sealed class MySqlAnbieter : Datenbankanbieter
         var c = new MySqlConnection(Verbindung);
         c.Open();
         using var cmd = c.CreateCommand();
-        cmd.CommandText = "SET SESSION sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION', SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED";
+        cmd.CommandText = "SET SESSION sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'; SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED";
         cmd.ExecuteNonQuery();
         return c;
     }
@@ -246,12 +246,16 @@ public sealed class MySqlAnbieter : Datenbankanbieter
                         $"Bitte als root anlegen: CREATE DATABASE {Datenbankname} CHARACTER SET utf8mb4; GRANT ALL ON {Datenbankname}.* TO '{ohne.UserID}'@'%';", e);
                 }
             }
-            catch (MySqlException ex) when (DateTime.UtcNow < ende && ex.ErrorCode is not (MySqlErrorCode.AccessDenied or MySqlErrorCode.DatabaseAccessDenied))
+            catch (MySqlException ex) when (DateTime.UtcNow < ende && NichtErreichbar(ex))
             {
                 Thread.Sleep(2000); // Datenbankserver startet noch (Container)
             }
         }
     }
+
+    /// <summary>Server (noch) nicht erreichbar – z. B. Container startet; andere Fehler (Anmeldung, SQL) sofort melden.</summary>
+    private static bool NichtErreichbar(MySqlException ex) => ex.ErrorCode is MySqlErrorCode.UnableToConnectToHost or MySqlErrorCode.ServerShutdown
+        or MySqlErrorCode.ConnectionCountError || (int)ex.ErrorCode is 2002 or 2003 or 2006 or 2013 || ex.InnerException is System.Net.Sockets.SocketException;
 
     public override int SchemaVersionLesen(DbConnection c)
     {

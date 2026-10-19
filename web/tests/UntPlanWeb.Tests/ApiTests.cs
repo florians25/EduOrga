@@ -507,7 +507,7 @@ public class MonitorTests
         var start = await c.GetAsync("/");
         Assert.Equal(HttpStatusCode.OK, start.StatusCode);
         Assert.Contains("frame-ancestors 'none'", start.Headers.GetValues("Content-Security-Policy").First());
-        Assert.Contains("UntPlanWeb", await start.Content.ReadAsStringAsync());
+        Assert.Contains("EduOrga Web", await start.Content.ReadAsStringAsync());
     }
 }
 

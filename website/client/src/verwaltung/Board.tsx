@@ -5,6 +5,8 @@ import {
   KeyboardSensor,
   PointerSensor,
   closestCorners,
+  pointerWithin,
+  type CollisionDetection,
   useDroppable,
   useSensor,
   useSensors,
@@ -20,6 +22,16 @@ import { MODULE, PRIORITAETEN, STATUS, STATUS_REIHENFOLGE, TYPEN } from "../inha
 import { sortieren, type Sortierung, type Verschiebung } from "./Verwaltung";
 
 const SPALTE = "spalte:";
+
+/** Ziel ist, was unter dem Mauszeiger liegt (Karte vor Spalte); ohne Zeiger (Tastatur) die nächstgelegene Ecke. */
+const kollision: CollisionDetection = (args) => {
+  const unterZeiger = pointerWithin(args);
+  if (unterZeiger.length > 0) {
+    const karten = unterZeiger.filter((k) => !String(k.id).startsWith(SPALTE));
+    return karten.length > 0 ? karten : unterZeiger;
+  }
+  return closestCorners(args);
+};
 
 interface Props {
   eintraege: AdminEintrag[];
@@ -81,7 +93,7 @@ export function Board({ eintraege, alle, sortierung, onOeffnen, onVerschieben, o
   };
 
   return (
-    <DndContext sensors={sensoren} collisionDetection={closestCorners} onDragStart={start} onDragEnd={ende} onDragCancel={() => setAktiv(null)}>
+    <DndContext sensors={sensoren} collisionDetection={kollision} onDragStart={start} onDragEnd={ende} onDragCancel={() => setAktiv(null)}>
       <div className="board" role="region" aria-label="Backlog als Board">
         {STATUS_REIHENFOLGE.map((s) => (
           <Spalte
@@ -102,14 +114,14 @@ export function Board({ eintraege, alle, sortierung, onOeffnen, onVerschieben, o
 function Spalte({ status, eintraege, anzahl, zustand, onOeffnen }: { status: Status; eintraege: AdminEintrag[]; anzahl: number; zustand: string; onOeffnen: (id: number) => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: SPALTE + status });
   return (
-    <section className={`spalte spalte-${status} ${zustand ? "spalte-" + zustand : ""} ${isOver ? "spalte-darueber" : ""}`} aria-label={STATUS[status]}>
+    <section ref={setNodeRef} className={`spalte spalte-${status} ${zustand ? "spalte-" + zustand : ""} ${isOver ? "spalte-darueber" : ""}`} aria-label={STATUS[status]}>
       <header className="spalte-kopf">
         <span className={`status-punkt punkt-${status}`} aria-hidden />
         <h2>{STATUS[status]}</h2>
         <span className="spalte-zahl">{eintraege.length === anzahl ? anzahl : `${eintraege.length}/${anzahl}`}</span>
       </header>
       <SortableContext items={eintraege.map((e) => e.id)} strategy={verticalListSortingStrategy}>
-        <div ref={setNodeRef} className="spalte-inhalt">
+        <div className="spalte-inhalt">
           {eintraege.map((e) => (
             <SortierbareKarte key={e.id} eintrag={e} onOeffnen={onOeffnen} />
           ))}

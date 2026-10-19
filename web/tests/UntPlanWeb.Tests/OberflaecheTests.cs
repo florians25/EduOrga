@@ -467,7 +467,7 @@ public class OberflaecheTests
         var neu = await Testserver.JsonAsync(await kli.PostAsJsonAsync("/api/app/schueler", new { vorname = "Anna", name = "Neumann", klasse = klasse.Kurz, geschlecht = "w" }));
         var neuId = neu["id"]!.GetValue<int>();
         Assert.True(neuId >= Schuelerverwaltung.ErsteEigeneId);
-        Assert.Equal("UntPlanWeb", neu["quelle"]!.GetValue<string>());
+        Assert.Equal("EduOrga Web", neu["quelle"]!.GetValue<string>());
         // ungültige Eingaben
         Assert.Equal(HttpStatusCode.BadRequest, (await kli.PostAsJsonAsync("/api/app/schueler", new { vorname = "A", name = "", klasse = klasse.Kurz })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await kli.PutAsJsonAsync($"/api/app/schueler/{id}", new { vorname = "A", name = "B", klasse = klasse.Kurz, geburtsdatum = "01.05.2012" })).StatusCode);
