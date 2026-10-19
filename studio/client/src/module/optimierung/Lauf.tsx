@@ -14,6 +14,7 @@ import { frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import { Stundenplanraster, type Stundenplan } from '@/komponenten/raster/Stundenplanraster';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 import { useElemente } from '../gemeinsam';
 import { gewichtungDialog, optimierungStarten } from './dialoge';
 
@@ -80,9 +81,8 @@ function Vergleich({ nummer, p, setzen }: { nummer: number; p: { typ: string; el
           <Select size="small" value={typ} onChange={(_, d) => setzen({ vergleichTyp: d.value, vergleichElement: undefined })}>
             <option value="klasse">Klasse</option><option value="lehrer">Lehrkraft</option><option value="raum">Raum</option>
           </Select>
-          <Select size="small" value={element ? String(element) : ''} onChange={(_, d) => setzen({ vergleichElement: Number(d.value) })}>
-            {liste.map((e) => <option key={e.id} value={e.id}>{e.l ? `${e.k} – ${e.l}` : e.k}</option>)}
-          </Select>
+          <SuchAuswahl size="small" ariaLabel="Element für den Vergleich" platzhalter="Suchen …" wert={element ? String(element) : ''} beiWahl={(w) => setzen({ vergleichElement: Number(w) })}
+            optionen={liste.map((e) => ({ wert: String(e.id), kurz: e.k, text: e.l ? `${e.k} – ${e.l}` : e.k }))} />
         </Feld>
         <span className={s.leise}>Geänderte Stunden sind im rechten Plan hervorgehoben.</span>
       </div>

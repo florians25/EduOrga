@@ -6,13 +6,14 @@ import type { ElementOption } from '@/api/typen';
 import { elemente, zustand } from '@/kern/zustand';
 import { StandardDialog, dialogZeigen } from '@/komponenten/dialoge';
 import { hinweis } from '@/komponenten/hinweise';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 export const TYPEN: [string, string][] = [['lehrer', 'Lehrkraft'], ['klasse', 'Klasse'], ['raum', 'Raum'], ['fach', 'Fach'], ['schueler', 'Schüler'], ['gang', 'Gang'], ['abteilung', 'Abteilung']];
 
 export interface Kommentar { id: number; typ: string; element: number; feld: string; kategorie: number; text: string; kategorieName?: string; typName?: string; elementName?: string; erstellt?: string; farbe?: string | null }
 type Eingabe = Pick<Kommentar, 'typ' | 'element' | 'feld' | 'kategorie' | 'text'>;
 
-const useStile = makeStyles({ formular: { display: 'flex', flexDirection: 'column', gap: '12px' }, zeile: { display: 'flex', gap: '8px' } });
+const useStile = makeStyles({ formular: { display: 'flex', flexDirection: 'column', gap: '12px' }, zeile: { display: 'flex', gap: '8px' }, element: { flex: 1, minWidth: 0 } });
 
 function Inhalt({ vorgabe, titel, kategorien, schliessen }: { vorgabe: Partial<Kommentar>; titel: string; kategorien: { nr: number; name: string }[]; schliessen: (e: Eingabe | null) => void }) {
   const s = useStile();
@@ -36,9 +37,14 @@ function Inhalt({ vorgabe, titel, kategorien, schliessen }: { vorgabe: Partial<K
         <Field label="Element">
           <div className={s.zeile}>
             <Select value={typ} disabled={!!vorgabe.id} onChange={(_, d) => setTyp(d.value)} aria-label="Art des Elements">{TYPEN.map(([w, t]) => <option key={w} value={w}>{t}</option>)}</Select>
-            <Select value={element ? String(element) : ''} disabled={!!vorgabe.id} onChange={(_, d) => setElement(Number(d.value))} aria-label="Element" style={{ flex: 1 }}>
-              {liste.map((e) => <option key={e.id} value={e.id}>{e.l ? `${e.k} – ${e.l}` : e.k}</option>)}
-            </Select>
+            {vorgabe.id ? (
+              <Select value={element ? String(element) : ''} disabled onChange={() => undefined} aria-label="Element" style={{ flex: 1 }}>
+                {liste.map((e) => <option key={e.id} value={e.id}>{e.l ? `${e.k} – ${e.l}` : e.k}</option>)}
+              </Select>
+            ) : (
+              <SuchAuswahl ariaLabel="Element" className={s.element} platzhalter="Element suchen …" wert={element ? String(element) : ''} beiWahl={(w) => setElement(Number(w))}
+                optionen={liste.map((e) => ({ wert: String(e.id), kurz: e.k, text: e.l ? `${e.k} – ${e.l}` : e.k }))} />
+            )}
           </div>
         </Field>
         <Field label="Feld"><Input value={feld} onChange={(_, d) => setFeld(d.value)} placeholder="Optional, z. B. Wochensoll" /></Field>

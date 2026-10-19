@@ -27,7 +27,6 @@ const useStile = makeStyles({
   zusatz: { fontWeight: tokens.fontWeightRegular, color: 'rgba(255,255,255,0.72)', marginLeft: '6px' },
   slogan: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold, marginTop: 'auto', '@media (max-width: 720px)': { marginTop: 0, fontSize: '16px' } },
   beschreibung: { margin: 0, fontSize: tokens.fontSizeBase300, lineHeight: '20px', color: 'rgba(255,255,255,0.78)', '@media (max-width: 720px)': { display: 'none' } },
-  linie: { width: '40px', height: '3px', backgroundColor: '#7fc9c9', '@media (max-width: 720px)': { display: 'none' } },
   formular: { padding: '32px 36px', display: 'flex', flexDirection: 'column', gap: '16px', '@media (max-width: 720px)': { padding: '24px' } },
   titel: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
   hinweis: { margin: '-8px 0 4px 0', color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase300 },
@@ -60,7 +59,6 @@ export function Anmeldung({ fertig }: { fertig: (b: Benutzer) => void }) {
             <Monogramm groesse={40} invers />
             <span className={s.wortmarke}><span className={s.fett}>Edu</span>Orga<span className={s.zusatz}>Studio</span></span>
           </div>
-          <span className={s.linie} />
           <p className={s.beschreibung}>Stundenplanung und Vertretungsplanung für die ganze Schule – im Browser, gemeinsam im Kollegium.</p>
           <p className={s.slogan}>{SLOGAN}</p>
         </div>

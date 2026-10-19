@@ -172,7 +172,13 @@ export const theme = createTheme({
         inputSizeSmall: { paddingBlock: 6.5 },
       },
     },
-    MuiInputLabel: { styleOverrides: { root: { fontSize: 14 } } },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: { fontSize: 14 },
+        // mittlere Felder (Anmeldung): Beschriftung mittig im niedrigeren Feld (Eingabe mit 8 px Innenabstand)
+        outlined: { '&.MuiInputLabel-sizeMedium:not(.MuiInputLabel-shrink)': { transform: 'translate(14px, 10px) scale(1)' } },
+      },
+    },
     MuiTextField: { defaultProps: { size: 'small' } },
     MuiSelect: { defaultProps: { size: 'small' } },
     MuiFormControl: { defaultProps: { size: 'small' } },

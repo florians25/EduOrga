@@ -119,7 +119,6 @@ export function DatumFeld({ wert, beiAenderung, size = 'small', disabled, wochen
       firstWeekOfYear={2}
       showWeekNumbers
       showGoToToday
-      highlightCurrentMonth
       highlightSelectedMonth
       strings={KALENDER_DE}
       dateTimeFormatter={DATUMSFORMAT}

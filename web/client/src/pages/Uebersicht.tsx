@@ -71,10 +71,10 @@ function UKarte({ symbol, titel, href, linkText, gruppen, vorne, leerSymbol }: {
   const voll = gruppen.filter(g => g.zeilen.length);
   const leer = gruppen.filter(g => !g.zeilen.length && g.leer).map(g => g.leer!);
   return (
-    <Paper variant="outlined" component="section" aria-label={titel} sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%' }}>
-      <Stack direction="row" alignItems="center" gap={1}>
+    <Paper variant="outlined" component="section" aria-label={titel} sx={{ p: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%', overflow: 'hidden' }}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ mx: -2, px: 2, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider', '& svg': { fontSize: 20 } }}>
         <Box sx={{ color: 'primary.main', display: 'flex' }}>{symbol}</Box>
-        <Typography variant="h3" sx={{ flex: 1 }}>{titel}</Typography>
+        <Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>
         {href && <Link href={href} underline="hover" sx={{ display: 'flex', alignItems: 'center', fontSize: 13, fontWeight: 500 }}>{linkText ?? 'Öffnen'}<ChevronRightRounded fontSize="small" /></Link>}
       </Stack>
       {vorne}
@@ -148,7 +148,7 @@ export default function Uebersicht() {
   }, [neuZaehler]);
 
   return (
-    <Seite titel="" dokumentTitel="Übersicht">
+    <Seite titel="" dokumentTitel="Start">
       <UpdateHinweis />
       <Geladen g={g}>{d => {
         if (!d) return <Typography color="text.secondary">{OHNE_ZUORDNUNG}</Typography>;
@@ -250,7 +250,7 @@ export default function Uebersicht() {
 
         return (
           <Stack gap={2.5}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} alignItems={{ sm: 'flex-end' }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} alignItems={{ sm: 'flex-end' }} sx={{ pb: 1.5, borderBottom: '1px solid', borderColor: 'flaechen.rand' }}>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="h1">{gruss()}{name ? `, ${name}` : ''}</Typography>
                 <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center" sx={{ mt: 0.75, color: 'text.secondary', fontSize: 14.5 }}>

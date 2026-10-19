@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Ansicht des Plans: Tag oder Woche (Matrix).
+/// Ansicht des Plans: Woche (Raster, Standard) oder Tag.
 enum Planmodus: String, CaseIterable, Identifiable {
     case tag
     case woche
@@ -27,9 +27,10 @@ struct PlanView: View {
     }
 }
 
-/// Ein Plan zum Bedienen mit einer Hand: waagrecht wischen = nächster bzw. voriger Schultag (Seiten), unten die
+/// Ein Plan zum Bedienen mit einer Hand. Startansicht ist die Woche als Raster (waagrecht wischen = andere Woche,
+/// Tageskopf antippen = Tag); in der Tagesansicht waagrecht wischen = nächster bzw. voriger Schultag (Seiten). Unten die
 /// schwebende Wochenleiste aus Glas (Tag antippen; waagrecht wischen bzw. Pfeile = andere Woche; nach oben ziehen =
-/// Wochenübersicht, nach unten = zurück zum Tag). Oben der Planname (Menü: eigener Plan, Favoriten, weitere Pläne),
+/// Woche, nach unten = Tag). Oben der Planname (Menü: eigener Plan, Favoriten, weitere Pläne),
 /// „Heute“ und das Menü (Tag/Woche, Liste/Zeitachse, Gehe zu Datum). Eine Stunde öffnet sich groß mit Zoom aus der
 /// Kachel; langes Drücken zeigt Raumplan, Plan der Lehrkraft bzw. Klasse, Teilen und den Online-Link.
 ///
@@ -42,7 +43,7 @@ struct PlanSeite: View {
     @EnvironmentObject var favoriten: Favoriten
     @StateObject private var modell = Planmodell()
     @Namespace private var zoom
-    @AppStorage("planModus") private var modusRoh = Planmodus.tag.rawValue
+    @AppStorage("planModus") private var modusRoh = Planmodus.woche.rawValue
     @AppStorage("tagesDarstellung") private var darstellungRoh = Tagesdarstellung.liste.rawValue
     @State private var tag: String? = nil
     @State private var wahl: Stundenwahl? = nil
@@ -55,7 +56,17 @@ struct PlanSeite: View {
     }
 
     private var istReiter: Bool { fest == nil }
-    private var modus: Planmodus { Planmodus(rawValue: modusRoh) ?? .tag }
+    private var modus: Planmodus { Planmodus(rawValue: modusRoh) ?? .woche }
+
+    /// Woche der Seiten im Wochenraster: Wechsel der Woche führt den Tag mit (gleicher Wochentag).
+    private var wocheBindung: Binding<String> {
+        Binding(get: { aktuelleWoche }, set: { neu in
+            guard neu != aktuelleWoche, let alt = Datumsformat.datum(aktuelleWoche), let ziel = Datumsformat.datum(neu) else { return }
+            let wochen = Int((ziel.timeIntervalSince(alt) / (7 * 86_400)).rounded())
+            guard wochen != 0 else { return }
+            blaettern(wochen, animiert: false)
+        })
+    }
     private var darstellung: Tagesdarstellung { Tagesdarstellung(rawValue: darstellungRoh) ?? .liste }
 
     // MARK: Zeitraum
@@ -100,13 +111,10 @@ struct PlanSeite: View {
                 tagesBlaetter
                     .transition(.opacity)
             } else {
-                ScrollView {
-                    Wochenmatrix(modell: modell, montag: aktuelleWoche, raum: zoom) { k, t, quelle in
-                        oeffnen(k, in: t, quelle: quelle)
-                    }
-                }
-                .refreshable { await modell.laden(montag: aktuelleWoche, erzwingen: true) }
-                .transition(.opacity)
+                WochenSeiten(modell: modell, montage: montage, montag: wocheBindung, raum: zoom,
+                             antippen: { k, t, quelle in oeffnen(k, in: t, quelle: quelle) },
+                             tagOeffnen: { tagWaehlen($0) })
+                    .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: modusRoh)
@@ -158,7 +166,6 @@ struct PlanSeite: View {
         .onChange(of: zustand.schnellaktion) { _, _ in anfragenAusfuehren() }
         .onChange(of: zustand.stundenplanHeute) { _, _ in
             guard istReiter else { return }
-            if modus == .woche { modusRoh = Planmodus.tag.rawValue }
             withAnimation(.snappy) { tag = PlanSeite.startTag }
         }
         .onChange(of: zustand.planGeaendert) { _, _ in
@@ -198,14 +205,18 @@ struct PlanSeite: View {
             }
             Button("Heute") {
                 Haptik.tippen()
-                if modus == .woche { modusRoh = Planmodus.tag.rawValue }
                 springen(zu: Date())
             }
             .fontWeight(.semibold)
             Menu {
                 Picker("Ansicht", selection: $modusRoh) {
                     ForEach(Planmodus.allCases) { m in
-                        Label(m.titel, systemImage: m == .tag ? "rectangle.portrait" : "square.grid.3x3").tag(m.rawValue)
+                        Label(m.titel, systemImage: m == .tag ? "rectangle.portrait" : "calendar").tag(m.rawValue)
+                    }
+                }
+                if modus == .woche {
+                    Section("Dichte der Woche") {
+                        WochendichteAuswahl()
                     }
                 }
                 Picker("Tag als", selection: $darstellungRoh) {
@@ -333,6 +344,11 @@ struct PlanSeite: View {
     // MARK: Abläufe
 
     private func vorbereiten() {
+        // Die Woche ist jetzt die Startansicht (einmalig auch für bisherige Installationen)
+        if !UserDefaults.standard.bool(forKey: "planWocheStandard") {
+            UserDefaults.standard.set(true, forKey: "planWocheStandard")
+            modusRoh = Planmodus.woche.rawValue
+        }
         modell.einrichten(zustand: zustand)
         if let fest { modell.waehlen(fest) }
         if !bereit {
@@ -348,13 +364,17 @@ struct PlanSeite: View {
     }
 
     /// Andere Woche: gleicher Wochentag (bzw. erster Schultag) der Nachbarwoche.
-    private func blaettern(_ richtung: Int) {
+    private func blaettern(_ richtung: Int, animiert: Bool = true) {
         guard let m = Datumsformat.datum(aktuelleWoche) else { return }
         let neu = Datumsformat.iso(Datumsformat.tage(7 * richtung, nach: m))
         let index = modell.tage(montag: aktuelleWoche).firstIndex(of: aktuellerTag) ?? 0
         let tage = modell.tage(montag: neu)
         guard let ziel = tage.indices.contains(index) ? tage[index] : tage.first else { return }
-        withAnimation(.snappy) { tag = ziel }
+        if animiert {
+            withAnimation(.snappy) { tag = ziel }
+        } else {
+            tag = ziel
+        }
     }
 
     private func ansichtWechseln(_ woche: Bool) {
@@ -391,7 +411,6 @@ struct PlanSeite: View {
             switch a {
             case .stundenplan:
                 modell.waehlen(nil)
-                modusRoh = Planmodus.tag.rawValue
                 springen(zu: Date())
             default:
                 break

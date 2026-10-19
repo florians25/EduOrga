@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   Button,
@@ -98,7 +98,7 @@ function Einreichung() {
     return Object.keys(e).length === 0;
   };
 
-  const absenden = async (ev: React.FormEvent) => {
+  const absenden = async (ev: FormEvent) => {
     ev.preventDefault();
     setErgebnis(null);
     if (!pruefen()) return;

@@ -1,4 +1,4 @@
-import React from "react";
+import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { FluentProvider, Toaster } from "@fluentui/react-components";
@@ -16,7 +16,7 @@ import { Verwaltung } from "./verwaltung/Verwaltung";
 import { TOASTER } from "./bausteine/meldungen";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  <StrictMode>
     <FluentProvider theme={thema} className="fluent-wurzel">
       <BrowserRouter>
         <Routes>
@@ -35,5 +35,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       </BrowserRouter>
       <Toaster toasterId={TOASTER} position="bottom-end" />
     </FluentProvider>
-  </React.StrictMode>,
+  </StrictMode>,
 );

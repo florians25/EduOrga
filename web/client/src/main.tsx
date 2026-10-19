@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { deDE } from '@mui/x-date-pickers/locales';
 import 'dayjs/locale/de';
 import './fonts.css';
 import { theme } from './theme';
@@ -17,7 +18,7 @@ createRoot(document.getElementById('app')!).render(
   <StrictMode>
     <ThemeProvider theme={theme} defaultMode="system">
       <CssBaseline enableColorScheme />
-      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="de">
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="de" localeText={deDE.components.MuiLocalizationProvider.defaultProps.localeText}>
         <App />
         <Meldungen />
         <PdfWahl />

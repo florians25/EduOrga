@@ -52,9 +52,13 @@ const useStile = makeStyles({
   fehler: { color: tokens.colorPaletteRedForeground1, fontSize: tokens.fontSizeBase200 },
 });
 
-function EinstellungenInhalt({ e, schliessen }: { e: Einstellungen; schliessen: (w: Record<string, unknown> | null) => void }) {
+/** Direkte Übertragung der Vertretungen (Studio-Datenbank je Dokument, nicht in der Schuldatei). */
+interface Direkt { automatisch: boolean; sekunden: number }
+
+function EinstellungenInhalt({ e, direkt, schliessen }: { e: Einstellungen; direkt: Direkt; schliessen: (w: Record<string, unknown> | null) => void }) {
   const s = useStile();
   const [w, setW] = useState({ ...e, port: String(e.port), tageVoraus: String(e.tageVoraus), apiSchluessel: '' });
+  const [auto, setAuto] = useState({ automatisch: direkt.automatisch, sekunden: String(direkt.sekunden) });
   const [pruefung, setPruefung] = useState<{ text: string; ok?: boolean } | null>(null);
   const setze = (teil: Partial<typeof w>) => setW((x) => ({ ...x, ...teil }));
   const daten = () => ({
@@ -69,7 +73,7 @@ function EinstellungenInhalt({ e, schliessen }: { e: Einstellungen; schliessen: 
   };
   return (
     <StandardDialog<boolean> titel="Einstellungen für EduOrga Web" breite="640px" knoepfe={[{ text: 'Speichern', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }]}
-      beiKnopf={(x) => schliessen(x ? daten() : null)}>
+      beiKnopf={(x) => schliessen(x ? { ...daten(), _direkt: { automatisch: auto.automatisch, sekunden: Math.min(600, Math.max(5, Number(auto.sekunden) || 30)) } } : null)}>
       <h3 className={s.h3}>Verbindung</h3>
       <div className={s.spalte}>
         <Field label="Schul-ID" orientation="horizontal"><Input value={w.schulId} onChange={(_, d) => setze({ schulId: d.value })} /></Field>
@@ -98,6 +102,16 @@ function EinstellungenInhalt({ e, schliessen }: { e: Einstellungen; schliessen: 
           <Checkbox label="Ohne Begrenzung" title="Unterricht und Vertretungen bis zum Schuljahresende übertragen" checked={w.unbegrenzt} onChange={(_, d) => setze({ unbegrenzt: !!d.checked })} />
         </div>
       </Field>
+      <h3 className={s.h3}>Vertretungen direkt übertragen</h3>
+      <div className={s.zeile}>
+        <Checkbox label="Vertretungen automatisch übertragen" checked={auto.automatisch} onChange={(_, d) => setAuto((x) => ({ ...x, automatisch: !!d.checked }))} data-testid="upw-automatisch" />
+        <span className={s.zeile} style={{ gap: 6 }}>
+          höchstens
+          <Input type="number" min={5} max={600} style={{ width: 80 }} disabled={!auto.automatisch} value={auto.sekunden} onChange={(_, d) => setAuto((x) => ({ ...x, sekunden: d.value }))} aria-label="Sekunden nach einer Änderung" />
+          Sekunden nach einer Änderung
+        </span>
+      </div>
+      <p className={s.leise}>Geänderte Vertretungen gehen dann ohne Klick an EduOrga Web (wie „Vertretungen*“, nur die geänderten Stunden). Jederzeit von Hand: „An Web senden“ in der Kopfleiste der Vertretungsplanung.</p>
       <h3 className={s.h3}>Freigaben</h3>
       <div className={s.spalte} style={{ gap: 0 }}>
         {OPTIONEN.map(([k, t]) => <Checkbox key={k} label={t} checked={!!w[k]} onChange={(_, d) => setze({ [k]: !!d.checked } as Partial<typeof w>)} />)}
@@ -108,10 +122,15 @@ function EinstellungenInhalt({ e, schliessen }: { e: Einstellungen; schliessen: 
 }
 
 export async function einstellungenDialog(): Promise<boolean> {
-  const e = await api.get<Einstellungen>(api.dok('/untplanweb/einstellungen'));
-  const w = await dialogZeigen<Record<string, unknown>>((schliessen) => <EinstellungenInhalt e={e} schliessen={schliessen} />);
+  const [e, direkt] = await Promise.all([
+    api.get<Einstellungen>(api.dok('/untplanweb/einstellungen')),
+    api.get<Direkt>(api.dok('/untplanweb/direkt')).catch(() => ({ automatisch: false, sekunden: 30 })),
+  ]);
+  const w = await dialogZeigen<Record<string, unknown>>((schliessen) => <EinstellungenInhalt e={e} direkt={direkt} schliessen={schliessen} />);
   if (!w) return false;
-  await api.put(api.dok('/untplanweb/einstellungen'), w);
+  const { _direkt, ...einstellungen } = w;
+  await api.put(api.dok('/untplanweb/einstellungen'), einstellungen);
+  await api.put(api.dok('/untplanweb/direkt'), _direkt);
   hinweis('Einstellungen für EduOrga Web gespeichert.', 'ok');
   return true;
 }

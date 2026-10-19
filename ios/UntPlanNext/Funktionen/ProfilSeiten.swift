@@ -162,14 +162,14 @@ struct NeuigkeitenView: View {
     }
 
     private let punkte: [Punkt] = [
-        Punkt(titel: "UntPlan Next", text: "Eine eigenständige App neben „UntPlan“: eigenes Symbol, eigene Konten und Einstellungen. Beide Apps lassen sich gleichzeitig installieren."),
-        Punkt(titel: "Liquid Glass", text: "Tab-Leiste, Wochenleiste und Bedienknöpfe aus Liquid Glass (iOS 26) schweben über dem Inhalt; die Tab-Leiste klappt beim Rollen ein. Petrol als neue Akzentfarbe."),
-        Punkt(titel: "Mit einer Hand", text: "Waagrecht wischen wechselt den Tag, die schwebende Wochenleiste unten wählt Tag und Woche; nach oben ziehen zeigt die Wochenübersicht."),
-        Punkt(titel: "Große Kacheln", text: "Fach und Raum groß, Änderungen mit kräftiger Plakette, Rahmen und „alt → neu“; Pausen und Freistunden kompakt. Langes Drücken: Raumplan, Plan der Lehrkraft bzw. Klasse, Teilen, Online-Link."),
-        Punkt(titel: "Suche", text: "Eigener Reiter für Klassen, Lehrkräfte und Räume – Pläne öffnen direkt, Favoriten mit Stern."),
-        Punkt(titel: "Jetzt-Karte", text: "Die laufende Stunde mit Fortschrittsring und Restzeit, darunter die nächste Stunde."),
-        Punkt(titel: "Zeitachse", text: "Wahlweise der Tag als Zeitachse mit echter Uhrzeit (Menü im Plan bzw. Darstellung)."),
-        Punkt(titel: "Große Stundenansicht", text: "Eine Stunde öffnet sich mit Zoom aus der Kachel: Kopf in der Fachfarbe, Änderungen „alt → neu“, Thema, Hausaufgaben, Online-Unterricht und – für Lehrkräfte – das Klassenbuch."),
+        Punkt(titel: "EduOrga", text: "UntPlan Next heißt jetzt EduOrga – einfach mehr Schulalltag. Neues Symbol, Farben der Marke (Petrol) und eine ruhige, sachliche Gestaltung."),
+        Punkt(titel: "Einrichtung", text: "Eine App für alle Schulen: EduOrga-Adresse der Schule eingeben (die App prüft sie schon beim Tippen), den QR-Code der Schule scannen oder eine zuletzt verwendete Schule wählen."),
+        Punkt(titel: "Woche als Standard", text: "Der Plan öffnet mit der Woche als Raster: Montag bis Freitag, Stunden mit Uhrzeit, heute hervorgehoben mit Jetzt-Linie. Waagrecht wischen wechselt die Woche, Aufziehen mit zwei Fingern ändert die Dichte, im Querformat wird es breiter."),
+        Punkt(titel: "Klassische Stundenkarten", text: "Fach fett oben links, Raum oben rechts, Lehrkraft bzw. Klasse darunter, Fachfarbe als Balken – genau wie die Schule die Karten im Web eingestellt hat. Entfall durchgestrichen, Vertretung violett."),
+        Punkt(titel: "Klassenbuch", text: "Für Lehrkräfte im Reiter „Schule“: offene Stunden, Lehrstoff, Hausaufgaben, Anwesenheit mit Schnellwahl (anwesend, abwesend, verspätet), Einträge, Klassendienste, Befreiungen, Sitzplan und Prüfungen. Ohne Netz gespeicherte Änderungen werden später gesendet."),
+        Punkt(titel: "Melden und Buchen", text: "Abwesenheit melden, Prüfung eintragen, Meine Meldungen; Räume und Geräte buchen und eigene Buchungen stornieren."),
+        Punkt(titel: "Sprechtag", text: "Eltern buchen Termine und tragen sich auf die Warteliste ein; Lehrkräfte sehen ihre Termine, laden Familien ein, tragen Termine ein und sagen ab."),
+        Punkt(titel: "Für Familien", text: "Hausaufgaben, Abwesenheiten, Entschuldigungsschreiben als PDF, Prüfungen und Vertretungsplan."),
     ]
 
     var body: some View {
@@ -212,8 +212,13 @@ struct UeberView: View {
                     LabeledContent("Datenstand", value: Datumsformat.anzeige(empfangen, "d.M.yyyy, HH:mm"))
                 }
             }
-            Section("App") {
+            Section {
+                LabeledContent("App", value: Marke.name)
                 LabeledContent("Version", value: MehrView.version)
+            } header: {
+                Text("App")
+            } footer: {
+                Text("EduOrga gibt es für alle Schulen zentral im App Store; jede Schule betreibt ihr EduOrga selbst.\n\n" + Marke.hinweis)
             }
         }
         .navigationTitle("Über")

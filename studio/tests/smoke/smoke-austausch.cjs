@@ -77,7 +77,13 @@ function attrappe(rueckmeldungen) {
     await page.click(`${upw} [data-teil=stpl-aenderungen] button`);
     const stpl = '[data-ansicht="untplanweb.stpl"]';
     await page.waitForSelector(`${stpl} [data-tabelle="upw-stpl"]`);
-    await page.locator(`${stpl} input[type=date]`).nth(1).fill(iso);
+    // Datumsfeld (Fluent DatePicker): deutsches Datum eintippen, Enter übernimmt, Escape schließt den Kalender
+    const bisFeld = page.locator(`${stpl} input[data-datum]`).nth(1);
+    await bisFeld.click();
+    await bisFeld.fill(iso.split('-').reverse().join('.'));
+    await bisFeld.press('Enter');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(([s, d]) => document.querySelectorAll(`${s} input[data-datum]`)[1]?.dataset.datum === d, [stpl, iso], { timeout: 5000 });
     await page.locator(`${stpl} button`, { hasText: /^Laden$/ }).click();
     await page.waitForSelector(`${stpl} .tb-zeile:has-text("Mathe-Klausur")`, { timeout: 15000 });
     await h.werkzeug(page, 'untplanweb.stpl', 'Prüfungen markieren');

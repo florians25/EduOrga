@@ -70,7 +70,7 @@ export default function Heute() {
   const g = useLaden(() => holen<Start>('/api/app/start'), []);
   const [details, setDetails] = useState<{ k: Karte; liste: Karte[] } | null>(null);
   return (
-    <Seite dokumentTitel="Heute">
+    <Seite dokumentTitel="Mein Tag">
       <UpdateHinweis />
       <Geladen g={g}>{d => {
         const stunden = (d.stunden ?? []).slice().sort((a, b) => a.stunde - b.stunde || (a.status === 'entfall' ? 0 : 1) - (b.status === 'entfall' ? 0 : 1));
@@ -88,9 +88,9 @@ export default function Heute() {
         const mitLehrkraft = !ich.kollegium || stunden.some(s => s.lehrer.length > 1 || s.lehrer.some(w => w.alt || w.neu));
         return (
           <>
-            <Stack direction="row" alignItems="baseline" gap={1.5} sx={{ mb: 3 }} flexWrap="wrap">
-              <Typography variant="h1">Heute</Typography>
-              <Typography sx={{ fontSize: 18, color: 'text.secondary' }}>{datumText(d.datum)}</Typography>
+            <Stack direction="row" alignItems="baseline" gap={1.5} sx={{ mb: 2.5, pb: 1.5, borderBottom: '1px solid', borderColor: 'flaechen.rand' }} flexWrap="wrap">
+              <Typography variant="h1">Mein Tag</Typography>
+              <Typography sx={{ fontSize: 16, color: 'text.secondary' }}>{datumText(d.datum)}</Typography>
             </Stack>
             <Grid container spacing={2.5}>
               <Grid size={{ xs: 12, lg: mitStunden ? 7.5 : 12 }} sx={{ order: { xs: 2, lg: 1 } }}>

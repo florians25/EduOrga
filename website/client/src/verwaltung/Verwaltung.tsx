@@ -29,6 +29,7 @@ import {
 import {
   ArrowClockwiseRegular,
   BoardRegular,
+  FilterRegular,
   KeyRegular,
   PersonRegular,
   SearchRegular,
@@ -174,6 +175,7 @@ function Arbeitsbereich({ benutzer, onAbgemeldet }: { benutzer: string; onAbgeme
   const [offen, setOffen] = useState<number | null>(null);
   const [ablehnen, setAblehnen] = useState<Verschiebung | null>(null);
   const [passwortOffen, setPasswortOffen] = useState(false);
+  const [filterOffen, setFilterOffen] = useState(false);
 
   const laden = useCallback(async () => {
     try {
@@ -293,6 +295,16 @@ function Arbeitsbereich({ benutzer, onAbgemeldet }: { benutzer: string; onAbgeme
           onChange={(_, d) => setSuche(d.value)}
           aria-label="Suchen"
         />
+        <Button
+          className="werkzeuge-filterknopf"
+          appearance={filterOffen || filterAktiv ? "primary" : "secondary"}
+          icon={<FilterRegular />}
+          onClick={() => setFilterOffen(!filterOffen)}
+          aria-expanded={filterOffen}
+        >
+          Filter
+        </Button>
+        <div className={filterOffen ? "werkzeuge-filter offen" : "werkzeuge-filter"}>
         <Auswahl leer="Alle Bereiche" wert={modul} setzen={setModul} optionen={MODULE} />
         <Auswahl leer="Alle Arten" wert={typ} setzen={setTyp} optionen={TYPEN as Record<Typ, string>} />
         <Auswahl leer="Alle Prioritäten" wert={prio} setzen={setPrio} optionen={PRIORITAETEN as Record<Prioritaet, string>} />
@@ -300,7 +312,7 @@ function Arbeitsbereich({ benutzer, onAbgemeldet }: { benutzer: string; onAbgeme
         <Dropdown
           aria-label="Sortierung"
           className="werkzeuge-auswahl"
-          value={`Sortierung: ${SORTIERUNGEN[sortierung]}`}
+          value={SORTIERUNGEN[sortierung]}
           selectedOptions={[sortierung]}
           onOptionSelect={(_, d) => setSortierung((d.optionValue as Sortierung) ?? "reihenfolge")}
         >
@@ -324,6 +336,7 @@ function Arbeitsbereich({ benutzer, onAbgemeldet }: { benutzer: string; onAbgeme
             Filter zurücksetzen
           </Button>
         )}
+        </div>
         <span className="werkzeuge-luecke" />
         <span className="werkzeuge-zahl">
           {eintraege ? (filterAktiv ? `${gefiltert.length} von ${eintraege.length}` : `${eintraege.length} Einträge`) : ""}

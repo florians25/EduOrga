@@ -1,4 +1,4 @@
-// Übernimmt Schriftlizenz, Logo und Bildschirmfotos aus dem Repository nach public/ (Build-Ausgabe, nicht eingecheckt).
+// Übernimmt Schrift, Logo und Bildschirmfotos aus dem Repository nach public/ (Build-Ausgabe, nicht eingecheckt).
 // So zeigt die Website immer die aktuellen Bilder aus studio/docs/bilder, web/docs/bilder und mobile/docs/bilder.
 import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -8,7 +8,11 @@ const hier = dirname(fileURLToPath(import.meta.url));
 const wurzel = resolve(hier, "../../..");
 const ziel = resolve(hier, "../public");
 
+// Schriften: design/tokens.css verweist auf ../fonts/ – zur Laufzeit also /fonts/ neben /assets/
 const dateien = [
+  ["design/fonts/plex-sans-400.woff2", "fonts/plex-sans-400.woff2"],
+  ["design/fonts/plex-sans-500.woff2", "fonts/plex-sans-500.woff2"],
+  ["design/fonts/plex-sans-600.woff2", "fonts/plex-sans-600.woff2"],
   ["design/fonts/OFL.txt", "fonts/OFL.txt"],
   ["design/logo/edo-monogramm.svg", "logo/edo-monogramm.svg"],
   ["design/logo/edo-monogramm-eckig.svg", "logo/edo-monogramm-eckig.svg"],

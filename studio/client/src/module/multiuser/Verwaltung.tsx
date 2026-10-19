@@ -5,8 +5,7 @@ import {
   Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Tooltip, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import {
-  Add20Regular, Delete16Regular, Edit16Regular, Eye16Regular, Key16Regular, MoreHorizontal20Regular, PeopleTeam16Regular, Prohibited16Regular,
-  Search16Regular, WindowEdit16Regular, type FluentIcon,
+  Add20Regular, Delete16Regular, Edit16Regular, Key16Regular, MoreHorizontal20Regular, PeopleTeam16Regular, Search16Regular,
 } from '@fluentui/react-icons';
 import { useMemo, useState } from 'react';
 import { api } from '@/api/client';
@@ -30,11 +29,11 @@ interface Verwaltungsdaten {
 }
 
 /** Stufen von oben nach unten (stärkste zuerst), mit Kurztext für die Matrix. */
-const STUFEN: { stufe: string; kurz: string; symbol: FluentIcon; erklaerung: string }[] = [
-  { stufe: 'Bearbeiten', kurz: 'Bearbeiten', symbol: Edit16Regular, erklaerung: 'Daten des Bereichs lesen und ändern' },
-  { stufe: 'AnsichtenBearbeiten', kurz: 'Ansichten', symbol: WindowEdit16Regular, erklaerung: 'Lesen, dazu eigene Ansichten (Spalten, Filter, Layouts) anpassen' },
-  { stufe: 'NurLesen', kurz: 'Nur lesen', symbol: Eye16Regular, erklaerung: 'Daten des Bereichs nur ansehen' },
-  { stufe: 'Keine', kurz: 'Kein Zugriff', symbol: Prohibited16Regular, erklaerung: 'Bereich ist nicht sichtbar' },
+const STUFEN: { stufe: string; kurz: string; erklaerung: string }[] = [
+  { stufe: 'Bearbeiten', kurz: 'Bearbeiten', erklaerung: 'Daten des Bereichs lesen und ändern' },
+  { stufe: 'AnsichtenBearbeiten', kurz: 'Ansichten', erklaerung: 'Lesen, dazu eigene Ansichten (Spalten, Filter, Layouts) anpassen' },
+  { stufe: 'NurLesen', kurz: 'Nur lesen', erklaerung: 'Daten des Bereichs nur ansehen' },
+  { stufe: 'Keine', kurz: 'Kein Zugriff', erklaerung: 'Bereich ist nicht sichtbar' },
 ];
 const RANG: Record<string, number> = { Keine: 0, NurLesen: 1, AnsichtenBearbeiten: 2, Bearbeiten: 3 };
 const stufeInfo = (st: string) => STUFEN.find((x) => x.stufe === st) || STUFEN[3];
@@ -96,7 +95,7 @@ function wirksameStufen(b: VBenutzer, v: Verwaltungsdaten): Record<string, strin
 
 function StufenKennzeichen({ stufe, klein, text }: { stufe: string; klein?: boolean; text?: string }) {
   const i = stufeInfo(stufe);
-  return <span className={mergeClasses('mu-stufe', klein && 'klein')} data-stufe={i.stufe} style={{ cursor: 'default' }}><i.symbol />{text ?? i.kurz}</span>;
+  return <span className={mergeClasses('mu-stufe', klein && 'klein')} data-stufe={i.stufe} style={{ cursor: 'default' }}>{text ?? i.kurz}</span>;
 }
 
 /** Stufe einer Zelle: farbiges Kennzeichen, Klick öffnet die Auswahl. */
@@ -108,7 +107,7 @@ function StufenWahl({ g, bereich, text, stufen, aendern }: { g: Gruppe; bereich:
     <Menu checkedValues={{ stufe: [wert] }} onCheckedValueChange={(_, d) => { const n = d.checkedItems[0]; if (n && n !== wert) aendern(n); }}>
       <MenuTrigger disableButtonEnhancement>
         <button type="button" className="mu-stufe" data-stufe={i.stufe} aria-label={`${g.name}, ${text}: ${langText(wert)} – ändern`} title={`${text}: ${langText(wert)}`}>
-          <i.symbol />{i.kurz}
+          {i.kurz}
         </button>
       </MenuTrigger>
       <MenuPopover>

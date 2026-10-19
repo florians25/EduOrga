@@ -8,6 +8,7 @@ enum Mehrseite: Hashable {
     case neues
     case ueber
     case darstellung
+    case benachrichtigungen
 }
 
 /// Profil und Einstellungen („Mehr“) als Blatt über dem Avatar oben rechts: oben das Profil (Name, Rolle, Schule) mit
@@ -95,6 +96,7 @@ struct MehrView: View {
                 case .neues: NeuigkeitenView()
                 case .ueber: UeberView()
                 case .darstellung: DarstellungView()
+                case .benachrichtigungen: BenachrichtigungenView()
                 }
             }
             .navigationDestination(for: Startziel.self) { ziel in
@@ -229,6 +231,9 @@ struct MehrView: View {
             if zustand.darfPlanmitteilungen {
                 PlanmitteilungenSchalter()
             }
+            NavigationLink(value: Mehrseite.benachrichtigungen) {
+                Mehrzeile(titel: "Benachrichtigungen")
+            }
             NavigationLink(value: Mehrseite.darstellung) {
                 Mehrzeile(titel: "Darstellung")
             }
@@ -271,7 +276,7 @@ struct MehrView: View {
 /// Darstellung: Tag als Liste oder Zeitachse, Dichte der Zeitachse und Startansicht des Plans.
 struct DarstellungView: View {
     @AppStorage("zeitachseDichte") private var dichte: Double = 1.0
-    @AppStorage("planModus") private var modusRoh = Planmodus.tag.rawValue
+    @AppStorage("planModus") private var modusRoh = Planmodus.woche.rawValue
     @AppStorage("tagesDarstellung") private var darstellungRoh = Tagesdarstellung.liste.rawValue
 
     var body: some View {
@@ -301,6 +306,15 @@ struct DarstellungView: View {
                 Text("Höhe der Zeitachse")
             } footer: {
                 Text("Wie viel Platz eine Unterrichtsminute auf der Zeitachse bekommt. Größere Schrift (Dynamic Type) vergrößert die Zeitachse zusätzlich.")
+            }
+            Section {
+                WochendichteAuswahl()
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+            } header: {
+                Text("Dichte der Woche")
+            } footer: {
+                Text("Höhe der Stunden im Wochenraster. Im Plan auch mit zwei Fingern aufziehen bzw. zusammenschieben.")
             }
             Section("Plan öffnet mit") {
                 Picker("Ansicht", selection: $modusRoh) {

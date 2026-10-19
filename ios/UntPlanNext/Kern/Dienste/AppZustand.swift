@@ -61,6 +61,17 @@ final class AppZustand: ObservableObject {
 
     var benutzer: SitzungsBenutzer? { sitzung?.benutzer }
 
+    /// Darstellung der Stundenkarten (schulweit aus der Sitzung; ohne Angabe der Standard „Klassisch“).
+    var darstellung: Kartendarstellung { sitzung?.darstellung ?? Kartendarstellung() }
+
+    /// Erziehungsberechtigte (Buchen beim Sprechtag, Entschuldigungsschreiben).
+    var istEltern: Bool { (benutzer?.rolle ?? "").lowercased() == "eltern" }
+
+    /// Recht laut Sitzung (ältere Server ohne Rechteliste: `vorgabe`).
+    func darf(_ recht: String, vorgabe: Bool = true) -> Bool {
+        benutzer?.darf(recht, vorgabe: vorgabe) ?? false
+    }
+
     /// Kollegium (Lehrkräfte, Schulleitung, Administration).
     var istKollegium: Bool {
         guard let b = benutzer else { return false }

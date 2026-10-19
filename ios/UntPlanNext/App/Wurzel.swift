@@ -20,12 +20,16 @@ struct HauptView: View {
             }
         }
         .task {
+            Schreibpuffer.shared.beobachten()
             if zustand.phase == .startet { await zustand.starten() }
+            if zustand.phase == .angemeldet { await Schreibpuffer.shared.senden() }
         }
         .onChange(of: szene) { _, neu in
             if neu == .active && zustand.phase == .angemeldet {
                 Task {
                     await zustand.aktualisieren()
+                    // Offline gespeicherte Klassenbuch-Änderungen nachsenden
+                    await Schreibpuffer.shared.senden()
                     // Lehrkräfte: eigenen Plan auf Änderungen prüfen (Mitteilung bei Entfall, Vertretung, Raumänderung …)
                     await zustand.planPruefen()
                 }
@@ -103,6 +107,7 @@ enum AppReiter: Hashable, CaseIterable {
     case heute
     case plan
     case postfach
+    case schule
     case suche
 
     var titel: String {
@@ -110,6 +115,7 @@ enum AppReiter: Hashable, CaseIterable {
         case .heute: return "Heute"
         case .plan: return "Plan"
         case .postfach: return "Postfach"
+        case .schule: return "Schule"
         case .suche: return "Suche"
         }
     }
@@ -120,12 +126,14 @@ enum AppReiter: Hashable, CaseIterable {
         case .heute: return "sun.max"
         case .plan: return "calendar"
         case .postfach: return "tray"
+        case .schule: return "square.grid.2x2"
         case .suche: return "magnifyingglass"
         }
     }
 }
 
-/// Tab-Leiste des Systems: Heute · Plan · Postfach · Suche (Reiter mit der Rolle „Suche“ – ab iOS 26 als eigene
+/// Tab-Leiste des Systems: Heute · Plan · Postfach · Schule · Suche (Schule: Klassenbuch, Melden, Buchen, Prüfungen,
+/// Vertretungsplan, Sprechtag, Hausaufgaben, Abwesenheiten, Neuigkeiten je nach Rolle; Suche mit der Rolle „Suche“ – ab iOS 26 als eigene
 /// Glasfläche rechts, das Suchfeld wandert in die Leiste). Ab iOS 26 klappt die Leiste beim Rollen nach unten ein.
 /// Der Zähler ungelesener Mitteilungen steht als Plakette am Postfach; erneutes Antippen von „Plan“ führt zu heute
 /// zurück. Profil und Einstellungen als Blatt (Avatar oben rechts in jedem Reiter).
@@ -151,17 +159,22 @@ struct AppTabView: View {
                 MitteilungenView()
             }
             .badge(zustand.ungelesen)
+            Tab("Schule", systemImage: "square.grid.2x2", value: AppReiter.schule) {
+                SchuleView()
+            }
             Tab("Suche", systemImage: "magnifyingglass", value: AppReiter.suche, role: .search) {
                 SucheView()
             }
         }
         .tabLeisteEinklappbar()
         .tint(Farben.akzent)
+        .environment(\.kartendarstellung, zustand.darstellung)
         .sensoryFeedback(.selection, trigger: zustand.reiter)
         .sheet(isPresented: $zustand.mehrOffen) {
             MehrView()
                 .environmentObject(zustand)
                 .environmentObject(favoriten)
+                .environment(\.kartendarstellung, zustand.darstellung)
         }
     }
 }

@@ -97,7 +97,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
     <Paper variant="outlined" sx={{ overflow: 'hidden' }}><Stack direction="row" alignItems="center" gap={1} sx={{ px: 2.5, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>{rechts}</Stack><Box sx={{ p: 2.5 }}>{kinder}</Box></Paper>
   );
   const zeitFeld = (label: string, k: 'einladungBis' | 'anmeldungVon' | 'anmeldungBis', hilfe?: string) => (
-    <DatumZeitFeld label={label} wert={f[k] ?? ''} onWert={v => set({ [k]: v } as Partial<typeof f>)} hilfe={hilfe} />
+    <DatumZeitFeld label={label} wert={f[k] ?? ''} onWert={v => set({ [k]: v } as Partial<typeof f>)} hilfe={hilfe} breite="100%" />
   );
   const phasen = [
     f.sichtbar && f.ankuendigen ? ['termin', 'Angekündigt', 'sobald freigegeben'] : null,
@@ -151,11 +151,11 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
           }}>Zeitblock</Button>)}
           {karte('Ankündigung, Einladungen und Anmeldung', (
             <Stack gap={2}>
-              <Stack direction="row" gap={2} flexWrap="wrap">
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(232px, 1fr))', gap: 2, alignItems: 'start' }}>
                 {zeitFeld('Einladungen der Lehrkräfte bis', 'einladungBis', 'Leer = bis zum Ende der Anmeldung.')}
                 {zeitFeld('Anmeldung für Eltern ab', 'anmeldungVon')}
                 {zeitFeld('Anmeldung für Eltern bis', 'anmeldungBis')}
-              </Stack>
+              </Box>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5 }}>
                 {schalter('sichtbar', <><b>Freigegeben</b> – für Lehrkräfte und Familien sichtbar (Startseite und Menü)</>)}
                 {schalter('ankuendigen', <>Schon vor der Anmeldung <b>ankündigen</b> (Datum, Zeit, Ort, Anmeldebeginn)</>)}

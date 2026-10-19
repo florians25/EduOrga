@@ -15,7 +15,7 @@ enum Kachelspeicher {
 // MARK: - Planmodell
 
 /// Lädt Wochenpläne (eigener Plan oder gewählte Klasse, Lehrkraft bzw. Raum) und bereitet Tage für die Zeitachse,
-/// die Wochenleiste und die Wochenmatrix auf.
+/// die Wochenleiste und das Wochenraster auf.
 @MainActor
 final class Planmodell: ObservableObject {
     /// Zählt bei jeder Änderung hoch (geladene Woche, anderer Plan) – Ansichten zeichnen neu.

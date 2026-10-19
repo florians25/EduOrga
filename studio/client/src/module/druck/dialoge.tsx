@@ -1,10 +1,11 @@
 // Dialoge des Druckmoduls: Aushang (HTML/ZIP) und Kalender der Lehrkräfte (iCalendar).
-import { Field, Select } from '@fluentui/react-components';
+import { Field } from '@fluentui/react-components';
 import { useState } from 'react';
 import { api } from '@/api/client';
 import { vergleich } from '@/kern/hilfen';
 import { dialog, dialogZeigen, StandardDialog } from '@/komponenten/dialoge';
 import { DatumFeld } from '@/komponenten/eingaben';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 import { direktLaden, druckUrl, heute, imTab, plusTage, type Auswahl } from './kern';
 
 export async function infoStundenplan(): Promise<void> {
@@ -27,10 +28,8 @@ export async function iCalendar(): Promise<void> {
         beiKnopf={(x) => schliessen(x ? w : null)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Field label="Lehrkraft">
-            <Select value={w.lehrer} onChange={(_, d) => setW({ ...w, lehrer: d.value })}>
-              <option value="">Alle Lehrkräfte (ZIP-Datei)</option>
-              {lehrer.map((l) => <option key={l.id} value={l.id}>{l.l ? `${l.k} – ${l.l}` : l.k}</option>)}
-            </Select>
+            <SuchAuswahl ariaLabel="Lehrkraft" platzhalter="Lehrkraft suchen …" wert={w.lehrer || '_alle'} beiWahl={(x) => setW({ ...w, lehrer: x === '_alle' ? '' : x })}
+              optionen={[{ wert: '_alle', kurz: 'alle', text: 'Alle Lehrkräfte (ZIP-Datei)' }, ...lehrer.map((l) => ({ wert: String(l.id), kurz: l.k, text: l.l ? `${l.k} – ${l.l}` : l.k }))]} />
           </Field>
           <Field label="Von"><DatumFeld size="medium" wert={w.von} beiAenderung={(datum) => setW({ ...w, von: datum })} /></Field>
           <Field label="Bis" hint="Stundenplan der Lehrkraft mit Vertretungen als .ics-Datei zum Import in Kalenderprogramme.">

@@ -55,6 +55,9 @@ public sealed class Arbeitsdokument
     public string? Speicherfehler { get; private set; }
     /// <summary>Fehlgeschlagene Speicherversuche in Folge (für die Wartezeit bis zum nächsten Versuch).</summary>
     public int Fehlversuche { get; private set; }
+    /// <summary>Erfolgreiche Speichervorgänge seit dem Öffnen (Diagnose, Tests).</summary>
+    public long Speichervorgaenge => Interlocked.Read(ref _speichervorgaenge);
+    private long _speichervorgaenge;
     /// <summary>Bereich der letzten Änderung (<see cref="AenderungsArt"/>), z. B. „Stammdaten“ – für gezielte Aktualisierung der Fenster.</summary>
     public string LetzterBereich { get; private set; } = "";
     public bool IstGeaendert => Dokument.IstGeaendert;
@@ -191,6 +194,7 @@ public sealed class Arbeitsdokument
                 throw;
             }
             Speichert = false;
+            Interlocked.Increment(ref _speichervorgaenge);
             Fehlversuche = 0;
             Speicherfehler = null;
             Gespeichert = DateTime.Now;

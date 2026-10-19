@@ -401,20 +401,35 @@ Mit dem Datum wechselt automatisch die gültige Periode.
 
 *Vertretungsplanung → Tagesplanung* ist der Arbeitsplatz für den Planungstag:
 
-- **Tageskopf:** Tag blättern (auch **Strg+Bild↑ / Strg+Bild↓**), Heute, Datum wählen, Wochentyp und eine Kurzübersicht
-  (offene Vertretungen, Abwesenheiten, Entfälle, Kollisionen, Tagestexte). **Abwesenheit erfassen** legt eine
-  Abwesenheit für eine Lehrkraft, Klasse oder einen Raum direkt an; die Verweise *Abwesenheiten* und *Kalender* führen
-  zu den eigenen Seiten (Wochenübersicht, Tagestexte, Kalendertag, alle Abwesenheiten).
+- **Tageskopf:** Tag blättern (auch **Strg+Bild↑ / Strg+Bild↓**, eine Woche mit **Strg+Umschalt+Bild↑ /
+  Strg+Umschalt+Bild↓**), Heute, Datum wählen, Wochentyp, der Umschalter **Tag | Woche** für die ganze Seite, der
+  **Wochenstreifen** (Mo–Fr bzw. die Tage des Zeitrasters mit der Zahl der offenen Vertretungen je Tag; ein Klick wechselt
+  zu diesem Tag, unterrichtsfreie Tage sind gekennzeichnet) und eine Kurzübersicht (offene Vertretungen, Abwesenheiten,
+  Entfälle, Kollisionen, Tagestexte). **Abwesenheit** erfasst eine Abwesenheit für eine Lehrkraft, Klasse oder einen Raum
+  direkt und führt zu den Seiten *Alle Abwesenheiten* (Strg+M) und *Kalender*; auf breiten Bildschirmen stehen beide
+  zusätzlich als Verweise im Kopf.
 - **Vertretungen:** Std., Klasse, Fach, Lehrkraft, Vertretung, Raum und Art; offene Stunden tragen die Plakette
   **Offen**. Sichtbar sind *Vorschlag*, *Nächste offene* (F3), *Entfall* (-) und *Ohne Lehrkraft* (+); **Filter**
   enthält *Nur offene*, *Nur Kollisionen*, *Veranstaltungen zusammenfassen*, Ansicht, Klasse bzw. Lehrkraft und
   Zeitraum; im Menü **…** stehen Zurücksetzen (Entf), Raum zuordnen, Teilen, Vormerken, Fixieren, Nicht drucken,
   Automatische Vertretung, Neu berechnen, Löschen und die Darstellung (auf Wunsch alle Spalten der Listenansicht).
+  Im Wochenmodus (bzw. Zeitraum *Woche*) zeigt die Liste die ganze Woche, gegliedert durch Tageszeilen wie
+  „Mo 02.11.“ mit der Zahl der offenen Vertretungen; der Planungstag ist markiert. Ein Klick auf eine Tageszeile oder
+  eine Vertretung eines anderen Tages macht diesen Tag zum Planungstag.
 - **Vertretungsvorschlag** zur gewählten Zeile: zuerst die fünf besten Lehrkräfte, *Alle anzeigen* klappt den Rest auf;
   Reiter Betreuungen, Räume und Vorziehungen. Schalter wie *Stundenblock*, *Dauervertretung* oder *Danach nächste
   offene* stehen unter **Optionen**.
-- **Tagespläne** der Klasse und der Lehrkraft der gewählten Vertretung, als Tagesansicht (*Optionen → Nur Planungstag*
-  schaltet auf die Woche um); Verlegen und Tauschen per Drag & Drop wie in den Tagesplänen.
+- **Pläne** der Klasse und der Lehrkraft der gewählten Vertretung, Verlegen und Tauschen per Drag & Drop wie in den
+  Tagesplänen. Jeder Plan hat im Kopf den Umschalter **Tag | Woche** (je Benutzer im Browser gemerkt; der Umschalter im
+  Tageskopf stellt beide Pläne und die Liste gemeinsam um). In der Wochenansicht ist der Planungstag mit einer Linie in
+  der Markenfarbe und einer hellen Fläche hervorgehoben, die Spaltenköpfe zeigen die offenen Stunden je Tag. Ein Klick
+  auf eine Stunde oder den Kopf eines anderen Tages wechselt dorthin (Tageskopf, Liste und Vorschlag folgen; eine offene
+  Stunde wird als Vertretung gewählt). Ein Klick auf eine Stunde im Klassenplan zeigt im anderen Plan deren Lehrkraft,
+  ein Klick im Lehrkräfteplan die Klasse; die Wahl einer Vertretung stellt beide Pläne ein.
+- **Aufteilung:** Zeigt ein Plan die Woche, stehen die beiden Pläne untereinander in einer breiteren rechten Spalte.
+  Auf niedrigen Bildschirmen (etwa 1366×768) werden die Stunden einzeilig (Fach und Raum, Einzelheiten im Tooltip),
+  damit die ganze Woche sichtbar bleibt. **Vergrößern** (⤢ im Plankopf) zeigt einen Plan über die ganze Fläche; Esc
+  oder der Knopf stellen die Aufteilung wieder her.
 
 ### Kalender und Nachrichten zum Tag
 

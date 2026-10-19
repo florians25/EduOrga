@@ -150,7 +150,7 @@ enum Statuslehre {
     /// Plakette „Online“.
     static let online = Statusmerkmal(text: "Online", farbe: Farben.akzent, flaeche: Farben.primaerFlaeche, symbol: "video.fill")
 
-    /// Farbe eines Abschnitts in der Belegungsleiste und der Wochenmatrix: Status vor Fachfarbe.
+    /// Farbe eines Abschnitts in der Belegungsleiste: Status vor Fachfarbe.
     static func leistenfarbe(_ k: Kachel) -> Color {
         switch k.art {
         case .entfall: return Farben.entfall
