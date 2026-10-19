@@ -66,7 +66,7 @@ public sealed class UntPlanWebVerbindung
         anfrage.Headers.Add("Cookie", $"{WebCookie}={sitzung}");
         HttpResponseMessage antwort;
         try { antwort = await _http.SendAsync(anfrage, c.RequestAborted); }
-        catch (HttpRequestException ex) { throw new UntPlanWebFehler(502, $"UntPlanWeb ist nicht erreichbar ({ex.Message})."); }
+        catch (HttpRequestException ex) { throw new UntPlanWebFehler(502, $"EduOrga Web ist nicht erreichbar ({ex.Message})."); }
         using (antwort)
         {
             CookieUebernehmen(c, antwort, true);
@@ -74,6 +74,42 @@ public sealed class UntPlanWebVerbindung
             if (!antwort.IsSuccessStatusCode) throw new UntPlanWebFehler((int)antwort.StatusCode, "Der Anhang ist nicht (mehr) vorhanden.");
             var cd = antwort.Content.Headers.ContentDisposition;
             return (await antwort.Content.ReadAsByteArrayAsync(c.RequestAborted), (cd?.FileNameStar ?? cd?.FileName)?.Trim('"'));
+        }
+    }
+
+    /// <summary>Antwort von EduOrga Web unverändert (Status, Inhaltstyp, Dateiname, Inhalt) – für die Durchreichung an die Oberfläche,
+    /// auch für PDF-Dateien. Ohne Anmeldung bzw. bei 401 folgt <see cref="NichtAngemeldetException"/>; Fehler (4xx/5xx) als
+    /// <see cref="UntPlanWebFehler"/> mit der Meldung von EduOrga Web.</summary>
+    public async Task<(int Status, string Typ, string? Name, byte[] Inhalt)> RohAsync(HttpContext c, HttpMethod methode, string pfad, string? json)
+    {
+        var sitzung = Sitzung(c) ?? throw new NichtAngemeldetException();
+        using var anfrage = new HttpRequestMessage(methode, pfad.TrimStart('/'));
+        anfrage.Headers.Add("X-UntPlanWeb", "1");
+        anfrage.Headers.Add("Cookie", $"{WebCookie}={sitzung}");
+        if (json != null) anfrage.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        HttpResponseMessage antwort;
+        try { antwort = await _http.SendAsync(anfrage, c.RequestAborted); }
+        catch (HttpRequestException ex) { throw new UntPlanWebFehler(502, $"EduOrga Web ist nicht erreichbar ({ex.Message})."); }
+        catch (TaskCanceledException) when (!c.RequestAborted.IsCancellationRequested) { throw new UntPlanWebFehler(504, "EduOrga Web antwortet nicht."); }
+        using (antwort)
+        {
+            CookieUebernehmen(c, antwort, true);
+            var inhalt = await antwort.Content.ReadAsByteArrayAsync(c.RequestAborted);
+            var typ = antwort.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+            if (antwort.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                _speicher?.SitzungUngueltig(sitzung);
+                SitzungLoeschen(c);
+                throw new NichtAngemeldetException();
+            }
+            if (!antwort.IsSuccessStatusCode)
+            {
+                string? meldung = null;
+                try { meldung = JsonNode.Parse(inhalt) is JsonObject o && o["fehler"] is JsonValue f ? f.GetValue<string>() : null; } catch (JsonException) { }
+                throw new UntPlanWebFehler((int)antwort.StatusCode, meldung ?? $"EduOrga Web antwortet mit HTTP {(int)antwort.StatusCode}.");
+            }
+            var cd = antwort.Content.Headers.ContentDisposition;
+            return ((int)antwort.StatusCode, typ, (cd?.FileNameStar ?? cd?.FileName)?.Trim('"'), inhalt);
         }
     }
 
@@ -91,8 +127,8 @@ public sealed class UntPlanWebVerbindung
 
         HttpResponseMessage antwort;
         try { antwort = await _http.SendAsync(anfrage, c.RequestAborted); }
-        catch (HttpRequestException ex) { throw new UntPlanWebFehler(502, $"UntPlanWeb ist nicht erreichbar ({ex.Message})."); }
-        catch (TaskCanceledException) when (!c.RequestAborted.IsCancellationRequested) { throw new UntPlanWebFehler(504, "UntPlanWeb antwortet nicht."); }
+        catch (HttpRequestException ex) { throw new UntPlanWebFehler(502, $"EduOrga Web ist nicht erreichbar ({ex.Message})."); }
+        catch (TaskCanceledException) when (!c.RequestAborted.IsCancellationRequested) { throw new UntPlanWebFehler(504, "EduOrga Web antwortet nicht."); }
 
         using (antwort)
         {
@@ -108,7 +144,7 @@ public sealed class UntPlanWebVerbindung
             }
             if (!antwort.IsSuccessStatusCode)
             {
-                var meldung = json is JsonObject o && o["fehler"] is JsonValue f ? f.GetValue<string>() : $"UntPlanWeb antwortet mit HTTP {(int)antwort.StatusCode}.";
+                var meldung = json is JsonObject o && o["fehler"] is JsonValue f ? f.GetValue<string>() : $"EduOrga Web antwortet mit HTTP {(int)antwort.StatusCode}.";
                 throw new UntPlanWebFehler((int)antwort.StatusCode, meldung);
             }
             return json;
@@ -118,7 +154,7 @@ public sealed class UntPlanWebVerbindung
     public async Task<T> HolenAsync<T>(HttpContext c, string pfad)
     {
         var json = await AufrufAsync(c, HttpMethod.Get, pfad);
-        return json.Deserialize<T>(Json) ?? throw new UntPlanWebFehler(502, "Leere Antwort von UntPlanWeb.");
+        return json.Deserialize<T>(Json) ?? throw new UntPlanWebFehler(502, "Leere Antwort von EduOrga Web.");
     }
 
     public Task<JsonNode?> GetAsync(HttpContext c, string pfad) => AufrufAsync(c, HttpMethod.Get, pfad);

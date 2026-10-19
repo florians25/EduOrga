@@ -1,5 +1,5 @@
 // EduOrga Web: Verbindung, Datenaustausch (Übertragen/Übernehmen mit Fortschritt), Anfangsdatum, automatischer Abgleich.
-import { Button, Checkbox, Input, Link, MessageBar, MessageBarBody, MessageBarTitle, ProgressBar, Select, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Button, Checkbox, Input, Link, MessageBar, MessageBarBody, MessageBarTitle, ProgressBar, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { useEffect, useRef, useState } from 'react';
 import { api, dateiHerunterladen } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
@@ -11,6 +11,7 @@ import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import { DatumFeld } from '@/komponenten/eingaben';
 import { einstellungenDialog, heute, iso, sachlich, verfolgen, type Auftrag } from './kern';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 interface Teil { teil: string; titel: string; hinweis: string; datum: string; zuletzt: string; export: boolean }
 interface Abgleich { aktiv: boolean; minuten: number; vertretungen: boolean; rueckmeldungen: boolean; zuletzt?: string | null; ergebnis?: string }
@@ -198,11 +199,9 @@ export default function UntPlanWeb() {
             <div className={s.kopf}><h3 className={s.h3}>Datenaustausch</h3></div>
             <div className={s.anfang}>
               <Checkbox label="Anfangsdatum für die mit * markierten Bereiche" disabled={gesperrt} checked={stand.anfangsdatumAktiv} onChange={(_, d) => void anfangSetzen(!!d.checked)} />
-              <Select size="small" style={{ width: 260 }} aria-label="Vorgabe für das Anfangsdatum" title="Anfangsdatum aus Vorgaben wählen (Tagesdatum, nächster Montag, Schuljahresbeginn, Periodenbeginn)"
-                disabled={gesperrt || !stand.anfangsdatumAktiv} value="" onChange={(_, d) => { if (d.value) void anfangSetzen(stand.anfangsdatumAktiv, d.value); }}>
-                <option value="">Vorgabe wählen</option>
-                {stand.datumVorgaben.map((v) => <option key={v.text} value={iso(v.datum)}>{`${v.text} (${new Date(`${iso(v.datum)}T12:00:00`).toLocaleDateString('de-DE')})`}</option>)}
-              </Select>
+              <SuchAuswahl size="small" breite={260} ariaLabel="Vorgabe für das Anfangsdatum" title="Anfangsdatum aus Vorgaben wählen (Tagesdatum, nächster Montag, Schuljahresbeginn, Periodenbeginn)"
+                disabled={gesperrt || !stand.anfangsdatumAktiv} wert="" platzhalter="Vorgabe wählen" beiWahl={(w) => { if (w) void anfangSetzen(stand.anfangsdatumAktiv, w); }}
+                optionen={stand.datumVorgaben.map((v) => ({ wert: iso(v.datum), text: `${v.text} (${new Date(`${iso(v.datum)}T12:00:00`).toLocaleDateString('de-DE')})` }))} />
               <DatumFeld size="small" aria-label="Anfangsdatum" disabled={gesperrt || !stand.anfangsdatumAktiv} wert={iso(stand.anfangsdatum)} beiAenderung={(datum) => { if (datum) void anfangSetzen(stand.anfangsdatumAktiv, datum); }} />
             </div>
             {status ? (

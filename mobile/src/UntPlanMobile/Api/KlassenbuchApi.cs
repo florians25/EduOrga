@@ -36,7 +36,7 @@ public static class KlassenbuchApi
     private static string Stunde(Schluessel k) => $"datum={Iso(k.Datum)}&stunde={k.Stunde}&unterricht={k.Unterricht}{(k.Lehrer.Length > 0 ? "&lehrer=" + Uri.EscapeDataString(k.Lehrer) : "")}{(k.Einzelstunde is int e ? $"&einzelstunde={e}" : "")}";
 
     /// <summary>Antwort auf das frühere Umschalten „Findet online statt“ (ältere Apps).</summary>
-    public const string OnlineNurStudio = "„Findet online statt“ wird in UntPlan Studio festgelegt.";
+    public const string OnlineNurStudio = "„Findet online statt“ wird in EduOrga Studio festgelegt.";
 
     private static IResult Fehler(string meldung, int status = 400) => Results.Json(new { ok = false, error = meldung }, statusCode: status);
 

@@ -27,6 +27,12 @@ public sealed record Konto(Sitzungsbenutzer Benutzer, string Schule, Elemente El
     public int? PlanWochenZurueck { get; init; }
     public int? PlanWochenVor { get; init; }
 
+    /// <summary>Benutzer aus /api/app/sitzung, wie EduOrga Web ihn liefert (Rechte, Kinder, Klassen, Mitteilungsrechte …).</summary>
+    public JsonObject? BenutzerRoh { get; init; }
+
+    /// <summary>Darstellung der Stundenkarten (schulweit, Administration von EduOrga Web); null bei älteren Servern.</summary>
+    public JsonNode? Darstellung { get; init; }
+
     /// <summary>Voller Name zum eigenen Kürzel (Lehrkraft), sonst der Anzeigename.</summary>
     public string Name =>
         !IstSchueler && Elemente.Lehrer.FirstOrDefault(l => string.Equals(l.Kurz, Kuerzel, StringComparison.OrdinalIgnoreCase)) is { } l && l.Name.Length > 0
@@ -66,6 +72,8 @@ public sealed class Kontodienst
         {
             PlanWochenZurueck = Wochenzahl(s, b, "planWochenZurueck"),
             PlanWochenVor = Wochenzahl(s, b, "planWochenVor"),
+            BenutzerRoh = (JsonObject)b.DeepClone(),
+            Darstellung = s["darstellung"] is JsonObject d ? d.DeepClone() : null,
         };
         _cache.Set(Schluessel(sitzung), k, TimeSpan.FromSeconds(30));
         return k;

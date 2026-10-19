@@ -3,7 +3,9 @@
 import { lazy } from 'react';
 import { seiteOeffnen, type Params } from '@/kern/befehle';
 import { zustand } from '@/kern/zustand';
+import { kopfleistenElement } from '@/shell/kopfleiste-elemente';
 import type { StudioModul } from '../typen';
+import PeriodenWahl, { neuePeriodeDialog } from './Periodenwahl';
 
 const oeffnen = (typ: string) => (p?: Params) => (zustand().dokument ? seiteOeffnen(typ, p && Object.keys(p).length ? p : undefined) : null);
 
@@ -22,16 +24,22 @@ const modul: StudioModul = {
     'einstellungen.ferien': oeffnen('einstellungen.ferien'),
     'einstellungen.perioden': oeffnen('einstellungen.perioden'),
     'einstellungen.ugruppen': oeffnen('einstellungen.ugruppen'),
+    'einstellungen.periodeNeu': () => (zustand().dokument ? neuePeriodeDialog() : null),
   },
   eintraege: [
     { id: 'start.einstellungen', text: 'Schuldaten', ansicht: { typ: 'einstellungen.schule' }, braucht: 'dokument', gruppe: 'Schule', hinweis: 'Schule, Schuljahr, Soll und Ist, Vertretungsplanung' },
     { id: 'start.perioden', text: 'Perioden', ansicht: { typ: 'einstellungen.perioden' }, braucht: 'dokument', gruppe: 'Schule' },
+    { id: 'einstellungen.periodeNeu', text: 'Neue Periode ab …', befehl: 'einstellungen.periodeNeu', braucht: 'schreiben', gruppe: 'Schule', hinweis: 'Periode ab einem Datum als Kopie der aktiven anlegen und gleich aktiv setzen' },
     { id: 'start.ferien', text: 'Kalender und Ferien', ansicht: { typ: 'einstellungen.ferien' }, braucht: 'dokument', gruppe: 'Schule' },
     { id: 'eingabe.ugruppen', text: 'Unterrichtsgruppen', ansicht: { typ: 'einstellungen.ugruppen' }, braucht: 'dokument', gruppe: 'Unterricht' },
     { id: 'eingabe.zeitraster', text: 'Zeitraster', ansicht: { typ: 'einstellungen.zeitraster' }, braucht: 'dokument', gruppe: 'Schule' },
     { id: 'eingabe.ferien', text: 'Ferien', ansicht: { typ: 'einstellungen.ferien' }, braucht: 'dokument', gruppe: 'Schule' },
     { id: 'eingabe.schuljahr', text: 'Schuljahr', ansicht: { typ: 'einstellungen.schule', p: { seite: 'Allgemein' } }, braucht: 'dokument', gruppe: 'Schule' },
   ],
+  start() {
+    // Periodenwechsel in der Kopfleiste (nur Stundenplanung; in der Vertretungsplanung gilt die Periode des Planungstags)
+    kopfleistenElement({ id: 'einstellungen.periode', komponente: PeriodenWahl, modus: 'stundenplan', ort: 'mitte' });
+  },
 };
 
 export default modul;

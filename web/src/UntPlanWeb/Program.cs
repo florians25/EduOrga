@@ -64,6 +64,7 @@ public class Program
         builder.Services.AddSingleton<Monitordienst>();
         builder.Services.AddSingleton<Verwaltungsdienst>();
         builder.Services.AddSingleton<Klassenbuchverwaltung>();
+        builder.Services.AddSingleton<Abwesenheitsmeldungen>();
         builder.Services.AddSingleton<Entschuldigungsdienst>();
         builder.Services.AddSingleton<Sitzplandienst>();
         builder.Services.AddHttpClient("update");
@@ -196,6 +197,7 @@ public class Program
         EntschuldigungApi.Abbilden(app);
         UnterrichtKlassenApi.Abbilden(app);
         WartungApi.Abbilden(app);
+        AbwesenheitsmeldungApi.Abbilden(app);
         app.MapGet("/monitor/{token}", (string token, IWebHostEnvironment env) => env.WebRootFileProvider.GetFileInfo("monitor.html") is { Exists: true, PhysicalPath: { } pfad }
             ? Results.File(pfad, "text/html; charset=utf-8") : OhneOberflaeche());
         // Oberfläche (web/client, React) noch nicht gebaut: kurzer Hinweis statt 404 – sonst liefert UseDefaultFiles wwwroot/index.html

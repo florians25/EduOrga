@@ -720,6 +720,18 @@ public sealed class Db
         ALTER TABLE ressourcen ADD COLUMN standort VARCHAR(100) NOT NULL DEFAULT '';
         ALTER TABLE ressourcenarten ADD COLUMN symbol VARCHAR(40) NOT NULL DEFAULT '';
         """),
+
+        // 32: Abwesenheitsmeldungen von Eltern bzw. Schüler*innen (Klassenbuch: „Eltern melden → Klassenleitung bestätigt“)
+        Nr(32, """
+        CREATE TABLE abwesenheitsmeldungen (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, schueler_id INTEGER NOT NULL, klasse VARCHAR(40) NOT NULL, von VARCHAR(10) NOT NULL, bis VARCHAR(10) NOT NULL,
+            grund VARCHAR(20) NOT NULL DEFAULT '', text VARCHAR(500) NOT NULL DEFAULT '', status VARCHAR(20) NOT NULL DEFAULT 'gemeldet',
+            gemeldet_von VARCHAR(200) NOT NULL DEFAULT '', gemeldet VARCHAR(16) NOT NULL, benutzer_id INTEGER,
+            bearbeitet_von VARCHAR(200) NOT NULL DEFAULT '', bearbeitet VARCHAR(16) NOT NULL DEFAULT '', antwort VARCHAR(500) NOT NULL DEFAULT ''
+        );
+        CREATE INDEX ix_abwesenheitsmeldungen_klasse ON abwesenheitsmeldungen (klasse, status);
+        CREATE INDEX ix_abwesenheitsmeldungen_schueler ON abwesenheitsmeldungen (schueler_id, von);
+        """),
     };
 
 

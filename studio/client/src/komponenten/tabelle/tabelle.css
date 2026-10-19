@@ -48,6 +48,9 @@
 .tb-haken.an { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
 .tb-haken.an::after { content: ''; width: 7px; height: 4px; border-left: 2px solid var(--colorNeutralForegroundOnBrand); border-bottom: 2px solid var(--colorNeutralForegroundOnBrand); transform: translateY(-1px) rotate(-45deg); }
 .tb-farbpunkt { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--colorNeutralStroke1); flex-shrink: 0; }
+.tb-farbpunkt[title] { width: 16px; height: 16px; cursor: pointer; }
+.tb-farbpunkt[title]:hover { box-shadow: 0 0 0 1px var(--colorNeutralForeground2); }
+.tb-farbpunkt.leer { border-style: dashed; border-color: var(--colorNeutralStroke1); background: transparent; }
 .tb-leer { position: absolute; top: 56px; left: 0; right: 0; text-align: center; color: var(--colorNeutralForeground3); pointer-events: none; }
 .tb-editor {
   position: absolute; z-index: 4; box-sizing: border-box; border: 2px solid var(--colorBrandStroke1); padding: 0 6px;

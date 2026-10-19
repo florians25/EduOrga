@@ -5,7 +5,7 @@ using UntPlan.Core.Austausch;
 using UntPlan.Core.Model;
 using UntPlan.Core.Planung;
 using UntPlan.Core.Vertretungsplanung;
-using Farbe = UntPlanStudio.Dienste.PdfSeite.Farbe;
+using UntPlan.Druck;
 
 namespace UntPlanStudio.Dienste;
 
@@ -34,7 +34,7 @@ public sealed class AushangLayout
     public string Ueberschrift { get; set; } = "";
     public bool AbwesendeNichtDrucken { get; set; }
     public bool AuchElementeOhneVertretung { get; set; }
-    public bool UeberschriftJeElement { get; set; }
+    public bool UeberschriftJeElement { get; set; } = true;
     public bool EineSeiteJeElement { get; set; }
     public bool ElementueberschriftKomprimiert { get; set; }
     public string Gruppierung { get; set; } = "Element";
@@ -86,29 +86,29 @@ public sealed class AushangFeld
 public static class VertretungsplanPdf
 {
     public sealed record Zeile(string Element, string Stunde, int? StundeZahl, string Partner, string Abwesend, bool Durchgestrichen, string Fach, string StattFach,
-        string Raum, string StattRaum, string Bemerkung, string Art, string VtrNr);
+        string Raum, string StattRaum, string Bemerkung, string Art, string VtrNr, bool Entfall = false);
 
     public sealed record Tag(DateOnly Datum, List<string> Nachrichten, List<(string Titel, string Text)> Kaesten, List<Zeile> Zeilen);
 
     public static readonly (string Schluessel, float Anteil, bool Standard)[] AlleFelder =
     {
-        ("Element", 0.13f, true), ("Stunde", 0.08f, true), ("Partner", 0.11f, true), ("Abwesend", 0.12f, true), ("Fach", 0.11f, true),
-        ("Raum", 0.10f, true), ("Bemerkung", 0.35f, true), ("Art", 0.12f, false), ("StattFach", 0.09f, false), ("StattRaum", 0.09f, false), ("VtrNr", 0.07f, false),
+        ("Stunde", 0.07f, true), ("Element", 0.11f, true), ("Fach", 0.09f, true), ("Abwesend", 0.11f, true), ("Partner", 0.11f, true),
+        ("Raum", 0.09f, true), ("Art", 0.12f, true), ("Bemerkung", 0.30f, true), ("StattFach", 0.09f, false), ("StattRaum", 0.09f, false), ("VtrNr", 0.06f, false),
     };
 
     public static string StandardUeberschrift(string schluessel, bool lehrer) => schluessel switch
     {
-        "Element" => lehrer ? "Vertreter" : "Klasse(n)",
-        "Stunde" => "Stunde",
-        "Partner" => lehrer ? "Klasse(n)" : "Vertreter",
-        "Abwesend" => "Abwesend",
+        "Element" => lehrer ? "Lehrkraft" : "Klasse",
+        "Stunde" => "Std.",
+        "Partner" => lehrer ? "Klasse" : "Vertretung",
+        "Abwesend" => lehrer ? "Vertretung für" : "Lehrkraft",
         "Fach" => "Fach",
         "Raum" => "Raum",
-        "Bemerkung" => "Bemerkungen\nund Hinweise",
+        "Bemerkung" => "Bemerkung",
         "Art" => "Art",
         "StattFach" => "statt Fach",
         "StattRaum" => "statt Raum",
-        "VtrNr" => "Vtr-Nr.",
+        "VtrNr" => "Nr.",
         _ => schluessel,
     };
 
@@ -155,136 +155,49 @@ public static class VertretungsplanPdf
         _ => x.Element,
     };
 
-    public static byte[] Erzeugen(Dokument doc, DateOnly von, DateOnly bis, bool lehrer, AushangLayout e)
+    /// <param name="gross">Aushang am Schwarzen Brett: mindestens 14 pt im Querformat.</param>
+    public static byte[] Erzeugen(Dokument doc, DateOnly von, DateOnly bis, bool lehrer, AushangLayout e, string? ersteller = null, bool gross = false)
     {
         var d = doc.Daten;
         var tage = Tage(doc, von, bis, lehrer, e);
-        var pdf = new PdfDokument { Titel = d.Einstellungen.Vertretungsplantitel };
-        if (tage.Count == 0)
-        {
-            var s0 = pdf.NeueSeite(e.Querformat);
-            s0.Text(40, 80, 12, "Im gewählten Zeitraum gibt es keinen Unterrichtstag.");
-            return pdf.Erzeugen();
-        }
-        var g = Math.Clamp(e.Schriftgroesse, 6, 20);
         var felder = Felder(e).Where(f => f.Drucken).ToList();
         if (felder.Count == 0) felder = Felder(e).Take(1).ToList();
-        var seitenGesamt = 0;
-        for (var ti = 0; ti < tage.Count; ti++)
+        var titel = e.Ueberschrift.Length > 0 ? e.Ueberschrift : $"{d.Einstellungen.Vertretungsplantitel} {(lehrer ? "Lehrkräfte" : "Klassen")}";
+        var kopf = ListenPdf.Kopf(d, titel, tage.Count == 0 ? $"{Format.Datum(von)} – {Format.Datum(bis)}" : "", ersteller);
+        if (lehrer) kopf.Vermerk = "Nur für den Dienstgebrauch";
+        var o = new Aushangoptionen
         {
-            var tag = tage[ti];
-            var zeileNr = 0;
-            var anfang = true;
-            do
+            Titel = titel,
+            Schriftgroesse = gross ? Math.Max(14, e.Schriftgroesse) : Math.Clamp(e.Schriftgroesse, 6, 20),
+            Quer = e.Querformat || gross,
+            Raster = e.Raster,
+            Gruppenkopf = e.UeberschriftJeElement,
+            EineSeiteJeGruppe = e.EineSeiteJeElement,
+            GruppenSpalte = e.Gruppierung switch { "Stunde" => "Stunde", "Vertreter" => "Partner", "Fach" => "Fach", _ => "Element" },
+            GruppeJedeSeite = e.ErsteBeschriftungJedeSeite,
+            EntfallSpalte = lehrer ? "Abwesend" : "Partner",
+            ArtSpalte = "Art",
+        };
+        var spalten = felder.Select(f => new Aushangspalte(f.Schluessel, Ueberschrift(f, lehrer).Replace('\n', ' '), Math.Max(0.02f, f.Anteil),
+            f.Schluessel is "Stunde" or "VtrNr" ? Ausrichtung.Links : null)).ToList();
+        var aushang = tage.Select(t =>
+        {
+            var a = new Aushangtag { Datum = t.Datum };
+            a.Nachrichten.AddRange(t.Nachrichten.Select(TagestextHtml.ZuText).Where(x => !string.IsNullOrWhiteSpace(x)));
+            a.Angaben.AddRange(t.Kaesten);
+            foreach (var z in t.Zeilen)
             {
-                var s = pdf.NeueSeite(e.Querformat);
-                seitenGesamt++;
-                const float l = 40, o = 32;
-                var b = s.Breite - l - 32;
-                var unten = s.Hoehe - 40;
-                var y = (float)o;
-                var schule = d.Einstellungen.Schulname.ToUpperInvariant();
-                s.Text(l, y + g + 2, g + 2, schule, true);
-                var sj = $"Schuljahr {d.Einstellungen.SchuljahrVon.Year}/{d.Einstellungen.SchuljahrBis.Year}";
-                var sjX = Math.Max(l + b / 2 - PdfDokument.TextBreite(sj, g + 1) / 2, l + PdfDokument.TextBreite(schule, g + 2, true) + 18);
-                s.Text(sjX, y + g + 2, g + 1, sj);
-                s.TextRechts(l + b, y + g + 2, g + 2, $"UntPlan {DateTime.Now.Year}", true);
-                y += (g + 2) * 1.2f + 1.5f;
-                s.Text(l, y + g + 1, g + 1, d.Einstellungen.Adresse);
-                s.TextRechts(l + b, y + g + 1, g + 1, DateTime.Now.ToString("d.M.yyyy  HH:mm"));
-                y += (g + 1) * 1.2f + 1;
-                s.Linie(l, y, l + b, y, 0.6f);
-                y += 12;
-                var wochentag = Planungsdienst.TageLang[((int)tag.Datum.DayOfWeek + 6) % 7];
-                var titelText = e.Ueberschrift.Length > 0 ? e.Ueberschrift : $"{d.Einstellungen.Vertretungsplantitel} {(lehrer ? "Lehrer" : "Klassen")}";
-                s.Text(l, y + g + 6, g + 8, $"{titelText} am:  {tag.Datum:d.M.} / {wochentag}{(anfang ? "" : "  (Fortsetzung)")}", true);
-                y += (g + 8) * 1.2f + 10;
-                var zh = g * 1.2f + 3.5f;
-                if (anfang)
-                {
-                    foreach (var n in tag.Nachrichten)
-                    {
-                        var zeilen = PdfDokument.Umbrechen(TagestextHtml.ZuText(n), b - 6, g + 1);
-                        var h = zeilen.Count * (g + 1) * 1.2f + 6;
-                        s.Flaeche(l, y, b, h, Farbe.Grau(236 / 255f));
-                        for (var i = 0; i < zeilen.Count; i++) s.Text(l + 3, y + 3 + (i + 1) * (g + 1) * 1.2f - 2, g + 1, zeilen[i]);
-                        y += h + 4;
-                    }
-                    foreach (var (kt, kx) in tag.Kaesten)
-                    {
-                        var zeilen = PdfDokument.Umbrechen($"{kt}:  {kx}", b - 12, g + 1);
-                        var h = zeilen.Count * (g + 1) * 1.2f + 7;
-                        s.Rahmen(l, y, b, h, 0.6f);
-                        for (var i = 0; i < zeilen.Count; i++) s.Text(l + 6, y + 4 + (i + 1) * (g + 1) * 1.2f - 2, g + 1, zeilen[i]);
-                        y += h + 4;
-                    }
-                    y += 10;
-                }
-                var summe = felder.Sum(f => Math.Max(0.02f, f.Anteil));
-                var xs = new float[felder.Count + 1];
-                xs[0] = l;
-                for (var i = 0; i < felder.Count; i++) xs[i + 1] = xs[i] + Math.Max(0.02f, felder[i].Anteil) / summe * b;
-                var koepfe = felder.Select(f => PdfDokument.Umbrechen(Ueberschrift(f, lehrer), Math.Max(10, xs[felder.IndexOf(f) + 1] - xs[felder.IndexOf(f)] - 2), g)).ToList();
-                var kopfH = Math.Max(zh, koepfe.Max(k => k.Count) * g * 1.2f) + 4;
-                var tabelleOben = y;
-                s.Flaeche(l, y, b, kopfH, Farbe.Grau(236 / 255f));
-                for (var i = 0; i < koepfe.Count; i++)
-                {
-                    var k = koepfe[i];
-                    for (var j = 0; j < k.Count; j++)
-                    {
-                        var gl = y + kopfH - 3 - (k.Count - 1 - j) * g * 1.2f;
-                        var t = PdfDokument.Kuerzen(k[j], xs[i + 1] - xs[i] - 2, g, i == 0);
-                        if (i == 0) s.Unterstrichen(xs[i] + 1, gl, g, t, true); else s.Text(xs[i] + 1, gl, g, t);
-                    }
-                }
-                y += kopfH;
-                s.Linie(l, y, l + b, y, 0.6f);
-                if (tag.Zeilen.Count == 0) s.Text(l + 2, y + g + 4, g, "Keine Vertretungen.", false, Farbe.Grau(0.4f));
-                var erste = true;
-                while (zeileNr < tag.Zeilen.Count && y + zh <= unten)
-                {
-                    var z = tag.Zeilen[zeileNr];
-                    var gruppenAnfang = zeileNr == 0 || Gruppe(tag.Zeilen[zeileNr - 1], e) != Gruppe(z, e);
-                    if (e.EineSeiteJeElement && gruppenAnfang && !erste) break;
-                    if (e.UeberschriftJeElement && gruppenAnfang)
-                    {
-                        var uh = e.ElementueberschriftKomprimiert ? zh : zh + 4;
-                        if (y + uh + zh > unten) break;
-                        s.TextImKasten(l, y, b, uh, g + 2, Gruppe(z, e), 0, true);
-                        y += uh;
-                        s.Linie(l, y, l + b, y, 0.6f);
-                    }
-                    for (var i = 0; i < felder.Count; i++)
-                    {
-                        var key = felder[i].Schluessel;
-                        var wert = Wert(z, key);
-                        if (key == "Element" && !gruppenAnfang && !(erste && e.ErsteBeschriftungJedeSeite)) wert = "";
-                        var gestrichen = key == "Abwesend" && z.Durchgestrichen;
-                        s.TextImKasten(xs[i], y, xs[i + 1] - xs[i], zh, g, wert, 0, key == "Element", null, 1);
-                        if (gestrichen && wert.Length > 0)
-                        {
-                            var w = Math.Min(PdfDokument.TextBreite(wert, g), xs[i + 1] - xs[i] - 2);
-                            s.Linie(xs[i] + 2, y + zh / 2 + 0.7f, xs[i] + w, y + zh / 2 - 0.7f, 1.1f);
-                        }
-                    }
-                    y += zh;
-                    var gruppenEnde = zeileNr + 1 >= tag.Zeilen.Count || Gruppe(tag.Zeilen[zeileNr + 1], e) != Gruppe(z, e);
-                    s.Linie(l, y, l + b, y, gruppenEnde ? 0.6f : 0.5f, gruppenEnde ? Farbe.Schwarz : Farbe.Grau(205 / 255f));
-                    zeileNr++;
-                    erste = false;
-                }
-                if (e.Raster)
-                {
-                    for (var i = 0; i <= felder.Count; i++) s.Linie(xs[i], tabelleOben, xs[i], y, 0.6f);
-                    s.Linie(l, tabelleOben, l + b, tabelleOben, 0.6f);
-                }
-                s.TextRechts(l + b, unten + 18, Math.Max(7, g - 3), $"Seite {ti + 1}/{tage.Count}");
-                anfang = false;
-                if (seitenGesamt > 500) break;
-            } while (zeileNr < tag.Zeilen.Count);
-        }
-        return pdf.Erzeugen();
+                var zeile = new Aushangzeile { Gruppe = Gruppe(z, e), Entfall = z.Entfall };
+                foreach (var f in AlleFelder) zeile[f.Schluessel] = Wert(z, f.Schluessel);
+                // Bemerkung wiederholt nur die Art (z. B. „Entfall“): weglassen, wenn die Art gedruckt wird
+                if (felder.Any(f => f.Schluessel == "Art") && string.Equals(zeile["Bemerkung"].Trim(), zeile["Art"].Trim(), StringComparison.CurrentCultureIgnoreCase)) zeile["Bemerkung"] = "";
+                if (z.Durchgestrichen) zeile.Gestrichen.Add("Abwesend");
+                if (!z.Entfall && z.Partner is "???") zeile.Fett.Add("Partner");
+                a.Zeilen.Add(zeile);
+            }
+            return a;
+        }).ToList();
+        return Vertretungsaushang.Erzeugen(kopf, aushang, spalten, o);
     }
 
     /// <summary>„Alle Klassen“, „Alle Lehrkräfte außer A, B“ – gilt für jedes gewählte Element, das nicht hinter „außer“ steht.</summary>
@@ -324,14 +237,15 @@ public static class VertretungsplanPdf
             var stunde = z.ArtWert == VertretungsArt.Pausenaufsicht ? $"{z.Stunde}/{z.Stunde + 1}" : StundeText(z.Stunde);
             int? zahl = z.ArtWert == VertretungsArt.Pausenaufsicht ? null : z.Stunde;
             var art = Vertretungsplan.ArtText(z.ArtWert);
+            var entfall = z.ArtWert is VertretungsArt.Entfall or VertretungsArt.Freisetzung or VertretungsArt.BereitschaftEntfaellt;
             var nr = z.Id > 0 ? z.Id.ToString() : "";
             if (e.AbwesendeNichtDrucken) abwesend = "";
             var streichen = e.EntfallslehrerDurchstreichen;
             if (!lehrer)
-                return new Zeile(Klassen(z.Klassen), stunde, zahl, vertreter, abwesend, streichen && abwesend.Length > 0, fach, z.Fach, raum, z.Raum, z.Bemerkung, art, nr);
+                return new Zeile(Klassen(z.Klassen), stunde, zahl, vertreter, abwesend, streichen && abwesend.Length > 0, fach, z.Fach, raum, z.Raum, z.Bemerkung, art, nr, entfall);
             var person = vertreter is "---" or "+" or "+++" or "???" || vertreter.Length == 0 ? z.Lehrer : vertreter;
             var weg = z.Lehrer.Length > 0 && z.Lehrer != person && !e.AbwesendeNichtDrucken ? z.Lehrer : "";
-            return new Zeile(person, stunde, zahl, Klassen(z.Klassen), weg, streichen && weg.Length > 0, fach, z.Fach, raum, z.Raum, z.Bemerkung, art, nr);
+            return new Zeile(person, stunde, zahl, Klassen(z.Klassen), weg, streichen && weg.Length > 0, fach, z.Fach, raum, z.Raum, z.Bemerkung, art, nr, entfall);
         }).ToList();
         var auswahl = lehrer ? e.LehrerAuswahl : e.KlassenAuswahl;
         if (auswahl.Count > 0)

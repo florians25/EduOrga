@@ -35,7 +35,7 @@ public static class MobilApi
                     {
                         ok = true, own = Wochendienst.Eigen(k), isStudent = k.IstSchueler, entities = Wochendienst.Entitaeten(k),
                         lessonTimes = Kachelbau.Stundenzeiten(k.Elemente.Stunden ?? new()), names = Wochendienst.Namen(k), school = k.Schule,
-                        user = Wochendienst.Benutzer(k),
+                        user = Wochendienst.Benutzer(k), darstellung = k.Darstellung,
                     });
                 }
                 case "week":

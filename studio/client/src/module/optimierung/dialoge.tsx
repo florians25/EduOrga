@@ -1,6 +1,6 @@
 // Gewichtung der Optimierungsziele (Regler 0–5 je Abschnitt, Verteilung, Analyse) und Steuerdaten der Optimierung.
 import {
-  Checkbox, Field, Input, Select, Slider, Tab, TabList, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow,
+  Checkbox, Field, Input, Slider, Tab, TabList, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { useEffect, useState } from 'react';
@@ -9,6 +9,7 @@ import { seiteOeffnen } from '@/kern/befehle';
 import { darfSchreiben, zustand } from '@/kern/zustand';
 import { StandardDialog, dialogZeigen } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 const useStile = makeStyles({
   gewichtung: { display: 'grid', gridTemplateColumns: '200px minmax(0, 1fr)', gap: '16px', minHeight: '440px' },
@@ -138,7 +139,7 @@ function Steuerdaten({ strategien, start, schliessen }: { strategien: { wert: st
       <div className={s.formular}>
         <h3 className={s.abschnitt}>Ablauf</h3>
         <span>Verfahren</span>
-        <Select value={o.strategie} onChange={(_, d) => setzen('strategie', d.value)}>{strategien.map((x) => <option key={x.wert} value={x.wert}>{x.text.replace(/^[A-E]\s+/, '')}</option>)}</Select>
+        <SuchAuswahl ariaLabel="Verfahren" wert={String(o.strategie)} beiWahl={(w) => setzen('strategie', w)} optionen={strategien.map((x) => ({ wert: String(x.wert), text: x.text.replace(/^[A-E]\s+/, '') }))} />
         <span>Pläne je Lauf</span>{z('anzahlPlaene', 1, 20, '1 bis 20')}
         <span>Optimierungsschritte je Plan</span>{z('schritte', 1, 9, '1 bis 9')}
         <span>Ähnlichkeit zum bisherigen Plan</span>{z('aehnlichkeit', 0, 4, '0 = beliebig, 4 = sehr ähnlich', o.bedingtFixieren)}

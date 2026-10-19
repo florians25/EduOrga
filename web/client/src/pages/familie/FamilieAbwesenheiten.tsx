@@ -1,5 +1,6 @@
-// Schüler*innen und Erziehungsberechtigte: „Meine Abwesenheiten“ (Zeiträume, aufklappbar mit den Stunden) und „Fehlzeiten“ (je Stunde),
-// Zeitraum, Kind, Status, Export (PDF, CSV) und Entschuldigungsschreiben.
+// Schüler*innen und Erziehungsberechtigte: „Abwesenheit melden“ (Meldung an die Klassenleitung mit Status, siehe Meldungen.tsx),
+// „Meine Abwesenheiten“ (Zeiträume, aufklappbar mit den Stunden) und „Fehlzeiten“ (je Stunde), Zeitraum, Kind, Status, Export (PDF, CSV)
+// und Entschuldigungsschreiben.
 import { Fragment, useState } from 'react';
 import { Box, Button, Checkbox, Collapse, IconButton, MenuItem, Paper, Stack, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Tooltip, Typography } from '@mui/material';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
@@ -20,6 +21,7 @@ import { pdfAusrichtung } from '../../lib/pdf';
 import { toast } from '../../lib/meldungen';
 import { useLaden } from '../../lib/useLaden';
 import { KindWahl, kinderLaden, OHNE_ZUORDNUNG } from './kinder';
+import { MeldungenListe } from './Meldungen';
 
 interface Zeitraum { ids: number[]; vonDatum: string; vonZeit: string; bisDatum: string; bisZeit: string; grund: string; art: string; minuten: number; status: string; statusGemischt?: boolean; entschuldigt: number; unentschuldigt: number; fehlstunden: number; text: string }
 export const monatPlus = (iso: string, n: number) => { const d = new Date(iso + 'T12:00'); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 10); };
@@ -27,7 +29,7 @@ export const monatPlus = (iso: string, n: number) => { const d = new Date(iso + 
 export default function FamilieAbwesenheiten({ teile }: { teile: string[] }) {
   const { schuljahr } = useSitzung();
   const [reiterP, vonP, statusP, bisP] = teile;
-  const reiter = reiterP === 'fehlzeiten' ? 'fehlzeiten' : 'meine';
+  const reiter = reiterP === 'fehlzeiten' ? 'fehlzeiten' : reiterP === 'meine' ? 'meine' : 'melden';
   const start = schuljahr?.von && schuljahr.von <= heuteIso() ? schuljahr.von : plusTage(heuteIso(), -90);
   const von = istIsoDatum(vonP) ? vonP : start;
   const bisWahl = istIsoDatum(bisP) && bisP >= von ? bisP : '';
@@ -39,6 +41,7 @@ export default function FamilieAbwesenheiten({ teile }: { teile: string[] }) {
   const g = useLaden(async () => {
     const { liste, kind } = await kinderLaden();
     if (!kind) return { liste, kind, zeilen: [], stunden: new Map<number, FehlzeitZeile>(), gruende: {} as Record<string, string>, q: '' };
+    if (reiter === 'melden') return { liste, kind, zeilen: [], stunden: new Map<number, FehlzeitZeile>(), gruende: await holen<Record<string, string>>('/api/app/familie/gruende').catch(() => ({} as Record<string, string>)), q: '' };
     const q = `schueler=${kind.id}&von=${von}&bis=${bis}${status ? `&status=${status}` : ''}`;
     const [d, gruende, st] = await Promise.all([
       holen<{ zeilen: (Zeitraum | FehlzeitZeile)[] }>(`/api/app/familie/${reiter === 'meine' ? 'abwesenheiten' : 'fehlzeiten'}?${q}`),
@@ -59,8 +62,11 @@ export default function FamilieAbwesenheiten({ teile }: { teile: string[] }) {
   };
   return (
     <Seite titel="Abwesenheiten">
-      <Tabs value={reiter} onChange={(_, v) => navigieren(ziel(v))} sx={{ mb: 2 }}><Tab value="meine" label="Meine Abwesenheiten" /><Tab value="fehlzeiten" label="Fehlzeiten" /></Tabs>
-      <Geladen g={g}>{d => !d.kind ? <Leer text={OHNE_ZUORDNUNG} /> : (
+      <Tabs value={reiter} onChange={(_, v) => navigieren(v === 'melden' ? '#/abwesenheiten/melden' : ziel(v))} sx={{ mb: 2 }} variant="scrollable">
+        <Tab value="melden" label="Abwesenheit melden" /><Tab value="meine" label="Meine Abwesenheiten" /><Tab value="fehlzeiten" label="Fehlzeiten" /></Tabs>
+      <Geladen g={g}>{d => !d.kind ? <Leer text={OHNE_ZUORDNUNG} /> : reiter === 'melden' ? (
+        <><Box sx={{ mb: d.liste.length > 1 ? 2 : 0 }}><KindWahl liste={d.liste} kind={d.kind} onWahl={() => void g.neu()} /></Box><MeldungenListe key={d.kind.id} kind={d.kind} gruende={d.gruende} /></>
+      ) : (
         <>
           <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
             <IconButton onClick={() => navigieren(ziel(reiter, monatPlus(von, -1)))} aria-label="Einen Monat früher"><ArrowBackRounded /></IconButton>

@@ -1,5 +1,6 @@
 // Klassenbuch → Abwesenheiten: Zeiträume der Schülerabwesenheiten mit Filter (Klasse, Status, Art, Grund, Zeitraum), Kennzahlen,
-// Neu/Bearbeiten/Löschen, Entschuldigen, Zusammenfassen, CSV; Reiter „Meine Abwesenheiten“ (eigene Meldungen der Lehrkraft).
+// Neu/Bearbeiten/Löschen, Entschuldigen, Zusammenfassen, CSV; Reiter „Meldungen der Eltern“ (Abwesenheitsmeldungen bestätigen bzw. ablehnen,
+// Abwesenheitsmeldungen.tsx) und „Meine Abwesenheiten“ (eigene Meldungen der Lehrkraft).
 // Schüler*innen und Erziehungsberechtigte sehen ihre eigenen Seiten (FamilieAbwesenheiten).
 import { useEffect, useState } from 'react';
 import { Autocomplete, Box, Button, ButtonBase, FormControlLabel, MenuItem, Paper, Stack, Switch, Tab, Tabs, TextField, Tooltip, Typography } from '@mui/material';
@@ -22,6 +23,7 @@ import { useLaden } from '../../lib/useLaden';
 import { meldungText, MeldungStatus, type Meldung } from '../melden/meldungen';
 import FamilieAbwesenheiten from '../familie/FamilieAbwesenheiten';
 import { AbwesenheitEntschuldigen, FehlzeitenLeiste, type FeAbwesenheit } from './Entschuldigen';
+import { Abwesenheitsmeldungen } from './Abwesenheitsmeldungen';
 import type { SeitenProps } from '../register';
 
 interface Zeitraum extends Partial<Details> {
@@ -118,7 +120,9 @@ export default function Abwesenheiten(props: SeitenProps) {
 function AbwesenheitenKollegium({ teile }: SeitenProps) {
   const { ich, elemente } = useSitzung();
   const [rP, vP, bP, kP, sP, gP, aP] = teile;
-  const reiter = rP === 'meine' && ich.element ? 'meine' : 'schueler';
+  const reiter = rP === 'meine' && ich.element ? 'meine' : rP === 'meldungen' ? 'meldungen' : 'schueler';
+  const [offeneMeldungen, setOffeneMeldungen] = useState<number | null>(null);
+  useEffect(() => { holen<unknown[]>('/api/app/abwesenheiten/meldungen?status=gemeldet').then(l => setOffeneMeldungen(l.length)).catch(() => setOffeneMeldungen(null)); }, [reiter]);
   const gemeinsam = abwZeitraum();
   const von = istIsoDatum(vP) ? vP : gemeinsam?.von ?? plusTage(heuteIso(), -14);
   const bis = istIsoDatum(bP) ? bP : gemeinsam?.bis ?? heuteIso();
@@ -134,6 +138,7 @@ function AbwesenheitenKollegium({ teile }: SeitenProps) {
   const g = useLaden(async () => {
     const el = await elemente();
     if (reiter === 'meine') return { el, meine: (await holen<Meldung[]>('/api/app/meldungen')).filter(m => m.typ === 'absenz') };
+    if (reiter === 'meldungen') return { el, gruende: await holen<Grund[]>('/api/app/abwesenheitsgruende?art=abwesenheit').catch(() => [] as Grund[]) };
     const q = qs({ von, bis, klasse, status });
     const [zr, gruende, fe, texte] = await Promise.all([
       holen<Zeitraum[]>(`/api/app/abwesenheiten/zeitraeume${q}`),
@@ -167,11 +172,23 @@ function AbwesenheitenKollegium({ teile }: SeitenProps) {
   );
   return (
     <Seite titel="Abwesenheiten" untertitel={reiter === 'schueler' && d?.zr ? `${liste.length} ${liste.length === 1 ? 'Abwesenheit' : 'Abwesenheiten'}` : undefined}
-      aktionen={reiter === 'meine' ? <Button variant="contained" startIcon={<AddRounded />} href="#/melden/abwesenheit">Abwesenheit melden</Button> : <>
+      aktionen={reiter === 'meldungen' ? undefined : reiter === 'meine' ? <Button variant="contained" startIcon={<AddRounded />} href="#/melden/abwesenheit">Abwesenheit melden</Button> : <>
         <Button variant="outlined" startIcon={<FileDownloadOutlined />} onClick={csv} disabled={!liste.length}>Bericht (CSV)</Button>
         {verwalten && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'neu' })}>Hinzufügen</Button>}</>}>
-      {ich.element && <Tabs value={reiter} onChange={(_, v) => navigieren(ziel(v))} sx={{ mb: 2 }}><Tab value="schueler" label="Schüler*innen" /><Tab value="meine" label="Meine Abwesenheiten" /></Tabs>}
-      <Geladen g={g}>{dd => reiter === 'meine' ? (
+      <Tabs value={reiter} onChange={(_, v) => navigieren(ziel(v))} sx={{ mb: 2 }} variant="scrollable">
+        <Tab value="schueler" label="Schüler*innen" />
+        <Tab value="meldungen" label={offeneMeldungen ? `Meldungen der Eltern (${offeneMeldungen})` : 'Meldungen der Eltern'} />
+        {ich.element && <Tab value="meine" label="Meine Abwesenheiten" />}
+      </Tabs>
+      {reiter === 'schueler' && !!offeneMeldungen && (
+        <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 2, px: 2, py: 1.25, borderRadius: 2, border: 1, borderColor: 'divider', bgcolor: 'status.frei.flaeche' }}>
+          <Typography variant="body2" sx={{ flex: 1 }}><b>{offeneMeldungen}</b> {offeneMeldungen === 1 ? 'Abwesenheitsmeldung wartet' : 'Abwesenheitsmeldungen warten'} auf Ihre Bestätigung.</Typography>
+          <Button size="small" variant="outlined" onClick={() => navigieren(ziel('meldungen'))}>Meldungen ansehen</Button>
+        </Stack>
+      )}
+      <Geladen g={g}>{dd => reiter === 'meldungen' ? (
+        <Abwesenheitsmeldungen klasse={klasse} grundName={x => dd.gruende?.find(y => y.kurz === x)?.name ?? x} geaendert={() => holen<unknown[]>('/api/app/abwesenheiten/meldungen?status=gemeldet').then(l => setOffeneMeldungen(l.length)).catch(() => undefined)} />
+      ) : reiter === 'meine' ? (
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           {dd.meine?.length ? dd.meine.map(m => (
             <Stack key={m.id} direction="row" gap={2} alignItems="center" sx={{ p: 2, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 } }}>

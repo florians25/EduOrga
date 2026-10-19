@@ -1,0 +1,192 @@
+/* Tagesablauf der Vertretungsplanung: Schritte, Arbeitsliste (Karten mit Kandidaten), Prüfung der Automatik, „Wer ist frei?“,
+   Tagesbilanz und Belastung. Sachlich nach design/DESIGN.md: 1-px-Linien, Radius 3–6 px, Modusfarbe nur als Linie bzw. sehr leichte
+   Fläche, Status über Farbe der Statusrollen, keine Verläufe und keine Schatten außer auf schwebenden Ebenen. */
+
+/* ---- Schritte im Tageskopf ---- */
+.ta-schritte {
+  flex-basis: 100%; display: flex; align-items: stretch; gap: 0; margin: 2px -12px -6px -12px; padding: 0 6px;
+  border-top: 1px solid var(--colorNeutralStroke2);
+}
+.ta-schritt {
+  all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 6px 10px; cursor: pointer;
+  font-size: 13px; color: var(--colorNeutralForeground2); box-shadow: inset 0 -2px 0 transparent; white-space: nowrap;
+}
+.ta-schritt:hover { color: var(--colorNeutralForeground1); box-shadow: inset 0 -2px 0 var(--colorNeutralStroke1); }
+.ta-schritt:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.ta-schritt.aktiv { color: var(--colorNeutralForeground1); font-weight: 600; box-shadow: inset 0 -2px 0 var(--edo-modus); cursor: default; }
+.ta-schritt-nr {
+  display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 3px; font-size: 11px; font-weight: 600;
+  border: 1px solid var(--colorNeutralStroke1); color: var(--colorNeutralForeground2); font-variant-numeric: tabular-nums;
+}
+.ta-schritt.aktiv .ta-schritt-nr { border-color: var(--edo-modus); color: var(--edo-modus); }
+.ta-schritt-stand { font-size: 12px; font-weight: 400; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; }
+.ta-schritt-stand.achtung { color: var(--up-entfall); font-weight: 600; }
+.ta-schritt + .ta-schritt { margin-left: 6px; }
+.ta-schritte-rechts { margin-left: auto; display: inline-flex; align-items: center; padding: 0 6px; }
+@media (max-width: 1450px) { .ta-schritt { padding: 7px 10px 6px 8px; } }
+
+/* ---- Kontextbereich neben der Arbeitsliste ---- */
+.ta-kontext { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; gap: 6px; }
+.ta-kontext-reiter { display: flex; gap: 2px; flex-shrink: 0; border-bottom: 1px solid var(--colorNeutralStroke2); }
+.ta-reiter {
+  all: unset; box-sizing: border-box; padding: 4px 12px 5px 12px; font-size: 13px; cursor: pointer; color: var(--colorNeutralForeground2);
+  box-shadow: inset 0 -2px 0 transparent;
+}
+.ta-reiter:hover { color: var(--colorNeutralForeground1); box-shadow: inset 0 -2px 0 var(--colorNeutralStroke1); }
+.ta-reiter:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.ta-reiter.aktiv { color: var(--colorNeutralForeground1); font-weight: 600; box-shadow: inset 0 -2px 0 var(--edo-modus); }
+.ta-kontext > div[style] > div[data-bereich], .ta-kontext > div[style] > div:not([data-bereich]) { flex: 1; }
+
+/* ---- Karten der Arbeitsliste ---- */
+.ta-karte {
+  box-sizing: border-box; background: var(--colorNeutralBackground1); border: 1px solid var(--edo-karte-rand, var(--colorNeutralStroke1)); border-radius: 6px;
+  padding: 7px 10px 8px 12px; cursor: pointer; position: relative; font-size: 13px;
+}
+.ta-karte:hover { border-color: var(--colorNeutralStroke1Hover); }
+.ta-karte.gewaehlt { border-color: var(--edo-modus); box-shadow: inset 3px 0 0 var(--edo-modus); background: color-mix(in srgb, var(--edo-modus-flaeche) 45%, var(--colorNeutralBackground1)); }
+.ta-karte.klausur:not(.gewaehlt) { box-shadow: inset 3px 0 0 var(--up-pruefung); }
+.ta-kopf { display: flex; align-items: baseline; gap: 10px; min-width: 0; line-height: 20px; }
+.ta-std { font-weight: 600; font-size: 14px; min-width: 30px; font-variant-numeric: tabular-nums; color: var(--colorNeutralForeground1); }
+.ta-zeit { color: var(--colorNeutralForeground3); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ta-was { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ta-was b { font-weight: 600; }
+.ta-statt { color: var(--colorNeutralForeground3); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--up-entfall) 60%, transparent); }
+.ta-raum { font-size: 11px; font-weight: 600; padding: 0 4px; border: 1px solid var(--colorNeutralStroke1); border-radius: 3px; line-height: 16px; color: var(--colorNeutralForeground2); }
+.ta-nr { margin-left: auto; color: var(--colorNeutralForeground4); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ta-plakette { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 0 5px; border-radius: 3px; line-height: 17px; white-space: nowrap; }
+.ta-plakette.pruefung { background: var(--up-pruefung-flaeche); color: var(--up-pruefung); }
+.ta-plakette.offen { background: var(--up-entfall-flaeche); color: var(--up-entfall); }
+.ta-plakette.termin { background: var(--up-termin-flaeche); color: var(--up-termin); }
+.ta-hinweis { font-size: 11px; color: var(--colorNeutralForeground2); border: 1px dashed var(--colorNeutralStroke1); border-radius: 3px; padding: 0 4px; line-height: 16px; white-space: nowrap; }
+.ta-zusatz { color: var(--colorNeutralForeground3); font-size: 12px; margin: 0 0 2px 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ta-kandidaten { display: flex; flex-direction: column; gap: 2px; margin: 5px 0 0 0; container-type: inline-size; }
+@container (max-width: 560px) {
+  .ta-kandidat { grid-template-columns: 20px 40px minmax(0, 1fr) auto; }
+  .ta-kandidat .ta-name { display: none; }
+}
+.ta-kandidat {
+  all: unset; box-sizing: border-box; display: grid; grid-template-columns: 20px 44px minmax(60px, 150px) minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  padding: 2px 6px; border-radius: 4px; cursor: pointer; line-height: 22px; border: 1px solid transparent; min-width: 0;
+}
+.ta-kandidat:hover:not(:disabled) { background: var(--colorNeutralBackground1Hover); border-color: var(--colorNeutralStroke2); }
+.ta-kandidat:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -1px; }
+.ta-kandidat:disabled { cursor: default; }
+.ta-kandidat kbd, .ta-aktion kbd {
+  font: inherit; font-size: 11px; font-weight: 600; min-width: 16px; height: 16px; line-height: 15px; text-align: center; border-radius: 3px; display: inline-block;
+  border: 1px solid var(--colorNeutralStroke1); color: var(--colorNeutralForeground3); background: var(--colorNeutralBackground2); padding: 0 2px; box-sizing: border-box;
+}
+.ta-kurz { font-weight: 600; color: var(--colorNeutralForeground1); }
+.ta-kandidat.rot .ta-kurz { color: var(--up-entfall); }
+.ta-name { color: var(--colorNeutralForeground2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ta-gruende { color: var(--colorNeutralForeground3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ta-weitere { color: var(--colorNeutralForeground3); font-size: 12px; padding-left: 34px; }
+.ta-laedt, .ta-leer { color: var(--colorNeutralForeground3); font-size: 12px; padding: 3px 6px; display: inline-flex; align-items: center; gap: 6px; }
+.ta-last { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ta-last-text { min-width: 22px; }
+.ta-balken { position: relative; display: inline-block; width: 36px; height: 6px; border-radius: 1px; background: var(--colorNeutralBackground3); border: 1px solid var(--colorNeutralStroke2); overflow: hidden; }
+.ta-balken i { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--edo-modus) 70%, transparent); }
+.ta-balken.voll i { background: var(--up-entfall); }
+.ta-balken em { position: absolute; top: -1px; bottom: -1px; width: 1px; background: var(--colorNeutralForeground3); }
+.ta-balken.breit { width: 100%; max-width: 140px; height: 8px; overflow: visible; }
+.ta-ma { font-size: 11px; padding: 0 3px; border-radius: 2px; color: var(--colorNeutralForeground3); min-width: 34px; }
+.ta-ma.ueber { color: var(--up-pruefung); font-weight: 600; }
+.ta-ma.frei { color: var(--up-ok); }
+.ta-aktionen { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; margin: 7px 0 0 0; padding-top: 6px; border-top: 1px solid var(--colorNeutralStroke2); }
+.ta-aktion {
+  all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; height: 26px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--colorNeutralStroke1); background: var(--colorNeutralBackground1); font-size: 12px; color: var(--colorNeutralForeground1); white-space: nowrap;
+}
+.ta-aktion:hover { background: var(--colorNeutralBackground1Hover); }
+.ta-aktion:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+.ta-aktion.empfohlen { border-color: var(--up-entfall); color: var(--up-entfall); }
+.ta-aktion-mehr { margin-left: auto; }
+.ta-karte.erledigt .ta-kopf { line-height: 22px; }
+.ta-ergebnis { font-weight: 600; color: var(--up-aenderung); white-space: nowrap; }
+.ta-ergebnis[data-entfall] { color: var(--up-entfall); }
+
+/* ---- Prüfung der Automatik ---- */
+.ta-pruefung { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.ta-pruefung-kopf {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--colorNeutralStroke2);
+  background: color-mix(in srgb, var(--edo-modus-flaeche) 55%, var(--colorNeutralBackground1)); flex-wrap: wrap;
+}
+.ta-pruefung-titel { font-weight: 600; }
+.ta-pruefung-text { color: var(--colorNeutralForeground3); font-size: 12px; }
+.ta-pruefung-knoepfe { margin-left: auto; display: inline-flex; gap: 8px; }
+.ta-pruefung-liste { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 0; }
+.ta-pzeile { display: flex; align-items: center; gap: 10px; padding: 2px 14px 2px 8px; border-bottom: 1px solid var(--colorNeutralStroke3); min-height: 34px; font-size: 13px; }
+.ta-pzeile.aus { color: var(--colorNeutralForeground3); }
+.ta-pzeile .ta-gruende { flex: 1; }
+.ta-pfeil { color: var(--colorNeutralForeground3); }
+.ta-pziel { font-weight: 600; color: var(--up-aenderung); min-width: 64px; }
+.ta-pziel.entfall { color: var(--up-entfall); }
+.ta-pzeile.aus .ta-pziel { color: var(--colorNeutralForeground3); }
+.ta-pohne { padding: 12px 0 0 0; }
+.ta-pohne .ta-pruefung-titel { padding: 0 14px 4px 14px; }
+.ta-pohne .ta-pzeile { padding-left: 14px; }
+
+/* ---- Flache Abschnitte (Erfassen, Prüfen) ---- */
+.ta-karte-flach { border: 1px solid var(--colorNeutralStroke2); border-radius: 6px; padding: 10px 12px 12px 12px; background: var(--colorNeutralBackground1); }
+.ta-abschnitt-titel { font-weight: 600; font-size: 13px; margin: 0 0 8px 0; color: var(--colorNeutralForeground1); }
+.ta-auswirkung { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ta-auswirkung li { display: grid; grid-template-columns: 48px 28px 1fr; gap: 8px; align-items: baseline; padding: 3px 0; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.ta-auswirkung-zahl { color: var(--up-entfall); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.ta-statusliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ta-status { display: flex; align-items: center; gap: 8px; }
+.ta-status.ok svg { color: var(--up-ok); }
+.ta-status.warn svg { color: var(--up-pruefung); }
+.ta-status.fehler svg { color: var(--up-entfall); }
+.ta-status-detail { padding-left: 28px; font-size: 12px; color: var(--colorNeutralForeground2); }
+.ta-link { all: unset; cursor: pointer; color: var(--colorBrandForeground1); text-decoration: underline; text-underline-offset: 2px; }
+.ta-zahlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 16px; margin: 0; }
+.ta-zahlen > div { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.ta-zahlen dt { color: var(--colorNeutralForeground2); }
+.ta-zahlen dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ta-zahlen > div.offen dd { color: var(--up-entfall); }
+.ta-texte { list-style: none; margin: 0; padding: 0; }
+.ta-texte li { display: flex; align-items: center; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.ta-texte-art { font-size: 11px; color: var(--colorNeutralForeground3); min-width: 72px; }
+.ta-texte-text { flex: 1; }
+.ta-veroeffentlichen { border-color: var(--edo-modus); }
+.ta-werkzeugtext { color: var(--colorNeutralForeground3); font-size: 12px; margin-right: 6px; }
+
+/* ---- Belastung ---- */
+.ta-belastung { flex: 1; min-height: 0; overflow-y: auto; font-size: 13px; }
+.ta-bzeile { display: grid; grid-template-columns: minmax(120px, 1.3fr) 48px minmax(90px, 1fr) minmax(90px, 1fr) 90px; gap: 10px; align-items: center; padding: 0 12px; height: 28px; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.ta-bzeile.kopf { position: sticky; top: 0; z-index: 1; background: var(--edo-tabellenkopf, var(--colorNeutralBackground3)); color: var(--colorNeutralForeground2); font-size: 12px; font-weight: 500; }
+.ta-bname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--colorNeutralForeground2); }
+.ta-bname b { color: var(--colorNeutralForeground1); margin-right: 4px; }
+.ta-bzahl { font-variant-numeric: tabular-nums; text-align: right; }
+.ta-bzahl.ueber { color: var(--up-pruefung); font-weight: 600; }
+.ta-bbalken { display: grid; grid-template-columns: 1fr 24px; align-items: center; gap: 6px; }
+
+/* ---- Wer ist frei? ---- */
+.ta-matrix { font-size: 12px; }
+.ta-mkopf, .ta-mzeile { display: grid; grid-template-columns: minmax(150px, 220px) repeat(var(--ta-std, 10), minmax(34px, 1fr)) 96px; }
+.ta-matrix { --ta-std: 10; }
+.ta-mkopf { position: sticky; top: 0; z-index: 2; background: var(--edo-tabellenkopf, var(--colorNeutralBackground3)); border-bottom: 1px solid var(--colorNeutralStroke1); height: 26px; align-items: center; color: var(--colorNeutralForeground2); font-weight: 500; }
+.ta-mzeile { align-items: stretch; border-bottom: 1px solid var(--colorNeutralStroke3); cursor: pointer; box-sizing: border-box; }
+.ta-mzeile:hover { background: var(--colorNeutralBackground1Hover); }
+.ta-mzeile.gewaehlt { background: color-mix(in srgb, var(--edo-modus-flaeche) 60%, transparent); }
+.ta-mzeile .ta-mname { background: var(--colorNeutralBackground1); }
+.ta-mzeile.gewaehlt .ta-mname, .ta-mzeile:hover .ta-mname { background: transparent; }
+.ta-mname { padding: 0 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; color: var(--colorNeutralForeground2); position: sticky; left: 0; background: inherit; }
+.ta-mname b { color: var(--colorNeutralForeground1); min-width: 34px; }
+.ta-mstd { text-align: center; font-variant-numeric: tabular-nums; }
+.ta-mstd.markiert { color: var(--edo-modus); font-weight: 700; box-shadow: inset 0 -2px 0 var(--edo-modus); }
+.ta-mlast { display: flex; align-items: center; gap: 6px; padding: 0 8px; font-variant-numeric: tabular-nums; color: var(--colorNeutralForeground2); }
+.ta-z { margin: 2px 1px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; overflow: hidden; white-space: nowrap; border: 1px solid transparent; }
+.ta-z.U { background: var(--edo-karte-neutral, var(--colorNeutralBackground3)); border-color: var(--edo-karte-rand, var(--colorNeutralStroke1)); color: var(--colorNeutralForeground2); }
+.ta-z.V { background: var(--up-aenderung-flaeche); border-color: var(--up-aenderung); color: var(--up-aenderung); font-weight: 600; }
+.ta-z.A { color: var(--up-entfall); background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--up-entfall) 14%, transparent) 4px 5px); border-color: color-mix(in srgb, var(--up-entfall) 45%, transparent); }
+.ta-z.B { background: var(--up-ok-flaeche); border-color: color-mix(in srgb, var(--up-ok) 55%, transparent); color: var(--up-ok); font-weight: 600; }
+.ta-z.X { background: var(--up-frei-flaeche); border-color: color-mix(in srgb, var(--up-frei) 55%, transparent); color: var(--up-frei); }
+.ta-z.H { border: 1px dashed var(--colorNeutralStroke1); color: var(--colorNeutralForeground3); }
+.ta-z.markiert { box-shadow: 0 0 0 1px color-mix(in srgb, var(--edo-modus) 50%, transparent); }
+.ta-z.markiert:not(.U):not(.V):not(.A) { background-color: color-mix(in srgb, var(--edo-modus-flaeche) 70%, transparent); }
+.ta-z.markiert.waehlbar { cursor: copy; }
+.ta-z.markiert.waehlbar:hover { background: color-mix(in srgb, var(--edo-modus) 18%, transparent); }
+.ta-legende { display: inline-flex; gap: 10px; font-size: 11px; color: var(--colorNeutralForeground3); white-space: nowrap; }
+.ta-legende span { display: inline-flex; align-items: center; gap: 4px; }
+.ta-legende .ta-z { width: 14px; height: 10px; margin: 0; display: inline-block; }
+@media (max-width: 1400px) { .ta-legende span:nth-child(n+5) { display: none; } }

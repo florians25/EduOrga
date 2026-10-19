@@ -72,6 +72,8 @@ export interface Spalte<Z> {
   farbe?: (z: Z) => string | null | undefined;
   klasse?: (z: Z) => string | null | undefined;
   aendern?: (z: Z, wert: string) => Promise<unknown>;
+  /** eigener Editor statt des Eingabefelds (z. B. Farbwahl): Enter/F2/Doppelklick bzw. Klick auf das Farbfeld; Tippen öffnet weiter das Eingabefeld */
+  eigenerEditor?: (z: Z, zelle: DOMRect | null) => void;
 }
 
 export interface Aenderung<Z> { zeile: Z; spalte: Spalte<Z>; wert: string }
@@ -494,10 +496,19 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     const z = zeile(r), s = sichtbarRef.current[c]?.s;
     if (!z || !editierbar(s, z)) return;
     if (s!.art === 'Bool') { if (!istNeu(z)) void speichernWert(z, s!, text(z, s) === 'X' ? '' : 'X'); return; }
+    if (s!.eigenerEditor && start === undefined && !istNeu(z)) { eigenenEditorOeffnen(r, c); return; }
     sichtbarMachen(r, c);
     const ed = { r, c, start, nr: Date.now() };
     editorRef.current = ed;
     setEditor(ed);
+  };
+
+  const eigenenEditorOeffnen = (r: number, c: number) => {
+    const z = zeile(r), s = sichtbarRef.current[c]?.s;
+    if (!z || !s?.eigenerEditor) return;
+    sichtbarMachen(r, c);
+    const el = wurzel.current?.querySelector(`.tb-zeile[data-r="${r}"] .tb-zelle[data-c="${c}"]`);
+    s.eigenerEditor(z, el?.getBoundingClientRect() ?? null);
   };
 
   /** Editor schließen; übernehmen = prüfen und speichern. false = ungültig (Editor bleibt bzw. Zelle wird markiert). */
@@ -828,6 +839,10 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     if (e.button === 0 && !e.shiftKey && !e.ctrlKey && s?.art === 'Bool' && z && !istNeu(z) && (e.target as HTMLElement).closest('.tb-haken') && editierbar(s, z)) {
       void speichernWert(z, s, text(z, s) === 'X' ? '' : 'X');
     }
+    if (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && s?.eigenerEditor && z && !istNeu(z) && (e.target as HTMLElement).closest('.tb-farbpunkt') && editierbar(s, z)) {
+      ziehtAuswahl.current = false;
+      setTimeout(() => eigenenEditorOeffnen(p.r, p.c));
+    }
   };
   const ziehen = (e: RMouseEvent<HTMLDivElement>) => {
     if (!ziehtAuswahl.current || e.buttons !== 1 || editorRef.current) return;
@@ -1135,7 +1150,8 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
                   let inhalt: ReactElement;
                   if (!neu && s.art === 'Bool') inhalt = <span className={`tb-haken${t === 'X' || t === 'true' ? ' an' : ''}`} />;
                   else if (!neu && s.art === 'Haken') inhalt = t && t !== 'false' ? <Checkmark16Regular /> : <span />;
-                  else if (!neu && s.art === 'Farbe' && t) inhalt = <><span className="tb-farbpunkt" style={{ background: t }} /><span className="t">{t}</span></>;
+                  else if (!neu && s.art === 'Farbe' && t) inhalt = <><span className="tb-farbpunkt" style={{ background: t }} title={s.eigenerEditor ? 'Farbe wählen' : undefined} /><span className="t">{t}</span></>;
+                  else if (!neu && s.art === 'Farbe' && s.eigenerEditor && s.editierbar !== false) inhalt = <span className="tb-farbpunkt leer" title="Farbe wählen" />;
                   else inhalt = <span className="t">{t}</span>;
                   return (
                     <div key={c.id} className={zk.join(' ')} data-c={ci} role="gridcell" style={{ width: c.getSize(), background: farbe || undefined }}

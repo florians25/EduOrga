@@ -21,7 +21,7 @@
 :root{
   /* Raster */
   --gutter-w:         44px;      /* Zeitspalte (Stundennummer, Beginn, Ende) */
-  --day-gap:          3px;       /* Luft zwischen den Tagesspalten */
+  --day-gap:          2px;       /* Luft zwischen den Tagesspalten */
   --grid-pad-top:     12px;
   --grid-pad-bottom:  24px;
 
@@ -43,7 +43,13 @@
   --st-ok:            var(--up-ok);
   --st-warnung:       var(--up-warnung);
 
-  /* Kacheln */
+  /* Kacheln (Standard „Klassisch“) */
+  --raster:           #edf1f2;   /* Rasterfläche hinter den Karten */
+  --raster-pause:     #e2e8ea;
+  --karte:            #ffffff;
+  --karte-neutral:    #f6f8fa;
+  --karte-rahmen:     0 1px 1.5px rgba(12, 44, 49, .16), 0 0 0 .5px rgba(12, 44, 49, .06);
+  --balken-grau:      #b4bec4;
   --kachel-anteil:    14%;       /* Fachfarbe über der Fläche */
   --kachel-anteil-vorbei: 8%;
   --kachel-neutral:   var(--up-schiefer-50);
@@ -57,9 +63,15 @@
 
 :root[data-thema="dunkel"]{
   --st-entfall:       #f08a80;
-  --st-aenderung:     #3fbfb8;
+  --st-aenderung:     #ab95f3;
   --st-pruefung:      #e2a347;
-  --st-termin:        #a9a1f2;
+  --st-termin:        #e48bc4;
+  --raster:           #0b0f13;
+  --raster-pause:     #080b0e;
+  --karte:            #1a2128;
+  --karte-neutral:    #1d232c;
+  --karte-rahmen:     0 0 0 1px #262f38;
+  --balken-grau:      #56626c;
   --st-frei:          #7fb5e2;
   --st-ok:            #5cc68b;
   --st-warnung:       #e2a347;
@@ -399,7 +411,7 @@ a{ color:var(--up-primaer); }
 /* =====================================================================
    3  Stundenplan
    ===================================================================== */
-.screen--plan{ background:var(--up-flaeche); }
+.screen--plan{ background:var(--raster); }
 
 /* ---------- Kopfzeile: Planauswahl links, Info und Menü rechts ---------- */
 .topbar{
@@ -494,9 +506,10 @@ a{ color:var(--up-primaer); }
   touch-action:pan-y;                 /* waagerechte Gesten gehören der App */
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
-  background:var(--up-flaeche);
+  background:var(--raster);
   contain:layout paint;
 }
+[data-raster="weiss"]{ --raster:var(--up-flaeche); --raster-pause:var(--pause); }
 /* Waagerechte Wischgeste erkannt: bis zum Loslassen kein senkrechtes Rollen. */
 .gridscroll.is-wischsperre{ overflow-y:hidden; }
 .gridpane{
@@ -519,24 +532,30 @@ a{ color:var(--up-primaer); }
 .grid::before{
   /* Trennlinie der Zeitspalte */
   content:""; position:absolute; top:0; bottom:calc(-1 * var(--grid-pad-bottom)); left:calc(var(--gutter-w) - 1px);
-  width:1px; background:var(--up-linie); z-index:1;
+  width:1px; background:var(--up-rand); z-index:1;
+}
+/* Zeitspalte weiß auf dem grauen Raster */
+.gridpane::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:calc(var(--gutter-w) - 1px);
+  background:var(--up-flaeche); pointer-events:none;
 }
 .slotrow__no{
-  position:absolute; left:0; top:5px; width:calc(var(--gutter-w) - 1px);
+  position:absolute; left:0; top:4px; width:calc(var(--gutter-w) - 1px);
   text-align:center;
   font-size:13px; font-weight:600; line-height:16px; color:var(--up-text);
   font-variant-numeric:tabular-nums;
 }
 .slotrow__time{
-  position:absolute; left:0; top:21px; width:calc(var(--gutter-w) - 1px);
+  position:absolute; left:0; top:20px; width:calc(var(--gutter-w) - 1px);
   text-align:center;
-  font-size:11px; font-weight:400; line-height:13px; color:var(--up-text-3);
-  font-variant-numeric:tabular-nums; letter-spacing:-.01em;
+  font-size:10px; font-weight:400; line-height:12px; color:var(--up-text-3);
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em;
 }
-.slotrow__time--ende{ top:34px; }
+.slotrow__time--ende{ top:32px; }
+.is-eng .slotrow__time--ende{ display:none; }
 /* Pause: leicht graues Band ohne Text über die ganze Breite */
-.slotrow--pause{ background:var(--pause); border-top-color:var(--up-linie); }
-:root[data-thema="dunkel"] .slotrow--pause{ background:var(--pause); }
+.slotrow--pause{ background:var(--raster-pause); border-top-color:transparent; }
+.slotrow + .slotrow--pause{ border-top-color:var(--up-linie); }
 .grid__rest{
   position:absolute; left:0; right:0;
   height:max(calc(var(--grid-pad-bottom) - 1px), calc(var(--rest) - var(--grid-pad-top) - 1px));
@@ -570,18 +589,23 @@ a{ color:var(--up-primaer); }
 .daycol .card{ max-width:100%; }
 
 /* ---------- Stundenkachel ----------
-   Fläche = Fachfarbe (--fach, von app.js an der Kachel gesetzt) auf 14 %
-   über der Fläche, kein Seitenbalken. Zustände über Rahmen, Schraffur
-   und Plakette. */
+   Standard „Klassisch“ (Darstellung der Stundenkarten von EduOrga Web):
+   weiße, kompakte Karte ohne Linie mit sehr flachem Schatten auf hellgrauem
+   Raster, Fachfarbe als 4-px-Streifen innen links (grau ohne Fachfarbe),
+   drei Zeilen Lehrkraft bzw. Klasse · Fach · Raum. Die Schule kann die
+   Karte in EduOrga Web anpassen; app.js setzt die Wahl als data-Attribute
+   am Raster (#gridPane). Status über Linie, Fläche, Schraffur, Durch-
+   streichung und Plaketten. */
 .card{
-  --fach:var(--up-schiefer-400);
+  --fach:var(--balken-grau);
   --anteil:var(--kachel-anteil);
   position:absolute;
   display:flex; flex-direction:column;
   width:100%;
-  padding:4px 4px 4px 5px;
-  border-radius:var(--up-radius-s);
-  background-color:color-mix(in srgb, var(--fach) var(--anteil), var(--up-flaeche));
+  padding:3px 3px 3px calc(var(--balken, 4px) + 9px);
+  border-radius:var(--kradius, 2px);
+  background-color:var(--karte);
+  box-shadow:var(--karte-rahmen);
   color:var(--up-text);
   text-align:left;
   overflow:hidden;
@@ -591,28 +615,63 @@ a{ color:var(--up-primaer); }
   -webkit-tap-highlight-color:transparent;
   -webkit-touch-callout:none;
 }
-.card.is-past{ --anteil:var(--kachel-anteil-vorbei); --neutral:color-mix(in srgb, var(--kachel-neutral) 60%, var(--up-flaeche)); }
-/* Ohne Fachfarbe: Schiefer-50 mit 1-px-Rand. Nur eine Klasse, damit die
-   Zustände weiter unten (Prüfung, Veranstaltung …) Vorrang haben. */
-.ohne-fach{ background-color:var(--neutral, var(--kachel-neutral)); box-shadow:inset 0 0 0 1px var(--kachel-rand); }
+/* Fachfarbe als Streifen innen links mit Abstand zum Rand und runden Enden */
+.card::before{
+  content:""; position:absolute; z-index:0; pointer-events:none;
+  left:4px; top:4px; bottom:4px; width:var(--balken, 4px);
+  border-radius:2px;
+  background:var(--fach);
+}
+.card.ohne-fach::before{ background:var(--balken-grau); }
+.card.is-past{ --anteil:var(--kachel-anteil-vorbei); }
+.card.is-past::before{ opacity:.55; }
+.card > *{ position:relative; z-index:1; }
 .card:focus-visible{ outline:2px solid var(--up-marine-500); outline-offset:1px; }
+/* Sonderfelder ohne Fachstreifen */
+.card--supervision::before, .card--standby::before, .card--holiday::before, .card--released::before,
+.card--gs::before, .card--absence::before, .card--event::before{ display:none; }
+
+/* Varianten der Fachfarbe (Administration von EduOrga Web) */
+[data-fachfarbe="balken-links"] .card::before, [data-fachfarbe="balken-flaeche"] .card::before{ left:0; top:0; bottom:0; border-radius:0; }
+[data-fachfarbe="balken-oben"] .card::before{ left:0; right:0; top:0; bottom:auto; width:auto; height:var(--balken, 4px); border-radius:0; }
+[data-fachfarbe="balken-oben"] .card{ padding:calc(var(--balken, 4px) + 3px) 3px 3px 6px; }
+[data-fachfarbe="balken-links"] .card, [data-fachfarbe="balken-flaeche"] .card{ padding-left:calc(var(--balken, 4px) + 5px); }
+[data-fachfarbe="quadrat"] .card::before{ left:5px; top:7px; bottom:auto; width:7px; height:7px; border-radius:1px; }
+[data-fachfarbe="quadrat"] .card{ padding-left:16px; }
+[data-fachfarbe="flaeche"] .card::before, [data-fachfarbe="keine"] .card::before{ display:none; }
+[data-fachfarbe="flaeche"] .card, [data-fachfarbe="keine"] .card{ padding-left:6px; }
+[data-fachfarbe="flaeche"] .card:not(.ohne-fach), [data-fachfarbe="balken-flaeche"] .card:not(.ohne-fach){
+  background-color:color-mix(in srgb, var(--fach) var(--toenung, 12%), var(--karte));
+}
+/* Kartenfläche und Rahmen */
+[data-flaeche="neutral"]{ --karte:var(--karte-neutral); }
+[data-flaeche="getoent"]{ --karte:color-mix(in srgb, var(--up-primaer) 5%, var(--up-flaeche)); }
+[data-rahmen="fein"]{ --karte-rahmen:inset 0 0 0 1px var(--kachel-rand); }
+[data-rahmen="kraeftig"]{ --karte-rahmen:inset 0 0 0 2px color-mix(in srgb, var(--up-text) 42%, transparent); }
+[data-rahmen="keiner"]{ --karte-rahmen:none; }
+/* Dichte */
+[data-dichte="normal"] .card{ padding-top:5px; padding-bottom:5px; }
+[data-dichte="grosszuegig"] .card{ padding-top:6px; padding-bottom:6px; }
+[data-dichte="grosszuegig"] .card__line{ font-size:13px; line-height:16px; }
 
 .card__line{
   display:block;
   font-size:12px; line-height:14px; font-weight:400;
-  color:var(--up-text);
+  color:var(--up-text-2);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   font-variant-numeric:tabular-nums;
 }
-.card__line--primary{ font-weight:600; }
+.card__line--primary{ font-weight:600; font-size:12.5px; color:var(--up-text); }
+.card__line--primary + .card__line{ color:var(--up-text); }
 .card.is-past .card__line{ color:var(--up-text-2); }
+.card.is-past .card__line--primary{ color:color-mix(in srgb, var(--up-text) 72%, transparent); }
 .card__line--scroll{ overflow:hidden; text-overflow:ellipsis; }
 .card.pad-last .card__line--last{ max-width:calc(100% - 16px); }
 .card__line--rooms .tok + .tok{ margin-left:4px; }
 .tok{ white-space:nowrap; }
 .tok i, .tok__trenn{ font-style:normal; color:inherit; }
 
-/* Geänderter Wert: petrolfarben und unterstrichen */
+/* Geänderter Wert: violett und unterstrichen */
 .badge{
   display:inline;
   color:var(--st-aenderung);
@@ -624,7 +683,7 @@ a{ color:var(--up-primaer); }
   white-space:nowrap;
 }
 /* Wegfallender Wert: durchgestrichen. Bei offener Vertretung bzw. offenem
-   Raum steht der bisherige Wert durchgestrichen in der Plakette. */
+   Raum steht der bisherige Wert durchgestrichen, dahinter ein „?“. */
 .badge.badge--removed{
   color:inherit; font-weight:inherit;
   text-decoration:line-through; text-decoration-thickness:var(--strike);
@@ -633,55 +692,65 @@ a{ color:var(--up-primaer); }
 .badge.badge--removed.badge--open{
   display:inline-block;
   padding:0 3px; margin-right:1px;
-  border-radius:3px;
+  border-radius:2px;
   line-height:13px;
   background:var(--up-aenderung-flaeche);
   color:var(--st-aenderung);
   font-weight:500;
 }
+.badge--frage{
+  display:inline-block; margin-left:2px; padding:0 3px;
+  border:1px dashed color-mix(in srgb, var(--st-aenderung) 80%, transparent);
+  border-radius:2px;
+  line-height:11px; font-size:11px; font-weight:600;
+  color:var(--st-aenderung); text-decoration:none;
+}
 .card.is-past .badge:not(.badge--removed){ color:color-mix(in srgb, var(--st-aenderung) 80%, var(--up-text-2)); }
 
-/* Vertretung, Änderung, Raumwechsel: 1,5-px-Rahmen in Petrol */
-.card--change{ box-shadow:inset 0 0 0 1.5px var(--st-aenderung); }
+/* Vertretung, Änderung, Raumwechsel: violette Linie und helle Statusfläche */
+.card--change{ box-shadow:inset 0 0 0 1px var(--st-aenderung); }
+.mit-statusflaeche .card--change{ background-color:var(--up-aenderung-flaeche); }
 .card--change.is-past{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 55%, transparent); }
 .card.is-highlight{ box-shadow:inset 0 0 0 2px var(--st-aenderung); }
 
-/* Entfall: schraffiert, Inhalt durchgestrichen */
+/* Entfall: weiß, fein schraffiert, rötliche Linie, Inhalt rot durchgestrichen */
 .card--cancelled{
+  background-color:var(--karte);
   background-image:repeating-linear-gradient(-45deg, var(--schraffur) 0 1px, transparent 1px 6px);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-entfall) 40%, transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-entfall) 45%, transparent);
 }
+.card--cancelled::before{ opacity:.35; }
 .card--cancelled .card__line{
   color:var(--up-text-2);
   text-decoration:line-through; text-decoration-thickness:var(--strike);
   text-decoration-color:color-mix(in srgb, var(--st-entfall) 75%, transparent);
 }
+.card--cancelled .card__line--primary{ color:var(--st-entfall); }
 .card--cancelled .badge, .card--cancelled .badge.badge--removed.badge--open{
   display:inline; padding:0; background:none; color:inherit; font-weight:inherit; text-decoration:inherit;
 }
+.card--cancelled .badge--frage{ display:none; }
 .card--class-absent{
   background-image:repeating-linear-gradient(-45deg, var(--schraffur) 0 1px, transparent 1px 6px);
 }
 .card--class-absent .card__line{ color:var(--up-text-2); text-decoration:line-through; text-decoration-thickness:var(--strike); }
 
-/* Prüfung: hell-bernstein */
+/* Prüfung: Bernstein-Linie und helle Bernsteinfläche */
 .card--exam{
-  background-color:var(--up-pruefung-flaeche);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-pruefung) 45%, transparent);
+  box-shadow:inset 0 0 0 1px var(--st-pruefung);
 }
-.card--exam.is-past{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-pruefung) 25%, transparent); }
+.mit-statusflaeche .card--exam{ background-color:var(--up-pruefung-flaeche); }
+.card--exam.is-past{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-pruefung) 45%, transparent); }
 
-/* Veranstaltung, Termin, Freisetzung: hell-violett, gestrichelter Rahmen */
+/* Veranstaltung, Termin, Freisetzung: weiße Karte mit gestrichelter Linie */
 .card--gs, .card--absence, .card--event{
-  background-color:var(--up-termin-flaeche);
-  border:1px dashed color-mix(in srgb, var(--st-termin) 70%, transparent);
-  padding:3px 3px 3px 4px;
+  background-color:var(--karte);
+  border:1px dashed color-mix(in srgb, var(--up-text-2) 60%, transparent);
+  padding:3px 3px 3px 5px;
   box-shadow:none;
 }
 .card--gs .card__line--primary, .card--event .card__line--primary{ color:var(--st-termin); }
-:root[data-thema="dunkel"] .card--gs .card__line--primary,
-:root[data-thema="dunkel"] .card--event .card__line--primary{ color:var(--st-termin); }
-.card--gs.is-past, .card--absence.is-past, .card--event.is-past{ border-color:color-mix(in srgb, var(--st-termin) 40%, transparent); }
+.card--gs.is-past, .card--absence.is-past, .card--event.is-past{ border-color:color-mix(in srgb, var(--up-text-3) 50%, transparent); }
 .card.is-priority{ z-index:5; }
 
 /* Ferien und unterrichtsfreie Tage: ganzflächig hellblau mit Name und Zeitraum */
@@ -743,6 +812,7 @@ a{ color:var(--up-primaer); }
   flex-direction:row; align-items:center;
   min-height:0;
   padding:0 4px 0 5px;
+  border-radius:2px;
   background-color:var(--aufsicht);
   box-shadow:inset 0 0 0 1px var(--up-rand);
   overflow:hidden;
@@ -753,6 +823,8 @@ a{ color:var(--up-primaer); }
   color:var(--up-text-2);
 }
 .card--supervision .card__times{ display:none !important; }
+.card--supervision.card--sup-eng .card__line{ font-size:9.5px; line-height:11px; }
+.card--supervision.card--sup-eng .sup-menu, .card--supervision.card--sup-eng .sup-menu .ico{ width:11px; height:11px; }
 .card.card--supervision.is-sub,
 .card.card--supervision.is-absent{ padding-right:18px; }
 .card.card--supervision.is-sub{ box-shadow:inset 0 0 0 1.5px var(--st-aenderung); background-color:var(--up-aenderung-flaeche); }
@@ -779,26 +851,28 @@ a{ color:var(--up-primaer); }
 }
 .sup-menu .ico{ width:14px; height:14px; stroke-width:2.25; }
 
-/* Statusplakette oben rechts – nur auf breiten Kacheln */
+/* Statuswort unten links (10 px Großbuchstaben in der Statusfarbe, ohne
+   Fläche) – nur was sich sonst nicht ablesen lässt (Prüfung, Termin) bzw.
+   alle Statuswörter, wenn die Schule es so eingestellt hat; nur auf
+   Kacheln, die hoch genug sind (app.js: is-hoch). */
 .card__status{
-  position:absolute; top:3px; right:3px; z-index:3;
+  position:absolute; left:calc(var(--balken, 4px) + 9px); bottom:2px; z-index:3;
   display:none;
-  height:15px; padding:0 4px;
-  border-radius:3px;
-  font-size:10px; font-weight:600; line-height:15px;
+  font-size:9.5px; font-weight:600; line-height:12px;
   letter-spacing:.04em; text-transform:uppercase; white-space:nowrap;
-  background:var(--up-schiefer-100); color:var(--up-text-2);
+  max-width:calc(100% - var(--balken, 4px) - 12px); overflow:hidden;
+  color:var(--up-text-2);
 }
+.card.has-info .card__status, .card.has-online .card__status{ max-width:calc(100% - var(--balken, 4px) - 30px); }
+.card.is-hoch.zeige-status .card__status{ display:block; }
 @container kachel (min-width: 108px){
-  .card__status{ display:block; }
-  .card.has-status > .card__line:first-child,
-  .card.has-status .holiday-inner + .card__line{ padding-right:var(--sb, 64px); }
+  .card.is-hoch .card__status{ display:block; }
 }
-.card--cancelled .card__status{ background:var(--up-entfall-flaeche); color:var(--st-entfall); }
-.card--exam .card__status{ background:color-mix(in srgb, var(--st-pruefung) 16%, var(--up-flaeche)); color:var(--st-pruefung); }
-.card--change .card__status{ background:var(--up-aenderung-flaeche); color:var(--st-aenderung); }
-.card--gs .card__status, .card--absence .card__status{ background:color-mix(in srgb, var(--st-termin) 14%, var(--up-flaeche)); color:var(--st-termin); }
-.card--released .card__status, .card--standby .card__status{ background:var(--up-hintergrund); color:var(--up-text-2); box-shadow:inset 0 0 0 1px var(--up-rand); }
+.card--cancelled .card__status{ color:var(--st-entfall); }
+.card--exam .card__status{ color:var(--st-pruefung); }
+.card--change .card__status{ color:var(--st-aenderung); }
+.card--gs .card__status, .card--absence .card__status{ color:var(--st-termin); left:5px; }
+.card--released .card__status, .card--standby .card__status{ color:var(--up-text-2); }
 body.show-card-times .card__status{ display:none; }
 
 /* Zeichen unten rechts: Online, Hausaufgabe, Info – bzw. „…“ bei Kürzung */
@@ -826,6 +900,7 @@ body.show-card-times .card__status{ display:none; }
   font-variant-numeric:tabular-nums;
 }
 body.show-card-times .card__times{ display:flex; }
+.is-tag .card:not(.card--supervision):not(.card--holiday) .card__times{ display:flex; }
 
 /* Parallele Stunden: vorne eine Kachel, daneben die Zählkarte */
 .card.has-count{ padding-right:3px; }
@@ -1198,11 +1273,11 @@ body.show-card-times .card__times{ display:flex; }
 .spt__slots{ display:grid; grid-template-columns:repeat(auto-fill, minmax(64px, 1fr)); gap:6px; }
 .spt__slot{
   height:34px; border-radius:var(--up-radius);
-  border:1px solid color-mix(in srgb, var(--st-ok) 45%, transparent);
-  background:var(--up-ok-flaeche); color:var(--st-ok);
-  font-size:14px; font-weight:600; font-variant-numeric:tabular-nums;
+  border:1px solid var(--up-rand-stark);
+  background:var(--up-flaeche); color:var(--up-primaer);
+  font-size:14px; font-weight:500; font-variant-numeric:tabular-nums; text-align:center;
 }
-.spt__slot:active{ background:color-mix(in srgb, var(--st-ok) 22%, var(--up-flaeche)); }
+.spt__slot:active{ background:var(--up-primaer-flaeche); }
 .spt__slot.is-konflikt{ background:var(--up-hintergrund); border-color:var(--up-rand); color:var(--up-text-3); text-decoration:line-through; }
 .spt__slot.is-vorschau{ display:grid; place-items:center; background:var(--up-hintergrund); border-color:var(--up-rand); color:var(--up-text-2); }
 
@@ -1585,6 +1660,9 @@ body.show-card-times .card__times{ display:flex; }
 
 /* Kopfblock */
 .dhead{ padding:16px 16px 14px; }
+.dhead--fach{ position:relative; padding-left:28px; }
+.dhead--fach::before{ content:""; position:absolute; left:14px; top:18px; bottom:16px; width:4px; border-radius:2px; background:var(--fach, var(--balken-grau)); }
+.dline__lang{ margin-left:8px; font-weight:400; color:var(--up-text-2); }
 .dhead.is-off{ background-image:repeating-linear-gradient(-45deg, var(--schraffur) 0 1px, transparent 1px 7px); }
 .dtitle, .dline{
   white-space:nowrap; overflow-x:auto; overflow-y:hidden;
@@ -2238,9 +2316,15 @@ body.show-card-times .card__times{ display:flex; }
   border:1px solid var(--up-rand);
   border-radius:var(--up-radius-l);
 }
-.login .login__marke{ margin:0 0 20px; font-size:20px; font-weight:600; letter-spacing:-.01em; color:var(--up-marine-900); }
-.login .login__marke span{ font-weight:400; color:var(--up-text-3); }
-:root[data-thema="dunkel"] .login .login__marke{ color:var(--up-text); }
+.login .login__marke{ display:flex; align-items:center; gap:10px; margin:0 0 6px; }
+.login__monogramm{ width:36px; height:36px; flex:0 0 auto; }
+.login__wort{ font-size:21px; font-weight:400; letter-spacing:-.01em; color:var(--edo-text, var(--up-text)); }
+.login__wort b{ font-weight:600; }
+.login__wort span{ color:var(--up-text-3); }
+:root[data-thema="dunkel"] .login__wort{ color:var(--up-text); }
+.login .login__slogan{ margin:0 0 26px; font-size:14px; color:var(--up-akzent, var(--up-primaer)); }
+:root[data-thema="dunkel"] .login .login__slogan{ color:var(--up-primaer); }
+.login .login__recht{ margin:24px 0 0; font-size:11.5px; line-height:1.5; color:var(--up-text-3); }
 .login h1{ font-size:22px; font-weight:600; line-height:1.25; }
 .login p{ margin:4px 0 20px; font-size:14px; color:var(--up-text-2); }
 .login__sso{ margin:0; }
@@ -2292,13 +2376,143 @@ body.show-card-times .card__times{ display:flex; }
 .card:active, .parcount:active{ filter:none; }
 
 /* =====================================================================
+   6b Schulfunktionen (schule.js): Menü unter „Schule“ bzw. „Mehr“, Unterseiten
+   ===================================================================== */
+.screen--schule .seite__inhalt{ padding-bottom:40px; }
+.sf-zahl{
+  display:inline-block; min-width:20px; height:18px; padding:0 6px; border-radius:3px;
+  font-size:11.5px; font-weight:600; line-height:18px; text-align:center;
+  background:var(--up-schiefer-100); color:var(--up-text-2);
+}
+.sf-zahl--warn{ background:var(--up-pruefung-flaeche); color:var(--st-pruefung); }
+:root[data-thema="dunkel"] .sf-zahl{ background:#252d38; }
+.sf-fuss{ margin:6px 4px 14px; font-size:12.5px; line-height:1.5; color:var(--up-text-3); }
+.sf-leer{ margin-top:4px; background:var(--up-flaeche); border:1px solid var(--up-rand); border-radius:var(--up-radius); }
+.sf-laden{ height:3px; margin:18px 4px; overflow:hidden; border-radius:2px; background:var(--up-linie); }
+.sf-laden span{ display:block; width:30%; height:100%; background:var(--up-primaer); animation:sfLaden 1s linear infinite; }
+@keyframes sfLaden{ from{ transform:translateX(-100%); } to{ transform:translateX(340%); } }
+
+/* Auswahl als flache Reihe (Zeitraum, Tag, Klasse) */
+.sf-chips{ display:flex; gap:6px; overflow-x:auto; margin:0 -16px 12px; padding:0 16px; }
+.sf-chip{
+  flex:0 0 auto; display:inline-flex; align-items:center; height:32px; padding:0 12px;
+  border:1px solid var(--up-rand-stark); border-radius:var(--up-radius);
+  background:var(--up-flaeche); color:var(--up-text-2);
+  font-size:13.5px; font-weight:500; white-space:nowrap;
+}
+.sf-chip.is-on{ border-color:var(--up-primaer); color:var(--up-primaer); box-shadow:inset 0 0 0 1px var(--up-primaer); }
+.sf-chips--wahl{ flex-wrap:wrap; margin:0; padding:0; overflow:visible; }
+.sf-chips--wahl .sf-chip{ cursor:pointer; }
+.sf-chips--wahl input{ position:absolute; opacity:0; width:1px; height:1px; }
+.sf-chips--wahl .sf-chip:has(input:checked){ border-color:var(--up-primaer); color:var(--up-primaer); box-shadow:inset 0 0 0 1px var(--up-primaer); }
+.sf-seg{ margin-bottom:12px; }
+
+/* Kennzahlen als Textzeile, keine Kacheln */
+.sf-kennzahlen{
+  display:flex; flex-wrap:wrap; gap:4px 16px; margin:0 4px 6px;
+  font-size:13px; color:var(--up-text-2); font-variant-numeric:tabular-nums;
+}
+.sf-kennzahlen b{ font-weight:600; color:var(--up-text); }
+
+/* Listenzeilen mit Datum links */
+.rows .row.sf-eintrag, .rows .row.sf-ha, .rows .row.sf-pruefung, .rows .row.sf-meldung, .rows .row.sf-buchung, .rows .row.sf-abw{
+  grid-template-columns:40px minmax(0,1fr) auto; align-items:start;
+}
+.sf-datum{ display:flex; flex-direction:column; align-items:center; padding-top:1px; line-height:1.1; }
+.sf-datum b{ font-size:18px; font-weight:600; color:var(--up-text); font-variant-numeric:tabular-nums; }
+.sf-datum i{ font-style:normal; font-size:11px; color:var(--up-text-3); text-transform:uppercase; letter-spacing:.03em; }
+.row__main b + i, .row__main i + i{ white-space:normal; }
+.sf-text{ display:block; margin-top:2px; font-size:14px; line-height:19px; color:var(--up-text); white-space:pre-line; overflow-wrap:anywhere; }
+.sf-marken{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.sf-marken .plakette + .plakette{ margin-top:0; }
+.sf-klein{ height:28px; padding:0 8px; font-size:13px; }
+.sf-loeschen{ width:34px; height:34px; color:var(--up-text-3); }
+.sf-loeschen .ico{ width:18px; height:18px; }
+.sf-ha.is-erledigt .row__main b{ color:var(--up-text-3); }
+.sf-mehr{ margin-top:16px; }
+.row.sf-info{ grid-template-columns:minmax(0,1fr); }
+.row.sf-info .row__main b{ font-weight:600; font-size:13px; color:var(--up-text-2); }
+.sf-stunde{ grid-template-columns:4px minmax(0,1fr) auto auto; }
+.sf-fachmarke{ align-self:stretch; width:4px; border-radius:2px; background:var(--fach); }
+.sf-stunde .sf-marken{ flex-direction:row; gap:4px; }
+.row__main i.sf-fehlt{ color:var(--st-pruefung); }
+
+/* Vertretungsplan */
+.row.sf-vp{ grid-template-columns:34px minmax(0,1fr) auto; align-items:start; }
+.sf-vp__std{ font-size:17px; font-weight:600; text-align:center; color:var(--up-text); font-variant-numeric:tabular-nums; }
+.sf-vp s{ color:var(--up-text-3); text-decoration-thickness:1px; }
+.sf-vp.is-entfall .row__main b{ color:var(--st-entfall); }
+
+/* Neuigkeiten: aufklappbar */
+.row.sf-news{ grid-template-columns:minmax(0,1fr); text-align:left; }
+.sf-news__kopf{ display:flex; align-items:center; gap:8px; }
+.sf-news__kopf b{ font-weight:500 !important; }
+.sf-news.is-neu .sf-news__kopf b{ font-weight:600 !important; }
+.sf-punkt{ flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--up-primaer); }
+.sf-news__text{ display:none; margin-top:6px; font-size:14px; line-height:1.5; color:var(--up-text); }
+.sf-news.is-offen .sf-news__text{ display:block; }
+.sf-news__text ul{ margin:4px 0 0; padding-left:18px; list-style:disc; }
+.sf-news__text li{ margin:3px 0; }
+
+/* Formulare */
+.sf-form{ display:flex; flex-direction:column; gap:12px; margin-bottom:12px; }
+.sf-form--karte{ padding:14px 12px; background:var(--up-flaeche); border:1px solid var(--up-rand); border-radius:var(--up-radius); }
+.sf-feld{ display:block; min-width:0; }
+.sf-feld > span{ display:block; margin-bottom:4px; font-size:12px; font-weight:500; color:var(--up-text-2); }
+.sf-feld small{ display:block; margin-top:4px; font-size:12px; color:var(--up-text-3); }
+.sf-feld input, .sf-feld select, .sf-feld textarea{
+  display:block; width:100%; min-width:0; height:42px; padding:0 12px;
+  border:1px solid var(--up-rand-stark); border-radius:var(--up-radius);
+  background:var(--up-flaeche); outline:none;
+  font-size:16px; color:var(--up-text);
+  -webkit-appearance:none; appearance:none;
+}
+.sf-feld select{
+  padding-right:32px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238c96a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position:calc(100% - 10px) 50%; background-size:16px 16px; background-repeat:no-repeat;
+}
+.sf-feld textarea{ height:auto; min-height:84px; padding:10px 12px; line-height:1.4; resize:vertical; }
+.sf-feld input:focus, .sf-feld select:focus, .sf-feld textarea:focus{ border-color:var(--up-marine-500); box-shadow:0 0 0 3px var(--up-marine-100); }
+:root[data-thema="dunkel"] .sf-feld input:focus, :root[data-thema="dunkel"] .sf-feld select:focus, :root[data-thema="dunkel"] .sf-feld textarea:focus{ box-shadow:0 0 0 3px var(--up-primaer-rand); }
+.sf-zwei{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.sf-schalter{ border:1px solid var(--up-rand); border-radius:var(--up-radius); background:var(--up-flaeche); }
+.sf-pdf{ margin-top:14px; }
+.sf-form .knopf--gross{ margin-top:2px; }
+
+/* Elternsprechtag: Unterlagen, Einladen, Schüler*in wählen */
+.spt__pdf, .spt__knopf{ margin-top:8px; }
+.spt-row--einladung .spt-row__front{ cursor:default; }
+.spt-wahl__panel{ top:calc(var(--sat) + 40px); bottom:0; left:0; right:0; max-width:none; gap:0; display:flex; flex-direction:column; padding:0 !important; background:var(--up-hintergrund); border-radius:var(--up-radius-l) var(--up-radius-l) 0 0; overflow:hidden; }
+.spt-wahl__kopf{ display:flex; align-items:center; justify-content:space-between; padding:10px 8px 6px 16px; }
+.spt-wahl__kopf b{ font-size:16px; font-weight:600; }
+.spt-wahl__suche{ flex:0 0 auto; margin:4px 16px 10px; }
+.spt-wahl__klassen{ flex:0 0 auto; margin:0 0 8px; }
+.spt-wahl__liste{ flex:1 1 auto; overflow-y:auto; margin:0 16px 16px; background:var(--up-flaeche); border:1px solid var(--up-rand); border-radius:var(--up-radius); }
+.spt-wahl__zeile{ display:flex; align-items:center; justify-content:space-between; width:100%; min-height:50px; padding:8px 12px; border-top:1px solid var(--up-linie); text-align:left; }
+.spt-wahl__zeile:first-child{ border-top:0; }
+.spt-wahl__zeile span{ display:flex; flex-direction:column; }
+.spt-wahl__zeile b{ font-weight:500; font-size:15px; }
+.spt-wahl__zeile i{ font-style:normal; font-size:12.5px; color:var(--up-text-3); }
+.spt-wahl__leer{ padding:16px; font-size:14px; color:var(--up-text-3); }
+
+/* Über EduOrga Mobile */
+.sf-about{ display:flex; flex-direction:column; align-items:center; padding:8px 0 18px; text-align:center; }
+.sf-about__logo{ width:56px; height:56px; }
+.sf-about__wort{ margin-top:10px; font-size:22px; color:var(--up-text); }
+.sf-about__wort b{ font-weight:600; }
+.sf-about__wort span{ color:var(--up-text-3); }
+.sf-about__slogan{ margin-top:2px; font-size:14px; color:var(--up-text-2); }
+.sf-recht{ margin:0 4px 8px; font-size:13px; line-height:1.55; color:var(--up-text-2); }
+
+/* =====================================================================
    7  Breite Bildschirme (Tablet)
    ===================================================================== */
 @media (max-width:699px){
-  :root{ --gutter-w:40px; }
+  :root{ --gutter-w:32px; }
 }
 @media (max-width:360px){
-  :root{ --gutter-w:36px; }
+  :root{ --gutter-w:30px; }
   .card__line{ font-size:11.5px; }
 }
 @media (min-width:700px){

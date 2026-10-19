@@ -1,7 +1,7 @@
 // Durchsuchbare Auswahl (Fluent Combobox): Tippen filtert die Liste (Kurzname beginnt mit …, dann Text enthält …), übernommen
 // werden nur Einträge der Liste – freie Eingaben sind nicht möglich. Einzeln oder mehrfach (Werte durch Komma getrennt).
 import { Combobox, Option, type ComboboxProps } from '@fluentui/react-components';
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
 
 export interface SuchOption { wert: string; text: string; /** Kurzform für die Suche (z. B. Kurzname) */ kurz?: string }
 
@@ -21,6 +21,11 @@ interface Props {
   beiTaste?: (e: KeyboardEvent<HTMLInputElement>) => void;
   /** höchstens so viele Treffer zeigen */
   max?: number;
+  disabled?: boolean;
+  title?: string;
+  /** feste Breite in px (Standard: Breite der Fluent-Combobox bzw. über className/style) */
+  breite?: number;
+  style?: CSSProperties;
 }
 
 const teile = (w: string) => w.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
@@ -39,7 +44,7 @@ export function suchTreffer(optionen: SuchOption[], suche: string, max = 300): S
   return [...a, ...b, ...c].slice(0, max);
 }
 
-export function SuchAuswahl({ optionen, wert, beiWahl, mehrfach = false, id, name, size, className, autoFocus, platzhalter, ariaLabel, beiTaste, max = 300 }: Props) {
+export function SuchAuswahl({ optionen, wert, beiWahl, mehrfach = false, id, name, size, className, autoFocus, platzhalter, ariaLabel, beiTaste, max = 300, disabled, title, breite, style }: Props) {
   const [suche, setSuche] = useState<string | null>(null);
   const gewaehlt = useMemo(() => (mehrfach ? teile(wert) : wert ? [wert] : []), [wert, mehrfach]);
   const anzeige = mehrfach
@@ -48,6 +53,7 @@ export function SuchAuswahl({ optionen, wert, beiWahl, mehrfach = false, id, nam
   const treffer = suchTreffer(optionen, suche ?? '', max);
   return (
     <Combobox id={id} name={name} size={size} className={className} autoFocus={autoFocus} placeholder={platzhalter} aria-label={ariaLabel}
+      disabled={disabled} title={title} style={breite ? { minWidth: breite, width: breite, ...style } : style}
       multiselect={mehrfach} freeform={false} clearable={false}
       value={suche ?? anzeige} selectedOptions={gewaehlt}
       onInput={(e) => setSuche((e.target as HTMLInputElement).value)}

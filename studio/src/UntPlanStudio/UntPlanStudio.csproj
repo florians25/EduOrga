@@ -20,6 +20,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\UntPlan.Core\UntPlan.Core.csproj" />
     <ProjectReference Include="..\..\..\src\UntPlan.Web.Contracts\UntPlan.Web.Contracts.csproj" />
+    <!-- gemeinsame PDF-Ausgabe mit UntPlan Web (Seitenlayout, Tabellen, Stundenplanraster, Aushang; Schrift IBM Plex Sans) -->
+    <ProjectReference Include="..\..\..\src\UntPlan.Druck\UntPlan.Druck.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="UntPlanStudio.Tests" />

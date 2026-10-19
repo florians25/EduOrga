@@ -103,6 +103,14 @@ public sealed class DruckApi : IStudioModul
         new("vertretungsstatistik", "Vertretungsstatistik je Lehrkraft", "Vertretungsplanung", true, "Vertretungen, Mehrarbeit, Entfälle und Saldo je Lehrkraft"),
         new("ausfall", "Unterrichtsausfall", "Vertretungsplanung", true, "Zusammenfassung: vertreten, Entfall, Freisetzung, Raumänderungen, offen"),
         new("entfalltage", "Entfalltage", "Vertretungsplanung", true, "Tage, an denen alle Stunden einer Lehrkraft entfallen sind"),
+        new("abrechnung", "Vertretungsabrechnung", "Abrechnung", true, "Abrechnung aller Lehrkräfte im Zeitraum mit Unterschriftsfeld"),
+        new("mehrarbeit", "Mehrarbeit NRW je Lehrkraft", "Abrechnung", true, "Mehrarbeit nach Monaten, gegliedert nach Lehrkraft"),
+        new("vertretungsuebersicht", "Vertretungs-Übersicht", "Abrechnung", true, "Geplante und erteilte Stunden, Vertretungen nach Art und Grund"),
+        new("pausenaufsicht", "Pausenaufsichtsplan", "Pausen und Prüfungen", false, "Aufsichten je Aufsichtsbereich: Pausen × Tage"),
+        new("pausenaufsicht-lehrer", "Pausenaufsichten je Lehrkraft", "Pausen und Prüfungen", false, "Anzahl, Minuten (Ist/Max) und Termine je Lehrkraft"),
+        new("klausuren", "Klausurplan", "Pausen und Prüfungen", true, "Klausuren und Prüfungen im Zeitraum mit Aufsicht und Raum"),
+        new("kurse", "Kursliste", "Kurse", false, "Kurse je Klasse bzw. Jahrgang mit Band, Lehrkraft und Teilnehmerzahl"),
+        new("kursteilnehmer", "Kursteilnehmer", "Kurse", false, "Teilnehmerlisten je Kurs (zum Abhaken)"),
     };
 
     private static string Z(decimal d) => Format.Zahl(d);
@@ -228,6 +236,126 @@ public sealed class DruckApi : IStudioModul
                     .Select(x => (IReadOnlyList<string>)new[] { Format.Datum(x.Datum), x.Lehrer.Kurzname, x.Lehrer.VollerName, x.Stunden.ToString(De), x.Grund }).ToList();
                 return new Bericht("Entfalltage", zeitraum, new[] { "Datum", "Kürzel", "Name", "Stunden", "Grund" }, zeilen);
             }
+            case "abrechnung":
+            case "vertretungsuebersicht":
+            {
+                var ab = AbrechnungApi.Bericht(d, id == "abrechnung" ? 0 : 5, von, bis, null);
+                var zeilen = ab.Zeilen.Select(z => (IReadOnlyList<string>)(z.Markierung == "gruppe" ? new[] { z.Werte[0].Trim('—', ' ') is var g && g.Length > 0 ? char.ToUpper(g[0]) + g[1..] : g } : z.Werte.Select(w => w.Trim()).ToArray())).ToList();
+                var arten = ab.Zeilen.Select(z => z.Markierung == "gruppe" ? "gruppe" : "").ToList();
+                return new Bericht(id == "abrechnung" ? "Vertretungsabrechnung" : "Vertretungs-Übersicht", zeitraum, ab.Kopf, zeilen, ab.Kopf.Length > 7, arten.Contains("gruppe") ? arten : null)
+                {
+                    Hinweis = string.Join("\n", ab.Summe.Split('\n').Where(x => !x.Contains("Doppelklick"))), Wechselzeilen = zeilen.Count > 12,
+                    Unterschriften = id == "abrechnung" ? new[] { "Ort, Datum", "Schulleitung" } : null,
+                };
+            }
+            case "mehrarbeit":
+            {
+                var zeilen = new List<IReadOnlyList<string>>();
+                var arten = new List<string>();
+                string[] kopf = Array.Empty<string>();
+                foreach (var l in Statistik.Abrechnung(d, von, bis).Select(x => x.Lehrer))
+                {
+                    var ab = AbrechnungApi.Bericht(d, 2, von, bis, l);
+                    if (ab.Zeilen.Count == 0) continue;
+                    kopf = ab.Kopf;
+                    zeilen.Add(new[] { $"{l.Kurzname} – {l.VollerName}" }); arten.Add("gruppe");
+                    foreach (var z in ab.Zeilen) { zeilen.Add(z.Werte); arten.Add(""); }
+                    var summe = new string[ab.Kopf.Length];
+                    for (var i = 0; i < summe.Length; i++) summe[i] = i == 0 ? $"Summe {l.Kurzname}" : int.TryParse(ab.Zeilen[0].Werte[i].TrimStart('+'), out _) ? ab.Zeilen.Sum(z => int.TryParse(z.Werte[i].TrimStart('+'), out var n) ? n : 0).ToString(De) : "";
+                    zeilen.Add(summe); arten.Add("zwischensumme");
+                }
+                if (kopf.Length == 0) kopf = new[] { "Monat", "Mehrarbeit" };
+                return new Bericht("Mehrarbeit NRW je Lehrkraft", zeitraum, kopf, zeilen, kopf.Length > 7, arten) { Unterschriften = new[] { "Ort, Datum", "Schulleitung" } };
+            }
+            case "pausenaufsicht":
+            {
+                var pausen = Pausenaufsichten.AufsichtsPausen(d).ToList();
+                var tage = Enumerable.Range(0, d.Zeitraster.TageProWoche).ToList();
+                var spalten = new[] { "Pause", "Zeit" }.Concat(tage.Select(t => Planungsdienst.Tagname(d, t, true))).ToList();
+                var zeilen = new List<IReadOnlyList<string>>();
+                var arten = new List<string>();
+                foreach (var gang in Stammdaten.Sortiert(d.Gaenge))
+                {
+                    zeilen.Add(new[] { gang.Langname.Length > 0 && gang.Langname != gang.Kurzname ? $"{gang.Kurzname} – {gang.Langname}" : gang.Kurzname }); arten.Add("gruppe");
+                    foreach (var p in pausen)
+                    {
+                        var zeile = new List<string> { Pausenaufsichten.PausenName(d, p.NachStunde), $"{d.Zeitraster.Zeit(p.NachStunde)?.Ende:H\\:mm}–{d.Zeitraster.Zeit(p.NachStunde + 1)?.Beginn:H\\:mm}" };
+                        foreach (var t in tage)
+                        {
+                            var teile = Pausenaufsichten.Teile(d, gang.Id, t, p.NachStunde);
+                            var liste = d.Pausenaufsichten.Where(a => a.GangId == gang.Id && a.Tag == t && a.NachStunde == p.NachStunde && a.Datum is null).ToList();
+                            zeile.Add(teile == 0 ? "–" : string.Join(", ", Enumerable.Range(1, teile).Select(teil => liste.FirstOrDefault(a => a.Teil == teil) is { } a ? ix.KLehrer(a.LehrerId) : "???")));
+                        }
+                        zeilen.Add(zeile); arten.Add("");
+                    }
+                }
+                return new Bericht("Pausenaufsichtsplan", $"{periode} · „???“ = noch nicht besetzt, „–“ = keine Aufsicht", spalten, zeilen, true, arten);
+            }
+            case "pausenaufsicht-lehrer":
+            {
+                var zeilen = Stammdaten.Sortiert(d.Lehrer).Where(l => !l.Ignorieren).Select(l =>
+                {
+                    var termine = d.Pausenaufsichten.Where(a => a.LehrerId == l.Id && a.Datum is null).OrderBy(a => a.Tag).ThenBy(a => a.NachStunde)
+                        .Select(a => $"{Planungsdienst.Tagname(d, a.Tag)} {Pausenaufsichten.PausenName(d, a.NachStunde)} {ix.K(ElementTyp.Gang, a.GangId)}");
+                    var ist = Pausenaufsichten.IstMinuten(d, l.Id);
+                    return (IReadOnlyList<string>)new[] { l.Kurzname, l.VollerName, Pausenaufsichten.Anzahl(d, l.Id).ToString(De), ist.ToString(De), l.PausenaufsichtMaxMinuten.ToString(De),
+                        (ist - l.PausenaufsichtMaxMinuten).ToString("+0;-0;0", De), string.Join(", ", termine) };
+                }).ToList();
+                return new Bericht("Pausenaufsichten je Lehrkraft", periode, new[] { "Kürzel", "Name", "Anzahl", "Minuten", "Max", "Differenz", "Aufsichten" }, zeilen, true) { Wechselzeilen = zeilen.Count > 15 };
+            }
+            case "klausuren":
+            {
+                var zeilen = new List<IReadOnlyList<string>>();
+                var arten = new List<string>();
+                foreach (var g in d.Klausuren.Where(k => k.Aktiv && k.Datum >= von && k.Datum <= bis).OrderBy(k => k.Datum).ThenBy(k => k.StundeVon).GroupBy(k => k.Datum))
+                {
+                    zeilen.Add(new[] { $"{Planungsdienst.TageLang[((int)g.Key.DayOfWeek + 6) % 7]}, {Format.Datum(g.Key)}" }); arten.Add("gruppe");
+                    foreach (var k in g)
+                    {
+                        zeilen.Add(new[] { k.StundeVon == k.StundeBis ? $"{k.StundeVon}." : $"{k.StundeVon}.–{k.StundeBis}.", k.Name, ix.KKlassen(k.KlassenIds),
+                            string.Join(", ", k.LehrerIds.Select(ix.KLehrer)), string.Join(", ", k.RaumIds.Select(ix.KRaum)), k.Text });
+                        arten.Add("");
+                    }
+                }
+                return new Bericht("Klausurplan", zeitraum, new[] { "Std.", "Klausur/Prüfung", "Klasse(n)", "Aufsicht", "Raum", "Bemerkung" }, zeilen, false, arten);
+            }
+            case "kurse":
+            {
+                var zeilen = new List<IReadOnlyList<string>>();
+                var arten = new List<string>();
+                foreach (var k in Stammdaten.Sortiert(d, ElementTyp.Klasse))
+                {
+                    var kurse = Kursplanung.Kurse(d, k.Id);
+                    if (kurse.Count == 0) continue;
+                    zeilen.Add(new[] { $"{k.Kurzname}{(k.Langname.Length > 0 && k.Langname != k.Kurzname ? " – " + k.Langname : "")}" }); arten.Add("gruppe");
+                    foreach (var u in kurse.OrderBy(u => u.Band, cmp).ThenBy(u => u.Kursname, cmp))
+                    {
+                        var teil = d.Schueler.Where(x => x.KurswahlIds.Contains(u.Id)).ToList();
+                        zeilen.Add(new[] { u.Kursname.Length > 0 ? u.Kursname : ix.KFach(u.HauptfachId), ix.KFach(u.HauptfachId), string.Join(", ", u.LehrerIds.Select(ix.KLehrer)), u.Band,
+                            u.Wochenstunden.ToString(De), teil.Count.ToString(De), $"{teil.Count(x => x.Geschlecht == "m")}/{teil.Count(x => x.Geschlecht == "w")}" });
+                        arten.Add("");
+                    }
+                }
+                return new Bericht("Kursliste", periode, new[] { "Kurs", "Fach", "Lehrkraft", "Band", "Wst", "Teilnehmer", "m/w" }, zeilen, false, arten);
+            }
+            case "kursteilnehmer":
+            {
+                var zeilen = new List<IReadOnlyList<string>>();
+                var arten = new List<string>();
+                foreach (var u in Kursplanung.Kurse(d).OrderBy(u => ix.KKlassen(u.KlassenIds), cmp).ThenBy(u => u.Kursname, cmp))
+                {
+                    var teil = Stammdaten.Sortiert(d.Schueler.Where(x => x.KurswahlIds.Contains(u.Id))).ToList();
+                    zeilen.Add(new[] { $"{(u.Kursname.Length > 0 ? u.Kursname : ix.KFach(u.HauptfachId))} · {ix.KKlassen(u.KlassenIds)} · {string.Join(", ", u.LehrerIds.Select(ix.KLehrer))} · {teil.Count} Teilnehmende" });
+                    arten.Add("gruppe");
+                    var nr = 0;
+                    foreach (var x in teil)
+                    {
+                        zeilen.Add(new[] { (++nr).ToString(De), x.Langname.Length > 0 ? x.Langname : x.Kurzname, x.Vorname, ix.KKlassen(x.KlasseId is int kid ? new[] { kid } : Array.Empty<int>()), "" });
+                        arten.Add("");
+                    }
+                }
+                return new Bericht("Kursteilnehmer", periode, new[] { "Nr.", "Name", "Vorname", "Klasse", "Bemerkung" }, zeilen, false, arten) { Senkrechte = true };
+            }
             default:
                 throw StudioFehler.NichtGefunden($"Der Bericht „{id}“");
         }
@@ -255,7 +383,7 @@ public sealed class DruckApi : IStudioModul
         }));
 
         // ---- Stundenpläne (PDF bzw. HTML) ----
-        g.MapGet("/stundenplaene", async (HttpContext ctx, Arbeitsdokument a, string? typ, string? ids, string? format, bool? kompakt, bool? farbig, string? ausgabe, bool? herunterladen) =>
+        g.MapGet("/stundenplaene", async (HttpContext ctx, Arbeitsdokument a, ClaimsPrincipal p, string? typ, string? ids, string? format, bool? kompakt, bool? farbig, DateOnly? woche, string? ausgabe, bool? herunterladen) =>
         {
             var t = PlanTyp(typ);
             var html = string.Equals(ausgabe, "html", StringComparison.OrdinalIgnoreCase);
@@ -268,7 +396,7 @@ public sealed class DruckApi : IStudioModul
                     ?? throw StudioFehler.NichtGefunden($"Das Stundenplanformat „{format}“");
                 var titel = $"Stundenpläne {Typnamen.Name(t, true)}";
                 if (html) return (Encoding.UTF8.GetBytes(Export.Seite(titel, string.Concat(liste.Select(id => Export.StundenplanHtml(d, t, id))))), titel + ".html");
-                var o = StundenplanDruckOptionen.AusFormat(f, kompakt ?? (f is not null && !f.Gross), farbig ?? false);
+                var o = StundenplanDruckOptionen.AusFormat(f, kompakt ?? (f is not null && !f.Gross), farbig ?? false) with { Woche = woche, Ersteller = p.Benutzername() };
                 return (StundenplanPdf.Erzeugen(d, doc.Index, t, liste, o), titel + ".pdf");
             });
             return Datei(ctx, inhalt, html ? "text/html; charset=utf-8" : "application/pdf", name, herunterladen == true);
@@ -339,7 +467,7 @@ public sealed class DruckApi : IStudioModul
             VertretungsplanPdf.Felder(e);
             return a.AendernAsync(p.Benutzername(), "Seitenlayout Vertretungsplan", AenderungsArt.Einstellungen, d => AushangLayout.Schreiben(d, e), doc => AushangDto(doc.Daten));
         });
-        g.MapGet("/vertretungsplan", async (HttpContext ctx, Arbeitsdokument a, DateOnly? von, DateOnly? bis, string? version, string? ausgabe, bool? herunterladen) =>
+        g.MapGet("/vertretungsplan", async (HttpContext ctx, Arbeitsdokument a, ClaimsPrincipal p, DateOnly? von, DateOnly? bis, string? version, string? ausgabe, bool? gross, bool? herunterladen) =>
         {
             var v = von ?? DateOnly.FromDateTime(DateTime.Today);
             var b = bis ?? v;
@@ -353,13 +481,13 @@ public sealed class DruckApi : IStudioModul
                 var titel = $"{d.Einstellungen.Vertretungsplantitel} {(lehrer ? "Lehrer" : "Klassen")} {Format.Datum(v)}";
                 if (html || monitor)
                     return (Encoding.UTF8.GetBytes(Export.VertretungsplanHtml(d, Kalender.Tage(v, b.DayNumber - v.DayNumber > 62 ? v.AddDays(62) : b).Where(t => Kalender.IstUnterrichtstag(d, t)), lehrer, monitor)), titel + ".html");
-                return (VertretungsplanPdf.Erzeugen(doc, v, b, lehrer, AushangLayout.Lesen(d)), titel + ".pdf");
+                return (VertretungsplanPdf.Erzeugen(doc, v, b, lehrer, AushangLayout.Lesen(d), p.Benutzername(), gross == true), titel + ".pdf");
             });
             return Datei(ctx, inhalt, html || monitor ? "text/html; charset=utf-8" : "application/pdf", titel, herunterladen == true);
         });
 
         // ---- Übersichtsplan (PDF) ----
-        g.MapGet("/uebersicht", async (HttpContext ctx, Arbeitsdokument a, string? typ, string? inhalt, bool? herunterladen) =>
+        g.MapGet("/uebersicht", async (HttpContext ctx, Arbeitsdokument a, ClaimsPrincipal p, string? typ, string? inhalt, bool? herunterladen) =>
         {
             var t = PlanTyp(typ);
             var art = Enum.TryParse<UebersichtApi.Inhalt>(inhalt, true, out var i) ? i : UebersichtApi.Inhalt.Standard;
@@ -367,14 +495,14 @@ public sealed class DruckApi : IStudioModul
             {
                 var d = doc.Daten;
                 var belegung = UebersichtApi.Belegung(d, doc.Index, t, art);
-                return ListenPdf.Uebersicht(d, doc.Index, t, Stammdaten.Sortiert(d, t).ToList(), e => UebersichtApi.Zellen(belegung.GetValueOrDefault(e.Id)));
+                return ListenPdf.Uebersicht(d, doc.Index, t, Stammdaten.Sortiert(d, t).ToList(), e => UebersichtApi.Zellen(belegung.GetValueOrDefault(e.Id)), p.Benutzername());
             });
             return Datei(ctx, pdf, "application/pdf", $"{ListenPdf.TypText(t)} Übersicht.pdf", herunterladen == true);
         });
 
         // ---- Berichte ----
         g.MapGet("/berichte", () => Berichte);
-        g.MapGet("/bericht/{id}", async (HttpContext ctx, Arbeitsdokument a, string id, DateOnly? von, DateOnly? bis, string? ausgabe, bool? herunterladen) =>
+        g.MapGet("/bericht/{id}", async (HttpContext ctx, Arbeitsdokument a, ClaimsPrincipal p, string id, DateOnly? von, DateOnly? bis, string? ausgabe, bool? herunterladen) =>
         {
             var (bericht, pdf) = await a.LesenAsync(doc =>
             {
@@ -385,7 +513,7 @@ public sealed class DruckApi : IStudioModul
                 if (b < v) throw StudioFehler.Ungueltig("Das Ende liegt vor dem Beginn.");
                 if (b.DayNumber - v.DayNumber > 400) throw StudioFehler.Ungueltig("Höchstens ein Jahr auf einmal.");
                 var ber = BerichtErzeugen(d, doc.Index, id, v, b);
-                return (ber, (ausgabe ?? "pdf").ToLowerInvariant() == "pdf" ? ListenPdf.Bericht(d, ber) : null);
+                return (ber, (ausgabe ?? "pdf").ToLowerInvariant() == "pdf" ? ListenPdf.Bericht(d, ber, p.Benutzername()) : null);
             });
             switch ((ausgabe ?? "pdf").ToLowerInvariant())
             {

@@ -44,7 +44,7 @@ export interface Tag { nr: number; kurz: string; lang: string }
 export interface Stunde { nr: number; label: string; beginn: string; ende: string; pauseDanach: string | null }
 export interface Zeitraster { tage: Tag[]; stunden: Stunde[]; belegung: string[][] }
 
-export interface Periode { id: number; name: string; langname: string; von: string; bis: string; fixiert: boolean; aktiv: boolean }
+export interface Periode { id: number; name: string; langname: string; von: string; bis: string | null; ende: string; mutterId: number | null; fixiert: boolean; aktiv: boolean }
 
 export interface Grunddaten { schulname: string; zeitraster: Zeitraster; perioden: Periode[]; wochenperiodizitaet: number }
 

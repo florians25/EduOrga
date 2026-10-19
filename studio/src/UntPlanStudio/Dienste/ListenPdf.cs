@@ -2,186 +2,143 @@ using System.Globalization;
 using UntPlan.Core;
 using UntPlan.Core.Model;
 using UntPlan.Core.Planung;
-using Farbe = UntPlanStudio.Dienste.PdfSeite.Farbe;
+using UntPlan.Druck;
 
 namespace UntPlanStudio.Dienste;
 
-/// <summary>Ein Bericht als Tabelle (Druck-Modul): Titel, Spalten und Zeilen als Text; optional Zeilenarten „gruppe“ und „summe“.</summary>
+/// <summary>Ein Bericht als Tabelle (Druck-Modul): Titel, Spalten und Zeilen als Text; optional Zeilenarten „gruppe“, „zwischensumme“, „summe“.</summary>
 public sealed record Bericht(string Titel, string Untertitel, IReadOnlyList<string> Spalten, IReadOnlyList<IReadOnlyList<string>> Zeilen, bool Quer = false,
-    IReadOnlyList<string>? Arten = null);
+    IReadOnlyList<string>? Arten = null)
+{
+    /// <summary>Hinweis unter der Tabelle (optional).</summary>
+    public string Hinweis { get; init; } = "";
+    /// <summary>Jede zweite Zeile hellgrau (lange, breite Listen).</summary>
+    public bool Wechselzeilen { get; init; }
+    /// <summary>Senkrechte Linien (Listen zum Ausfüllen bzw. Abhaken).</summary>
+    public bool Senkrechte { get; init; }
+    /// <summary>Unterschriftsfelder unter dem Bericht (z. B. Abrechnung).</summary>
+    public IReadOnlyList<string>? Unterschriften { get; init; }
+}
 
 /// <summary>
-/// Listen- und Übersichtsdrucke als PDF in Schwarz-Weiß: Berichte als Tabelle mit umrandetem Kopf (auf jeder Seite wiederholt),
-/// rechtsbündigen Zahlenspalten, feinen Zeilenlinien und „Seite x von y“; Übersichtspläne (Elemente × Tage/Stunden) im Querformat.
+/// Listen- und Übersichtsdrucke des Studios im gemeinsamen Druckdesign (UntPlan.Druck): Berichte als Tabelle mit wiederholtem Kopf,
+/// Gruppen und Summen; Übersichtspläne (Elemente × Tage/Stunden) im Querformat.
 /// </summary>
 public static class ListenPdf
 {
-    private const float Rand = 34;
     private static readonly CultureInfo De = CultureInfo.GetCultureInfo("de-DE");
 
-    private static float Kopfzeile(PdfSeite s, Schuldatei d, string titel, int seite)
+    /// <summary>Kopf- und Fußangaben aus den Schuldaten (gleich für alle Ausdrucke des Studios).</summary>
+    public static Kopfdaten Kopf(Schuldatei d, string titel, string untertitel = "", string? ersteller = null)
     {
-        var y = Rand;
-        s.Text(Rand, y + 10, 10.5f, d.Einstellungen.Schulname, true);
-        s.TextRechts(s.Breite - Rand, y + 10, 8, $"Erstellt am {DateTime.Now:dd.MM.yyyy} um {DateTime.Now:HH:mm} Uhr");
-        s.TextRechts(s.Breite - Rand, y + 20, 8, PeriodeText(d));
-        y += 26;
-        s.Linie(Rand, y, s.Breite - Rand, y, 0.8f);
-        y += seite == 1 ? 20 : 14;
-        return y;
+        var e = d.Einstellungen;
+        return new Kopfdaten
+        {
+            Schule = e.Schulname.Length > 0 ? e.Schulname : "Schule",
+            Schulzusatz = e.Schulname2.Length > 0 ? e.Schulname2 : e.Adresse,
+            Titel = titel,
+            Untertitel = untertitel,
+            RechtsOben = $"Schuljahr {Schuljahr(d)}",
+            Ersteller = ersteller ?? "",
+        };
     }
 
-    private static void Fusszeile(PdfSeite s, string titel, int seite)
+    /// <summary>„2026/27“.</summary>
+    public static string Schuljahr(Schuldatei d) => $"{d.Einstellungen.SchuljahrVon.Year}/{(d.Einstellungen.SchuljahrVon.Year + 1) % 100:00}";
+
+    public static byte[] Bericht(Schuldatei d, Bericht b, string? ersteller = null)
     {
-        var y = s.Hoehe - Rand + 8;
-        s.Linie(Rand, y - 10, s.Breite - Rand, y - 10, 0.5f);
-        s.Text(Rand, y, 7.5f, PdfDokument.Kuerzen(titel, s.Breite * .5f, 7.5f));
-        s.TextRechts(s.Breite - Rand, y, 7.5f, $"Seite {seite} von {PdfDokument.Seitenzahl}");
-        s.TextMittig(0, s.Breite, y, 7.5f, "EduOrga Studio");
+        var f = new Formular(Kopf(d, b.Titel, b.Untertitel, ersteller), b.Quer);
+        f.NeueSeite();
+        f.Tabelle(BerichtTabelle(b));
+        if (b.Hinweis.Length > 0) f.Absatz(b.Hinweis, Formular.GroesseKlein + 0.5f, false, Formular.GrauText);
+        if (b.Unterschriften is { Count: > 0 } u) f.Unterschriften(u.ToArray());
+        return f.Erzeugen();
     }
 
-    public static byte[] Bericht(Schuldatei d, Bericht b)
+    /// <summary>Tabelle eines Berichts (erste Spalte halbfett; schlichte Listen mit Zahl der Einträge).</summary>
+    public static Tabelle BerichtTabelle(Bericht b)
     {
-        var pdf = new PdfDokument { Titel = b.Titel };
-        string Art(int r) => b.Arten != null && r < b.Arten.Count ? b.Arten[r] : "";
-        const float g = 8.5f, zh = 15f;
-        var probe = pdf.NeueSeite(b.Quer);
-        var nutz = probe.Breite - 2 * Rand;
-        var w = b.Spalten.Select((sp, i) => Math.Max(PdfDokument.TextBreite(sp, 8, true), b.Zeilen.Where((z, r) => Art(r) != "gruppe")
-            .Select(z => i < z.Count ? Math.Min(PdfDokument.TextBreite(z[i], g), nutz * .45f) : 0).DefaultIfEmpty(0).Max()) + 10).ToArray();
-        var faktor = nutz / Math.Max(1, w.Sum());
-        for (var i = 0; i < w.Length; i++) w[i] *= faktor;
-        var daten = b.Zeilen.Where((z, r) => Art(r) is "" or "zeile").ToList();
-        var zahl = b.Spalten.Select((sp, i) => daten.Count > 0 && daten.All(z => i >= z.Count || z[i].Length == 0
-            || double.TryParse(z[i].Replace("%", "").Trim(), NumberStyles.Number, De, out _)) && daten.Any(z => i < z.Count && z[i].Length > 0)).ToArray();
-
-        var seite = 1;
-        var s = probe;
-        float y = 0;
-        void Kopf()
-        {
-            y = Kopfzeile(s, d, b.Titel, seite);
-            if (seite == 1)
-            {
-                s.Text(Rand, y, 15, b.Titel, true);
-                if (b.Untertitel.Length > 0) s.Text(Rand, y + 15, 9.5f, b.Untertitel);
-                y += b.Untertitel.Length > 0 ? 24 : 12;
-            }
-            else { s.Text(Rand, y, 10, b.Titel + " (Fortsetzung)", true); y += 8; }
-            s.Flaeche(Rand, y, nutz, 17, Farbe.Grau(0.9f));
-            s.Linie(Rand, y, Rand + nutz, y, 0.6f);
-            s.Linie(Rand, y + 17, Rand + nutz, y + 17, 0.6f);
-            var x = Rand;
-            for (var i = 0; i < b.Spalten.Count; i++)
-            {
-                s.TextImKasten(x, y, w[i], 17, 7.8f, b.Spalten[i], zahl[i] ? 2 : 0, true, null, 4);
-                x += w[i];
-            }
-            y += 17;
-        }
-        void Neu()
-        {
-            Fusszeile(s, b.Titel, seite);
-            seite++;
-            s = pdf.NeueSeite(b.Quer);
-            Kopf();
-        }
-        Kopf();
-        if (b.Zeilen.Count == 0) { s.Text(Rand + 4, y + 11, g, "Keine Einträge."); y += zh; }
+        var t = new Tabelle { Anzahl = b.Arten is null, Wechselzeilen = b.Wechselzeilen, Senkrechte = b.Senkrechte, LeerText = "Keine Einträge im gewählten Zeitraum." };
+        for (var i = 0; i < b.Spalten.Count; i++) t.Spalte(b.Spalten[i], fett: i == 0);
         for (var r = 0; r < b.Zeilen.Count; r++)
-        {
-            var art = Art(r);
-            if (y + zh * (art == "gruppe" ? 3 : 1) > s.Hoehe - Rand - 14) Neu();
-            var z = b.Zeilen[r];
-            if (art == "gruppe")
-            {
-                y += 3;
-                s.Flaeche(Rand, y, nutz, zh, Farbe.Grau(0.95f));
-                s.TextImKasten(Rand, y, nutz, zh, 9.5f, z.Count > 0 ? z[0] : "", 0, true, null, 4);
-                s.Linie(Rand, y + zh, Rand + nutz, y + zh, 0.5f);
-                y += zh;
-                continue;
-            }
-            var fett = art == "summe";
-            if (fett) { s.Flaeche(Rand, y, nutz, zh, Farbe.Grau(0.9f)); s.Linie(Rand, y, Rand + nutz, y, 0.6f); }
-            var x = Rand;
-            for (var i = 0; i < b.Spalten.Count; i++)
-            {
-                s.TextImKasten(x, y, w[i], zh, g, i < z.Count ? z[i] : "", zahl[i] ? 2 : 0, fett || i == 0, null, 4);
-                x += w[i];
-            }
-            s.Linie(Rand, y + zh, Rand + nutz, y + zh, 0.4f, fett ? Farbe.Schwarz : Farbe.Grau(0.75f));
-            y += zh;
-        }
-        if (b.Zeilen.Count > 0 && b.Arten is null)
-        {
-            s.Linie(Rand, y, Rand + nutz, y, 0.6f);
-            s.Text(Rand + 4, y + 12, g, b.Zeilen.Count == 1 ? "1 Eintrag" : $"{b.Zeilen.Count} Einträge", true);
-        }
-        Fusszeile(s, b.Titel, seite);
-        return pdf.Erzeugen();
+            t.Hinzu(Tabelle.Art(b.Arten != null && r < b.Arten.Count ? b.Arten[r] : ""), b.Zeilen[r]);
+        return t;
     }
 
     // ------------------------------------------------------------------------------------------ Übersichtsplan
 
-    /// <summary>Übersichtsplan im Querformat: je Element eine Zeile, Tage × Stunden als Spalten (wie Desktop „… Übersicht quer“).</summary>
-    public static byte[] Uebersicht(Schuldatei d, DatenIndex ix, ElementTyp typ, IReadOnlyList<Element> elemente, Func<Element, Dictionary<(int Tag, int Stunde), string>> inhalt)
+    /// <summary>Übersichtsplan im Querformat: je Element eine Zeile, Tage × Stunden als Spalten.</summary>
+    public static byte[] Uebersicht(Schuldatei d, DatenIndex ix, ElementTyp typ, IReadOnlyList<Element> elemente, Func<Element, Dictionary<(int Tag, int Stunde), string>> inhalt,
+        string? ersteller = null)
     {
         var zr = d.Zeitraster;
-        var titel = $"{TypText(typ)} Übersicht – {d.Einstellungen.Schulname}";
-        var pdf = new PdfDokument { Titel = titel };
-        var spalten = zr.TageProWoche * zr.StundenProTag;
-        const float nameB = 40, kopf = 24;
-        var seite = 1;
+        var titel = $"Übersichtsplan {TypText(typ)}";
+        var f = new Formular(Kopf(d, titel, $"{PeriodeText(d)} · gültig ab {Format.Datum(d.AktivePeriode.Von)} · {elemente.Count} {TypText(typ)}", ersteller), true);
+        var tage = zr.TageProWoche;
+        var stunden = zr.StundenProTag;
+        var spalten = tage * stunden;
         var i = 0;
         do
         {
-            var s = pdf.NeueSeite(true);
-            var y0 = Kopfzeile(s, d, titel, seite);
-            s.Text(Rand, y0, 13, $"{TypText(typ)} Übersicht quer", true);
-            y0 += 8;
-            var nutz = s.Breite - 2 * Rand;
+            var s = f.NeueSeite();
+            var nameB = Math.Clamp(elemente.Skip(i).Take(60).Select(e => Satz.Breite(e.Kurzname, 7.5f, true)).DefaultIfEmpty(20).Max() + 8, 30, 70);
+            var x0 = f.Links;
+            var nutz = f.Breite;
             var cw = (nutz - nameB) / spalten;
-            var verfuegbar = s.Hoehe - Rand - 18 - y0 - kopf;
-            var rh = Math.Clamp(verfuegbar / Math.Max(1, elemente.Count - i), 13f, 22f);
-            var platz = (int)(verfuegbar / rh);
-            var teil = elemente.Skip(i).Take(Math.Max(1, platz)).ToList();
-            var g = Math.Clamp(cw / 4.2f, 4f, 6.5f);
-            s.Flaeche(Rand, y0, nutz, kopf, Farbe.Grau(0.92f));
-            for (var t = 0; t < zr.TageProWoche; t++)
+            const float kopf = 24;
+            var y0 = f.Y;
+            var verfuegbar = f.Unten - y0 - kopf - 16;
+            var rh = Math.Clamp(verfuegbar / Math.Max(1, elemente.Count - i), 11f, 20f);
+            var platz = Math.Max(1, (int)(verfuegbar / rh));
+            var teil = elemente.Skip(i).Take(platz).ToList();
+            var g = Math.Clamp(cw / 4.4f, 4f, 6.5f);
+
+            s.Flaeche(x0, y0, nutz, kopf, Formular.GrauKopf);
+            for (var t = 0; t < tage; t++)
             {
-                var x = Rand + nameB + t * zr.StundenProTag * cw;
-                s.TextImKasten(x, y0, zr.StundenProTag * cw, 12, 8.5f, Planungsdienst.Tagname(d, t, true), 1, true);
-                for (var st = 1; st <= zr.StundenProTag; st++)
-                    s.TextImKasten(x + (st - 1) * cw, y0 + 12, cw, 12, 6.5f, zr.StundenLabel(st), 1);
+                var x = x0 + nameB + t * stunden * cw;
+                s.TextImKasten(x, y0, stunden * cw, 13, 8, Planungsdienst.Tagname(d, t, true), Ausrichtung.Mitte, true);
+                for (var st = 1; st <= stunden; st++)
+                    s.TextImKasten(x + (st - 1) * cw, y0 + 12, cw, 11, 6.5f, zr.StundenLabel(st), Ausrichtung.Mitte, false, 0.5f);
             }
+            s.TextImKasten(x0, y0, nameB, kopf, 7.5f, TypText(typ), Ausrichtung.Links, true);
             var y = y0 + kopf;
             for (var k = 0; k < teil.Count; k++)
             {
                 var e = teil[k];
-                if (k % 2 == 1) s.Flaeche(Rand, y, nutz, rh, Farbe.Grau(0.965f));
-                s.TextImKasten(Rand, y, nameB, rh, 7.5f, e.Kurzname, 0, true);
+                if (k % 2 == 1) s.Flaeche(x0, y, nutz, rh, Formular.GrauWechsel);
+                s.TextImKasten(x0, y, nameB, rh, 7.5f, e.Kurzname, Ausrichtung.Links, true);
                 foreach (var ((tag, st), text) in inhalt(e))
                 {
-                    var x = Rand + nameB + (tag * zr.StundenProTag + st - 1) * cw;
-                    s.Flaeche(x + 0.4f, y + 0.4f, cw - 0.8f, rh - 0.8f, Farbe.Grau(0.85f));
-                    s.TextImKasten(x, y, cw, rh, g, text, 1, false, null, 0.6f);
+                    if (tag < 0 || tag >= tage || st < 1 || st > stunden) continue;
+                    var x = x0 + nameB + (tag * stunden + st - 1) * cw;
+                    s.Flaeche(x + 0.4f, y + 0.4f, cw - 0.8f, rh - 0.8f, 0.86f);
+                    s.TextImKasten(x, y, cw, rh, g, text, Ausrichtung.Mitte, false, 0.5f);
                 }
                 y += rh;
-                s.Linie(Rand, y, Rand + nutz, y, 0.3f, Farbe.Grau(0.7f));
+                s.Linie(x0, y, x0 + nutz, y, Formular.LinieFein, Formular.GrauLinie);
             }
-            for (var t = 0; t <= zr.TageProWoche; t++)
+            for (var t = 0; t < tage; t++)
+                for (var st = 1; st < stunden; st++)
+                {
+                    var x = x0 + nameB + (t * stunden + st) * cw;
+                    s.Linie(x, y0 + 12, x, y, 0.25f, 0.7f);
+                }
+            for (var t = 0; t <= tage; t++)
             {
-                var x = Rand + nameB + t * zr.StundenProTag * cw;
-                s.Linie(x, y0, x, y, 0.8f);
+                var x = x0 + nameB + t * stunden * cw;
+                s.Linie(x, y0, x, y, t == 0 || t == tage ? Formular.LinieStark : Formular.LinieNormal);
             }
-            s.Linie(Rand, y0 + kopf, Rand + nutz, y0 + kopf, 0.8f);
-            s.Rahmen(Rand, y0, nutz, y - y0, 0.8f);
-            Fusszeile(s, titel, seite);
-            seite++;
+            s.Linie(x0 + nameB, y0 + 12, x0 + nutz, y0 + 12, Formular.LinieFein, Formular.GrauLinie);
+            s.Linie(x0, y0 + kopf, x0 + nutz, y0 + kopf, Formular.LinieStark);
+            s.Rahmen(x0, y0, nutz, y - y0, Formular.LinieStark);
+            f.Y = y + 6;
+            if (i + teil.Count >= elemente.Count)
+                f.Notiz("Grau hinterlegt: belegte Stunde; mehrere Unterrichte in einer Stunde durch „/“ getrennt, fixierte Stunden mit „*“.");
             i += teil.Count;
         } while (i < elemente.Count);
-        return pdf.Erzeugen();
+        return f.Erzeugen();
     }
 
     /// <summary>„Periode 1“ bzw. „Periode Halbjahr 2“ (ohne doppeltes „Periode“).</summary>

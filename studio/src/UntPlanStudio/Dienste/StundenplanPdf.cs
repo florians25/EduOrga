@@ -2,16 +2,17 @@ using System.Globalization;
 using UntPlan.Core;
 using UntPlan.Core.Model;
 using UntPlan.Core.Planung;
-using Farbe = UntPlanStudio.Dienste.PdfSeite.Farbe;
+using UntPlan.Core.Vertretungsplanung;
+using UntPlan.Druck;
 
 namespace UntPlanStudio.Dienste;
 
 /// <summary>Einstellungen eines Stundenplandrucks (aus der Druckauswahl und dem gewählten Stundenplanformat).</summary>
 public sealed record StundenplanDruckOptionen
 {
-    /// <summary>Kompaktes Format: zwei Pläne je Seite ohne Unterrichtsliste und Legenden (Desktop: „Format groß“ aus).</summary>
+    /// <summary>Kompaktes Format: zwei Pläne je Seite ohne Unterrichtsliste (Desktop: „Format groß“ aus).</summary>
     public bool Kompakt { get; init; }
-    /// <summary>Belegte Stunden in der (aufgehellten) Fachfarbe statt grau.</summary>
+    /// <summary>Fachfarben als Grautöne hinterlegen (der Druck bleibt schwarz-weiß).</summary>
     public bool Farbig { get; init; }
     /// <summary>Doppelstunden/Blöcke nicht zusammenfassen.</summary>
     public bool Einzelstunden { get; init; }
@@ -25,8 +26,12 @@ public sealed record StundenplanDruckOptionen
     public int VonTag { get; init; }
     /// <summary>-1 = bis zum letzten Tag.</summary>
     public int BisTag { get; init; } = -1;
-    /// <summary>Name des verwendeten Stundenplanformats (Anzeige im Fuß).</summary>
+    /// <summary>Name des verwendeten Stundenplanformats (Anzeige im Untertitel).</summary>
     public string Format { get; init; } = "";
+    /// <summary>Wochenplan mit Vertretungen, Entfällen, Raumänderungen und Prüfungen der Woche, in der dieser Tag liegt (null = Regelplan).</summary>
+    public DateOnly? Woche { get; init; }
+    /// <summary>Wer druckt (Fuß).</summary>
+    public string Ersteller { get; init; } = "";
 
     public static StundenplanDruckOptionen AusFormat(StundenplanFormat? f, bool kompakt, bool farbig) => f is null
         ? new StundenplanDruckOptionen { Kompakt = kompakt, Farbig = farbig }
@@ -39,103 +44,166 @@ public sealed record StundenplanDruckOptionen
 }
 
 /// <summary>
-/// Stundenplan als schlichtes Schulformular in Schwarz-Weiß-Druck (Druck/StundenplanFormular): Kopf mit Schule,
-/// Schuljahr, „Gilt ab“ und Druckdatum, großer Kurzname mit Langname, links das Raster mit Pausenzeilen und grau hinterlegten
-/// belegten Stunden (Doppelstunden zusammengefasst, Kopplungen mit „*“ und Fußnote), rechts die Unterrichtsliste, unten Fußnoten
-/// und Fächerlegende, ganz unten Periode und Seitenzahl. Kompakt: zwei Pläne je Seite (A4 quer) ohne Liste und Legenden.
+/// Stundenpläne (Klasse, Lehrkraft, Raum, Fach) im gemeinsamen Druckdesign: A4 quer, je Plan eine Seite mit Titel, links das klassische
+/// Raster (Stundennummern mit Zeiten, Pausenbänder, Doppelstunden zusammengefasst; je Zelle Fach halbfett, Lehrkraft bzw. Klasse, Raum),
+/// rechts die Unterrichtsliste mit Wochenstunden, unten Kopplungen und Fächer. Kompakt: zwei Pläne je Seite. Wochenplan mit Änderungen:
+/// Entfall schraffiert und durchgestrichen, Vertretung mit „»“ und durchgestrichenem Bisherigen, Zusatzstunden gestrichelt, Prüfungen
+/// doppelt umrandet – mit Legende. Fachfarben nur auf Wunsch als Grautöne.
 /// </summary>
 public static class StundenplanPdf
 {
     private static readonly CultureInfo De = CultureInfo.GetCultureInfo("de-DE");
-    private const float RandX = 25, RandY = 29;
-    private static readonly Farbe Grau = Farbe.Grau(222 / 255f);
-    private static readonly Farbe KopfGrau = Farbe.Grau(232 / 255f);
+
+    public static string TypName(ElementTyp t) => t switch
+    {
+        ElementTyp.Klasse => "Klasse",
+        ElementTyp.Lehrer => "Lehrkraft",
+        ElementTyp.Raum => "Raum",
+        ElementTyp.Fach => "Fach",
+        _ => t.ToString(),
+    };
+
+    private static string TypMehrzahl(ElementTyp t) => t switch
+    {
+        ElementTyp.Klasse => "Klassen",
+        ElementTyp.Lehrer => "Lehrkräfte",
+        ElementTyp.Raum => "Räume",
+        ElementTyp.Fach => "Fächer",
+        _ => t.ToString(),
+    };
 
     public static byte[] Erzeugen(Schuldatei d, DatenIndex ix, ElementTyp typ, IReadOnlyList<int> ids, StundenplanDruckOptionen o)
     {
-        var pdf = new PdfDokument { Titel = $"Stundenpläne {d.Einstellungen.Schulname}" };
-        var proSeite = o.Kompakt && ids.Count > 1 ? 2 : 1;
-        var seiten = Math.Max(1, (ids.Count + proSeite - 1) / proSeite);
-        for (var i = 0; i < Math.Max(1, ids.Count); i += proSeite)
+        var periode = d.AktivePeriode;
+        var zeitraum = o.Woche is DateOnly w
+            ? $"Woche vom {Format.Datum(TagDatum(d, w, 0))} bis {Format.Datum(TagDatum(d, w, d.Zeitraster.TageProWoche - 1))} mit Vertretungen und Änderungen"
+            : $"{ListenPdf.PeriodeText(d)} · gültig ab {periode.Von.ToString("d. MMMM yyyy", De)}";
+        if (o.Format.Length > 0) zeitraum += $" · Format „{o.Format}“";
+        var kopf = ListenPdf.Kopf(d, $"Stundenpläne {TypMehrzahl(typ)}", zeitraum, o.Ersteller);
+        var f = new Formular(kopf, true);
+        if (ids.Count == 0)
         {
-            var s = pdf.NeueSeite(true);
-            var r = new Kasten(RandX, RandY, s.Breite - 2 * RandX, s.Hoehe - 2 * RandY);
-            var oben = Kopf(s, r, d);
-            Fuss(s, r, d, i / proSeite + 1, seiten, o.Format);
-            var unten = r.Unten - 13;
-            var teil = ids.Skip(i).Take(proSeite).ToList();
-            if (teil.Count == 0) { s.Text(r.X, oben + 30, 12, "Keine Elemente gewählt."); break; }
-            const float abstand = 20;
-            var breite = (r.B - (teil.Count - 1) * abstand) / teil.Count;
-            for (var k = 0; k < teil.Count; k++)
-                Plan(s, new Kasten(r.X + k * (breite + abstand), oben, breite, unten - oben), d, ix, typ, teil[k], teil.Count > 1 || o.Kompakt, o);
+            f.NeueSeite();
+            f.Absatz("Keine Elemente gewählt.");
+            return f.Erzeugen();
         }
-        return pdf.Erzeugen();
+        if (o.Kompakt && ids.Count > 1)
+        {
+            for (var i = 0; i < ids.Count; i += 2)
+            {
+                f.NeueSeite(kopf.Titel, zeitraum);
+                const float abstand = 22;
+                var teil = ids.Skip(i).Take(2).ToList();
+                var b = (f.Breite - abstand) / 2;
+                for (var k = 0; k < teil.Count; k++)
+                    Kompakt(f, d, ix, typ, teil[k], o, f.Links + k * (b + abstand), f.Y, b, f.Unten - f.Y);
+            }
+            return f.Erzeugen();
+        }
+        foreach (var id in ids)
+        {
+            var el = ix.Element(typ, id);
+            f.NeueSeite($"Stundenplan {TypName(typ)} {el?.Kurzname}", Untertitel(d, ix, typ, el, zeitraum));
+            Gross(f, d, ix, typ, id, o);
+        }
+        return f.Erzeugen();
     }
 
-    internal readonly record struct Kasten(float X, float Y, float B, float H)
+    private static string Langname(Element? el) => el is Lehrer l ? l.VollerName : el?.Langname ?? "";
+
+    private static string Untertitel(Schuldatei d, DatenIndex ix, ElementTyp typ, Element? el, string zeitraum)
     {
-        public float Rechts => X + B;
-        public float Unten => Y + H;
+        var teile = new List<string>();
+        var lang = Langname(el);
+        if (lang.Length > 0 && lang != el?.Kurzname) teile.Add(lang);
+        if (el is Klasse k && k.KlassenlehrerIds.Count > 0) teile.Add("Klassenleitung " + string.Join(", ", k.KlassenlehrerIds.Select(ix.KLehrer)));
+        teile.Add(zeitraum);
+        return string.Join(" · ", teile);
     }
 
-    // ------------------------------------------------------------------------------------------ Kopf und Fuß
+    // ------------------------------------------------------------------------------------------ Seitenaufbau
 
-    private static float Kopf(PdfSeite s, Kasten r, Schuldatei d)
+    private static void Gross(Formular f, Schuldatei d, DatenIndex ix, ElementTyp typ, int id, StundenplanDruckOptionen o)
     {
-        var e = d.Einstellungen;
-        s.Text(r.X, r.Y + 9, 9.5f, e.Schulname, true);
-        var zweite = e.Schulname2.Length > 0 ? e.Schulname2 : e.Adresse;
-        if (zweite.Length > 0) s.Text(r.X, r.Y + 20, 9, zweite);
-        var x2 = r.X + Math.Max(115, Math.Max(PdfDokument.TextBreite(e.Schulname, 9.5f, true), PdfDokument.TextBreite(zweite, 9)) + 20);
-        s.Text(x2, r.Y + 9, 9, $"Stundenplan {e.SchuljahrVon.Year}/{e.SchuljahrVon.Year + 1}");
-        s.Text(x2, r.Y + 20, 9, $"Gilt ab: {d.AktivePeriode.Von.ToString("d. MMMM", De)}");
-        s.TextRechts(r.Rechts, r.Y + 9, 9.5f, $"UntPlan {e.SchuljahrVon.Year}", true);
-        s.TextRechts(r.Rechts, r.Y + 20, 9, DateTime.Now.ToString("dd.MM.yyyy  HH:mm", De));
-        s.Linie(r.X, r.Y + 23, r.Rechts, r.Y + 23, 0.75f);
-        return r.Y + 27;
-    }
-
-    private static void Fuss(PdfSeite s, Kasten r, Schuldatei d, int seite, int seiten, string format)
-    {
-        var y = r.Unten - 10;
-        s.Linie(r.X, y - 1.5f, r.Rechts, y - 1.5f, 0.75f);
-        var p = d.AktivePeriode;
-        var text = $"{(p.Name.Length > 0 ? p.Name : "Periode")}  {Format.Datum(p.Von)} - {Format.Datum(p.Bis ?? d.Einstellungen.SchuljahrBis)}     UntPlan";
-        s.TextMittig(r.X, r.B, y + 8, 8, text);
-        if (format.Length > 0) s.Text(r.X, y + 8, 8, format);
-        s.TextRechts(r.Rechts, y + 8, 8, $"Seite {seite} / {seiten}");
-    }
-
-    // ------------------------------------------------------------------------------------------ ein Plan
-
-    private sealed record Teil(Kopplungszeile Zeile, int? Raum);
-    private sealed record Fussnote(int Nr, List<(string Text, string Klassen)> Zeilen);
-
-    private static void Plan(PdfSeite s, Kasten r, Schuldatei d, DatenIndex ix, ElementTyp typ, int id, bool kompakt, StundenplanDruckOptionen o)
-    {
-        var el = ix.Element(typ, id);
-        var gName = kompakt ? 15f : 18f;
-        var gLang = kompakt ? 11f : 13f;
-        var kurz = el?.Kurzname ?? "";
-        var lang = el is Lehrer l ? l.VollerName : el?.Langname ?? "";
-        s.Text(r.X, r.Y + gName * 0.95f, gName, kurz);
-        if (lang.Length > 0 && lang != kurz) s.Text(r.X + PdfDokument.TextBreite(kurz, gName) + 4, r.Y + gName * 0.95f, gLang, lang);
-        var top = r.Y + gName * 1.15f + 3;
-
+        var s = f.Seite;
         var fussnoten = new List<Fussnote>();
-        var faecher = new SortedSet<int>(Comparer<int>.Create((a, b) => string.Compare(ix.KFach(a), ix.KFach(b), StringComparison.CurrentCultureIgnoreCase) is var c && c != 0 ? c : a.CompareTo(b)));
-        if (kompakt)
-        {
-            Raster(s, new Kasten(r.X, top, r.B, r.Unten - top - 3), d, ix, typ, id, fussnoten, faecher, true, o);
-            return;
-        }
-        const float legende = 108;
-        var rasterBreite = r.B * .485f;
-        Raster(s, new Kasten(r.X, top, rasterBreite, r.Unten - top - legende - 7), d, ix, typ, id, fussnoten, faecher, false, o);
-        Liste(s, new Kasten(r.X + rasterBreite + 12, top + 13, r.B - rasterBreite - 12, r.Unten - top - legende - 20), ix, typ, id, faecher);
-        Legenden(s, new Kasten(r.X, r.Unten - legende, r.B, legende - 3), ix, fussnoten, faecher);
+        var faecher = new SortedSet<string>(StringComparer.Create(De, true));
+        var raster = Raster(d, ix, typ, id, o, fussnoten, faecher, false);
+
+        // Unterrichtsliste rechts, Raster links
+        var listeB = Math.Min(250, f.Breite * 0.31f);
+        var rasterB = f.Breite - listeB - 16;
+        var unten = Unterteil(f, d, ix, fussnoten, faecher, raster.Status.ToList(), measureOnly: true);
+        var rasterUnten = raster.Zeichnen(s, f.Links, f.Y, rasterB, f.Unten - f.Y - unten);
+        var liste = Unterrichtsliste(d, ix, typ, id);
+        var lx = f.Links + rasterB + 16;
+        s.Text(lx, f.Y + 8, 8.5f, "Unterricht", true);
+        var (gesetzt, _) = liste.SetzenIn(s, lx, f.Y + 12, listeB, rasterUnten);
+        var daten = liste.Zeilen.Count(z => z.Art == Zeilenart.Daten);
+        if (gesetzt < liste.Zeilen.Count) s.TextRechts(lx + listeB, rasterUnten + 9, 6.5f, $"Liste gekürzt ({daten} Unterrichte)", false, Formular.GrauText);
+        f.Y = rasterUnten + 8;
+        Unterteil(f, d, ix, fussnoten, faecher, raster.Status.ToList(), measureOnly: false);
     }
+
+    private static void Kompakt(Formular f, Schuldatei d, DatenIndex ix, ElementTyp typ, int id, StundenplanDruckOptionen o, float x, float y, float b, float h)
+    {
+        var s = f.Seite;
+        var el = ix.Element(typ, id);
+        var name = $"{TypName(typ)} {el?.Kurzname}";
+        s.Text(x, y + 10, 12, name, true);
+        var lang = Langname(el);
+        if (lang.Length > 0 && lang != el?.Kurzname)
+            s.Text(x + Satz.Breite(name, 12, true) + 8, y + 10, 8.5f, Satz.Kuerzen(lang, b - Satz.Breite(name, 12, true) - 10, 8.5f), false, Formular.GrauText);
+        var fussnoten = new List<Fussnote>();
+        var faecher = new SortedSet<string>(StringComparer.Create(De, true));
+        var raster = Raster(d, ix, typ, id, o, fussnoten, faecher, true);
+        var noten = fussnoten.Count > 0 ? string.Join("   ", fussnoten.Select(n => $"{n.Nr}) {n.Text}")) : "";
+        var notenZeilen = noten.Length > 0 ? Satz.Umbrechen(noten, b, 6.5f).Take(3).ToList() : new List<string>();
+        var status = raster.Status.ToList();
+        var legendeH = status.Count > 0 ? 14f : 0;
+        var unten = raster.Zeichnen(s, x, y + 16, b, h - 18 - notenZeilen.Count * 8.5f - legendeH);
+        var yy = unten + 3;
+        foreach (var z in notenZeilen) { yy += 8.5f; s.Text(x, yy, 6.5f, z, false, Formular.GrauText); }
+        if (status.Count > 0) Stundenraster.Legende(s, x, yy + 4, b, status, 6.5f);
+    }
+
+    /// <summary>Kopplungen, Fächer und Zeichenerklärung unter dem Plan; gibt die benötigte Höhe zurück.</summary>
+    private static float Unterteil(Formular f, Schuldatei d, DatenIndex ix, List<Fussnote> fussnoten, ISet<string> faecher, List<Stundenstatus> status, bool measureOnly)
+    {
+        const float g = 7.5f, zh = 10;
+        var zeilen = new List<(string Titel, string Text)>();
+        if (fussnoten.Count > 0) zeilen.Add(("Kopplungen", string.Join("   ", fussnoten.Select(n => $"{n.Nr}) {n.Text}"))));
+        var fl = faecher.Select(k => ix.Faecher.Values.FirstOrDefault(x => x.Kurzname == k)).Where(x => x is { Langname.Length: > 0 } && x.Langname != x.Kurzname)
+            .Select(x => $"{x!.Kurzname} {x.Langname}").ToList();
+        if (fl.Count > 0) zeilen.Add(("Fächer", string.Join(" · ", fl)));
+        float h = 0;
+        var titelB = 52f;
+        foreach (var (titel, text) in zeilen)
+        {
+            var teile = Satz.Umbrechen(text, f.Breite - titelB, g).Take(4).ToList();
+            if (!measureOnly)
+                for (var i = 0; i < teile.Count; i++)
+                {
+                    if (i == 0) f.Seite.Text(f.Links, f.Y + h + 8, g, titel, true);
+                    f.Seite.Text(f.Links + titelB, f.Y + h + 8, g, teile[i]);
+                    h += zh;
+                }
+            else h += teile.Count * zh;
+        }
+        if (status.Count > 0)
+        {
+            if (!measureOnly) h += Stundenraster.Legende(f.Seite, f.Links, f.Y + h + 2, f.Breite, status, g) + 2;
+            else h += 16;
+        }
+        return h + 6;
+    }
+
+    // ------------------------------------------------------------------------------------------ Raster
+
+    private sealed record Teil(Kopplungszeile Zeile, int Index, int? Raum);
+    private sealed record Fussnote(int Nr, string Text);
+
+    internal static DateOnly TagDatum(Schuldatei d, DateOnly woche, int tag) => Kalender.Montag(woche).AddDays(d.Zeitraster.ErsterSchultag + tag);
 
     private static List<Teil> Teile(Unterricht u, Planstunde p, ElementTyp typ, int id)
     {
@@ -152,268 +220,250 @@ public static class StundenplanPdf
                 ElementTyp.Fach => z.FachId == id,
                 _ => true,
             };
-            if (dabei) res.Add(new Teil(z, raum ?? z.FachraumId ?? z.StammraumId));
+            if (dabei) res.Add(new Teil(z, i, raum ?? z.FachraumId ?? z.StammraumId));
         }
-        return res.Count > 0 ? res : u.Zeilen.Take(1).Select(z => new Teil(z, null)).ToList();
+        return res.Count > 0 ? res : u.Zeilen.Take(1).Select(z => new Teil(z, 0, null)).ToList();
     }
 
-    private static void Raster(PdfSeite s, Kasten r, Schuldatei d, DatenIndex ix, ElementTyp typ, int id, List<Fussnote> fussnoten, ISet<int> faecher, bool kompakt, StundenplanDruckOptionen o)
+    /// <summary>Fach, Person (Lehrkraft bzw. Klasse) und dritte Angabe (Raum bzw. Lehrkraft) je Planart.</summary>
+    private static (string Fach, string Person, string Raum) Angaben(ElementTyp typ, string fach, string lehrer, string klassen, string raum) => typ switch
+    {
+        ElementTyp.Klasse => (fach, lehrer, raum),
+        ElementTyp.Lehrer => (fach, klassen, raum),
+        ElementTyp.Raum => (fach, klassen, lehrer),
+        _ => (klassen, lehrer, raum),
+    };
+
+    private static float? Grau(DatenIndex ix, int? fachId, StundenplanDruckOptionen o)
+    {
+        if (!o.Farbig || fachId is not int f || ix.Faecher.GetValueOrDefault(f) is not { Hintergrund: not 0 } fa) return null;
+        var c = fa.Hintergrund;
+        var hell = (0.299f * ((c >> 16) & 0xFF) + 0.587f * ((c >> 8) & 0xFF) + 0.114f * (c & 0xFF)) / 255f;
+        return 0.80f + 0.17f * hell;
+    }
+
+    private static Stundenraster Raster(Schuldatei d, DatenIndex ix, ElementTyp typ, int id, StundenplanDruckOptionen o, List<Fussnote> fussnoten, ISet<string> faecher, bool kompakt)
     {
         var zr = d.Zeitraster;
-        var tagVon = Math.Clamp(o.VonTag, 0, zr.TageProWoche - 1);
+        var tagVon = Math.Clamp(o.VonTag, 0, Math.Max(0, zr.TageProWoche - 1));
         var tagBis = o.BisTag < 0 ? zr.TageProWoche - 1 : Math.Clamp(o.BisTag, tagVon, zr.TageProWoche - 1);
-        var stVon = Math.Clamp(o.VonStunde, 1, zr.StundenProTag);
+        var stVon = Math.Clamp(o.VonStunde, 1, Math.Max(1, zr.StundenProTag));
         var stBis = o.BisStunde <= 0 ? zr.StundenProTag : Math.Clamp(o.BisStunde, stVon, zr.StundenProTag);
-        var tage = Enumerable.Range(tagVon, tagBis - tagVon + 1).ToList();
-        var stunden = stBis - stVon + 1;
-        var plan = ix.PlanVon(typ, id).Where(p => p.Stunde >= stVon && p.Stunde <= stBis).ToList();
-        var zeilen = new List<(int Stunde, string Pause)>();
+        var tage = Enumerable.Range(tagVon, Math.Max(0, tagBis - tagVon + 1)).ToList();
+        var r = new Stundenraster { Kompakt = kompakt, ZeitenZeigen = o.ZeitenZeigen };
+        foreach (var t in tage)
+        {
+            r.Tage.Add(Planungsdienst.Tagname(d, t, true));
+            if (o.Woche is DateOnly w)
+            {
+                var datum = TagDatum(d, w, t);
+                r.Daten.Add($"{datum:d.M.}");
+                if (!Kalender.IstUnterrichtstag(d, datum)) r.FreieTage[r.Tage.Count - 1] = Kalender.FreiBezeichnung(d, datum) is { Length: > 0 } fb ? fb : "unterrichtsfrei";
+            }
+        }
         for (var st = stVon; st <= stBis; st++)
         {
-            zeilen.Add((st, ""));
-            var pause = zr.Pausen.FirstOrDefault(p => p.NachStunde == st);
-            if (o.PausenZeigen && pause != null && st < stBis) zeilen.Add((0, pause.Bezeichnung.Length > 0 ? pause.Bezeichnung : "Pause"));
+            var zeit = zr.Zeit(st);
+            var pause = o.PausenZeigen && st < stBis ? zr.Pausen.FirstOrDefault(p => p.NachStunde == st) : null;
+            r.Stunden.Add(new Rasterstunde(zr.StundenLabel(st), zeit is null ? "" : $"{zeit.Beginn:H\\:mm}", zeit is null ? "" : $"{zeit.Ende:H\\:mm}",
+                pause is null ? null : pause.Bezeichnung.Length > 0 ? pause.Bezeichnung : ""));
         }
-        var kopfH = kompakt ? 17f : 22f;
-        const float pauseH = 10;
-        var anzahlP = zeilen.Count(z => z.Stunde == 0);
-        var zeileH = Math.Clamp((r.H - kopfH - anzahlP * pauseH) / Math.Max(1, stunden), 13, kompakt ? 32 : 35);
-        var gNr = kompakt ? 13f : 16f;
-        var nrB = Enumerable.Range(stVon, stunden).Max(st => PdfDokument.TextBreite(zr.StundenLabel(st), gNr, true));
-        var zeitB = o.ZeitenZeigen
-            ? Enumerable.Range(stVon, stunden).Select(zr.Zeit).Where(z => z != null).Select(z => PdfDokument.TextBreite($"{z!.Beginn:H\\:mm}-{z.Ende:H\\:mm}", 6.5f)).DefaultIfEmpty(0).Max()
-            : 0;
-        var stdB = MathF.Ceiling(Math.Max(kompakt ? 34 : 40, nrB + zeitB + 7));
-        var tagB = (r.B - stdB) / Math.Max(1, tage.Count);
-        var hoehe = kopfH + anzahlP * pauseH + stunden * zeileH;
-        var y0 = r.Y;
 
-        s.Flaeche(r.X, y0, r.B, kopfH, KopfGrau);
-        for (var t = 0; t < tage.Count; t++)
-            s.TextImKasten(r.X + stdB + t * tagB, y0, tagB, kopfH, kompakt ? 9f : 10.5f, Planungsdienst.Tagname(d, tage[t], true), 1, true);
-
-        var lage = new Dictionary<int, (float Y, float H)>();
-        var pausen = new List<(float Y, string Text)>();
-        var y = y0 + kopfH;
-        foreach (var z in zeilen)
+        var plan = ix.PlanVon(typ, id).Where(p => p.Stunde >= stVon && p.Stunde <= stBis).ToList();
+        // Einträge je Tag und Stunde (Wochenplan: mit Änderungen)
+        var eintraege = new Dictionary<(int Tag, int Stunde), List<Rastereintrag>>();
+        foreach (var t in tage)
         {
-            if (z.Stunde == 0) { pausen.Add((y, z.Pause)); y += pauseH; }
-            else { lage[z.Stunde] = (y, zeileH); y += zeileH; }
+            var datum = o.Woche is DateOnly wo ? TagDatum(d, wo, t) : (DateOnly?)null;
+            var frei = datum is DateOnly df && !Kalender.IstUnterrichtstag(d, df);
+            var vertretungen = datum is DateOnly dv && !frei ? Vertretungen.Am(d, dv).Where(v => !v.NichtDrucken && v.Art != VertretungsArt.Pausenaufsicht).ToList() : new List<Vertretung>();
+            var benutzt = new HashSet<Vertretung>();
+            for (var st = stVon; st <= stBis; st++)
+            {
+                var liste = new List<Rastereintrag>();
+                if (frei) continue;
+                foreach (var p in plan.Where(p => p.Tag == t && p.Stunde == st))
+                {
+                    if (!ix.Unterrichte.TryGetValue(p.UnterrichtId, out var u)) continue;
+                    var teile = Teile(u, p, typ, id);
+                    string hinweis = "";
+                    if (u.Zeilen.Count > 1)
+                    {
+                        var text = string.Join("; ", u.Zeilen.Select((z, i) =>
+                        {
+                            var raum = i < p.Raeume.Count && p.Raeume[i] is int rr ? ix.KRaum(rr) : z.FachraumId is int fr ? ix.KRaum(fr) : "";
+                            return $"{ix.KFach(z.FachId)} {ix.KLehrer(z.LehrerId)}{(raum.Length > 0 ? " " + raum : "")} ({ix.KKlassen(z.KlassenIds)})";
+                        }));
+                        var nr = fussnoten.FirstOrDefault(n => n.Text == text)?.Nr;
+                        if (nr is null) { nr = fussnoten.Count + 1; fussnoten.Add(new Fussnote(nr.Value, text)); }
+                        hinweis = $"{nr})";
+                    }
+                    foreach (var tl in teile.Take(u.Zeilen.Count > 1 && teile.Count > 3 ? 3 : 99))
+                    {
+                        var fachEl = tl.Zeile.FachId is int fid ? ix.Faecher.GetValueOrDefault(fid) : null;
+                        if (fachEl != null) faecher.Add(fachEl.Kurzname);
+                        var fach = o.Langname && fachEl is { Langname.Length: > 0 } ? fachEl.Langname : ix.KFach(tl.Zeile.FachId);
+                        var (a, b, c) = Angaben(typ, fach, ix.KLehrer(tl.Zeile.LehrerId), ix.KKlassen(tl.Zeile.KlassenIds), tl.Raum is int rr ? ix.KRaum(rr) : "");
+                        var e = new Rastereintrag { Fach = a, Person = b, Raum = c, Hinweis = hinweis, Grau = Grau(ix, tl.Zeile.FachId, o) };
+                        if (datum is not null)
+                        {
+                            var v = vertretungen.FirstOrDefault(x => !benutzt.Contains(x) && x.UnterrichtId == u.Id && x.Stunde == st && (x.ZeilenIndex == tl.Index || u.Zeilen.Count == 1))
+                                    ?? vertretungen.FirstOrDefault(x => !benutzt.Contains(x) && x.UnterrichtId == u.Id && x.Stunde == st);
+                            if (v != null) { benutzt.Add(v); Aendern(e, v, typ, id, ix, tl); }
+                        }
+                        liste.Add(e);
+                    }
+                }
+                if (datum is DateOnly dt)
+                {
+                    // zusätzliche Stunden (Vertretung durch die Lehrkraft, verlegte Stunden, Raum neu belegt)
+                    foreach (var v in vertretungen.Where(x => x.Stunde == st && !benutzt.Contains(x) && !x.IstEntfall && Betrifft(x, typ, id)))
+                    {
+                        benutzt.Add(v);
+                        var (a, b, c) = Angaben(typ, ix.KFach(v.VertretungsfachId ?? v.FachId), ix.KLehrer(v.VertreterId), ix.KKlassen(v.NeueKlassenIds), ix.KRaum(v.VertretungsraumId ?? v.RaumId));
+                        liste.Add(new Rastereintrag { Fach = a, Person = b, Raum = c, Status = Stundenstatus.Zusatz, Hinweis = v.Art == VertretungsArt.Verlegung || v.VonDatum.HasValue ? "verlegt" : "" });
+                    }
+                    foreach (var k in d.Klausuren.Where(k => k.Aktiv && k.Datum == dt && st >= k.StundeVon && st <= k.StundeBis && KlausurBetrifft(k, typ, id)))
+                    {
+                        var (a, b, c) = Angaben(typ, k.Name.Length > 0 ? k.Name : "Prüfung", string.Join(",", k.LehrerIds.Select(ix.KLehrer)), ix.KKlassen(k.KlassenIds),
+                            string.Join(",", k.RaumIds.Select(ix.KRaum)));
+                        liste.RemoveAll(x => x.Status == Stundenstatus.Normal && k.UnterrichtEntfaellt && typ == ElementTyp.Klasse);
+                        liste.Add(new Rastereintrag { Fach = a, Person = b, Raum = c, Status = Stundenstatus.Pruefung });
+                    }
+                }
+                if (liste.Count > 0) eintraege[(t, st)] = liste;
+            }
         }
 
-        string Schluessel(int t, int st) => string.Join(",", plan.Where(p => p.Tag == t && p.Stunde == st).Select(p => p.UnterrichtId).OrderBy(x => x));
+        string Schluessel(int t, int st) => eintraege.TryGetValue((t, st), out var l)
+            ? string.Join("|", l.Select(e => $"{e.Fach}/{e.Person}/{e.Raum}/{e.FachAlt}/{e.PersonAlt}/{e.RaumAlt}/{e.Status}/{e.Hinweis}/{e.Grau}"))
+            : "";
         for (var ti = 0; ti < tage.Count; ti++)
         {
             var t = tage[ti];
             var st = stVon;
             while (st <= stBis)
             {
-                var hier = plan.Where(p => p.Tag == t && p.Stunde == st).ToList();
                 var sch = Schluessel(t, st);
                 var bis = st;
                 while (!o.Einzelstunden && sch.Length > 0 && bis < stBis && !(o.PausenZeigen && zr.Pausen.Any(p => p.NachStunde == bis)) && Schluessel(t, bis + 1) == sch) bis++;
-                var x = r.X + stdB + ti * tagB;
-                var zelle = new Kasten(x, lage[st].Y, tagB, lage[bis].Y + lage[bis].H - lage[st].Y);
-                if (hier.Count > 0)
-                {
-                    var fuell = Grau;
-                    if (o.Farbig && ix.Unterrichte.TryGetValue(hier[0].UnterrichtId, out var u0) && u0.HauptfachId is int hf
-                        && ix.Faecher.GetValueOrDefault(hf) is { Hintergrund: not 0 } fa)
-                        fuell = Farbe.AusInt(fa.Hintergrund).Hell(0.55f);
-                    s.Flaeche(zelle.X, zelle.Y, zelle.B, zelle.H, fuell);
-                    Zelle(s, zelle, hier, ix, typ, id, fussnoten, faecher, o);
-                }
-                s.Rahmen(zelle.X, zelle.Y, zelle.B, zelle.H, 0.55f);
+                if (sch.Length > 0) r.Zelle(ti, st - stVon, bis - stVon).Eintraege.AddRange(eintraege[(t, st)]);
                 st = bis + 1;
             }
         }
-
-        foreach (var (st, (yy, hh)) in lage)
-        {
-            s.Flaeche(r.X, yy, stdB, hh, KopfGrau);
-            s.Rahmen(r.X, yy, stdB, hh, 0.55f);
-            s.Text(r.X + 2, PdfSeite.Mitte(yy, hh, gNr), gNr, zr.StundenLabel(st), true);
-            if (o.ZeitenZeigen && zr.Zeit(st) is { } zeit)
-                s.Text(r.X + nrB + 5, PdfSeite.Mitte(yy, hh, 6.5f) + 1, 6.5f, $"{zeit.Beginn:H\\:mm}-{zeit.Ende:H\\:mm}");
-        }
-        foreach (var (py, text) in pausen)
-        {
-            s.Flaeche(r.X + stdB, py, r.B - stdB, pauseH, Farbe.Weiss);
-            s.Rahmen(r.X + stdB, py, r.B - stdB, pauseH, 0.55f);
-            s.TextImKasten(r.X + stdB, py, r.B - stdB, pauseH, 8, text, 1);
-            s.Flaeche(r.X + 0.3f, py, stdB - 0.6f, pauseH, Farbe.Weiss);
-        }
-        s.Rahmen(r.X, y0, r.B, hoehe, 1.5f);
-        s.Linie(r.X, y0 + kopfH, r.Rechts, y0 + kopfH, 1.5f);
-        s.Linie(r.X + stdB, y0, r.X + stdB, y0 + hoehe, 1.5f);
-        for (var t = 1; t < tage.Count; t++) s.Linie(r.X + stdB + t * tagB, y0, r.X + stdB + t * tagB, y0 + kopfH, 0.55f);
+        return r;
     }
 
-    /// <summary>Inhalt einer Zelle: je Unterricht eine Zeile (fett, normal, unterstrichen); Kopplungen mit „*“ und Fußnotennummer.</summary>
-    private static void Zelle(PdfSeite s, Kasten z, List<Planstunde> hier, DatenIndex ix, ElementTyp typ, int id, List<Fussnote> fussnoten, ISet<int> faecher, StundenplanDruckOptionen o)
+    private static bool Betrifft(Vertretung v, ElementTyp typ, int id) => typ switch
     {
-        var zeilen = new List<(string A, string B, string C, bool Stern)>();
-        var noten = new List<int>();
-        foreach (var p in hier)
+        ElementTyp.Klasse => v.NeueKlassenIds.Contains(id) && v.Art is not (VertretungsArt.Raumbuchung or VertretungsArt.Vormerkung),
+        ElementTyp.Lehrer => v.VertreterId == id,
+        ElementTyp.Raum => (v.VertretungsraumId ?? v.RaumId) == id,
+        ElementTyp.Fach => (v.VertretungsfachId ?? v.FachId) == id,
+        _ => false,
+    };
+
+    private static bool KlausurBetrifft(Klausur k, ElementTyp typ, int id) => typ switch
+    {
+        ElementTyp.Klasse => k.KlassenIds.Contains(id),
+        ElementTyp.Lehrer => k.LehrerIds.Contains(id),
+        ElementTyp.Raum => k.RaumIds.Contains(id),
+        _ => false,
+    };
+
+    /// <summary>Änderung durch eine Vertretung an einem Planeintrag: Entfall, neue Lehrkraft, neuer Raum, neues Fach.</summary>
+    private static void Aendern(Rastereintrag e, Vertretung v, ElementTyp typ, int id, DatenIndex ix, Teil tl)
+    {
+        if (v.IstEntfall || (v.NachDatum.HasValue && v.Art is VertretungsArt.Verlegung or VertretungsArt.Tausch or VertretungsArt.Lehrertausch))
         {
-            if (!ix.Unterrichte.TryGetValue(p.UnterrichtId, out var u)) continue;
-            var teile = Teile(u, p, typ, id);
-            foreach (var t in teile) if (t.Zeile.FachId is int f) faecher.Add(f);
-            var gekoppelt = u.Zeilen.Count > 1;
-            if (gekoppelt)
+            e.Status = Stundenstatus.Entfall;
+            if (v.NachDatum is DateOnly nach) e.Hinweis = $"verlegt auf {nach:d.M.}";
+            return;
+        }
+        if (v.Art is VertretungsArt.Raumbuchung or VertretungsArt.Vormerkung or VertretungsArt.Unterricht) return;
+        var geaendert = false;
+        // Lehrkraft
+        var alt = ix.KLehrer(v.LehrerId ?? tl.Zeile.LehrerId);
+        var neu = v.VertreterId is int vid ? ix.KLehrer(vid) : v.Art is VertretungsArt.VertretungOhneLehrer or VertretungsArt.EigenverantwortlichesArbeiten ? "" : "???";
+        if (typ == ElementTyp.Lehrer)
+        {
+            if (v.VertreterId != id && v.LehrerId == id)
             {
-                var fz = FussnotenZeilen(u, p, ix);
-                var nr = fussnoten.FirstOrDefault(n => n.Zeilen.SequenceEqual(fz))?.Nr;
-                if (nr is null) { nr = fussnoten.Count + 1; fussnoten.Add(new Fussnote(nr.Value, fz)); }
-                noten.Add(nr.Value);
-            }
-            foreach (var t in teile.Take(gekoppelt && teile.Count > 3 ? 3 : 99))
-            {
-                var fachEl = t.Zeile.FachId is int fid ? ix.Faecher.GetValueOrDefault(fid) : null;
-                var fach = o.Langname && fachEl is { Langname.Length: > 0 } ? fachEl.Langname : ix.KFach(t.Zeile.FachId);
-                var lehrer = ix.KLehrer(t.Zeile.LehrerId);
-                var raum = t.Raum is int rr ? ix.KRaum(rr) : "";
-                var klassen = ix.KKlassen(t.Zeile.KlassenIds);
-                zeilen.Add(typ switch
-                {
-                    ElementTyp.Klasse => (fach, lehrer, raum, gekoppelt),
-                    ElementTyp.Lehrer => (klassen, raum, fach, gekoppelt),
-                    _ => (klassen, lehrer, fach, gekoppelt),
-                });
+                e.Status = Stundenstatus.Entfall;
+                e.Hinweis = neu.Length > 0 ? $"vertreten: {neu}" : "vertreten";
+                return;
             }
         }
-        if (zeilen.Count == 0) return;
-        var g = zeilen.Count <= 2 ? 8.5f : zeilen.Count <= 4 ? 6.5f : 5.5f;
-        var zh = g * 1.15f + (zeilen.Count <= 2 ? 2 : 0.4f);
-        var platz = z.H - (noten.Count > 0 ? 5 : 0);
-        var max = Math.Max(1, (int)(platz / zh));
-        var sichtbar = zeilen.Take(max).ToList();
-        var y = z.Y + (platz - sichtbar.Count * zh) / 2;
-        var leer = PdfDokument.TextBreite(" ", g);
-        foreach (var (a, b, c, stern) in sichtbar)
+        else if (neu != alt && (v.VertreterId.HasValue || v.Art is VertretungsArt.Vertretung or VertretungsArt.VertretungOhneLehrer or VertretungsArt.EigenverantwortlichesArbeiten))
         {
-            var ta = (stern ? "*" : "") + a;
-            var wa = PdfDokument.TextBreite(ta, g, true);
-            var wb = b.Length > 0 ? leer + PdfDokument.TextBreite(b, g) : 0;
-            var wc = c.Length > 0 ? leer + PdfDokument.TextBreite(c, g) : 0;
-            // zu breit: Schrift auf die Zelle verkleinern
-            var faktor = Math.Min(1f, (z.B - 3) / Math.Max(1, wa + wb + wc));
-            var gg = g * faktor;
-            var x = z.X + Math.Max(1.5f, (z.B - (wa + wb + wc) * faktor) / 2);
-            var gl = y + zh / 2 + gg * 0.35f;
-            s.Text(x, gl, gg, ta, true);
-            x += wa * faktor;
-            if (b.Length > 0)
-            {
-                if (typ == ElementTyp.Lehrer) s.Unterstrichen(x + leer * faktor, gl, gg, b); else s.Text(x + leer * faktor, gl, gg, b);
-                x += wb * faktor;
-            }
-            if (c.Length > 0)
-            {
-                if (typ == ElementTyp.Klasse) s.Unterstrichen(x + leer * faktor, gl, gg, c); else s.Text(x + leer * faktor, gl, gg, c);
-            }
-            y += zh;
+            if (typ == ElementTyp.Klasse || typ == ElementTyp.Fach) { e.PersonAlt = alt; e.Person = neu.Length > 0 ? neu : "EVA"; }
+            else { e.RaumAlt = alt; e.Raum = neu.Length > 0 ? neu : "EVA"; }
+            geaendert = true;
         }
-        if (noten.Count > 0) s.Text(z.X + 1.5f, z.Unten - 1.5f, 5.5f, string.Join(" ", noten.Distinct().Select(n => $"{n})")));
+        // Raum
+        if (v.VertretungsraumId is int nr && nr != (tl.Raum ?? -1))
+        {
+            var altRaum = tl.Raum is int rr ? ix.KRaum(rr) : "";
+            if (typ == ElementTyp.Raum) { e.Status = Stundenstatus.Entfall; e.Hinweis = $"in {ix.KRaum(nr)}"; return; }
+            e.RaumAlt = altRaum;
+            e.Raum = ix.KRaum(nr);
+            geaendert = true;
+        }
+        // Fach
+        if (v.VertretungsfachId is int nf && nf != tl.Zeile.FachId)
+        {
+            e.FachAlt = e.Fach;
+            e.Fach = ix.KFach(nf);
+            geaendert = true;
+        }
+        if (geaendert) e.Status = Stundenstatus.Aenderung;
     }
 
-    private static List<(string Text, string Klassen)> FussnotenZeilen(Unterricht u, Planstunde p, DatenIndex ix) =>
-        u.Zeilen.Select((z, i) =>
-        {
-            var raum = i < p.Raeume.Count && p.Raeume[i] is int r ? ix.KRaum(r) : z.FachraumId is int f ? ix.KRaum(f) : "";
-            return ($"{ix.KLehrer(z.LehrerId)}, {ix.KFach(z.FachId)}{(raum.Length > 0 ? ",  " + raum : "")}", ix.KKlassen(z.KlassenIds));
-        }).ToList();
+    // ------------------------------------------------------------------------------------------ Unterrichtsliste
 
-    // ------------------------------------------------------------------------------------------ Unterrichtsliste rechts
-
-    private static void Liste(PdfSeite s, Kasten r, DatenIndex ix, ElementTyp typ, int id, ISet<int> faecher)
+    private static Tabelle Unterrichtsliste(Schuldatei d, DatenIndex ix, ElementTyp typ, int id)
     {
-        var mitKlassen = typ != ElementTyp.Klasse;
-        var spalten = mitKlassen
-            ? new[] { ("U-Nr", .10f), ("Kl,Le", .10f), ("Wst", .08f), ("Lehrer", .18f), ("Fach", .17f), ("Klasse(n)", .37f) }
-            : new[] { ("U-Nr", .12f), ("Kl,Le", .12f), ("Std.", .10f), ("Wst", .08f), ("Lehrer", .26f), ("Fach", .32f) };
-        var xs = new float[spalten.Length + 1];
-        xs[0] = r.X;
-        for (var i = 0; i < spalten.Length; i++) xs[i + 1] = xs[i] + spalten[i].Item2 * r.B;
-        const float g = 8.5f;
-        var zh = g * 1.15f + 1.5f;
-        s.Flaeche(r.X, r.Y, r.B, zh + 2, KopfGrau);
-        for (var i = 0; i < spalten.Length; i++) s.Text(xs[i] + 1.5f, PdfSeite.Mitte(r.Y, zh + 2, 9), 9, spalten[i].Item1);
-        var y = r.Y + zh + 3.5f;
+        var t = new Tabelle { Schriftgroesse = 7.2f, LeerText = "Kein Unterricht." };
+        t.Spalte("U-Nr", Ausrichtung.Rechts, 0, false);
+        t.Spalte("Fach", null, 0, false, true);
+        switch (typ)
+        {
+            case ElementTyp.Klasse: t.Spalte("Lehrkraft"); break;
+            case ElementTyp.Lehrer: t.Spalte("Klasse(n)"); break;
+            default: t.Spalte("Klasse(n)"); t.Spalte("Lehrkraft"); break;
+        }
+        t.Spalte("Wst", Ausrichtung.Rechts, 0, false);
+        decimal summe = 0;
         foreach (var u in ix.UnterrichteVon(typ, id).OrderBy(u => u.Id))
         {
             var zeilen = typ switch
             {
                 ElementTyp.Lehrer => u.Zeilen.Where(z => z.LehrerId == id).ToList(),
                 ElementTyp.Klasse => u.Zeilen.Where(z => z.KlassenIds.Contains(id)).ToList(),
+                ElementTyp.Fach => u.Zeilen.Where(z => z.FachId == id).ToList(),
                 _ => u.Zeilen.ToList(),
             };
             if (zeilen.Count == 0) zeilen = u.Zeilen.Take(1).ToList();
-            var hoehe = zeilen.Count * zh;
-            if (y + hoehe > r.Unten) { s.Text(r.X + 1.5f, y + g, g, "…"); break; }
-            foreach (var z in zeilen) if (z.FachId is int fa) faecher.Add(fa);
-            var klLe = u.Zeilen.Count > 1 ? $"{u.KlassenIds.Count()}, {u.LehrerIds.Count()}" : "";
-            var nvpl = ix.NichtVerplant(u);
-            for (var i = 0; i < zeilen.Count; i++)
+            var fach = string.Join(", ", zeilen.Select(z => ix.KFach(z.FachId)).Distinct());
+            var lehrer = string.Join(", ", zeilen.Select(z => ix.KLehrer(z.LehrerId)).Where(x => x.Length > 0).Distinct());
+            var klassen = string.Join(", ", zeilen.Select(z => ix.KKlassen(z.KlassenIds)).Where(x => x.Length > 0).Distinct());
+            var wst = u.Wochenstunden.ToString(De) + (u.Zeilen.Count > 1 ? "*" : "");
+            var werte = typ switch
             {
-                var z = zeilen[i];
-                var w = mitKlassen
-                    ? new[] { i == 0 ? u.Id.ToString(De) : "", i == 0 ? klLe : "", i == 0 ? u.Wochenstunden.ToString(De) : "", ix.KLehrer(z.LehrerId), ix.KFach(z.FachId), ix.KKlassen(z.KlassenIds) }
-                    : new[] { i == 0 ? u.Id.ToString(De) : "", i == 0 ? klLe : "", i == 0 && nvpl > 0 ? nvpl.ToString(De) : "", i == 0 ? u.Wochenstunden.ToString(De) : "", ix.KLehrer(z.LehrerId), ix.KFach(z.FachId) };
-                for (var c = 0; c < w.Length; c++) s.TextImKasten(xs[c], y + i * zh, xs[c + 1] - xs[c], zh, g, w[c], 0, false, null, 1.5f);
-            }
-            y += hoehe;
-            s.Linie(r.X, y, r.Rechts, y, 0.55f, Farbe.Grau(200 / 255f));
-            y += 0.7f;
+                ElementTyp.Klasse => new[] { u.Id.ToString(De), fach, lehrer, wst },
+                ElementTyp.Lehrer => new[] { u.Id.ToString(De), fach, klassen, wst },
+                _ => new[] { u.Id.ToString(De), fach, klassen, lehrer, wst },
+            };
+            t.Zeile(werte);
+            summe += u.Wochenstunden;
         }
-    }
-
-    // ------------------------------------------------------------------------------------------ Legenden unten
-
-    private static void Legenden(PdfSeite s, Kasten r, DatenIndex ix, List<Fussnote> fussnoten, ISet<int> faecher)
-    {
-        const float g = 8.5f;
-        var zh = g * 1.15f + 0.7f;
-        var breiteNote = r.B * .25f;
-        var noteZeilen = fussnoten.SelectMany(n => n.Zeilen.Select((z, i) => (Nr: i == 0 ? $"{n.Nr})" : "", z.Text, z.Klassen))).ToList();
-        var proSpalte = Math.Max(1, (int)((r.H - zh - 3) / zh));
-        for (var sp = 0; sp < 2; sp++)
+        if (t.Zeilen.Count > 0)
         {
-            var sx = r.X + sp * breiteNote;
-            if (sp == 0 || noteZeilen.Count > proSpalte)
-            {
-                s.Flaeche(sx, r.Y, breiteNote - 7, zh, KopfGrau);
-                s.Text(sx, PdfSeite.Mitte(r.Y, zh, g), g, "Nr. Le.,Fa.,Rm.");
-                s.Text(sx + breiteNote - 33, PdfSeite.Mitte(r.Y, zh, g), g, "Kla.");
-                s.Linie(sx, r.Y + zh, sx + breiteNote - 7, r.Y + zh, 0.55f);
-            }
-            var teil = noteZeilen.Skip(sp * proSpalte).Take(proSpalte).ToList();
-            for (var i = 0; i < teil.Count; i++)
-            {
-                var yy = r.Y + zh + 1.5f + i * zh;
-                s.Text(sx, PdfSeite.Mitte(yy, zh, g), g, teil[i].Nr);
-                s.TextImKasten(sx + 16, yy, breiteNote - 58, zh, g, teil[i].Text, 0, false, null, 0);
-                s.TextImKasten(sx + breiteNote - 33, yy, 29, zh, g, teil[i].Klassen, 0, false, null, 0);
-            }
+            var werte = Enumerable.Repeat("", t.Spalten.Count).ToArray();
+            werte[1] = "Summe";
+            werte[^1] = summe.ToString("0.##", De);
+            t.Summe(werte);
         }
-        var fx = r.X + 2 * breiteNote;
-        var fb = r.Rechts - fx;
-        var liste = faecher.Select(id => ix.Faecher.GetValueOrDefault(id)).Where(fa => fa != null).ToList();
-        s.Text(fx, PdfSeite.Mitte(r.Y, zh, g), g, "Fächer", true);
-        var proSp = Math.Max(1, (int)((r.H - 2 * zh - 3) / zh));
-        for (var sp = 0; sp < 2; sp++)
-        {
-            var sx = fx + sp * fb / 2;
-            s.Text(sx, PdfSeite.Mitte(r.Y + zh, zh, g), g, "Name");
-            s.Text(sx + 43, PdfSeite.Mitte(r.Y + zh, zh, g), g, "Langname");
-            s.Linie(sx, r.Y + 2 * zh, sx + fb / 2 - 7, r.Y + 2 * zh, 0.55f);
-            var teil = liste.Skip(sp * proSp).Take(proSp).ToList();
-            for (var i = 0; i < teil.Count; i++)
-            {
-                var yy = r.Y + 2 * zh + 1.5f + i * zh;
-                s.TextImKasten(sx, yy, 42, zh, g, teil[i]!.Kurzname, 0, false, null, 0);
-                s.TextImKasten(sx + 43, yy, fb / 2 - 52, zh, g, teil[i]!.Langname, 0, false, null, 0);
-            }
-        }
+        return t;
     }
 }

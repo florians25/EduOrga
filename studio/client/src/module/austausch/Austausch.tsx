@@ -1,5 +1,5 @@
 // Import und Export: alles in einer Seite (Schuldatei, Import, Export, Abteilungsplanung, Protokoll des letzten Imports).
-import { Button, Select, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, makeStyles, tokens } from '@fluentui/react-components';
 import { useState, type ReactNode } from 'react';
 import { api, dateiHerunterladen } from '@/api/client';
 import { befehl } from '@/kern/befehle';
@@ -10,6 +10,7 @@ import { AnsichtRahmen, Feld, Ladeanzeige } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { DatumFeld } from '@/komponenten/eingaben';
 import { berichtText, csvImport, gpuImport, type Importbericht } from './aktionen';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 interface Info { schulname?: string; abteilungen: { id: number; kurz: string; lang: string; unterrichte: number }[]; lehrer: { id: number; kurz: string; lang: string }[]; zaehler: Record<string, number> }
 
@@ -78,7 +79,8 @@ export default function Austausch() {
           {zeile('Aushang (HTML, ZIP)', 'Statische HTML-Seiten aller Pläne zum Veröffentlichen', aktion('Herunterladen', () => dateiHerunterladen(api.dok('/austausch/infostundenplan.zip'), 'Aushang.zip')))}
           {zeile('Paket für EduOrga Web (JSON)', 'Paket im Schema untplanweb/1, z. B. für ein manuelles Hochladen', aktion('Herunterladen', () => dateiHerunterladen(api.dok('/austausch/untplanweb.json'), 'untplanweb.json')))}
           {zeile('Kalender einer Lehrkraft (iCalendar)', 'Stundenplan mit Vertretungen als .ics-Datei',
-            <Select key="l" size="small" value={lk} onChange={(_, d) => setLehrer(d.value)} title="Lehrkraft für den Kalenderexport">{(info?.lehrer || []).map((l) => <option key={l.id} value={l.id}>{`${l.kurz} – ${l.lang}`}</option>)}</Select>,
+            <SuchAuswahl key="l" size="small" breite={240} wert={String(lk ?? '')} beiWahl={(w) => setLehrer(w)} title="Lehrkraft für den Kalenderexport" ariaLabel="Lehrkraft" platzhalter="Lehrkraft suchen …"
+              optionen={(info?.lehrer || []).map((l) => ({ wert: String(l.id), kurz: l.kurz, text: `${l.kurz} – ${l.lang}` }))} />,
             <Feld key="v" titel="Von"><DatumFeld size="small" wert={von} beiAenderung={(datum) => setVon(datum)} /></Feld>,
             <Feld key="b" titel="Bis"><DatumFeld size="small" wert={bis} beiAenderung={(datum) => setBis(datum)} /></Feld>,
             <span key="k">{aktion('Herunterladen', () => { if (!lk) throw new Error('Bitte eine Lehrkraft wählen.'); return dateiHerunterladen(api.dok(`/austausch/ical/${lk}?von=${von}&bis=${bis}`), 'Stundenplan.ics'); })}</span>)}
@@ -89,9 +91,8 @@ export default function Austausch() {
           <div className={s.zeile}>
             <div className={s.text}>
               <Feld titel="Abteilung">
-                <Select size="small" value={ab} onChange={(_, d) => setAbteilung(d.value)}>
-                  {info?.abteilungen.length ? info.abteilungen.map((x) => <option key={x.id} value={x.id}>{`${x.kurz}${x.lang ? ` – ${x.lang}` : ''} (${x.unterrichte} Unterrichte)`}</option>) : <option value="">Keine Abteilungen angelegt</option>}
-                </Select>
+                <SuchAuswahl size="small" breite={280} wert={String(ab ?? '')} beiWahl={(w) => setAbteilung(w)} ariaLabel="Abteilung" platzhalter={info?.abteilungen.length ? 'Abteilung wählen' : 'Keine Abteilungen angelegt'}
+                  disabled={!info?.abteilungen.length} optionen={(info?.abteilungen || []).map((x) => ({ wert: String(x.id), kurz: x.kurz, text: `${x.kurz}${x.lang ? ` – ${x.lang}` : ''} (${x.unterrichte} Unterrichte)` }))} />
               </Feld>
             </div>
             <div className={s.aktion}>

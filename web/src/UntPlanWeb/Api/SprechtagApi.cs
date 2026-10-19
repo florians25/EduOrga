@@ -471,26 +471,33 @@ public static class SprechtagApi
             var s = p.Aktuell;
             var alle = Rechtedienst.Darf(b, Recht.SprechtagVerwalten) && string.IsNullOrWhiteSpace(lehrer);
             var liste = alle ? t.Lehrkraefte.Select(l => l.Lehrer).ToList() : new List<string> { Lehrkraft(b, t, lehrer) };
+            // je Lehrkraft ein Gruppenkopf mit Raum; Zeilen: Zeit, Schüler*in, Klasse, gebucht von, Bemerkung
             var zeilen = new List<IReadOnlyList<string>>();
+            var arten = new List<string>();
             foreach (var kurz in liste)
             {
-                var raum = Sprechtagdienst.Beteiligt(t, kurz)?.Raum ?? "";
-                foreach (var x in d.Raster(t, kurz).Where(x => leer == true || x.Status == "gebucht"))
+                var lk = Sprechtagdienst.Beteiligt(t, kurz);
+                var raum = lk is { Online: true } ? "online" : lk?.Raum ?? "";
+                var termine = d.Raster(t, kurz).Where(x => leer == true || x.Status == "gebucht").ToList();
+                if (alle || raum.Length > 0)
+                {
+                    zeilen.Add(new[] { $"{Sprechtagdienst.LehrerName(s, kurz)}{(raum.Length > 0 ? $" · Raum {raum}" : "")} · {termine.Count(x => x.Termin != null)} Termine" });
+                    arten.Add("gruppe");
+                }
+                foreach (var x in termine)
                 {
                     var k = x.Termin is null ? null : s?.Schueler.FirstOrDefault(y => y.Id == x.Termin.SchuelerId);
                     var von = x.Termin?.BenutzerId is int u && bd.Holen(u) is { } eb ? (eb.Anzeigename.Length > 0 ? eb.Anzeigename : eb.Login) : x.Termin is null ? "" : "eingetragen";
-                    var zeile = new List<string> { $"{x.Beginn}–{x.Ende}", x.Termin is null ? (x.Status == "gesperrt" ? "– gesperrt –" : "") : k is null ? $"Nr. {x.Termin.SchuelerId}" : $"{k.Name}, {k.Vorname}",
-                        k?.Klasse ?? "", von, x.Termin?.Bemerkung ?? "", raum };
-                    if (alle) zeile.Insert(0, Sprechtagdienst.LehrerName(s, kurz));
-                    zeilen.Add(zeile);
+                    zeilen.Add(new List<string> { $"{x.Beginn}–{x.Ende}", x.Termin is null ? (x.Status == "gesperrt" ? "– gesperrt –" : "") : k is null ? $"Nr. {x.Termin.SchuelerId}" : $"{k.Name}, {k.Vorname}",
+                        k?.Klasse ?? "", von, x.Termin?.Bemerkung ?? "" });
+                    arten.Add("");
                 }
             }
-            var spalten = new List<string> { "Zeit", "Schüler*in", "Klasse", "Gebucht von", "Bemerkung", "Raum" };
-            if (alle) spalten.Insert(0, "Lehrkraft");
+            var spalten = new List<string> { "Zeit", "Schüler*in", "Klasse", "Gebucht von", "Bemerkung" };
             var titel = alle ? $"Terminplan {t.Name}" : $"Terminplan {Sprechtagdienst.LehrerName(s, liste[0])}";
-            var pdf = PdfBericht.Erzeugen(Schule(e, p), titel, $"{t.Name} · {DatumText(t.Datum)} · {t.Beginn}–{t.Ende} Uhr", spalten, zeilen,
+            var pdf = PdfBericht.Erzeugen(Schule(e, p), titel, $"{t.Name} · {DatumText(t.Datum)} · {t.Beginn}–{t.Ende} Uhr{(t.Ort.Length > 0 ? $" · {t.Ort}" : "")}", spalten, zeilen,
                 leer == true ? "Freie Zeilen: Erziehungsberechtigte ohne Termin können sich hier spontan eintragen." : null, b.Anzeigename.Length > 0 ? b.Anzeigename : b.Login, false,
-                PdfBericht.Hochformat(ausrichtung, !alle));
+                PdfBericht.Hochformat(ausrichtung, !alle), arten, PdfBericht.Dienstgebrauch, leer == true);
             return Results.File(pdf, "application/pdf", $"sprechtag-{t.Datum}{(alle ? "" : "-" + liste[0].ToLowerInvariant())}.pdf");
         });
 
@@ -590,7 +597,8 @@ public static class SprechtagApi
                     k is null ? "" : $"{k.Vorname} {k.Name}", k?.Klasse ?? "", x.Bemerkung };
             }).ToList();
             var pdf = PdfBericht.Erzeugen(Schule(e, p), "Meine Termine am Sprechtag", $"{t.Name} · {DatumText(t.Datum)}{(t.Ort.Length > 0 ? $" · {t.Ort}" : "")}",
-                new[] { "Zeit", "Lehrkraft", "Raum", "Kind", "Klasse", "Bemerkung" }, zeilen, null, b.Anzeigename.Length > 0 ? b.Anzeigename : b.Login, false, PdfBericht.Hochformat(ausrichtung, true));
+                new[] { "Zeit", "Lehrkraft", "Raum", "Kind", "Klasse", "Bemerkung" }, zeilen, "Bitte erscheinen Sie einige Minuten vor Ihrem Termin. Ist ein Termin nicht wahrnehmbar, sagen Sie ihn bitte in EduOrga ab.",
+                b.Anzeigename.Length > 0 ? b.Anzeigename : b.Login, false, PdfBericht.Hochformat(ausrichtung, true), vermerk: "");
             return Results.File(pdf, "application/pdf", $"sprechtag-{t.Datum}-termine.pdf");
         });
     }

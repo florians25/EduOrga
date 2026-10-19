@@ -198,7 +198,7 @@ public static class StartseiteApi
                                 reason = m["grund"]?.GetValue<string>() ?? "",
                                 note = m["text"]?.GetValue<string>() ?? "",
                                 tone = uebernommen ? "ok" : "open",
-                                label = uebernommen ? "Von UntPlan übernommen" : "Gemeldet – noch nicht übernommen",
+                                label = uebernommen ? "Vom Stundenplanbüro übernommen" : "Gemeldet – noch nicht übernommen",
                                 source = "UntPlanWeb",
                             };
                         }).ToList();

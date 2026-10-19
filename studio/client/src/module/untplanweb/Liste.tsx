@@ -1,11 +1,12 @@
 // Aus EduOrga Web übernommene Listen: Fehlzeiten der Schüler bzw. Klassenbuch (nur lesen), mit Klassenfilter und Suche.
-import { Input, Select } from '@fluentui/react-components';
+import { Input } from '@fluentui/react-components';
 import { useMemo, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
 import { useDaten } from '@/kern/laden';
 import { AnsichtRahmen, Feld, FussText } from '@/komponenten/ansicht';
 import { Tabelle } from '@/komponenten/tabelle/Tabelle';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 type Z = Record<string, string | number> & { id: number };
 
@@ -39,9 +40,8 @@ export default function UpwListe() {
     <AnsichtRahmen titel={def.titel} laden={laedt && !daten}
       filter={<>
         <Feld titel="Klasse">
-          <Select size="small" value={klasse} title="Nur Einträge dieser Klasse anzeigen" onChange={(_, d) => setKlasse(d.value)}>
-            <option value="">Alle Klassen</option>{klassen.map((k) => <option key={k} value={k}>{k}</option>)}
-          </Select>
+          <SuchAuswahl size="small" breite={150} wert={klasse} title="Nur Einträge dieser Klasse anzeigen" ariaLabel="Klasse" beiWahl={(w) => setKlasse(w)}
+            optionen={[{ wert: '', text: 'Alle Klassen' }, ...klassen.map((k) => ({ wert: k, text: k }))]} />
         </Feld>
         <Input type="search" size="small" placeholder="Suchen" aria-label="Suchen" style={{ width: 200 }} value={suche} onChange={(_, d) => setSuche(d.value)} />
         <FussText rechts>Übernommen aus EduOrga Web; Änderungen bitte dort vornehmen.</FussText>

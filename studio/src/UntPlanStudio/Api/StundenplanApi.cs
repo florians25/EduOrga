@@ -92,6 +92,35 @@ public sealed class StundenplanApi : IStudioModul
             };
         }));
 
+        // Blockansicht: mehrere Pläne eines Elementtyps in einer Antwort (ids leer = alle), je Element mit Gruppe (Jahrgang der Klasse,
+        // Abteilung der Lehrkraft, Raumart) für die Schnellauswahl
+        g.MapGet("/{typ}/block", (Arbeitsdokument a, string typ, string? ids) => a.LesenAsync(doc =>
+        {
+            var t = Typnamen.Typ(typ);
+            var ix = doc.Index;
+            var gewuenscht = (ids ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => int.TryParse(x, out var i) ? i : -1).ToHashSet();
+            var elemente = Stammdaten.Sortiert(doc.Daten, t).Where(e => gewuenscht.Count == 0 || gewuenscht.Contains(e.Id)).ToList();
+            string Gruppe(Element e) => e switch
+            {
+                Klasse k => k.Jahrgang.Length > 0 ? k.Jahrgang : new string(k.Kurzname.TakeWhile(char.IsDigit).ToArray()),
+                Lehrer l => l.AbteilungId is int ab ? doc.Daten.AlleElemente(ElementTyp.Abteilung).FirstOrDefault(x => x.Id == ab)?.Kurzname ?? "" : "",
+                Raum r => r.Raumart.Length > 0 ? r.Raumart : r.Stockwerk,
+                _ => "",
+            };
+            return new
+            {
+                zeitraster = DokumenteApi.Zeitraster(doc.Daten),
+                periode = doc.Daten.AktivePeriode.Name,
+                alle = Stammdaten.Sortiert(doc.Daten, t).Select(e => new { id = e.Id, kurz = e.Kurzname, lang = e is Lehrer l ? l.VollerName : e.Langname, gruppe = Gruppe(e) }),
+                plaene = elemente.Select(e => new
+                {
+                    element = new { id = e.Id, typ = Typnamen.Schluessel(t), kurz = e.Kurzname, lang = e is Lehrer l ? l.VollerName : e.Langname },
+                    zellen = Zellen(doc, t, e.Id),
+                    nichtVerplant = ix.UnterrichteVon(t, e.Id).Sum(u => ix.NichtVerplant(u)),
+                }),
+            };
+        }));
+
         // Zielstatus aller Felder beim Ziehen einer Stunde: Frei, VorgabeVerletzt, KeinRaum, TauschMoeglich, Kollision
         g.MapGet("/zielstatus", (Arbeitsdokument a, int unterricht, int? tag, int? stunde) => a.LesenAsync(doc =>
         {

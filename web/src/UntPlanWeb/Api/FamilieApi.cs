@@ -169,7 +169,7 @@ public static class FamilieApi
             {
                 var schule = e.Schulname.Length > 0 ? e.Schulname : s.Paket.Schule.Name;
                 var pdf = PdfBericht.Erzeugen(schule, titel, $"{kind.Vorname} {kind.Name} · Klasse {kind.Klasse} · Zeitraum {v:dd.MM.yyyy} – {bi:dd.MM.yyyy}", spalten,
-                    zeilen.Select(z => (IReadOnlyList<string>)z).ToList(), null, b.Anzeigename.Length > 0 ? b.Anzeigename : b.Login, false, PdfBericht.Hochformat(ausrichtung, false));
+                    zeilen.Select(z => (IReadOnlyList<string>)z).ToList(), null, b.Anzeigename.Length > 0 ? b.Anzeigename : b.Login, false, PdfBericht.Hochformat(ausrichtung, false), vermerk: "");
                 return Results.File(pdf, "application/pdf", datei + ".pdf");
             }
             return Results.File(Listendienst.Csv(spalten, zeilen.Select(z => z.Cast<object?>())), "text/csv; charset=utf-8", datei + ".csv");
@@ -189,11 +189,8 @@ public static class FamilieApi
             var schule = e.Schulname.Length > 0 ? e.Schulname : s.Paket.Schule.Name;
             var zeilen = liste.Select(z => (IReadOnlyList<string>)new List<string> { $"{Datum(z.VonDatum)} {z.VonZeit}", $"{Datum(z.BisDatum)} {z.BisZeit}",
                 z.Fehlstunden.ToString(De), gruende.GetValueOrDefault(z.Grund, z.Grund), StatusText(z.Status), z.Text }).ToList();
-            var hinweis = $"Hiermit entschuldige ich das Fehlen von {kind.Vorname} {kind.Name} (Klasse {kind.Klasse}) in den oben aufgeführten Zeiträumen. "
-                          + "Grund des Fehlens: ____________________________________________";
-            var pdf = PdfBericht.Erzeugen(schule, "Entschuldigungsschreiben", $"{kind.Vorname} {kind.Name} · Klasse {kind.Klasse}",
-                new[] { "Von", "Bis", "Fehlstunden", "Abwesenheitsgrund", "Status", "Text" }, zeilen, hinweis, b.Rolle == Rollen.Eltern ? "Erziehungsberechtigte*r" : $"{kind.Vorname} {kind.Name}",
-                true, PdfBericht.Hochformat(ausrichtung, true));
+            var pdf = PdfBericht.Entschuldigung(schule, $"{kind.Vorname} {kind.Name}", kind.Klasse, $"{Datum(liste[0].VonDatum)} – {Datum(liste[^1].BisDatum)}", zeilen,
+                b.Rolle == Rollen.Eltern, b.Anzeigename.Length > 0 ? b.Anzeigename : b.Login, PdfBericht.Hochformat(ausrichtung, true));
             return Results.File(pdf, "application/pdf", $"entschuldigung-{kind.Name.ToLowerInvariant()}-{uhr.Heute:yyyy-MM-dd}.pdf");
         });
     }

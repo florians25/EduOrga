@@ -5,11 +5,12 @@ import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
 import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben } from '@/kern/zustand';
-import { AnsichtRahmen } from '@/komponenten/ansicht';
-import { formular, frage } from '@/komponenten/dialoge';
+import { AnsichtRahmen, Werkzeug } from '@/komponenten/ansicht';
+import { frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { DatumFeld } from '@/komponenten/eingaben';
-import { de, isoAusDe, pfad } from './kern';
+import { de, pfad } from './kern';
+import { neuePeriodeDialog } from './Periodenwahl';
 import './einstellungen.css';
 
 interface Periode { id: number; name: string; langname: string; von: string; bis?: string | null; ende: string; schultage: number; mutter?: string; ebene: number; aktiv: boolean; fixiert: boolean; unterrichte: number; planstunden: number }
@@ -35,7 +36,7 @@ function Bearbeiten({ p, lesen, anzahl, senden, neu, loeschen }: { p: Periode; l
       <div className="es-knoepfe">
         <Button size="small" appearance="primary" disabled={lesen} onClick={() => void senden(api.put<PeriodenDaten>(pfad(`/perioden/${p.id}`), { ...w, bis: w.bis || null }, { quelle: a.id }), 'Periode geändert.')}>Übernehmen</Button>
         <Button size="small" disabled={lesen || p.aktiv} onClick={() => void senden(api.post<PeriodenDaten>(pfad(`/perioden/${p.id}/aktiv`), {}, { quelle: a.id }), `${p.name} ist jetzt die aktive Periode.`)}>Als aktive Periode setzen</Button>
-        <Button size="small" disabled={lesen} onClick={() => neu(p)}>Untergeordnete Periode …</Button>
+        <Button size="small" disabled={lesen} onClick={() => neu(p)}>Neue Periode als Kopie …</Button>
         <Button size="small" disabled={lesen || anzahl <= 1} onClick={() => loeschen(p)}>Löschen</Button>
       </div>
     </div>
@@ -54,19 +55,12 @@ export default function Perioden() {
   const id = d?.perioden.some((x) => x.id === gewaehlt) ? gewaehlt : d?.aktiv ?? null;
   const p = d?.perioden.find((x) => x.id === id);
 
-  const neu = async (mutter: Periode) => {
-    if (!d) return;
-    const w = await formular(`Neue Periode unter ${mutter.name}`, [
-      { name: 'name', titel: 'Name', wert: `Periode${d.perioden.length + 1}`, pflicht: true },
-      { name: 'von', titel: 'Von (TT.MM.JJJJ)', wert: de(mutter.von), pflicht: true },
-      { name: 'bis', titel: 'Bis (leer = offen)', wert: '' },
-    ], { okText: 'Anlegen' });
-    if (!w) return;
+  const neu = async (mutter?: Periode) => {
+    if (!(await neuePeriodeDialog({ mutterId: mutter?.id }))) return;
     try {
-      const n = await api.post<PeriodenDaten>(pfad('/perioden'), { mutterId: mutter.id, name: w.name, von: isoAusDe(w.von), bis: isoAusDe(w.bis, true) }, { quelle: a.id });
+      const n = await api.get<PeriodenDaten>(pfad('/perioden'));
       setDaten(n);
-      hinweis('Periode angelegt.', 'ok', 2000);
-      const neue = n.perioden.find((x) => x.name === String(w.name).trim());
+      const neue = [...n.perioden].sort((x, y) => y.id - x.id)[0];
       if (neue) setGewaehlt(neue.id);
     } catch (e) { fehlerMelden(e); }
   };
@@ -76,7 +70,8 @@ export default function Perioden() {
   };
 
   return (
-    <AnsichtRahmen titel="Perioden" laden={laedt && !d}>
+    <AnsichtRahmen titel="Perioden" laden={laedt && !d}
+      werkzeuge={<Werkzeug text="Neue Periode ab …" titel="Neue Periode ab einem Datum als Kopie der aktiven Periode" deaktiviert={lesen} aktion={() => neu()} />}>
       {d ? (
         <div className="es-perioden">
           <div className="es-perioden-liste">

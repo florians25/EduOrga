@@ -66,20 +66,24 @@ export function menue(b: Benutzer): Bereich[] {
       { nav: 'u-tag-klasse', href: '#/tag/klasse/-/u', text: 'Tagesablauf Klasse' },
       ...(b.admin || r['klassenbuch.einstellungen'] ? [{ nav: 'kbeinstellungen-unterricht', href: '#/kbeinstellungen/unterricht', text: 'Einstellungen' }] : []),
     ] });
+    // Klassenbuch: im Menü nur die Einstiege; alle weiteren Seiten über die Unternavigation im Klassenbuch-Bereich (components/klassenbuch/Bereich.tsx).
+    // Verborgene Punkte bleiben aufrufbar (Rechteprüfung wie bisher, alte Adressen und Lesezeichen gelten weiter).
     m.push({ id: 'klassenbuch', text: 'Klassenbuch', icon: <MenuBookOutlined />, unter: [
-      { nav: 'klassenbuch', href: '#/klassenbuch', text: 'Klassenbuch' },
-      { nav: 'klassenbuch-woche', href: '#/klassenbuch/-/woche', text: 'Woche im Überblick' },
+      { nav: 'klassenbuch-woche', href: '#/klassenbuch/-/woche', text: 'Wochenübersicht' },
+      { nav: 'klassenbuch', href: '#/klassenbuch', text: b.element ? 'Meine Stunden' : 'Stunden suchen' },
       { nav: 'offen', href: '#/offen', text: 'Offene Stunden' },
-      { nav: 'eintraege', href: '#/eintraege', text: 'Einträge' },
-      { nav: 'hausaufgaben', href: '#/hausaufgaben', text: 'Hausaufgaben' },
       ...(b.fehlzeiten ? [{ nav: 'abwesenheiten', href: '#/abwesenheiten', text: 'Abwesenheiten' },
-        { nav: 'fehlzeiten', href: '#/klassenbuch/-/fehlzeiten', text: 'Fehlzeiten' }] : []),
-      ...(b.fachlehrerEntschuldigungen ? [{ nav: 'entschuldigen', href: '#/entschuldigen', text: b.fehlzeiten ? 'Fehlzeiten eigener Unterricht' : 'Fehlzeiten' }] : []),
-      { nav: 'befreiungen', href: '#/befreiungen', text: 'Befreiungen' },
-      { nav: 'dienste', href: '#/dienste', text: 'Klassendienste' },
-      { nav: 'berichte', href: '#/berichte', text: 'Auswertungen' },
+        { nav: 'fehlzeiten', href: '#/klassenbuch/-/fehlzeiten', text: 'Fehlzeiten', verborgen: true }] : []),
+      { nav: 'klassenbuch-verlauf', href: '#/klassenbuch/-/verlauf', text: 'Inhalte & Hausaufgaben', verborgen: true },
+      { nav: 'klassenbuch-vermerke', href: '#/klassenbuch/-/vermerke', text: 'Vermerke', verborgen: true },
+      { nav: 'eintraege', href: '#/eintraege', text: 'Einträge', verborgen: true },
+      { nav: 'hausaufgaben', href: '#/hausaufgaben', text: 'Hausaufgaben', verborgen: true },
+      ...(b.fachlehrerEntschuldigungen ? [{ nav: 'entschuldigen', href: '#/entschuldigen', text: b.fehlzeiten ? 'Fehlzeiten eigener Unterricht' : 'Fehlzeiten', verborgen: !!b.fehlzeiten }] : []),
+      { nav: 'befreiungen', href: '#/befreiungen', text: 'Befreiungen', verborgen: true },
+      { nav: 'dienste', href: '#/dienste', text: 'Klassendienste', verborgen: true },
+      { nav: 'berichte', href: '#/berichte', text: 'Auswertungen', verborgen: true },
       { nav: 'sitzplan', href: '#/sitzplan', text: 'Sitzplan', verborgen: true },
-      ...(b.admin || r['klassenbuch.einstellungen'] ? [{ nav: 'kbeinstellungen', href: '#/kbeinstellungen', text: 'Einstellungen' }] : []),
+      ...(b.admin || r['klassenbuch.einstellungen'] ? [{ nav: 'kbeinstellungen', href: '#/kbeinstellungen', text: 'Einstellungen', verborgen: true }] : []),
     ] });
     m.push(mitteilungen([
       { nav: 'mitteilungen', href: '#/mitteilungen', text: 'Posteingang', zaehler: true },
@@ -179,6 +183,9 @@ export const ALIASE: Record<string, string[]> = {
   start: ['uebersicht'], 'mein-tag': ['heute'], elternsprechtag: ['sprechtag'], stundenplaene: ['plan'],
   'abwesenheit-melden': ['melden', 'abwesenheit'], kommunikation: ['mitteilungen'], verwaltung: ['admin'],
   'raum-buchen': ['buchen', 'raum'], 'geraete-buchen': ['buchen', 'ressource'],
+  // Klassenbuch-Bereich: sprechende Adressen der Unterseiten
+  'offene-stunden': ['offen'], klassenbucheintraege: ['eintraege'], klassendienste: ['dienste'], auswertungen: ['berichte'],
+  'meine-stunden': ['klassenbuch'], wochenuebersicht: ['klassenbuch', '-', 'woche'],
 };
 
 /** Adresse mit aufgelöstem Alias. */
@@ -194,7 +201,7 @@ export function navAus(teile: string[], b: Benutzer): string {
     case 'tag': return (teile[3] === 'u' ? 'u-tag-' : 'tag-') + (a || 'klasse');
     case 'unterricht': return a === 'klasse' ? 'unterricht-klasse' : 'unterricht';
     case 'mitteilungen': return ['gesendet', 'entwuerfe', 'listen', 'einstellungen', 'verfassen'].includes(a) ? 'mitteilungen-' + a : 'mitteilungen';
-    case 'klassenbuch': return c === 'fehlzeiten' ? 'fehlzeiten' : c && c !== 'uebersicht' ? 'klassenbuch-woche' : 'klassenbuch';
+    case 'klassenbuch': return c === 'fehlzeiten' ? 'fehlzeiten' : c === 'verlauf' ? 'klassenbuch-verlauf' : c === 'vermerke' ? 'klassenbuch-vermerke' : c && c !== 'uebersicht' ? 'klassenbuch-woche' : 'klassenbuch';
     case 'melden': return 'melden-' + (a || 'uebersicht');
     case 'buchen': return a === 'stunden' ? 'buchen-unterricht' : 'buchen-' + (a || 'raum');
     case 'stammdaten': return 'stammdaten-' + (a || 'klassen');

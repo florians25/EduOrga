@@ -1,19 +1,21 @@
-// Klassenbuch (Kollegium): Übersicht aller Unterrichte des Schuljahres je Tag (eigene Unterrichte, Lehrkraft der eigenen Klassen bzw.
-// Suche für Administration/Schulleitung, Filter „Lehrstoff fehlt“ und „Abwesenheiten nicht kontrolliert“), Wochenübersicht einer Klasse,
-// Fehlzeiten einer Klasse, Vermerke und Inhalte. Klassenkonten: offene Hausaufgaben und Unterrichtsinhalte.
+// Klassenbuch (Kollegium) im Klassenbuch-Bereich (Unternavigation components/klassenbuch/Bereich.tsx): „Meine Stunden“ – alle Unterrichte des
+// Schuljahres je Tag (eigene Unterrichte, Lehrkraft der eigenen Klassen bzw. Suche für Administration/Schulleitung, Filter „Lehrstoff fehlt“
+// und „Abwesenheiten nicht kontrolliert“) –, Wochenübersicht einer Klasse (Raster bzw. Tagesliste auf dem Telefon, Stand je Stunde:
+// dokumentiert, offen, entfallen, geplant; Filter „Nur offene“, Sprung zu Datum), Fehlzeiten, Vermerke und Inhalte einer Klasse.
+// Jede Stunde öffnet das Fenster „Unterrichtsstunde“. Klassenkonten: offene Hausaufgaben und Unterrichtsinhalte.
 // Adressen: #/klassenbuch/<Kriterien|->/uebersicht/<Datum>/<Unterricht|->, #/klassenbuch/<Klasse>/(woche|fehlzeiten|vermerke|verlauf)/<Datum>[/<von>]
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   alpha, Autocomplete, Box, Button, ButtonBase, Checkbox, Collapse, IconButton, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField,
-  ToggleButton, Tooltip, Typography, useTheme,
+  ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
+import CheckRounded from '@mui/icons-material/CheckRounded';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
 import AddRounded from '@mui/icons-material/AddRounded';
 import PersonOffOutlined from '@mui/icons-material/PersonOffOutlined';
 import AccessTimeRounded from '@mui/icons-material/AccessTimeRounded';
-import HowToRegOutlined from '@mui/icons-material/HowToRegOutlined';
 import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined';
 import HomeWorkOutlined from '@mui/icons-material/HomeWorkOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
@@ -32,6 +34,7 @@ import { gueltigeFarbe } from '../../components/plan/logik';
 import { abwZeitraum, DatumZelle, DetailFelder, detailsVon, StatusLabel, STATUS_TEXT, Zaehlt, type Details } from '../../components/klassenbuch/fehlzeiten';
 import { bestaetigen, toast } from '../../lib/meldungen';
 import { datumDe, datumKurz, heuteIso, istIsoDatum, kalenderwoche, montag, plusTage, wochentag, wochentagKurz, MONATE, ausIso, hhmm, jetztMinuten } from '../../lib/datum';
+import { kbKlasse, kbKlasseMerken } from '../../components/klassenbuch/Bereich';
 import { navigieren } from '../../lib/router';
 import { lesen, schreiben } from '../../lib/speicher';
 import { useLaden } from '../../lib/useLaden';
@@ -130,7 +133,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
   const tage = (daten.daten ?? []).slice().sort((a, b) => a.datum.localeCompare(b.datum));
   let letzteKw = -1;
   return (
-    <Seite dokumentTitel="Klassenbuch – Übersicht">
+    <Seite titel={suchModus ? 'Stunden suchen' : 'Meine Stunden'} untertitel={suchModus ? 'Unterrichte nach Klasse, Lehrkraft oder Fach – mit Thema, Anwesenheitskontrolle und Hausaufgaben.' : 'Ihre Unterrichte des Schuljahres je Tag – offene Dokumentation ist markiert.'} dokumentTitel="Klassenbuch – Stunden">
       <Paper variant="outlined" sx={{ p: 1.5, mb: 2.5, borderRadius: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', position: 'sticky', top: { xs: 60, lg: 8 }, zIndex: 5 }} className="nicht-drucken">
         {suchModus ? (
           <Autocomplete multiple options={optionen} value={optionen.filter(o => kriterien.some(k => k.typ === o.typ && k.kurz === o.kurz))} groupBy={o => GRUPPE[o.typ]}
@@ -158,7 +161,7 @@ function Uebersicht({ el, kritParam, datumParam, uParam }: { el: Elemente; kritP
         <Box sx={{ flex: 1 }} />
         {[['lehrstoff', 'Lehrstoff fehlt'], ['kontrolle', 'Abwesenheiten nicht kontrolliert']].map(([f, text]) => (
           <ToggleButton key={f} value={f} size="small" selected={filter.has(f)} onChange={() => { const n = new Set(filter); if (n.has(f)) n.delete(f); else n.add(f); setFilter(n); }}
-            sx={{ borderRadius: '999px !important', border: '1px solid', borderColor: 'divider', px: 1.5 }}>{text}</ToggleButton>
+            sx={{ borderRadius: '6px', border: '1px solid', borderColor: 'divider', px: 1.5 }}>{text}</ToggleButton>
         ))}
         <DatumFeld label="Gehe zu" wert={zielDatum} min={sjVon} max={sjBis} onWert={d => { if (d) { setBereich({ von: grenze(plusTage(montag(d), -7)), bis: grenze(plusTage(d, 21)) }); navigieren(ziel({ d })); } }} breite={160} />
       </Paper>
@@ -244,50 +247,139 @@ interface WStunde { von: number; bis: number; beginn: string; ende: string; fach
 interface WTag { datum: string; frei: boolean; freiGrund: string | null; vermerke: { art: string; text: string; schueler?: string; lehrer: string; zeit?: string }[]; stunden: WStunde[] }
 interface Woche { klasse: string; von: string; bis: string; schuelerAnzahl: number; raster: { nr: number; beginn: string; ende: string }[]; tage: WTag[] }
 
+type Doku = 'dokumentiert' | 'offen' | 'entfall' | 'geplant';
+const DOKU: Record<Doku, { text: string; ton: 'ok' | 'warnung' | 'entfall' | 'neutral' }> = {
+  dokumentiert: { text: 'Dokumentiert', ton: 'ok' }, offen: { text: 'Offen', ton: 'warnung' }, entfall: { text: 'Entfallen', ton: 'entfall' }, geplant: { text: 'Geplant', ton: 'neutral' },
+};
+
 function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string; ziel: (k: string, r: string, d?: string) => string }) {
   const t = useTheme();
+  const schmal = useMediaQuery(t.breakpoints.down('md'));
   const g = useLaden(() => holen<Woche>(`/api/app/klassenbuch/woche?klasse=${encodeURIComponent(klasse)}&datum=${datum}`), [klasse, datum]);
   const [details, setDetails] = useState<{ k: Karte; liste: Karte[] } | null>(null);
   const [vermerk, setVermerk] = useState<string | null>(null);
+  const [nurOffen, setNurOffenRoh] = useState(() => lesen<boolean>('untplan:kb-nur-offen', false, true));
+  const setNurOffen = (v: boolean) => { setNurOffenRoh(v); schreiben('untplan:kb-nur-offen', v, true); };
   const heute = heuteIso(), jetzt = hhmm(jetztMinuten());
   return (
     <Geladen g={g}>{w => {
       const tage = w.tage.filter(x => x.stunden.length || x.frei || ![5, 6].includes((ausIso(x.datum).getDay() + 6) % 7));
       const letzte = Math.max(0, ...tage.flatMap(x => x.stunden.map(s => s.bis)), ...w.raster.filter(r => r.nr <= 6).map(r => r.nr));
       const raster = w.raster.filter(r => r.nr <= letzte);
-      const vergangen = (s: WStunde, d: string) => s.status !== 'entfall' && (d < heute || (d === heute && (s.ende || '99:99') <= jetzt));
+      const vergangen = (s: WStunde, d: string) => s.status !== 'entfall' && (d < heute || (d === heute && (s.beginn || '99:99') <= jetzt));
+      const doku = (s: WStunde, d: string): Doku => (s.status === 'entfall' ? 'entfall' : !vergangen(s, d) ? 'geplant' : s.thema && s.geprueft != null ? 'dokumentiert' : 'offen');
+      const fehlt = (s: WStunde) => [!s.thema && 'Thema fehlt', s.geprueft == null && 'Anwesenheit offen'].filter(Boolean).join(' · ');
       const alle = tage.flatMap(x => x.stunden.map(s => ({ s, d: x.datum })));
       const gehalten = alle.filter(x => vergangen(x.s, x.d));
+      const offen = gehalten.filter(x => doku(x.s, x.d) === 'offen');
       const karten = alle.map(({ s, d }) => karteAus({ datum: d, von: s.von, bis: s.bis, beginn: s.beginn, ende: s.ende, status: s.status, fach: s.fach, fachName: s.fachName, farbe: s.farbe, art: s.art, klassen: [klasse], lehrer: s.lehrer, raeume: s.raeume, unterricht: s.unterricht }));
       const vermerke = tage.flatMap(x => x.vermerke.map(v => ({ ...v, datum: x.datum })));
-      const zahl = (n: number, text: string, warn = false) => <Typography variant="body2" sx={{ color: warn && n ? 'status.pruefung.main' : 'text.secondary' }}><b style={{ color: 'inherit' }}>{n}</b> {text}</Typography>;
+      const sichtbar = (s: WStunde, d: string) => !nurOffen || doku(s, d) === 'offen';
+      const oeffnen = (s: WStunde) => { const i = alle.findIndex(a => a.s === s); setDetails({ k: karten[i], liste: karten }); };
+      const zahl = (n: number, text: string, ton?: 'warn' | 'entfall') => (
+        <Typography variant="body2" sx={{ color: ton && n ? (ton === 'warn' ? 'status.pruefung.main' : 'status.entfall.main') : 'text.secondary', whiteSpace: 'nowrap' }}><b style={{ color: 'inherit' }}>{n}</b> {text}</Typography>
+      );
+      const statusZeile = (s: WStunde, d: string) => {
+        const st = doku(s, d);
+        return (
+          <Stack direction="row" gap={0.75} alignItems="center" sx={{ minWidth: 0 }}>
+            <Plakette ton={DOKU[st].ton}>{st === 'dokumentiert' && <CheckRounded sx={{ fontSize: 13 }} />}{DOKU[st].text}</Plakette>
+            {st === 'offen' && <Typography variant="caption" noWrap sx={{ color: 'status.pruefung.main', fontWeight: 600 }}>{fehlt(s)}</Typography>}
+          </Stack>
+        );
+      };
+      const symbole = (s: WStunde) => {
+        const hw = (s.hausaufgaben?.length ? s.hausaufgaben : [s.hausaufgabe]).filter(Boolean);
+        const spaet = s.verspaetet.length + (s.vorzeitig?.length ?? 0);
+        return (
+          <Stack direction="row" gap={1} sx={{ color: 'text.secondary', '& svg': { fontSize: 15 } }}>
+            {s.fehlend.length > 0 && <Tooltip title={`fehlt: ${s.fehlend.join('; ')}`}><Stack direction="row" alignItems="center" gap={0.25}><PersonOffOutlined />{s.fehlend.length}</Stack></Tooltip>}
+            {spaet > 0 && <Tooltip title={[...s.verspaetet, ...(s.vorzeitig ?? [])].join('; ')}><Stack direction="row" alignItems="center" gap={0.25}><AccessTimeRounded />{spaet}</Stack></Tooltip>}
+            {s.eintraege > 0 && <Tooltip title={`${s.eintraege} Klassenbucheinträge`}><Stack direction="row" alignItems="center" gap={0.25}><MenuBookOutlined />{s.eintraege}</Stack></Tooltip>}
+            {hw.length > 0 && <Tooltip title={`Hausaufgabe: ${hw.join(' · ')}`}><HomeWorkOutlined /></Tooltip>}
+          </Stack>
+        );
+      };
+      const kachel = (s: WStunde, d: string, i: number, eng = false) => {
+        const st = doku(s, d), entfall = st === 'entfall', komm = st === 'geplant';
+        const farbe = gueltigeFarbe(s.farbe) ?? t.palette.divider;
+        return (
+          <ButtonBase key={i} onClick={() => oeffnen(s)} aria-label={`${s.fach} ${s.von}. Stunde, ${wochentag(d)} ${datumDe(d)}: ${DOKU[st].text}${st === 'offen' ? ` (${fehlt(s)})` : ''}`}
+            sx={{ flex: 1, minWidth: 0, flexDirection: 'column', alignItems: 'stretch', textAlign: 'left', p: 1, gap: 0.5, borderRadius: 1.5,
+              border: 1, borderColor: st === 'offen' ? alpha(t.palette.status.pruefung.main, 0.55) : 'divider', boxShadow: `inset 3px 0 0 ${entfall ? t.palette.status.entfall.main : farbe}`,
+              bgcolor: entfall ? 'status.entfall.flaeche' : 'background.paper', opacity: komm ? 0.72 : 1, '&:hover': { borderColor: 'primary.light' } }}>
+            <Stack direction="row" gap={0.75} alignItems="baseline" sx={{ pl: 0.5 }}>
+              <Typography sx={{ fontWeight: 600, fontSize: 13, textDecoration: entfall ? 'line-through' : 'none' }}>{s.fach}</Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>{s.lehrer.join(', ')}</Typography>
+            </Stack>
+            <Typography variant="caption" sx={{ pl: 0.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: entfall ? 'status.entfall.main' : 'text.primary', minHeight: 18 }} title={s.thema}>
+              {entfall ? s.art || 'Entfall' : s.thema}</Typography>
+            <Box sx={{ mt: 'auto', pl: 0.5, display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <Plakette ton={DOKU[st].ton} title={st === 'offen' ? fehlt(s) : undefined}>{st === 'dokumentiert' && <CheckRounded sx={{ fontSize: 13 }} />}{st === 'offen' ? (eng ? 'Offen' : s.thema ? 'Anwesenheit offen' : 'Thema fehlt') : DOKU[st].text}</Plakette>
+              {!entfall && !komm && symbole(s)}
+            </Box>
+          </ButtonBase>
+        );
+      };
       return (
         <>
-          <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" sx={{ mb: 2 }}>
-            <IconButton href={ziel(klasse, 'woche', plusTage(w.von, -7))} aria-label="Vorherige Woche"><ChevronLeftRounded /></IconButton>
-            <Typography sx={{ fontWeight: 600 }}>KW {kalenderwoche(w.von)} · {datumKurz(w.von)} – {datumKurz(w.bis)}{w.bis.slice(0, 4)}</Typography>
-            <IconButton href={ziel(klasse, 'woche', plusTage(w.von, 7))} aria-label="Nächste Woche"><ChevronRightRounded /></IconButton>
+          <Paper variant="outlined" className="nicht-drucken" sx={{ px: 1.5, py: 1, mb: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'flaechen.band' }}>
+            <Stack direction="row" alignItems="center" gap={0.5}>
+              <IconButton size="small" href={ziel(klasse, 'woche', plusTage(w.von, -7))} aria-label="Vorige Woche"><ChevronLeftRounded /></IconButton>
+              <Typography sx={{ fontWeight: 600, minWidth: 170, textAlign: 'center' }}>KW {kalenderwoche(w.von)} · {datumKurz(w.von)} – {datumKurz(w.bis)}{w.bis.slice(0, 4)}</Typography>
+              <IconButton size="small" href={ziel(klasse, 'woche', plusTage(w.von, 7))} aria-label="Nächste Woche"><ChevronRightRounded /></IconButton>
+            </Stack>
             <Button size="small" variant="outlined" href={ziel(klasse, 'woche', heute)}>Heute</Button>
+            <DatumFeld label="Gehe zu" wert={datum} onWert={x => x && navigieren(ziel(klasse, 'woche', x))} breite={170} />
+            <ToggleButtonGroup exclusive size="small" value={nurOffen ? 'offen' : 'alle'} onChange={(_, v) => v && setNurOffen(v === 'offen')} aria-label="Filter">
+              <ToggleButton value="alle">Alle Stunden</ToggleButton><ToggleButton value="offen">Nur offene{offen.length ? ` (${offen.length})` : ''}</ToggleButton>
+            </ToggleButtonGroup>
             <Box sx={{ flex: 1 }} />
-            <Stack direction="row" gap={2} flexWrap="wrap">
-              {zahl(gehalten.length, 'gehalten')}{zahl(gehalten.filter(x => !x.s.thema).length, 'ohne Lehrstoff', true)}{zahl(gehalten.filter(x => x.s.geprueft == null).length, 'nicht kontrolliert', true)}
+            <Stack direction="row" gap={2} flexWrap="wrap" alignItems="center">
+              {zahl(gehalten.length, 'gehalten')}{zahl(offen.length, 'offen', 'warn')}{zahl(alle.filter(x => x.s.status === 'entfall').length, 'entfallen', 'entfall')}
               {zahl(alle.reduce((n, x) => n + (x.s.fehlend?.length ?? 0), 0), 'Abwesenheiten')}{zahl(vermerke.length, vermerke.length === 1 ? 'Eintrag' : 'Einträge')}
               <Typography variant="body2" color="text.secondary">{w.schuelerAnzahl ? `${w.schuelerAnzahl} Schüler*innen` : 'keine Schülerliste übertragen'}</Typography>
             </Stack>
-          </Stack>
-          {!raster.length || !tage.length ? <Leer text={`In dieser Woche gibt es für ${klasse} keinen Unterricht.`} /> : (
+          </Paper>
+          {!raster.length || !tage.length ? <Leer text={`In dieser Woche gibt es für ${klasse} keinen Unterricht.`} /> : schmal ? (
+            <Stack gap={2} sx={{ mb: 3 }}>
+              {tage.map(x => {
+                const st = x.stunden.filter(s => sichtbar(s, x.datum)).sort((a, b) => a.von - b.von);
+                return (
+                  <Paper key={x.datum} variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                    <Stack direction="row" alignItems="center" sx={{ px: 1.5, py: 0.75, bgcolor: x.datum === heute ? alpha(t.palette.primary.main, 0.06) : 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}>
+                      <Typography sx={{ fontWeight: 600, flex: 1, color: x.datum === heute ? 'primary.main' : 'text.primary' }}>{wochentag(x.datum)}, {datumKurz(x.datum)}</Typography>
+                      {!x.frei && <IconButton size="small" onClick={() => setVermerk(x.datum)} aria-label={`Klassenbucheintrag am ${datumKurz(x.datum)}`}><AddRounded fontSize="small" /></IconButton>}
+                    </Stack>
+                    {x.frei ? <Typography sx={{ p: 1.5, color: 'status.frei.main' }}>{x.freiGrund || 'unterrichtsfrei'}</Typography>
+                      : !st.length ? <Typography variant="body2" color="text.secondary" sx={{ p: 1.5 }}>{nurOffen ? 'Keine offenen Stunden.' : 'Kein Unterricht.'}</Typography>
+                      : st.map((s, i) => (
+                        <ButtonBase key={i} onClick={() => oeffnen(s)} sx={{ width: '100%', display: 'grid', gridTemplateColumns: '38px minmax(0, 1fr)', gap: 1, textAlign: 'left', px: 1.5, py: 1, borderTop: i ? 1 : 0, borderColor: 'divider' }}>
+                          <Typography sx={{ fontWeight: 600, fontSize: 13 }}>{s.von === s.bis ? s.von : `${s.von}–${s.bis}`}</Typography>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontSize: 13.5, fontWeight: 600, textDecoration: s.status === 'entfall' ? 'line-through' : 'none' }}>{s.fach} <Typography component="span" variant="caption" color="text.secondary">{s.lehrer.join(', ')}</Typography></Typography>
+                            {s.thema && <Typography variant="caption" noWrap sx={{ display: 'block' }}>{s.thema}</Typography>}
+                            <Box sx={{ mt: 0.5 }}>{statusZeile(s, x.datum)}</Box>
+                          </Box>
+                        </ButtonBase>
+                      ))}
+                  </Paper>
+                );
+              })}
+            </Stack>
+          ) : (
             <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'auto', mb: 3 }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: `56px repeat(${tage.length}, minmax(150px, 1fr))`, minWidth: 56 + tage.length * 150 }}>
-                <Box sx={{ borderBottom: 1, borderColor: 'divider' }} />
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'flaechen.band' }} />
                 {tage.map(x => (
-                  <Stack key={x.datum} direction="row" alignItems="center" sx={{ px: 1.25, py: 1, borderBottom: 1, borderLeft: 1, borderColor: 'divider', bgcolor: x.datum === heute ? alpha(t.palette.primary.main, 0.06) : 'background.default' }}>
-                    <Typography sx={{ fontWeight: 600, flex: 1, color: x.datum === heute ? 'primary.main' : 'text.primary' }}>{wochentagKurz(x.datum)} {datumKurz(x.datum)}</Typography>
-                    {!x.frei && <Tooltip title={`Klassenbucheintrag am ${datumKurz(x.datum)}`}><IconButton size="small" onClick={() => setVermerk(x.datum)} aria-label="Klassenbucheintrag"><AddRounded fontSize="small" /></IconButton></Tooltip>}
+                  <Stack key={x.datum} direction="row" alignItems="center" sx={{ px: 1.25, py: 0.75, borderBottom: 1, borderLeft: 1, borderColor: 'divider', bgcolor: x.datum === heute ? alpha(t.palette.primary.main, 0.07) : 'flaechen.band', boxShadow: x.datum === heute ? `inset 0 2px 0 ${t.palette.primary.main}` : 'none' }}>
+                    <Typography sx={{ fontWeight: 600, flex: 1, color: x.datum === heute ? 'primary.main' : 'text.primary' }}>{wochentagKurz(x.datum)} <Box component="span" sx={{ fontWeight: 400, color: 'text.secondary' }}>{datumKurz(x.datum)}</Box></Typography>
+                    {!x.frei && <Tooltip title={`Klassenbucheintrag am ${datumKurz(x.datum)}`}><IconButton size="small" onClick={() => setVermerk(x.datum)} aria-label={`Klassenbucheintrag am ${datumKurz(x.datum)}`}><AddRounded fontSize="small" /></IconButton></Tooltip>}
                   </Stack>
                 ))}
                 {raster.map(r => (
                   <Fragment key={r.nr}>
-                    <Box sx={{ px: 1, py: 1, borderBottom: 1, borderColor: 'divider' }}><Typography sx={{ fontWeight: 600, fontSize: 13 }}>{r.nr}</Typography><Typography variant="caption" color="text.secondary">{r.beginn}</Typography></Box>
+                    <Box sx={{ px: 1, py: 1, borderBottom: 1, borderColor: 'divider', bgcolor: 'flaechen.band' }}><Typography sx={{ fontWeight: 600, fontSize: 13 }}>{r.nr}</Typography><Typography variant="caption" color="text.secondary">{r.beginn}</Typography></Box>
                     {tage.map((x, ti) => {
                       if (x.frei) return r.nr === raster[0].nr ? <Box key={x.datum} sx={{ gridRow: `span ${raster.length}`, gridColumn: ti + 2, borderLeft: 1, borderColor: 'divider', bgcolor: 'status.frei.flaeche', color: 'status.frei.main', display: 'grid', placeItems: 'center', p: 1, textAlign: 'center' }}>{x.freiGrund || 'unterrichtsfrei'}</Box> : null;
                       const hier = x.stunden.filter(s => s.von <= r.nr && s.bis >= r.nr);
@@ -295,33 +387,8 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
                       if (hier.length && !start.length) return null;
                       const span = start.length ? Math.max(...start.map(s => Math.min(s.bis, letzte) - r.nr + 1)) : 1;
                       return (
-                        <Box key={x.datum} sx={{ gridColumn: ti + 2, gridRow: `span ${span}`, borderBottom: 1, borderLeft: 1, borderColor: 'divider', p: 0.5, display: 'flex', gap: 0.5, minHeight: 92 * span, bgcolor: x.datum === heute ? alpha(t.palette.primary.main, 0.025) : undefined }}>
-                          {start.map(s => {
-                            const i = alle.findIndex(a => a.s === s);
-                            const entfall = s.status === 'entfall', komm = !entfall && !vergangen(s, x.datum);
-                            const farbe = gueltigeFarbe(s.farbe) ?? t.palette.divider;
-                            const hw = (s.hausaufgaben?.length ? s.hausaufgaben : [s.hausaufgabe]).filter(Boolean);
-                            const spaet = s.verspaetet.length + (s.vorzeitig?.length ?? 0);
-                            return (
-                              <ButtonBase key={i} onClick={() => setDetails({ k: karten[i], liste: karten })} sx={{ flex: 1, minWidth: 0, flexDirection: 'column', alignItems: 'stretch', textAlign: 'left', p: 1, borderRadius: 2,
-                                border: 1, borderColor: !entfall && !komm && !s.thema ? alpha(t.palette.status.pruefung.main, 0.5) : 'divider', borderLeft: `4px solid ${entfall ? t.palette.status.entfall.main : farbe}`,
-                                bgcolor: entfall ? 'status.entfall.flaeche' : 'background.paper', opacity: komm ? 0.7 : 1, '&:hover': { boxShadow: '0 4px 12px rgba(21,26,33,.1)' } }}>
-                                <Stack direction="row" gap={0.75} alignItems="baseline"><Typography sx={{ fontWeight: 600, fontSize: 13, textDecoration: entfall ? 'line-through' : 'none' }}>{s.fach}</Typography><Typography variant="caption" color="text.secondary" noWrap>{s.lehrer.join(', ')}</Typography>
-                                  {!entfall && !komm && s.geprueft == null && <Tooltip title="Abwesenheiten nicht kontrolliert"><Box sx={{ ml: 'auto', width: 7, height: 7, borderRadius: 4, bgcolor: 'status.pruefung.main', flex: 'none' }} /></Tooltip>}</Stack>
-                                <Typography variant="caption" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', mt: 0.25, color: entfall ? 'status.entfall.main' : s.thema ? 'text.primary' : 'status.pruefung.main', fontWeight: s.thema ? 400 : 600 }} title={s.thema}>
-                                  {entfall ? s.art || 'Entfall' : s.thema || (komm ? '' : 'Lehrstoff fehlt')}</Typography>
-                                {!entfall && (
-                                  <Stack direction="row" gap={1} sx={{ mt: 'auto', pt: 0.5, color: 'text.secondary', '& svg': { fontSize: 15 } }}>
-                                    {s.fehlend.length > 0 && <Tooltip title={`fehlt: ${s.fehlend.join('; ')}`}><Stack direction="row" alignItems="center" gap={0.25}><PersonOffOutlined />{s.fehlend.length}</Stack></Tooltip>}
-                                    {spaet > 0 && <Tooltip title={[...s.verspaetet, ...(s.vorzeitig ?? [])].join('; ')}><Stack direction="row" alignItems="center" gap={0.25}><AccessTimeRounded />{spaet}</Stack></Tooltip>}
-                                    {!s.fehlend.length && !spaet && s.geprueft != null && <Tooltip title="Abwesenheiten kontrolliert – alle anwesend"><HowToRegOutlined sx={{ color: 'status.ok.main' }} /></Tooltip>}
-                                    {s.eintraege > 0 && <Tooltip title={`${s.eintraege} Klassenbucheinträge`}><Stack direction="row" alignItems="center" gap={0.25}><MenuBookOutlined />{s.eintraege}</Stack></Tooltip>}
-                                    {hw.length > 0 && <Tooltip title={`Hausaufgabe: ${hw.join(' · ')}`}><HomeWorkOutlined /></Tooltip>}
-                                  </Stack>
-                                )}
-                              </ButtonBase>
-                            );
-                          })}
+                        <Box key={x.datum} sx={{ gridColumn: ti + 2, gridRow: `span ${span}`, borderBottom: 1, borderLeft: 1, borderColor: 'divider', p: 0.5, display: 'flex', gap: 0.5, minHeight: 96 * span, bgcolor: x.datum === heute ? alpha(t.palette.primary.main, 0.025) : undefined }}>
+                          {start.map((s, i) => (sichtbar(s, x.datum) ? kachel(s, x.datum, i, start.length > 1) : <Box key={i} sx={{ flex: 1, borderRadius: 1.5, border: '1px dashed', borderColor: 'divider' }} title={`${s.fach}: ${DOKU[doku(s, x.datum)].text}`} />))}
                         </Box>
                       );
                     })}
@@ -330,16 +397,20 @@ function Wochenansicht({ klasse, datum, ziel }: { klasse: string; datum: string;
               </Box>
             </Paper>
           )}
-          <Abschnitt titel="Klassenbucheinträge der Woche">
-            <Box sx={{ px: 2, pb: 2 }}>
+          <Stack direction="row" gap={2} flexWrap="wrap" alignItems="center" sx={{ mb: 2, color: 'text.secondary' }} className="nicht-drucken" aria-label="Legende">
+            {(Object.keys(DOKU) as Doku[]).map(x => <Stack key={x} direction="row" gap={0.75} alignItems="center"><Plakette ton={DOKU[x].ton}>{DOKU[x].text}</Plakette><Typography variant="caption">{
+              x === 'dokumentiert' ? 'Thema eingetragen und Anwesenheit kontrolliert' : x === 'offen' ? 'Thema oder Anwesenheitskontrolle fehlt' : x === 'entfall' ? 'Stunde fällt aus' : 'Stunde liegt in der Zukunft'}</Typography></Stack>)}
+          </Stack>
+          <Abschnitt titel="Klassenbucheinträge der Woche" aktion={<Button size="small" startIcon={<AddRounded />} onClick={() => setVermerk(heute >= w.von && heute <= w.bis ? heute : w.von)}>Neuer Eintrag</Button>}>
+            <Box sx={{ px: 2, pb: 1.5 }}>
               {vermerke.length ? vermerke.map((v, i) => (
-                <Stack key={i} direction="row" gap={2} sx={{ py: 1, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 } }} alignItems="baseline">
+                <Stack key={i} direction={{ xs: 'column', sm: 'row' }} columnGap={2} rowGap={0.25} sx={{ py: 1, borderBottom: 1, borderColor: 'divider', '&:last-child': { borderBottom: 0 } }} alignItems={{ sm: 'baseline' }}>
                   <Typography variant="body2" color="text.secondary" sx={{ width: 110, flex: 'none' }}>{wochentagKurz(v.datum)} {datumKurz(v.datum)}{v.zeit ? ` · ${v.zeit}` : ''}</Typography>
-                  <Plakette>{v.art}</Plakette>
+                  <Box><Plakette>{v.art}</Plakette></Box>
                   <Typography variant="body2" sx={{ flex: 1 }}>{v.schueler && <b>{v.schueler}: </b>}{v.text}</Typography>
                   <Typography variant="body2" color="text.secondary">{v.lehrer}</Typography>
                 </Stack>
-              )) : <Typography variant="body2" color="text.secondary">Keine Einträge in dieser Woche.</Typography>}
+              )) : <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>Keine Einträge in dieser Woche.</Typography>}
             </Box>
           </Abschnitt>
           {details && <Stundendetails karte={details.k} liste={details.liste} typ="klasse" onClose={() => setDetails(null)} onGeaendert={() => void g.neu()} />}
@@ -533,24 +604,37 @@ function Verlauf({ klasse }: { klasse: string }) {
 
 // ---------------------------------------------------------------- Seite
 const TITEL: Record<string, string> = { woche: 'Wochenübersicht', fehlzeiten: 'Fehlzeiten', vermerke: 'Vermerke', verlauf: 'Inhalte & Hausaufgaben' };
+const UNTERTITEL: Record<string, string> = {
+  woche: 'Alle Stunden der Woche mit Stand der Dokumentation. Eine Stunde öffnen, um Thema, Anwesenheit und Einträge zu erfassen.',
+  fehlzeiten: 'Fehlstunden der Klasse im Zeitraum – entschuldigen, Details erfassen, ganze Tage eintragen.',
+  vermerke: 'Vermerke zur Klasse und zu einzelnen Schüler*innen.',
+  verlauf: 'Behandelte Inhalte und Hausaufgaben aller Fächer der Klasse.',
+};
 
 export default function Klassenbuch({ teile }: SeitenProps) {
   const s = useSitzung();
   const { ich } = s;
   const [kP, rP, dP, vP] = teile;
   const el = useLaden(() => s.elemente(), []);
+  const reiter = ['woche', 'fehlzeiten', 'vermerke', 'verlauf'].includes(rP) ? rP : 'woche';
+  const klasseRoh = kP && kP !== '-' ? kP : '';
+  useEffect(() => { if (klasseRoh && rP !== 'uebersicht') kbKlasseMerken(klasseRoh); }, [klasseRoh, rP]);
   if (!ich.kollegium) return <KlassenkontoHausaufgaben />;
   if (!el.daten) return el.fehler ? <Fehler fehler={el.fehler} neu={el.neu} /> : <Laden />;
   if (!kP || rP === 'uebersicht') return <Uebersicht el={el.daten} kritParam={kP && kP !== '-' ? kP : ''} datumParam={dP} uParam={vP} />;
-  const reiter = ['woche', 'fehlzeiten', 'vermerke', 'verlauf'].includes(rP) ? rP : 'woche';
   const gem = reiter === 'fehlzeiten' ? abwZeitraum() : null;
   const eigene = el.daten.klassen.find(k => ich.element && (k.leitung ?? []).some(l => l.toLowerCase() === ich.element.toLowerCase()))?.kurz;
-  const klasse = kP && kP !== '-' ? kP : (reiter === 'fehlzeiten' && gem?.klasse && el.daten.klassen.some(k => k.kurz === gem.klasse) ? gem.klasse : null) ?? eigene ?? el.daten.klassen[0]?.kurz ?? '';
+  const gemerkt = kbKlasse();
+  const klasse = klasseRoh || (reiter === 'fehlzeiten' && gem?.klasse && el.daten.klassen.some(k => k.kurz === gem.klasse) ? gem.klasse : null)
+    || (gemerkt && el.daten.klassen.some(k => k.kurz === gemerkt) ? gemerkt : null) || eigene || el.daten.klassen[0]?.kurz || '';
   const datum = istIsoDatum(dP) ? dP : gem?.bis ?? heuteIso();
   const ziel = (k: string, r: string, d = datum) => `#/klassenbuch/${encodeURIComponent(k)}/${r}/${d}`;
   if (!klasse) return <Seite titel="Klassenbuch"><Leer text="Keine Klassen vorhanden." /></Seite>;
+  const name = el.daten.klassen.find(k => k.kurz === klasse)?.name;
+  const leitung = el.daten.klassen.find(k => k.kurz === klasse)?.leitung ?? [];
   return (
-    <Seite titel={`${TITEL[reiter]} · ${klasse}`} aktionen={<ElementWahl liste={el.daten.klassen} wert={klasse} onWahl={k => navigieren(ziel(k, reiter))} platzhalter="Klasse wählen" breite={170} />}>
+    <Seite titel={`${TITEL[reiter]} · ${klasse}`} untertitel={<>{name && name !== klasse ? `${name} · ` : ''}{leitung.length ? `Klassenleitung ${leitung.join(', ')} · ` : ''}{UNTERTITEL[reiter]}</>} dokumentTitel={`Klassenbuch ${klasse} – ${TITEL[reiter]}`}
+      aktionen={<ElementWahl liste={el.daten.klassen} wert={klasse} onWahl={k => { kbKlasseMerken(k); navigieren(ziel(k, reiter)); }} platzhalter="Klasse wählen" breite={170} />}>
       {reiter === 'woche' && <Wochenansicht klasse={klasse} datum={datum} ziel={ziel} />}
       {reiter === 'fehlzeiten' && <Fehlzeiten klasse={klasse} bis={datum} vonParam={vP} ziel={ziel} />}
       {reiter === 'vermerke' && <Vermerke klasse={klasse} />}

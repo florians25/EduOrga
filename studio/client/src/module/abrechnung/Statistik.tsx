@@ -1,6 +1,5 @@
 // Vertretungsstatistik: Abrechnung, Einzelnachweis, Mehrarbeit NRW, Monatsabrechnung, Entfalltage, Vertretungsübersicht und
 // Wochenwerte – als Tabelle, HTML-Dokument und CSV.
-import { Select } from '@fluentui/react-components';
 import { useEffect, useState } from 'react';
 import { api, dateiHerunterladen } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
@@ -11,6 +10,7 @@ import { Tabelle } from '@/komponenten/tabelle/Tabelle';
 import { DatumFeld } from '@/komponenten/eingaben';
 import { useElemente } from '../gemeinsam';
 import './abrechnung.css';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 interface Bericht { nr: number; text: string; lehrer: boolean }
@@ -46,11 +46,13 @@ export default function Statistik({ p }: AnsichtProps) {
         <MenueKnopf text="Weitere Aktionen" eintraege={[{ text: 'HTML für alle Lehrkräfte (je Lehrkraft eine Seite)', aktion: () => window.open(api.dok(`/abrechnung/statistik.html?${q(true)}`), '_blank') }]} />
       </>}
       filter={<>
-        <Feld titel="Auswertung"><Select size="small" style={{ width: 260 }} value={String(bericht)} onChange={(_, d) => setBericht(Number(d.value))}>{(berichte || []).map((x) => <option key={x.nr} value={x.nr}>{x.text}</option>)}</Select></Feld>
-        <Feld titel="Lehrkraft"><Select size="small" disabled={!mitLehrer} value={lehrer ? String(lehrer) : ''} onChange={(_, d) => setLehrer(Number(d.value))}>{lehrkraefte.map((l) => <option key={l.id} value={l.id}>{l.k}</option>)}</Select></Feld>
+        <Feld titel="Auswertung"><SuchAuswahl size="small" breite={260} ariaLabel="Auswertung" wert={String(bericht)} beiWahl={(w) => setBericht(Number(w))} optionen={(berichte || []).map((x) => ({ wert: String(x.nr), text: x.text }))} /></Feld>
+        <Feld titel="Lehrkraft"><SuchAuswahl size="small" breite={180} ariaLabel="Lehrkraft" disabled={!mitLehrer} wert={lehrer ? String(lehrer) : ''} beiWahl={(w) => setLehrer(Number(w))} platzhalter="Suchen …"
+          optionen={lehrkraefte.map((l) => ({ wert: String(l.id), kurz: l.k, text: l.l ? `${l.k} – ${l.l}` : l.k }))} /></Feld>
         <Feld titel="Von"><DatumFeld size="small" wert={von} beiAenderung={(datum) => setVon(datum)} /></Feld>
         <Feld titel="Bis"><DatumFeld size="small" wert={bis} beiAenderung={(datum) => setBis(datum)} /></Feld>
-        <Select size="small" value="0" title="Zeitraum übernehmen" onChange={(_, d) => zeitraum(Number(d.value))}>{['Zeitraum wählen', 'Aktueller Monat', 'Vormonat', 'Aktuelle Woche', 'Schuljahr'].map((t, i) => <option key={t} value={i}>{t}</option>)}</Select>
+        <SuchAuswahl size="small" breite={170} wert="" platzhalter="Zeitraum wählen" title="Zeitraum übernehmen" ariaLabel="Zeitraum übernehmen" beiWahl={(w) => { if (w) zeitraum(Number(w)); }}
+          optionen={['Aktueller Monat', 'Vormonat', 'Aktuelle Woche', 'Schuljahr'].map((t, i) => ({ wert: String(i + 1), text: t }))} />
       </>}
       fuss={daten?.summe ? <span style={{ whiteSpace: 'pre-wrap' }}>{daten.summe}</span> : null}>
       <Tabelle key={`${daten?.nr}-${daten?.kopf.length}`} name="statistik" id={(z) => z.i} zeilen={zeilen} leerText="Keine Einträge im gewählten Zeitraum."

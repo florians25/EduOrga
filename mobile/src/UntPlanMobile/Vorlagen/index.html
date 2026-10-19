@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<!-- UntPlan Mobile – App-Hülle. Der Server setzt Symbolsammlung, Startdaten (TT_BOOT) und Fassung ein. -->
+<!-- EduOrga Mobile – App-Hülle. Der Server setzt Symbolsammlung, Startdaten (TT_BOOT) und Fassung ein. -->
 <html lang="de" data-thema="hell">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <title>__TITEL__</title>
 
-<meta name="description" content="UntPlan Mobile – Stundenplan, Vertretungen, Klassenbuch und Mitteilungen aus UntPlan Web">
-<meta name="theme-color" content="#ffffff">
+<meta name="description" content="EduOrga Mobile – Stundenplan, Vertretungen, Klassenbuch, Mitteilungen und Schulfunktionen aus EduOrga Web. Einfach mehr Schulalltag.">
+<meta name="theme-color" content="#164c55" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1318" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -25,7 +26,7 @@
     } catch (e) { }
   })();
 </script>
-<meta name="apple-mobile-web-app-title" content="UntPlan">
+<meta name="apple-mobile-web-app-title" content="EduOrga">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
@@ -104,7 +105,7 @@
       <div class="titelblock">
         <h1 class="grosstitel">Heute</h1>
         <p class="untertitel"><span id="startDatum">–</span><span class="untertitel__tag" id="startTag" hidden></span></p>
-        <p class="schulname" id="startSchool">UntPlan Mobile</p>
+        <p class="schulname" id="startSchool">EduOrga Mobile</p>
       </div>
 
       <!-- Infos zum Tag (Nachrichten, Veranstaltungen) -->
@@ -248,8 +249,12 @@
     </header>
     <div class="seite__inhalt">
       <div class="titelblock">
-        <h1 class="grosstitel">Mehr</h1>
+        <h1 class="grosstitel" id="mehrTitel">Mehr</h1>
+        <p class="schulname" id="mehrSchule"></p>
       </div>
+
+      <!-- Schulfunktionen nach Rolle (schule.js): Lehrkräfte, Schüler*innen, Eltern -->
+      <div id="schulMenue"></div>
 
       <!-- Konto: Anfangsbuchstabe, Anmeldename, Rolle; Antippen wechselt das Profil -->
       <h2 class="gruppe__titel">Konto</h2>
@@ -313,7 +318,7 @@
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <button class="row row--nav" id="btnAbout">
-          <span class="row__main"><b>Über UntPlan Mobile</b></span>
+          <span class="row__main"><b>Über EduOrga Mobile</b></span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
       </div>
@@ -324,8 +329,28 @@
         </button>
       </div>
 
-      <p class="legalnote">UntPlan Mobile · Daten aus UntPlan Web werden auf dem Gerät zwischengespeichert.<br>
-        Fassung <span id="buildStamp">–</span></p>
+      <p class="legalnote">EduOrga Mobile · Einfach mehr Schulalltag.<br>
+        Daten aus EduOrga Web werden auf dem Gerät zwischengespeichert. Fassung <span id="buildStamp">–</span></p>
+    </div>
+  </main>
+
+  <!-- ==================== SCHULFUNKTIONEN (Unterseiten von „Mehr“ bzw. „Schule“, schule.js) ==================== -->
+  <main class="screen screen--schule seite" id="screenSchule">
+    <header class="kopf">
+      <span class="kopf__links">
+        <button class="kopf__zurueck" id="schuleZurueck" aria-label="Zurück">
+          <svg class="ico" aria-hidden="true"><use href="#i-chevron-left"></use></svg><span id="schuleZurueckText">Mehr</span>
+        </button>
+      </span>
+      <span class="kopf__titel" aria-hidden="true"></span>
+      <span class="kopf__aktionen" id="schuleAktionen"></span>
+    </header>
+    <div class="seite__inhalt">
+      <div class="titelblock">
+        <h1 class="grosstitel" id="schuleTitel">–</h1>
+        <p class="untertitel" id="schuleUntertitel"></p>
+      </div>
+      <div id="schuleInhalt"></div>
     </div>
   </main>
 
@@ -345,8 +370,8 @@
       <i class="tab__dot" id="msgDot" hidden></i>
     </button>
     <button class="tab" data-screen="profile" role="tab" aria-selected="false">
-      <svg class="ico" aria-hidden="true"><use href="#i-ellipsis"></use></svg>
-      <span>Mehr</span>
+      <svg class="ico" aria-hidden="true" id="tabMehrSymbol"><use href="#i-ellipsis"></use></svg>
+      <span id="tabMehrText">Mehr</span>
     </button>
   </nav>
 </div>
@@ -701,11 +726,15 @@
 <!-- ==================== ANMELDUNG ==================== -->
 <section class="login" id="login" hidden>
   <div class="login__box">
-    <p class="login__marke" aria-hidden="true">UntPlan <span>Mobile</span></p>
+    <div class="login__marke" aria-hidden="true">
+      <svg class="login__monogramm" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#164c55"/><path d="M18 14h28v6H24v9h14v6H24v9h22v6H18z" fill="#ffffff"/><rect x="41" y="29" width="6" height="6" fill="#7fc9c9"/></svg>
+      <span class="login__wort"><b>Edu</b>Orga <span>Mobile</span></span>
+    </div>
+    <p class="login__slogan">Einfach mehr Schulalltag.</p>
     <h1>Anmelden</h1>
-    <p>Mit dem Konto von UntPlan Web.</p>
+    <p>Mit dem Konto Ihrer Schule (EduOrga Web).</p>
 
-    <a class="knopf knopf--primaer knopf--gross login__sso" id="loginSso" href="sso/start">Über UntPlan Web anmelden</a>
+    <a class="knopf knopf--primaer knopf--gross login__sso" id="loginSso" href="sso/start">Über EduOrga Web anmelden</a>
     <p class="login__oder"><span>oder mit Benutzername und Passwort</span></p>
 
     <label class="field">
@@ -723,6 +752,9 @@
 
     <button class="knopf knopf--sekundaer knopf--gross login__submit" id="loginSubmit">Anmelden</button>
     <button class="knopf knopf--still knopf--gross login__cancel" id="loginCancel" type="button" hidden>Abbrechen</button>
+    <p class="login__recht">EduOrga ist ein privates Hobbyprojekt eines Auszubildenden zum Fachinformatiker für Systemintegration,
+      entwickelt mit Unterstützung von Claude (Anthropic). Jede Schule bzw. jeder Betreiber ist für Einsatz, Betrieb und Datenschutz
+      selbst verantwortlich.</p>
   </div>
 </section>
 
@@ -737,5 +769,6 @@ window.TT_FASSUNG = "__FASSUNG__";
 <script src="assets/js/api-db.js?v=__FASSUNG__"></script>
 <script src="assets/js/planwacht.js?v=__FASSUNG__"></script>
 <script src="assets/js/app.js?v=__FASSUNG__"></script>
+<script src="assets/js/schule.js?v=__FASSUNG__"></script>
 </body>
 </html>

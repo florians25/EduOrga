@@ -1,5 +1,4 @@
 // Vertretung der Pausenaufsichten eines Tages (Vertretungsmodus): abwesende Aufsichten, Auswahl der Vertretung.
-import { Select } from '@fluentui/react-components';
 import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
@@ -10,6 +9,7 @@ import { fehlerMelden } from '@/komponenten/hinweise';
 import { DatumFeld } from '@/komponenten/eingaben';
 import { isoAus, usePlanungsdatum } from '../vertretung/kern';
 import './pausenaufsicht.css';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 interface Kandidat { id: number; kurz: string; zaehler: number; aufsichten: number }
 interface PvZeile { id: number; pause: string; gang: string; lehrer: string; vertreterId?: number | null; vertreter?: string; text: string; offen: boolean; kandidaten: Kandidat[] }
@@ -47,11 +47,13 @@ export default function AufsichtVertretung() {
                 <tr key={z.id} className={z.offen ? 'pa-offen' : undefined}>
                   <td>{z.pause}</td><td>{z.gang}</td><td>{z.lehrer}</td>
                   <td>
-                    <Select size="small" style={{ width: 200 }} disabled={!schreiben} aria-label={`Vertretung ${z.pause} ${z.gang}`} value={z.vertreterId ? String(z.vertreterId) : ''} onChange={(_, d) => void waehlen(z, d.value)}>
-                      <option value="">{z.offen ? 'Offen' : 'Vertretung aufheben'}</option>
-                      {z.vertreterId && !z.kandidaten.some((k) => k.id === z.vertreterId) ? <option value={z.vertreterId}>{z.vertreter}</option> : null}
-                      {z.kandidaten.map((k) => <option key={k.id} value={k.id}>{`${k.kurz} (${k.zaehler}, ${k.aufsichten})`}</option>)}
-                    </Select>
+                    <SuchAuswahl size="small" breite={220} disabled={!schreiben} ariaLabel={`Vertretung ${z.pause} ${z.gang}`} wert={z.vertreterId ? String(z.vertreterId) : ''}
+                      beiWahl={(w) => void waehlen(z, w)} platzhalter={z.offen ? 'Offen' : undefined}
+                      optionen={[
+                        { wert: '', text: z.offen ? 'Offen' : 'Vertretung aufheben' },
+                        ...(z.vertreterId && !z.kandidaten.some((k) => k.id === z.vertreterId) ? [{ wert: String(z.vertreterId), text: z.vertreter || String(z.vertreterId) }] : []),
+                        ...z.kandidaten.map((k) => ({ wert: String(k.id), kurz: k.kurz, text: `${k.kurz} (${k.zaehler}, ${k.aufsichten})` })),
+                      ]} />
                   </td>
                   <td>{z.text}</td>
                   <td className="pa-leise">{z.kandidaten.slice(0, 6).map((k) => k.kurz).join(', ')}</td>

@@ -12,6 +12,8 @@
   <ItemGroup>
     <!-- gemeinsame Datenverträge mit UntPlan (Desktop), Schema untplanweb/1 -->
     <ProjectReference Include="..\..\..\src\UntPlan.Web.Contracts\UntPlan.Web.Contracts.csproj" />
+    <!-- gemeinsame PDF-Ausgabe mit UntPlan Studio (Seitenlayout, Tabellen, Formulare, Aushang; Schrift IBM Plex Sans) -->
+    <ProjectReference Include="..\..\..\src\UntPlan.Druck\UntPlan.Druck.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />

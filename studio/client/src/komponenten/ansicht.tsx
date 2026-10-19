@@ -52,6 +52,21 @@ const useStile = makeStyles({
   },
   leer: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '48px 16px', color: tokens.colorNeutralForeground3, textAlign: 'center', flex: 1 },
   elementwahl: { display: 'inline-flex', alignItems: 'center', gap: '2px' },
+  segmente: {
+    display: 'inline-flex', alignItems: 'stretch', flexShrink: 0, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden', height: '24px',
+    backgroundColor: tokens.colorNeutralBackground1, border: `1px solid ${tokens.colorNeutralStroke1}`,
+  },
+  segment: {
+    border: 'none', margin: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: tokens.fontSizeBase200, lineHeight: '22px', padding: '0 10px',
+    backgroundColor: 'transparent', color: tokens.colorNeutralForeground2, whiteSpace: 'nowrap',
+    ':not(:first-child)': { borderLeft: `1px solid ${tokens.colorNeutralStroke2}` },
+    ':hover': { color: tokens.colorNeutralForeground1, backgroundColor: tokens.colorNeutralBackground1Hover },
+    ':focus-visible': { outline: `2px solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
+  },
+  segmentAn: {
+    backgroundColor: tokens.colorNeutralBackground3, color: tokens.colorNeutralForeground1, fontWeight: tokens.fontWeightSemibold,
+    boxShadow: 'inset 0 -2px 0 var(--edo-modus)', cursor: 'default', ':hover': { backgroundColor: tokens.colorNeutralBackground3 },
+  },
   auswahl: { minWidth: '160px', maxWidth: '280px' },
 });
 
@@ -153,6 +168,21 @@ export function Leer({ text, children }: { text: string; children?: ReactNode })
 export function FussText({ children, rechts }: { children: ReactNode; rechts?: boolean }) {
   const s = useStile();
   return <span className={rechts ? s.rechts : undefined}>{children}</span>;
+}
+
+/** Segmentschalter für Ansichtswechsel („Einzelplan | Blockansicht“): flach, das gewählte grau mit Linie in der Modusfarbe. */
+export function Segmente<T extends string>({ wert, optionen, beiWahl, titel, testid }: {
+  wert: T; optionen: { wert: T; text: string; titel?: string }[]; beiWahl: (w: T) => void; titel: string; testid?: string;
+}) {
+  const s = useStile();
+  return (
+    <span className={s.segmente} role="radiogroup" aria-label={titel} data-testid={testid}>
+      {optionen.map((o) => (
+        <button key={o.wert} type="button" role="radio" aria-checked={o.wert === wert} title={o.titel} data-wert={o.wert}
+          className={mergeClasses(s.segment, o.wert === wert && s.segmentAn)} onClick={() => { if (o.wert !== wert) beiWahl(o.wert); }}>{o.text}</button>
+      ))}
+    </span>
+  );
 }
 
 const NAME: Record<string, string> = { klasse: 'Klasse', lehrer: 'Lehrkraft', raum: 'Raum', fach: 'Fach' };

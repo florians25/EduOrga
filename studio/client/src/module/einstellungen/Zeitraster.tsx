@@ -1,6 +1,6 @@
 // Zeitraster: Woche und Stunden, Stundenzeiten, Belegung Vormittag/Nachmittag/leer (Zellen ziehen oder Strg+Klick), Pausen
 // und Mittagspause.
-import { Button, Checkbox, Input, Select, Tab, TabList } from '@fluentui/react-components';
+import { Button, Checkbox, Input, Tab, TabList } from '@fluentui/react-components';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
@@ -10,6 +10,7 @@ import { AnsichtRahmen, FussText, Werkzeug } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { pfad, TAGE } from './kern';
 import './einstellungen.css';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 interface Pause { nachStunde: number; bezeichnung: string; dauerMinuten: number; aufsicht: boolean }
 interface Z {
@@ -139,13 +140,11 @@ export default function Zeitraster() {
         </div>
         <div className="es-formular">
           <label>Erster Schultag der Woche</label>
-          <Select size="small" disabled={lesen} value={String(z.ersterSchultag)} onChange={(_, d) => aendern((x) => ({ ...x, ersterSchultag: Number(d.value) }))}>
-            {TAGE.map((t, i) => <option key={t} value={i}>{t}</option>)}
-          </Select>
+          <SuchAuswahl size="small" breite={160} disabled={lesen} ariaLabel="Erster Schultag" wert={String(z.ersterSchultag)} beiWahl={(w) => aendern((x) => ({ ...x, ersterSchultag: Number(w) }))}
+            optionen={TAGE.map((t, i) => ({ wert: String(i), text: t }))} />
           <label>Nummer der ersten Stunde</label>
-          <Select size="small" disabled={lesen} value={String(z.ersteStundennummer)} onChange={(_, d) => aendern((x) => ({ ...x, ersteStundennummer: Number(d.value) }))}>
-            <option value="0">0</option><option value="1">1</option>
-          </Select>
+          <SuchAuswahl size="small" breite={90} disabled={lesen} ariaLabel="Nummer der ersten Stunde" wert={String(z.ersteStundennummer)} beiWahl={(w) => aendern((x) => ({ ...x, ersteStundennummer: Number(w) }))}
+            optionen={[{ wert: '0', text: '0' }, { wert: '1', text: '1' }]} />
           {zahl('Dauer einer Stunde (Minuten)', 'normalstundeMinuten', 10, 120)}
         </div>
       </div>

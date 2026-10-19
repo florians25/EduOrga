@@ -31,6 +31,15 @@ public sealed class DokumenteApi : IStudioModul
 {
     public string Name => "dokumente";
 
+    /// <summary>Letzter Tag, an dem die Periode gilt: ihr Ende bzw. der Vortag der nächsten (später beginnenden) Periode –
+    /// an jedem Tag gilt die zuletzt beginnende Periode (Anzeige im Periodenwechsel der Kopfleiste).</summary>
+    public static DateOnly GiltBis(Schuldatei d, Periode p)
+    {
+        var ende = UntPlan.Core.Module.Perioden.Ende(d, p);
+        var naechste = d.Perioden.Where(x => x.Id != p.Id && x.Von > p.Von).Select(x => (DateOnly?)x.Von).Min();
+        return naechste is DateOnly n && n.AddDays(-1) < ende ? n.AddDays(-1) : ende;
+    }
+
     public static DokumentStand Stand(Arbeitsdokument a, Dokument d)
     {
         var e = d.Daten.Einstellungen;
@@ -113,7 +122,7 @@ public sealed class DokumenteApi : IStudioModul
         {
             schulname = doc.Daten.Einstellungen.Schulname,
             zeitraster = Zeitraster(doc.Daten),
-            perioden = doc.Daten.Perioden.Select(x => new { x.Id, x.Name, x.Langname, x.Von, x.Bis, x.Fixiert, aktiv = x.Id == doc.Daten.AktivePeriode.Id }),
+            perioden = doc.Daten.Perioden.OrderBy(x => x.Von).ThenBy(x => x.Id).Select(x => new { x.Id, x.Name, x.Langname, x.Von, x.Bis, ende = GiltBis(doc.Daten, x), x.MutterId, x.Fixiert, aktiv = x.Id == doc.Daten.AktivePeriode.Id }),
             wochenperiodizitaet = doc.Daten.Einstellungen.Wochenperiodizitaet,
         }));
 

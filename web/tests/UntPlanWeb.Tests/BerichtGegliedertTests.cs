@@ -55,10 +55,12 @@ public class BerichtGegliedertTests
         {
             var pdf = await leitung.GetAsync($"/api/app/berichte/erstellen/{art}?klasse=7a&von=2026-10-12&bis=2026-10-14&format=pdf");
             Assert.Equal(HttpStatusCode.OK, pdf.StatusCode);
-            var text = System.Text.Encoding.Latin1.GetString(await pdf.Content.ReadAsByteArrayAsync());
-            Assert.StartsWith("%PDF", text);
+            var bytes = await pdf.Content.ReadAsByteArrayAsync();
+            Assert.StartsWith("%PDF", System.Text.Encoding.Latin1.GetString(bytes, 0, 8));
+            var text = UntPlan.Druck.PdfPruefung.Text(bytes);
             Assert.Contains("Summe 7a", text);
             Assert.Contains("Klasse 7a", text);
+            WebDruckTests.Muster($"klassenbuch-bericht-{art}", bytes);
         }
     }
 }

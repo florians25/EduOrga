@@ -1,5 +1,5 @@
 // Schuldaten: Allgemein, Soll und Ist, Vertretungsplanung (mit Gewichtung des Vorschlags), Weiteres.
-import { Checkbox, Input, Select, Slider } from '@fluentui/react-components';
+import { Checkbox, Input, Slider } from '@fluentui/react-components';
 import { useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
@@ -12,6 +12,7 @@ import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { DatumFeld } from '@/komponenten/eingaben';
 import { pfad } from './kern';
 import './einstellungen.css';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 type Werte = Record<string, any>;
 interface Daten extends Werte {
@@ -42,9 +43,8 @@ export default function Schuldaten() {
   const datumFeld = (n: string) => <DatumFeld size="small" disabled={!schreiben} wert={String(wert(n) ?? '')} beiAenderung={(datum) => setze(n, datum)} />;
   const haken = (n: string, t: string) => <Checkbox label={t} disabled={!schreiben} checked={!!wert(n)} onChange={(_, d) => setze(n, !!d.checked)} />;
   const auswahl = (n: string, optionen: { wert: string; text: string }[]) => (
-    <Select size="small" disabled={!schreiben} value={String(wert(n) ?? '')} onChange={(_, d) => setze(n, d.value)}>
-      {optionen.map((o) => <option key={o.wert} value={o.wert}>{o.text}</option>)}
-    </Select>
+    <SuchAuswahl size="small" disabled={!schreiben} wert={String(wert(n) ?? '')} beiWahl={(w) => setze(n, w)} ariaLabel={n}
+      optionen={optionen.map((o) => ({ wert: String(o.wert), text: o.text }))} />
   );
   const zeile = (titel: string, el: JSX.Element, hinweisText?: string) => <>
     <label>{titel}</label>{el}{hinweisText ? <p className="es-hinweis">{hinweisText}</p> : null}

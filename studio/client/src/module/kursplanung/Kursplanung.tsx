@@ -1,6 +1,6 @@
 // Kursplanung: Kurse einer Klasse bzw. eines Jahrgangs (Kursname und Band änderbar), Kurswahlen der Schüler,
 // Kollisionsmatrix, automatische Bandbildung mit Vorschlag und Übernahme der Bänder.
-import { Button, Input, Select, Tab, TabList, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Input, Tab, TabList, makeStyles, tokens } from '@fluentui/react-components';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
@@ -11,6 +11,7 @@ import { formular, frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import { Tabelle, type Spalte } from '@/komponenten/tabelle/Tabelle';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 interface Kurs { id: number; kursname: string; fach: string; lehrer: string; klassen: string; wst: number; band: string; teilnehmer: number; mw: string }
 interface Band { band: string; kurse: string[]; schueler: number }
@@ -81,7 +82,7 @@ export default function Kursplanung({ p }: AnsichtProps) {
     <AnsichtRahmen titel="Kursplanung" laden={laedt}
       werkzeuge={<>
         <Feld titel="Klasse oder Jahrgang">
-          <Select size="small" value={klasse != null ? String(klasse) : ''} onChange={(_, x) => a.parameterSetzen({ klasse: Number(x.value) })}>{(klassen || []).map((k) => <option key={k.id} value={k.id}>{k.kurz}</option>)}</Select>
+          <SuchAuswahl size="small" breite={160} ariaLabel="Klasse oder Jahrgang" wert={klasse != null ? String(klasse) : ''} beiWahl={(w) => { if (w) a.parameterSetzen({ klasse: Number(w) }); }} optionen={(klassen || []).map((k) => ({ wert: String(k.id), text: k.kurz }))} />
         </Feld>
         <Trenner />
         <Werkzeug text="Schülerinnen und Schüler" titel="Stammdaten der Schülerinnen und Schüler" aktion={() => a.oeffnen('stammdaten', { typ: 'schueler' })} />

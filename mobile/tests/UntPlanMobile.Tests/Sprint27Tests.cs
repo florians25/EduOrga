@@ -246,9 +246,9 @@ public class Sprint27Tests
             Assert.Equal(groesse, (b[16] << 24) | (b[17] << 16) | (b[18] << 8) | b[19]);
             Assert.Equal(groesse, (b[20] << 24) | (b[21] << 16) | (b[22] << 8) | b[23]);
         }
-        // Monogramm von UntPlan (weißes „U“ auf Marine-900)
-        Assert.Equal(File.ReadAllText(Path.Combine(Umgebung.Wurzel(), "design", "logo", "monogramm.svg")), File.ReadAllText(Path.Combine(wurzel, "favicon.svg")));
-        Assert.Contains("#11264a", File.ReadAllText(Path.Combine(wurzel, "favicon.svg")));
+        // Monogramm von EduOrga (weißes „E“ auf Petrol #164C55)
+        Assert.Equal(File.ReadAllText(Path.Combine(Umgebung.Wurzel(), "design", "logo", "edo-monogramm.svg")), File.ReadAllText(Path.Combine(wurzel, "favicon.svg")));
+        Assert.Contains("#164c55", File.ReadAllText(Path.Combine(wurzel, "favicon.svg")));
         var manifest = JsonNode.Parse(Datei("wwwroot", "manifest.webmanifest"))!;
         Assert.Contains(manifest["icons"]!.AsArray(), i => i!["purpose"]!.GetValue<string>() == "maskable" && i["sizes"]!.GetValue<string>() == "512x512");
     }
@@ -259,8 +259,10 @@ public class Sprint27Tests
         var html = Datei("Vorlagen", "index.html");
         // untere Leiste: Heute · Plan · Postfach · Mehr
         var leiste = html[html.IndexOf("<nav class=\"tabbar\"", StringComparison.Ordinal)..html.IndexOf("</nav>", html.IndexOf("<nav class=\"tabbar\"", StringComparison.Ordinal), StringComparison.Ordinal)];
-        var reiter = Regex.Matches(leiste, @"<span>([^<]+)</span>").Select(m => m.Groups[1].Value).ToArray();
+        var reiter = Regex.Matches(leiste, @"<span( id=""[^""]+"")?>([^<]+)</span>").Select(m => m.Groups[2].Value).ToArray();
+        // „Mehr“ heißt für Lehrkräfte „Schule“ (schule.js setzt den Text nach der Rolle)
         Assert.Equal(new[] { "Heute", "Plan", "Postfach", "Mehr" }, reiter);
+        Assert.Contains("tabText = R.kollegium ? 'Schule' : 'Mehr'", Datei("wwwroot", "assets", "js", "schule.js"));
         // alle bisherigen Funktionen bleiben erreichbar
         foreach (var id in new[] { "btnSwitchAccount", "btnAddProfile", "themeSeg", "optCardTimes", "optLongNames", "optShowCancelled",
                                    "optNotify", "btnRefresh", "btnLogout", "btnAppointments", "btnAbsences", "btnClassLead", "btnSprechtag",

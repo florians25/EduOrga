@@ -3,7 +3,7 @@
 // Drag & Drop (dnd-kit): Stunde innerhalb der Zeile verschieben/tauschen; im Raum-Übersichtsplan in eine andere Raumzeile =
 // Raumverlegung. Server: Api/UebersichtApi.cs (/uebersicht/{typ}), Druck: /druck/uebersicht (PDF).
 import { useDndMonitor, useDraggable, useDroppable } from '@dnd-kit/core';
-import { Input, Select } from '@fluentui/react-components';
+import { Input } from '@fluentui/react-components';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
@@ -16,6 +16,7 @@ import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { useZiehen, type AblageDaten, type ZiehDaten } from '@/komponenten/ziehen';
 import { druckUrl, herunterladen } from '../druck/kern';
 import './uebersicht.css';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 const TITEL: Record<string, string> = { klasse: 'Klassen', lehrer: 'Lehrkräfte', raum: 'Räume', fach: 'Fächer' };
 const ZH = 26;
@@ -151,9 +152,8 @@ export default function Uebersicht() {
     <AnsichtRahmen titel={`Gesamtübersicht ${TITEL[typ]}`} laden={laedt && !daten}
       werkzeuge={<>
         <Feld titel="Zelleninhalt">
-          <Select size="small" aria-label="Zelleninhalt" value={inhalt} onChange={(_, d) => a.parameterSetzen({ inhalt: d.value })}>
-            {[['Standard', 'Standard'], ['Fach', 'Fach'], ['Lehrer', 'Lehrkräfte'], ['Klasse', 'Klassen'], ['Raum', 'Räume']].map(([w, t]) => <option key={w} value={w}>{t}</option>)}
-          </Select>
+          <SuchAuswahl size="small" breite={140} ariaLabel="Zelleninhalt" wert={inhalt} beiWahl={(w) => a.parameterSetzen({ inhalt: w })}
+            optionen={[['Standard', 'Standard'], ['Fach', 'Fach'], ['Lehrer', 'Lehrkräfte'], ['Klasse', 'Klassen'], ['Raum', 'Räume']].map(([w, t]) => ({ wert: w!, text: t! }))} />
         </Feld>
         <Input type="search" size="small" placeholder={`${TITEL[typ]} filtern`} aria-label="Filtern" style={{ width: 160 }} value={filter} onChange={(_, d) => setFilter(d.value)} />
         <Trenner />

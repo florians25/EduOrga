@@ -295,6 +295,22 @@ public static class AppApi
             return Results.Json(new { tage = res });
         });
 
+        // Vertretungsplan als PDF (Aushang, Schwarz-Weiß): gleiche Rechte und Filter wie die Liste; gross=true für das Schwarze Brett
+        api.MapGet("/vertretungen.pdf", (string? datum, int? tage, bool? gross, string? ausrichtung, HttpContext c, Paketdienst p, Vertretungsplandienst vp, Einstellungen e, Uhr uhr) =>
+        {
+            var b = Ich(c);
+            var s = Paket(p);
+            var lehrerVersion = Rechtedienst.Darf(b, Recht.VertretungLehrer);
+            if (!lehrerVersion && !Rechtedienst.Darf(b, Recht.VertretungSchueler)) throw new UnauthorizedAccessException("Der Vertretungsplan ist für Ihr Konto nicht freigegeben.");
+            var res = vp.NaechsteTage(s, Datum(datum, uhr), Math.Clamp(tage ?? 1, 1, 7)).Select(d => vp.Tag(s, d, lehrerVersion)).ToList();
+            if (!b.Kollegium)
+                res = res.Select(t => t with { Zeilen = t.Zeilen.Where(z => z.Klassen.Split(", ").Any(b.HatKlasse)).ToList() }).ToList();
+            var schule = e.Schulname.Length > 0 ? e.Schulname : s.Paket.Schule.Name;
+            var pdf = PdfBericht.Vertretungsplan(schule, res, lehrerVersion, gross == true, b.Anzeigename.Length > 0 ? b.Anzeigename : b.Login,
+                string.IsNullOrWhiteSpace(ausrichtung) ? null : PdfBericht.Hochformat(ausrichtung, true));
+            return Results.File(pdf, "application/pdf", $"vertretungsplan-{(res.FirstOrDefault()?.Datum ?? Plandienst.Iso(uhr.Heute))}.pdf");
+        });
+
         // ---------------------------------------------------------------- Startseite
 
         api.MapGet("/heute", (HttpContext c, Paketdienst p, Plandienst plan, Vertretungsplandienst vp, Rueckmeldungsdienst r, Mitteilungsdienst m, Klassenbuchdienst kb, Uhr uhr, Sprechtagdienst st) =>
@@ -563,11 +579,18 @@ public static class AppApi
             var d = Datum(datum, uhr);
             return Results.Json(kb.Woche(Paket(p), klasse, d.AddDays(-(((int)d.DayOfWeek + 6) % 7))));
         });
-        api.MapGet("/klassenbuch/anwesenheit", (DateOnly datum, int stunde, int unterricht, int? einzelstunde, HttpContext c, Paketdienst p, Klassenbuchdienst kb) =>
+        api.MapGet("/klassenbuch/anwesenheit", (DateOnly datum, int stunde, int unterricht, int? einzelstunde, HttpContext c, Paketdienst p, Klassenbuchdienst kb,
+            Abwesenheitsmeldungen am, Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Http.Json.JsonOptions> jo) =>
         {
             var b = Ich(c);
             if (!b.Kollegium) throw new UnauthorizedAccessException("Nur für das Kollegium.");
-            return Results.Json(kb.Anwesenheit(b, Paket(p), datum, stunde, unterricht, einzelstunde));
+            var s = Paket(p);
+            // dazu die Abwesenheitsmeldungen der Eltern bzw. Schüler*innen für diesen Tag (gemeldet bzw. bestätigt), damit nicht doppelt erfasst wird
+            var o = jo.Value.SerializerOptions;
+            var antwort = System.Text.Json.JsonSerializer.SerializeToNode(kb.Anwesenheit(b, s, datum, stunde, unterricht, einzelstunde), o)!.AsObject();
+            var ids = (antwort["schueler"]?.AsArray() ?? new()).Select(x => x?["id"]?.GetValue<int>() ?? 0).Where(x => x > 0).ToList();
+            antwort["meldungen"] = System.Text.Json.JsonSerializer.SerializeToNode(am.FuerTag(b, s, datum, ids), o);
+            return Results.Json(antwort, o);
         });
         api.MapPut("/klassenbuch/anwesenheit", (AnwesenheitDaten d, HttpContext c, Paketdienst p, Klassenbuchdienst kb) =>
             Results.Json(new { fehlend = kb.AnwesenheitSpeichern(Ich(c), Paket(p), d.Datum, d.Stunde, d.Unterricht, d.Eintraege ?? new(), d.Einzelstunde) }));

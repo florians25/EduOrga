@@ -1,6 +1,6 @@
 // Planformate: eigene Formate für Stundenpläne (Allgemein, Zeitbereich, Linien und Flächen, Darstellung, HTML, Stundenfeld mit
 // grafischem Feld-Editor). Die Formate liegen in der Schuldatei und werden in der Druckauswahl gewählt. Server: Api/FormateApi.cs.
-import { Button, Checkbox, Input, Select, Tab, TabList } from '@fluentui/react-components';
+import { Button, Checkbox, Input, Tab, TabList } from '@fluentui/react-components';
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
@@ -11,6 +11,7 @@ import { AnsichtRahmen, FussText, Rechts, Trenner, Werkzeug } from '@/komponente
 import { formular, frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import './formate.css';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 const TAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 const TYPEN: [string, string][] = [['Klasse', 'Klassen'], ['Lehrer', 'Lehrkräfte'], ['Raum', 'Räume'], ['Fach', 'Fächer']];
@@ -179,20 +180,17 @@ export default function Formate() {
     if (art === 'auswahl' || art === 'grundform') {
       const o: Opt[] = art === 'grundform' ? daten!.grundformen : optionen || [];
       el = (
-        <Select size="small" aria-label={titel} disabled={!schreiben} value={String(f[k] ?? '')} onChange={(_, d) => setze(k, typeof f[k] === 'number' ? Number(d.value) : d.value)}>
-          {o.map((x) => <option key={String(x.wert)} value={String(x.wert)}>{x.text}</option>)}
-        </Select>
+        <SuchAuswahl size="small" ariaLabel={titel} disabled={!schreiben} wert={String(f[k] ?? '')} beiWahl={(w) => setze(k, typeof f[k] === 'number' ? Number(w) : w)}
+          optionen={o.map((x) => ({ wert: String(x.wert), text: x.text }))} />
       );
     } else if (art === 'gestaltung') {
       const g = f[k] || { raeumlich: 'Flach', grau: false };
       el = (
         <div className="fm-paar">
-          <Select size="small" aria-label={`${titel}: Rand`} disabled={!schreiben} value={g.raeumlich} onChange={(_, d) => setze(k, { ...g, raeumlich: d.value })}>
-            <option value="Erhaben">Erhaben</option><option value="Versenkt">Vertieft</option><option value="Flach">Eben</option>
-          </Select>
-          <Select size="small" aria-label={`${titel}: Fläche`} disabled={!schreiben} value={g.grau ? '1' : '0'} onChange={(_, d) => setze(k, { ...g, grau: d.value === '1' })}>
-            <option value="1">Grau</option><option value="0">Weiß</option>
-          </Select>
+          <SuchAuswahl size="small" breite={120} ariaLabel={`${titel}: Rand`} disabled={!schreiben} wert={g.raeumlich} beiWahl={(w) => setze(k, { ...g, raeumlich: w })}
+            optionen={[{ wert: 'Erhaben', text: 'Erhaben' }, { wert: 'Versenkt', text: 'Vertieft' }, { wert: 'Flach', text: 'Eben' }]} />
+          <SuchAuswahl size="small" breite={100} ariaLabel={`${titel}: Fläche`} disabled={!schreiben} wert={g.grau ? '1' : '0'} beiWahl={(w) => setze(k, { ...g, grau: w === '1' })}
+            optionen={[{ wert: '1', text: 'Grau' }, { wert: '0', text: 'Weiß' }]} />
         </div>
       );
     } else {
@@ -224,14 +222,14 @@ export default function Formate() {
         <tbody>
           {f.felder.map((fe, i) => (
             <tr key={i}>
-              <td><Select size="small" aria-label="Feld" disabled={!schreiben} value={fe.art} onChange={(_, d) => feldSetzen(i, { art: d.value })}>{daten!.feldarten.map((x) => <option key={x} value={x}>{x}</option>)}</Select></td>
+              <td><SuchAuswahl size="small" breite={170} ariaLabel="Feld" disabled={!schreiben} wert={fe.art} beiWahl={(w) => feldSetzen(i, { art: w })} optionen={daten!.feldarten.map((x) => ({ wert: x, text: x }))} /></td>
               <td><Eingabe titel="Zeile" zahl wert={fe.zeile} gesperrt={!schreiben} setzen={(v) => feldSetzen(i, { zeile: Number(v) })} /></td>
               <td><Eingabe titel="Schrift (%)" zahl wert={fe.schriftProzent} gesperrt={!schreiben} setzen={(v) => feldSetzen(i, { schriftProzent: Number(v) })} /></td>
               <td className="mitte"><Checkbox aria-label="Fett" disabled={!schreiben} checked={fe.fett} onChange={(_, d) => feldSetzen(i, { fett: !!d.checked })} /></td>
               <td className="mitte"><Checkbox aria-label="Kursiv" disabled={!schreiben} checked={fe.kursiv} onChange={(_, d) => feldSetzen(i, { kursiv: !!d.checked })} /></td>
               <td className="mitte"><Checkbox aria-label="Unterstrichen" disabled={!schreiben} checked={fe.unterstrichen} onChange={(_, d) => feldSetzen(i, { unterstrichen: !!d.checked })} /></td>
-              <td><Select size="small" aria-label="Ausrichtung" disabled={!schreiben} value={String(fe.ausrichtung)} onChange={(_, d) => feldSetzen(i, { ausrichtung: Number(d.value) })}>
-                <option value="0">links</option><option value="1">mittig</option><option value="2">rechts</option></Select></td>
+              <td><SuchAuswahl size="small" breite={100} ariaLabel="Ausrichtung" disabled={!schreiben} wert={String(fe.ausrichtung)} beiWahl={(w) => feldSetzen(i, { ausrichtung: Number(w) })}
+                optionen={[{ wert: '0', text: 'links' }, { wert: '1', text: 'mittig' }, { wert: '2', text: 'rechts' }]} /></td>
               <td><Button size="small" appearance="subtle" disabled={!schreiben} onClick={() => { setAktuell({ ...f, felder: f.felder.filter((_, j) => j !== i) }); merken(); }}>Entfernen</Button></td>
             </tr>
           ))}

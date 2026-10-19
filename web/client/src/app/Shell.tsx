@@ -34,6 +34,7 @@ import { lesen, schreiben } from '../lib/speicher';
 import { fehler, toast } from '../lib/meldungen';
 import { SEITEN, darfSeite } from '../pages/register';
 import { FehlerGrenze } from '../components/FehlerGrenze';
+import { KLASSENBUCH_NAVS, KlassenbuchRahmen } from '../components/klassenbuch/Bereich';
 
 const BREIT = 272;
 const SCHMAL = 76;
@@ -62,6 +63,8 @@ export function Shell({ abmelden, neuStarten }: { abmelden: () => void; neuStart
   const erlaubt = darfSeite(name, nav, ich, allePunkte(m));
   if (!SEITEN[name] || !erlaubt) { name = 'heute'; nav = 'heute'; }
   const Seite = SEITEN[name];
+  // Klassenbuch-Bereich mit eigener Unternavigation (Kollegium); „Unterricht → Aufgaben“ und „Unterricht | Einstellungen“ bleiben ohne
+  const imKlassenbuch = !!ich.kollegium && KLASSENBUCH_NAVS.has(nav) && name !== 'aufgaben' && !(name === 'kbeinstellungen' && teile[1] === 'unterricht');
   const aktiveGruppe = m.find(g => g.unter?.some(p => p.nav === nav))?.id ?? null;
   const [offen, setOffen] = useState<string | null>(aktiveGruppe);
   useEffect(() => { if (aktiveGruppe) setOffen(aktiveGruppe); setMobilOffen(false); window.scrollTo(0, 0); }, [aktiveGruppe, teile.join('/')]);
@@ -117,7 +120,9 @@ export function Shell({ abmelden, neuStarten }: { abmelden: () => void; neuStart
         <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2.5, lg: 3 }, pt: { xs: 9, lg: 2.5 }, pb: 6, '@media print': { p: 0 } }}>
           <FehlerGrenze schluessel={teile.join('/')}>
             <Suspense fallback={<Laden hoehe={320} />}>
-              {Seite ? <Seite key={name} teile={teile.slice(1)} nav={nav} /> : <Fehler fehler={new Error('Seite nicht gefunden.')} />}
+              {!Seite ? <Fehler fehler={new Error('Seite nicht gefunden.')} />
+                : imKlassenbuch ? <KlassenbuchRahmen nav={nav}><Seite key={name} teile={teile.slice(1)} nav={nav} /></KlassenbuchRahmen>
+                : <Seite key={name} teile={teile.slice(1)} nav={nav} />}
             </Suspense>
           </FehlerGrenze>
         </Box>

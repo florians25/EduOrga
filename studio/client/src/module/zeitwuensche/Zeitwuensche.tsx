@@ -1,7 +1,7 @@
 // Zeitwünsche (+3 unbedingt Unterricht … −3 unbedingt frei): Wert wählen und Stunden mit gedrückter Maustaste (oder dem
 // Finger) überstreichen; „Ganzer Tag“/„Vormittag“/„Nachmittag“ setzen den ganzen (Halb-)Tag. Darunter die Zeitwünsche ohne
 // feste Lage (z. B. „1 Tag unbedingt frei“). Tasten 3, 2, 1, 0 und Umschalt+1–3 wählen den Wert.
-import { Button, Input, Select, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Input, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import { ChevronLeft20Regular, ChevronRight20Regular, Dismiss16Regular } from '@fluentui/react-icons';
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent, type KeyboardEvent } from 'react';
 import { api } from '@/api/client';
@@ -14,6 +14,7 @@ import { frage } from '@/komponenten/dialoge';
 import { fehlerMelden } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import './zeitwuensche.css';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 export const TYPEN: Record<string, string> = { klasse: 'Klasse', lehrer: 'Lehrkraft', raum: 'Raum', fach: 'Fach', unterricht: 'Unterricht' };
 const WERTE = [3, 2, 1, 0, -1, -2, -3];
@@ -129,12 +130,11 @@ export default function Zeitwuensche({ p }: AnsichtProps) {
     <AnsichtRahmen titel={`Zeitwünsche – ${TYPEN[typ]}${d ? ` ${d.element.kurz}` : ''}`} laden={laedt && !d}
       werkzeuge={<>
         <Feld>
-          <Select size="small" value={typ} aria-label="Art" onChange={(_, x) => setzen(x.value, null)}>{Object.entries(TYPEN).map(([k, t]) => <option key={k} value={k}>{t}</option>)}</Select>
+          <SuchAuswahl size="small" breite={130} wert={typ} ariaLabel="Art" beiWahl={(w) => setzen(w, null)} optionen={Object.entries(TYPEN).map(([k, t]) => ({ wert: k, text: t }))} />
           <Tooltip content="Vorheriges Element (Bild auf)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={() => blaettern(-1)} /></Tooltip>
-          <Select size="small" style={{ minWidth: 200 }} aria-label="Element" value={element != null ? String(element) : ''} onChange={(_, x) => setzen(typ, Number(x.value))}
-            onKeyDown={(e) => { if (e.key === 'PageUp' || e.key === 'PageDown') { e.preventDefault(); blaettern(e.key === 'PageUp' ? -1 : 1); } }}>
-            {(liste || []).map((e) => <option key={e.id} value={e.id}>{optionText(e)}</option>)}
-          </Select>
+          <SuchAuswahl size="small" breite={240} ariaLabel="Element" wert={element != null ? String(element) : ''} beiWahl={(w) => { if (w) setzen(typ, Number(w)); }}
+            beiTaste={(e) => { if (e.key === 'PageUp' || e.key === 'PageDown') { e.preventDefault(); blaettern(e.key === 'PageUp' ? -1 : 1); } }}
+            optionen={(liste || []).map((e) => ({ wert: String(e.id), text: optionText(e) }))} />
           <Tooltip content="Nächstes Element (Bild ab)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={() => blaettern(1)} /></Tooltip>
         </Feld>
         <Trenner />
@@ -198,8 +198,8 @@ export default function Zeitwuensche({ p }: AnsichtProps) {
                       return (
                         <tr key={i}>
                           <td className={s.td}><Input size="small" type="number" min={1} max={7} style={{ width: 72 }} disabled={!schreiben} defaultValue={String(u.anzahl)} onBlur={(e) => aendern({ anzahl: Math.max(1, Math.min(7, Number(e.target.value) || 1)) })} /></td>
-                          <td className={s.td}><Select size="small" disabled={!schreiben} value={u.bereich} onChange={(_, x) => aendern({ bereich: x.value })}>{BEREICHE.map(([b, t]) => <option key={b} value={b}>{t}</option>)}</Select></td>
-                          <td className={s.td}><Select size="small" disabled={!schreiben} value={String(u.wunsch)} onChange={(_, x) => aendern({ wunsch: Number(x.value) })}>{UNBESTIMMT.map(([w, t]) => <option key={w} value={w}>{t}</option>)}</Select></td>
+                          <td className={s.td}><SuchAuswahl size="small" breite={170} disabled={!schreiben} ariaLabel="Bereich" wert={u.bereich} beiWahl={(w) => aendern({ bereich: w })} optionen={BEREICHE.map(([b, t]) => ({ wert: b, text: t }))} /></td>
+                          <td className={s.td}><SuchAuswahl size="small" breite={170} disabled={!schreiben} ariaLabel="Wunsch" wert={String(u.wunsch)} beiWahl={(w) => aendern({ wunsch: Number(w) })} optionen={UNBESTIMMT.map(([w, t]) => ({ wert: String(w), text: t }))} /></td>
                           <td className={s.td}>{schreiben ? <Button size="small" appearance="subtle" icon={<Dismiss16Regular />} aria-label="Zeile entfernen" title="Zeile entfernen" onClick={() => void unbestimmteSpeichern(d.unbestimmte!.filter((_, j) => j !== i))} /> : null}</td>
                         </tr>
                       );

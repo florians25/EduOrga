@@ -59,7 +59,19 @@ public sealed class Wochendienst
     {
         login = k.Benutzer.Login, role = k.Benutzer.Rollenname, rolle = k.Benutzer.Rolle, kollegium = k.Kollegium,
         planWochenZurueck = k.PlanWochenZurueck, planWochenVor = k.PlanWochenVor,
+        name = k.Benutzer.Anzeigename,
+        // Schulfunktionen nach Rolle und Rechten (Schule/Mehr): Familie (Schüler*innen, Eltern), Kinder, Klassen, Rechte
+        familie = Feld<bool?>(k, "familie"), schuelerIds = k.BenutzerRoh?["schuelerIds"]?.DeepClone(), klassen = k.BenutzerRoh?["klassen"]?.DeepClone(),
+        rechte = k.BenutzerRoh?["rechte"]?.DeepClone(), fehlzeiten = Feld<bool?>(k, "fehlzeiten"),
+        fachlehrerEntschuldigungen = Feld<bool?>(k, "fachlehrerEntschuldigungen"), admin = k.Benutzer.Admin,
     };
+
+    private static T? Feld<T>(Konto k, string name)
+    {
+        try { return k.BenutzerRoh?[name] is JsonValue v ? v.GetValue<T>() : default; }
+        catch (InvalidOperationException) { return default; }
+        catch (FormatException) { return default; }
+    }
 
     /// <summary>Text hinter dem ⓘ einer Klasse: Klassenleitung mit Namen, sonst der Langname.</summary>
     private static string KlassenInfo(ElementKlasse c, IReadOnlyDictionary<string, string> lehrerName)
@@ -260,7 +272,7 @@ public sealed class Wochendienst
             return new
             {
                 ok = true,
-                school = k.Schule.Length > 0 ? k.Schule : "UntPlanMobile",
+                school = k.Schule.Length > 0 ? k.Schule : "EduOrga Mobile",
                 own = Eigen(k),
                 isStudent = k.IstSchueler,
                 entities = Entitaeten(k),
@@ -277,6 +289,7 @@ public sealed class Wochendienst
                 now = jetzt.ToString("HH:mm", CultureInfo.InvariantCulture),
                 names = Namen(k),
                 user = Benutzer(k),
+                darstellung = k.Darstellung,
             };
         }
         catch (NichtAngemeldetException)

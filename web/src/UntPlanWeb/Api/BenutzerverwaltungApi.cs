@@ -159,11 +159,10 @@ public static class BenutzerverwaltungApi
             var konten = d.Konten ?? new();
             if (konten.Count == 0) throw new ArgumentException("Keine Zugangsdaten.");
             var adresse = $"{c.Request.Scheme}://{c.Request.Host}{c.Request.PathBase}";
-            var pdf = PdfBericht.Erzeugen(e.Schulname, string.IsNullOrWhiteSpace(d.Titel) ? "Zugangsdaten" : d.Titel!, $"Anmeldung unter {adresse}",
-                new[] { "Name", "Klasse / Kürzel", "Rolle", "Benutzername", "Startpasswort" },
-                konten.Select(k => (IReadOnlyList<string>)new[] { k.Name, k.Klasse.Length > 0 ? k.Klasse : k.Zuordnung, Rollen.Name(k.Rolle), k.Login, k.Passwort }).ToList(),
-                "Das Startpasswort muss bei der ersten Anmeldung geändert werden. Bitte diese Liste vertraulich behandeln und nach dem Verteilen vernichten.",
-                ich.Anzeigename.Length > 0 ? ich.Anzeigename : ich.Login, false, PdfBericht.Hochformat(d.Ausrichtung, true));
+            var pdf = PdfBericht.Zugangsdaten(e.Schulname, string.IsNullOrWhiteSpace(d.Titel) ? "Zugangsdaten" : d.Titel!, adresse,
+                konten.Select(k => new PdfBericht.Zugang(k.Name, k.Klasse.Length > 0 ? k.Klasse : k.Zuordnung, Rollen.Name(k.Rolle), k.Login, k.Passwort)).ToList(),
+                "Karten an den gestrichelten Linien ausschneiden und persönlich übergeben. Das Startpasswort muss bei der ersten Anmeldung geändert werden. Nicht benötigte Karten vernichten.",
+                ich.Anzeigename.Length > 0 ? ich.Anzeigename : ich.Login, PdfBericht.Hochformat(d.Ausrichtung, true));
             return Results.File(pdf, "application/pdf", "zugangsdaten.pdf");
         });
     }

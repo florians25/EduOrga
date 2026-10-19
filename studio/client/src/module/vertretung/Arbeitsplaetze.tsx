@@ -1,7 +1,7 @@
-// Arbeitsplätze der Vertretungsplanung.
+// Arbeitsplätze der Vertretungsplanung: Tagesplanung (Tagesablauf bzw. Expertenansicht), Verlegen und Tauschen, Kompaktpläne.
 import { Button, Link, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import { ChevronLeft20Regular, ChevronRight20Regular } from '@fluentui/react-icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { api } from '@/api/client';
 import { seiteOeffnen } from '@/kern/befehle';
 import { useEreignis } from '@/kern/ereignisse';
@@ -12,9 +12,11 @@ import { MenueKnopf } from '@/komponenten/menue';
 import { Bereich, Teilung } from '@/shell/arbeitsplatz';
 import { DatumFeld } from '@/komponenten/eingaben';
 import {
-  aktuelleAuswahl, blaettern, datumSetzen, isoAus, planVergroessern, seitenansichtSetzen, tagKurz, useTagesplanung, usePlanungsdatum, vpfad, type Zeitansicht,
+  aktuelleAuswahl, blaettern, datumSetzen, isoAus, planVergroessern, seitenansichtSetzen, tagKurz, tpAnsichtSetzen, tpKontextSetzen, tpSchrittSetzen, useTagesplanung,
+  usePlanungsdatum, vpfad, type TpAnsicht, type TpKontext, type TpSchritt, type Zeitansicht,
 } from './kern';
 import { Umschalter } from './steuer';
+import './ablauf/ablauf.css';
 
 const useStile = makeStyles({
   seite: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, gap: '8px' },
@@ -76,6 +78,9 @@ function Tageskopf() {
   const letzte = useStudio((x) => x.grunddaten?.zeitraster?.stunden?.length || 8);
   const tageProWoche = useStudio((x) => x.grunddaten?.zeitraster?.tage?.length || 5);
   const seite = useTagesplanung((x) => x.seite);
+  const tpAnsicht = useTagesplanung((x) => x.ansicht);
+  const schritt = useTagesplanung((x) => x.schritt);
+  const ablauf = tpAnsicht === 'ablauf';
   const [liste, setListe] = useState<{ entfall: number } | null>(null);
   const { daten } = useDaten(async (): Promise<TagesStand> => {
     const [k, abw] = await Promise.all([
@@ -101,6 +106,10 @@ function Tageskopf() {
     if (t && t.kollL + t.kollR > 0) teile.push({ text: mehrzahl(t.kollL + t.kollR, 'Kollision', 'Kollisionen'), klasse: s.offen, titel: `Lehrkräfte ${t.kollL} · Räume ${t.kollR}` });
     if (t?.tagestexte) teile.push({ text: mehrzahl(t.tagestexte, 'Tagestext', 'Tagestexte') });
   }
+  const modusWahl = (
+    <Umschalter<TpAnsicht> wert={tpAnsicht} titel="Geführter Tagesablauf oder Expertenansicht (Liste, Vorschlag und Pläne nebeneinander)" testid="tp-modus" beiWahl={tpAnsichtSetzen}
+      optionen={[{ wert: 'ablauf', text: 'Tagesablauf', titel: 'Abwesenheiten erfassen, offene Stunden lösen, prüfen und veröffentlichen' }, { wert: 'experte', text: 'Expertenansicht', titel: 'Vertretungsliste, Vorschlag und Pläne nebeneinander' }]} />
+  );
   const erfassen = (art: 'lehrer' | 'klasse' | 'raum') => async () => {
     if (!datum) return;
     const { abwesenheitErfassen } = await import('./Absenzen');
@@ -130,6 +139,8 @@ function Tageskopf() {
         ))}
       </span>
       <span className={s.rechts}>
+        {ablauf ? null : <>
+        {modusWahl}
         <span className={schreiben ? s.breit : undefined} style={schreiben ? undefined : { display: 'inline-flex', gap: 12 }}>
           <Link onClick={() => seiteOeffnen('vertretung.absenzen')} title="Abwesenheiten von Lehrkräften, Klassen und Räumen bearbeiten (Strg+M)">Abwesenheiten</Link>
           <Link onClick={() => seiteOeffnen('vertretung.kalender')} title="Wochenübersicht mit Kennzahlen, Tagestexte und Kalendertag">Kalender</Link>
@@ -145,19 +156,111 @@ function Tageskopf() {
             { text: 'Kalender', aktion: () => seiteOeffnen('vertretung.kalender') },
           ]} />
         ) : null}
+        </>}
       </span>
+      {ablauf ? <Schritte schritt={schritt} abwesend={abw} offen={t?.offen ?? 0} kollisionen={t ? t.kollL + t.kollR : 0} unterrichtstag={!!daten?.unterrichtstag}>{modusWahl}</Schritte> : null}
     </div>
   );
 }
 
+/** Schritte des Tagesablaufs als flache Reiter mit Stand (Abwesenheiten, offene Stunden, Kollisionen). */
+function Schritte({ schritt, abwesend, offen, kollisionen, unterrichtstag, children }: { schritt: TpSchritt; abwesend: number; offen: number; kollisionen: number; unterrichtstag: boolean; children?: ReactNode }) {
+  const liste: { wert: TpSchritt; nr: number; text: string; stand: string; achtung?: boolean; titel: string }[] = [
+    { wert: 'erfassen', nr: 1, text: 'Abwesenheiten erfassen', stand: abwesend ? String(abwesend) : '–', titel: 'Wer fehlt heute? Lehrkräfte, Klassen und Räume schnell erfassen' },
+    { wert: 'loesen', nr: 2, text: 'Offene Stunden lösen', stand: unterrichtstag ? (offen ? `${offen} offen` : 'erledigt') : '–', achtung: offen > 0, titel: 'Arbeitsliste der offenen Stunden mit den besten Kandidaten' },
+    { wert: 'pruefen', nr: 3, text: 'Prüfen und veröffentlichen', stand: kollisionen ? mehrzahl(kollisionen, 'Kollision', 'Kollisionen') : offen ? '' : 'bereit', achtung: kollisionen > 0, titel: 'Tagesbilanz, Belastung, Nachrichten zum Tag, an EduOrga Web senden und drucken' },
+  ];
+  return (
+    <nav className="ta-schritte" aria-label="Tagesablauf" data-testid="tp-schritte">
+      {liste.map((x) => (
+        <button key={x.wert} type="button" className={`ta-schritt${x.wert === schritt ? ' aktiv' : ''}`} aria-current={x.wert === schritt ? 'step' : undefined} data-schritt={x.wert} title={x.titel}
+          onClick={() => tpSchrittSetzen(x.wert)}>
+          <span className="ta-schritt-nr">{x.nr}</span>
+          <span className="ta-schritt-text">{x.text}</span>
+          {x.stand ? <span className={`ta-schritt-stand${x.achtung ? ' achtung' : ''}`}>{x.stand}</span> : null}
+        </button>
+      ))}
+      <span className="ta-schritte-rechts">{children}</span>
+    </nav>
+  );
+}
+
+const KONTEXTE: { wert: TpKontext; text: string; taste: string; titel: string }[] = [
+  { wert: 'plaene', text: 'Pläne', taste: 'P', titel: 'Tagespläne von Klasse und Lehrkraft der gewählten Stunde (Verlegen und Tauschen per Drag & Drop)' },
+  { wert: 'frei', text: 'Wer ist frei?', taste: 'F', titel: 'Alle Lehrkräfte × Stunden des Tages mit Belastung' },
+  { wert: 'vorschlag', text: 'Alle Kandidaten', taste: 'V', titel: 'Vollständiger Vertretungsvorschlag: Lehrkräfte, Betreuungen, Räume, Vorziehungen' },
+];
+
+/** Kontextbereich neben der Arbeitsliste: folgt der gewählten Stunde. Bereiche bleiben nach dem ersten Zeigen eingehängt. */
+function Kontext({ woche, gross }: { woche: boolean; gross: string | null }) {
+  const kontext = useTagesplanung((x) => x.kontext);
+  const [gezeigt, setGezeigt] = useState<Set<TpKontext>>(() => new Set([kontext]));
+  useEffect(() => { setGezeigt((g) => (g.has(kontext) ? g : new Set([...g, kontext]))); }, [kontext]);
+  const sichtbar = (k: TpKontext) => ({ display: kontext === k ? 'flex' : 'none', flex: 1, minHeight: 0, minWidth: 0, flexDirection: 'column' as const });
+  return (
+    <div className="ta-kontext" data-testid="tp-kontext" data-kontext={kontext}>
+      <div className="ta-kontext-reiter" role="tablist" aria-label="Kontext der gewählten Stunde" style={gross ? { display: 'none' } : undefined}>
+        {KONTEXTE.map((k) => (
+          <button key={k.wert} type="button" role="tab" aria-selected={k.wert === kontext} className={`ta-reiter${k.wert === kontext ? ' aktiv' : ''}`} title={`${k.titel} (Taste ${k.taste})`}
+            data-kontext={k.wert} onClick={() => tpKontextSetzen(k.wert)}>{k.text}</button>
+        ))}
+      </div>
+      <div style={sichtbar('plaene')}>
+        <Teilung richtung={woche ? 'zeilen' : 'spalten'} schluessel={woche ? 'tagesablauf.plaene.woche' : 'tagesablauf.plaene'} anteile={[50, 50]} nur={gross === 'klasse' ? 0 : gross === 'lehrer' ? 1 : null}>
+          <Bereich id="plan-klasse" typ="vertretung.plan" p={{ typ: 'klasse', tagesplanung: true }} />
+          <Bereich id="plan-lehrer" typ="vertretung.plan" p={{ typ: 'lehrer', tagesplanung: true }} />
+        </Teilung>
+      </div>
+      {gezeigt.has('frei') ? <div style={sichtbar('frei')}><Bereich id="wer-ist-frei" typ="vertretung.frei" /></div> : null}
+      {gezeigt.has('vorschlag') ? <div style={sichtbar('vorschlag')}><Bereich id="vorschlag" typ="vertretung.vorschlag" /></div> : null}
+    </div>
+  );
+}
+
+/** Geführter Tagesablauf: 1 Abwesenheiten erfassen · 2 offene Stunden lösen · 3 prüfen und veröffentlichen. */
+function Ablauf() {
+  const schritt = useTagesplanung((x) => x.schritt);
+  const woche = useTagesplanung((x) => Object.values(x.plaene).some((v) => v === 'woche'));
+  const gross = useTagesplanung((x) => x.gross);
+  if (schritt === 'erfassen') {
+    return (
+      <Teilung schluessel="tagesablauf.erfassen" anteile={[42, 58]}>
+        <Bereich id="erfassen" typ="vertretung.erfassen" />
+        <Bereich id="abwesenheiten" typ="vertretung.absenzen" p={{ zeitraum: 'tag' }} />
+      </Teilung>
+    );
+  }
+  if (schritt === 'pruefen') {
+    return (
+      <Teilung schluessel="tagesablauf.pruefen" anteile={[46, 54]}>
+        <Bereich id="pruefen" typ="vertretung.tagesbilanz" />
+        <Teilung richtung="zeilen" schluessel="tagesablauf.pruefen.rechts" anteile={[42, 58]}>
+          <Bereich id="belastung" typ="vertretung.belastung" />
+          <Bereich id="pruef-liste" typ="vertretung.liste" p={{ schlank: true }} />
+        </Teilung>
+      </Teilung>
+    );
+  }
+  return (
+    <Teilung schluessel={woche ? 'tagesablauf.loesen.woche' : 'tagesablauf.loesen'} anteile={woche ? [42, 58] : [48, 52]} nur={gross ? 1 : null}>
+      <Bereich id="arbeitsliste" typ="vertretung.arbeitsliste" />
+      <Kontext woche={woche} gross={gross} />
+    </Teilung>
+  );
+}
+
 /**
- * Tagesplanung: oben der Tageskopf (mit Umschalter Tag | Woche und Wochenstreifen); links die Vertretungen (schlanke Liste,
+ * Tagesplanung: oben der Tageskopf (mit Umschalter Tag | Woche, Wochenstreifen und dem Umschalter Tagesablauf | Expertenansicht).
+ * Tagesablauf (Standard): Schritte „Abwesenheiten erfassen“, „Offene Stunden lösen“ (Arbeitsliste mit Kandidaten, daneben Pläne,
+ * „Wer ist frei?“ oder alle Kandidaten der gewählten Stunde) und „Prüfen und veröffentlichen“ (Tagesbilanz, Belastung, Liste).
+ * Expertenansicht: links die Vertretungen (schlanke Liste,
  * im Wochenmodus nach Tagen gegliedert) und darunter der Vorschlag zur gewählten Vertretung; rechts die Pläne von Klasse und
  * Lehrkraft (folgen der Auswahl). Zeigt ein Plan die Woche, stehen die Pläne untereinander in einer breiteren rechten Spalte;
  * ein Plan lässt sich vergrößern (Esc stellt die Aufteilung wieder her). Alle Bereiche bleiben dabei eingehängt.
  */
 export function Tagesplanung() {
   const s = useStile();
+  const ansicht = useTagesplanung((x) => x.ansicht);
   const woche = useTagesplanung((x) => Object.values(x.plaene).some((v) => v === 'woche'));
   const gross = useTagesplanung((x) => x.gross);
   useEffect(() => {
@@ -169,9 +272,9 @@ export function Tagesplanung() {
   useEffect(() => () => planVergroessern(null), []);
   const k = woche ? 'tagesplanung.woche' : 'tagesplanung.v2';
   return (
-    <div className={s.seite} data-ansicht-art={woche ? 'woche' : 'tag'}>
+    <div className={s.seite} data-ansicht-art={woche ? 'woche' : 'tag'} data-tp-ansicht={ansicht}>
       <Tageskopf />
-      <Teilung schluessel={k} anteile={woche ? [45, 55] : [58, 42]} nur={gross ? 1 : null}>
+      {ansicht === 'ablauf' ? <Ablauf /> : <Teilung schluessel={k} anteile={woche ? [45, 55] : [58, 42]} nur={gross ? 1 : null}>
         <Teilung richtung="zeilen" schluessel={`${k}.links`} anteile={[56, 44]}>
           <Bereich id="liste" typ="vertretung.liste" p={{ schlank: true, tagesplanung: true }} />
           <Bereich id="vorschlag" typ="vertretung.vorschlag" />
@@ -180,7 +283,7 @@ export function Tagesplanung() {
           <Bereich id="plan-klasse" typ="vertretung.plan" p={{ typ: 'klasse', tagesplanung: true }} />
           <Bereich id="plan-lehrer" typ="vertretung.plan" p={{ typ: 'lehrer', tagesplanung: true }} />
         </Teilung>
-      </Teilung>
+      </Teilung>}
     </div>
   );
 }

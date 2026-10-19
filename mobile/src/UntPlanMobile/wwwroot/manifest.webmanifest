@@ -1,7 +1,7 @@
 {
-  "name": "UntPlan Mobile",
-  "short_name": "UntPlan",
-  "description": "Stundenplan, Vertretungen, Klassenbuch und Mitteilungen aus UntPlan Web – mobil und offline.",
+  "name": "EduOrga Mobile",
+  "short_name": "EduOrga",
+  "description": "EduOrga Mobile – Stundenplan, Vertretungen, Klassenbuch, Mitteilungen und Schulfunktionen aus EduOrga Web. Einfach mehr Schulalltag.",
   "id": "/untplanmobile/",
   "start_url": "./",
   "scope": "./",
@@ -11,8 +11,8 @@
     "minimal-ui"
   ],
   "orientation": "portrait",
-  "background_color": "#f4f6f8",
-  "theme_color": "#ffffff",
+  "background_color": "#f5f7f8",
+  "theme_color": "#164c55",
   "lang": "de",
   "dir": "ltr",
   "categories": [
@@ -67,6 +67,17 @@
       "name": "Postfach",
       "short_name": "Postfach",
       "url": "./?view=msg",
+      "icons": [
+        {
+          "src": "assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Stundenplan",
+      "short_name": "Plan",
+      "url": "./?view=plan",
       "icons": [
         {
           "src": "assets/icons/icon-192.png",

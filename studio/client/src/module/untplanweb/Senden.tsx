@@ -73,28 +73,38 @@ const useStile = makeStyles({
   text: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '170px', '@media (max-width: 1440px)': { display: 'none' } },
   fehler: { color: tokens.colorPaletteRedForeground1 },
   kurz: { '@media (max-width: 1600px)': { display: 'none' } },
+  /* Kopfleiste: nur Symbol mit kleinem Statuspunkt (grün gesendet, gelb vorgemerkt, rot Fehler); Einzelheiten in der Kurzinfo */
+  symbolKnopf: { minWidth: '32px', padding: '0 6px', position: 'relative' },
+  punkt: {
+    position: 'absolute', right: '4px', top: '5px', width: '7px', height: '7px', borderRadius: '50%',
+    boxShadow: `0 0 0 1.5px ${tokens.colorNeutralBackground1}`, pointerEvents: 'none',
+  },
+  punktOk: { backgroundColor: 'var(--up-ok)' },
+  punktFaellig: { backgroundColor: 'var(--up-warnung)' },
+  punktFehler: { backgroundColor: 'var(--up-entfall)' },
+  zeit: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', '@media (max-width: 1680px)': { display: 'none' } },
 });
 
 const uhr = (iso: string | null | undefined) => (iso ? datumDe(iso).split(', ')[1] || datumDe(iso) : '');
 
-function statusText(st: DirektStand | null, sendet: boolean): { text: string; titel: string; fehler: boolean } {
+function statusText(st: DirektStand | null, sendet: boolean): { text: string; titel: string; fehler: boolean; art?: 'ok' | 'faellig' | 'fehler'; zeit?: string } {
   if (!st) return { text: '', titel: '', fehler: false };
   if (sendet || st.laufend) return { text: 'Wird gesendet …', titel: st.laufend ? sachlich(st.laufend.text) : '', fehler: false };
   const auto = st.automatisch ? `Automatische Übertragung ${st.sekunden} s nach jeder Änderung ist eingeschaltet.` : 'Automatische Übertragung: aus (Einstellungen für UntPlan Web).';
   if (!st.eingerichtet) return { text: 'Nicht eingerichtet', titel: 'Keine Verbindung zu EduOrga Web eingerichtet.', fehler: false };
   if (st.letzte && !st.letzte.ok) {
-    return { text: `Fehler ${uhr(st.letzte.zeit)}`, titel: `Übertragung am ${datumDe(st.letzte.zeit)} fehlgeschlagen: ${sachlich(st.letzte.text)}\n${auto}`, fehler: true };
+    return { text: `Fehler ${uhr(st.letzte.zeit)}`, titel: `Übertragung am ${datumDe(st.letzte.zeit)} fehlgeschlagen: ${sachlich(st.letzte.text)}\n${auto}`, fehler: true, art: 'fehler', zeit: uhr(st.letzte.zeit) };
   }
-  if (st.faellig) return { text: `Automatisch um ${uhr(st.faellig)}`, titel: `Geänderte Vertretungen werden um ${uhr(st.faellig)} übertragen.\n${auto}`, fehler: false };
+  if (st.faellig) return { text: `Automatisch um ${uhr(st.faellig)}`, titel: `Geänderte Vertretungen werden um ${uhr(st.faellig)} übertragen.\n${auto}`, fehler: false, art: 'faellig', zeit: uhr(st.faellig) };
   if (st.zuletztErfolgreich) {
     const wer = st.letzte?.ok ? (st.letzte.automatisch ? ' (automatisch)' : ` (${st.letzte.benutzer})`) : '';
-    return { text: `Gesendet · ${uhr(st.zuletztErfolgreich)}`, titel: `Zuletzt an EduOrga Web übertragen am ${datumDe(st.zuletztErfolgreich)}${wer}, Revision ${st.revision}.\n${auto}`, fehler: false };
+    return { text: `Gesendet · ${uhr(st.zuletztErfolgreich)}`, titel: `Zuletzt an EduOrga Web übertragen am ${datumDe(st.zuletztErfolgreich)}${wer}, Revision ${st.revision}.\n${auto}`, fehler: false, art: 'ok', zeit: uhr(st.zuletztErfolgreich) };
   }
   return { text: 'Noch nicht gesendet', titel: auto, fehler: false };
 }
 
-/** Knopf „An EduOrga Web senden“ mit Stand der letzten Übertragung. */
-export function VertretungenSendenKnopf({ mitText = true }: { mitText?: boolean }) {
+/** Knopf „An EduOrga Web senden“ mit Stand der letzten Übertragung (kompakt: nur Symbol mit Statuspunkt und Uhrzeit). */
+export function VertretungenSendenKnopf({ mitText = true, kompakt = false }: { mitText?: boolean; kompakt?: boolean }) {
   const s = useStile();
   const schreiben = useStudio((x) => !!x.benutzer?.darfSchreiben);
   const stand = useDirekt((x) => x.stand);
@@ -107,6 +117,20 @@ export function VertretungenSendenKnopf({ mitText = true }: { mitText?: boolean 
   }, []);
   if (!schreiben) return null;
   const st = statusText(stand, sendet);
+  if (kompakt) {
+    const punkt = st.art === 'ok' ? s.punktOk : st.art === 'faellig' ? s.punktFaellig : st.art === 'fehler' ? s.punktFehler : null;
+    return (
+      <span className={s.rahmen} data-testid="untplanweb-senden" data-stand={st.fehler ? 'fehler' : 'ok'}>
+        <Tooltip relationship="description" content={`An EduOrga Web senden – Vertretungen jetzt übertragen.${st.titel ? `\n${st.titel}` : st.text ? `\n${st.text}` : ''}`}>
+          <Button appearance="subtle" className={s.symbolKnopf} disabled={sendet} icon={sendet ? <Spinner size="extra-tiny" /> : <CloudArrowUp20Regular />}
+            onClick={() => { void vertretungenSenden(); }} aria-label={`Vertretungen jetzt an EduOrga Web senden${st.text ? ` (${st.text})` : ''}`}>
+            {punkt && !sendet ? <span className={mergeClasses(s.punkt, punkt)} aria-hidden /> : null}
+          </Button>
+        </Tooltip>
+        {st.zeit && st.art !== 'fehler' ? <span className={s.zeit}>{st.zeit}</span> : null}
+      </span>
+    );
+  }
   return (
     <span className={s.rahmen} data-testid="untplanweb-senden">
       <Tooltip relationship="description" content={st.titel ? `Vertretungen jetzt an EduOrga Web senden.\n${st.titel}` : 'Vertretungen jetzt an EduOrga Web senden'}>
@@ -122,5 +146,5 @@ export function VertretungenSendenKnopf({ mitText = true }: { mitText?: boolean 
 
 /** Kopfleistenelement (nur Vertretungsplanung). */
 export default function KopfleisteSenden() {
-  return <VertretungenSendenKnopf />;
+  return <VertretungenSendenKnopf kompakt />;
 }

@@ -1,7 +1,7 @@
 // Automatische Planung: Hintergrundauftrag auf dem Server (Status, Fortschritt, Abbrechen), Ergebnisse mit Kennzahlen,
 // Vergleich aktueller Plan / Ergebnisplan, Plan übernehmen (409 = Schuldatei inzwischen geändert → Rückfrage).
 import {
-  Badge, Button, ProgressBar, Select, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, makeStyles, mergeClasses, tokens,
+  Badge, Button, ProgressBar, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/api/client';
@@ -78,9 +78,8 @@ function Vergleich({ nummer, p, setzen }: { nummer: number; p: { typ: string; el
       <div className={s.vergleichKopf}>
         <h3 className={s.h3}>Vergleich</h3>
         <Feld titel="Plan von">
-          <Select size="small" value={typ} onChange={(_, d) => setzen({ vergleichTyp: d.value, vergleichElement: undefined })}>
-            <option value="klasse">Klasse</option><option value="lehrer">Lehrkraft</option><option value="raum">Raum</option>
-          </Select>
+          <SuchAuswahl size="small" breite={120} ariaLabel="Plan von" wert={typ} beiWahl={(w) => setzen({ vergleichTyp: w, vergleichElement: undefined })}
+            optionen={[{ wert: 'klasse', text: 'Klasse' }, { wert: 'lehrer', text: 'Lehrkraft' }, { wert: 'raum', text: 'Raum' }]} />
           <SuchAuswahl size="small" ariaLabel="Element für den Vergleich" platzhalter="Suchen …" wert={element ? String(element) : ''} beiWahl={(w) => setzen({ vergleichElement: Number(w) })}
             optionen={liste.map((e) => ({ wert: String(e.id), kurz: e.k, text: e.l ? `${e.k} – ${e.l}` : e.k }))} />
         </Feld>

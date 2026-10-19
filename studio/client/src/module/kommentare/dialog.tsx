@@ -1,5 +1,5 @@
 // Kommentar-Dialog (Element, Feld, Kategorie, Text) und Anlegen – auch für andere Module (Befehl kommentare.neu).
-import { Field, Select, Input, Textarea, makeStyles } from '@fluentui/react-components';
+import { Field, Input, Textarea, makeStyles } from '@fluentui/react-components';
 import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
 import type { ElementOption } from '@/api/typen';
@@ -36,11 +36,10 @@ function Inhalt({ vorgabe, titel, kategorien, schliessen }: { vorgabe: Partial<K
       <div className={s.formular}>
         <Field label="Element">
           <div className={s.zeile}>
-            <Select value={typ} disabled={!!vorgabe.id} onChange={(_, d) => setTyp(d.value)} aria-label="Art des Elements">{TYPEN.map(([w, t]) => <option key={w} value={w}>{t}</option>)}</Select>
+            <SuchAuswahl breite={150} wert={typ} disabled={!!vorgabe.id} beiWahl={(w) => setTyp(w)} ariaLabel="Art des Elements" optionen={TYPEN.map(([w, t]) => ({ wert: w, text: t }))} />
             {vorgabe.id ? (
-              <Select value={element ? String(element) : ''} disabled onChange={() => undefined} aria-label="Element" style={{ flex: 1 }}>
-                {liste.map((e) => <option key={e.id} value={e.id}>{e.l ? `${e.k} – ${e.l}` : e.k}</option>)}
-              </Select>
+              <SuchAuswahl className={s.element} wert={element ? String(element) : ''} disabled beiWahl={() => undefined} ariaLabel="Element"
+                optionen={liste.map((e) => ({ wert: String(e.id), kurz: e.k, text: e.l ? `${e.k} – ${e.l}` : e.k }))} />
             ) : (
               <SuchAuswahl ariaLabel="Element" className={s.element} platzhalter="Element suchen …" wert={element ? String(element) : ''} beiWahl={(w) => setElement(Number(w))}
                 optionen={liste.map((e) => ({ wert: String(e.id), kurz: e.k, text: e.l ? `${e.k} – ${e.l}` : e.k }))} />
@@ -48,7 +47,7 @@ function Inhalt({ vorgabe, titel, kategorien, schliessen }: { vorgabe: Partial<K
           </div>
         </Field>
         <Field label="Feld"><Input value={feld} onChange={(_, d) => setFeld(d.value)} placeholder="Optional, z. B. Wochensoll" /></Field>
-        <Field label="Kategorie"><Select value={String(kategorie)} onChange={(_, d) => setKategorie(Number(d.value))}>{kategorien.map((k) => <option key={k.nr} value={k.nr}>{k.name}</option>)}</Select></Field>
+        <Field label="Kategorie"><SuchAuswahl ariaLabel="Kategorie" wert={String(kategorie)} beiWahl={(w) => setKategorie(Number(w))} optionen={kategorien.map((k) => ({ wert: String(k.nr), text: k.name }))} /></Field>
         <Field label="Kommentar" required validationMessage={geprueft && !text.trim() ? 'Bitte ausfüllen.' : undefined}><Textarea rows={6} value={text} onChange={(_, d) => setText(d.value)} autoFocus /></Field>
       </div>
     </StandardDialog>

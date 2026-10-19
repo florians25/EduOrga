@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    EduOrga Druck: gemeinsame PDF-Ausgabe für Studio und Web (ohne Fremdbibliothek). Eigener PDF-Schreiber mit eingebetteter
+    Schrift IBM Plex Sans (SIL Open Font License 1.1, Schriften/OFL.txt), Seitenrahmen (Kopf, Fuß, „Seite x von y“),
+    Tabellen, Formularbausteine, Stundenplanraster und Vertretungsplan-Aushang – alles in Schwarz-Weiß bzw. Graustufen.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>UntPlan.Druck</RootNamespace>
+    <AssemblyName>UntPlan.Druck</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schriften\IBMPlexSans-Regular.ttf" LogicalName="UntPlan.Druck.IBMPlexSans-Regular.ttf" />
+    <EmbeddedResource Include="Schriften\IBMPlexSans-SemiBold.ttf" LogicalName="UntPlan.Druck.IBMPlexSans-SemiBold.ttf" />
+    <None Include="Schriften\OFL.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Lizenzen\IBM-Plex-OFL.txt" />
+  </ItemGroup>
+</Project>

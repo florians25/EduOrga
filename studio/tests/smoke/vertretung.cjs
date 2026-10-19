@@ -4,8 +4,9 @@
 //
 // Ablauf: Beispielschule → Vertretungsmodus mit Planungsdatum → Abwesenheit direkt in der Liste erfassen (Entwurf, Strg+Enter)
 // → Vertretungen mit offenen Stunden (Plakette „Offen“) → Vorschlag (Enter) und ersten Kandidaten übernehmen → Entfall mit „-“ →
-// Kontextmenü → Kalender → Arbeitsplatz „Verlegen und Tauschen“ → Veranstaltung „Alle Lehrkräfte“ → Arbeitsplatz
-// Tagesplanung (Tageskopf, schlanke Liste, Filter, Vorschlag zur gewählten Zeile, Tagespläne als Tagesansicht) → Tag blättern
+// Kontextmenü → Kalender → Arbeitsplatz „Verlegen und Tauschen“ → Veranstaltung „Alle Lehrkräfte“ → Tagesplanung im Tagesablauf
+// (Schnellerfassung einer Abwesenheit, Arbeitsliste mit Kandidaten, Tasten 1 und E, Wer ist frei?, Pläne, Automatik als Probe mit
+// Prüfung und Übernahme, bearbeitete Stunde zurücksetzen, Prüfen und veröffentlichen mit Belastung) → Expertenansicht (Tageskopf, schlanke Liste, Filter, Vorschlag zur gewählten Zeile, Tagespläne als Tagesansicht) → Tag blättern
 // (Strg+Bild↓) → Wochenansicht (Umschalter Tag | Woche im Plan und im Tageskopf, Wochenstreifen, Strg+Umschalt+Bild↓/↑,
 // Plan vergrößern, gemerkte Ansicht) → Verknüpfung der Pläne (Klick auf eine Stunde) → Einstellungen. Umgebungsvariablen: hilfe.cjs.
 const h = require('./hilfe.cjs');
@@ -18,12 +19,12 @@ const h = require('./hilfe.cjs');
   // Lehrkraft mit mindestens drei Stunden am Planungsdatum
   const datum = (await holen('/vertretung/start')).datum;
   const lehrer = (await holen('/elemente?typen=lehrer')).lehrer;
-  let kurz = null;
+  let kurz = null, kurz2 = null;
   for (const l of lehrer) {
     const plan = await holen(`/vertretung/plan/lehrer/${l.id}?datum=${datum}`);
-    if (plan.zellen.filter((z) => z.datum === datum).length >= 3) { kurz = l.k; break; }
+    if (plan.zellen.filter((z) => z.datum === datum).length >= 3) { if (!kurz) kurz = l.k; else if (!kurz2) { kurz2 = l.k; break; } }
   }
-  if (!kurz) throw new Error('keine Lehrkraft mit Unterricht');
+  if (!kurz || !kurz2) throw new Error('keine Lehrkraft mit Unterricht');
 
   const t = await h.starten('studio-shots-vertretung');
   const { page, foto } = t;
@@ -118,9 +119,105 @@ const h = require('./hilfe.cjs');
     await foto('08-veranstaltung-alle');
     schritt('Veranstaltung „Alle Lehrkräfte“ angelegt');
 
-    // Arbeitsplatz Tagesplanung: Tageskopf, schlanke Liste, Vorschlag und Tagespläne (Kalender und Abwesenheiten auf eigenen Seiten)
+    // Arbeitsplatz Tagesplanung, Tagesablauf: 1 Abwesenheiten erfassen → 2 offene Stunden lösen (Karten, Tasten, Automatik mit Prüfung,
+    // Wer ist frei?) → 3 prüfen und veröffentlichen; danach die Expertenansicht (bisherige Tagesplanung)
     await page.click('[data-nav="nav:Tagesplanung"]');
     const tp = '[data-arbeitsplatz=tagesplanung]';
+    await page.waitForSelector(`${tp} [data-testid=tp-modus]`, { timeout: 15000 });
+    await page.click(`${tp} [data-testid=tp-modus] [data-wert=ablauf]`);
+    await page.waitForSelector(`${tp} [data-testid=tp-schritte]`, { timeout: 10000 });
+    await page.click(`${tp} [data-schritt=erfassen]`);
+    await page.waitForSelector(`${tp} [data-testid=erfassen-form]`, { timeout: 15000 });
+    const offenStand = async () => Number(((await page.textContent(`${tp} [data-testid=tageskopf] [data-schritt=loesen]`)) || '').match(/(\d+) offen/)?.[1] || 0);
+    const offen0 = await offenStand();
+    // Schnellerfassung: Lehrkraft wählen, ganztägig, Enter bzw. „Abwesenheit erfassen“
+    const wer = page.locator(`${tp} [data-testid=erfassen-form] input[aria-label=Abwesend]`);
+    await wer.click();
+    await wer.fill(kurz2);
+    await page.locator('[role=menuitemcheckbox], [role=option]', { hasText: kurz2 }).first().click();
+    await page.keyboard.press('Escape');
+    await page.click(`${tp} [data-testid=erfassen-speichern]`);
+    // Rückfragen (z. B. Lehrkraft aus der Veranstaltung „Alle Lehrkräfte“ entfernen) bestätigen
+    for (let i = 0; i < 6; i++) {
+      await page.waitForTimeout(500);
+      const ja = page.locator('[role=dialog] button', { hasText: /^(Ja|OK)$/ });
+      if (await ja.count()) await ja.first().click(); else if (i > 1) break;
+    }
+    await page.waitForFunction(([s, k]) => [...document.querySelectorAll(`${s} [data-bereich=abwesenheiten] .tb-zeile`)].some((z) => z.textContent.includes(k)), [tp, kurz2], { timeout: 15000 });
+    await page.waitForFunction(([s, k]) => (document.querySelector(`${s} [data-testid=erfassen-auswirkungen]`)?.textContent || '').includes(k), [tp, kurz2], { timeout: 15000 });
+    await foto('09-tagesablauf-erfassen');
+    schritt(`Tagesablauf: Abwesenheit ${kurz2} erfasst (vorher ${offen0} offen)`);
+    // Offene Stunden lösen: Karten mit Kandidaten, 1 weist den ersten zu, J/E: nächste Stunde entfällt
+    await page.click(`${tp} [data-testid=weiter-loesen]`);
+    const karten = `${tp} [data-testid=arbeitsliste] .ta-karte`;
+    await page.waitForSelector(`${karten}.gewaehlt .ta-kandidaten :is(.ta-kandidat, .ta-leer)`, { timeout: 15000 });
+    const zahlOffen = async () => Number(((await page.textContent(`${tp} [data-bereich=arbeitsliste] [data-testid=arbeitsliste-filter] [data-wert=offen]`)) || '').match(/\d+/)?.[0] || 0);
+    const n1 = await zahlOffen();
+    if (!n1) throw new Error('Arbeitsliste ohne offene Stunden');
+    await foto('10-tagesablauf-loesen');
+    // erste Karte mit Kandidaten (alle Lehrkräfte können durch die Veranstaltung gebunden sein)
+    await page.waitForFunction((s) => ![...document.querySelectorAll(`${s} .ta-laedt`)].length, karten, { timeout: 15000 });
+    const mitKandidat = page.locator(`${karten}:has(.ta-kandidat)`).first();
+    if (await mitKandidat.count()) {
+      const id1 = await mitKandidat.getAttribute('data-id');
+      await mitKandidat.locator('.ta-kopf').click();
+      await page.waitForSelector(`${karten}.gewaehlt[data-id="${id1}"]`, { timeout: 5000 });
+      const k1 = (await page.textContent(`${karten}.gewaehlt .ta-kandidat .ta-kurz`)).trim();
+      await page.keyboard.press('1');
+      await page.waitForFunction(([s, id]) => !document.querySelector(`${s} [data-testid=arbeitsliste] .ta-karte[data-id="${id}"]`), [tp, id1], { timeout: 15000 });
+      schritt(`Taste 1: Nr. ${id1} → ${k1}`);
+    } else {
+      // keine Lehrkraft frei: Kandidat aus „Wer ist frei?“ gibt es nicht – weiter mit Entfall
+      schritt('Keine Karte mit freier Lehrkraft (Veranstaltung „Alle Lehrkräfte“)');
+    }
+    if ((await zahlOffen()) > 0) {
+      await page.waitForSelector(`${karten}.gewaehlt`, { timeout: 10000 });
+      const id2 = await page.getAttribute(`${karten}.gewaehlt`, 'data-id');
+      await page.keyboard.press('e');
+      await page.waitForFunction(([s, id]) => !document.querySelector(`${s} [data-testid=arbeitsliste] .ta-karte[data-id="${id}"]`), [tp, id2], { timeout: 15000 });
+      schritt(`Taste E: Nr. ${id2} entfällt`);
+    }
+    // Kontext: Wer ist frei? (Matrix) und Pläne folgen der Auswahl
+    await page.click(`${tp} [role=tab][data-kontext=frei]`);
+    await page.waitForSelector(`${tp} [data-testid=wer-ist-frei] .ta-mzeile`, { timeout: 15000 });
+    if ((await zahlOffen()) > 0) await page.waitForSelector(`${tp} [data-testid=wer-ist-frei] .ta-mstd.markiert`, { timeout: 10000 });
+    await foto('11-tagesablauf-wer-ist-frei');
+    await page.keyboard.press('p');
+    await page.waitForSelector(`${tp} [data-bereich=plan-klasse] .ra-eintrag`, { timeout: 15000 });
+    schritt('Wer ist frei? und Pläne im Kontextbereich');
+    // Automatisch vorschlagen: Probe ohne Änderung, Prüfung, alle übernehmen
+    if ((await zahlOffen()) > 0) {
+      const vorher = await zahlOffen();
+      await page.locator(`${tp} [data-bereich=arbeitsliste] [role=toolbar] button`, { hasText: 'Automatisch vorschlagen' }).click();
+      await page.waitForSelector(`${tp} [data-testid=automatik-pruefung]`, { timeout: 20000 });
+      if ((await zahlOffen()) !== vorher) throw new Error('Die Probe der Automatik hat bereits etwas geändert');
+      await foto('12-tagesablauf-automatik');
+      const alle = page.locator(`${tp} [data-testid=automatik-alle]`);
+      if (await alle.isEnabled()) {
+        await alle.click();
+        await page.waitForFunction(([s, n]) => Number((document.querySelector(`${s} [data-bereich=arbeitsliste] [data-testid=arbeitsliste-filter] [data-wert=offen]`)?.textContent || '').match(/\d+/)?.[0] || 0) < n, [tp, vorher], { timeout: 20000 });
+      } else await page.locator(`${tp} [data-testid=automatik-pruefung] button`, { hasText: 'Verwerfen' }).click();
+      schritt(`Automatik geprüft und übernommen: ${vorher} → ${await zahlOffen()} offen`);
+    }
+    // Bearbeitete Stunden: zurücksetzen (Entf) macht eine Stunde wieder offen
+    await page.click(`${tp} [data-testid=arbeitsliste-filter] [data-wert=bearbeitet]`);
+    await page.waitForSelector(`${karten}.erledigt.gewaehlt`, { timeout: 10000 });
+    const vorZurueck = await zahlOffen();
+    await page.locator(`${karten}.erledigt.gewaehlt .ta-kopf`).click();
+    await page.keyboard.press('Delete');
+    await page.waitForFunction(([s, n]) => Number((document.querySelector(`${s} [data-testid=arbeitsliste-filter] [data-wert=offen]`)?.textContent || '').match(/\d+/)?.[0] || 0) > n, [tp, vorZurueck], { timeout: 15000 });
+    await page.click(`${tp} [data-testid=arbeitsliste-filter] [data-wert=offen]`);
+    schritt('Bearbeitete Stunde zurückgesetzt');
+    // Prüfen und veröffentlichen: Stand, Zahlen, Belastung
+    await page.click(`${tp} [data-schritt=pruefen]`);
+    await page.waitForSelector(`${tp} [data-testid=pruefen] .ta-statusliste`, { timeout: 15000 });
+    await page.waitForSelector(`${tp} [data-testid=belastung] .ta-bzeile:not(.kopf)`, { timeout: 15000 });
+    await page.waitForSelector(`${tp} [data-testid=pruefen] [data-testid=pruefen-senden]`, { timeout: 10000 });
+    await foto('13-tagesablauf-pruefen');
+    schritt('Prüfen und veröffentlichen: Tagesbilanz, Belastung, Senden');
+
+    // Expertenansicht: Tageskopf, schlanke Liste, Vorschlag und Tagespläne (Kalender und Abwesenheiten auf eigenen Seiten)
+    await page.click(`${tp} [data-testid=tp-modus] [data-wert=experte]`);
     await page.waitForSelector(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile`, { timeout: 15000 });
     await page.waitForSelector(`${tp} [data-ansicht="vertretung.plan"] .ra-eintrag`, { timeout: 15000 });
     await page.waitForFunction((s) => /offen/.test(document.querySelector(`${s} [data-testid=tagessumme]`)?.textContent || ''), tp, { timeout: 15000 });
@@ -129,12 +226,12 @@ const h = require('./hilfe.cjs');
     if (tagSpalten !== 1) throw new Error(`Tagesplan zeigt ${tagSpalten} Tage statt nur des Planungstags`);
     await page.locator(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile`).first().locator('.tb-zelle').first().click();
     await page.waitForSelector(`${tp} [data-testid=vorschlag-kopf]`, { timeout: 15000 });
-    await foto('09-tagesplanung');
+    await foto('14-tagesplanung-experte');
     await page.click(`${tp} [data-testid=liste-filter]`);
     await page.waitForSelector('[role=switch], input[role=switch]', { timeout: 5000 }).catch(() => {});
     await page.getByLabel('Nur offene').check();
     await page.waitForFunction((s) => [...document.querySelectorAll(`${s} [data-ansicht="vertretung.liste"] .tb-zeile`)].every((z) => z.querySelector('.vt-z-offen')), tp, { timeout: 15000 });
-    await foto('09b-tagesplanung-filter');
+    await foto('14b-tagesplanung-filter');
     await page.keyboard.press('Escape');
     schritt('Tagesplanung: Tageskopf, Liste mit Filter, Vorschlag, Tagespläne');
 
@@ -143,7 +240,7 @@ const h = require('./hilfe.cjs');
     await page.keyboard.press('Control+PageDown');
     await page.waitForFunction((d) => (document.querySelector('[data-testid=planungsdatum] input[data-datum]')?.dataset.datum || '') > d, datum, { timeout: 10000 });
     await page.waitForTimeout(600);
-    await foto('10-naechster-tag');
+    await foto('15-naechster-tag');
     schritt(`Tag gewechselt: ${await datumImKopf()}`);
 
     // Wochenansicht: Umschalter Tag | Woche im Plankopf, Planungstag hervorgehoben, Klick auf einen anderen Tag wechselt das Datum
@@ -158,7 +255,7 @@ const h = require('./hilfe.cjs');
     await page.waitForTimeout(500);
     const d1 = await datumImKopf();
     if (!(await page.locator(`${tp} [data-testid=wochenstreifen] [data-datum="${d1}"][aria-pressed=true]`).count())) throw new Error('Wochenstreifen folgt dem Planungstag nicht');
-    await foto('12-wochenplan-klasse');
+    await foto('16-wochenplan-klasse');
     schritt(`Wochenplan Klasse, Tag gewechselt ${d0} → ${d1}`);
 
     // ganze Seite im Wochenmodus: Liste nach Tagen gegliedert, beide Pläne als Woche untereinander, Wochenstreifen
@@ -169,7 +266,7 @@ const h = require('./hilfe.cjs');
     const kb = await page.locator(`${tp} [data-bereich=plan-klasse]`).boundingBox();
     const lb = await page.locator(`${tp} [data-bereich=plan-lehrer]`).boundingBox();
     if (!(lb.y > kb.y + kb.height - 2)) throw new Error('Pläne stehen im Wochenmodus nicht untereinander');
-    await foto('13-tagesplanung-woche');
+    await foto('17-tagesplanung-woche');
     // Wochenstreifen: anderer Tag
     const tageImListe = await page.evaluate((s) => [...document.querySelectorAll(`${s} .tb-zeile.vt-tageskopf`)].map((z) => z.textContent), tp);
     const streifen = page.locator(`${tp} [data-testid=wochenstreifen] button[aria-pressed=false]:not(.frei)`);
@@ -191,7 +288,7 @@ const h = require('./hilfe.cjs');
     await page.click(`${tp} [data-testid=plan-gross-klasse]`);
     await page.waitForSelector(`${tp} [data-bereich=liste]`, { state: 'hidden', timeout: 5000 });
     await page.waitForSelector(`${tp} [data-bereich=plan-lehrer]`, { state: 'hidden', timeout: 5000 });
-    await foto('14-plan-vergroessert');
+    await foto('18-plan-vergroessert');
     await page.keyboard.press('Escape');
     await page.waitForSelector(`${tp} [data-bereich=liste]`, { state: 'visible', timeout: 5000 });
     // gemerkt (localStorage): nach dem Neuladen wieder Woche
@@ -228,7 +325,7 @@ const h = require('./hilfe.cjs');
     // Einstellungen der Vertretungsplanung (Dialog, Seite Vertretungsvorschlag)
     await page.evaluate(() => { void window.studioTest.befehl('vertretung.einstellungen', { seite: 2 }); });
     await page.waitForSelector('[role=dialog]');
-    await foto('11-einstellungen');
+    await foto('19-einstellungen');
     await page.keyboard.press('Escape');
   });
 })().catch((e) => { console.error(e); process.exit(1); });

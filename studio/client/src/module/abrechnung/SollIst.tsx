@@ -1,6 +1,6 @@
 // Soll und Ist: Lehrkräfte (Wochensoll, Wertkorrektur bearbeitbar), Unterrichtsmatrix (Anzeige Lehrer/Stunden), Stundentafel
 // (Wochenstunden je Jahrgang und Fach, rechts die Abweichungen zum Unterricht).
-import { Button, Select, Tab, TabList, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Tab, TabList, makeStyles, tokens } from '@fluentui/react-components';
 import { useMemo } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
@@ -11,6 +11,7 @@ import { formular } from '@/komponenten/dialoge';
 import { fehlerMelden } from '@/komponenten/hinweise';
 import { Tabelle, type Spalte } from '@/komponenten/tabelle/Tabelle';
 import './abrechnung.css';
+import { SuchAuswahl } from '@/komponenten/suchauswahl';
 
 const useStile = makeStyles({
   flaeche: { display: 'flex', flex: 1, minHeight: 0 },
@@ -105,7 +106,7 @@ export default function SollIst({ p }: AnsichtProps) {
           <Tab value="werte">Lehrkräfte</Tab><Tab value="matrix">Unterrichtsmatrix</Tab><Tab value="tafel">Stundentafel</Tab>
         </TabList>
         {tab === 'matrix' ? <>
-          <Feld titel="Anzeige"><Select size="small" value={String(art)} onChange={(_, d) => a.parameterSetzen({ matrixArt: Number(d.value) })}>{['Lehrer', 'Stunden', 'Lehrer + Stunden'].map((t, i) => <option key={t} value={i}>{t}</option>)}</Select></Feld>
+          <Feld titel="Anzeige"><SuchAuswahl size="small" breite={180} ariaLabel="Anzeige" wert={String(art)} beiWahl={(w) => a.parameterSetzen({ matrixArt: Number(w) })} optionen={['Lehrkräfte', 'Stunden', 'Lehrkräfte und Stunden'].map((t, i) => ({ wert: String(i), text: t }))} /></Feld>
           <span className={s.tipp}>Doppelklick öffnet den Unterricht der Klasse.</span>
         </> : null}
         {tab === 'tafel' ? <>

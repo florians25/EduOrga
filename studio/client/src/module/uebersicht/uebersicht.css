@@ -16,7 +16,8 @@
   background: inherit; border-right: 1px solid var(--colorNeutralStroke2); cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ue-name.aktiv { background: var(--colorBrandBackground2); color: var(--colorBrandForeground1); box-shadow: inset 2px 0 0 var(--colorBrandStroke1); }
 .ue-taglinie { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--colorNeutralStroke1); }
-.ue-zelle { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; background: var(--up-marine-100); color: var(--up-schiefer-800); font-size: 11px; line-height: 22px; text-align: center;
+.ue-zelle { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; background: var(--edo-karte-neutral); color: var(--colorNeutralForeground1); font-size: 11px; line-height: 20px; text-align: center;
+  border: 1px solid var(--edo-karte-rand); box-sizing: border-box;
   overflow: hidden; white-space: nowrap; text-overflow: clip; cursor: default; touch-action: none; }
 .ue-zelle.ziehbar { cursor: grab; }
 .ue-zelle.fix { box-shadow: inset 0 0 0 1.5px var(--up-schiefer-700); }

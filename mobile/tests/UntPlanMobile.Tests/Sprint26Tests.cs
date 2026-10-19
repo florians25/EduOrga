@@ -105,7 +105,8 @@ public class Sprint26Tests
         var css = AppCss;
         Assert.DoesNotContain(".card .ticon--verlegt", css);
         // kein Seitenbalken; Zeilenabstand der Kachel in app.js wie in app.css (14 bzw. 16 px)
-        Assert.DoesNotContain(".card::before", css);
+        // Fachfarbe als Streifen innen links (Standard „Klassisch“), nicht als Balken am Rand
+        Assert.Contains(".card::before{\n  content:\"\"; position:absolute; z-index:0; pointer-events:none;\n  left:4px; top:4px; bottom:4px;", css);
         Assert.Contains("? 14 : 16;", js);
         Assert.Contains(".card__line{\n  display:block;\n  font-size:12px; line-height:14px;", css);
         Assert.Contains(".card__line{ font-size:13px; line-height:16px; }", css);

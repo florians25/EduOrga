@@ -14,6 +14,7 @@ const SHELL = [
   './assets/css/tokens.css?v=__FASSUNG__',
   './assets/css/app.css?v=__FASSUNG__',
   './assets/js/app.js?v=__FASSUNG__',
+  './assets/js/schule.js?v=__FASSUNG__',
   './assets/js/data.js?v=__FASSUNG__',
   './assets/js/api-db.js?v=__FASSUNG__',
   './assets/js/planwacht.js?v=__FASSUNG__',

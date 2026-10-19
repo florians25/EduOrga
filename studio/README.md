@@ -32,8 +32,11 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   Datenaustausch, Schule* – im Vertretungsmodus *Vertretungsplanung, Ereignisse, Tagespläne, Auswertung und Ausgabe*.
   Strg+B blendet sie aus.
 * **Kopfleiste:** Schuldatei (zuletzt verwendet, alle Dateien, neu, hochladen), Modus *Stundenplanung /
-  Vertretungsplanung*, im Vertretungsmodus das Planungsdatum und „An Web senden“ (Vertretungen sofort an EduOrga Web),
-  Rückgängig/Wiederholen mit Speicherstand („Gespeichert · 14:32“), aktive Benutzer, Suche (Strg+K – findet jede Funktion) und Konto.
+  Vertretungsplanung*, in der Stundenplanung die **aktive Periode** mit Zeitraum (‹ › vorherige/nächste, Liste mit Suche,
+  „Neue Periode ab …“ als Kopie in einem Dialog), im Vertretungsmodus das Planungsdatum und „An Web senden“ (Symbol mit
+  Statuspunkt, Stand in der Kurzinfo), Rückgängig/Wiederholen mit Speicherstand („Gespeichert · 14:32“, unter 1500 px nur
+  das Symbol), aktive Benutzer, Suche (Strg+K – findet jede Funktion) und Konto. Bis 1366 px Breite passt alles ohne
+  Abschneiden.
 * **Speichern gibt es nicht mehr als Schritt:** Jede Änderung (auch Rückgängig/Wiederholen) landet nach weniger als einer
   Sekunde in der Datenbank. Die Kopfleiste zeigt ruhig den Stand: *Gespeichert · 14:32*, kurz *Speichert …* oder bei einem
   Problem *Nicht gespeichert* mit *Erneut versuchen* (der Server versucht es ohnehin selbst wieder). **Strg+S** legt einen
@@ -54,7 +57,16 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   Nur lesen, Kein Zugriff), Klick ändert die Stufe sofort; Einzelrechte und „Alle Bereiche: …“ je Gruppe; Benutzerliste mit
   Suche, durchsuchbarer Gruppenwahl, „Nur lesen“, Abteilung und lesbaren wirksamen Rechten.
 * **Datumsfelder** überall mit Kalender (Fluent DatePicker, deutsch, Woche ab Montag mit Kalenderwochen); Eingabe auch als
-  „19.10.2026“, „19.10.“ oder „191026“. Lange Auswahllisten in Dialogen sind durchsuchbar.
+  „19.10.2026“, „19.10.“ oder „191026“. Auswahllisten sind durchsuchbar (Tippen filtert).
+* **Farben** der Stammdaten: Spalte *Farbe* mit Farbfeld (Klick öffnet eine ruhige Palette mit 24 Farben und eigenem
+  Hex-Wert), markierte Zeilen → *Farben → Farbe zuweisen …*, **Zufallsfarben** für alle ohne Farbe bzw. alle (gut
+  unterscheidbar, eine Rückgängig-Stufe, „Rückgängig“ im Hinweis). Stunden ohne Fachfarbe sind in allen Plänen neutrale
+  hellgraue Karten mit Linie.
+* **Blockansicht** der Stundenpläne: Umschalter *Einzelplan / Blockansicht* – mehrere Pläne (z. B. ein Jahrgang, alle
+  Lehrkräfte einer Abteilung) als dichte Kacheln neben- und untereinander, Schnellauswahl nach Gruppe, Drucken im
+  Querformat.
+* **Kalender und Ferien:** Jahreskalender mit Aufziehen der Tage per Maus → *Als frei markieren …* (Ferien, Feiertag,
+  beweglicher Ferientag, unterrichtsfrei) bzw. *Wieder Schultage*; Liste daneben, Ferien und Feiertage NRW per Knopf.
 
 ## Lokal starten
 

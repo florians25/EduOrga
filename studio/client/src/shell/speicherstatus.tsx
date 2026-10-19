@@ -15,6 +15,8 @@ const useStile = makeStyles({
     whiteSpace: 'nowrap', maxWidth: '220px', flexShrink: 1, overflow: 'hidden', textOverflow: 'ellipsis',
   },
   symbol: { flexShrink: 0, display: 'inline-flex' },
+  /* in schmalen Fenstern nur das Symbol (der Stand steht in der Kurzinfo) */
+  text: { '@media (max-width: 1500px)': { display: 'none' } },
   fehler: { color: tokens.colorPaletteRedForeground1 },
   getrennt: { color: tokens.colorPaletteRedForeground1 },
   knopf: { minWidth: 0, padding: '0 6px', height: '24px', fontSize: tokens.fontSizeBase200 },
@@ -47,7 +49,7 @@ export function Speicherstatus() {
     return (
       <Tooltip relationship="description" content="Die Verbindung zum Server ist unterbrochen. Änderungen sind erst nach der Wiederverbindung möglich.">
         <Text className={mergeClasses(s.stand, s.getrennt)} data-testid="speicherstand" data-stand="getrennt">
-          <span className={s.symbol}><CloudDismiss16Regular /></span>Verbindung unterbrochen
+          <span className={s.symbol}><CloudDismiss16Regular /></span><span className={s.text}>Verbindung unterbrochen</span>
         </Text>
       </Tooltip>
     );
@@ -68,8 +70,8 @@ export function Speicherstatus() {
   }
   if (zeigeSpeichert) {
     return (
-      <Text className={s.stand} data-testid="speicherstand" data-stand="speichert">
-        <span className={s.symbol}><CloudSync16Regular /></span>Speichert …
+      <Text className={s.stand} data-testid="speicherstand" data-stand="speichert" title="Speichert …" aria-label="Speichert …">
+        <span className={s.symbol}><CloudSync16Regular /></span><span className={s.text}>Speichert …</span>
       </Text>
     );
   }
@@ -78,7 +80,7 @@ export function Speicherstatus() {
     <Tooltip relationship="description"
       content={`Alle Änderungen werden sofort gespeichert${d.gespeichert ? ` (zuletzt am ${datumDe(d.gespeichert)})` : ''}. Strg+S legt zusätzlich einen Sicherungspunkt an.`}>
       <Text className={s.stand} data-testid="speicherstand" data-stand={offen ? 'speichert' : 'gespeichert'}>
-        <span className={s.symbol}><CloudCheckmark16Regular /></span>{zeit ? `Gespeichert · ${zeit}` : 'Gespeichert'}
+        <span className={s.symbol}><CloudCheckmark16Regular /></span><span className={s.text}>{zeit ? `Gespeichert · ${zeit}` : 'Gespeichert'}</span>
       </Text>
     </Tooltip>
   );

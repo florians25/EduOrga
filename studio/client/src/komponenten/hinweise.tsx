@@ -1,5 +1,5 @@
 // Kurze Hinweise (Fluent Toast) unten rechts und Fehlermeldungen. hinweis() ist von überall aufrufbar.
-import { Toast, ToastTitle, Toaster, useToastController, type ToastIntent } from '@fluentui/react-components';
+import { Link, Toast, ToastTitle, Toaster, useToastController, type ToastIntent } from '@fluentui/react-components';
 import type { ReactNode } from 'react';
 import { melden, type MeldungArt } from '@/kern/ereignisse';
 
@@ -8,10 +8,13 @@ let ausgeben: ((inhalt: ReactNode, intent: ToastIntent, dauer: number) => void) 
 
 const INTENT: Record<MeldungArt, ToastIntent> = { info: 'info', ok: 'success', warnung: 'warning', fehler: 'error' };
 
-/** Kurzer Hinweis unten rechts (art: 'info' | 'ok' | 'warnung' | 'fehler'). */
-export function hinweis(text: string, art: MeldungArt = 'info', dauer = 3500): void {
+/** Kurzer Hinweis unten rechts (art: 'info' | 'ok' | 'warnung' | 'fehler'), optional mit einem Knopf (z. B. „Rückgängig“). */
+export function hinweis(text: string, art: MeldungArt = 'info', dauer = 3500, knopf?: { text: string; aktion: () => unknown }): void {
   melden('meldung', { text, art, angezeigt: true });
-  ausgeben?.(<Toast><ToastTitle>{text}</ToastTitle></Toast>, INTENT[art], dauer);
+  const aktion = knopf
+    ? <Link as="button" data-testid="hinweis-aktion" onClick={() => { Promise.resolve().then(knopf.aktion).catch(fehlerMelden); }}>{knopf.text}</Link>
+    : undefined;
+  ausgeben?.(<Toast><ToastTitle action={aktion}>{text}</ToastTitle></Toast>, INTENT[art], knopf ? Math.max(dauer, 8000) : dauer);
 }
 
 /** Fehler (ApiFehler oder Exception) als Hinweis zeigen. */

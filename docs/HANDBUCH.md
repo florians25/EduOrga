@@ -40,7 +40,7 @@ Konten verwaltet die Administration (siehe [Abschnitt 12](#12-mehrbenutzerbetrie
 | Element | Inhalt |
 |---|---|
 | Navigation | Bereiche der Planung, z. B. *Stammdaten*, *Unterricht*, *Planung*, *Stundenpläne*. Selten gebrauchte Einträge stehen unter „weitere“. |
-| Kopfleiste | geöffnete Schuldatei, Rückgängig und Wiederholen, Speichern mit Speicherstand, Befehlssuche, Umschalter *Stundenplanung / Vertretungsplanung*, im Vertretungsmodus das Planungsdatum, Konto |
+| Kopfleiste | geöffnete Schuldatei, Umschalter *Stundenplanung / Vertretungsplanung*, in der Stundenplanung die **aktive Periode** (Name und Zeitraum, ‹ › wechselt zur vorherigen bzw. nächsten, Klick öffnet die Liste mit „Neue Periode ab …“), im Vertretungsmodus das Planungsdatum und „An Web senden“ (Symbol mit Statuspunkt: grün gesendet, gelb vorgemerkt, rot Fehler – Einzelheiten in der Kurzinfo), Rückgängig und Wiederholen, Speicherstand (in schmalen Fenstern nur als Symbol), Befehlssuche, Konto |
 | Übersicht | Kennzahlen der Schuldatei (Klassen, Lehrkräfte, Räume, Fächer, Unterrichte, Planstunden), Planqualität mit Bewertungszahl und Schnellzugriff |
 
 **Befehlssuche:** **Strg+K** (bzw. ⌘K) öffnet ein Suchfeld. Tippen Sie einen Teil des Namens, z. B. „zeitw“ oder
@@ -97,12 +97,22 @@ geöffneten Stundenpläne mit eingeschalteter **Fensterverknüpfung** (Kettensym
 
 ### Ferien und Kalender
 
-*Schule → Ferien und Kalender*: **Ferien NRW eintragen** übernimmt alle amtlichen Ferien und Feiertage. Weitere freie
-Tage, z. B. bewegliche Ferientage, legen Sie im Jahreskalender an: Tag anklicken, mit Umschalt+Klick einen Zeitraum
-wählen und **Ferien für den Zeitraum …** wählen (oder Doppelklick). Für einen einzelnen Tag setzen Sie
-*Unterrichtsfrei* bzw. *Feiertag* direkt.
-Der Kalender unterscheidet Ferien, Feiertage und Schultage farblich; unten stehen die Kennzahlen des Schuljahres
-(Tage, Wochen, Ferientage).
+*Schule → Kalender und Ferien* zeigt links den **Jahreskalender** (die zwölf Monate des Schuljahres) und rechts die
+**Liste** der freien Abschnitte. **Ferien und Feiertage NRW eintragen** übernimmt alle amtlichen Ferien und Feiertage.
+
+- **Tage markieren:** im Kalender mit gedrückter Maustaste über die Tage ziehen (auch über Monatsgrenzen) – oder Tag
+  anklicken und mit Umschalt+Klick erweitern. Die Leiste über dem Kalender nennt Zeitraum, Anzahl und vorhandene
+  Einträge.
+- **Als frei markieren …** (oder Doppelklick): Art wählen – *Ferien*, *Feiertag*, *Beweglicher Ferientag* oder
+  *Unterrichtsfreier Tag* –, Namen vergeben (z. B. „Herbst“, „Pädagogischer Tag“) und übernehmen; Von/Bis lassen sich im
+  Dialog noch mit dem Kalender ändern.
+- **Wieder Schultag(e):** macht die markierten Tage wieder zu Unterrichtstagen; längere Einträge werden dabei gekürzt
+  oder geteilt.
+- **Liste:** Name, Von und Bis (Datumsfelder mit Kalender), Feiertag, *Woche danach* (A/B-Wochen) und *Wochen zählen*
+  direkt ändern; die Bezeichnung steht klein unter dem Namen (Doppelklick ändert sie). Klick auf eine Zeile markiert den
+  Zeitraum im Kalender, **Löschen** entfernt die markierten Einträge.
+- Ferien und freie Tage sind blau, Feiertage kräftiger blau, Wochenenden grau; unten stehen die Kennzahlen des
+  Schuljahres (Tage, Wochen, Ferientage). Jede Änderung lässt sich mit Strg+Z bzw. „Rückgängig“ im Hinweis zurücknehmen.
 
 ### Zeitraster
 
@@ -136,6 +146,20 @@ Jede Liste ist eine bearbeitbare Tabelle (Bedienung siehe [Abschnitt 13](#13-bed
 Gemeinsame Felder aller Elemente: Name (Kurzname), Langname, Text, Beschreibung, Aliasname, Statistik-Kennzeichen,
 Abteilung, **Fix (X)** (Unterricht des Elements wird von der Optimierung nicht verändert), **Ignore (i)** (Element wird
 nicht verplant), Farbe.
+
+**Farben** (Klassen, Lehrkräfte, Räume, Fächer, Abwesenheitsgründe): Die Spalte *Farbe* steht direkt neben dem Namen.
+
+- **Klick auf das Farbfeld** öffnet die Palette: 24 ruhige Farben in drei Reihen (mittel, hell, gedeckt), **Keine
+  Farbe** und eine eigene Farbe als Hex-Wert (z. B. `#3f7f9a`) oder über den Farbwähler. Pfeiltasten wählen, Enter
+  übernimmt. Den Hex-Wert können Sie auch direkt in die Zelle tippen.
+- **Mehrere auf einmal:** Zeilen markieren (Strg+Klick, Umschalt+Klick) und **Farben → Farbe zuweisen …** bzw. im
+  Kontextmenü *Farbe zuweisen …* – oder auf das Farbfeld einer markierten Zeile klicken. **Farbe entfernen** leert sie.
+- **Zufallsfarben:** **Farben → Zufallsfarben für … ohne Farbe** vergibt gut unterscheidbare Farben an alle Elemente
+  ohne Farbe – sie heben sich auch von den schon vergebenen ab. **… für alle (ersetzen)** färbt alle neu (mit
+  Rückfrage). Jede Farbänderung ist eine Rückgängig-Stufe; der Hinweis unten rechts hat dafür den Knopf **Rückgängig**.
+- Im Stundenplan bestimmt die **Fachfarbe** die Farbe der Stunde (leichte Tönung mit Linie in der Farbe). Stunden ohne
+  Fachfarbe erscheinen als neutrale hellgraue Karte mit Linie – in allen Plänen (Stundenplan, Blockansicht, Manuell
+  planen, Gesamtübersichten, Tagespläne).
 
 ### Räume
 
@@ -371,6 +395,13 @@ In der **Gesamtübersicht Räume** verlegen Sie Räume per Drag & Drop in eine a
 *Stundenpläne → Klassen, Lehrkräfte, Räume, Fächer*.
 
 - **Element wählen:** Auswahl oben; die Pfeile wechseln zum vorherigen bzw. nächsten Element.
+- **Einzelplan / Blockansicht:** Der Umschalter links in der Werkzeugleiste zeigt statt eines Plans **mehrere Pläne als
+  Kacheln** neben- und untereinander (z. B. alle Klassen eines Jahrgangs oder alle Lehrkräfte einer Abteilung) – mit
+  dichten Feldern, Doppel- und Blockstunden als ein Feld, Kopplungen nebeneinander; Stunden nach der letzten belegten
+  Stunde werden weggelassen. Die Pläne wählen Sie in der durchsuchbaren Liste (Mehrfachauswahl) oder über
+  **Schnellauswahl** (alle bzw. je Jahrgang, Abteilung oder Raumart); **Anordnung** legt fest, wie viele Kacheln in einer
+  Zeile stehen. Klick auf den Kopf einer Kachel (oder Doppelklick auf eine Stunde) öffnet den Einzelplan. **Drucken** gibt
+  die gezeigten Pläne im Querformat aus (drei je Zeile, Kacheln werden nicht getrennt).
 - **Blöcke:** Doppelstunden und Blöcke erscheinen als ein Feld. Gekoppelte und gleichzeitige Stunden stehen
   nebeneinander.
 - **Fensterverknüpfung:** Ein Klick auf eine Stunde, z. B. im Lehrerplan, stellt die verknüpften Klassen- und Raumpläne
@@ -625,10 +656,18 @@ Kurswahlen übernehmen Sie mit *Oberstufe → Kurswahlen importieren* (CSV mit N
 ### Perioden
 
 Perioden sind verschiedene Stundenpläne für Abschnitte des Schuljahres, z. B. ab dem 2. Halbjahr oder für eine
-Projektwoche. Sie verwalten sie unter *Schule → Perioden*. Die aktive Periode steht unter dem Namen der Schuldatei in
-der Kopfleiste.
+Projektwoche. Sie verwalten sie unter *Schule → Perioden*.
 
-- **Neue Periode:** *Neue Periode zu dieser Mutterperiode …* legt eine Tochter der markierten Periode an. Sie übernimmt
+**Periodenwechsel in der Kopfleiste** (Stundenplanung): Neben dem Modus steht die **aktive Periode** mit ihrem Zeitraum
+(„Periode 2 · 01.02.–16.07.“ – bis zum Beginn der nächsten Periode). ‹ und › wechseln zur vorherigen bzw. nächsten
+Periode, ein Klick öffnet die Liste aller Perioden (mit Suche, aktive markiert) – ein Klick auf eine Periode setzt sie
+aktiv. **Neue Periode ab …** öffnet einen Dialog: **Beginn** im Kalender wählen, optional ein Ende, **Kopie von**
+(Unterricht, Stundenplan und Pausenaufsichten werden aus dieser Periode übernommen; vorgeschlagen ist die aktive),
+Name und **Danach als aktive Periode setzen** – alles in einer Rückgängig-Stufe. Nach jedem Wechsel bietet der Hinweis
+**Rückgängig** an. Dieselben Befehle finden Sie in der Befehlssuche („Neue Periode ab …“).
+
+- **Neue Periode:** *Neue Periode ab …* in der Werkzeugleiste bzw. *Neue Periode als Kopie …* bei der markierten Periode
+  (öffnet denselben Dialog mit dieser Periode als Vorlage). Die neue Periode ist eine Tochter der Vorlage und übernimmt
   deren Unterricht, Stundenplan und Pausenaufsichten.
   - Beginn und Ende müssen im Schuljahr und innerhalb der Mutterperiode liegen.
   - Ohne Ende gilt die Periode bis zum Beginn der nächsten Periode derselben Ebene.

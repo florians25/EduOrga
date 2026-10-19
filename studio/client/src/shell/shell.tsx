@@ -11,6 +11,7 @@ import { beiDokumentwechsel, rueckgaengig, sicherungspunkt, wiederholen } from '
 import { entprellen } from '@/kern/hilfen';
 import { setzen, zustand } from '@/kern/zustand';
 import { DialogHost, dialogOffen } from '@/komponenten/dialoge';
+import { FarbwahlHost } from '@/komponenten/farbwahl';
 import { HinweisHost, fehlerMelden } from '@/komponenten/hinweise';
 import { KontextmenueHost } from '@/komponenten/menue';
 import { ZiehKontext } from '@/komponenten/ziehen';
@@ -90,6 +91,7 @@ export function Shell() {
       <Befehlssuche />
       <DialogHost />
       <KontextmenueHost />
+      <FarbwahlHost />
       <HinweisHost />
     </div>
   );

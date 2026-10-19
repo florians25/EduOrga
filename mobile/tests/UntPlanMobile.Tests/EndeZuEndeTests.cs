@@ -15,7 +15,7 @@ public class EndeZuEndeTests
         var c = u.Client();
         var seite = await c.GetStringAsync("/");
         Assert.Contains("\"needLogin\":true", seite);
-        Assert.Contains("<title>UntPlan Mobile</title>", seite);
+        Assert.Contains("<title>EduOrga Mobile</title>", seite);
         Assert.Contains("id=\"i-calendar-days\"", seite);   // Symbolsammlung eingebettet
         Assert.Equal(HttpStatusCode.Unauthorized, (await c.GetAsync("/api/mobile?action=meta")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await c.GetAsync("/api/mobile?action=week&date=2026-10-14")).StatusCode);
@@ -234,7 +234,7 @@ public class EndeZuEndeTests
         Assert.Contains("const VERSION = 'untplanmobile-1.0.0-", text);
         Assert.DoesNotContain("__FASSUNG__", text);
         var manifest = await Umgebung.HolenAsync(c, "/manifest.webmanifest");
-        Assert.Equal("UntPlan Mobile", manifest["name"]!.GetValue<string>());
+        Assert.Equal("EduOrga Mobile", manifest["name"]!.GetValue<string>());
         Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/assets/js/app.js")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/gesundheit")).StatusCode);
     }

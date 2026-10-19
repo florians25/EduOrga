@@ -1,6 +1,7 @@
 // Stundenplan je Klasse, Lehrkraft, Raum oder Fach (Wochenraster, Blöcke, Kopplungen nebeneinander). Planen-Modus: Stunden
 // und Blöcke per Drag & Drop verschieben/tauschen, nicht verplante Blöcke setzen, Mehrfachauswahl, Planungsaktionen in der
 // Werkzeugleiste und im Kontextmenü (fixieren, Raum, Tausch, entplanen) – Logik in module/planung/aktionen.tsx.
+// Umschalter „Einzelplan | Blockansicht“: mehrere Pläne kompakt als Kacheln (Blockansicht.tsx, Parameter block=true).
 import { useDraggable } from '@dnd-kit/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
@@ -8,7 +9,7 @@ import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
 import { melden, useEreignis } from '@/kern/ereignisse';
 import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben, useStudio } from '@/kern/zustand';
-import { AnsichtRahmen, ElementAuswahl, FussText, Rechts, Schalter, Trenner, Werkzeug } from '@/komponenten/ansicht';
+import { AnsichtRahmen, ElementAuswahl, FussText, Rechts, Schalter, Segmente, Trenner, Werkzeug } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf, menue } from '@/komponenten/menue';
 import { Stundenplanraster, type NichtVerplant, type Stundenplan, type StundenplanrasterApi } from '@/komponenten/raster/Stundenplanraster';
@@ -16,6 +17,7 @@ import type { ZiehDaten } from '@/komponenten/ziehen';
 import { befehl } from '@/kern/befehle';
 import { ersterOder, useElemente } from '../gemeinsam';
 import * as planung from '../planung/aktionen';
+import Blockansicht from './Blockansicht';
 
 const TYPEN: Record<string, string> = { klasse: 'Klasse', lehrer: 'Lehrkraft', raum: 'Raum', fach: 'Fach' };
 
@@ -31,7 +33,12 @@ function NvChip({ rasterId, n, laenge, anzahl, ziehbar, kontext }: { rasterId: s
   );
 }
 
-export default function StundenplanAnsicht({ p }: AnsichtProps) {
+export default function StundenplanSeite({ p }: AnsichtProps) {
+  const typ = TYPEN[String(p.typ)] ? String(p.typ) : 'klasse';
+  return p.block ? <Blockansicht p={p} typ={typ} /> : <StundenplanAnsicht p={p} />;
+}
+
+function StundenplanAnsicht({ p }: AnsichtProps) {
   const a = useAnsicht();
   const typ = TYPEN[String(p.typ)] ? String(p.typ) : 'klasse';
   const schreiben = useDarfSchreiben();
@@ -72,6 +79,11 @@ export default function StundenplanAnsicht({ p }: AnsichtProps) {
   return (
     <AnsichtRahmen titel={titel} laden={laedt && !plan}
       werkzeuge={<>
+        {a.lage === 'seite' ? <>
+          <Segmente titel="Darstellung" testid="plan-darstellung" wert="einzel" beiWahl={() => a.parameterSetzen({ block: true })}
+            optionen={[{ wert: 'einzel', text: 'Einzelplan', titel: 'Ein Plan mit allen Angaben' }, { wert: 'block', text: 'Blockansicht', titel: 'Mehrere Pläne kompakt neben- und untereinander' }]} />
+          <Trenner />
+        </> : null}
         <ElementAuswahl typ={typ} liste={liste} wert={element} beiWahl={(id) => { a.parameterSetzen({ element: id }); melden('element', { typ: typ, id, quelle: a.id }); }} />
         <Trenner />
         {schreiben ? <>

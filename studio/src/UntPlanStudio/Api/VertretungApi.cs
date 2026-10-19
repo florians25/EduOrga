@@ -50,7 +50,7 @@ public sealed record OnlineStundeAnfrage(DateOnly Datum, int Stunde, int Unterri
 /// Rückfragen („Trotzdem verplanen?“) liefert der Server als <c>{ frage: { schluessel, text, optionen } }</c>; die
 /// Oberfläche wiederholt die Anfrage mit <c>antworten: { schluessel: index }</c>.
 /// </summary>
-public sealed class VertretungApi : IStudioModul
+public sealed partial class VertretungApi : IStudioModul
 {
     public string Name => "vertretung";
 
@@ -123,6 +123,7 @@ public sealed class VertretungApi : IStudioModul
         PlanRegistrieren(g);
         OnlineRegistrieren(g);
         EinstellungenRegistrieren(g);
+        TagesablaufRegistrieren(g);
     }
 
     // =============================================================================================

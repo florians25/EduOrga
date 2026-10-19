@@ -28,8 +28,9 @@ public sealed record ZeitrasterDaten(
 public sealed record FerienEintrag(string? Kurzname, string? Langname, DateOnly Von, DateOnly? Bis, bool Feiertag = false, string? WocheDanach = null, bool Wochennummerierung = false);
 public sealed record FerienFeld(string Feld, string? Wert);
 public sealed record FerienTag(DateOnly Datum, bool Unterrichtsfrei, bool Feiertag);
+public sealed record FerienZeitraum(DateOnly Von, DateOnly Bis);
 public sealed record SchuleIdListe(List<int> Ids);
-public sealed record PeriodeNeu(int? MutterId, string? Name, DateOnly Von, DateOnly? Bis);
+public sealed record PeriodeNeu(int? MutterId, string? Name, DateOnly Von, DateOnly? Bis, bool Aktivieren = false);
 public sealed record PeriodeAenderung(string Name, string? Langname, DateOnly Von, DateOnly? Bis, bool Fixiert);
 public sealed record UGruppeDaten(string? Kurzname, string? Langname, DateOnly? Von, DateOnly? Bis, string? Wochen, bool Fix, bool Ignorieren, string? Unterbrechungen);
 public sealed record SchuleZahl(int Wert);
@@ -338,13 +339,35 @@ public sealed class EinstellungenSchuleApi : IStudioModul
                 Kalender.CacheLeeren();
             }, doc => FerienDto(doc.Daten)));
 
+        // Zeitraum wieder zu Schultagen machen (Jahreskalender: Tage markieren → „Nicht mehr frei“): alle Einträge kürzen bzw. teilen
+        g.MapPost("/ferien/freigeben", (Arbeitsdokument a, FerienZeitraum n, ClaimsPrincipal p) =>
+            a.AendernAsync(p.Benutzername(), n.Von == n.Bis ? $"Kalender {Format.Datum(n.Von)}: kein freier Tag" : $"Kalender {Format.Datum(n.Von)} – {Format.Datum(n.Bis)}: keine freien Tage", AenderungsArt.Einstellungen, d =>
+            {
+                var (von, bis) = n.Von <= n.Bis ? (n.Von, n.Bis) : (n.Bis, n.Von);
+                foreach (var f in d.Ferien.Where(x => x.Bis >= von && x.Von <= bis).ToList())
+                {
+                    if (f.Von >= von && f.Bis <= bis) d.Ferien.Remove(f);
+                    else if (f.Von < von && f.Bis > bis)
+                    {
+                        d.Ferien.Add(new Ferien { Id = d.NeueId(), Kurzname = f.Kurzname, Langname = f.Langname, Von = bis.AddDays(1), Bis = f.Bis, Feiertag = f.Feiertag, WocheDanach = f.WocheDanach, Wochennummerierung = f.Wochennummerierung });
+                        f.Bis = von.AddDays(-1);
+                    }
+                    else if (f.Von < von) f.Bis = von.AddDays(-1);
+                    else f.Von = bis.AddDays(1);
+                }
+                d.Ferien.Sort((x, y) => x.Von.CompareTo(y.Von));
+                Kalender.CacheLeeren();
+            }, doc => FerienDto(doc.Daten)));
+
         // ---- Perioden ----
         g.MapGet("/perioden", (Arbeitsdokument a) => a.LesenAsync(doc => PeriodenDto(doc.Daten)));
         g.MapPost("/perioden", (Arbeitsdokument a, PeriodeNeu n, ClaimsPrincipal p) =>
-            a.AendernAsync(p.Benutzername(), "Periode angelegt", AenderungsArt.Alles, d =>
+            a.AendernAsync(p.Benutzername(), n.Aktivieren ? "Periode angelegt und aktiviert" : "Periode angelegt", AenderungsArt.Alles, d =>
             {
                 var mutter = n.MutterId is int m ? Periode(d, m) : d.AktivePeriode;
-                Perioden.Neu(d, mutter, n.Name ?? "", n.Von, n.Bis);
+                var neu = Perioden.Neu(d, mutter, n.Name ?? "", n.Von, n.Bis);
+                // in derselben Rückgängig-Stufe gleich als aktive Periode setzen (Periodenwechsel in einem Schritt)
+                if (n.Aktivieren) d.AktivePeriodeId = neu.Id;
             }, doc => PeriodenDto(doc.Daten)));
         g.MapPut("/perioden/{id:int}", (Arbeitsdokument a, int id, PeriodeAenderung n, ClaimsPrincipal p) =>
             a.AendernAsync(p.Benutzername(), "Periode geändert", AenderungsArt.Alles,

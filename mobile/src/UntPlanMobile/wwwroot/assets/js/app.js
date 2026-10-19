@@ -1,5 +1,5 @@
 /* =====================================================================
-   app.js — UntPlan Mobile (Oberfläche der Stundenplan-PWA)
+   app.js — EduOrga Mobile (Oberfläche der Stundenplan-PWA)
    ---------------------------------------------------------------------
    Stundenplan, Stundendetails mit Klassenbuch, Startseite „Heute“,
    Postfach und „Mehr“ (Konto, Darstellung, App). Die Daten kommen über
@@ -156,30 +156,101 @@ if (qs.get('week')){
 /* =====================================================================
    Rasterberechnung
    ===================================================================== */
-const PPM = 1.2704;                 // px je Minute — 45 min = 57,17 px
+/* Zeilen statt Minuten: Jede Stunde bekommt dieselbe Höhe, Pausen stehen
+   als schmaler Spalt dazwischen (große Pausen ab 15 Minuten breiter, dort
+   sitzen die Pausenaufsichten). Die Zeilenhöhe setzt renderGrid so, dass
+   der Schultag der gezeigten Woche ganz auf den Bildschirm passt (wie in
+   der iOS-App); erst bei sehr vielen Stunden wird gerollt. */
+const RASTER = { zeile: 57, gross: 16, klein: 3 };
+const ZEILE_MIN = 44, ZEILE_MAX = 104;
 
-function buildLayout(times, pre = 0){
+function buildLayout(times, pre = 0, z = RASTER){
   const nos = Object.keys(times).map(Number).sort((a,b) => a-b);
   const t0 = minutes(times[nos[0]].start);
   const rows = [];
+  /* Stützstellen [Minute, y] für die Umrechnung von Uhrzeiten */
+  const pts = [];
+  const oben = {};
+  let y = pre;
   nos.forEach((n, i) => {
     const st = minutes(times[n].start), en = minutes(times[n].end);
-    rows.push({ y:(st - t0) * PPM + pre, label:times[n].start, ende:times[n].end, no:n });
+    oben[n] = y;
+    pts.push([st, y]);
+    rows.push({ y, label:times[n].start, ende:times[n].end, no:n });
+    y += z.zeile;
+    pts.push([en, y]);
     const next = nos[i+1];
-    if (!next || minutes(times[next].start) > en)
-      rows.push({ y:(en - t0) * PPM + pre, label:times[n].end, no:null,
-                  pause: next ? (minutes(times[next].start) - en) * PPM : 0 });
+    if (next){
+      const pause = minutes(times[next].start) - en;
+      const spalt = pause >= 15 ? z.gross : pause > 0 ? z.klein : 0;
+      if (spalt) rows.push({ y, label:times[n].end, no:null, pause:spalt });
+      y += spalt;
+    }
   });
   const last = nos[nos.length-1];
+  const total = y;
+  const yAus = m => {
+    if (m <= pts[0][0]) return pts[0][1];
+    for (let i = 1; i < pts.length; i++){
+      const [m1, y1] = pts[i], [m0, y0] = pts[i-1];
+      if (m <= m1) return m1 === m0 ? y1 : y0 + (m - m0) * (y1 - y0) / (m1 - m0);
+    }
+    return total;
+  };
   return {
-    nos, t0, rows, pre,
-    total: (minutes(times[last].end) - t0) * PPM + pre,
-    top:  n => (minutes(times[n].start) - t0) * PPM + pre,
+    nos, t0, rows, pre, total, zeile:z.zeile, yAus,
+    top:  n => oben[n] !== undefined ? oben[n] : yAus(minutes((times[n] || times[last]).start)),
     height: (n, span) => {
       const end = Math.min(n + span - 1, last);
-      return (minutes(times[end].end) - minutes(times[n].start)) * PPM;
+      const a = oben[n] !== undefined ? oben[n] : yAus(minutes(times[n].start));
+      return (oben[end] !== undefined ? oben[end] + z.zeile : yAus(minutes(times[end].end))) - a;
     }
   };
+}
+
+/* Zeilenhöhe für die gezeigte Woche: alle Stunden bis zur letzten belegten
+   (mindestens bis zur 6.) passen in die Höhe der Rasterfläche. */
+function rasterMasse(verfuegbar, letzte){
+  const nos = Object.keys(state.times || {}).map(Number).sort((a,b) => a-b);
+  if (!nos.length || !verfuegbar) return RASTER;
+  const bis = nos.filter(n => n <= Math.max(letzte || 0, Math.min(6, nos[nos.length-1])));
+  const anzahl = Math.max(1, bis.length);
+  let spalten = 0;
+  for (let i = 1; i < bis.length; i++){
+    const pause = minutes(state.times[bis[i]].start) - minutes(state.times[bis[i-1]].end);
+    spalten += pause >= 15 ? RASTER.gross : pause > 0 ? RASTER.klein : 0;
+  }
+  const zeile = Math.floor((verfuegbar - spalten) / anzahl);
+  RASTER.zeile = Math.max(ZEILE_MIN, Math.min(ZEILE_MAX, zeile));
+  return RASTER;
+}
+
+/* Darstellung der Schule am Raster setzen (app.css liest die Attribute). */
+function darstellungSetzen(pane){
+  if (!pane) return;
+  const d = state.darstellung || {};
+  pane.dataset.fachfarbe = d.fachfarbe || 'balken-innen';
+  pane.dataset.flaeche = d.flaeche || 'weiss';
+  pane.dataset.rahmen = d.rahmen || 'schatten';
+  pane.dataset.dichte = d.dichte || 'kompakt';
+  const flaeche = $('#gridScroll');
+  if (flaeche) flaeche.dataset.raster = d.raster || 'grau';
+  const plan = $('#screenPlan');
+  if (plan) plan.dataset.raster = d.raster || 'grau';
+  pane.classList.toggle('mit-statusflaeche', d.statusflaeche !== false);
+  pane.style.setProperty('--balken', (d.balkenbreite || 4) + 'px');
+  pane.style.setProperty('--kradius', (d.eckenradius ?? 2) + 'px');
+  pane.style.setProperty('--toenung', (d.deckkraft || 12) + '%');
+}
+
+/* Letzte belegte Stunde der gezeigten Woche (ohne Ferienfelder). */
+function letzteStunde(byDate, dates){
+  let max = 0;
+  dates.forEach(d => (byDate[d] || []).forEach(c => {
+    if (c.blockType === 'holiday' || c.holiday || !c.lesson) return;
+    max = Math.max(max, c.lesson + Math.max(1, c.span || 1) - 1);
+  }));
+  return max;
 }
 
 /* =====================================================================
@@ -651,7 +722,57 @@ function raumTokens(card, changed){
 if (typeof window !== 'undefined') window.UntPlanRaum = { raumTokens };
 /* RAUMTOKENS-ENDE */
 
+/* DARSTELLUNG-BEGINN (wird von den Tests ausgeführt) */
+/* Darstellung der Stundenkarten (schulweit, Administration von EduOrga Web,
+   kommt mit den Startdaten als `darstellung`). Standard „Klassisch“: weiße
+   Karten auf hellgrauem Raster, Fachfarbe als 4-px-Streifen innen links
+   (grau ohne Fachfarbe), drei Zeilen Lehrkraft bzw. Klasse · Fach · Raum. */
+const DARSTELLUNG_STANDARD = {
+  fachfarbe:'balken-innen', balkenbreite:4, deckkraft:12, flaeche:'weiss', rahmen:'schatten', eckenradius:2, dichte:'kompakt',
+  fach:'kuerzel', raum:true, zeile2:true, zeile2Text:'kuerzel', kuerzel:'text', statuswoerter:false, statusflaeche:true,
+  reihenfolge:'element', raster:'grau'
+};
+function darstellungMitStandard(d){
+  const x = Object.assign({}, DARSTELLUNG_STANDARD, d && typeof d === 'object' ? d : {});
+  x.balkenbreite = Math.min(6, Math.max(2, +x.balkenbreite || 4));
+  x.eckenradius = Math.min(8, Math.max(0, +x.eckenradius || 0));
+  x.deckkraft = Math.min(30, Math.max(6, +x.deckkraft || 12));
+  return x;
+}
+/* Zeilen der Kachel nach der Darstellung: Reihenfolge (Fach oben bzw.
+   Lehrkraft/Klasse oben), Fach als Kürzel oder Name, Zeile 2 und Raum
+   ausblendbar – geänderte Werte bleiben immer stehen. */
+function darstellungZeilen(lines, card, kind, d, langname){
+  if (!d) return lines;
+  const geaendert = l => !!(l.changed || l.removed || (l.tokens && l.tokens.some(t => (t.state || 'ok') !== 'ok' || t.plus)));
+  const element = kind === 'class' ? 'teacher' : 'class';
+  let out = lines.filter(l => {
+    if (!d.zeile2 && (l.key === element) && !geaendert(l)) return false;
+    if (!d.raum && l.key === 'room' && !geaendert(l)) return false;
+    return true;
+  });
+  if (d.fach === 'name' && langname)
+    out = out.map(l => l.key === 'subject' && !l.changed && !l.tokens ? { ...l, text: langname('subject', l.text) || l.text } : l);
+  if (d.zeile2Text === 'name' && langname)
+    out = out.map(l => l.key === 'teacher' && kind === 'class' && !l.changed && !l.tokens ? { ...l, text: langname('teacher', l.text) || l.text } : l);
+  if (d.reihenfolge === 'fach'){
+    const i = out.findIndex(l => l.key === 'subject');
+    if (i > 0) out = [out[i], ...out.slice(0, i), ...out.slice(i + 1)];
+  }
+  return out.map((l, i) => ({ ...l, primary: i === 0 }));
+}
+if (typeof window !== 'undefined') window.EduOrgaDarstellung = { standard: DARSTELLUNG_STANDARD, mitStandard: darstellungMitStandard, zeilen: darstellungZeilen };
+/* DARSTELLUNG-ENDE */
+state.darstellung = darstellungMitStandard(BOOT && BOOT.darstellung);
+
 function cardLines(card, kind){
+  const roh = cardLinesRoh(card, kind);
+  if (card.blockType === 'absence' || card.blockType === 'gs' || card.fullday || card.blockType === 'event') return roh;
+  return darstellungZeilen(roh, card, kind, state.darstellung,
+    (art, code) => { const N = (BOOT && BOOT.names) || {}; return ((N[art] || {})[String(code).toUpperCase()]) || code; });
+}
+
+function cardLinesRoh(card, kind){
   /* Veranstaltung, Klassenabwesenheit, Freisetzung.
 
      Die Reihenfolge folgt derselben Regel wie beim Unterricht: Oben steht,
@@ -1252,6 +1373,7 @@ function renderGrid(){
     ? tagesStreifen(state.day, nTage)
     : [-7, 0, 7].flatMap(off => weekDates(iso(addDays(mo0, off))));
   const pane = $('#gridPane');
+  darstellungSetzen(pane);
 
   /* Karten aller drei Wochen an einem Ort. */
   const around = state.around || {};
@@ -1278,11 +1400,20 @@ function renderGrid(){
   const preInset = hatVorErste ? PRE_PILLE + PRE_LUFT + 1 : 0;
   if (pane) pane.classList.toggle('has-pre', hatVorErste);
 
+  /* Sichtbare Woche bzw. Tage: deren letzte belegte Stunde bestimmt, wie
+     hoch die Zeilen werden (alles passt auf den Bildschirm). */
+  const sichtTage = nTage ? dates.slice(nTage, nTage * 2) : dates.slice(5, 10);
+  const flaeche = $('#gridScroll');
+  const padOben = pane ? parseFloat(getComputedStyle(pane).paddingTop) || 0 : 0;
+  const verfuegbar = flaeche ? flaeche.clientHeight - padOben - preInset - 6 : 0;
+  rasterMasse(verfuegbar, letzteStunde(byDate, sichtTage));
   const L = buildLayout(state.times, preInset);
+  if (pane) pane.classList.toggle('is-eng', L.zeile < 50);
+  if (pane) pane.classList.toggle('is-tag', isDay);
   const now = new Date();
   const todayISO = iso(now);
 
-  const atTime = t => { const [h,m] = String(t).split(':').map(Number); return ((h*60+m) - L.t0) * PPM + L.pre; };
+  const atTime = t => { const [h,m] = String(t).split(':').map(Number); return L.yAus(h*60+m); };
   const cols  = nTage || 5;             /* Spalten je sichtbarem Abschnitt */
 
   /* Wie viele Kacheln passen nebeneinander in eine Spalte, ohne dass der
@@ -1341,11 +1472,7 @@ function renderGrid(){
   /* Unter der letzten Stunde läuft das Raster weiter — bis ganz unten
      hinter die untere Leiste. Leere Zeilen im Takt einer Stunde, ohne
      Beschriftung. */
-  const takt = (() => {
-    const t1 = (state.times || {})[1];
-    const m = t1 ? minutes(t1.end) - minutes(t1.start) : 45;
-    return Math.max(24, Math.round((m > 0 ? m : 45) * PPM));
-  })();
+  const takt = Math.round(L.zeile + RASTER.klein);
   const sichtbar = (pane && pane.parentElement && pane.parentElement.clientHeight) || window.innerHeight;
   const rest = Math.max(0, sichtbar - L.total);
   html += `<div class="grid__rest" style="top:${L.total}px;--takt:${takt}px;--rest:${rest}px"></div>`;
@@ -1524,7 +1651,7 @@ function renderGrid(){
                 : (byTime && card._supervision)
                     /* Dicht an den Stunden darüber und darunter: je ein
                        Punkt Luft – die Pille gehört sichtbar zum Plan. */
-                    ? Math.max(18, Math.min(SUP_H, supGap - 1))
+                    ? Math.max(9, Math.min(SUP_H, supGap - 2))
                 : card._supervision ? SUP_H            /* Aufsicht: immer schmale Pille */
                 : byTime    ? Math.max(16, atTime(card.to) - atTime(card.from) - 1)
                 :             Math.max(0, L.height(card.lesson, card.span) - 1);
@@ -1582,6 +1709,7 @@ function renderGrid(){
          Aufsicht. */
       if (isSup)                             cls.push('card--supervision');
       if (isSup)                             cls.push(...aufsichtKlassen(card));
+      if (isSup && h < 18)                   cls.push('card--sup-eng');
       if (isStandby)                         cls.push('card--standby');
       if (isStandby && card.standbyAbsent)   cls.push('is-absent');
       if (card.blockType === 'absence')      cls.push('card--gs');
@@ -1703,7 +1831,7 @@ function renderGrid(){
                 : esc(t.text);
               return `<span class="tok tok--${t.state}">${kern}${komma}</span>`;
             }).join('')
-          : l.changed ? `<span class="${cls2}">${esc(l.removed ? l.text : werteListe(l.text).map(x => plusWert(card, l.key, x)).join(KACHEL_TRENNER))}</span>` : esc(l.text);
+          : l.changed ? `<span class="${cls2}">${esc(l.removed ? l.text : werteListe(l.text).map(x => plusWert(card, l.key, x)).join(KACHEL_TRENNER))}</span>${offenGruen ? '<span class="badge--frage" aria-label="offen">?</span>' : ''}` : esc(l.text);
       };
 
       const body = isHoliday
@@ -1831,12 +1959,19 @@ function renderGrid(){
         : (isStandby && card.standbyAbsent) ? 'ohne mich'
         : card.blockType === 'cancelled' ? 'Entfall'
         : card.blockType === 'klausur' ? 'Prüfung'
-        : (card.blockType === 'gs' || card.blockType === 'absence') ? 'Veranstaltung'
+        : (card.blockType === 'gs' || card.blockType === 'absence') ? 'Termin'
         : card.blockType === 'change' && card.extra ? 'Zusatz'
         : card.blockType === 'change' && (card.openSub || card.openRoom) ? 'offen'
-        : card.blockType === 'change' ? 'Änderung'
+        : card.blockType === 'change' && (card.changed || []).length && (card.changed || []).every(k => k === 'room') ? 'Raum'
+        : card.blockType === 'change' ? 'Vertretung'
         : '';
-      if (plakette){ cls.push('has-status'); style += `--sb:${Math.round(plakette.length * 6.4 + 14)}px;`; }
+      if (plakette){
+        cls.push('has-status');
+        /* Statuswort unten links nur, wo unter den Zeilen Platz ist. */
+        const wortBreite = plakette.length * 7 + 14 + (showInfo || online || card.hasHw ? 18 : 0);
+        if (h - 9 - lines.length * karteZeile() >= 12 && kachelBreit >= wortBreite) cls.push('is-hoch');
+        if (state.darstellung.statuswoerter || plakette === 'Prüfung' || plakette === 'Termin') cls.push('zeige-status');
+      }
       const tag = isHoliday ? 'div' : 'button';
       html += `<${tag} class="${cls.join(' ')}" style="${style}"
                  data-date="${date}" data-lesson="${card.lesson}" data-idx="${card._uid}"
@@ -1944,8 +2079,8 @@ function renderGrid(){
   const midLen = cols;
   if (ti >= midAt && ti < midAt + midLen){
     const mins = now.getHours()*60 + now.getMinutes();
-    const y = (mins - L.t0) * PPM + L.pre;
-    if (y >= L.pre && y <= L.total){
+    const y = L.yAus(mins);
+    if (mins >= L.t0 && y >= L.pre && y < L.total){
       const wkStart = midAt;
       const wkCols  = midLen;
       html += `<div class="nowline nowline--week" style="top:${y}px;left:${colAt(wkStart)};width:calc(${colW} * ${wkCols})"></div>`;
@@ -2320,7 +2455,7 @@ function scrollToNow(){
   if (!sc) return;
   const L = buildLayout(state.times);
   const now = new Date();
-  const y = (now.getHours() * 60 + now.getMinutes() - L.t0) * PPM + (L.pre || 0);
+  const y = L.yAus(now.getHours() * 60 + now.getMinutes());
   const max = Math.max(0, sc.scrollHeight - sc.clientHeight);
   const ziel = Math.min(Math.max(0, y - sc.clientHeight * 0.35), max);
   /* Nie mitten in einer Stunde anschneiden: auf den Beginn der Stunde
@@ -2941,9 +3076,9 @@ function showScreen(name){
   /* Listen sind Unterseiten von „Heute“: hinein von rechts, zurück wieder
      nach rechts hinaus. */
   if (name === 'list' && vorher !== 'list'){
-    listeZurueck = vorher === 'profile' ? 'profile' : 'start';
+    listeZurueck = vorher === 'profile' || vorher === 'schule' ? 'profile' : 'start';
     const lab = $('#lstBackLabel');
-    if (lab) lab.textContent = listeZurueck === 'profile' ? 'Mehr' : 'Heute';
+    if (lab) lab.textContent = listeZurueck === 'profile' ? (($('#tabMehrText') || {}).textContent || 'Mehr') : 'Heute';
     iosAnim($('#screenList'), 'ios-push');
   }
   if (vorher === 'list' && name !== 'list' && name === listeZurueck){
@@ -2954,7 +3089,7 @@ function showScreen(name){
      alles, wofür ihnen das Recht fehlt. */
   if (state.isStudent) rechteAnwenden();
   const map = { plan:'#screenPlan', start:'#screenStart', msg:'#screenMsg',
-                profile:'#screenProfile', list:'#screenList' };
+                profile:'#screenProfile', list:'#screenList', schule:'#screenSchule' };
   Object.entries(map).forEach(([k, sel]) => $(sel).classList.toggle('is-active', k === name));
   /* Jetzt erst hat der Plan Ausmaße. Was im Verborgenen gezeichnet wurde,
      konnte nicht vermessen werden — hier wird es nachgeholt, sobald der
@@ -2962,7 +3097,7 @@ function showScreen(name){
   if (name === 'plan') requestAnimationFrame(feinKuerzung);
   $$('.tab').forEach(t => {
     /* Die Listen gehören zu der Seite, von der sie geöffnet wurden. */
-    const on = t.dataset.screen === (name === 'list' ? listeZurueck : name);
+    const on = t.dataset.screen === (name === 'list' ? listeZurueck : name === 'schule' ? 'profile' : name);
     t.classList.toggle('is-active', on);
     t.setAttribute('aria-selected', on ? 'true' : 'false');
   });
@@ -3735,8 +3870,10 @@ $('#msgOptNoReply').addEventListener('click', () => {
 /* Grenzen für Anhänge vom Server (still, mit Vorgaben als Rückhalt). */
 msgFetch('options').then(o => { msgMax = { files: o.maxAttachments || 5, mb: o.maxAttachmentMb || 7 }; }).catch(() => {});
 
-$('#btnAbout').addEventListener('click', () =>
-  toast('UntPlan Mobile · Fassung ' + BUILD));
+$('#btnAbout').addEventListener('click', () => {
+  if (window.EDOSchule) window.EDOSchule.oeffnen('about');
+  else toast('EduOrga Mobile · Fassung ' + BUILD);
+});
 /* =====================================================================
    Startseite: Termine, Abwesenheiten, Klassenleitung
    ---------------------------------------------------------------------
@@ -4470,6 +4607,58 @@ function sptWischen(zeile, beimTippen){
   });
 }
 
+/* PDF-Formulare (Terminplan der Lehrkraft, Termine der Familie) über die
+   Durchreichung api/web – EduOrga Web erzeugt die Datei. */
+const SPT_PDF = new URL('api/web/sprechtag/', location.href).href;
+const sptPdfKnopf = (datei, text) =>
+  `<a class="knopf knopf--sekundaer knopf--gross spt__pdf" href="${esc(SPT_PDF + spt.id + '/' + datei)}" target="_blank" rel="noopener">${sym('download')}<span>${esc(text)}</span></a>`;
+
+/* Schüler*in wählen (Einladen, Termin eintragen): Blatt mit Suche und
+   Klassenfilter, zuerst die eigenen Klassen. Liefert { id, name } oder null. */
+let sptSchuelerCache = null;
+async function sptSchuelerWaehlen(titel){
+  if (!sptSchuelerCache || sptSchuelerCache.id !== spt.id)
+    sptSchuelerCache = { id: spt.id, d: await sptFetch(`/${spt.id}/schueler`) };
+  const d = sptSchuelerCache.d || {};
+  const eigene = d.eigeneKlassen || [];
+  let klasse = eigene[0] || (d.klassen || [])[0] || '';
+  return new Promise(fertig => {
+    const el = document.createElement('div');
+    el.className = 'iosas spt-wahl';
+    el.innerHTML = `<div class="iosas__scrim"></div>
+      <div class="iosas__panel spt-wahl__panel" role="dialog" aria-modal="true" aria-label="${esc(titel)}">
+        <div class="spt-wahl__kopf"><b>${esc(titel)}</b><button type="button" class="icon-btn" data-zu aria-label="Schließen">${sym('x')}</button></div>
+        <label class="suchfeld spt-wahl__suche">${sym('search')}<input type="search" placeholder="Name suchen" autocapitalize="none"></label>
+        <div class="sf-chips spt-wahl__klassen">${(d.klassen || []).map(k => `<button type="button" class="sf-chip" data-k="${esc(k)}">${esc(k)}</button>`).join('')}</div>
+        <div class="spt-wahl__liste"></div>
+      </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('is-open'));
+    const zu = w => { el.classList.remove('is-open'); setTimeout(() => el.remove(), 300); fertig(w); };
+    const suche = el.querySelector('input');
+    const zeichnen = () => {
+      const q = suche.value.trim().toLowerCase();
+      el.querySelectorAll('[data-k]').forEach(b => b.classList.toggle('is-on', b.dataset.k === klasse && !q));
+      const liste = (d.schueler || []).filter(x => q ? `${x.vorname} ${x.name} ${x.klasse}`.toLowerCase().includes(q) : x.klasse === klasse);
+      el.querySelector('.spt-wahl__liste').innerHTML = liste.length ? liste.map(x => `
+        <button type="button" class="spt-wahl__zeile" data-id="${x.id}" data-name="${esc(x.vorname + ' ' + x.name)}">
+          <span><b>${esc(x.name)}, ${esc(x.vorname)}</b><i>${esc(x.klasse)}${x.elternkonto ? '' : ' · kein Elternkonto'}</i></span>${sym('chevron-right', 'ico--chev2')}
+        </button>`).join('') : '<p class="spt-wahl__leer">Keine Schüler*innen gefunden.</p>';
+      el.querySelectorAll('[data-id]').forEach(b => b.addEventListener('click', () => zu({ id:+b.dataset.id, name:b.dataset.name })));
+    };
+    el.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { klasse = b.dataset.k; suche.value = ''; zeichnen(); }));
+    suche.addEventListener('input', zeichnen);
+    el.querySelector('.iosas__scrim').addEventListener('click', () => zu(null));
+    el.querySelector('[data-zu]').addEventListener('click', () => zu(null));
+    zeichnen();
+  });
+}
+
+async function sptAktion(pfad, methode, body, ok){
+  try { await sptFetch(pfad, methode, body); buzz(); if (ok) toast(ok); spt.liste = null; await sprechtagZeichnen(); sptStart(); }
+  catch (e){ toast('Nicht möglich: ' + e.message); }
+}
+
 /* Lehrkraft: Segmentschalter Alle/Gebucht/Frei, darunter die Zeitfenster
    als gruppierte Liste. Tippen oder Wischen: Sperren, Freigeben, Absagen. */
 function sptLehrkraftZeichnen(){
@@ -4520,8 +4709,43 @@ function sptLehrkraftZeichnen(){
       <p class="spt__gruppe">${esc(sptZeit(b[0].beginn))} – ${esc(sptZeit(b[b.length - 1].ende))} Uhr<span>${b.length} ${b.length === 1 ? 'Termin' : 'Termine'}</span></p>
       <div class="spt__liste">${b.map(zeile).join('')}</div>`).join('')
       : `<div class="spt__leerBox"><b>${leer[0]}</b><span>${leer[1]}</span></div>`}
-    ${aktiv && bloecke.length ? `<p class="spt__fuss">Zum Sperren, Freigeben oder Absagen auf ein Zeitfenster tippen oder nach links wischen.${zahl('gesperrt') ? ` ${zahl('gesperrt')} gesperrt.` : ''}</p>` : ''}
+    ${aktiv && bloecke.length ? `<p class="spt__fuss">Zum Sperren, Freigeben, Eintragen oder Absagen auf ein Zeitfenster tippen oder nach links wischen.${zahl('gesperrt') ? ` ${zahl('gesperrt')} gesperrt.` : ''}</p>` : ''}
+    <p class="spt__gruppe">Einladungen<span>${(d.einladungen || []).length || ''}</span></p>
+    ${(d.einladungen || []).length ? `<div class="spt__liste">${d.einladungen.map(e => `
+      <div class="spt-row spt-row--einladung"><div class="spt-row__front">
+        <span class="spt__was"><b>${esc(sptKind(e.schueler))}</b><span>${e.termin ? 'Termin um ' + esc(sptZeit(e.termin)) + ' Uhr' : 'noch kein Termin'}${e.benachrichtigt ? ' · benachrichtigt' : ''}</span></span>
+        ${aktiv ? `<button class="knopf knopf--still sf-klein" type="button" data-einl-weg="${e.id}">Entfernen</button>` : ''}
+      </div></div>`).join('')}</div>`
+      : '<div class="spt__leerBox spt__leerBox--klein"><b>Keine Einladungen</b><span>Laden Sie Familien ein, die Sie sprechen möchten.</span></div>'}
+    ${aktiv && d.einladenMoeglich ? '<button class="knopf knopf--sekundaer knopf--gross spt__knopf" type="button" id="sptEinladen">Familie einladen</button>' : ''}
+    ${(d.warteliste || []).length ? `<p class="spt__gruppe">Warteliste<span>${d.warteliste.length}</span></p><div class="spt__liste">${d.warteliste.map(w => `
+      <div class="spt-row"><div class="spt-row__front"><span class="spt__was"><b>${esc(sptKind(w.schueler))}</b><span>seit ${esc(String(w.erstellt || '').slice(0, 16).replace('T', ' '))}</span></span></div></div>`).join('')}</div>` : ''}
+    <p class="spt__gruppe">Unterlagen</p>
+    ${sptPdfKnopf('plan.pdf', 'Terminplan als PDF')}
+    ${!vorbei ? (l.abgesagt
+      ? '<button class="knopf knopf--sekundaer knopf--gross spt__knopf" type="button" id="sptWieder">Teilnahme wieder aufnehmen</button>'
+      : '<button class="knopf knopf--gefahr knopf--gross spt__knopf" type="button" id="sptTeilnahmeAb">Teilnahme absagen</button>') : ''}
   </div>`;
+  const einl = $('#sptEinladen');
+  if (einl) einl.addEventListener('click', async () => {
+    const k = await sptSchuelerWaehlen('Familie einladen').catch(e => { toast(e.message); return null; });
+    if (!k) return;
+    const a = await sptBlatt({ titel:`${k.name} einladen`, text:'Die Erziehungsberechtigten erhalten eine Mitteilung.', eingabe:'Nachricht (optional)',
+      knoepfe:[{ label:'Einladen', wert:1, fett:true }] });
+    if (a) sptAktion(`/${spt.id}/einladungen`, 'POST', { schuelerIds:[k.id], text:a.text }, 'Eingeladen');
+  });
+  $$('#lstBody [data-einl-weg]').forEach(b => b.addEventListener('click', async () => {
+    const a = await sptBlatt({ titel:'Einladung entfernen?', knoepfe:[{ label:'Entfernen', wert:1, rot:true }] });
+    if (a) sptAktion(`/${spt.id}/einladungen/${b.dataset.einlWeg}`, 'DELETE', null, 'Einladung entfernt');
+  }));
+  const ab = $('#sptTeilnahmeAb');
+  if (ab) ab.addEventListener('click', async () => {
+    const a = await sptBlatt({ titel:'Teilnahme absagen?', text:'Gebuchte Termine werden abgesagt; die Familien erhalten eine Mitteilung.', eingabe:'Grund (optional)',
+      knoepfe:[{ label:'Teilnahme absagen', wert:1, rot:true }] });
+    if (a) sptAktion(`/${spt.id}/teilnahme/absagen`, 'POST', { grund:a.text }, 'Teilnahme abgesagt');
+  });
+  const wieder = $('#sptWieder');
+  if (wieder) wieder.addEventListener('click', () => sptAktion(`/${spt.id}/teilnahme/wiederaufnehmen`, 'POST', {}, 'Teilnahme wieder aufgenommen'));
 
   $$('#lstBody .spt__seg button').forEach(b => b.addEventListener('click', () => {
     spt.filter = b.dataset.filter; buzz(); sptLehrkraftZeichnen();
@@ -4542,9 +4766,13 @@ function sptLehrkraftZeichnen(){
       const zeit = `${sptZeit(f.beginn)}–${sptZeit(f.ende)} Uhr`;
       if (f.status === 'gebucht') return sptAbsagen(f.termin && f.termin.id, zeit, sptKind(f.termin && f.termin.schueler));
       const sperr = f.status !== 'gesperrt';
-      const a = await sptBlatt({ titel: zeit, text: sperr ? 'Dieses Zeitfenster sperren? Eltern können es dann nicht mehr buchen.' : 'Dieses Zeitfenster wieder zur Buchung freigeben?',
-        knoepfe: [{ label: sperr ? 'Zeitfenster sperren' : 'Zeitfenster freigeben', wert: 1, fett: !sperr }] });
-      if (a) sperren(f.beginn, sperr);
+      const knoepfe = [{ label: sperr ? 'Zeitfenster sperren' : 'Zeitfenster freigeben', wert: 1, fett: !sperr }];
+      if (f.status === 'frei') knoepfe.unshift({ label:'Termin eintragen', wert:2, fett:true });
+      const a = await sptBlatt({ titel: zeit, text: f.status === 'frei' ? 'Termin für eine Familie eintragen oder das Zeitfenster sperren.' : 'Dieses Zeitfenster wieder zur Buchung freigeben?', knoepfe });
+      if (a && a.wert === 2){
+        const k = await sptSchuelerWaehlen(`Termin um ${sptZeit(f.beginn)} Uhr`).catch(e => { toast(e.message); return null; });
+        if (k) sptAktion(`/${spt.id}/termine`, 'POST', { schuelerId:k.id, beginn:f.beginn, bemerkung:'' }, `Termin für ${k.name} eingetragen`);
+      } else if (a) sperren(f.beginn, sperr);
     });
     r.querySelectorAll('[data-sperren]').forEach(b => b.addEventListener('click', () => sperren(f.beginn, b.dataset.sperren === '1')));
     r.querySelectorAll('[data-absagen]').forEach(b => b.addEventListener('click', () =>
@@ -4618,6 +4846,10 @@ function sptElternZeichnen(){
       else if (vorschau) unten = fenster.length
         ? `<div class="spt__slots spt__slots--vorschau" aria-label="Vorschau">${fenster.map(f => `<span class="spt__slot is-vorschau">${esc(sptZeit(f.beginn))}</span>`).join('')}</div>`
         : '';
+      else if (l.warteliste && !nurLesen) unten = `<p class="spt__karteText">Auf der Warteliste – Sie werden benachrichtigt, sobald ein Termin frei wird.</p>
+          <button class="knopf knopf--still sf-klein" type="button" data-warte-weg="${esc(l.warteliste.id || l.warteliste)}">Warteliste verlassen</button>`;
+      else if (l.ausgebucht && d.warteliste && d.buchbar && !nurLesen) unten = `<p class="spt__karteText">Alle Zeiten sind vergeben.</p>
+          <button class="knopf knopf--sekundaer sf-klein" type="button" data-warte="${esc(l.kurz)}" data-kind="${k.id}">Auf die Warteliste</button>`;
       else if (d.buchbar && !nurLesen) unten = fenster.length
         ? `<div class="spt__slots">${fenster.map(f =>
             `<button class="spt__slot${f.konflikt ? ' is-konflikt' : ''}" type="button" data-kind="${k.id}" data-lehrer="${esc(l.kurz)}" data-name="${esc(l.name || l.kurz)}" data-beginn="${esc(f.beginn)}"
@@ -4633,8 +4865,13 @@ function sptElternZeichnen(){
         </div>`);
     });
   });
+  if (termine.length) html.push(`<p class="spt__gruppe">Unterlagen</p>${sptPdfKnopf('elternplan.pdf', 'Termine als PDF')}`);
   html.push('</div>');
   $('#lstBody').innerHTML = html.join('');
+  $$('#lstBody [data-warte]').forEach(b => b.addEventListener('click', () =>
+    sptAktion(`/${spt.id}/warteliste`, 'POST', { lehrer:b.dataset.warte, schuelerId:+b.dataset.kind }, 'Auf der Warteliste')));
+  $$('#lstBody [data-warte-weg]').forEach(b => b.addEventListener('click', () =>
+    sptAktion(`/${spt.id}/warteliste/${b.dataset.warteWeg}`, 'DELETE', null, 'Warteliste verlassen')));
 
   $$('#lstBody .spt-row[data-tid]').forEach(r => {
     const x = termine.find(y => String(y.id) === r.dataset.tid);
@@ -5766,8 +6003,16 @@ function renderDetail(){
   /* Zusätzliche Unterrichtsstunde: Plakette „Zusatzstunde“
      statt eines Vertretungstexts (nie beim Entfall). */
   const artPille = c.blockType === 'klausur' ? 'Prüfung' : istVeranstaltung ? 'Veranstaltung'
-                 : (zusatz && c.blockType !== 'cancelled') ? 'Zusatzstunde' : '';
+                 : (zusatz && c.blockType !== 'cancelled') ? 'Zusatzstunde'
+                 : c.blockType === 'change' && (c.openSub || c.teacherOpen) ? 'Vertretung offen'
+                 : c.blockType === 'change' && (c.changed || []).length && (c.changed || []).every(k => k === 'room') ? 'Raumänderung'
+                 : c.blockType === 'change' ? 'Vertretung' : '';
   const pilleArt = c.blockType === 'klausur' ? 'pruefung' : istVeranstaltung ? 'termin' : 'aenderung';
+  /* Fachfarbe als Streifen links im Kopf, Langname des Fachs neben dem Kürzel */
+  const fachFarbe = c.color && /^#?[0-9a-f]{3,8}$/i.test(c.color) ? (c.color.startsWith('#') ? c.color : '#' + c.color) : '';
+  const fachLang = !istVeranstaltung && c.subject && !(c.changed || []).includes('subject')
+    ? (c.subjectLong || longName('subject', c.subject)) : '';
+  const fachLangHtml = fachLang && fachLang.toUpperCase() !== String(c.subject).toUpperCase() ? `<span class="dline__lang">${esc(fachLang)}</span>` : '';
   const pilleHtml = artPille ? `<span class="dpill dpill--art plakette plakette--${pilleArt}">${esc(artPille)}</span>` : '';
 
   /* --- Aktionszeilen ----------------------------------------------------
@@ -5844,7 +6089,7 @@ function renderDetail(){
   const PFEIL = sym('chevron-right', 'drow2__chev');
 
   $('#detailBody').innerHTML = `
-    <div class="dhead ${(c.blockType === 'cancelled' || c.blockType === 'class-absent') ? 'is-off' : ''}">
+    <div class="dhead ${(c.blockType === 'cancelled' || c.blockType === 'class-absent') ? 'is-off' : ''}${istVeranstaltung || terminOhneKlasse ? '' : ' dhead--fach'}"${fachFarbe ? ` style="--fach:${fachFarbe}"` : ''}>
       ${head ? `<h2 class="dtitle">${head}</h2>` : ''}
       ${istVeranstaltung
           /* Veranstaltung: Fachzeile nur mit eingetragenem Fach; die Plakette
@@ -5852,7 +6097,7 @@ function renderDetail(){
           ? (veranstFach ? `<p class="dline dline--big dline--mitpill"><span class="dline__txt">${esc(veranstFach)}</span>${pilleHtml}</p>`
              : head && pilleHtml ? `<p class="dline dline--pill">${pilleHtml}</p>` : '')
           : (c.subject || c.subjectOrig) && !terminOhneKlasse
-            ? `<p class="dline dline--big dline--mitpill"><span class="dline__txt">${val('subject')}</span>${pilleHtml}</p>`
+            ? `<p class="dline dline--big dline--mitpill"><span class="dline__txt">${val('subject')}${fachLangHtml}</span>${pilleHtml}</p>`
             : pilleHtml ? `<p class="dline dline--pill">${pilleHtml}</p>` : ''}
       ${onlineD
           /* Online-Unterricht: kein Raum, nur das Zeichen (wie auf der Kachel). */
@@ -8155,6 +8400,36 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* =====================================================================
+   Brücke zu schule.js (Schulfunktionen unter „Mehr“ bzw. „Schule“)
+   ===================================================================== */
+/* Stunde aus einer Liste (offene Stunden, Hausaufgaben …) im eigenen Plan
+   öffnen: Woche laden, Plan zeigen, Stundendetails aufklappen. */
+async function stundeOeffnen(datum, stunde, unterricht){
+  const eig = state.entities.find(e => e.type === 'mine') || state.entities[0];
+  if (planKey(state.entity) !== planKey(eig)){
+    state.entity = eig;
+    store.set(state.entityKey || 'entity', { type:eig.type, id:eig.id });
+    setzeBeschriftung();
+  }
+  state.weekStart = iso(mondayOf(parseISO(datum)));
+  if (tageAnsicht()) state.day = datum;
+  state.around = {};
+  showScreen('plan');
+  await refresh();
+  const liste = (state.week.byDate || {})[datum] || [];
+  const k = liste.find(c => unterricht && (c.unterricht === unterricht || c.entryId === unterricht)
+                          && c.lesson <= stunde && stunde < c.lesson + (c.span || 1))
+         || liste.find(c => c.lesson <= stunde && stunde < c.lesson + (c.span || 1) && c.blockType !== 'supervision');
+  if (k) openDetail(datum, k.lesson, k._uid, state.week.byDate);
+  else toast('Die Stunde steht nicht (mehr) im Plan.');
+}
+window.EDO = {
+  state, esc, sym, toast, buzz, showScreen, kopfAbgleichen, sptBlatt, listeOeffnen, stundeOeffnen,
+  build: () => BUILD,
+  sprechtagOeffnen: () => { spt.id = 0; spt.liste = null; spt.filter = 'alle'; listeOeffnen('sprechtag'); }
+};
+
+/* =====================================================================
    Start
    ===================================================================== */
 (async function init(){
@@ -8166,7 +8441,7 @@ document.addEventListener('visibilitychange', () => {
     try { versucht = sessionStorage.getItem('sso:versucht') === '1'; sessionStorage.setItem('sso:versucht', '1'); } catch (e) { versucht = true; }
     if (!fehler && !versucht){ location.replace('sso/start'); return; }
     if (fehler) history.replaceState(null, '', location.pathname);
-    showLogin(fehler ? 'Die Anmeldung über UntPlanWeb hat nicht geklappt. Bitte erneut versuchen oder mit Passwort anmelden.' : '');
+    showLogin(fehler ? 'Die Anmeldung über EduOrga Web hat nicht geklappt. Bitte erneut versuchen oder mit Passwort anmelden.' : '');
     return;
   }
   try { sessionStorage.removeItem('sso:versucht'); } catch (e) { /* privat */ }
