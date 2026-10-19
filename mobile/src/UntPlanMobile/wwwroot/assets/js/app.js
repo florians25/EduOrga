@@ -239,7 +239,8 @@ function darstellungSetzen(pane){
   if (plan) plan.dataset.raster = d.raster || 'grau';
   pane.classList.toggle('mit-statusflaeche', d.statusflaeche !== false);
   pane.style.setProperty('--balken', (d.balkenbreite || 4) + 'px');
-  pane.style.setProperty('--kradius', (d.eckenradius ?? 2) + 'px');
+  /* Weiche Ecken (4–6 px) – Vorgabe der App, die Schule wählt innerhalb */
+  pane.style.setProperty('--kradius', Math.min(6, Math.max(4, d.eckenradius ?? 5)) + 'px');
   pane.style.setProperty('--toenung', (d.deckkraft || 12) + '%');
 }
 
@@ -1654,7 +1655,7 @@ function renderGrid(){
                     ? Math.max(9, Math.min(SUP_H, supGap - 2))
                 : card._supervision ? SUP_H            /* Aufsicht: immer schmale Pille */
                 : byTime    ? Math.max(16, atTime(card.to) - atTime(card.from) - 1)
-                :             Math.max(0, L.height(card.lesson, card.span) - 1);
+                :             Math.max(0, L.height(card.lesson, card.span) - 2);
       /* Aufsichts-Pille exakt mittig zwischen den beiden Blöcken.
 
          Gemessen wird nicht die Pause nach der Uhr, sondern der Abstand,
@@ -1761,7 +1762,7 @@ function renderGrid(){
         more = cards.filter(x => x !== card && x._i > 0
           && x.lesson < card.lesson + card.span && card.lesson < x.lesson + x.span).length;
         if (!more) { /* nichts verdeckt — volle Breite */ }
-        else { style += 'width:calc(100% - 14px);'; cls.push('has-count'); }
+        else cls.push('has-plus');
       }
 
       /* wie in timetable.php: bei reinem Entfall und bei Terminen kein Info-Icon
@@ -2046,9 +2047,13 @@ function renderGrid(){
         const vorbei = st.karten.every(x => {
           const e = cardEndDate(x); return e && e < now;
         });
-        html += `<button class="parcount${ton}${vorbei ? ' is-past' : ''}"
-                   style="top:${t}px;height:${hh}px"
-                   data-more="${date}" type="button">${st.karten.length}</button>`;
+        /* Eigene Lösung statt Zählkarte: die vordere Stunde bleibt voll
+           breit, oben rechts in ihrer Rasterzelle steht ein kleines „+X“.
+           Tippen öffnet ein Blatt mit allen Stunden dieser Zeit. */
+        void hh;
+        html += `<button class="plusbadge${ton.replace(/parcount/g, 'plusbadge')}${vorbei ? ' is-past' : ''}"
+                   style="top:${t + 3}px" data-more="${date}" data-von="${st.von}" data-bis="${st.bis}"
+                   aria-label="${st.karten.length} weitere ${st.karten.length === 1 ? 'Stunde' : 'Stunden'} zur selben Zeit" type="button">+${st.karten.length}</button>`;
       });
     }
 
@@ -2488,6 +2493,7 @@ function setView(view, day){
     }
   }
   const sc = $('#gridScroll'), keep = sc.scrollTop;
+  planSegSetzen();
   renderDayBar();
   renderWeekHead();
   renderGrid();
@@ -3010,7 +3016,7 @@ $('#dayNext').addEventListener('click', e => { e.stopImmediatePropagation(); pla
 /* Kurzes Rückmelden beim Antippen von Kacheln und Reitern */
 document.addEventListener('touchstart', e => {
   if (!navigator.vibrate) return;
-  if (e.target.closest('.card, .tab, .parcount, .picker-item, .pk__row'))
+  if (e.target.closest('.card, .tab, .parcount, .plusbadge, .picker-item, .pk__row'))
     try { navigator.vibrate(5); } catch (err){}
 }, { passive:true });
 
@@ -6064,7 +6070,7 @@ function renderDetail(){
                 key:'substitution', sub:c.info });
   }
   if (voll){
-    rows.push({ ico:'lehrstoff', title:'Lehrstoff', key:'lehrstoff', sub:cbText('lehrstoff') || cbErbe('lehrstoff'),
+    rows.push({ ico:'lehrstoff', title:'Thema (Lehrstoff)', key:'lehrstoff', sub:cbText('lehrstoff') || cbErbe('lehrstoff'),
                 done:!!cbText('lehrstoff') });
     rows.push({ ico:'students', title:'Schüler*innen', key:'students',
                 count:attAbsentCount(), tone:attAbsentCount() ? 'red' : '',
@@ -6175,7 +6181,7 @@ function renderDetail(){
 const CB_URL = new URL('api/classbook', location.href).toString();
 
 const CB = {
-  lehrstoff:      { title:'Lehrstoff',                 kind:'text' },
+  lehrstoff:      { title:'Thema (Lehrstoff)',         kind:'text' },
   notes_students: { title:'Notizen für Schüler*innen', kind:'text' },
   notes_teachers: { title:'Notizen für Lehrkräfte',    kind:'text' },
   homework:       { title:'Hausaufgaben',              kind:'list' },
@@ -8141,8 +8147,8 @@ const rasterTippGueltig = () => !rasterGeste.bewegt
 
 document.addEventListener('click', e => {
   if (e.target.closest('#gridPane') && !rasterTippGueltig()){ e.stopPropagation(); return; }
-  const more = e.target.closest('#gridPane .parcount');
-  if (more){ setView('day', more.dataset.more); return; }
+  const more = e.target.closest('#gridPane .plusbadge, #gridPane .parcount');
+  if (more){ paralleleZeigen(more.dataset.more, +(more.dataset.von || 0), +(more.dataset.bis || 99)); return; }
 
   const card = e.target.closest('#gridPane .card');
   if (card) openDetail(card.dataset.date, +card.dataset.lesson, +(card.dataset.idx || 0));
@@ -8400,6 +8406,78 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* =====================================================================
+   Parallele Stunden: Blatt mit allen Stunden derselben Zeit („+X“)
+   ===================================================================== */
+function paralleleZeigen(datum, von, bis){
+  const pool = (state.allByDate || state.week.byDate || {})[datum] || [];
+  const liste = pool.filter(c => c.lesson && !(c._supervision || c._pause || c.blockType === 'supervision' || c.holiday || c.blockType === 'holiday')
+      && c.lesson <= bis && von <= c.lesson + (c.span || 1) - 1)
+    .sort((a, b) => a.lesson - b.lesson || String(a.subject).localeCompare(String(b.subject)));
+  if (!liste.length) return;
+  const kind = viewKind(state.entity);
+  const d = parseISO(datum);
+  const zeit = c => `${(state.times[c.lesson] || {}).start || ''}–${(state.times[Math.min(c.lesson + (c.span || 1) - 1, 12)] || {}).end || ''}`;
+  const status = c => c.blockType === 'cancelled' ? ['Entfall', 'entfall'] : c.blockType === 'klausur' ? ['Prüfung', 'pruefung']
+    : c.blockType === 'change' ? [c.openSub ? 'Vertretung offen' : 'Vertretung', 'aenderung'] : (c.blockType === 'gs' || c.blockType === 'absence' || c.blockType === 'event') ? ['Termin', 'termin'] : null;
+  const el = document.createElement('div');
+  el.className = 'iosas parblatt';
+  el.innerHTML = `<div class="iosas__scrim"></div>
+    <div class="iosas__panel parblatt__panel" role="dialog" aria-modal="true" aria-label="Stunden zur selben Zeit">
+      <div class="parblatt__kopf"><span><b>${liste.length} Stunden zur selben Zeit</b><i>${WD_SHORT[(d.getDay() + 6) % 7]} ${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}. · ${von === bis ? von + '. Stunde' : von + '.–' + bis + '. Stunde'}</i></span>
+        <button type="button" class="icon-btn" data-zu aria-label="Schließen">${sym('x')}</button></div>
+      <div class="parblatt__liste">${liste.map(c => {
+        const z = cardLines(c, kind).map(l => l.text).filter(Boolean);
+        const st = status(c);
+        const farbe = c.color && /^#?[0-9a-f]{3,8}$/i.test(c.color) ? (c.color.startsWith('#') ? c.color : '#' + c.color) : '';
+        return `<button type="button" class="parblatt__zeile${c.blockType === 'cancelled' ? ' is-entfall' : ''}" data-uid="${c._uid}" data-lesson="${c.lesson}"${farbe ? ` style="--fach:${farbe}"` : ''}>
+          <span class="parblatt__zeit"><b>${esc(stundenText(c))}</b><i>${esc(zeit(c))}</i></span>
+          <span class="parblatt__was"><b>${esc(z[0] || c.subject || '')}</b><i>${esc(z.slice(1).join(' · '))}</i></span>
+          ${st ? `<span class="plakette plakette--${st[1]}">${esc(st[0])}</span>` : '<span></span>'}
+          ${sym('chevron-right', 'ico--chev2')}
+        </button>`; }).join('')}</div>
+    </div>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('is-open'));
+  const zu = () => { el.classList.remove('is-open'); setTimeout(() => el.remove(), 250); };
+  el.querySelector('.iosas__scrim').addEventListener('click', zu);
+  el.querySelector('[data-zu]').addEventListener('click', zu);
+  el.querySelectorAll('[data-uid]').forEach(b => b.addEventListener('click', () => {
+    zu(); openDetail(datum, +b.dataset.lesson, +b.dataset.uid, state.allByDate || state.week.byDate);
+  }));
+}
+const stundenText = c => (c.span || 1) > 1 ? `${c.lesson}.–${c.lesson + c.span - 1}.` : `${c.lesson}.`;
+
+/* Tag | Woche als Segmentschalter in der Kopfzeile (ohne Untermenü);
+   dazu Aufziehen (Tag) und Zusammenziehen (Woche) mit zwei Fingern. */
+function planSegSetzen(){
+  $$('#planSeg button').forEach(b => {
+    const an = b.dataset.v === 'day' ? state.view === 'day' : state.view === 'week';
+    b.classList.toggle('is-on', an); b.setAttribute('aria-pressed', an ? 'true' : 'false');
+  });
+}
+$$('#planSeg button').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.v === state.view) return;
+  buzz();
+  setView(b.dataset.v, b.dataset.v === 'day' ? pickDefaultDay() : undefined);
+  if (typeof markMenuView === 'function') markMenuView();
+}));
+(() => {
+  const flaeche = $('#gridScroll');
+  if (!flaeche) return;
+  let start = 0, fertig = false;
+  const abstand = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  flaeche.addEventListener('touchstart', e => { if (e.touches.length === 2){ start = abstand(e.touches); fertig = false; } }, { passive:true });
+  flaeche.addEventListener('touchmove', e => {
+    if (e.touches.length !== 2 || !start || fertig) return;
+    const f = abstand(e.touches) / start;
+    if (f > 1.3 && state.view !== 'day'){ fertig = true; setView('day', pickDefaultDay()); }
+    else if (f < 0.75 && state.view !== 'week'){ fertig = true; setView('week'); }
+    if (fertig){ buzz(); if (typeof markMenuView === 'function') markMenuView(); }
+  }, { passive:true });
+  flaeche.addEventListener('touchend', () => { start = 0; }, { passive:true });
+})();
+
+/* =====================================================================
    Brücke zu schule.js (Schulfunktionen unter „Mehr“ bzw. „Schule“)
    ===================================================================== */
 /* Stunde aus einer Liste (offene Stunden, Hausaufgaben …) im eigenen Plan
@@ -8519,6 +8597,7 @@ window.EDO = {
   if (view === 'msg') showScreen('msg');
   else if (view === 'today') showScreen('start');
 
+  planSegSetzen();
   scrollToNow();
   planwachtStart();
 })();

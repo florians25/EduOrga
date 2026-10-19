@@ -1,0 +1,97 @@
+using System.Diagnostics;
+
+namespace UntPlanMobile.Tests;
+
+/// <summary>
+/// EduOrga Mobile, Planraster (Referenz für iOS, siehe mobile/README.md „Planraster“): Kartendarstellung der Schule (Zeilenfolge,
+/// Ausblenden, Name statt Kürzel), Zeilen auf den Bildschirm eingepasst, „+X“ statt Zählkarte mit Blatt der parallelen Stunden,
+/// Tag/Woche als Segmentschalter, weiche Ecken, grauer Balken ohne Fachfarbe.
+/// </summary>
+public class PlanrasterTests
+{
+    private static string Datei(params string[] teile) => File.ReadAllText(Path.Combine(new[] { Umgebung.Wurzel(), "mobile", "src", "UntPlanMobile" }.Concat(teile).ToArray()));
+    private static string AppJs => Datei("wwwroot", "assets", "js", "app.js");
+    private static string AppCss => Datei("wwwroot", "assets", "css", "app.css");
+
+    private static string Abschnitt(string js, string name)
+    {
+        var beginn = js.IndexOf($"/* {name}-BEGINN", StringComparison.Ordinal);
+        var ende = js.IndexOf($"/* {name}-ENDE */", StringComparison.Ordinal);
+        Assert.True(beginn > 0 && ende > beginn, $"Abschnitt {name} fehlt");
+        return js[beginn..ende];
+    }
+
+    private static string? Node()
+    {
+        foreach (var kandidat in new[] { "node", "/opt/node22/bin/node", "/usr/bin/node", "/usr/local/bin/node" })
+        {
+            try
+            {
+                using var p = Process.Start(new ProcessStartInfo(kandidat, "--version") { RedirectStandardOutput = true, UseShellExecute = false });
+                p!.WaitForExit(5000);
+                if (p.ExitCode == 0) return kandidat;
+            }
+            catch (System.ComponentModel.Win32Exception) { }
+        }
+        return null;
+    }
+
+    [Fact]
+    public void Kartendarstellung_der_Schule_steuert_die_Zeilen()
+    {
+        var node = Node();
+        if (node is null) return;
+        var skript = Path.Combine(Path.GetTempPath(), "edo-darstellung-" + Guid.NewGuid().ToString("N") + ".js");
+        File.WriteAllText(skript, "const window = {};\nconst pruefe = (ist, soll) => { const a = JSON.stringify(ist), b = JSON.stringify(soll); if (a !== b) { console.error(a + ' statt ' + b); process.exit(1); } };\n"
+            + Abschnitt(AppJs, "DARSTELLUNG") + """
+            const D = window.EduOrgaDarstellung;
+            const std = D.mitStandard(null);
+            pruefe([std.fachfarbe, std.reihenfolge, std.raster, std.statusflaeche], ['balken-innen', 'element', 'grau', true]);
+            const zeilen = [{ key:'class', text:'5a', primary:true }, { key:'subject', text:'M' }, { key:'room', text:'R101' }];
+            const txt = l => l.map(x => x.key + ':' + x.text + (x.primary ? '*' : ''));
+            // Standard: Klasse · Fach · Raum, erste Zeile fett
+            pruefe(txt(D.zeilen(zeilen, {}, 'teacher', std)), ['class:5a*', 'subject:M', 'room:R101']);
+            // „Fach und Raum oben“ und Fach als Name
+            pruefe(txt(D.zeilen(zeilen, {}, 'teacher', D.mitStandard({ reihenfolge:'fach', fach:'name' }), (a, c) => c === 'M' ? 'Mathematik' : c)),
+                   ['subject:Mathematik*', 'class:5a', 'room:R101']);
+            // Zeile 2 und Raum ausgeblendet – geänderte Werte bleiben
+            pruefe(txt(D.zeilen(zeilen, {}, 'teacher', D.mitStandard({ zeile2:false, raum:false }))), ['subject:M*']);
+            const geaendert = [{ key:'class', text:'5a' }, { key:'subject', text:'M' }, { key:'room', text:'R102', changed:true }];
+            pruefe(txt(D.zeilen(geaendert, {}, 'teacher', D.mitStandard({ zeile2:false, raum:false }))), ['subject:M*', 'room:R102']);
+            // Grenzen: Balken 2–6 px
+            pruefe(D.mitStandard({ balkenbreite:12 }).balkenbreite, 6);
+            """);
+        try
+        {
+            using var p = Process.Start(new ProcessStartInfo(node, skript) { RedirectStandardError = true, UseShellExecute = false })!;
+            var fehler = p.StandardError.ReadToEnd();
+            p.WaitForExit(15000);
+            Assert.True(p.ExitCode == 0, fehler);
+        }
+        finally { File.Delete(skript); }
+    }
+
+    [Fact]
+    public void Raster_Plus_Badge_Segmentschalter_und_Ecken()
+    {
+        var js = AppJs;
+        var css = AppCss;
+        var html = Datei("Vorlagen", "index.html");
+        // Zeilen statt Minuten, der Schultag passt auf den Bildschirm
+        Assert.Contains("const RASTER = { zeile: 57, gross: 16, klein: 3 };", js);
+        Assert.Contains("function rasterMasse(verfuegbar, letzte)", js);
+        // parallele Stunden: „+X“ in der Rasterzelle, Blatt mit allen Stunden (keine Zählkarte mehr)
+        Assert.Contains("class=\"plusbadge", js);
+        Assert.Contains("function paralleleZeigen(datum, von, bis)", js);
+        Assert.DoesNotContain("<button class=\"parcount", js);
+        Assert.Contains(".plusbadge{", css);
+        // Tag | Woche ohne Untermenü, Aufziehen/Zusammenziehen
+        Assert.Contains("id=\"planSeg\"", html);
+        Assert.Contains("setView('day', pickDefaultDay())", js);
+        // weiche Ecken 4–6 px, grauer Balken ohne Fachfarbe (hell und dunkel)
+        Assert.Contains("Math.min(6, Math.max(4, d.eckenradius ?? 5))", js);
+        Assert.Contains(".card.ohne-fach::before{ background:var(--balken-grau); }", css);
+        Assert.Contains("--balken-grau:      #b4bec4;", css);
+        Assert.Contains("--balken-grau:      #56626c;", css);
+    }
+}

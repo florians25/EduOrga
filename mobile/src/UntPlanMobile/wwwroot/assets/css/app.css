@@ -920,6 +920,48 @@ body.show-card-times .card__times{ display:flex; }
 }
 .parcount.is-past:not(.parcount--change):not(.parcount--cancel){ opacity:.6; }
 
+/* Parallele Stunden: vorne eine Stunde (volle Breite), oben rechts in der
+   Rasterzelle ein „+X“ (16 px hoch, Radius 8 px, 10,5 px/600). Tippen
+   öffnet das Blatt mit allen Stunden dieser Zeit. */
+.card.has-plus > .card__line:first-child{ padding-right:22px; }
+.plusbadge{
+  position:absolute; right:3px; z-index:6;
+  min-width:20px; height:16px; padding:0 4px;
+  border-radius:8px;
+  background:var(--up-text-2); color:var(--up-flaeche);
+  font-size:10.5px; font-weight:600; line-height:16px; text-align:center;
+  font-variant-numeric:tabular-nums;
+  box-shadow:0 0 0 1.5px var(--karte);
+}
+.plusbadge--change{ background:var(--st-aenderung); }
+.plusbadge--cancel{ background:var(--st-entfall); }
+:root[data-thema="dunkel"] .plusbadge{ color:#0f1318; }
+.plusbadge.is-past{ opacity:.7; }
+.plusbadge::after{ content:""; position:absolute; inset:-10px -6px; }   /* größere Tippfläche */
+
+/* Blatt „Stunden zur selben Zeit“ */
+.iosas .parblatt__panel{ left:0; right:0; bottom:0; max-width:560px; gap:0; padding-bottom:var(--sab);
+  background:var(--up-flaeche); border-radius:var(--up-radius-l) var(--up-radius-l) 0 0; max-height:80vh; overflow:hidden; }
+.parblatt__kopf{ display:flex; align-items:center; justify-content:space-between; padding:14px 8px 10px 16px; border-bottom:1px solid var(--up-rand); }
+.parblatt__kopf span{ display:flex; flex-direction:column; }
+.parblatt__kopf b{ font-size:16px; font-weight:600; }
+.parblatt__kopf i{ font-style:normal; font-size:13px; color:var(--up-text-2); }
+.parblatt__liste{ overflow-y:auto; }
+.parblatt__zeile{ position:relative; display:grid; grid-template-columns:78px minmax(0,1fr) auto 16px; align-items:center; gap:10px;
+  width:100%; min-height:58px; padding:8px 12px 8px 22px; border-top:1px solid var(--up-linie); text-align:left; }
+.parblatt__zeile:first-child{ border-top:0; }
+.parblatt__zeile::before{ content:""; position:absolute; left:10px; top:10px; bottom:10px; width:4px; border-radius:2px; background:var(--fach, var(--balken-grau)); }
+.parblatt__zeile:active{ background:var(--up-flaeche-hover); }
+.parblatt__zeit, .parblatt__was{ display:flex; flex-direction:column; min-width:0; }
+.parblatt__zeit b{ font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
+.parblatt__zeit i, .parblatt__was i{ font-style:normal; font-size:12.5px; color:var(--up-text-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.parblatt__was b{ font-size:15px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.parblatt__zeile.is-entfall .parblatt__was b{ color:var(--st-entfall); text-decoration:line-through; }
+
+/* Tag | Woche in der Kopfzeile des Plans */
+.plan-seg{ margin-right:2px; }
+.plan-seg > button{ height:28px; padding:0 10px; font-size:13px; }
+
 /* Eigene Abwesenheit („Mein Stundenplan“): graues Feld hinter den Stunden */
 .absfeld{
   position:absolute; left:0; right:0; z-index:0;
