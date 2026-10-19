@@ -12,7 +12,7 @@ import { Geladen } from '../../components/Seite';
 import { Wochenraster } from '../../components/plan/Wochenraster';
 import { karteAus } from '../../components/plan/karte';
 import {
-  DarstellungsAnbieter, FachMarke, istStandard, mitStandard, STANDARD, VORLAGEN, vorlageVon,
+  DarstellungsAnbieter, FachMarke, istStandard, mitBalken, mitStandard, mitToenung, STANDARD, VORLAGEN, vorlageVon,
   type Kartendarstellung, type Namen,
 } from '../../components/plan/darstellung';
 import { bestaetigen, fehler, toast } from '../../lib/meldungen';
@@ -125,7 +125,7 @@ export default function Stundenkarten() {
   const geaendert = useMemo(() => !!entwurf && (Object.keys(STANDARD) as (keyof Kartendarstellung)[]).some(k => entwurf[k] !== gespeichert[k]), [entwurf, gespeichert]);
   const set = <K extends keyof Kartendarstellung>(k: K, v: Kartendarstellung[K]) => setEntwurf({ ...d, [k]: v });
   const vorlage = vorlageVon(d);
-  const balken = d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben';
+  const balken = mitBalken(d.fachfarbe);
 
   const uebernehmen = (neu: Kartendarstellung) => {
     g.setDaten(neu);
@@ -138,7 +138,7 @@ export default function Stundenkarten() {
     catch (err) { fehler(err); } finally { setSpeichert(false); }
   };
   const zuruecksetzen = async () => {
-    if (!(await bestaetigen('Auf Standard zurücksetzen?', 'Die Stundenkarten erscheinen danach für alle Konten wieder in der sachlichen Standarddarstellung.', 'Zurücksetzen'))) return;
+    if (!(await bestaetigen('Auf Standard zurücksetzen?', 'Die Stundenkarten erscheinen danach für alle Konten wieder in der Standarddarstellung „Klassisch“.', 'Zurücksetzen'))) return;
     setSpeichert(true);
     try { uebernehmen(mitStandard(await api<Kartendarstellung>('/api/app/darstellung', { methode: 'DELETE' }))); toast('Standarddarstellung wiederhergestellt.'); }
     catch (err) { fehler(err); } finally { setSpeichert(false); }
@@ -163,13 +163,13 @@ export default function Stundenkarten() {
 
               <Abschnitt titel="Fachfarbe">
                 <Wahl label="Fachfarbe" wert={d.fachfarbe} onWahl={v => set('fachfarbe', v)}
-                  optionen={[['quadrat', 'Quadrat'], ['balken-links', 'Balken links'], ['balken-oben', 'Balken oben'], ['flaeche', 'Fläche'], ['keine', 'Keine']]} />
+                  optionen={[['balken-flaeche', 'Balken links und Tönung'], ['balken-links', 'Balken links'], ['balken-oben', 'Balken oben'], ['quadrat', 'Quadrat'], ['flaeche', 'Fläche'], ['keine', 'Keine']]} />
                 {balken && (
                   <Feld titel={`Balkenbreite: ${d.balkenbreite} px`}>
                     <Slider size="small" min={2} max={6} step={1} marks value={d.balkenbreite} onChange={(_, v) => set('balkenbreite', v as number)} aria-label="Balkenbreite in Pixel" valueLabelDisplay="auto" sx={{ maxWidth: 320 }} />
                   </Feld>
                 )}
-                {d.fachfarbe === 'flaeche' && (
+                {mitToenung(d.fachfarbe) && (
                   <Feld titel={`Deckkraft der Tönung: ${d.deckkraft} %`} hilfe="Niedrige Werte halten den Text gut lesbar; Entfall wird nie getönt.">
                     <Slider size="small" min={6} max={30} step={1} value={d.deckkraft} onChange={(_, v) => set('deckkraft', v as number)} aria-label="Deckkraft der Fachfarbe in Prozent" valueLabelDisplay="auto" sx={{ maxWidth: 320 }} />
                   </Feld>
@@ -208,6 +208,7 @@ export default function Stundenkarten() {
 
               <Abschnitt titel="Status">
                 <Typography variant="body2" color="text.secondary">Linie, Schraffur, Durchstreichung und Kürzel-Plaketten bleiben unverändert.</Typography>
+                <FormControlLabel control={<Switch checked={d.statusflaeche} onChange={e => set('statusflaeche', e.target.checked)} />} label="Änderungen und Prüfungen hell hinterlegen (Vertretung violett, Prüfung bernstein)" />
                 <FormControlLabel control={<Switch checked={d.statuswoerter} onChange={e => set('statuswoerter', e.target.checked)} />} label="Statuswörter auf Kacheln anzeigen (Entfall, Offen, Vertreten …)" />
               </Abschnitt>
 

@@ -12,9 +12,13 @@ namespace UntPlanStudio.Api;
 public sealed record NeuesDokument(string? Schulname, string? Schulform);
 public sealed record DokumentName(string Name);
 
-/// <summary>Stand eines geöffneten Dokuments (Titelleiste, Statuszeile, Schnellzugriff).</summary>
+/// <summary>
+/// Stand eines geöffneten Dokuments (Titelleiste, Speicherstand, Schnellzugriff). <c>Geaendert</c> = noch nicht in der Datenbank
+/// (Speichern ist vorgemerkt), <c>Speichert</c> = wird gerade geschrieben, <c>Speicherfehler</c> = letzter Versuch fehlgeschlagen.
+/// </summary>
 public sealed record DokumentStand(string Id, string Name, long Version, bool Geaendert, DateTime? Gespeichert, bool KannRueckgaengig, string? RueckgaengigText,
-    bool KannWiederholen, string Schulname, string Schuljahr, string Periode, bool PeriodeFixiert, string Besitzer, string Herkunft, int Abonnenten, Dictionary<string, int> Zaehler);
+    bool KannWiederholen, string Schulname, string Schuljahr, string Periode, bool PeriodeFixiert, string Besitzer, string Herkunft, int Abonnenten, Dictionary<string, int> Zaehler,
+    bool Speichert = false, string? Speicherfehler = null);
 
 public sealed record ImportErgebnis(int Neu, int Aktualisiert, List<string> Hinweise);
 
@@ -38,7 +42,7 @@ public sealed class DokumenteApi : IStudioModul
                 ["klassen"] = d.Daten.Klassen.Count, ["lehrer"] = d.Daten.Lehrer.Count, ["raeume"] = d.Daten.Raeume.Count, ["faecher"] = d.Daten.Faecher.Count,
                 ["unterrichte"] = d.Daten.Unterrichte.Count, ["planstunden"] = d.Daten.Stundenplan.Count,
                 ["nichtVerplant"] = d.Daten.Unterrichte.Sum(u => d.Index.NichtVerplant(u)),
-            });
+            }, a.Speichert, a.Speicherfehler);
     }
 
     /// <summary>Zeitraster für Stundenplan-Raster und Zeitwunsch-Fenster.</summary>
@@ -113,11 +117,23 @@ public sealed class DokumenteApi : IStudioModul
             wochenperiodizitaet = doc.Daten.Einstellungen.Wochenperiodizitaet,
         }));
 
+        // Gespeichert wird automatisch nach jeder Änderung; „speichern“ schreibt sofort (z. B. „Erneut versuchen“ nach einem Fehler),
+        // „sicherungspunkt“ (Strg+S) legt zusätzlich den aktuellen Stand als ältere Fassung ab, die nicht automatisch verdrängt wird.
         d.MapPost("/speichern", async (Arbeitsdokument a, ClaimsPrincipal p) =>
         {
             await a.SpeichernAsync(p.Benutzername(), immer: true);
             return await a.LesenAsync(doc => Stand(a, doc));
         });
+
+        d.MapPost("/sicherungspunkt", async (Arbeitsdokument a, ClaimsPrincipal p, Dokumentdienst dienst) =>
+        {
+            await dienst.SicherungspunktAsync(a, p.Benutzername());
+            return await a.LesenAsync(doc => Stand(a, doc));
+        });
+
+        // ältere Fassungen (automatisch höchstens alle STUDIO_FASSUNG_MINUTEN bzw. Sicherungspunkte), neueste zuerst
+        d.MapGet("/fassungen", (Arbeitsdokument a, StudioDatenbank db) =>
+            db.DokumentSicherungen(a.Id).Select(f => new { nr = f.Nr, zeit = f.Zeit, groesse = f.Groesse, art = f.Art, benutzer = f.Benutzer }));
 
         d.MapGet("/herunterladen", async (Arbeitsdokument a) =>
         {

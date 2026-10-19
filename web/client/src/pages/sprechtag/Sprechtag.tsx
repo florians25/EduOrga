@@ -55,7 +55,7 @@ function Liste() {
     return d;
   }), []);
   return (
-    <Seite titel="Sprechtag" aktionen={g.daten?.admin && <Button variant="contained" startIcon={<AddRounded />} href="#/sprechtag/neu">Sprechtag anlegen</Button>}>
+    <Seite titel="Elternsprechtag" aktionen={g.daten?.admin && <Button variant="contained" startIcon={<AddRounded />} href="#/sprechtag/neu">Sprechtag anlegen</Button>}>
       <Geladen g={g}>{d => (
         <Tabelle zeilen={d.sprechtage} schluessel={x => x.sprechtag.id} onZeile={x => navigieren(`#/sprechtag/${x.sprechtag.id}`)}
           leer={d.admin ? 'Noch kein Sprechtag angelegt.' : 'Zurzeit ist kein Sprechtag freigegeben.'}
@@ -91,7 +91,7 @@ function Start({ id }: { id: number }) {
   if (g.daten?.beteiligt && !g.daten.admin) return <LehrkraftSeite id={id} lehrer={null} />;
   const t = g.daten?.sprechtag;
   return (
-    <Seite titel={t?.name ?? 'Sprechtag'} aktionen={t && g.daten!.admin && <>
+    <Seite titel={t?.name ?? 'Elternsprechtag'} aktionen={t && g.daten!.admin && <>
       <Button variant="outlined" startIcon={<PictureAsPdfOutlined />} href={`${BASIS}/${t.id}/plan.pdf`} target="_blank">Gesamtplan (PDF)</Button>
       <Button variant="outlined" startIcon={<PrintOutlined />} href={`${BASIS}/${t.id}/plan.pdf?leer=true`} target="_blank">Aushang</Button>
       {absagbar(t) && <>
@@ -159,7 +159,7 @@ function LehrkraftSeite({ id, lehrer }: { id: number; lehrer: string | null }) {
   const d = g.daten?.d;
   const t = d?.sprechtag;
   return (
-    <Seite titel={t ? (lehrer ? `${t.name} · ${d!.lehrer.name}` : t.name) : 'Sprechtag'} aktionen={t && <>
+    <Seite titel={t ? (lehrer ? `${t.name} · ${d!.lehrer.name}` : t.name) : 'Elternsprechtag'} aktionen={t && <>
       {absagbar(t) && (d!.lehrer.abgesagt
         ? <Button variant="outlined" color="success" startIcon={<UndoRounded />} onClick={() => tue(() => senden(`${BASIS}/${id}/teilnahme/wiederaufnehmen`, mit({})), 'Teilnahme wieder aufgenommen – die Zeitfenster sind wieder buchbar.')}>Teilnahme wieder aufnehmen</Button>
         : <Button variant="outlined" color="error" startIcon={<CloseRounded />} onClick={() => setDialog({ art: 'teilnahme' })}>Teilnahme absagen</Button>)}
@@ -346,7 +346,7 @@ function Eltern({ id }: { id: number }) {
   const tue = async (f: () => Promise<unknown>) => { try { await f(); void g.neu(); } catch (err) { fehler(err); } };
   const d = g.daten;
   return (
-    <Seite titel={d?.sprechtag.name ?? 'Sprechtag'} aktionen={d && !d.nurLesen && <Button variant="outlined" startIcon={<PictureAsPdfOutlined />} href={`${BASIS}/${id}/elternplan.pdf`} target="_blank">Meine Termine (PDF)</Button>}>
+    <Seite titel={d?.sprechtag.name ?? 'Elternsprechtag'} aktionen={d && !d.nurLesen && <Button variant="outlined" startIcon={<PictureAsPdfOutlined />} href={`${BASIS}/${id}/elternplan.pdf`} target="_blank">Meine Termine (PDF)</Button>}>
       <Geladen g={g}>{d => {
         const t = d.sprechtag;
         const lesen = !!d.nurLesen;

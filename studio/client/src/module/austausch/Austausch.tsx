@@ -8,6 +8,7 @@ import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, Feld, Ladeanzeige } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { berichtText, csvImport, gpuImport, type Importbericht } from './aktionen';
 
 interface Info { schulname?: string; abteilungen: { id: number; kurz: string; lang: string; unterrichte: number }[]; lehrer: { id: number; kurz: string; lang: string }[]; zaehler: Record<string, number> }
@@ -59,7 +60,7 @@ export default function Austausch() {
         <section className={s.karte}>
           <h3 className={s.h3}>Schuldatei</h3>
           <div className={s.kennzahlen}>{kz(z.lehrer, 'Lehrkräfte')}{kz(z.klassen, 'Klassen')}{kz(z.schueler, 'Schülerinnen und Schüler')}{kz(z.unterrichte, 'Unterrichte')}{kz(z.stunden, 'verplante Stunden')}</div>
-          {zeile('Schuldatei herunterladen', `Aktueller Stand von „${info?.schulname || 'Schuldatei'}“ als UntPlan-Datei (.up)`, aktion('Herunterladen', () => befehl('datei.herunterladen')))}
+          {zeile('Schuldatei herunterladen', `Aktueller Stand von „${info?.schulname || 'Schuldatei'}“ als Schuldatei (.up)`, aktion('Herunterladen', () => befehl('datei.herunterladen')))}
           {zeile('Schuldatei hochladen', 'Eine .up- oder BAL-Datei als neue Schuldatei auf den Server laden', aktion('Hochladen …', () => befehl('datei.hochladen'), { nurSchreiben: true }))}
           {zeile('BAL-Datei übernehmen', 'Stundenplan aus einer BAL-Datei (WILLI2) in diese Schuldatei übernehmen', aktion('Importieren …', () => befehl('datei.balImport'), { nurSchreiben: true }))}
         </section>
@@ -75,11 +76,11 @@ export default function Austausch() {
           {zeile('GPU-Dateien (ZIP)', 'GPU001 bis GPU006 im Latin-1-Format', aktion('Herunterladen', () => dateiHerunterladen(api.dok('/austausch/gpu'), 'GPU.zip')))}
           {zeile('Unterrichtsverteilung (CSV)', 'Alle Unterrichte mit Kopplungszeilen', aktion('Herunterladen', () => dateiHerunterladen(api.dok('/austausch/unterricht.csv'), 'Unterrichtsverteilung.csv')))}
           {zeile('Aushang (HTML, ZIP)', 'Statische HTML-Seiten aller Pläne zum Veröffentlichen', aktion('Herunterladen', () => dateiHerunterladen(api.dok('/austausch/infostundenplan.zip'), 'Aushang.zip')))}
-          {zeile('Paket für UntPlan Web (JSON)', 'Paket im Schema untplanweb/1, z. B. für ein manuelles Hochladen', aktion('Herunterladen', () => dateiHerunterladen(api.dok('/austausch/untplanweb.json'), 'untplanweb.json')))}
+          {zeile('Paket für EduOrga Web (JSON)', 'Paket im Schema untplanweb/1, z. B. für ein manuelles Hochladen', aktion('Herunterladen', () => dateiHerunterladen(api.dok('/austausch/untplanweb.json'), 'untplanweb.json')))}
           {zeile('Kalender einer Lehrkraft (iCalendar)', 'Stundenplan mit Vertretungen als .ics-Datei',
             <Select key="l" size="small" value={lk} onChange={(_, d) => setLehrer(d.value)} title="Lehrkraft für den Kalenderexport">{(info?.lehrer || []).map((l) => <option key={l.id} value={l.id}>{`${l.kurz} – ${l.lang}`}</option>)}</Select>,
-            <Feld key="v" titel="Von"><Input size="small" type="date" value={von} onChange={(_, d) => setVon(d.value)} /></Feld>,
-            <Feld key="b" titel="Bis"><Input size="small" type="date" value={bis} onChange={(_, d) => setBis(d.value)} /></Feld>,
+            <Feld key="v" titel="Von"><DatumFeld size="small" wert={von} beiAenderung={(datum) => setVon(datum)} /></Feld>,
+            <Feld key="b" titel="Bis"><DatumFeld size="small" wert={bis} beiAenderung={(datum) => setBis(datum)} /></Feld>,
             <span key="k">{aktion('Herunterladen', () => { if (!lk) throw new Error('Bitte eine Lehrkraft wählen.'); return dateiHerunterladen(api.dok(`/austausch/ical/${lk}?von=${von}&bis=${bis}`), 'Stundenplan.ics'); })}</span>)}
         </section>
         <section className={s.karte}>

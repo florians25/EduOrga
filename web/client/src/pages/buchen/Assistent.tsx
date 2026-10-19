@@ -29,7 +29,7 @@ import { useLaden } from '../../lib/useLaden';
 import { ART_NAME, ART_TON, BASIS, ResSymbol, stdText, tagIndex, tagKurz, WIEDERHOLUNG, type Optionen } from './gemeinsam';
 
 export type Art = 'raum' | 'ressource' | 'aktivitaet' | 'unterricht';
-const TITEL: Record<Art, string> = { raum: 'Raum buchen', ressource: 'Ressource buchen', aktivitaet: 'Neue Aktivität', unterricht: 'Zusätzliche Stunden' };
+const TITEL: Record<Art, string> = { raum: 'Raum buchen', ressource: 'Geräte & Medien buchen', aktivitaet: 'Termin eintragen', unterricht: 'Zusätzliche Stunden' };
 export interface EigenerUnterricht { id: number; fach: string; klassen: string[]; lehrer: string; gruppe: string; text: string; wochenstunden: number; gebuchteStunden: number; benutzerId: number }
 interface Zeit { wiederholung: string; datum: string; von: string; bis: string; wochentage: number[]; modus: 'stunden' | 'uhrzeit'; stundeVon: number; stundeBis: number; beginn: string; ende: string }
 interface TerminRoh { datum: string; stundeVon: number; stundeBis: number }
@@ -53,7 +53,7 @@ function zeitDaten(z: Zeit) {
 }
 
 export function BuchenKopfAktionen() {
-  return <><Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/raeume">Raumübersicht</Button><Button variant="outlined" startIcon={<ListAltOutlined />} href="#/buchen/meine">Meine Buchungen</Button></>;
+  return <><Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/raeume">Raumbelegung</Button><Button variant="outlined" startIcon={<ListAltOutlined />} href="#/buchen/meine">Meine Buchungen</Button></>;
 }
 
 export function Assistent({ art, rest }: { art: Art; rest: string[] }) {
@@ -385,7 +385,7 @@ function Ablauf({ art, rest, opt, el, unterricht }: { art: Art; rest: string[]; 
           {zf('Bemerkung', d.text)}
           {aktivitaet && d.benachrichtigen && d.lehrer && zf('Benachrichtigung', `Mitteilung an ${d.lehrer}`)}
           {hinweise.length > 0 && <Alert severity="warning" sx={{ mt: 1.5 }}><b>Zur gleichen Zeit schon eingeplant</b><Box component="ul" sx={{ m: 0, pl: 2 }}>{hinweise.slice(0, 6).map(x => <li key={x}>{x}</li>)}{hinweise.length > 6 && <li>… und {hinweise.length - 6} weitere</li>}</Box>Die Buchung ist trotzdem möglich.</Alert>}
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>Die Buchung erscheint sofort in „Meine Buchungen“ und in den Stundenplänen{art === 'ressource' ? '' : ' und wird an UntPlan übermittelt'}.</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>Die Buchung erscheint sofort in „Meine Buchungen“ und in den Stundenplänen{art === 'ressource' ? '' : ' und wird an EduOrga Studio übermittelt'}.</Typography>
         </Paper>
       </Box>
     );

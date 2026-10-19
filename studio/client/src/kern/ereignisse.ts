@@ -38,6 +38,8 @@ export interface Ereignisse {
   'vertretung.liste': { von: string; bis: string; offen: number; entfall: number; zeilen: number };
   /** Ansicht im Arbeitsplatz aktiviert (Id). */
   'ansicht.aktiv': string;
+  /** Direkte Übertragung der Vertretungen an EduOrga Web beendet (Server-Ereignis „untplanweb“). */
+  'untplanweb.direkt': { text: string; benutzer: string; zeit: string };
 }
 
 type Hoerer<K extends keyof Ereignisse> = (daten: Ereignisse[K]) => void;

@@ -185,7 +185,7 @@ export default function Dienste({ teile }: SeitenProps) {
       const aktiv = (sid: number, w: string) => zuordnungen.some(z => z.schuelerId === sid && z.von <= plusTage(w, 6) && z.bis >= w);
       return (
         <Seite titel={klasse && dienst ? `Klassendienste: ${klasse} | ${dienst.name}` : 'Klassendienste'} aktionen={aktionen} filter={filter}>
-          {!klasse ? <Leer text="Keine Klassen vorhanden." /> : !dienst ? <Leer text="Es sind noch keine Dienste angelegt (Stammdaten → Dienste)." /> : !d.schueler.length ? <Leer text="Für diese Klasse wurde keine Schülerliste aus UntPlan übertragen." /> : (
+          {!klasse ? <Leer text="Keine Klassen vorhanden." /> : !dienst ? <Leer text="Es sind noch keine Dienste angelegt (Stammdaten → Dienste)." /> : !d.schueler.length ? <Leer text="Für diese Klasse wurde keine Schülerliste aus EduOrga Studio übertragen." /> : (
             <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'auto' }}>
               <Table size="small" stickyHeader>
                 <TableHead><TableRow><TableCell sx={{ position: 'sticky', left: 0, zIndex: 3 }}>Schüler*in</TableCell>{wochen.map(w => <TableCell key={w} align="center" title={`Woche ab ${datumDe(w)}`}>{datumKurz(w)}</TableCell>)}<TableCell align="center">Σ</TableCell></TableRow></TableHead>

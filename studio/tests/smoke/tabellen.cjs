@@ -128,7 +128,7 @@ const h = require('./hilfe.cjs');
     await zelle(ut, ersteZeilen[1], cText).click({ button: 'right' });
     await page.getByRole('menuitem', { name: /Mehrfach ändern/ }).click();
     await page.waitForSelector('[data-testid=mehrfach-aendern]');
-    await page.locator('[data-testid=mehrfach-aendern] input[role=combobox]').fill('Serienwert');
+    await page.locator('[data-testid=mehrfach-aendern] input[aria-label="Neuer Wert"]').fill('Serienwert');
     await foto('07-mehrfach-aendern');
     await page.locator('[role=dialog] button', { hasText: /Zeilen ändern/ }).click();
     await page.waitForFunction(([s, c, rs]) => rs.every((r) => document.querySelector(`${s} .tb-zeile[data-r="${r}"] .tb-zelle[data-c="${c}"]`)?.textContent === 'Serienwert'), [ut, cText, ersteZeilen], { timeout: 15000 });
@@ -136,7 +136,7 @@ const h = require('./hilfe.cjs');
 
     // ---- Filterzeile, gespeicherter Zustand ----
     await zelle(ut, 0, 0).click();
-    await page.keyboard.press('Control+Shift+L');
+    if (!(await page.locator(`${ut} .tb-filterzeile`).count())) await page.keyboard.press('Control+Shift+L');
     await page.waitForSelector(`${ut} .tb-filterzeile`);
     const fach = (await text(0, cFach)).trim();
     await page.locator(`${ut} input[data-filter="Fach"]`).fill(`=${fach}`);
@@ -148,8 +148,10 @@ const h = require('./hilfe.cjs');
     await foto('08-filterzeile');
     schritt(`Filterzeile: Fach = ${fach}`);
     // Auswahlkästchen über das Spaltenmenü
-    await page.locator(`${ut} .tb-kz[data-spalte="Fach"]`).click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Auswahlkästchen' }).click();
+    if (!(await page.locator(`${ut} .tb-mk`).count())) {
+      await page.locator(`${ut} .tb-kz[data-spalte="Fach"]`).click({ button: 'right' });
+      await page.getByRole('menuitem', { name: 'Auswahlkästchen' }).click();
+    }
     await page.waitForSelector(`${ut} .tb-zeile .tb-mk .tb-haken`);
     await page.locator(`${ut} .tb-zeile[data-r="0"] .tb-mk`).click();
     await page.waitForSelector(`${ut} .tb-zeile.gewaehlt`);
@@ -162,6 +164,41 @@ const h = require('./hilfe.cjs');
     await page.waitForSelector(`${ut} .tb-filterzeile`);
     await page.waitForSelector(`${ut} .tb-mk`);
     schritt('Filterzeile und Auswahlkästchen bleiben nach dem Neuladen erhalten');
+    // ---- Spaltenbreite ziehen, Spalte verschieben, kompakte Zeilen ----
+    const kopf = (k) => page.locator(`${ut} .tb-kz[data-spalte="${k}"]`);
+    const reihe = () => page.evaluate((s) => [...document.querySelectorAll(`${s} .tb-kz`)].map((x) => x.dataset.spalte), ut);
+    const ausgang = await reihe();
+    const breiteVorher = (await kopf('Fach').boundingBox()).width;
+    const griff = await kopf('Fach').locator('.tb-breite').boundingBox();
+    await page.mouse.move(griff.x + griff.width / 2, griff.y + griff.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(griff.x + 40, griff.y + 10, { steps: 6 });
+    await page.mouse.move(griff.x + 70, griff.y + 10, { steps: 6 });
+    await page.mouse.up();
+    const breiteNachher = (await kopf('Fach').boundingBox()).width;
+    if (breiteNachher < breiteVorher + 50) throw new Error(`Spaltenbreite: ${breiteVorher} → ${breiteNachher}`);
+    const vorherReihe = await reihe();
+    if (vorherReihe.join() !== ausgang.join()) throw new Error(`Spaltenbreite ziehen hat Spalten verschoben: ${vorherReihe}`);
+    if (vorherReihe.indexOf('Lehrer') > vorherReihe.indexOf('Text')) { await kopf('Lehrer').dragTo(kopf('Fach')); }
+    await kopf('Lehrer').dragTo(kopf('Text'));
+    const nachherReihe = await reihe();
+    if (nachherReihe.indexOf('Lehrer') !== nachherReihe.indexOf('Text') + 1) throw new Error(`Spalte verschieben: ${nachherReihe.join(',')}`);
+    await page.waitForTimeout(900);
+    const zustand = await page.evaluate(() => JSON.parse(localStorage.getItem('studio.tabelle.unterricht') || 'null'));
+    const gesp = zustand.spalten.map((x) => x.s);
+    if (gesp.indexOf('Lehrer') !== gesp.indexOf('Text') + 1 || (zustand.spalten.find((x) => x.s === 'Fach')?.b || 0) < breiteVorher + 50) throw new Error(`Spaltenzustand: ${JSON.stringify(zustand.spalten.slice(0, 12))}`);
+    schritt(`Spaltenbreite ${Math.round(breiteVorher)} → ${Math.round(breiteNachher)} px gezogen, Lehrkraft hinter Text verschoben, gespeichert`);
+    await kopf('Fach').click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Kompakte Zeilen' }).click();
+    await page.waitForFunction((s) => {
+      const a = document.querySelector(`${s} .tb-zeile[data-r="1"]`).getBoundingClientRect(), b = document.querySelector(`${s} .tb-zeile[data-r="2"]`).getBoundingClientRect();
+      return Math.round(a.height) === 24 && Math.round(b.top - a.top) === 24;
+    }, ut);
+    await foto('10-kompakt-verschoben');
+    await kopf('Fach').click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Kompakte Zeilen' }).click();
+    await kopf('Lehrer').dragTo(kopf('Fach'));
+    schritt('Kompakte Zeilen (24 px) umschaltbar');
     // zurück zur Grundeinstellung
     await page.locator(`${ut} .tb-kz[data-spalte="Fach"]`).click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Auswahlkästchen' }).click();

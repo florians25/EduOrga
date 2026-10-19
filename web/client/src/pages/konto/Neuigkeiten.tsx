@@ -1,4 +1,4 @@
-// Neuigkeiten: Infos der Schule und Neuerungen in UntPlanWeb als ruhige Liste (wie im Infocenter), Filter nach Art.
+// Neuigkeiten: Infos der Schule und Neuerungen in EduOrga Web als ruhige Liste (wie im Infocenter), Filter nach Art.
 // #/neuigkeiten/verwalten: Infos anlegen, bearbeiten, löschen (Administration, Schulleitung).
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, FormControlLabel, IconButton, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material';
@@ -47,7 +47,7 @@ function Liste({ filter }: { filter: string }) {
   const f = suche.trim().toLowerCase();
   const liste = passend.filter(x => !f || `${x.titel} ${x.text ?? ''} ${(x.punkte ?? []).join(' ')} ${x.kategorie}`.toLowerCase().includes(f));
   return (
-    <Seite titel="Neuigkeiten" untertitel="Infos der Schule und Neuerungen in UntPlanWeb – neue Einträge sind mit einem Punkt markiert."
+    <Seite titel="Neuigkeiten" untertitel="Infos der Schule und Neuerungen in EduOrga Web – neue Einträge sind mit einem Punkt markiert."
       aktionen={<>
         {ic.ungelesen > 0 && <Button variant="outlined" startIcon={<DoneAllRounded />} onClick={() => ic.gelesen()}>Alle als gelesen markieren</Button>}
         {ic.darfVerwalten && <Button variant="contained" startIcon={<EditOutlined />} href="#/neuigkeiten/verwalten">Infos verwalten</Button>}
@@ -55,7 +55,7 @@ function Liste({ filter }: { filter: string }) {
       filter={<>
         <SuchFeld wert={suche} onWert={setSuche} platzhalter="Neuigkeiten durchsuchen" breite={300} />
         <Wahl label="Art" wert={filter} onWert={w => navigieren(`#/neuigkeiten${w ? '/' + w : ''}`, true)} alle={optionText('Alle')} breite={280}
-          optionen={[['infos', optionText('Infos der Schule', 'info')], ['updates', optionText('UntPlanWeb-Updates', 'neuigkeit')]]} />
+          optionen={[['infos', optionText('Infos der Schule', 'info')], ['updates', optionText('Neuerungen in EduOrga Web', 'neuigkeit')]]} />
       </>}>
       {liste.length ? (
         <Stack gap={1.25} sx={{ maxWidth: 900 }}>

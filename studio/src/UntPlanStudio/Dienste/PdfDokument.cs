@@ -38,7 +38,7 @@ public sealed class PdfDokument
         Obj($"<< /Type /Pages /Count {_seiten.Count} /Kids [{string.Join(" ", _seiten.Select((_, i) => $"{6 + 2 * i} 0 R"))}] >>");
         Obj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
         Obj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
-        Obj($"<< /Producer (UntPlan Studio) /Title ({PdfSeite.Maskieren(Titel)}) /CreationDate (D:{DateTime.Now:yyyyMMddHHmmss}) >>");
+        Obj($"<< /Producer (EduOrga Studio) /Title ({PdfSeite.Maskieren(Titel)}) /CreationDate (D:{DateTime.Now:yyyyMMddHHmmss}) >>");
         for (var i = 0; i < _seiten.Count; i++)
         {
             var s = _seiten[i];

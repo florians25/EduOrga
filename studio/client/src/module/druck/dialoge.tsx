@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { api } from '@/api/client';
 import { vergleich } from '@/kern/hilfen';
 import { dialog, dialogZeigen, StandardDialog } from '@/komponenten/dialoge';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { direktLaden, druckUrl, heute, imTab, plusTage, type Auswahl } from './kern';
 
 export async function infoStundenplan(): Promise<void> {
@@ -31,9 +32,9 @@ export async function iCalendar(): Promise<void> {
               {lehrer.map((l) => <option key={l.id} value={l.id}>{l.l ? `${l.k} – ${l.l}` : l.k}</option>)}
             </Select>
           </Field>
-          <Field label="Von"><Input type="date" value={w.von} onChange={(_, d) => setW({ ...w, von: d.value })} /></Field>
+          <Field label="Von"><DatumFeld size="medium" wert={w.von} beiAenderung={(datum) => setW({ ...w, von: datum })} /></Field>
           <Field label="Bis" hint="Stundenplan der Lehrkraft mit Vertretungen als .ics-Datei zum Import in Kalenderprogramme.">
-            <Input type="date" value={w.bis} onChange={(_, d) => setW({ ...w, bis: d.value })} />
+            <DatumFeld size="medium" wert={w.bis} beiAenderung={(datum) => setW({ ...w, bis: datum })} />
           </Field>
         </div>
       </StandardDialog>

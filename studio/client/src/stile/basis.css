@@ -12,7 +12,9 @@ body {
 button, input, select, textarea { font-family: inherit; }
 .zahl, td.zahl, .tabular { font-variant-numeric: tabular-nums; }
 ::selection { background: var(--up-marine-100); }
-:root[data-thema="dunkel"] ::selection { background: #2a4370; }
+:root[data-thema="dunkel"] ::selection { background: #1d5f66; color: #ffffff; }
+@media (prefers-color-scheme: dark) { :root[data-thema="auto"] ::selection { background: #1d5f66; color: #ffffff; } }
+a { color: var(--colorBrandForegroundLink, var(--up-akzent)); }
 @media print {
   header[role="banner"], nav[aria-label="Arbeitsbereiche"] { display: none !important; }
 }

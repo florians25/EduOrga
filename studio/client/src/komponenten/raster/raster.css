@@ -5,8 +5,8 @@
   color: var(--colorNeutralForeground1); position: relative;
 }
 .ra.kompakt .ra-gitter { grid-template-columns: 40px repeat(var(--tage), minmax(0, 1fr)); font-size: 12px; min-width: 360px; }
-.ra-ecke, .ra-kopf { position: sticky; top: 0; z-index: 3; background: var(--colorNeutralBackground1); border-bottom: 1px solid var(--colorNeutralStroke2); }
-.ra-kopf { display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 500; font-size: 13px; padding: 0 4px; white-space: nowrap; overflow: hidden; }
+.ra-ecke, .ra-kopf { position: sticky; top: 0; z-index: 3; background: var(--colorNeutralBackground3); border-bottom: 1px solid var(--colorNeutralStroke1); }
+.ra-kopf { display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 600; font-size: 13px; padding: 0 4px; white-space: nowrap; overflow: hidden; border-right: 1px solid var(--colorNeutralStroke2); }
 .ra-kopf .lang { display: inline; }
 .ra-kopf .kurz { display: none; }
 .ra.kompakt .ra-kopf .lang { display: none; }
@@ -15,7 +15,7 @@
 .ra-kopf.frei { color: var(--up-frei); background: var(--up-frei-flaeche); }
 .ra-stunde {
   display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 1px solid var(--colorNeutralStroke3);
-  border-right: 1px solid var(--colorNeutralStroke2); background: var(--colorNeutralBackground1);
+  border-right: 1px solid var(--colorNeutralStroke1); background: var(--colorNeutralBackground2);
 }
 .ra-stunde .nr { font-weight: 600; font-size: 13px; }
 .ra-stunde .zeit { font-size: 11px; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; }

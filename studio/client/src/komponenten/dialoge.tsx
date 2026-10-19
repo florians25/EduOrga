@@ -6,12 +6,14 @@
 //   await dialog({ titel, inhalt, knoepfe })         → Wert des gedrückten Knopfes oder null
 //   await dialogZeigen((schliessen) => <MeinDialog schliessen={schliessen} />)  → eigener Inhalt (DialogSurface …)
 import {
-  Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, Select, Textarea,
+  Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, Textarea,
   makeStyles, tokens,
 } from '@fluentui/react-components';
 import { Dismiss24Regular } from '@fluentui/react-icons';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { create } from 'zustand';
+import type { ElementOption } from '@/api/typen';
+import { SuchAuswahl } from './suchauswahl';
 
 type Render<T> = (schliessen: (wert: T | null) => void) => JSX.Element;
 
@@ -136,9 +138,12 @@ export const frage = async (text: string, { titel = 'Bitte bestätigen', ja = 'J
 export interface FormularFeld {
   name: string;
   titel: string;
-  art?: 'text' | 'zahl' | 'passwort' | 'auswahl' | 'bool' | 'textfeld' | 'datum';
+  /** auswahl: durchsuchbare Liste (optionen); element/elemente: Element(e) aus `elemente` (Kurzname, keine freie Eingabe);
+   *  datum: Kalender (Wert ISO yyyy-mm-dd) */
+  art?: 'text' | 'zahl' | 'passwort' | 'auswahl' | 'bool' | 'textfeld' | 'datum' | 'element' | 'elemente';
   wert?: string | number | boolean | null;
   optionen?: { wert: string | number; text: string }[];
+  elemente?: ElementOption[];
   pflicht?: boolean;
   hinweis?: string;
 }
@@ -169,9 +174,12 @@ function FormularInhalt({ titel, felder, okText, breite, schliessen }: { titel: 
           return (
             <Field key={f.name} label={f.titel} required={f.pflicht} hint={f.hinweis} validationMessage={fehler}>
               {f.art === 'auswahl' ? (
-                <Select name={f.name} value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} autoFocus={autofokus}>
-                  {(f.optionen || []).map((o) => <option key={String(o.wert)} value={String(o.wert)}>{o.text}</option>)}
-                </Select>
+                <SuchAuswahl name={f.name} wert={String(werte[f.name] ?? '')} beiWahl={(w) => setzen(f.name, w)} autoFocus={autofokus} ariaLabel={f.titel}
+                  optionen={(f.optionen || []).map((o) => ({ wert: String(o.wert), text: o.text }))} />
+              ) : f.art === 'element' || f.art === 'elemente' ? (
+                <SuchAuswahl name={f.name} wert={String(werte[f.name] ?? '')} beiWahl={(w) => setzen(f.name, w)} autoFocus={autofokus} ariaLabel={f.titel}
+                  mehrfach={f.art === 'elemente'} platzhalter="Suchen …"
+                  optionen={(f.elemente || []).map((e) => ({ wert: e.k, kurz: e.k, text: e.l ? `${e.k} – ${e.l}` : e.k }))} />
               ) : f.art === 'textfeld' ? (
                 <Textarea name={f.name} value={String(werte[f.name] ?? '')} onChange={(_, d) => setzen(f.name, d.value)} rows={4} autoFocus={autofokus} resize="vertical" />
               ) : (

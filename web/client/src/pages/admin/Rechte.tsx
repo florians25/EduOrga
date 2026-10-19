@@ -50,7 +50,7 @@ export default function Rechte({ teil }: { teil?: string; weitere?: string[] }) 
           { name: 'minLaenge', typ: 'zahl', label: 'Mindestlänge', min: 8, max: 64 },
           { name: 'grossbuchstaben', typ: 'schalter', label: 'Großbuchstaben erforderlich' }, { name: 'ziffern', typ: 'schalter', label: 'Ziffern erforderlich' },
           { name: 'sonderzeichen', typ: 'schalter', label: 'Sonderzeichen erforderlich' },
-          { typ: 'hinweis', text: 'Gilt für selbst gewählte Passwörter (Passwort ändern). Startpasswörter erzeugt UntPlanWeb zufällig.' }]} />
+          { typ: 'hinweis', text: 'Gilt für selbst gewählte Passwörter (Passwort ändern). Startpasswörter erzeugt EduOrga Web zufällig.' }]} />
       )}
     </>
   );

@@ -19,10 +19,17 @@ import { seitenortSetzen } from './seitenort';
 
 const useStile = makeStyles({
   seite: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0, height: '100%' },
-  kopf: { padding: '14px 20px 10px 20px', flexShrink: 0 },
-  pfad: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
-  titel: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold },
-  flaeche: { flex: 1, minHeight: 0, display: 'flex', padding: '0 12px 12px 12px' },
+  kopf: {
+    padding: '10px 20px 8px 20px', flexShrink: 0, backgroundColor: 'var(--edo-kopf-flaeche)',
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, display: 'flex', flexDirection: 'column', gap: '1px',
+  },
+  pfad: {
+    display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--edo-modus)', fontSize: '11px', lineHeight: '16px',
+    fontWeight: tokens.fontWeightSemibold, letterSpacing: '0.05em', textTransform: 'uppercase',
+    '::before': { content: '""', width: '8px', height: '8px', borderRadius: '2px', backgroundColor: 'var(--edo-modus)', flexShrink: 0 },
+  },
+  titel: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
+  flaeche: { flex: 1, minHeight: 0, display: 'flex', padding: '10px 12px 12px 12px', backgroundColor: tokens.colorNeutralBackground2 },
   teilung: { display: 'flex', flex: 1, minWidth: 0, minHeight: 0 },
   zeilen: { flexDirection: 'column' },
   teil: { display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden' },
@@ -30,7 +37,8 @@ const useStile = makeStyles({
   trennerW: { height: '8px', flexShrink: 0, cursor: 'row-resize', ':hover': { backgroundColor: tokens.colorBrandBackground2 } },
   bereich: {
     display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden',
-    border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusLarge, backgroundColor: tokens.colorNeutralBackground1,
+    border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusLarge, backgroundColor: tokens.colorNeutralBackground1,
+    boxShadow: 'var(--edo-karte-schatten)',
   },
   drawerBody: { padding: 0, display: 'flex', flexDirection: 'column' },
 });
@@ -64,7 +72,7 @@ export function ArbeitsplatzSeite() {
 
   useEffect(() => { seitenortSetzen({ arbeitsplatz: name, p: {} }); }, [name]);
   useModusBindung(def?.modus, name);
-  useEffect(() => { if (def) document.title = `${def.titel} – UntPlan Studio`; }, [def]);
+  useEffect(() => { if (def) document.title = `${def.titel} – EduOrga Studio`; }, [def]);
 
   const kontext = useMemo<ArbeitsplatzKontextWert>(() => ({
     name,

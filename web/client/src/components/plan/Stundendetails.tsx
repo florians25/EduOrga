@@ -1,7 +1,7 @@
 // Stundendetails als Seitenleiste rechts: sachlicher weißer Kopf (Fachquadrat und Fach, Plaketten, darunter Angaben als Schlüssel/Wert:
 // Datum, Zeit, Klasse, Lehrkraft, Raum mit Links auf die Pläne, Änderungen „alt → neu“), Wahl Block/Einzelstunde. Reiter „Klassenbuch“ (Kollegium: Schülerkacheln mit
 // Anwesenheit, Lehrstoff, Abwesende Schüler*innen, Hausaufgaben, Klassenbucheinträge, Klassendienste, Ticket) und „Details“ (online –
-// nur Anzeige, festgelegt in UntPlan Studio –, Vertretungstext, Lehrstoff, Hausaufgaben, Notizen, Räume). Fuß: Stand bzw. Blättern,
+// nur Anzeige, festgelegt in EduOrga Studio –, Vertretungstext, Lehrstoff, Hausaufgaben, Notizen, Räume). Fuß: Stand bzw. Blättern,
 // Prüfung erstellen/editieren/löschen.
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
@@ -369,7 +369,7 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
         {sichererLink(onlineLink) ? (
           <Button variant="contained" startIcon={<VideocamOutlined />} href={onlineLink} target="_blank" rel="noopener noreferrer">Online-Unterricht beitreten</Button>
         ) : <Hinweis>Es wurde noch kein Link zum Online-Unterricht hinterlegt.</Hinweis>}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>Online-Unterricht und Link legt die Schulleitung in UntPlan Studio fest.</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>Online-Unterricht und Link legt die Schulleitung in EduOrga Studio fest.</Typography>
       </Abschnitt>,
     );
     if (darfRaum) {
@@ -477,7 +477,7 @@ export function Stundendetails({ karte, liste: rohListe, typ, onClose, onGeaende
           <Tooltip title="Drucken"><IconButton size="small" onClick={() => window.print()} aria-label="Drucken"><PrintOutlined fontSize="small" /></IconButton></Tooltip>
           <Tooltip title="Klassenbuch-Einstellungen"><IconButton size="small" onClick={() => setDialog({ art: 'einst' })} aria-label="Klassenbuch-Einstellungen"><SettingsOutlined fontSize="small" /></IconButton></Tooltip></>}>
           {!a ? <Hinweis>Anwesenheit kann nicht geladen werden.</Hinweis>
-            : !sl.length ? <Hinweis>Für diese Klasse wurde keine Schülerliste aus UntPlan übertragen (UntPlan → UntPlanWeb → Einstellungen → „Schülerliste übertragen“).</Hinweis>
+            : !sl.length ? <Hinweis>Für diese Klasse wurde keine Schülerliste aus EduOrga Studio übertragen (EduOrga Studio → EduOrga Web → Einstellungen → „Schülerliste übertragen“).</Hinweis>
             : <>
               {darf && <Stack direction="row" gap={1} sx={{ mb: 1.5 }}><Button size="small" variant="outlined" onClick={() => setAuswahl(new Set(sl.map(x => x.id)))}>Alle auswählen</Button><Button size="small" variant="outlined" onClick={() => setAuswahl(new Set())} disabled={!auswahl.size}>Auswahl löschen</Button>
                 {auswahl.size > 0 && <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>{auswahl.size} ausgewählt</Typography>}</Stack>}

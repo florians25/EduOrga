@@ -15,7 +15,7 @@ public sealed class AnmeldungTests : IClassFixture<StudioFabrik>
         var c = _f.Client();
         Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/gesundheit")).StatusCode);
         var html = await c.GetStringAsync("/");
-        Assert.Contains("<title>UntPlan Studio</title>", html);
+        Assert.Contains("<title>EduOrga Studio</title>", html);
         Assert.Matches(@"src=""/assets/index-[\w-]+\.js""", html);
         var system = await c.GetJsonAsync("/api/system");
         Assert.False(system["beta"]!.GetValue<bool>());
@@ -30,7 +30,7 @@ public sealed class AnmeldungTests : IClassFixture<StudioFabrik>
         // Seiten der Oberfläche (Routing im Browser) liefern index.html, ohne Zwischenspeicher
         var seite = await c.GetAsync("/stundenplan?typ=klasse");
         Assert.Equal(HttpStatusCode.OK, seite.StatusCode);
-        Assert.Contains("<title>UntPlan Studio</title>", await seite.Content.ReadAsStringAsync());
+        Assert.Contains("<title>EduOrga Studio</title>", await seite.Content.ReadAsStringAsync());
         Assert.Equal("no-cache", seite.Headers.CacheControl?.ToString());
         var start = await c.GetAsync("/");
         Assert.Equal("no-cache", start.Headers.CacheControl?.ToString());

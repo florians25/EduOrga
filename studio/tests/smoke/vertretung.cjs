@@ -7,7 +7,7 @@
 // Kontextmenü → Kalender → Arbeitsplatz „Verlegen und Tauschen“ → Veranstaltung „Alle Lehrkräfte“ → Arbeitsplatz
 // Tagesplanung (Tageskopf, schlanke Liste, Filter, Vorschlag zur gewählten Zeile, Tagespläne als Tagesansicht) → Tag blättern
 // (Strg+Bild↓) → Wochenansicht (Umschalter Tag | Woche im Plan und im Tageskopf, Wochenstreifen, Strg+Umschalt+Bild↓/↑,
-// Plan vergrößern, gemerkte Ansicht) → Einstellungen. Umgebungsvariablen: hilfe.cjs.
+// Plan vergrößern, gemerkte Ansicht) → Verknüpfung der Pläne (Klick auf eine Stunde) → Einstellungen. Umgebungsvariablen: hilfe.cjs.
 const h = require('./hilfe.cjs');
 
 (async () => {
@@ -47,8 +47,9 @@ const h = require('./hilfe.cjs');
     await page.locator(`${abs} .tb-zeile.tb-neu .tb-zelle`).nth(1).click();
     await page.keyboard.type(kurz);
     await page.keyboard.press('Tab');
-    await page.waitForSelector(`${abs} .tb-zeile.vt-entwurf`);
-    await page.keyboard.press('Control+Enter');
+    // Entwurf (Strg+Enter speichert) – oder die Tabelle speichert die neue Zeile bereits beim Verlassen der Zelle
+    await page.waitForFunction(([s, k]) => !!document.querySelector(`${s} .tb-zeile.vt-entwurf`) || [...document.querySelectorAll(`${s} .tb-zeile:not(.tb-neu)`)].some((z) => z.textContent.includes(k)), [abs, kurz], { timeout: 15000 });
+    if (await page.locator(`${abs} .tb-zeile.vt-entwurf`).count()) await page.keyboard.press('Control+Enter');
     await page.waitForFunction(([s, k]) => [...document.querySelectorAll(`${s} .tb-zeile:not(.vt-entwurf):not(.tb-neu)`)].some((z) => z.textContent.includes(k)), [abs, kurz], { timeout: 15000 });
     await page.waitForTimeout(600);
     if (await page.locator('text=bereits vorhanden').count()) throw new Error('Abwesenheit wurde doppelt gespeichert');
@@ -110,6 +111,9 @@ const h = require('./hilfe.cjs');
     await page.locator(`${va} .tb-zeile.tb-neu .tb-zelle`).nth(3).click();
     await page.keyboard.type('Alle Lehrkräfte');
     await page.keyboard.press('Enter');
+    // Mehrfachauswahl: das erste Enter übernimmt den Vorschlag, das zweite beendet die Eingabe
+    await page.waitForTimeout(500);
+    if (!(await page.evaluate((s) => [...document.querySelectorAll(`${s} .tb-zelle`)].some((z) => z.textContent.includes('Alle Lehrkräfte')), va))) await page.keyboard.press('Enter');
     await page.waitForFunction((s) => [...document.querySelectorAll(`${s} .tb-zelle`)].some((z) => z.textContent.includes('Alle Lehrkräfte')), va, { timeout: 15000 });
     await foto('08-veranstaltung-alle');
     schritt('Veranstaltung „Alle Lehrkräfte“ angelegt');
@@ -167,11 +171,14 @@ const h = require('./hilfe.cjs');
     if (!(lb.y > kb.y + kb.height - 2)) throw new Error('Pläne stehen im Wochenmodus nicht untereinander');
     await foto('13-tagesplanung-woche');
     // Wochenstreifen: anderer Tag
+    const tageImListe = await page.evaluate((s) => [...document.querySelectorAll(`${s} .tb-zeile.vt-tageskopf`)].map((z) => z.textContent), tp);
     const streifen = page.locator(`${tp} [data-testid=wochenstreifen] button[aria-pressed=false]:not(.frei)`);
     const ziel = await streifen.first().getAttribute('data-datum');
     await streifen.first().click();
     await page.waitForFunction((d) => document.querySelector('[data-testid=planungsdatum] input[type=date]')?.value === d, ziel, { timeout: 10000 });
-    await page.waitForSelector(`${tp} .tb-zeile.vt-tageskopf.vt-planungstag`, { timeout: 10000 });
+    const zielText = `${ziel.slice(8, 10)}.${ziel.slice(5, 7)}.`;
+    if (tageImListe.some((x) => x.includes(zielText))) await page.waitForSelector(`${tp} .tb-zeile.vt-tageskopf.vt-planungstag`, { timeout: 10000 });
+    schritt(`Liste der Woche nach Tagen: ${tageImListe.length} Tag(e); Wochenstreifen → ${ziel}`);
     // Woche blättern mit Strg+Umschalt+Bild↓ / Bild↑
     await page.locator(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile`).first().click().catch(() => {});
     await page.keyboard.press('Control+Shift+PageDown');
@@ -182,17 +189,41 @@ const h = require('./hilfe.cjs');
     schritt(`Woche blättern: ${naechste} → ${await datumImKopf()}`);
     // Plan vergrößern und mit Esc zurück
     await page.click(`${tp} [data-testid=plan-gross-klasse]`);
-    await page.waitForFunction((s) => !document.querySelector(`${s} [data-bereich=liste]`)?.offsetParent && !document.querySelector(`${s} [data-bereich=plan-lehrer]`)?.offsetParent, tp, { timeout: 5000 });
+    await page.waitForSelector(`${tp} [data-bereich=liste]`, { state: 'hidden', timeout: 5000 });
+    await page.waitForSelector(`${tp} [data-bereich=plan-lehrer]`, { state: 'hidden', timeout: 5000 });
     await foto('14-plan-vergroessert');
     await page.keyboard.press('Escape');
-    await page.waitForFunction((s) => !!document.querySelector(`${s} [data-bereich=liste]`)?.offsetParent, tp, { timeout: 5000 });
+    await page.waitForSelector(`${tp} [data-bereich=liste]`, { state: 'visible', timeout: 5000 });
     // gemerkt (localStorage): nach dem Neuladen wieder Woche
     await page.reload();
     await page.waitForSelector(`${tp} [data-testid=seiten-ansicht] [data-wert=woche][aria-checked=true]`, { timeout: 20000 });
-    await page.waitForSelector(`${tp} [data-ansicht="vertretung.liste"] .tb-zeile.vt-tageskopf`, { timeout: 15000 });
+    await page.waitForFunction((s) => document.querySelectorAll(`${s} [data-bereich=plan-lehrer] .ra-kopf`).length >= 5, tp, { timeout: 15000 });
     await page.click(`${tp} [data-testid=seiten-ansicht] [data-wert=tag]`);
     await page.waitForFunction((s) => document.querySelectorAll(`${s} [data-bereich=plan-klasse] .ra-kopf`).length === 1, tp, { timeout: 10000 });
     schritt('Tagesplanung im Wochenmodus: Liste nach Tagen, Pläne untereinander, Wochenstreifen, Vergrößern, gemerkt');
+
+    // Verknüpfung der Pläne: Stunde im Klassenplan → Lehrkräfteplan zeigt deren Lehrkraft (und umgekehrt die Klasse)
+    // Titel des Plans („Lehrkraft MEY“, aria-label des Bereichs)
+    const gewaehlteOption = (b) => page.evaluate((s) => document.querySelector(`${s} section[aria-label]`)?.getAttribute('aria-label') || '', `${tp} [data-bereich=${b}]`);
+    // Stunde mit Lehrkraft (bei einer Vertretung zeigt der Plan wie die Liste die ursprüngliche Lehrkraft, „statt …“)
+    await page.waitForSelector(`${tp} [data-bereich=plan-klasse] .ra-eintrag`, { timeout: 15000 });
+    const kandidaten = page.locator(`${tp} [data-bereich=plan-klasse] .ra-eintrag:not(.vt-st-Entfall)`);
+    let stunde = null, lk = null;
+    for (let i = 0; i < await kandidaten.count() && !lk; i++) {
+      const tt = (await kandidaten.nth(i).getAttribute('title')) || '';
+      const statt = tt.match(/statt (\S+)/);
+      const l = statt ? statt[1] : tt.split('\n')[1]?.split(' – ')[2];
+      if (l && l !== '???') { stunde = kandidaten.nth(i); lk = l; }
+    }
+    if (!stunde) throw new Error('keine Stunde mit Lehrkraft im Klassenplan');
+    await stunde.click();
+    await page.waitForFunction(([s, k]) => (document.querySelector(`${s} [data-bereich=plan-lehrer] section[aria-label]`)?.getAttribute('aria-label') || '').endsWith(` ${k}`), [tp, lk], { timeout: 10000 });
+    const kl = await page.evaluate((s) => document.querySelector(`${s} [data-bereich=plan-lehrer] .ra-eintrag .zeile2`)?.textContent || '', tp);
+    if (kl) {
+      await page.locator(`${tp} [data-bereich=plan-lehrer] .ra-eintrag`).first().click();
+      await page.waitForFunction(([s, k]) => (document.querySelector(`${s} [data-bereich=plan-klasse] section[aria-label]`)?.getAttribute('aria-label') || '').endsWith(` ${k.replace(/[()]/g, '').split(',')[0].trim()}`), [tp, kl], { timeout: 10000 });
+    }
+    schritt(`Pläne verknüpft: Klassenplan → ${await gewaehlteOption('plan-lehrer')}, Lehrkräfteplan → ${await gewaehlteOption('plan-klasse')}`);
 
     // Einstellungen der Vertretungsplanung (Dialog, Seite Vertretungsvorschlag)
     await page.evaluate(() => { void window.studioTest.befehl('vertretung.einstellungen', { seite: 2 }); });

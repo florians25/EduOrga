@@ -431,7 +431,7 @@ function Fehlzeiten({ klasse, bis, vonParam, ziel }: { klasse: string; bis: stri
             {f.verwalten && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setDialog({ art: 'fehlen' })}>Fehlen eintragen</Button>}
           </Paper>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Fehlstunden entstehen aus einer Abwesenheit und dem Stundenplan. Den Zeitraum selbst erfassen Sie unter <a href={`#/abwesenheiten/schueler/${von}/${bis}/${encodeURIComponent(klasse)}`}>Abwesenheiten</a>.</Typography>
-          {!f.schueler.length ? <Leer text="Für diese Klasse wurde keine Schülerliste aus UntPlan übertragen." /> : !zeilen.length ? <Leer text="Im Zeitraum hat niemand gefehlt." /> : (
+          {!f.schueler.length ? <Leer text="Für diese Klasse wurde keine Schülerliste aus EduOrga Studio übertragen." /> : !zeilen.length ? <Leer text="Im Zeitraum hat niemand gefehlt." /> : (
             <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
               <Box sx={{ overflowX: 'auto' }}><Table size="small">
                 <TableHead><TableRow>{f.verwalten && <TableCell padding="checkbox" />}<TableCell>Name</TableCell><TableCell align="right">Fehlstunden</TableCell><TableCell align="right">Fehltage</TableCell><TableCell align="right">offen</TableCell><TableCell align="right">entschuldigt</TableCell><TableCell align="right">nicht entsch.</TableCell><TableCell /></TableRow></TableHead>

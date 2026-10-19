@@ -15,8 +15,10 @@ struct Sitzung: Decodable, Sendable {
     /// Plan-Fenster der Rolle in Wochen (nil = unbegrenzt) – auf oberster Ebene oder im Benutzer geliefert.
     var planWochenZurueck: Int?
     var planWochenVor: Int?
+    /// Darstellung der Stundenkarten (Administration, schulweit); ältere Server liefern nichts (Standard).
+    var darstellung: Kartendarstellung
 
-    enum CodingKeys: String, CodingKey { case eingerichtet, schule, paket, schuljahr, benutzer, ungelesen, planWochenZurueck, planWochenVor }
+    enum CodingKeys: String, CodingKey { case eingerichtet, schule, paket, schuljahr, benutzer, ungelesen, planWochenZurueck, planWochenVor, darstellung }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -28,6 +30,7 @@ struct Sitzung: Decodable, Sendable {
         ungelesen = c.zahl(.ungelesen) ?? 0
         planWochenZurueck = c.zahl(.planWochenZurueck) ?? benutzer?.planWochenZurueck
         planWochenVor = c.zahl(.planWochenVor) ?? benutzer?.planWochenVor
+        darstellung = c.optional(.darstellung) ?? Kartendarstellung()
         if benutzer?.planWochenZurueck == nil { benutzer?.planWochenZurueck = planWochenZurueck }
         if benutzer?.planWochenVor == nil { benutzer?.planWochenVor = planWochenVor }
     }
@@ -94,10 +97,16 @@ struct SitzungsBenutzer: Decodable, Sendable {
     /// Plan-Fenster der Rolle: so viele Wochen zurück bzw. voraus einsehbar (nil = unbegrenzt)
     var planWochenZurueck: Int?
     var planWochenVor: Int?
+    /// Effektive Rechte (Recht → Stufe 1 = Lesen, 2 = Schreiben); leer bei älteren Servern
+    var rechte: [String: Int]
+    /// Fachlehrer-Entschuldigungen eingeschaltet
+    var fachlehrerEntschuldigungen: Bool
+    /// Kinder (Elternkonten) bzw. eigene Schüler-ID
+    var schuelerIds: [Int]
 
     enum CodingKeys: String, CodingKey {
         case id, login, anzeigename, rolle, rollenname, element, kollegium, admin, nachrichten, passwortAendern, typ, familie, fehlzeiten
-        case planWochenZurueck, planWochenVor
+        case planWochenZurueck, planWochenVor, rechte, fachlehrerEntschuldigungen, schuelerIds
     }
 
     init(from decoder: Decoder) throws {
@@ -117,9 +126,18 @@ struct SitzungsBenutzer: Decodable, Sendable {
         fehlzeiten = c.wahr(.fehlzeiten)
         planWochenZurueck = c.zahl(.planWochenZurueck)
         planWochenVor = c.zahl(.planWochenVor)
+        rechte = (try? c.decodeIfPresent([String: Int].self, forKey: .rechte)) ?? [:]
+        fachlehrerEntschuldigungen = c.wahr(.fachlehrerEntschuldigungen)
+        schuelerIds = (try? c.decodeIfPresent([Int].self, forKey: .schuelerIds)) ?? []
     }
 
     var name: String { anzeigename.isEmpty ? login : anzeigename }
+
+    /// Recht vorhanden? Ältere Server ohne Rechteliste: `vorgabe`.
+    func darf(_ recht: String, vorgabe: Bool = true) -> Bool {
+        if rechte.isEmpty { return vorgabe }
+        return (rechte[recht] ?? 0) > 0
+    }
 }
 
 // MARK: - Plan
@@ -839,15 +857,18 @@ struct Ferienzeit: Decodable, Sendable {
 struct Planelement: Decodable, Identifiable, Hashable, Sendable {
     var kurz: String
     var name: String
+    /// Klassenleitung (nur Klassen)
+    var leitung: [String]
 
     var id: String { kurz }
 
-    enum CodingKeys: String, CodingKey { case kurz, name }
+    enum CodingKeys: String, CodingKey { case kurz, name, leitung }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         kurz = c.text(.kurz)
         name = c.text(.name)
+        leitung = c.texte(.leitung)
     }
 }
 
@@ -893,8 +914,10 @@ struct Elemente: Decodable, Sendable {
     var raeume: [Planelement]
     var faecher: [Fach]
     var ferien: [Ferien]
+    /// Zeitraster der Schule (Stunden mit Beginn und Ende)
+    var stunden: [Zeit]
 
-    enum CodingKeys: String, CodingKey { case klassen, lehrer, raeume, faecher, ferien }
+    enum CodingKeys: String, CodingKey { case klassen, lehrer, raeume, faecher, ferien, stunden }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -903,6 +926,7 @@ struct Elemente: Decodable, Sendable {
         raeume = c.liste(.raeume)
         faecher = c.liste(.faecher)
         ferien = c.liste(.ferien)
+        stunden = c.liste(.stunden)
     }
 }
 
@@ -1021,9 +1045,13 @@ struct Profil: Decodable, Sendable {
     /// Plan-Fenster der Rolle in Wochen (nil = unbegrenzt)
     var planWochenZurueck: Int?
     var planWochenVor: Int?
+    /// Benachrichtigung per E-Mail bei neuen Mitteilungen
+    var benachrichtigung: Bool
+    var sprache: String
 
     enum CodingKeys: String, CodingKey {
         case login, anzeigename, email, rolle, element, letzteAnmeldung, vorherigeAnmeldung, ical, kollegium, planWochenZurueck, planWochenVor
+        case benachrichtigung, sprache
     }
 
     init(from decoder: Decoder) throws {
@@ -1039,6 +1067,8 @@ struct Profil: Decodable, Sendable {
         kollegium = c.wahr(.kollegium)
         planWochenZurueck = c.zahl(.planWochenZurueck)
         planWochenVor = c.zahl(.planWochenVor)
+        benachrichtigung = c.wahr(.benachrichtigung)
+        sprache = c.text(.sprache)
     }
 }
 
@@ -1057,8 +1087,11 @@ struct Meldung: Decodable, Identifiable, Sendable {
     var grund: String?
     var text: String?
     var status: String
+    /// Raumbuchung: Raum; Prüfung: Klassen
+    var raum: String?
+    var klassen: [String]
 
-    enum CodingKeys: String, CodingKey { case id, typ, erstellt, von, bis, stundeVon, stundeBis, titel, grund, text, status }
+    enum CodingKeys: String, CodingKey { case id, typ, erstellt, von, bis, stundeVon, stundeBis, titel, grund, text, status, raum, klassen }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -1073,6 +1106,8 @@ struct Meldung: Decodable, Identifiable, Sendable {
         grund = c.textOderNil(.grund)
         text = c.textOderNil(.text)
         status = c.text(.status)
+        raum = c.textOderNil(.raum)
+        klassen = c.texte(.klassen)
     }
 
     var istAbwesenheit: Bool { typ == "absenz" }

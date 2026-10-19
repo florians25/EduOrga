@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-// Gestaltung von UntPlan Next: Petrol als Akzent, Statusfarben über `Farben` (Änderung Violett, Termin Magenta,
+// Gestaltung von EduOrga: Petrol als Primär- und Akzentfarbe, Statusfarben über `Farben` (Änderung Violett, Termin Magenta,
 // Prüfung Bernstein, Entfall Rot), Systemschrift SF Pro mit Dynamic Type, Abstände im 8-pt-Raster. Liquid Glass nur
 // über die Helfer in `Glas.swift` und nur auf der Bedienebene; Inhalte sind deckend.
 
@@ -62,8 +62,8 @@ enum Fachfarbe {
         })
     }
 
-    /// Ersatz ohne Fachfarbe: Petrol #0b5d57.
-    private static let petrol = (0x0B / 255.0, 0x5D / 255.0, 0x57 / 255.0)
+    /// Ersatz ohne Fachfarbe: Primärfarbe Petrol #164C55.
+    private static let petrol = (0x16 / 255.0, 0x4C / 255.0, 0x55 / 255.0)
 
     /// Kopf der großen Stundenansicht: Fachfarbe deckend (dunkel: abgedunkelt), ohne Fachfarbe Petrol.
     static func kopf(_ hex: String) -> Color {

@@ -11,6 +11,7 @@ export interface PruefSpalte {
   auswahl?: string[];
   pruefen?: boolean;
   zusatzWerte?: string[];
+  zulassen?: (teil: string) => boolean;
 }
 
 export type Pruefergebnis = { ok: true; wert: string } | { ok: false; fehler: string };
@@ -27,8 +28,9 @@ export const istListenart = (art?: string) => art === 'Element' || art === 'Elem
 /** Auswahlwerte als Optionen („3 Text“ → Kurz „3“, Lang „Text“ wäre irreführend – der ganze Text ist der Wert). */
 export const auswahlOptionen = (auswahl: string[] = []): ElementOption[] => auswahl.filter((a) => a !== '').map((a, i) => ({ id: i, k: a, l: '' }));
 
-function element(t: string, optionen: ElementOption[], zusatz: string[]): string | null {
+function element(t: string, optionen: ElementOption[], zusatz: string[], zulassen?: (teil: string) => boolean): string | null {
   const k = t.trim().toLowerCase();
+  if (zulassen?.(t.trim())) return t.trim();
   const z = zusatz.find((x) => x.toLowerCase() === k);
   if (z !== undefined) return z;
   const e = optionen.find((o) => o.k.toLowerCase() === k);
@@ -55,6 +57,9 @@ export function pruefeWert(s: PruefSpalte, roh: string, optionen: ElementOption[
       return t === '' || /^[-+]?\d+([.,]\d+)?$/.test(t) ? ok(t) : fehler(`„${t}“ ist keine Zahl${titel}.`);
     case 'Bereich':
       return /^[\d\s,;-]*$/.test(t) ? ok(t) : fehler(`„${t}“ ist kein Bereich${titel} (z. B. 1-2 oder 1,3).`);
+    case 'Datum':
+      return t === '' || /^\d{4}-\d{2}-\d{2}$/.test(t) || /^[+-]\d+$/.test(t) || /^((Mo|Di|Mi|Do|Fr|Sa|So),?\s+)?\d{1,2}\.\d{1,2}\.?(\d{2}|\d{4})?$/i.test(t)
+        ? ok(t) : fehler(`„${t}“ ist kein Datum${titel} (z. B. 12.10.2026).`);
     case 'Farbe':
       return t === '' || /^#?[0-9a-f]{6}$/i.test(t) ? ok(t === '' || t.startsWith('#') ? t : `#${t}`) : fehler(`„${t}“ ist keine Farbe${titel} (z. B. #3366CC).`);
     case 'Auswahl': {
@@ -68,7 +73,7 @@ export function pruefeWert(s: PruefSpalte, roh: string, optionen: ElementOption[
     }
     case 'Element': {
       if (t === '' || !optionen?.length) return ok(t);
-      const e = element(t, optionen, s.zusatzWerte || []);
+      const e = element(t, optionen, s.zusatzWerte || [], s.zulassen);
       return e !== null ? ok(e) : fehler(`„${t}“ ist nicht vorhanden${titel}.`);
     }
     case 'ElementListe': {
@@ -76,7 +81,7 @@ export function pruefeWert(s: PruefSpalte, roh: string, optionen: ElementOption[
       const erg: string[] = [];
       const unbekannt: string[] = [];
       for (const teil of listenTeile(t)) {
-        const e = element(teil, optionen, s.zusatzWerte || []);
+        const e = element(teil, optionen, s.zusatzWerte || [], s.zulassen);
         if (e !== null) { if (!erg.includes(e)) erg.push(e); continue; }
         // „5a 5b“ (mit Leerzeichen getrennt) zulassen, wenn alle Teile bekannt sind
         const woerter = teil.split(/\s+/);

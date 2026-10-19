@@ -2,27 +2,29 @@
 import { useEffect, type ReactNode } from 'react';
 import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
 import InboxOutlined from '@mui/icons-material/InboxOutlined';
+import { PRODUKT } from './Marke';
 
 export function Seite({ titel, untertitel, aktionen, filter, children, breit = true, dokumentTitel }: {
   titel?: ReactNode; untertitel?: ReactNode; aktionen?: ReactNode; filter?: ReactNode; children?: ReactNode; breit?: boolean; dokumentTitel?: string;
 }) {
   useEffect(() => {
     const t = dokumentTitel ?? (typeof titel === 'string' ? titel : '');
-    document.title = t ? `${t} – UntPlanWeb` : 'UntPlanWeb';
+    document.title = t ? `${t} – ${PRODUKT}` : PRODUKT;
   }, [titel, dokumentTitel]);
   return (
     <Box sx={{ maxWidth: breit ? 'none' : 1100, mx: breit ? 0 : 'auto', width: '100%' }}>
       {(titel || aktionen) && (
-        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} flexWrap="wrap" sx={{ mb: filter ? 2 : 3 }} className="seitenkopf">
+        <Stack direction="row" alignItems="flex-end" justifyContent="space-between" gap={2} flexWrap="wrap" className="seitenkopf"
+          sx={{ mb: filter ? 1.5 : 2.5, pb: 1.5, borderBottom: '1px solid', borderColor: 'flaechen.rand' }}>
           <Box sx={{ minWidth: 0 }}>
             {titel && <Typography variant="h1" component="h1">{titel}</Typography>}
-            {untertitel && <Typography color="text.secondary" sx={{ mt: 0.5 }}>{untertitel}</Typography>}
+            {untertitel && <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5, maxWidth: 900 }}>{untertitel}</Typography>}
           </Box>
           {aktionen && <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center" className="nicht-drucken">{aktionen}</Stack>}
         </Stack>
       )}
       {filter && (
-        <Paper variant="outlined" className="nicht-drucken" sx={{ p: 1.5, mb: 2.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>{filter}</Paper>
+        <Paper variant="outlined" className="nicht-drucken" sx={{ px: 1.5, py: 1.25, mb: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'flaechen.band' }}>{filter}</Paper>
       )}
       {children}
     </Box>
@@ -65,7 +67,7 @@ export function Abschnitt({ titel, aktion, children, sx, kein_rand }: { titel?: 
   return (
     <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', ...sx }}>
       {(titel || aktion) && (
-        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ px: 2, pt: 1.75, pb: kein_rand ? 1.75 : 1, ...(kein_rand ? { borderBottom: 1, borderColor: 'divider' } : {}) }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ px: 2, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider', mb: kein_rand ? 0 : 0.5 }}>
           {typeof titel === 'string' ? <Typography variant="h4" component="h2">{titel}</Typography> : titel}
           {aktion}
         </Stack>

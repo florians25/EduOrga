@@ -17,6 +17,7 @@ import { useStudio, zustand } from '@/kern/zustand';
 import { AnsichtRahmen, Ladeanzeige } from '@/komponenten/ansicht';
 import { formular, frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
+import { Monogramm, RECHTLICHER_HINWEIS, SLOGAN } from '@/komponenten/marke';
 import { VersionsInfo } from '@/shell/updatehinweis';
 import { hochladen, importBerichtZeigen, oeffnenMit, type ImportBericht } from './aktionen';
 
@@ -45,6 +46,13 @@ const useStile = makeStyles({
   knoepfe: { display: 'flex', gap: '8px', marginTop: '16px' },
   liste: { maxWidth: '960px' },
   haken: { display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '16px' },
+  ueberMarke: { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' },
+  slogan: { color: tokens.colorNeutralForeground3, marginTop: '2px' },
+  rechtlich: {
+    maxWidth: '720px', margin: '0 0 16px 0', padding: '12px 14px', borderRadius: tokens.borderRadiusMedium, fontSize: tokens.fontSizeBase300,
+    border: `1px solid ${tokens.colorNeutralStroke1}`, borderLeft: `3px solid ${tokens.colorBrandStroke1}`, backgroundColor: tokens.colorNeutralBackground2,
+    color: tokens.colorNeutralForeground2, lineHeight: '20px',
+  },
 });
 
 function Eigenschaften({ zeilen }: { zeilen: [string, ReactNode][] }) {
@@ -282,10 +290,17 @@ function SeiteUeber() {
   const admin = useStudio((x) => x.benutzer?.rolle === 'Admin');
   return (
     <>
-      <div className={s.kopf}><h2 className={s.h2}>Über UntPlan Studio</h2></div>
-      <Eigenschaften zeilen={[['Anwendung', (system?.anwendung || 'UntPlan Studio').replace(' (Beta)', '')], ['Version', system?.version || '']]} />
+      <div className={s.ueberMarke}>
+        <Monogramm groesse={48} />
+        <div>
+          <h2 className={s.h2}>EduOrga Studio</h2>
+          <div className={s.slogan}>{SLOGAN}</div>
+        </div>
+      </div>
+      <Eigenschaften zeilen={[['Anwendung', (system?.anwendung || 'EduOrga Studio').replace(' (Beta)', '')], ['Version', system?.version || '']]} />
       {admin ? <div className={s.eigenschaften}><VersionsInfo /></div> : null}
       <p className={s.einleitung} style={{ marginTop: 16 }}>Stunden-, Kurs- und Vertretungsplanung für Schulen im Browser. Alle Berechnungen (Planung, Optimierung, Vertretungsvorschläge, Auswertungen) laufen auf dem Server; Schuldateien (.up) lassen sich jederzeit herunterladen und wieder hochladen.</p>
+      <div className={s.rechtlich} role="note" aria-label="Rechtlicher Hinweis">{RECHTLICHER_HINWEIS}</div>
       <p className={s.leise}>Schrift: IBM Plex Sans (SIL Open Font License 1.1). Oberfläche mit Fluent UI (MIT-Lizenz). <Link href="/api/system" target="_blank">Systeminformation</Link></p>
     </>
   );
@@ -321,7 +336,7 @@ export default function DateiSeite({ p }: AnsichtProps) {
           <TabList vertical selectedValue={seite} onTabSelect={(_, x) => wechseln(String(x.value))}>
             <Tab value="konto">Konto</Tab>
             {admin ? <Tab value="benutzer">Benutzer</Tab> : null}
-            <Tab value="ueber">Über UntPlan Studio</Tab>
+            <Tab value="ueber">Über EduOrga Studio</Tab>
           </TabList>
         </nav>
         <div className={s.seite} data-seite={seite}>{seiten[seite] || seiten.oeffnen}</div>

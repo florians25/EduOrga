@@ -52,7 +52,7 @@ export const NAVIGATION: NavGruppe[] = [
     id: 'vertretung-ausgabe', titel: 'Auswertung und Ausgabe', modus: 'vertretung', symbol: 'ausgabe', eintraege: [
       { ref: 'vertretung.ausgabe', text: 'Vertretungsplan ausgeben' },
       { ref: 'vertretung.statistik', text: 'Statistik und Abrechnung' },
-      { ref: 'vertretung.untplanweb', text: 'UntPlan Web' },
+      { ref: 'vertretung.untplanweb', text: 'EduOrga Web' },
       { ref: 'vertretung.formate', text: 'Listenansichten' },
       { ref: 'vertretung.einstellungen', text: 'Einstellungen' },
     ],
@@ -138,7 +138,7 @@ export const NAVIGATION: NavGruppe[] = [
   {
     id: 'austausch', titel: 'Datenaustausch', symbol: 'austausch', eintraege: [
       { ref: 'eingabe.importexport', text: 'Import und Export' },
-      { ref: 'start.untplanweb', text: 'UntPlan Web' },
+      { ref: 'start.untplanweb', text: 'EduOrga Web' },
       { ref: 'eingabe.bal', text: 'BAL-Import' },
     ],
   },

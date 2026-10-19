@@ -1,4 +1,4 @@
-// Rückmeldungen an UntPlan (Abwesenheit, Raumbuchung, Prüfung): Text und Status.
+// Rückmeldungen an EduOrga Studio (Abwesenheit, Raumbuchung, Prüfung): Text und Status.
 import { Plakette } from '../../components/Bausteine';
 import { datumKurz } from '../../lib/datum';
 

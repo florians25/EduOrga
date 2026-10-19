@@ -1,0 +1,177 @@
+/* EduOrga Studio: Studio-eigene Ergänzungen zu design/tokens.css (nach tokens.css eingebunden, siehe main.tsx).
+   1. Dunkles Thema der --up-Rollen in Petrol (tokens.css trägt dort noch die frühere Marine-Belegung).
+   2. Modusfarbe: Stundenplanung Petrol, Vertretungsplanung Indigo (data-modus am <html>) – Moduswahl in der Kopfleiste,
+      Linie unter der Kopfleiste, Markierung in der Navigation und Bereichszeile im Seitenkopf.
+   3. Dunkle Seitenleiste (Primärfarbe) mit weißer Schrift. */
+
+:root {
+  color-scheme: light;
+  --edo-kopflinie: #c9d1db;
+  --edo-navi: #164c55;
+  --edo-navi-hover: #1e5a63;
+  --edo-navi-gewaehlt: #24656e;
+  --edo-navi-text: #e3eef0;
+  --edo-navi-text-2: #a9c3c7;
+  --edo-navi-linie: rgba(255, 255, 255, .14);
+  --edo-kopf-flaeche: #eef1f4;   /* Seitenkopf, Werkzeugleiste */
+  --edo-bereich-kopf: #e6eaee;   /* Kopfzeile der Bereiche (Arbeitsplätze, Nebenbereich) */
+  --edo-karte-schatten: 0 1px 2px rgba(21, 38, 43, .08);
+
+  /* Modusfarben */
+  --edo-stundenplan: #28747a;
+  --edo-stundenplan-flaeche: #e3eff0;
+  --edo-stundenplan-navi: #7fc9c9;
+  --edo-vertretung: #3b4a8f;
+  --edo-vertretung-flaeche: #e7e9f4;
+  --edo-vertretung-navi: #aab5f0;
+  --edo-modus: var(--edo-stundenplan);
+  --edo-modus-flaeche: var(--edo-stundenplan-flaeche);
+  --edo-modus-navi: var(--edo-stundenplan-navi);
+  --up-aenderung-flaeche: #f1edfb;
+}
+:root[data-modus="vertretung"] {
+  --edo-modus: var(--edo-vertretung);
+  --edo-modus-flaeche: var(--edo-vertretung-flaeche);
+  --edo-modus-navi: var(--edo-vertretung-navi);
+}
+
+/* Dunkel (fest oder wie das System) */
+:root[data-thema="dunkel"] {
+  color-scheme: dark;
+  --up-text: #e7ecee;
+  --up-text-2: #c4cdd2;
+  --up-text-3: #9ba8b0;
+  --up-hintergrund: #10161a;
+  --up-flaeche: #182126;
+  --up-flaeche-2: #141b1f;
+  --up-flaeche-hover: #202b31;
+  --up-rand: #37434b;
+  --up-rand-stark: #4b5962;
+  --up-linie: #2a343a;
+  --up-primaer: #4f9298;
+  --up-primaer-hover: #66a3a8;
+  --up-akzent: #7fb3b8;
+  --up-primaer-flaeche: #173338;
+  --up-primaer-rand: #1d5f66;
+  --up-fokus: #7fb3b8;
+  --up-entfall: #f07468;
+  --up-entfall-flaeche: #3a1c19;
+  --up-aenderung: #a993f0;
+  --up-aenderung-flaeche: #2a2347;
+  --up-pruefung: #e0a03c;
+  --up-pruefung-flaeche: #33260f;
+  --up-termin: #e07ab8;
+  --up-termin-flaeche: #35192b;
+  --up-frei: #7ab3e0;
+  --up-frei-flaeche: #15283a;
+  --up-ok: #5cc48a;
+  --up-ok-flaeche: #12291c;
+  --up-warnung: #e0a03c;
+  --up-warnung-flaeche: #33260f;
+  --edo-kopflinie: #37434b;
+  --edo-navi: #0e2a2f;
+  --edo-navi-hover: #163a40;
+  --edo-navi-gewaehlt: #1d4950;
+  --edo-navi-text: #dfeaec;
+  --edo-navi-text-2: #93aeb3;
+  --edo-navi-linie: rgba(255, 255, 255, .10);
+  --edo-kopf-flaeche: #1d262c;
+  --edo-bereich-kopf: #212b31;
+  --edo-karte-schatten: none;
+  --edo-stundenplan: #4f9298;
+  --edo-stundenplan-flaeche: #173338;
+  --edo-stundenplan-navi: #7fc9c9;
+  --edo-vertretung: #7f8fe0;
+  --edo-vertretung-flaeche: #232a4d;
+  --edo-vertretung-navi: #aab5f0;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-thema="auto"] {
+    color-scheme: dark;
+    --up-text: #e7ecee;
+    --up-text-2: #c4cdd2;
+    --up-text-3: #9ba8b0;
+    --up-hintergrund: #10161a;
+    --up-flaeche: #182126;
+    --up-flaeche-2: #141b1f;
+    --up-flaeche-hover: #202b31;
+    --up-rand: #37434b;
+    --up-rand-stark: #4b5962;
+    --up-linie: #2a343a;
+    --up-primaer: #4f9298;
+    --up-primaer-hover: #66a3a8;
+    --up-akzent: #7fb3b8;
+    --up-primaer-flaeche: #173338;
+    --up-primaer-rand: #1d5f66;
+    --up-fokus: #7fb3b8;
+    --up-entfall: #f07468;
+    --up-entfall-flaeche: #3a1c19;
+    --up-aenderung: #a993f0;
+    --up-aenderung-flaeche: #2a2347;
+    --up-pruefung: #e0a03c;
+    --up-pruefung-flaeche: #33260f;
+    --up-termin: #e07ab8;
+    --up-termin-flaeche: #35192b;
+    --up-frei: #7ab3e0;
+    --up-frei-flaeche: #15283a;
+    --up-ok: #5cc48a;
+    --up-ok-flaeche: #12291c;
+    --up-warnung: #e0a03c;
+    --up-warnung-flaeche: #33260f;
+    --edo-kopflinie: #37434b;
+    --edo-navi: #0e2a2f;
+    --edo-navi-hover: #163a40;
+    --edo-navi-gewaehlt: #1d4950;
+    --edo-navi-text: #dfeaec;
+    --edo-navi-text-2: #93aeb3;
+    --edo-navi-linie: rgba(255, 255, 255, .10);
+    --edo-kopf-flaeche: #1d262c;
+    --edo-bereich-kopf: #212b31;
+    --edo-karte-schatten: none;
+    --edo-stundenplan: #4f9298;
+    --edo-stundenplan-flaeche: #173338;
+    --edo-vertretung: #7f8fe0;
+    --edo-vertretung-flaeche: #232a4d;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Seitenleiste: Fluent Nav mit umgesetzten Farb-Variablen (gilt auch für die überlagernde Leiste im schmalen Fenster) */
+.edo-navi {
+  --colorNeutralBackground1: var(--edo-navi);
+  --colorNeutralBackground4: var(--edo-navi);
+  --colorNeutralBackground4Hover: var(--edo-navi-hover);
+  --colorNeutralBackground4Pressed: var(--edo-navi-gewaehlt);
+  --colorNeutralForeground1: #ffffff;
+  --colorNeutralForeground2: var(--edo-navi-text);
+  --colorNeutralForeground2Hover: #ffffff;
+  --colorNeutralForeground2Pressed: #ffffff;
+  --colorNeutralForeground2BrandSelected: #ffffff;
+  --colorNeutralForeground3: var(--edo-navi-text-2);
+  --colorNeutralForegroundDisabled: rgba(255, 255, 255, .38);
+  --colorCompoundBrandForeground1: var(--edo-modus-navi);
+  --colorCompoundBrandForeground1Hover: var(--edo-modus-navi);
+  --colorNeutralStroke2: var(--edo-navi-linie);
+  --colorStrokeFocus2: #ffffff;
+  background-color: var(--edo-navi) !important;
+  color: var(--edo-navi-text);
+  border-right: 0 !important;
+}
+.edo-navi [aria-current="page"] { background-color: var(--edo-navi-gewaehlt); color: #ffffff; }
+.edo-navi [aria-current="page"]:hover { background-color: var(--edo-navi-gewaehlt); }
+.edo-navi button[disabled], .edo-navi a[aria-disabled="true"] { color: rgba(255, 255, 255, .38); }
+.edo-navi ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .22); }
+.edo-navi * { scrollbar-color: rgba(255, 255, 255, .25) transparent; }
+
+/* Rollbalken dezent, im dunklen Thema dunkel */
+* { scrollbar-width: thin; scrollbar-color: var(--colorNeutralStroke1, #b4bec8) transparent; }
+
+/* Sichtbarer Fokus auch an eigenen Elementen (Tabellen, Raster, Karten) */
+:where(.ra-eintrag, .mu-stufe, [data-fokusring]):focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: 1px; }
+
+/* Moduswahl in der Kopfleiste: gewählter Modus in seiner Farbe, weiße Schrift */
+.edo-modus-tab[aria-selected="true"],
+.edo-modus-tab[aria-selected="true"]:hover,
+.edo-modus-tab[aria-selected="true"] .fui-Tab__content,
+.edo-modus-tab[aria-selected="true"] .fui-Tab__icon { color: #ffffff !important; }
+.edo-modus-tab[aria-selected="false"] .fui-Tab__icon { color: var(--colorNeutralForeground3); }

@@ -1,5 +1,5 @@
 // Wochenraster mit echtem Zeitmaßstab: Höhe proportional zur Uhrzeit, gerade 1-px-Linien, Pausen als schmale graue Bänder (mit
-// Pausenaufsichten), Spaltenköpfe linksbündig „Mo 02.11.“, heutiger Tag mit Marine-Linie oben und sehr leichter Tönung, Jetzt-Linie 1 px
+// Pausenaufsichten), Spaltenköpfe linksbündig „Mo 02.11.“, heutiger Tag mit Petrol-Linie oben und sehr leichter Tönung, Jetzt-Linie 1 px
 // mit Uhrzeit an der Zeitachse. Ferien und freie Tage als Fläche, ganztägige Termine und
 // Hinweise im Tageskopf, eigene Abwesenheiten als graue Fläche hinter den Stunden.
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -8,6 +8,7 @@ import LockOutlined from '@mui/icons-material/LockOutlined';
 import type { Aufsicht, Karte, Tageskopf, Wochenplan, Zeit } from '../../api/types';
 import { heuteIso, hhmm, jetztMinuten, minuten, wochentagKurz, datumKurz } from '../../lib/datum';
 import { Kachel } from './Kachel';
+import { DICHTE, useDarstellung } from './darstellung';
 import { artVon, aufsichtOrt, aufsichtTitel, aufsichtVertretung, freiText, spuren, tagHinweise, vergangen, type Art } from './logik';
 
 export type Aufsichtsmodus = 'normal' | 'kompakt' | 'aus';
@@ -85,6 +86,8 @@ function useJetzt() {
 
 export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan: Wochenplan; onOpen: (k: Karte, liste: Karte[]) => void; optionen?: RasterOptionen; kopfZusatz?: (t: Tageskopf, i: number) => ReactNode }) {
   const t = useTheme();
+  const { d } = useDarstellung();
+  const luecke = DICHTE[d.dichte].luecke;
   const { nurTag = null, kartenZeiten = false, aufsichten: aufsichtModus = 'normal', abwesenheiten = true, fokus, oben = 0 } = optionen;
   const jetzt = useJetzt();
   const zeiten = useMemo(() => plan.zeitraster.filter(z => z.beginn && z.ende), [plan.zeitraster]);
@@ -209,7 +212,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
                 const { spur, anzahl } = lage.get(k)!;
                 const sv = mass.stunde.get(k.von), sb = mass.stunde.get(k.bis) ?? mass.stunde.get(Math.min(k.bis, zeiten[zeiten.length - 1].nr)) ?? sv;
                 if (!sv || !sb) return null;
-                const y0 = sv.y + 2, h = sb.y + sb.h - sv.y - 4;
+                const y0 = sv.y + Math.min(2, luecke), h = sb.y + sb.h - sv.y - 2 * Math.min(2, luecke);
                 const breite = 100 / anzahl;
                 const zeit = kartenZeiten && h >= 56 && (anzahl === 1 || spur === 0) ? `${sv.z!.beginn}–${sb.z!.ende}` : null;
                 const art = artVon(k, plan.typ);
@@ -218,7 +221,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
                   <Kachel key={j} k={k} typ={plan.typ} hoehe={h} zeit={zeit} gedimmt={gedimmt} vorbei={k.status === 'regulaer' && vergangen(k, jetzt.tag, jetzt.min)}
                     gross={nurTag !== null}
                     onOpen={k.ereignis ? undefined : x => onOpen(x, alleKarten)}
-                    style={{ position: 'absolute', top: y0, height: h, left: `calc(${spur * breite}% + 3px)`, width: `calc(${breite}% - 6px)`, zIndex: 2 }} />
+                    style={{ position: 'absolute', top: y0, height: h, left: `calc(${spur * breite}% + ${luecke}px)`, width: `calc(${breite}% - ${2 * luecke}px)`, zIndex: 2 }} />
                 );
               })}
               {/* Pausenaufsichten */}

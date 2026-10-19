@@ -30,31 +30,34 @@ extension Color {
     }
 }
 
-/// Farben von UntPlan Next, jeweils als dynamische Farbe für hell und dunkel. Marke **Petrol** (#0b5d57, heller
-/// #138a80, im Dunkelmodus #3fb3a6), Neutraltöne Schiefer, Seiten- und Kartenflächen aus dem System (passen zu Listen,
-/// Blättern und Liquid Glass), fachliche Statusfarben mit heller Fläche. Die Statusfarben sind bewusst weit vom Petrol
-/// entfernt: Änderung/Vertretung Violett, Termin Magenta, Prüfung Bernstein, Entfall Rot, Ferien Blau. Im Dunkelmodus
-/// haben sie eine aufgehellte Variante, damit Text und Linien auf dunklen Flächen lesbar bleiben.
+/// Farben von EduOrga, jeweils als dynamische Farbe für hell und dunkel (Marke siehe design/MARKE.md). Primärfarbe
+/// **Petrol** #164C55 (Logo, hervorgehobene Flächen), Akzentfarbe #28747A (Knöpfe, Auswahl, Links, Fokus, Jetzt-Linie –
+/// 5,4 : 1 auf Weiß; im Dunkelmodus #5FB0B5, 6,8 : 1 auf dunklem Grund), Seitenhintergrund #F5F7F8, Text #24363B.
+/// Fachliche Statusfarben wie in design/tokens.css mit heller Fläche und bewusst weit weg vom Petrol der Marke:
+/// Änderung/Vertretung Violett #6d4fc2, Termin Magenta #a3347c, Prüfung Bernstein, Entfall Rot, Ferien Blau. Im
+/// Dunkelmodus haben sie eine aufgehellte Variante, damit Text und Linien auf dunklen Flächen lesbar bleiben.
 enum Farben {
     // MARK: Marke
 
-    /// Primärfarbe Petrol (Knöpfe, aktive Navigation, Links, Auswahl, Jetzt-Linie)
-    static let akzent = Color(hell: 0x0B5D57, dunkel: 0x3FB3A6)
+    /// Akzentfarbe (Knöpfe, aktive Navigation, Links, Auswahl, Jetzt-Linie) – zugleich `AccentColor`
+    static let akzent = Color(hell: 0x28747A, dunkel: 0x5FB0B5)
     /// Helleres Petrol (Fortschritt, Ring, zweite Ebene)
-    static let akzentHell = Color(hell: 0x138A80, dunkel: 0x5CC9BC)
+    static let akzentHell = Color(hell: 0x4F9298, dunkel: 0x7FC9C9)
+    /// Primärfarbe der Marke (Logo, Kopf der Einrichtung, hervorgehobene Flächen mit weißer Schrift)
+    static let primaer = Color(hell: 0x164C55, dunkel: 0x1D5F66)
     /// Helle Fläche der Primärfarbe (Auswahl, Avatare, Hinweise)
-    static let primaerFlaeche = Color(hell: 0xE5F2F0, dunkel: 0x0F2A27)
-    /// Schrift auf Flächen in der Primärfarbe (Primärknopf)
-    static let aufAkzent = Color(hell: 0xFFFFFF, dunkel: 0x061A18)
+    static let primaerFlaeche = Color(hell: 0xEEF5F6, dunkel: 0x0F2A2E)
+    /// Schrift auf Flächen in der Akzentfarbe (Primärknopf)
+    static let aufAkzent = Color(hell: 0xFFFFFF, dunkel: 0x0C2C31)
     /// Rand der Primärfarbe (Auswahlrahmen)
-    static let primaerRand = Color(hell: 0xA6D3CD, dunkel: 0x1E544E)
+    static let primaerRand = Color(hell: 0xAED1D4, dunkel: 0x1E5258)
     /// Schrift auf gefüllten Status-Plaketten (Entfall, Vertretung …)
     static let aufStatus = Color(hell: 0xFFFFFF, dunkel: 0x0F1318)
 
     // MARK: Text
 
     /// Haupttext
-    static let text = Color(hell: 0x232A33, dunkel: 0xE6E9EE)
+    static let text = Color(hell: 0x24363B, dunkel: 0xE6E9EE)
     /// Zweittext (Lehrkraft, Klasse, Untertitel)
     static let text2 = Color(hell: 0x4D5866, dunkel: 0xB3BBC6)
     /// Hinweistext, Symbole in Listen, Zeitspalte
@@ -64,8 +67,13 @@ enum Farben {
 
     // MARK: Flächen
 
-    /// Seitenhintergrund (wie gruppierte Listen des Systems)
-    static let grund = Color(uiColor: .systemGroupedBackground)
+    /// Seitenhintergrund #F5F7F8 der Marke (dunkel: wie gruppierte Listen des Systems)
+    static let grund = Color(uiColor: UIColor { merkmale in
+        if merkmale.userInterfaceStyle == .dark {
+            return UIColor.systemGroupedBackground.resolvedColor(with: merkmale)
+        }
+        return UIColor(red: 0xF5 / 255.0, green: 0xF7 / 255.0, blue: 0xF8 / 255.0, alpha: 1)
+    })
     /// Karten, Kacheln, Raster (deckend – Inhalte liegen nie auf Glas)
     static let flaeche = Color(uiColor: .secondarySystemGroupedBackground)
     /// Leicht abgesetzte Fläche (Spaltenköpfe, Zeitspalte)
@@ -101,7 +109,7 @@ enum Farben {
     static let pruefungFlaeche = Color(hell: 0xFDF4E3, dunkel: 0x2A2010)
     /// Veranstaltung, Termin, Raumbuchung (Magenta – unterscheidbar von Änderung und Entfall)
     static let termin = Color(hell: 0xA3347C, dunkel: 0xEE8CC9)
-    static let terminFlaeche = Color(hell: 0xFBEEF6, dunkel: 0x341A2C)
+    static let terminFlaeche = Color(hell: 0xFAEEF5, dunkel: 0x341A2C)
     /// Ferien, unterrichtsfrei
     static let frei = Color(hell: 0x2F6F9F, dunkel: 0x79B0DC)
     static let freiFlaeche = Color(hell: 0xEDF4FA, dunkel: 0x132231)

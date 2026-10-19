@@ -1,13 +1,14 @@
 // Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten): schulweite Einstellung aus der Sitzung, als Kontext für
-// Kachel, Legende, Startseite, Übersicht und Stundendetails. Der Standard entspricht der sachlichen Grunddarstellung (Fachfarbe als
-// 8-px-Quadrat, neutrale Fläche #f6f8fa, feine Linie, Radius 3 px). Die Statusdarstellung (Linie, Schraffur, Durchstreichung,
-// Kürzel-Plaketten) bleibt in jeder Variante erhalten.
+// Kachel, Legende, Startseite, Übersicht und Stundendetails. Standard ist „Klassisch“: kompakte Karten, die die Zelle füllen, Fachfarbe als
+// Balken links mit leichter Tönung, Fach fett oben links, Raum oben rechts, Lehrkraft bzw. Klasse darunter; Änderungen und Prüfungen
+// zusätzlich in der hellen Statusfläche (Vertretung violett). Die Statusdarstellung (Linie, Schraffur, Durchstreichung, Kürzel-Plaketten)
+// bleibt in jeder Variante erhalten.
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Box } from '@mui/material';
 import type { Elemente } from '../../api/types';
 import { gueltigeFarbe } from './logik';
 
-export type Fachfarbe = 'quadrat' | 'balken-links' | 'balken-oben' | 'flaeche' | 'keine';
+export type Fachfarbe = 'quadrat' | 'balken-links' | 'balken-flaeche' | 'balken-oben' | 'flaeche' | 'keine';
 export type KartenFlaeche = 'neutral' | 'weiss' | 'getoent';
 export type Rahmen = 'fein' | 'kraeftig' | 'keiner';
 export type Dichte = 'kompakt' | 'normal' | 'grosszuegig';
@@ -36,19 +37,33 @@ export interface Kartendarstellung {
   kuerzel: KuerzelStil;
   /** Statuswörter (Entfall, Offen, Vertreten …) zusätzlich auf den Kacheln. */
   statuswoerter: boolean;
+  /** Geänderte Stunden und Prüfungen zusätzlich in der hellen Statusfläche (Änderung violett, Prüfung bernstein). */
+  statusflaeche: boolean;
 }
 
 export const STANDARD: Kartendarstellung = {
+  fachfarbe: 'balken-flaeche', balkenbreite: 4, deckkraft: 12, flaeche: 'weiss', rahmen: 'fein', eckenradius: 2, dichte: 'kompakt',
+  fach: 'kuerzel', raum: true, zeile2: true, zeile2Text: 'kuerzel', kuerzel: 'text', statuswoerter: false, statusflaeche: true,
+};
+
+/** Bisherige Grunddarstellung „Sachlich“ (Fachfarbe als Quadrat, neutrale Fläche) – als Vorlage weiter wählbar. */
+const SACHLICH: Kartendarstellung = {
   fachfarbe: 'quadrat', balkenbreite: 3, deckkraft: 12, flaeche: 'neutral', rahmen: 'fein', eckenradius: 3, dichte: 'normal',
-  fach: 'kuerzel', raum: true, zeile2: true, zeile2Text: 'kuerzel', kuerzel: 'umrandet', statuswoerter: false,
+  fach: 'kuerzel', raum: true, zeile2: true, zeile2Text: 'kuerzel', kuerzel: 'umrandet', statuswoerter: false, statusflaeche: false,
 };
 
 export const VORLAGEN: { id: string; name: string; hinweis: string; werte: Kartendarstellung }[] = [
-  { id: 'sachlich', name: 'Sachlich (Standard)', hinweis: 'Neutrale Fläche, Fachfarbe als kleines Quadrat', werte: STANDARD },
-  { id: 'akzent', name: 'Akzentbalken', hinweis: 'Weiße Karte mit Fachfarbe als Balken am linken Rand', werte: { ...STANDARD, fachfarbe: 'balken-links', balkenbreite: 4, flaeche: 'weiss', eckenradius: 4, kuerzel: 'text' } },
-  { id: 'flaeche', name: 'Farbfläche', hinweis: 'Leicht getönte Fläche in der Fachfarbe', werte: { ...STANDARD, fachfarbe: 'flaeche', deckkraft: 14, flaeche: 'weiss', eckenradius: 4, kuerzel: 'gefuellt' } },
-  { id: 'minimal', name: 'Minimal', hinweis: 'Ohne Fachfarbe, weiße Fläche, kompakt', werte: { ...STANDARD, fachfarbe: 'keine', flaeche: 'weiss', eckenradius: 2, dichte: 'kompakt', kuerzel: 'text' } },
+  { id: 'klassisch', name: 'Klassisch (Standard)', hinweis: 'Kompakte Karten im Raster: Fachfarbe als Balken links mit leichter Tönung, Fach fett, Raum rechts, Änderungen hinterlegt', werte: STANDARD },
+  { id: 'sachlich', name: 'Sachlich', hinweis: 'Neutrale Fläche, Fachfarbe als kleines Quadrat', werte: SACHLICH },
+  { id: 'akzent', name: 'Akzentbalken', hinweis: 'Weiße Karte mit Fachfarbe als Balken am linken Rand', werte: { ...SACHLICH, fachfarbe: 'balken-links', balkenbreite: 4, flaeche: 'weiss', eckenradius: 4, kuerzel: 'text' } },
+  { id: 'flaeche', name: 'Farbfläche', hinweis: 'Leicht getönte Fläche in der Fachfarbe', werte: { ...SACHLICH, fachfarbe: 'flaeche', deckkraft: 14, flaeche: 'weiss', eckenradius: 4, kuerzel: 'gefuellt' } },
+  { id: 'minimal', name: 'Minimal', hinweis: 'Ohne Fachfarbe, weiße Fläche, kompakt', werte: { ...SACHLICH, fachfarbe: 'keine', flaeche: 'weiss', eckenradius: 2, dichte: 'kompakt', kuerzel: 'text' } },
 ];
+
+/** Fachfarbe als Balken (links bzw. oben, auch zusammen mit der Tönung)? */
+export const mitBalken = (f: Fachfarbe) => f === 'balken-links' || f === 'balken-oben' || f === 'balken-flaeche';
+/** Fachfarbe als Tönung der Fläche? */
+export const mitToenung = (f: Fachfarbe) => f === 'flaeche' || f === 'balken-flaeche';
 
 const gleich = (a: Kartendarstellung, b: Kartendarstellung) => (Object.keys(STANDARD) as (keyof Kartendarstellung)[]).every(k => a[k] === b[k]);
 /** Vorlage, der die Werte genau entsprechen (sonst null = „Eigene“). */
@@ -58,11 +73,11 @@ export const istStandard = (d: Kartendarstellung) => gleich(d, STANDARD);
 /** Werte aus der Sitzung bzw. vom Server mit Standardwerten ergänzt (ältere Server liefern nichts). */
 export const mitStandard = (d: Partial<Kartendarstellung> | null | undefined): Kartendarstellung => ({ ...STANDARD, ...(d ?? {}) });
 
-/** Abstände und Schriftgrößen je Dichte. */
-export const DICHTE: Record<Dichte, { px: number; py: number; fach: number; zeile: number; zeilenhoehe: number; kopf: number }> = {
-  kompakt: { px: 6, py: 3, fach: 12, zeile: 11, zeilenhoehe: 16, kopf: 16 },
-  normal: { px: 8, py: 5, fach: 13, zeile: 12, zeilenhoehe: 18, kopf: 17 },
-  grosszuegig: { px: 10, py: 7, fach: 14, zeile: 13, zeilenhoehe: 19, kopf: 19 },
+/** Abstände und Schriftgrößen je Dichte; luecke = Abstand der Karte zum Rand der Rasterzelle (kompakt: Karten füllen die Zelle). */
+export const DICHTE: Record<Dichte, { px: number; py: number; fach: number; zeile: number; zeilenhoehe: number; kopf: number; luecke: number }> = {
+  kompakt: { px: 6, py: 3, fach: 13, zeile: 12, zeilenhoehe: 16, kopf: 17, luecke: 1 },
+  normal: { px: 8, py: 5, fach: 13, zeile: 12, zeilenhoehe: 18, kopf: 17, luecke: 3 },
+  grosszuegig: { px: 10, py: 7, fach: 14, zeile: 13, zeilenhoehe: 19, kopf: 19, luecke: 4 },
 };
 
 /** Langnamen der Elemente (für „Name“ statt Kürzel). */
@@ -103,7 +118,7 @@ export function nameVon(namen: Namen | null, art: 'lehrer' | 'klassen' | 'raeume
 /** Breite der Fachmarke samt Abstand (Einzug der Zeilen darunter). */
 export function fachMarkeEinzug(d: Kartendarstellung, groesse: number, abstand: number) {
   if (d.fachfarbe === 'keine') return 0;
-  return (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben' ? Math.max(3, d.balkenbreite) : groesse) + abstand;
+  return (mitBalken(d.fachfarbe) ? Math.max(3, d.balkenbreite) : groesse) + abstand;
 }
 
 /**
@@ -114,7 +129,7 @@ export function FachMarke({ farbe, groesse = 8, sx }: { farbe: string | null | u
   const { d } = useDarstellung();
   const f = gueltigeFarbe(farbe) ?? (farbe && /^(rgba?|hsla?|color)\(/.test(farbe) ? farbe : null);
   if (d.fachfarbe === 'keine') return null;
-  if (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben')
+  if (mitBalken(d.fachfarbe))
     return <Box component="span" aria-hidden data-fachmarke="balken" sx={{ display: 'inline-block', width: Math.max(3, d.balkenbreite), height: Math.round(groesse * 2), borderRadius: '1px', flex: 'none', alignSelf: 'center',
       bgcolor: f ?? 'transparent', border: f ? 0 : 1, borderColor: 'text.disabled', ...sx }} />;
   return <Box component="span" aria-hidden data-fachmarke="quadrat" sx={{ display: 'inline-block', width: groesse, height: groesse, borderRadius: '1px', flex: 'none', bgcolor: f ?? 'transparent',

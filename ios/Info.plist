@@ -18,7 +18,7 @@
 		</dict>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Die Kamera wird verwendet, um Fotos als Anhang an eine Mitteilung zu hängen.</string>
+	<string>Die Kamera wird verwendet, um den QR-Code Ihrer Schule für die Einrichtung zu scannen und Fotos als Anhang an eine Mitteilung zu hängen.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

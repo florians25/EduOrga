@@ -1,5 +1,5 @@
-// Administration: Übersicht & Synchronisation (Verbindung mit UntPlan, Datenstand, Schule, Version & Updates), Nachrichten zum Tag,
-// Freie Tage & Ferien, Import, Export, Aktive Benutzer, Zugriff ent-/sperren, Über UntPlan, Rechte und Rollen, Benutzer, Personen & Konten,
+// Administration: Übersicht & Synchronisation (Verbindung mit EduOrga Studio, Datenstand, Schule, Version & Updates), Nachrichten zum Tag,
+// Freie Tage & Ferien, Import, Export, Aktive Benutzer, Zugriff ent-/sperren, Über EduOrga, Rechte und Rollen, Benutzer, Personen & Konten,
 // Zuordnungsgruppen, Rückmeldungen, Prüfungssperren, Verspätungen & Fehlzeiten, Ansichtseinstellungen, Darstellung der Stundenkarten,
 // Monitoransichten, Protokoll.
 import { lazy, Suspense, useState, type ReactNode } from 'react';
@@ -38,13 +38,13 @@ const Wartung = lazy(() => import('./Wartung'));
 const Stundenkarten = lazy(() => import('./Stundenkarten'));
 
 const BEREICHE: { id: string; text: string; admin: boolean; recht?: string }[] = [
-  { id: 'sync', text: 'Übersicht & Synchronisation', admin: true }, { id: 'nachrichten', text: 'Nachrichten zum Tag', admin: false },
+  { id: 'sync', text: 'System & Datenabgleich', admin: true }, { id: 'nachrichten', text: 'Nachrichten zum Tag', admin: false },
   { id: 'freietage', text: 'Freie Tage & Ferien', admin: true }, { id: 'import', text: 'Import', admin: true, recht: 'admin.import' },
   { id: 'export', text: 'Export', admin: true }, { id: 'aktive', text: 'Aktive Benutzer', admin: true, recht: 'admin.wartung' },
-  { id: 'zugriff', text: 'Zugriff ent-/sperren', admin: true, recht: 'admin.wartung' }, { id: 'ueber', text: 'Über UntPlan', admin: true, recht: 'admin.wartung' },
+  { id: 'zugriff', text: 'Wartungsmodus', admin: true, recht: 'admin.wartung' }, { id: 'ueber', text: 'Über EduOrga', admin: true, recht: 'admin.wartung' },
   { id: 'rechte', text: 'Rechte und Rollen', admin: true }, { id: 'benutzer', text: 'Benutzer', admin: true, recht: 'admin.benutzer' },
   { id: 'personen', text: 'Personen & Konten', admin: true, recht: 'admin.benutzer' }, { id: 'zuordnung', text: 'Zuordnungsgruppen', admin: true },
-  { id: 'rueckmeldungen', text: 'Rückmeldungen', admin: true }, { id: 'sperren', text: 'Prüfungssperren', admin: true },
+  { id: 'rueckmeldungen', text: 'Rückmeldungen an Studio', admin: true }, { id: 'sperren', text: 'Prüfungssperren', admin: true },
   { id: 'verspaetung', text: 'Verspätungen & Fehlzeiten', admin: true }, { id: 'ansicht', text: 'Ansichtseinstellungen', admin: true },
   { id: 'stundenkarten', text: 'Darstellung der Stundenkarten', admin: true },
   { id: 'monitore', text: 'Monitoransichten', admin: true }, { id: 'protokoll', text: 'Protokoll', admin: true },
@@ -63,9 +63,9 @@ export function KopierFeld({ wert, anzeige, label }: { wert: string; anzeige?: s
 }
 export function Karte({ titel, aktion, children, sx }: { titel?: ReactNode; aktion?: ReactNode; children: ReactNode; sx?: object }) {
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, ...sx }}>
-      {(titel || aktion) && <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}><Typography variant="h3" sx={{ flex: 1 }}>{titel}</Typography>{aktion}</Stack>}
-      {children}
+    <Paper variant="outlined" sx={{ overflow: 'hidden', ...sx }}>
+      {(titel || aktion) && <Stack direction="row" alignItems="center" gap={1} sx={{ px: { xs: 2, sm: 2.5 }, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>{aktion}</Stack>}
+      <Box sx={{ p: { xs: 2, sm: 2.5 } }}>{children}</Box>
     </Paper>
   );
 }
@@ -89,7 +89,7 @@ export default function Admin({ teile }: SeitenProps) {
       { name: 'aktiv', typ: 'schalter', label: 'Prüfungssperren aktivieren' },
       { name: 'maxProTag', typ: 'zahl', label: 'Höchstens Prüfungen je Klasse und Tag', max: 10 }, { name: 'maxProWoche', typ: 'zahl', label: 'Höchstens Prüfungen je Klasse und Woche', max: 20 },
       { name: 'leitungAusnehmen', typ: 'schalter', label: 'Schulleitung und Administration von den Sperren ausnehmen' },
-      { typ: 'hinweis', text: 'Gezählt werden Klausuren aus UntPlan und noch nicht übernommene Prüfungen aus UntPlanWeb. 0 = keine Grenze.' }]} />,
+      { typ: 'hinweis', text: 'Gezählt werden Klausuren aus EduOrga Studio und noch nicht übernommene Prüfungen aus EduOrga Web. 0 = keine Grenze.' }]} />,
     verspaetung: () => <Einstellung bereich="verspaetung" titel="Verspätungen und vorzeitiges Gehen" felder={[
       { name: 'abwesendAbMinuten', typ: 'zahl', label: 'Stunde gilt als Fehlstunde ab (Minuten)', max: 240, hilfe: '0 = nur ganz verpasste Stunden werden Fehlstunden. Beispiel 20: Wer 20 min oder mehr zu spät kommt, fehlt in dieser Stunde.' },
       { name: 'hinweisAbAnzahl', typ: 'zahl', label: 'Hinweis an die Klassenleitung ab (Verspätungen)', max: 100, hilfe: 'Im Fehlzeitenbericht und in der Klassenübersicht markiert; 0 = aus.' },
@@ -164,18 +164,18 @@ function Sync() {
       const zeile = (t: string, w: ReactNode) => <Stack direction="row" gap={2} sx={{ py: 0.75, borderTop: 1, borderColor: 'divider' }}><Typography variant="body2" color="text.secondary" sx={{ width: 130, flexShrink: 0 }}>{t}</Typography><Typography variant="body2" component="div">{w}</Typography></Stack>;
       return (
         <Stack gap={2.5}>
-          {frisch && <Alert severity="success"><b>UntPlanWeb ist eingerichtet.</b> Tragen Sie die Verbindungsdaten in UntPlan unter <em>UntPlanWeb → Einstellungen</em> ein. Der API-Schlüssel wird nur einmal angezeigt.</Alert>}
+          {frisch && <Alert severity="success"><b>EduOrga Web ist eingerichtet.</b> Tragen Sie die Verbindungsdaten in EduOrga Studio unter <em>EduOrga Web → Einstellungen</em> ein. Der API-Schlüssel wird nur einmal angezeigt.</Alert>}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', xl: 'repeat(2, minmax(0, 1fr))' }, gap: 2.5 }}>
-            <Karte titel="Verbindung mit UntPlan">
+            <Karte titel="Verbindung mit EduOrga Studio">
               <Stack gap={2}>
                 <KopierFeld label="Adresse" wert={u.adresse} />
                 <KopierFeld label="Schul-ID" wert={u.schulId || ''} />
                 {schluessel ? <KopierFeld label="API-Schlüssel" wert={schluessel} /> : <TextField size="small" label="API-Schlüssel" value={u.apiSchluesselGesetzt ? 'gespeichert (wird aus Sicherheitsgründen nicht angezeigt)' : 'noch nicht erzeugt'} slotProps={{ input: { readOnly: true } }} />}
                 <Box><Button variant="outlined" size="small" startIcon={<KeyRounded />} onClick={async () => {
-                  if (u.apiSchluesselGesetzt && !(await bestaetigen('Neuen API-Schlüssel erzeugen', 'Der bisherige Schlüssel wird ungültig. UntPlan muss danach mit dem neuen Schlüssel eingerichtet werden.', 'Neu erzeugen'))) return;
+                  if (u.apiSchluesselGesetzt && !(await bestaetigen('Neuen API-Schlüssel erzeugen', 'Der bisherige Schlüssel wird ungültig. EduOrga Studio muss danach mit dem neuen Schlüssel eingerichtet werden.', 'Neu erzeugen'))) return;
                   try { const r = await senden<{ apiSchluessel: string }>('/api/app/admin/apischluessel', {}); setSchluessel(r.apiSchluessel); toast('Neuer Schlüssel erzeugt.'); } catch (err) { fehler(err); }
                 }}>{u.apiSchluesselGesetzt ? 'Neuen Schlüssel erzeugen' : 'Schlüssel erzeugen'}</Button></Box>
-                <Typography variant="body2" color="text.secondary">In UntPlan unter <b>UntPlanWeb → Einstellungen</b> Adresse, Schul-ID und API-Schlüssel eintragen. Danach überträgt <b>Exportieren</b> die Daten; <b>Importieren</b> holt Abwesenheiten, Raumbuchungen und Klausuren ab.</Typography>
+                <Typography variant="body2" color="text.secondary">In EduOrga Studio unter <b>EduOrga Web → Einstellungen</b> Adresse, Schul-ID und API-Schlüssel eintragen. Danach überträgt <b>Exportieren</b> die Daten; <b>Importieren</b> holt Abwesenheiten, Raumbuchungen und Klausuren ab.</Typography>
               </Stack>
             </Karte>
             <Karte titel="Datenstand" aktion={<Button component="label" size="small" variant="outlined" startIcon={<UploadFileRounded />}>Paket hochladen<input type="file" accept=".json,application/json" hidden onChange={async e => {
@@ -187,7 +187,7 @@ function Sync() {
             }} /></Button>}>
               {p ? <Box>
                 {zeile('Empfangen', kurzZeit(p.empfangen))}
-                {zeile('Revision', <>{p.revision}{p.programmversion && <Typography component="span" variant="body2" color="text.secondary"> · UntPlan {p.programmversion}</Typography>}</>)}
+                {zeile('Revision', <>{p.revision}{p.programmversion && <Typography component="span" variant="body2" color="text.secondary"> · EduOrga Studio {p.programmversion}</Typography>}</>)}
                 {zeile('Schuljahr', p.schuljahr)}
                 {zeile('Zeitraum', p.von ? `${datumDe(p.von)} – ${datumDe(p.bis)}` : '–')}
                 {zeile('Stammdaten', `${p.klassen} Klassen, ${p.lehrer} Lehrkräfte, ${p.raeume} Räume`)}
@@ -223,13 +223,13 @@ function UpdateKarte() {
     <Karte titel="Version & Updates" aktion={<Tooltip title="Erneut prüfen"><IconButton onClick={() => setNeu(n => n + 1)} disabled={g.laedt}><RefreshRounded /></IconButton></Tooltip>}>
       <Geladen g={g}>{u => (
         <Stack gap={0.5}>
-          <Typography variant="body2">UntPlanWeb <b>{u.version}</b></Typography>
+          <Typography variant="body2">EduOrga Web <b>{u.version}</b></Typography>
           <Typography variant="body2" component="div">Neueste: {!u.pruefungAktiv ? <Typography component="span" variant="body2" color="text.secondary">Prüfung abgeschaltet</Typography>
             : u.fehler ? <Typography component="span" variant="body2" color="error">{u.fehler}</Typography>
             : u.updateVerfuegbar ? <><Plakette ton="pruefung">Update verfügbar</Plakette> {u.neueste} · <Link component="button" variant="body2" onClick={() => setHinweise(true)} sx={{ verticalAlign: 'baseline' }}>Versionshinweise</Link></>
             : <><Plakette ton="ok">aktuell</Plakette> <Typography component="span" variant="body2" color="text.secondary">neueste: {u.neueste ?? '–'}</Typography></>}</Typography>
           {u.geprueft && <Typography variant="caption" color="text.secondary">geprüft {new Date(u.geprueft).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</Typography>}
-          {u.mobil && <Typography variant="body2">UntPlanMobile {u.mobil.version}{u.mobil.updateVerfuegbar && <Plakette ton="pruefung" sx={{ ml: 1 }}>Update verfügbar</Plakette>}</Typography>}
+          {u.mobil && <Typography variant="body2">EduOrga Mobile {u.mobil.version}{u.mobil.updateVerfuegbar && <Plakette ton="pruefung" sx={{ ml: 1 }}>Update verfügbar</Plakette>}</Typography>}
           <Typography variant="body2">Datenbank {u.datenbank} <Typography component="span" variant="body2" color="text.secondary">· Schemastand {u.schemastand}</Typography></Typography>
           {u.angefordert && <Typography variant="body2">Angefordert: {u.angefordert} – wartet auf das Update-Skript</Typography>}
           <Box sx={{ mt: 1.5 }}>{u.installierbar ? (
@@ -251,7 +251,7 @@ function Rueckmeldungen() {
   const g = useLaden(sig => holen<(Meldung & { absender: string })[]>('/api/app/admin/rueckmeldungen', sig), []);
   return (
     <>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Rückmeldungen holt UntPlan beim Datenaustausch ab und quittiert sie nach der Übernahme. Der Status kann hier bei Bedarf manuell geändert werden.</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Rückmeldungen holt EduOrga Studio beim Datenaustausch ab und quittiert sie nach der Übernahme. Der Status kann hier bei Bedarf manuell geändert werden.</Typography>
       <Geladen g={g}>{l => (
         <Tabelle zeilen={l} schluessel={m => m.id} leer="Keine Rückmeldungen."
           spalten={[
@@ -285,7 +285,7 @@ function Nachrichten() {
   return (
     <>
       <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap" sx={{ mb: 2 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 280 }}>Nachrichten erscheinen im Vertretungsplan sowie wahlweise auf der Übersicht und den Monitoren. Tagestexte aus UntPlan werden zusätzlich angezeigt.</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 280 }}>Nachrichten erscheinen im Vertretungsplan sowie wahlweise auf der Übersicht und den Monitoren. Tagestexte aus EduOrga Studio werden zusätzlich angezeigt.</Typography>
         <Button variant="outlined" href="#/heute">Startseite ansehen</Button>
         <Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({})}>Nachricht</Button>
       </Stack>
@@ -328,7 +328,7 @@ function NachrichtFormular({ n, onClose, fertig }: { n: Partial<Nachricht>; onCl
         <TextField label="Text" value={w.text} onChange={e => setW({ ...w, text: e.target.value })} multiline minRows={4} required />
         <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
           <Stack sx={{ flex: 1 }}>{chk('aufgefaechert', 'Aufgefächert anzeigen')}{chk('oeffentlich', 'Öffentlich (RSS-Feed)')}</Stack>
-          <Stack sx={{ flex: 1 }}><Typography variant="overline" color="text.secondary">Anzeigebereich</Typography>{chk('startseite', 'Startseite „Heute“')}{chk('mobil', 'UntPlanMobile')}{chk('monitor', 'Monitore')}</Stack>
+          <Stack sx={{ flex: 1 }}><Typography variant="overline" color="text.secondary">Anzeigebereich</Typography>{chk('startseite', 'Startseite „Heute“')}{chk('mobil', 'EduOrga Mobile')}{chk('monitor', 'Monitore')}</Stack>
         </Stack>
       </Stack>
     </FormDialog>
@@ -415,19 +415,19 @@ function FreieTage() {
   return (
     <Stack gap={2.5}>
       <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
-        <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 280 }}>Ferien und Feiertage kommen aus UntPlan. Hier lassen sich zusätzliche unterrichtsfreie Tage eintragen (z. B. pädagogischer Tag, beweglicher Ferientag) – sie erscheinen sofort in allen Plänen, im Vertretungsplan und im Klassenbuch.</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 280 }}>Ferien und Feiertage kommen aus EduOrga Studio. Hier lassen sich zusätzliche unterrichtsfreie Tage eintragen (z. B. pädagogischer Tag, beweglicher Ferientag) – sie erscheinen sofort in allen Plänen, im Vertretungsplan und im Klassenbuch.</Typography>
         <Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({})}>Neu</Button>
       </Stack>
       <Geladen g={g}>{d => (
         <>
-          <Typography variant="h3">In UntPlanWeb eingetragen</Typography>
+          <Typography variant="h3">In EduOrga Web eingetragen</Typography>
           <Tabelle zeilen={d.eigene} schluessel={f => f.id} leer="Keine zusätzlichen freien Tage." onZeile={f => setForm(f)}
             spalten={[
               { id: 'name', kopf: 'Bezeichnung', zelle: f => <b>{f.name}</b> }, { id: 'art', kopf: 'Art', zelle: f => FREIART[f.art] ?? f.art },
               { id: 'von', kopf: 'Von', sortWert: f => f.von, zelle: f => datumDe(f.von) }, { id: 'bis', kopf: 'Bis', zelle: f => datumDe(f.bis) },
               { id: 'akt', kopf: '', rechts: true, zelle: f => <IconButton size="small" color="error" aria-label="Löschen" onClick={async e => { e.stopPropagation(); if (!(await bestaetigen('Freien Tag löschen', 'Diesen Eintrag löschen?'))) return; await loeschen(`/api/app/admin/freietage/${f.id}`); void g.neu(); }}><DeleteOutlineRounded fontSize="small" /></IconButton> },
             ]} />
-          <Typography variant="h3">Aus UntPlan übertragen</Typography>
+          <Typography variant="h3">Aus EduOrga Studio übertragen</Typography>
           <Tabelle zeilen={d.ausUntPlan} schluessel={(_, i) => i} leer="Keine Ferien übertragen."
             spalten={[{ id: 'name', kopf: 'Bezeichnung', zelle: f => f.name }, { id: 'art', kopf: 'Art', zelle: f => (f.feiertag ? 'Feiertag' : 'Ferien') },
               { id: 'von', kopf: 'Von', zelle: f => datumDe(f.von) }, { id: 'bis', kopf: 'Bis', zelle: f => datumDe(f.bis) }]} />
@@ -499,7 +499,7 @@ function Import({ teil }: { teil?: string }) {
                   { id: 'h', kopf: 'Hinweis', zelle: z => z.fehler ?? (z.vorhanden ? 'vorhanden' : 'neu') }]} />
             </Karte>
           )}
-          <Typography variant="body2" color="text.secondary">Stammdaten (Lehrkräfte, Fächer, Klassen, Räume) und Pausenaufsichten werden nicht hier importiert: sie kommen bei jeder Übertragung aus UntPlan.</Typography>
+          <Typography variant="body2" color="text.secondary">Stammdaten (Lehrkräfte, Fächer, Klassen, Räume) und Pausenaufsichten werden nicht hier importiert: sie kommen bei jeder Übertragung aus EduOrga Studio.</Typography>
           {ergebnis && (
             <FormDialog offen titel="Import abgeschlossen" onClose={() => setErgebnis(null)} links={ergebnis.neu.length > 0 && <Button startIcon={<DownloadRounded />} onClick={() => speichern(ergebnis.csv, `import-${heuteIso()}.csv`)}>Liste herunterladen (CSV)</Button>}>
               <Typography>{ergebnis.neu.length} Konten angelegt, {ergebnis.aktualisiert} aktualisiert, {ergebnis.uebersprungen} übersprungen.</Typography>
@@ -531,7 +531,7 @@ function Export() {
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
       {[['benutzer', 'Benutzer', 'Alle Benutzerkonten mit Rolle, Kürzel, E-Mail und letzter Anmeldung.'], ['rollen', 'Rechte und Rollen', 'Alle Rollen (Rechte-Profile) mit Basisrolle, Anzahl der Benutzer und Stufe je Recht.'],
-        ['nachrichten', 'Nachrichten zum Tag', 'Alle Nachrichten mit Zeitraum, Betreff und Anzeigebereich.'], ['rueckmeldungen', 'Rückmeldungen', 'Meldungen an UntPlan (Abwesenheiten, Buchungen, Klausuren).'],
+        ['nachrichten', 'Nachrichten zum Tag', 'Alle Nachrichten mit Zeitraum, Betreff und Anzeigebereich.'], ['rueckmeldungen', 'Rückmeldungen', 'Meldungen an EduOrga Studio (Abwesenheiten, Buchungen, Klausuren).'],
         ['protokoll', 'Protokoll', 'Die letzten 300 Einträge des Protokolls.']].map(([id, t, x]) => (
         <Karte key={id} titel={t}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{x}</Typography>

@@ -1,11 +1,11 @@
 {
-  "name": "UntPlan",
-  "short_name": "UntPlan",
-  "description": "Stundenplan, Vertretungsplan und Klassenbuch",
+  "name": "EduOrga Web",
+  "short_name": "EduOrga",
+  "description": "EduOrga Web – Stundenplan, Vertretungen, Klassenbuch und Kommunikation der Schule. Einfach mehr Schulalltag.",
   "start_url": "/#/heute",
   "display": "standalone",
-  "background_color": "#f4f6f8",
-  "theme_color": "#11264a",
+  "background_color": "#f5f7f8",
+  "theme_color": "#164c55",
   "lang": "de",
   "icons": [
     {

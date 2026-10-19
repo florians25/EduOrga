@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- EduOrga Website: Produkt-Website mit Ideen-, Wunsch- und Fehlerportal. Server (ASP.NET Core 8, SQLite) + Oberfläche (website/client). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>EduOrgaWebsite</RootNamespace>
+    <AssemblyName>EduOrgaWebsite</AssemblyName>
+    <Product>EduOrga Website</Product>
+    <Company>EduOrga</Company>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="EduOrgaWebsite.Tests" />
+  </ItemGroup>
+  <!--
+    Oberfläche (React + Fluent UI, Quelle in website/client) mit Vite nach wwwroot bauen. wwwroot ist reine Build-Ausgabe.
+    Abschalten mit -p:WebsiteOberflaecheBauen=false (Dockerfile und Tests bauen die Oberfläche getrennt).
+  -->
+  <PropertyGroup>
+    <WebsiteClient>$(MSBuildProjectDirectory)/../../client</WebsiteClient>
+    <WebsiteOberflaecheBauen Condition="'$(WebsiteOberflaecheBauen)' == ''">true</WebsiteOberflaecheBauen>
+  </PropertyGroup>
+  <Target Name="WebsiteOberflaecheBauen" BeforeTargets="BeforeBuild" Condition="'$(WebsiteOberflaecheBauen)' == 'true' And Exists('$(WebsiteClient)/package.json')"
+          Inputs="@(WebsiteClientQuelle)" Outputs="$(MSBuildProjectDirectory)/wwwroot/index.html" DependsOnTargets="WebsiteClientQuellenSammeln">
+    <Exec Command="npm --version" StandardOutputImportance="low" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="WebsiteNpmCode" />
+    </Exec>
+    <Error Condition="'$(WebsiteNpmCode)' != '0'" Text="Für die Oberfläche wird Node.js 22 (npm) benötigt: website/client mit „npm ci &amp;&amp; npm run build“ bauen oder -p:WebsiteOberflaecheBauen=false setzen." />
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(WebsiteClient)" Condition="!Exists('$(WebsiteClient)/node_modules')" />
+    <Exec Command="npm run build" WorkingDirectory="$(WebsiteClient)" />
+    <ItemGroup>
+      <Content Include="wwwroot/**" Exclude="@(Content)" />
+    </ItemGroup>
+  </Target>
+  <Target Name="WebsiteClientQuellenSammeln">
+    <ItemGroup>
+      <WebsiteClientQuelle Include="$(WebsiteClient)/src/**;$(WebsiteClient)/public/**;$(WebsiteClient)/index.html;$(WebsiteClient)/package.json;$(WebsiteClient)/vite.config.ts;$(WebsiteClient)/tsconfig.json" />
+    </ItemGroup>
+  </Target>
+</Project>

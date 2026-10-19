@@ -7,7 +7,7 @@ import { bestaetigen } from '../../lib/meldungen';
 async function externOeffnen(url: string) {
   let host = url;
   try { host = new URL(url).host; } catch { /* ungültig */ }
-  if (await bestaetigen('Externer Link', `Sie verlassen UntPlanWeb und öffnen eine externe Seite (${host}). Bitte prüfen Sie, ob Sie der Zielseite vertrauen:\n${url}`, 'Link öffnen'))
+  if (await bestaetigen('Externer Link', `Sie verlassen EduOrga Web und öffnen eine externe Seite (${host}). Bitte prüfen Sie, ob Sie der Zielseite vertrauen:\n${url}`, 'Link öffnen'))
     window.open(url, '_blank', 'noopener,noreferrer');
 }
 

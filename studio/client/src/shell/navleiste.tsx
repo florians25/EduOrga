@@ -1,6 +1,6 @@
 // Seitenleiste (Fluent Nav): Übersicht, Bereiche je Modus mit ihren Seiten, unten die Schuldateien.
 import {
-  NavCategory, NavCategoryItem, NavDrawer, NavDrawerBody, NavDrawerFooter, NavItem, NavSubItem, NavSubItemGroup, makeStyles, tokens,
+  NavCategory, NavCategoryItem, NavDrawer, NavDrawerBody, NavDrawerFooter, NavItem, NavSubItem, NavSubItemGroup, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { einstellungLesen, einstellungSchreiben } from '@/api/client';
@@ -12,9 +12,16 @@ import { NAVIGATION, aufloesen, passt, sichtbar, type NavPunkt } from './navigat
 import { useSeitenort } from './seitenort';
 
 const useStile = makeStyles({
-  nav: { width: '252px', borderRight: `1px solid ${tokens.colorNeutralStroke2}` },
-  koerper: { paddingTop: '8px' },
+  nav: { width: '252px' },
+  koerper: { paddingTop: '4px' },
+  modus: {
+    display: 'flex', alignItems: 'center', gap: '8px', margin: '10px 12px 6px 12px', padding: '6px 10px', borderRadius: '4px',
+    fontSize: '11px', fontWeight: tokens.fontWeightSemibold, letterSpacing: '0.06em', textTransform: 'uppercase',
+    color: '#ffffff', backgroundColor: 'rgba(255,255,255,0.08)', boxShadow: 'inset 3px 0 0 var(--edo-modus-navi)',
+  },
+  gruppe: { fontWeight: tokens.fontWeightMedium },
   unter: { fontSize: tokens.fontSizeBase300 },
+  fuss: { borderTop: '1px solid var(--edo-navi-linie)', paddingTop: '4px' },
 });
 
 const SCHMAL = '(max-width: 900px)';
@@ -81,7 +88,7 @@ export function NavLeiste() {
   };
 
   return (
-    <NavDrawer open={!eingeklappt} type={schmal ? 'overlay' : 'inline'} onOpenChange={(_, d) => { if (!d.open) setzen({ navEingeklappt: true }); }} className={s.nav} selectedValue={gewaehlt} selectedCategoryValue={gewaehlteGruppe}
+    <NavDrawer open={!eingeklappt} type={schmal ? 'overlay' : 'inline'} onOpenChange={(_, d) => { if (!d.open) setzen({ navEingeklappt: true }); }} className={mergeClasses('edo-navi', s.nav)} selectedValue={gewaehlt} selectedCategoryValue={gewaehlteGruppe}
       openCategories={offen} density="small" aria-label="Arbeitsbereiche"
       onNavCategoryItemToggle={(_, d) => {
         const id = String(d.value);
@@ -89,13 +96,14 @@ export function NavLeiste() {
         setGeschlossen(neu);
         void einstellungSchreiben('navigation.offen', Object.fromEntries(Object.entries(neu).map(([k, v]) => [k, !v])));
       }}>
+      <div className={s.modus} data-testid="modus-anzeige">{modus === 'vertretung' ? 'Vertretungsplanung' : 'Stundenplanung'}</div>
       <NavDrawerBody className={s.koerper}>
         <NavItem value={uebersicht.id} icon={<UebersichtSymbol />} disabled={!verfuegbar(uebersicht)} onClick={(e) => ausfuehren(uebersicht, e)} data-nav={uebersicht.id}>Übersicht</NavItem>
         {gruppen.map(({ g, eintraege }) => {
           const Sym = NAV_SYMBOLE[g.symbol];
           return (
             <NavCategory key={g.id} value={g.id}>
-              <NavCategoryItem icon={Sym ? <Sym /> : undefined} data-nav-gruppe={g.id}>{g.titel}</NavCategoryItem>
+              <NavCategoryItem icon={Sym ? <Sym /> : undefined} data-nav-gruppe={g.id} className={s.gruppe}>{g.titel}</NavCategoryItem>
               <NavSubItemGroup>
                 {eintraege.map((e) => (
                   <NavSubItem key={e.id} value={e.id} className={s.unter} title={e.hinweis} disabled={!verfuegbar(e)}
@@ -106,7 +114,7 @@ export function NavLeiste() {
           );
         })}
       </NavDrawerBody>
-      <NavDrawerFooter>
+      <NavDrawerFooter className={s.fuss}>
         <NavItem value="nav:dateien" icon={<DateienSymbol />} onClick={() => { if (schmal) setzen({ navEingeklappt: true }); void eintragAusfuehren({ befehl: 'datei.backstage', args: { seite: 'oeffnen' } }); }} data-nav="nav:dateien">Schuldateien</NavItem>
       </NavDrawerFooter>
     </NavDrawer>

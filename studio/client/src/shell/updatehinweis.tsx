@@ -160,7 +160,7 @@ export function UpdateBefehl({ befehl }: { befehl: string }) {
 
 function UpdateDialogInhalt({ stand, schliessen }: { stand: Versionsstand; schliessen: (w: boolean | null) => void }) {
   const s = useStile();
-  const titel = stand.updateVerfuegbar ? `Neue Version ${stand.neueste} verfügbar` : `UntPlan Studio ${stand.version}`;
+  const titel = stand.updateVerfuegbar ? `Neue Version ${stand.neueste} verfügbar` : `EduOrga Studio ${stand.version}`;
   return (
     <StandardDialog<boolean> titel={titel} breite="640px" beiKnopf={schliessen}
       knoepfe={stand.updateVerfuegbar ? [{ text: 'Hinweis ausblenden', wert: true }, { text: 'Schließen', wert: null, primaer: true }] : [{ text: 'Schließen', wert: null, primaer: true }]}
@@ -200,7 +200,7 @@ export function UpdateLeiste() {
     <MessageBar intent="info" layout="singleline" className={s.leiste} data-testid="update-hinweis">
       <MessageBarBody>
         <MessageBarTitle>Neue Version {stand.neueste} verfügbar</MessageBarTitle>
-        UntPlan Studio {stand.version} ist installiert.{' '}
+        EduOrga Studio {stand.version} ist installiert.{' '}
         <Link onClick={() => { void updateDialogZeigen(stand); }}>Versionshinweise ansehen</Link>
       </MessageBarBody>
       <MessageBarActions containerAction={
@@ -218,7 +218,7 @@ export function UpdatePunkt({ children }: { children: ReactNode }) {
   return <span className={s.punktRahmen}>{children}<span className={s.punkt} aria-hidden /></span>;
 }
 
-/** Versionsangaben für „Über UntPlan Studio“ (Administratoren): neueste Version, erneut prüfen, Hinweise. */
+/** Versionsangaben für „Über EduOrga Studio“ (Administratoren): neueste Version, erneut prüfen, Hinweise. */
 export function VersionsInfo() {
   const s = useStile();
   const { stand, laedt } = useVersionsstand();
@@ -236,7 +236,7 @@ export function VersionsInfo() {
             </MessageBarBody>
           </MessageBar>
         ) : stand.fehler ? <Text className={s.leise}>Neueste Version konnte nicht ermittelt werden ({stand.fehler}).</Text>
-        : <Text className={s.leise}>UntPlan Studio ist aktuell (neueste veröffentlichte Version: {stand.neueste ?? '–'}).</Text>}
+        : <Text className={s.leise}>EduOrga Studio ist aktuell (neueste veröffentlichte Version: {stand.neueste ?? '–'}).</Text>}
       {stand.pruefungAktiv ? (
         <div className={s.zeile} style={{ marginTop: 8 }}>
           <Button size="small" icon={<ArrowSync16Regular />} disabled={laedt} onClick={() => { void versionsstandLaden(true); }}>Erneut prüfen</Button>

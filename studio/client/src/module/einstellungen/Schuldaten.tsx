@@ -9,6 +9,7 @@ import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben, useStudio } from '@/kern/zustand';
 import { AnsichtRahmen, FussText, Werkzeug } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { pfad } from './kern';
 import './einstellungen.css';
 
@@ -38,7 +39,7 @@ export default function Schuldaten() {
   const setze = (n: string, w: unknown) => { setWerte((x) => ({ ...x, [n]: w })); setStatus('Geändert – mit „Übernehmen“ speichern.'); };
   const text = (n: string, breite?: number) => <Input size="small" style={breite ? { width: breite } : undefined} disabled={!schreiben} value={String(wert(n) ?? '')} onChange={(_, d) => setze(n, d.value)} />;
   const zahl = (n: string, min: number, max: number) => <Input size="small" type="number" min={min} max={max} style={{ width: 90 }} disabled={!schreiben} value={String(wert(n) ?? 0)} onChange={(_, d) => setze(n, Number(d.value))} />;
-  const datumFeld = (n: string) => <Input size="small" type="date" style={{ width: 160 }} disabled={!schreiben} value={String(wert(n) ?? '')} onChange={(_, d) => setze(n, d.value)} />;
+  const datumFeld = (n: string) => <DatumFeld size="small" disabled={!schreiben} wert={String(wert(n) ?? '')} beiAenderung={(datum) => setze(n, datum)} />;
   const haken = (n: string, t: string) => <Checkbox label={t} disabled={!schreiben} checked={!!wert(n)} onChange={(_, d) => setze(n, !!d.checked)} />;
   const auswahl = (n: string, optionen: { wert: string; text: string }[]) => (
     <Select size="small" disabled={!schreiben} value={String(wert(n) ?? '')} onChange={(_, d) => setze(n, d.value)}>

@@ -1,4 +1,4 @@
-// Klausuren: eigene und aus UntPlan Web übernommene (dort nur Aufsicht, Räume und „Aktiv“ änderbar).
+// Klausuren: eigene und aus EduOrga Web übernommene (dort nur Aufsicht, Räume und „Aktiv“ änderbar).
 import { Checkbox, Field, Input, makeStyles, tokens } from '@fluentui/react-components';
 import { useRef, useState } from 'react';
 import { api } from '@/api/client';
@@ -8,6 +8,7 @@ import { useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, Feld, FussText, Rechts, Werkzeug } from '@/komponenten/ansicht';
 import { dialogZeigen, frage, StandardDialog } from '@/komponenten/dialoge';
 import { Tabelle, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { heute, iso } from './kern';
 import './untplanweb.css';
 
@@ -38,10 +39,10 @@ function klausurDialog(k: Partial<Klausur>): Promise<KlausurDaten | null> {
     return (
       <StandardDialog<boolean> titel={k.id ? 'Klausur bearbeiten' : 'Neue Klausur'} breite="560px" knoepfe={[{ text: 'OK', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }]}
         beiKnopf={(x) => schliessen(x ? { ...w, von: Number(w.von), bis: Number(w.bis) } : null)}>
-        {importiert ? <p className={s.leise}>Aus UntPlan Web übernommen: Nur Aufsicht, Räume und „Aktiv“ lassen sich hier ändern.</p> : null}
+        {importiert ? <p className={s.leise}>Aus EduOrga Web übernommen: Nur Aufsicht, Räume und „Aktiv“ lassen sich hier ändern.</p> : null}
         <div className={s.formular}>
           {text('Bezeichnung', 'name', importiert)}
-          <Field label="Datum" orientation="horizontal"><Input type="date" value={w.datum} disabled={importiert} onChange={(_, d) => setze({ datum: d.value })} /></Field>
+          <Field label="Datum" orientation="horizontal"><DatumFeld size="medium" wert={w.datum} disabled={importiert} beiAenderung={(datum) => setze({ datum: datum })} /></Field>
           <Field label="Stunden" orientation="horizontal">
             <span className={s.zeile}>
               <Input type="number" min={1} style={{ width: 80 }} aria-label="Von Stunde" value={w.von} disabled={importiert} onChange={(_, d) => setze({ von: d.value })} />
@@ -71,7 +72,7 @@ export default function Klausuren() {
   const { daten, neuLaden } = useDaten(
     () => api.get<Klausur[]>(api.dok(`/untplanweb/klausuren?${von ? `von=${von}&` : ''}${bis ? `bis=${bis}` : ''}`)),
     [von, bis], { bereiche: ['Vertretung'], quelle: a.id });
-  const zeilen = (daten || []).map((k) => ({ ...k, aktivText: k.aktiv ? 'Ja' : 'Nein', herkunft: k.importiert ? 'UntPlan Web' : 'Eigene Eingabe' }));
+  const zeilen = (daten || []).map((k) => ({ ...k, aktivText: k.aktiv ? 'Ja' : 'Nein', herkunft: k.importiert ? 'EduOrga Web' : 'Eigene Eingabe' }));
 
   const neu = async () => { const d = await klausurDialog({}); if (d) { await api.post(api.dok('/untplanweb/klausuren'), d, { quelle: a.id }); await neuLaden(true); } };
   const bearbeiten = async (z: Klausur | null | undefined) => {
@@ -96,13 +97,13 @@ export default function Klausuren() {
           <Werkzeug text="Löschen" aktion={() => loeschen(t.current?.aktiveZeile())} />
         </> : null}
         <Rechts>
-          <Feld titel="Von"><Input type="date" size="small" value={von} onChange={(_, d) => setVon(d.value)} /></Feld>
-          <Feld titel="Bis"><Input type="date" size="small" value={bis} onChange={(_, d) => setBis(d.value)} /></Feld>
+          <Feld titel="Von"><DatumFeld size="small" wert={von} beiAenderung={(datum) => setVon(datum)} /></Feld>
+          <Feld titel="Bis"><DatumFeld size="small" wert={bis} beiAenderung={(datum) => setBis(datum)} /></Feld>
         </Rechts>
       </>}
       fuss={<>
         <span>{zeilen.length === 1 ? '1 Klausur' : `${zeilen.length} Klausuren`}</span>
-        <FussText rechts>Doppelklick bearbeitet. Bei Prüfungen aus UntPlan Web sind nur Aufsicht, Räume und „Aktiv“ änderbar.</FussText>
+        <FussText rechts>Doppelklick bearbeitet. Bei Prüfungen aus EduOrga Web sind nur Aufsicht, Räume und „Aktiv“ änderbar.</FussText>
       </>}>
       <Tabelle<Klausur> ref={t} name="upw-klausuren" zeilen={zeilen} id={(z) => z.id} zustandSchluessel="tabelle.untplanweb.klausuren" leerText="Keine Klausuren im gewählten Zeitraum."
         zeilenKlasse={(z) => (z.importiert ? 'upw-importiert' : z.aktiv ? '' : 'upw-erledigt')}

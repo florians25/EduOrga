@@ -8,7 +8,7 @@ import { SitzungsAnbieter } from './sitzung';
 import { Shell } from './Shell';
 import { Laden } from '../components/Seite';
 
-/** Einmalanmeldung für UntPlanMobile: nach der Anmeldung zurück zu /sso/… (nur relative Pfade). */
+/** Einmalanmeldung für EduOrga Mobile: nach der Anmeldung zurück zu /sso/… (nur relative Pfade). */
 const weiter = (() => {
   const w = new URLSearchParams(location.search).get('weiter');
   if (w && w.startsWith('/sso/') && !w.startsWith('//')) {

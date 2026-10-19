@@ -60,7 +60,7 @@ export function plaketten(k: Karte, typ: Typ): Plakette[] {
   else if (!verlegt && istZusatz(k)) p.push({ text: 'Zusatz', ton: 'aenderung', hinweis: k.zusaetzlich ? ZUSATZ_TEXT : k.art });
   else if (k.status === 'offen') p.push({ text: 'Offen', ton: 'aenderung', hinweis: 'Vertretung noch offen' });
   else if (k.status === 'buchung') p.push({ text: 'Buchung', ton: 'frei' });
-  else if (k.status === 'vorgemerkt') p.push({ text: 'Vorgemerkt', ton: 'neutral', hinweis: 'In UntPlanWeb beantragt, von UntPlan noch nicht übernommen' });
+  else if (k.status === 'vorgemerkt') p.push({ text: 'Vorgemerkt', ton: 'neutral', hinweis: 'In EduOrga Web beantragt, von EduOrga Studio noch nicht übernommen' });
   else if (lehrerAbwesend(k, typ)) p.push({ text: 'Vertreten', ton: 'neutral' });
   if ((k.abwesendeKlassen || []).length && !istEntfall(k, typ)) p.push({ text: k.abwesendText || 'abwesend', ton: 'neutral', hinweis: `${k.abwesendeKlassen.join(', ')} ${k.abwesendText || 'abwesend'}` });
   return p;

@@ -6,7 +6,7 @@ import { useDarstellung, type Kartendarstellung } from './darstellung';
 import { mischen } from './Kachel';
 
 export const ARTEN: { art: Art; text: string; hinweis: string }[] = [
-  { art: 'aenderung', text: 'Änderung', hinweis: 'Vertretung, Raum- oder Fachwechsel, Zusatzstunde – Linie in Petrol, neues Kürzel als petrolfarbene Plakette, das bisherige grau durchgestrichen davor, offene Vertretung als „?“' },
+  { art: 'aenderung', text: 'Änderung', hinweis: 'Vertretung, Raum- oder Fachwechsel, Zusatzstunde – violette Linie, neues Kürzel als violette Plakette, das bisherige grau durchgestrichen davor, offene Vertretung als „?“' },
   { art: 'entfall', text: 'Entfall', hinweis: 'Die Stunde fällt aus (rot durchgestrichen, fein schraffiert)' },
   { art: 'pruefung', text: 'Prüfung', hinweis: 'Klausur, Klassenarbeit oder Test' },
   { art: 'termin', text: 'Termin', hinweis: 'Veranstaltung oder Aktivität' },
@@ -19,7 +19,7 @@ export function unterrichtHinweis(d: Kartendarstellung) {
   const flaeche = d.flaeche === 'neutral' ? 'helle Kachel' : d.flaeche === 'getoent' ? 'leicht getönte Kachel' : 'weiße Kachel';
   const fach = {
     quadrat: 'die Fachfarbe steht als kleines Quadrat vor dem Fachkürzel', 'balken-links': 'die Fachfarbe steht als Balken am linken Rand',
-    'balken-oben': 'die Fachfarbe steht als Balken am oberen Rand', flaeche: 'die Kachel ist leicht in der Fachfarbe getönt', keine: 'ohne Fachfarbe',
+    'balken-flaeche': 'die Fachfarbe steht als Balken am linken Rand, die Kachel ist leicht getönt', 'balken-oben': 'die Fachfarbe steht als Balken am oberen Rand', flaeche: 'die Kachel ist leicht in der Fachfarbe getönt', keine: 'ohne Fachfarbe',
   }[d.fachfarbe];
   return `${flaeche}, ${fach}`;
 }
@@ -33,12 +33,14 @@ export function Muster({ art, gross = false }: { art: Art | 'regulaer'; gross?: 
   const s = pal.status;
   const papier = pal.background.paper;
   const stil: Record<string, object> = {
-    regulaer: { background: d.flaeche === 'neutral' ? pal.kachel.flaeche : papier, border: `1px solid ${d.rahmen === 'keiner' ? alpha(pal.text.primary, 0.12) : d.rahmen === 'kraeftig' ? alpha(pal.text.primary, 0.42) : pal.kachel.rand}`,
-      ...(d.fachfarbe === 'balken-links' ? { boxShadow: `inset ${Math.min(3, d.balkenbreite)}px 0 0 ${pal.primary.main}` } : d.fachfarbe === 'balken-oben' ? { boxShadow: `inset 0 ${Math.min(3, d.balkenbreite)}px 0 ${pal.primary.main}` }
-        : d.fachfarbe === 'flaeche' ? { background: alpha(pal.primary.main, d.deckkraft / 100) } : {}) },
-    aenderung: { background: papier, border: `1px solid ${s.aenderung.main}` },
+    regulaer: {
+      background: d.fachfarbe === 'flaeche' || d.fachfarbe === 'balken-flaeche' ? alpha(pal.primary.main, d.deckkraft / 100) : d.flaeche === 'neutral' ? pal.kachel.flaeche : papier,
+      border: `1px solid ${d.rahmen === 'keiner' ? alpha(pal.text.primary, 0.12) : d.rahmen === 'kraeftig' ? alpha(pal.text.primary, 0.42) : pal.kachel.rand}`,
+      ...(d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-flaeche' ? { boxShadow: `inset ${Math.min(3, d.balkenbreite)}px 0 0 ${pal.primary.main}` }
+        : d.fachfarbe === 'balken-oben' ? { boxShadow: `inset 0 ${Math.min(3, d.balkenbreite)}px 0 ${pal.primary.main}` } : {}) },
+    aenderung: { background: d.statusflaeche ? s.aenderung.flaeche : papier, border: `1px solid ${s.aenderung.main}` },
     entfall: { background: `repeating-linear-gradient(135deg, ${alpha(s.entfall.main, 0.45)} 0 1px, transparent 1px 3px), ${papier}`, border: `1px solid ${alpha(s.entfall.main, 0.7)}` },
-    pruefung: { background: papier, border: `1px solid ${s.pruefung.main}` },
+    pruefung: { background: d.statusflaeche ? s.pruefung.flaeche : papier, border: `1px solid ${s.pruefung.main}` },
     termin: { background: papier, border: `1px dashed ${pal.text.secondary}` },
     abwesend: { background: papier, border: `1px dashed ${pal.text.secondary}` },
     buchung: { background: papier, border: `1px dashed ${s.frei.main}` },

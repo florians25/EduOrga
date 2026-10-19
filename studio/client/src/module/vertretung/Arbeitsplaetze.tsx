@@ -161,7 +161,7 @@ export function Tagesplanung() {
   const gross = useTagesplanung((x) => x.gross);
   useEffect(() => {
     if (!gross) return undefined;
-    const taste = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented && !document.querySelector('[role=dialog], [role=menu]')) planVergroessern(null); };
+    const taste = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('[role=dialog], [role=menu], [role=listbox]')) planVergroessern(null); };
     document.addEventListener('keydown', taste);
     return () => document.removeEventListener('keydown', taste);
   }, [gross]);

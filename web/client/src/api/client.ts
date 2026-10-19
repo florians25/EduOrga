@@ -1,4 +1,4 @@
-// Schnittstelle zu UntPlanWeb (/api/app/*): Sitzungscookie, CSRF-Kopf „X-UntPlanWeb: 1“ für ändernde Aufrufe, Fehler als ApiFehler.
+// Schnittstelle zu EduOrga Web (/api/app/*): Sitzungscookie, CSRF-Kopf „X-UntPlanWeb: 1“ für ändernde Aufrufe, Fehler als ApiFehler.
 
 export class ApiFehler extends Error {
   constructor(public status: number, meldung: string) {

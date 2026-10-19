@@ -11,6 +11,7 @@ import { useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, Feld, FussText, Rechts, Werkzeug } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { druckUrl, herunterladen, imTab, naechsterWochentag } from './kern';
 import './druck.css';
 
@@ -99,8 +100,8 @@ export default function Vertretungsplan() {
         </Rechts>
       </>}
       filter={<>
-        <Feld titel="Von"><Input type="date" size="small" value={von} onChange={(_, x) => { if (x.value) zeitraum({ von: x.value }); }} /></Feld>
-        <Feld titel="Bis"><Input type="date" size="small" value={bis} onChange={(_, x) => { if (x.value) zeitraum({ bis: x.value }); }} /></Feld>
+        <Feld titel="Von"><DatumFeld size="small" wert={von} beiAenderung={(datum) => { if (datum) zeitraum({ von: datum }); }} /></Feld>
+        <Feld titel="Bis"><DatumFeld size="small" wert={bis} beiAenderung={(datum) => { if (datum) zeitraum({ bis: datum }); }} /></Feld>
         <Feld titel="Fassung">
           <Select size="small" value={version} onChange={(_, x) => zeitraum({ version: x.value })}>
             <option value="klassen">Für Schülerinnen und Schüler</option><option value="lehrer">Für Lehrkräfte</option>

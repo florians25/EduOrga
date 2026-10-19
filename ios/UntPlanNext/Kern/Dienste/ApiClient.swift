@@ -58,7 +58,7 @@ enum Serverpruefung: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .leer:
-            return "Bitte die Adresse von UntPlan Ihrer Schule eingeben."
+            return "Bitte die EduOrga-Adresse Ihrer Schule eingeben."
         case .ungueltig:
             return "Das ist keine gültige Adresse. Beispiel: plan.meine-schule.de"
         case .nichtGefunden:
@@ -76,9 +76,9 @@ enum Serverpruefung: LocalizedError {
         case .serverfehler(let code):
             return "Der Server meldet einen Fehler (\(code)). Bitte später erneut versuchen."
         case .keinUntPlan:
-            return "Unter dieser Adresse läuft kein UntPlan. Bitte die Adresse prüfen – sie steht z. B. im Elternbrief oder auf der Website Ihrer Schule."
+            return "Unter dieser Adresse läuft kein EduOrga. Bitte die Adresse prüfen – sie steht z. B. im Elternbrief, auf der Website Ihrer Schule oder im QR-Code der Schule."
         case .nichtEingerichtet:
-            return "UntPlan ist auf diesem Server noch nicht eingerichtet. Bitte wenden Sie sich an Ihre Schule."
+            return "EduOrga ist auf diesem Server noch nicht eingerichtet. Bitte wenden Sie sich an Ihre Schule."
         }
     }
 
@@ -103,7 +103,8 @@ enum Serverpruefung: LocalizedError {
     }
 }
 
-/// Zugriff auf die JSON-API von UntPlanWeb (Präfix /api/app). Die Sitzung läuft über das Anmelde-Cookie.
+/// Zugriff auf die JSON-API von EduOrga Web (Präfix /api/app). Die Sitzung läuft über das Anmelde-Cookie. Weitere
+/// Endpunkte (Klassenbuch, Melden, Buchen, Prüfungen, Sprechtag …) stehen in `ApiErweiterungen.swift`.
 final class ApiClient: @unchecked Sendable {
     static let shared = ApiClient()
 
@@ -113,8 +114,8 @@ final class ApiClient: @unchecked Sendable {
     static let merkenSchluessel = "passwortMerken"
 
     private let session: URLSession
-    private let decoder = JSONDecoder()
-    private let encoder = JSONEncoder()
+    let decoder = JSONDecoder()
+    let encoder = JSONEncoder()
 
     init() {
         let konfig = URLSessionConfiguration.default
@@ -618,7 +619,7 @@ final class ApiClient: @unchecked Sendable {
 
     // MARK: - Anfrage
 
-    private func url(_ pfad: String, _ parameter: [String: String]) throws -> URL {
+    func url(_ pfad: String, _ parameter: [String: String]) throws -> URL {
         let basis = serverAdresse
         guard !basis.isEmpty else { throw ApiFehler.keineServerAdresse }
         guard var teile = URLComponents(string: basis + "/api/app" + pfad) else { throw ApiFehler.ungueltigeAdresse }
@@ -630,7 +631,7 @@ final class ApiClient: @unchecked Sendable {
     }
 
     /// Anfrage ohne JSON-Auswertung (Hochladen, Herunterladen): liefert die Rohdaten oder wirft den Fehler des Servers.
-    private func rohAnfrage(_ anfrage: URLRequest, pfad: String) async throws -> Data {
+    func rohAnfrage(_ anfrage: URLRequest, pfad: String) async throws -> Data {
         var req = anfrage
         req.setValue("1", forHTTPHeaderField: "X-UntPlanWeb")
         let ergebnis: (Data, URLResponse)
@@ -652,13 +653,13 @@ final class ApiClient: @unchecked Sendable {
         return ergebnis.0
     }
 
-    private func anfrage<T: Decodable>(_ methode: String, _ pfad: String, parameter: [String: String] = [:],
+    func anfrage<T: Decodable>(_ methode: String, _ pfad: String, parameter: [String: String] = [:],
                                        inhalt: [String: String]? = nil) async throws -> T {
         let koerper: Data? = try inhalt.map { try encoder.encode($0) }
         return try await anfrage(methode, pfad, parameter: parameter, koerper: koerper)
     }
 
-    private func anfrage<T: Decodable>(_ methode: String, _ pfad: String, parameter: [String: String] = [:],
+    func anfrage<T: Decodable>(_ methode: String, _ pfad: String, parameter: [String: String] = [:],
                                        koerper: Data?) async throws -> T {
         var req = URLRequest(url: try url(pfad, parameter))
         req.httpMethod = methode

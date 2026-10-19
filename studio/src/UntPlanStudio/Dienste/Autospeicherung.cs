@@ -3,8 +3,9 @@ using UntPlanStudio.Grundlagen;
 namespace UntPlanStudio.Dienste;
 
 /// <summary>
-/// Hintergrunddienst: speichert geänderte Arbeitsdokumente regelmäßig in den Datenordner und entfernt lange nicht benutzte
-/// Dokumente aus dem Speicher. Beim Herunterfahren wird alles gespeichert.
+/// Hintergrunddienst (Sicherheitsnetz zum sofortigen Speichern im <see cref="Dokumentdienst"/>): speichert regelmäßig alle noch
+/// geänderten Arbeitsdokumente (z. B. nach einem Datenbankausfall oder bei Änderungen ohne Meldung) und entfernt lange nicht
+/// benutzte Dokumente aus dem Speicher. Beim Herunterfahren wird alles gespeichert (laufende Speichervorgänge werden abgewartet).
 /// </summary>
 public sealed class Autospeicherung : BackgroundService
 {
@@ -34,6 +35,6 @@ public sealed class Autospeicherung : BackgroundService
     public override async Task StopAsync(CancellationToken ct)
     {
         await base.StopAsync(ct);
-        await _dokumente.AlleSpeichernAsync(TimeSpan.Zero, CancellationToken.None);
+        await _dokumente.BeendenAsync();
     }
 }

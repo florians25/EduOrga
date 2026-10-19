@@ -80,15 +80,25 @@ async function dokumentWiederOeffnen() {
 export function App() {
   const thema = useStudio((x) => x.thema);
   const benutzer = useStudio((x) => x.benutzer);
+  const modus = useStudio((x) => x.modus);
   const systemDunkel = useSystemDunkel();
   const [phase, setPhase] = useState<'laden' | 'anmelden' | 'bereit'>('laden');
   const dunkel = thema === 'dunkel' || (thema === 'auto' && systemDunkel);
 
-  useEffect(() => { document.documentElement.dataset.thema = thema === 'auto' ? 'auto' : dunkel ? 'dunkel' : 'hell'; }, [thema, dunkel]);
+  useEffect(() => {
+    const html = document.documentElement;
+    html.dataset.thema = thema === 'auto' ? 'auto' : dunkel ? 'dunkel' : 'hell';
+    html.style.background = dunkel ? '#10161a' : '#f5f7f8';
+    html.style.colorScheme = dunkel ? 'dark' : 'light';
+    document.querySelector('meta[name=theme-color]')?.setAttribute('content', dunkel ? '#0e2a2f' : '#164c55');
+  }, [thema, dunkel]);
+
+  // Modusfarbe (stile/thema.css): Stundenplanung Petrol, Vertretungsplanung Indigo
+  useEffect(() => { document.documentElement.dataset.modus = modus; }, [modus]);
 
   useEffect(() => {
     void (async () => {
-      const system = await api.get<SystemInfo>('/api/system').catch(() => ({ anwendung: 'UntPlan Studio', version: '', beta: false }));
+      const system = await api.get<SystemInfo>('/api/system').catch(() => ({ anwendung: 'EduOrga Studio', version: '', beta: false }));
       const sitzung = await api.get<{ benutzer: Benutzer | null }>('/api/sitzung').catch(() => ({ benutzer: null }));
       setzen({ system, benutzer: sitzung.benutzer });
       setPhase(sitzung.benutzer ? 'bereit' : 'anmelden');
@@ -104,7 +114,7 @@ export function App() {
 
   return (
     <FluentProvider theme={dunkel ? dunklesThema : hellesThema} style={{ minHeight: '100vh' }}>
-      {phase === 'laden' ? <div style={{ height: '100vh', display: 'grid', placeItems: 'center' }}><Spinner label="UntPlan Studio wird geladen …" /></div> : null}
+      {phase === 'laden' ? <div style={{ height: '100vh', display: 'grid', placeItems: 'center' }}><Spinner label="EduOrga Studio wird geladen …" /></div> : null}
       {phase === 'anmelden' ? <Anmeldung fertig={(b) => {
         const vorher = gestartet;
         setzen({ benutzer: b });

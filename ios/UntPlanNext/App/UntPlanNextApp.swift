@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// UntPlan Next – eigenständige App neben „UntPlan“ (eigene Bundle-ID, eigenes URL-Schema „untplannext“, eigene Konten
-/// und Einstellungen). Spricht direkt die JSON-API von UntPlan Web an.
+/// EduOrga für iPhone und iPad – eine App für alle Schulen (zentral im App Store); jede Schule betreibt ihr EduOrga
+/// selbst, die App verbindet sich mit der Adresse der Schule. Technisch: Ziel UntPlanNext, Bundle-ID de.untplan.next,
+/// URL-Schema „untplannext“. Spricht direkt die JSON-API von EduOrga Web (/api/app) an.
 @main
 struct UntPlanNextApp: App {
     /// Kurzbefehle am App-Symbol, Hintergrund-Prüfung des Plans, Mitteilungen

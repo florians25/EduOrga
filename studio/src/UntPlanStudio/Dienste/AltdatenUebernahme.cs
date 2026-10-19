@@ -39,7 +39,7 @@ public static class AltdatenUebernahme
                 {
                     var name = b["Name"]?.GetValue<string>();
                     if (string.IsNullOrWhiteSpace(name)) continue;
-                    StudioDatenbank.AblageSchreiben(c, t, Ablagebereiche.Benutzer, name.ToLowerInvariant(), b.ToJsonString());
+                    db.AblageSchreiben(c, t, Ablagebereiche.Benutzer, name.ToLowerInvariant(), b.ToJsonString());
                     benutzer++;
                 }
             }
@@ -50,14 +50,14 @@ public static class AltdatenUebernahme
                 {
                     if (JsonLesen(d, uebersprungen, log) is not JsonObject o) continue;
                     var name = Uri.UnescapeDataString(Path.GetFileNameWithoutExtension(d)).ToLowerInvariant();
-                    StudioDatenbank.AblageSchreiben(c, t, Ablagebereiche.Einstellungen, name, o.ToJsonString());
+                    db.AblageSchreiben(c, t, Ablagebereiche.Einstellungen, name, o.ToJsonString());
                     einstellungen++;
                 }
 
             datei = Path.Combine(daten, MultiUserDatei);
             if (File.Exists(datei) && JsonLesen(datei, uebersprungen, log) is JsonObject mu)
             {
-                StudioDatenbank.AblageSchreiben(c, t, Ablagebereiche.MultiUser, MultiUserDienst.Konfigurationsschluessel, mu.ToJsonString());
+                db.AblageSchreiben(c, t, Ablagebereiche.MultiUser, MultiUserDienst.Konfigurationsschluessel, mu.ToJsonString());
                 multiuser = true;
             }
 
@@ -67,7 +67,7 @@ public static class AltdatenUebernahme
                 {
                     var id = Path.GetFileNameWithoutExtension(d);
                     if (!Dokumentdienst.IdGueltig(id) || JsonLesen(d, uebersprungen, log) is not JsonObject o) continue;
-                    StudioDatenbank.AblageSchreiben(c, t, Ablagebereiche.UntPlanWeb, id, o.ToJsonString());
+                    db.AblageSchreiben(c, t, Ablagebereiche.UntPlanWeb, id, o.ToJsonString());
                     abgleich++;
                 }
 
@@ -93,12 +93,12 @@ public static class AltdatenUebernahme
                         catch (JsonException) { uebersprungen.Add(infoDatei); }
                     info ??= new DokumentInfo { Name = id, Erstellt = gespeichert, Geaendert = gespeichert };
                     info.Id = id;
-                    StudioDatenbank.DokumentAnlegen(c, t, info, inhalt, gespeichert);
+                    db.DokumentAnlegen(c, t, info, inhalt, gespeichert);
                     dokumente++;
                     var bak = up + ".bak";
                     if (File.Exists(bak))
                     {
-                        StudioDatenbank.DokumentSicherungEinfuegen(c, t, id, File.GetLastWriteTime(bak), File.ReadAllBytes(bak));
+                        db.DokumentSicherungEinfuegen(c, t, id, File.GetLastWriteTime(bak), File.ReadAllBytes(bak));
                         sicherungen++;
                     }
                 }

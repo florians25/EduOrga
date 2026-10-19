@@ -1,5 +1,7 @@
 using System.Text;
+using System.Data.Common;
 using Microsoft.Data.Sqlite;
+using MySqlConnector;
 using Microsoft.Extensions.Logging.Abstractions;
 using UntPlanStudio.Dienste;
 using UntPlanStudio.Grundlagen;
@@ -31,9 +33,9 @@ public partial class Program
         try
         {
             var k = StudioKonfiguration.Laden(konfiguration, inhaltsordner);
-            if (!File.Exists(k.Datenbankpfad))
+            if (k.Datenbank == StudioDatenbankart.Sqlite && !File.Exists(k.Datenbankpfad))
             {
-                fehler.WriteLine($"Keine Datenbank unter {k.Datenbankpfad} – UntPlan Studio bitte zuerst einmal starten (oder ist STUDIO_DATEN falsch?).");
+                fehler.WriteLine($"Keine Datenbank unter {k.Datenbankpfad} – EduOrga Studio bitte zuerst einmal starten (oder ist STUDIO_DATEN falsch?).");
                 return 1;
             }
             var db = new StudioDatenbank(k, NullLogger<StudioDatenbank>.Instance);
@@ -66,7 +68,7 @@ public partial class Program
             fehler.WriteLine("Fehler: " + ex.Message);
             return 1;
         }
-        catch (Exception ex) when (ex is SqliteException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is DbException or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
             fehler.WriteLine("Passwort konnte nicht gesetzt werden: " + ex.Message);
             return 1;
@@ -74,6 +76,7 @@ public partial class Program
         finally
         {
             SqliteConnection.ClearAllPools();
+            MySqlConnection.ClearAllPools();
         }
     }
 

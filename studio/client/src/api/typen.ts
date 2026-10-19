@@ -13,8 +13,13 @@ export interface DokumentStand {
   id: string;
   name: string;
   version: number;
+  /** noch nicht in der Datenbank (Speichern ist vorgemerkt) */
   geaendert: boolean;
   gespeichert: string | null;
+  /** wird gerade in die Datenbank geschrieben */
+  speichert?: boolean;
+  /** letzter Speicherversuch fehlgeschlagen (Grund) */
+  speicherfehler?: string | null;
   kannRueckgaengig: boolean;
   rueckgaengigText: string | null;
   kannWiederholen: boolean;

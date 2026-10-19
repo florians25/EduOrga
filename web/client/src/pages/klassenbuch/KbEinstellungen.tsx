@@ -184,8 +184,8 @@ function Formular({ d, noten, reiterStart, nurUnterricht }: { d: Daten; noten: N
   const unterricht = karte('Prüfungen', <>
     <Zeile label="Erlaubter Datumsbereich für Prüfungseingaben" hilfe="Leer = keine Einschränkung.">{bereich('pruefungVon', 'pruefungBis')}</Zeile>
     {schalter('raumkonflikt', 'Raumkonflikt bei Prüfung zulassen', 'Prüfungen dürfen dann auch in Räumen eingetragen werden, die zu dieser Zeit belegt sind.')}
-    <Zeile label="Prüfungsübernahme nach UntPlan bis Tage in die Zukunft" hilfe="Prüfungen werden wie Buchungen an UntPlan übergeben; spätere Prüfungen folgen, sobald sie im Zeitraum liegen.">{zahl('uebernahmeTage', { leer: 'unbegrenzt', einheit: 'Tage' })}</Zeile>
-    {schalter('nurVertretungsrelevant', 'Nur vertretungsrelevante Prüfungen nach UntPlan übernehmen', 'Vertretungsrelevant sind Prüfungen mit Raum oder zugewiesener Lehrkraft (Aufsicht).')}
+    <Zeile label="Prüfungsübernahme nach EduOrga Studio bis Tage in die Zukunft" hilfe="Prüfungen werden wie Buchungen an EduOrga Studio übergeben; spätere Prüfungen folgen, sobald sie im Zeitraum liegen.">{zahl('uebernahmeTage', { leer: 'unbegrenzt', einheit: 'Tage' })}</Zeile>
+    {schalter('nurVertretungsrelevant', 'Nur vertretungsrelevante Prüfungen nach EduOrga Studio übernehmen', 'Vertretungsrelevant sind Prüfungen mit Raum oder zugewiesener Lehrkraft (Aufsicht).')}
   </>);
 
   const gesamt = noten.schemen.find(s => s.id === noten.gesamt);

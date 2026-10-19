@@ -7,6 +7,7 @@ import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, Feld, FussText, Leer, Rechts, Werkzeug } from '@/komponenten/ansicht';
 import { fehlerMelden } from '@/komponenten/hinweise';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { isoAus, usePlanungsdatum } from '../vertretung/kern';
 import './pausenaufsicht.css';
 
@@ -30,7 +31,7 @@ export default function AufsichtVertretung() {
   return (
     <AnsichtRahmen titel="Vertretung der Pausenaufsichten" laden={laedt && !daten}
       werkzeuge={<>
-        <Feld titel="Datum"><Input type="date" size="small" value={datum} onChange={(_, d) => { if (d.value) setDatum(d.value); }} /></Feld>
+        <Feld titel="Datum"><DatumFeld size="small" wert={datum} beiAenderung={(datum) => { if (datum) setDatum(datum); }} /></Feld>
         <Rechts><Werkzeug text="Wochenplan" titel="Wöchentliche Pausenaufsichten" aktion={() => a.oeffnen('pausenaufsicht')} /></Rechts>
       </>}
       fuss={daten ? <>

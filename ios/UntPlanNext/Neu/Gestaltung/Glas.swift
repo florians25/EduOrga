@@ -13,7 +13,7 @@ import SwiftUI
 // Übersetzen: Das Projekt braucht das iOS-26-SDK (Xcode 26, Swift 6.2); Zielsystem ist iOS 18.
 
 #if !compiler(>=6.2)
-#error("UntPlan Next braucht Xcode 26 (iOS-26-SDK, Swift 6.2) – Liquid Glass ist sonst nicht verfügbar.")
+#error("EduOrga braucht Xcode 26 (iOS-26-SDK, Swift 6.2) – Liquid Glass ist sonst nicht verfügbar.")
 #endif
 
 // MARK: - Glasfläche

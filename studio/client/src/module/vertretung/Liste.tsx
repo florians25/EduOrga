@@ -23,7 +23,7 @@ import { MenueKnopf, type MenueListe } from '@/komponenten/menue';
 import { Tabelle, type Spalte, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
 import { useElemente } from '../gemeinsam';
 import { ANSICHTEN, ARTEN_AUS, ansichtText, artenDialog, feldEinstellungen, felderDialog, raumDialog, spaltenFeld, spaltenTitel, type ListenSpalte } from './dialoge';
-import { auswahlMelden, datumSetzen, kurzText, mitRueckfragen, planungsdatum, seitenansichtSetzen, tageswechsel, tagKurz, useTagesplanung, vpfad } from './kern';
+import { auswahlMelden, datumSetzen, kurzText, mitRueckfragen, planungsdatum, seitenansichtSetzen, tageswechsel, tagKurz, usePlanungsdatum, useTagesplanung, vpfad } from './kern';
 import { OptionenKnopf, OptionenTitel, useZeitraum, ZeitraumAuswahl } from './steuer';
 import { automatikDialog, einstellungenDialog, sondereinsatzDialog } from './weitere';
 import './vertretung.css';
@@ -57,6 +57,7 @@ export default function Liste({ p }: AnsichtProps) {
   const schlank = !!p.schlank;
   const tagesplanung = !!p.tagesplanung;
   const seitenansicht = useTagesplanung((x) => x.seite);
+  const pdatum = usePlanungsdatum();
   const alleSpalten = !!p.alleSpalten;
   const schreiben = useDarfSchreiben();
   const tageProWoche = useStudio((x) => x.grunddaten?.zeitraster?.tage?.length || 5);
@@ -296,7 +297,9 @@ export default function Liste({ p }: AnsichtProps) {
     const z = aktiv || zeilen[0] || null;
     // mehrere Tage: der Tag der gewählten Zeile bzw. Tageszeile wird zum Planungstag (Tageskopf und Pläne folgen)
     const tag = z?.m.tageskopf ? z.m.datum : z?.m.datum;
-    if (schlank && zr.art !== 'tag' && typeof tag === 'string' && tag !== planungsdatum()) void datumSetzen(tag, { aktualisieren: false });
+    // (nur innerhalb des aktuellen Zeitraums – nach einem Wochenwechsel stehen bis zum Laden noch die alten Zeilen da)
+    const zz = zrRef.current;
+    if (schlank && zz.art !== 'tag' && typeof tag === 'string' && tag !== planungsdatum() && zz.von && zz.bis && tag >= zz.von && tag <= zz.bis) void datumSetzen(tag, { aktualisieren: false });
     if (z?.m.tageskopf) { setNr(''); setStatus({ text: '' }); return; }
     setNr(z?.m.v ? String(z.m.v) : '');
     setStatus(z?.m.koll ? { text: `Kollision: ${z.m.koll}`, art: 'fehler' } : { text: '' });
@@ -484,10 +487,10 @@ export default function Liste({ p }: AnsichtProps) {
         <span style={status.art === 'fehler' ? { color: 'var(--up-entfall)' } : status.art === 'warnung' ? { color: 'var(--up-warnung)' } : undefined}>{status.text}</span>
         <FussText rechts>{daten ? `${daten.zeilen.length} ${daten.zeilen.length === 1 ? 'Zeile' : 'Zeilen'} · ${daten.offen} offen` : ''}</FussText>
       </>}>
-      <Tabelle<VZeile> ref={tabelle} name="vertretungen" spalten={spalten} zeilen={zeilen} zeilenHoehe={schlank ? 34 : 30}
+      <Tabelle<VZeile> ref={tabelle} name="vertretungen" spalten={spalten} zeilen={zeilen} zeilenHoehe={schlank ? 34 : undefined}
         leerText="Im gewählten Zeitraum gibt es keine Vertretungen."
         sortierbar={!nachTagen}
-        zeilenKlasse={(z) => z.m.tageskopf ? `vt-tageskopf${z.m.datum === planungsdatum() ? ' vt-planungstag' : ''}` : [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.current.has(z.m.v) ? (filter.offen && !z.m.offen && !z.m.raumOffen ? 'vt-behalten vt-erledigt' : 'vt-behalten') : ''].filter(Boolean).join(' ')}
+        zeilenKlasse={(z) => z.m.tageskopf ? `vt-tageskopf${z.m.datum === pdatum ? ' vt-planungstag' : ''}` : [z.m.unterricht ? 'vt-unterricht' : '', z.m.koll ? 'vt-kollision' : '', z.m.sammel ? 'vt-sammel' : '', behalten.current.has(z.m.v) ? (filter.offen && !z.m.offen && !z.m.raumOffen ? 'vt-behalten vt-erledigt' : 'vt-behalten') : ''].filter(Boolean).join(' ')}
         aendern={schreiben ? async (z, s, wert) => { await aktion('/aendern', { spalte: s.schluessel, wert }, zielIds(z)); } : undefined}
         aendernMehrere={schreiben ? async (liste) => {
           // Einfügen, Ausfüllen, Mehrfach ändern: je Spalte und Wert ein Aufruf mit allen betroffenen Vertretungen

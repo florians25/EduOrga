@@ -28,7 +28,7 @@ function Inhalt({ stand, schliessen }: { stand: UnterrichtOnline; schliessen: (w
       <div className={s.inhalt}>
         <Text>{[stand.fach, stand.klassen, stand.lehrer].filter(Boolean).join(' · ')}</Text>
         <Switch label="Findet online statt" checked={online} disabled={!schreiben} onChange={(_, d) => setOnline(d.checked)} />
-        <Field label="Link zur Online-Stunde" hint="z. B. Adresse des Videoraums; wird in UntPlan Web angezeigt, solange der Unterricht online stattfindet." validationMessage={fehler}>
+        <Field label="Link zur Online-Stunde" hint="z. B. Adresse des Videoraums; wird in EduOrga Web angezeigt, solange der Unterricht online stattfindet." validationMessage={fehler}>
           <Input value={link} disabled={!schreiben} onChange={(_, d) => setLink(d.value)} placeholder="https://" type="url" />
         </Field>
         <span className={s.leise}>Gilt für alle Stunden des Unterrichts in der aktiven Periode. Abweichungen an einzelnen Tagen legt die Vertretungsplanung fest.</span>

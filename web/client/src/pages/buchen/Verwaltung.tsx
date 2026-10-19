@@ -1,4 +1,4 @@
-// Buchen → Neuer Unterricht (Unterricht außerhalb des UntPlan-Stundenplans anlegen, dann zusätzliche Stunden verplanen) und
+// Buchen → Neuer Unterricht (Unterricht außerhalb des Studio-Stundenplans anlegen, dann zusätzliche Stunden verplanen) und
 // Verwaltung (Administration): Ressourcenarten mit Symbol, Ressourcen (mobil mit Anzahl und Standort bzw. fest in einem Raum) und Raumdaten
 // (Kapazität, Gebäude, Abteilung, Raumgruppe) für die Auswahlkriterien.
 import { useEffect, useState } from 'react';
@@ -28,11 +28,11 @@ export function NeuerUnterricht() {
   const [neu, setNeu] = useState(false);
   const [w, setW] = useState({ lehrer: ich.element || '', fach: '', klassen: [] as string[], wochenstunden: 1, gruppe: '', text: '' });
   return (
-    <Seite titel="Neuer Unterricht" untertitel="Legen Sie hier Unterricht an, der nicht im Stundenplan aus UntPlan steht, und verplanen Sie danach seine Stunden über „Zusätzliche Stunden“."
+    <Seite titel="Unterricht anlegen" untertitel="Legen Sie hier Unterricht an, der nicht im Stundenplan aus EduOrga Studio steht, und verplanen Sie danach seine Stunden über „Zusätzliche Stunden“."
       aktionen={<><Button variant="outlined" href="#/unterricht">Mein Unterricht</Button><Button variant="contained" startIcon={<AddRounded />} onClick={() => setNeu(true)}>Neuer Unterricht</Button></>}>
       <Geladen g={g}>{({ liste, el }) => (
         <>
-          <Tabelle zeilen={liste} schluessel={u => u.id} leer="Noch kein Unterricht in UntPlanWeb angelegt."
+          <Tabelle zeilen={liste} schluessel={u => u.id} leer="Noch kein Unterricht in EduOrga Web angelegt."
             spalten={[
               { id: 'fach', kopf: 'Fach', sortWert: u => u.fach, zelle: u => <Plakette ton="primaer">{u.fach}</Plakette> },
               { id: 'klassen', kopf: 'Klassen', zelle: u => <b>{u.klassen.join(', ') || '–'}</b> },
@@ -94,10 +94,10 @@ export function Ressourcenverwaltung() {
   const [suche, setSuche] = useState('');
   const [artFilter, setArtFilter] = useState('');
   const [zuordnung, setZuordnung] = useState('');
-  if (!ich.admin) return <Seite titel="Ressourcen verwalten"><Alert severity="warning">Nur für die Administration.</Alert></Seite>;
+  if (!ich.admin) return <Seite titel="Geräte & Medien verwalten"><Alert severity="warning">Nur für die Administration.</Alert></Seite>;
   return (
-    <Seite titel="Ressourcen verwalten" untertitel={g.daten ? `${g.daten.liste.length} Ressourcen` : undefined}
-      aktionen={<><Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/ressourcen">Ressourcenübersicht</Button><Button variant="contained" startIcon={<AddRounded />} onClick={() => setFormular({})}>Ressource hinzufügen</Button></>}>
+    <Seite titel="Geräte & Medien verwalten" untertitel={g.daten ? `${g.daten.liste.length} Ressourcen` : undefined}
+      aktionen={<><Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/ressourcen">Gerätebelegung</Button><Button variant="contained" startIcon={<AddRounded />} onClick={() => setFormular({})}>Ressource hinzufügen</Button></>}>
       <Geladen g={g}>{({ opt, arten, liste, symbole }) => {
         const q = suche.toLowerCase();
         const sichtbar = liste.filter(r => (!q || `${r.name} ${r.art} ${r.raum} ${r.standort}`.toLowerCase().includes(q)) && (!artFilter || String(r.artId ?? '') === artFilter) && (!zuordnung || (r.raum ? 'fest' : 'mobil') === zuordnung));
@@ -260,7 +260,7 @@ export function Raumdaten() {
         {g.daten.gebaeude.length > 0 && <Wahl label="Gebäude" wert={geb} onWert={setGeb} alle="Alle Gebäude" optionen={g.daten.gebaeude.map(x => [x, x])} />}
         <Wahl label="Buchbar" wert={buchbar} onWert={setBuchbar} alle="Alle Räume" optionen={[['ja', 'Nur buchbare'], ['nein', 'Nicht buchbare']]} />
       </>}>
-      <Alert severity="info" sx={{ mb: 2 }}>Raumart, Kapazität und „buchbar“ kommen aus den Stammdaten von UntPlan. Hier ergänzen Sie Gebäude, Abteilung und Raumgruppe (und bei Bedarf eine abweichende Kapazität) für die Auswahlkriterien beim Buchen. Feste Ressourcen ordnen Sie unter „Ressourcen verwalten“ zu. Änderungen werden beim Verlassen des Feldes gespeichert.</Alert>
+      <Alert severity="info" sx={{ mb: 2 }}>Raumart, Kapazität und „buchbar“ kommen aus den Stammdaten von EduOrga Studio. Hier ergänzen Sie Gebäude, Abteilung und Raumgruppe (und bei Bedarf eine abweichende Kapazität) für die Auswahlkriterien beim Buchen. Feste Ressourcen ordnen Sie unter „Ressourcen verwalten“ zu. Änderungen werden beim Verlassen des Feldes gespeichert.</Alert>
       <Geladen g={g}>{opt => {
         const q = suche.toLowerCase();
         const l = opt.raeume.filter(r => (!q || `${r.kurz} ${r.name} ${r.raumart} ${r.gebaeude} ${r.abteilung} ${r.raumgruppe}`.toLowerCase().includes(q)) && (!geb || r.gebaeude === geb) && (!buchbar || (r.buchbar ? 'ja' : 'nein') === buchbar));

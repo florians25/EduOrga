@@ -1,5 +1,7 @@
 // Administration → Wartung: Aktive Benutzer (Sitzungen mit letzter Aktivität), Zugriff ent-/sperren (Wartungsmodus: nur die Administration
-// kann sich anmelden, angemeldete Benutzer bleiben angemeldet) und „Über UntPlan“ (Version, letzte Übertragungen, Module).
+// kann sich anmelden, angemeldete Benutzer bleiben angemeldet) und „Über EduOrga“ (Version, letzte Übertragungen, Module).
+import { Marke, SLOGAN } from '../../components/Marke';
+import { Rechtshinweis } from '../../components/Ueber';
 import { useEffect, useState } from 'react';
 import { Alert, Box, Button, FormControlLabel, Paper, Stack, Switch, TextField, Typography, useTheme } from '@mui/material';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
@@ -44,7 +46,7 @@ function Aktive({ stunden }: { stunden: string }) {
             <Wahl label="Aktivität" wert={stunden} onWert={v => navigieren(`#/admin/aktive/${v}`, true)} optionen={[['1', 'letzte Stunde'], ['24', 'letzte 24 Stunden'], ['168', 'letzte 7 Tage']]} />
             <Box sx={{ flex: 1 }} />
             <Button startIcon={<RefreshRounded />} onClick={() => void g.neu()}>Aktualisieren</Button>
-            <Button variant="outlined" startIcon={<LockOutlined />} href="#/admin/zugriff">Zugriff ent-/sperren</Button>
+            <Button variant="outlined" startIcon={<LockOutlined />} href="#/admin/zugriff">Wartungsmodus</Button>
           </Stack>
           <Tabelle zeilen={l} schluessel={(s, i) => `${s.benutzerId}-${i}`} leer="In diesem Zeitraum war niemand angemeldet."
             spalten={[
@@ -57,7 +59,7 @@ function Aktive({ stunden }: { stunden: string }) {
               { id: 'seit', kopf: 'Angemeldet seit', nowrap: true, sortWert: s => s.beginn, zelle: s => kurzZeit(s.beginn), verbergenMobil: true },
               { id: 'letzte', kopf: 'Letzte Aktivität', nowrap: true, sortWert: s => -s.minuten, zelle: s => <Box><Typography variant="body2">{vor(s.minuten)}</Typography><Typography variant="caption" color="text.secondary">{kurzZeit(s.letzte)}</Typography></Box> },
             ]} />
-          <Typography variant="body2" color="text.secondary">Angezeigt werden Sitzungen seit dem letzten Start von UntPlanWeb. „Gerade aktiv“: Aktivität in den letzten {d.aktivMinuten} Minuten. Vor Wartungsarbeiten (z. B. einem Import aus dem Desktop-Programm) prüfen Sie hier, ob noch jemand arbeitet.</Typography>
+          <Typography variant="body2" color="text.secondary">Angezeigt werden Sitzungen seit dem letzten Start von EduOrga Web. „Gerade aktiv“: Aktivität in den letzten {d.aktivMinuten} Minuten. Vor Wartungsarbeiten (z. B. einem Import aus dem Desktop-Programm) prüfen Sie hier, ob noch jemand arbeitet.</Typography>
         </Stack>
       );
     }}</Geladen>
@@ -111,10 +113,16 @@ function Ueber() {
               {d.paket && wert('Daten', `${d.paket.klassen} Klassen · ${d.paket.lehrer} Lehrkräfte · ${d.paket.schueler} Schüler*innen`)}
             </Box>
           </Karte>
-          <Karte titel="Letzte Übertragungen aus dem Desktop-Programm">
+          <Karte titel="Über EduOrga">
+            <Stack gap={1.5}>
+              <Stack direction="row" alignItems="center" gap={2} flexWrap="wrap"><Marke groesse={28} /><Typography sx={{ fontWeight: 500 }}>{SLOGAN}</Typography></Stack>
+              <Rechtshinweis />
+            </Stack>
+          </Karte>
+          <Karte titel="Letzte Übertragungen aus EduOrga Studio">
             <Tabelle zeilen={d.importe} schluessel={i => i.name} rahmen={false}
               spalten={[{ id: 'n', kopf: 'Daten', zelle: i => <b>{i.name}</b> }, { id: 'e', kopf: 'Übertragen am', zelle: i => (i.empfangen ? kurzZeit(i.empfangen) : <Plakette>noch nie</Plakette>) },
-                { id: 'r', kopf: 'Revision', zelle: i => i.revision ?? '–' }, { id: 'v', kopf: 'Desktop-Version', zelle: i => i.programmversion || '–' }]} />
+                { id: 'r', kopf: 'Revision', zelle: i => i.revision ?? '–' }, { id: 'v', kopf: 'Studio-Version', zelle: i => i.programmversion || '–' }]} />
           </Karte>
           <Karte titel="Module">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))', xl: 'repeat(3, minmax(0, 1fr))' }, gap: 1.5 }}>

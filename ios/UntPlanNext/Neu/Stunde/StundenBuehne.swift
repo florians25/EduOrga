@@ -626,7 +626,7 @@ struct StundenBuehneInhalt: View {
                     .accessibilityHint("Öffnet den Link zum Online-Unterricht")
                 }
                 if kollegium {
-                    Text("Ob eine Stunde online stattfindet, wird in UntPlan Studio festgelegt.")
+                    Text("Ob eine Stunde online stattfindet, wird in EduOrga Studio festgelegt.")
                         .font(.footnote)
                         .foregroundStyle(Farben.text3)
                 }

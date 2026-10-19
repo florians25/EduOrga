@@ -1,4 +1,4 @@
-// Gemeinsames des Moduls UntPlan Web: Auftragsverfolgung, Schreibweisen, Einstellungsdialog.
+// Gemeinsames des Moduls EduOrga Web: Auftragsverfolgung, Schreibweisen, Einstellungsdialog.
 import { Button, Checkbox, Field, Input, makeStyles, tokens } from '@fluentui/react-components';
 import { useState } from 'react';
 import { api } from '@/api/client';
@@ -27,7 +27,7 @@ export async function verfolgen(auftrag: Auftrag, fortschritt: (wert: number, te
 }
 
 /** Servertexte in der Schreibweise der Oberfläche. */
-export const sachlich = (t: unknown) => String(t ?? '').replace(/UntPlanWeb/g, 'UntPlan Web').replace(/Absenzen/g, 'Abwesenheiten');
+export const sachlich = (t: unknown) => String(t ?? '').replace(/UntPlanWeb/g, 'EduOrga Web').replace(/Absenzen/g, 'Abwesenheiten');
 
 interface Einstellungen {
   schulId: string; server: string; port: number; https: boolean; pfad: string; apiSchluesselGesetzt?: boolean; tageVoraus: number; unbegrenzt: boolean;
@@ -68,7 +68,7 @@ function EinstellungenInhalt({ e, schliessen }: { e: Einstellungen; schliessen: 
     catch (f) { setPruefung({ text: (f as Error).message, ok: false }); }
   };
   return (
-    <StandardDialog<boolean> titel="Einstellungen für UntPlan Web" breite="640px" knoepfe={[{ text: 'Speichern', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }]}
+    <StandardDialog<boolean> titel="Einstellungen für EduOrga Web" breite="640px" knoepfe={[{ text: 'Speichern', wert: true, primaer: true }, { text: 'Abbrechen', wert: null }]}
       beiKnopf={(x) => schliessen(x ? daten() : null)}>
       <h3 className={s.h3}>Verbindung</h3>
       <div className={s.spalte}>
@@ -112,6 +112,6 @@ export async function einstellungenDialog(): Promise<boolean> {
   const w = await dialogZeigen<Record<string, unknown>>((schliessen) => <EinstellungenInhalt e={e} schliessen={schliessen} />);
   if (!w) return false;
   await api.put(api.dok('/untplanweb/einstellungen'), w);
-  hinweis('Einstellungen für UntPlan Web gespeichert.', 'ok');
+  hinweis('Einstellungen für EduOrga Web gespeichert.', 'ok');
   return true;
 }

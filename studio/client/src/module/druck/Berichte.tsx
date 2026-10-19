@@ -5,6 +5,7 @@ import { api } from '@/api/client';
 import { useAnsicht } from '@/kern/ansichten';
 import { useDaten } from '@/kern/laden';
 import { AnsichtRahmen, Feld, Werkzeug } from '@/komponenten/ansicht';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { druckUrl, heute, herunterladen, imTab, type Auswahl } from './kern';
 import './druck.css';
 
@@ -52,8 +53,8 @@ export default function Berichte() {
               <div><b>{b.titel}</b><div className="dr-leise">{b.hinweis}</div></div>
               {b.zeitraum ? (
                 <div className="dr-zeitraum">
-                  <Feld titel="Von"><Input type="date" size="small" value={von} onChange={(_, d) => setVon(d.value)} /></Feld>
-                  <Feld titel="Bis"><Input type="date" size="small" value={bis} onChange={(_, d) => setBis(d.value)} /></Feld>
+                  <Feld titel="Von"><DatumFeld size="small" wert={von} beiAenderung={(datum) => setVon(datum)} /></Feld>
+                  <Feld titel="Bis"><DatumFeld size="small" wert={bis} beiAenderung={(datum) => setBis(datum)} /></Feld>
                   <Button size="small" onClick={() => setNr((x) => x + 1)}>Anzeigen</Button>
                 </div>
               ) : null}

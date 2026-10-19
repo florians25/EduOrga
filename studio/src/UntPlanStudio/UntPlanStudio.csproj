@@ -13,8 +13,9 @@
     <Compile Include="..\..\..\web\src\UntPlanWeb\Dienste\Updatepruefung.cs" Link="Dienste\Updatepruefung.cs" />
   </ItemGroup>
   <ItemGroup>
-    <!-- eigene Datenbank des Studios (studio.db im Datenordner), unabhängig von UntPlan Web -->
+    <!-- eigene Datenbank des Studios (studio.db im Datenordner oder MySQL/MariaDB), unabhängig von UntPlan Web -->
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\UntPlan.Core\UntPlan.Core.csproj" />

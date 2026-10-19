@@ -128,9 +128,9 @@ export function Ressourcenuebersicht({ rest }: { rest: string[] }) {
   const symbol = (r: Res) => <Box sx={{ width: 40, height: 40, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'action.selected', color: 'primary.main', flexShrink: 0 }}><ResSymbol r={r} /></Box>;
 
   return (
-    <Seite titel="Ressourcenübersicht" aktionen={opt && <>
+    <Seite titel="Gerätebelegung" aktionen={opt && <>
       {opt.admin && <Button variant="outlined" startIcon={<SettingsOutlined />} href="#/buchen/verwaltung">Verwalten</Button>}
-      {opt.ressourcenBuchen !== false && <Button variant="contained" startIcon={<AddRounded />} href="#/buchen/ressource">Ressource buchen</Button>}
+      {opt.ressourcenBuchen !== false && <Button variant="contained" startIcon={<AddRounded />} href="#/buchen/ressource">Geräte &amp; Medien buchen</Button>}
     </>}
       filter={g.daten && opt && <>
         <SuchFeld wert={f.suche} onWert={x => setF({ suche: x })} platzhalter="Ressource oder Standort suchen" breite={240} />

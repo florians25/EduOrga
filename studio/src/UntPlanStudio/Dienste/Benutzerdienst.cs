@@ -52,7 +52,7 @@ public sealed class Benutzerdienst
             if (passwort is null)
             {
                 passwort = Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant();
-                log.LogWarning("UntPlan Studio: Admin-Konto \"{Benutzer}\" mit erzeugtem Passwort {Passwort} angelegt (STUDIO_ADMIN_PASSWORT setzen, um es vorzugeben).", k.AdminBenutzer, passwort);
+                log.LogWarning("EduOrga Studio: Admin-Konto \"{Benutzer}\" mit erzeugtem Passwort {Passwort} angelegt (STUDIO_ADMIN_PASSWORT setzen, um es vorzugeben).", k.AdminBenutzer, passwort);
             }
             var admin = new StudioBenutzer { Name = k.AdminBenutzer, Anzeigename = "Administrator", Rolle = Rollen.Admin, Hash = _hasher.HashPassword(k.AdminBenutzer, passwort) };
             _benutzer.Add(admin);

@@ -69,7 +69,7 @@ export default function UnterrichtKlassen({ teile }: SeitenProps) {
               spalten={[
                 { id: 'nr', kopf: 'U-Nr', sortWert: u => u.id, zelle: u => <Typography variant="body2" color="text.secondary">{u.id}</Typography> },
                 { id: 'klassen', kopf: 'Klasse(n)', sortWert: u => u.klassen.join(), zelle: u => <b>{u.klassen.join(', ')}</b> },
-                { id: 'gruppe', kopf: 'Schülergruppe', zelle: u => <>{u.gruppe}{u.geaendert && <Plakette ton="pruefung" sx={{ ml: 1 }} title="Schülergruppe in UntPlanWeb geändert">geändert</Plakette>}</>, verbergenMobil: true },
+                { id: 'gruppe', kopf: 'Schülergruppe', zelle: u => <>{u.gruppe}{u.geaendert && <Plakette ton="pruefung" sx={{ ml: 1 }} title="Schülergruppe in EduOrga Web geändert">geändert</Plakette>}</>, verbergenMobil: true },
                 { id: 'lehrer', kopf: 'Lehrkraft', sortWert: u => u.lehrer.join(), zelle: u => u.lehrer.join(', ') },
                 { id: 'fach', kopf: 'Fach', sortWert: u => u.fach, zelle: u => (
                   <Stack direction="row" gap={0.75} alignItems="center" title={u.fachName}><Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: /^#[0-9a-f]{6}$/i.test(u.farbe) ? u.farbe : 'divider' }} /><b>{u.fach}</b></Stack>

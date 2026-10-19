@@ -1,6 +1,6 @@
 // Unterricht → Schüler*innen: Liste je Klasse mit Suche. Administration und Schulleitung legen an, ändern (auch Klassenwechsel ab Datum)
 // und löschen, die Klassenleitung bearbeitet ihre Klassen, andere Lehrkräfte sehen Name, Klasse und Geschlecht.
-// Die Liste aus UntPlan bleibt Grundlage; Änderungen in UntPlanWeb überlagern sie.
+// Die Liste aus EduOrga Studio bleibt Grundlage; Änderungen in EduOrga Web überlagern sie.
 import { useState } from 'react';
 import { Button, IconButton, MenuItem, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import AddRounded from '@mui/icons-material/AddRounded';
@@ -62,7 +62,7 @@ export default function Schueler({ teile }: SeitenProps) {
                     {s.bearbeiten && <Tooltip title="Bearbeiten"><IconButton size="small" onClick={() => setDialog({ art: 'form', s })}><EditOutlined fontSize="small" /></IconButton></Tooltip>}
                     {d.klassenwechsel && <Tooltip title="Klassenwechsel"><IconButton size="small" onClick={() => setDialog({ art: 'wechsel', s })}><SwapHorizRounded fontSize="small" /></IconButton></Tooltip>}
                     {d.loeschen && <Tooltip title="Löschen"><IconButton size="small" color="error" onClick={async () => {
-                      if (!(await bestaetigen('Schüler*in löschen', `${s.name}, ${s.vorname} (${s.klasse}) aus UntPlanWeb entfernen?`))) return;
+                      if (!(await bestaetigen('Schüler*in löschen', `${s.name}, ${s.vorname} (${s.klasse}) aus EduOrga Web entfernen?`))) return;
                       try { await loeschen(`/api/app/schueler/${s.id}`); toast('Gelöscht.'); void g.neu(); } catch (err) { fehler(err); }
                     }}><DeleteOutlineRounded fontSize="small" /></IconButton></Tooltip>}
                   </Stack>
@@ -70,7 +70,7 @@ export default function Schueler({ teile }: SeitenProps) {
               ]} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
               {d.loeschen ? 'Sie können alle Schüler*innen bearbeiten.' : d.anlegen ? 'Sie können die Schüler*innen Ihrer Klassen bearbeiten; Klassenwechsel und Löschen nimmt die Administration vor.' : 'Bearbeiten können die Klassenleitung, die Schulleitung und die Administration.'}
-              {' '}Die Schülerliste kommt aus UntPlan; Änderungen in UntPlanWeb bleiben bei der nächsten Übertragung erhalten.
+              {' '}Die Schülerliste kommt aus EduOrga Studio; Änderungen in EduOrga Web bleiben bei der nächsten Übertragung erhalten.
             </Typography>
             {dialog?.art === 'form' && <SchuelerFormular s={dialog.s} d={d} klasse={klasse} onClose={() => setDialog(null)} fertig={() => void g.neu()} />}
             {dialog?.art === 'wechsel' && <KlassenwechselDialog schueler={dialog.s} klassen={d.klassen} onClose={() => setDialog(null)} fertig={() => void g.neu()} />}

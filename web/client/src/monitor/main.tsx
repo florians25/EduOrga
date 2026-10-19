@@ -15,9 +15,9 @@ interface Daten { name: string; schule: string; jetzt: string; version: string; 
 const token = location.pathname.split('/').filter(Boolean).pop() ?? '';
 const M = farben.marine;
 
-const Alt = ({ w }: { w?: string }) => (w ? <Box component="span" sx={{ color: '#8ea2bf', textDecoration: 'line-through', mr: 0.5 }}>{w}</Box> : null);
+const Alt = ({ w }: { w?: string }) => (w ? <Box component="span" sx={{ color: '#8fb0b4', textDecoration: 'line-through', mr: 0.5 }}>{w}</Box> : null);
 function Wechsel({ a, n, trenn = '→' }: { a?: string; n: string; trenn?: string }) {
-  return a && n ? <><Alt w={a} /><Box component="span" sx={{ color: '#8ea2bf', mr: 0.5 }}>{trenn}</Box>{n}</> : <><Alt w={a} />{n}</>;
+  return a && n ? <><Alt w={a} /><Box component="span" sx={{ color: '#8fb0b4', mr: 0.5 }}>{trenn}</Box>{n}</> : <><Alt w={a} />{n}</>;
 }
 
 function Rollbereich({ children }: { children: React.ReactNode }) {
@@ -50,7 +50,7 @@ function Rollbereich({ children }: { children: React.ReactNode }) {
 function TagKarte({ t, lehrer, mitNachrichten }: { t: Tag; lehrer: boolean; mitNachrichten: boolean }) {
   const infos = [t.abwesendeKlassen.length ? `Abwesende Klassen: ${t.abwesendeKlassen.join(', ')}` : '', lehrer && t.abwesendeLehrer.length ? `Abwesende Lehrkräfte: ${t.abwesendeLehrer.join(', ')}` : '',
     t.blockierteRaeume.length ? `Nicht verfügbare Räume: ${t.blockierteRaeume.join(', ')}` : ''].filter(Boolean);
-  const art = (z: Zeile) => ({ color: z.status === 'entfall' ? '#ff9b91' : z.status === 'geaendert' || z.status === 'offen' ? '#5fd3ca' : M[200] });
+  const art = (z: Zeile) => ({ color: z.status === 'entfall' ? '#ff9b91' : z.status === 'geaendert' || z.status === 'offen' ? '#c3b3ff' : M[200] });
   return (
     <Box component="section" sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, bgcolor: M[800], border: '1px solid rgba(255,255,255,.1)', borderRadius: '4px', overflow: 'hidden' }}>
       <Box component="header" sx={{ px: 2.5, py: 1.75, borderBottom: '1px solid rgba(255,255,255,.1)', fontSize: 22, fontWeight: 600, color: '#fff' }}>
@@ -72,7 +72,7 @@ function TagKarte({ t, lehrer, mitNachrichten }: { t: Tag; lehrer: boolean; mitN
               <tbody>{t.zeilen.map((z, i) => {
                 const e = z.status === 'entfall';
                 return (
-                  <Box component="tr" key={i} sx={e ? { '& td': { color: '#9fb1cb' }, '& td:nth-of-type(n+3):not(:last-of-type)': { textDecoration: 'line-through' } } : undefined}>
+                  <Box component="tr" key={i} sx={e ? { '& td': { color: '#9fb8bb' }, '& td:nth-of-type(n+3):not(:last-of-type)': { textDecoration: 'line-through' } } : undefined}>
                     <td>{z.klassen}</td><td>{z.stunde}</td>
                     <td>{e ? <><Alt w={z.fachAlt} />{z.fach}</> : <Wechsel a={z.fachAlt} n={z.fach} />}</td>
                     <Box component="td" sx={z.status === 'offen' ? { color: '#ffb4ab' } : undefined}>{z.status === 'offen' ? <><Alt w={z.lehrerAlt} />???</> : e ? <><Alt w={z.lehrerAlt} />{z.lehrer}</> : <Wechsel a={z.lehrerAlt} n={z.lehrer} trenn="|" />}</Box>
@@ -102,7 +102,7 @@ function Monitor() {
         if (r.status === 404) { setFehlt(true); return; }
         const x = (await r.json()) as Daten;
         setVersatz(new Date(x.jetzt).getTime() - Date.now());
-        document.title = `${x.name} · UntPlan`;
+        document.title = `${x.name} · EduOrga`;
         setD(x);
         setTakt(Math.max(15, Number(x.anzeige?.aktualisierung) || 60) * 1000);
       } catch { /* alten Stand weiter anzeigen */ }
@@ -120,7 +120,7 @@ function Monitor() {
   const a = d?.anzeige ?? {};
   const ticker = a.ticker && d?.tage[0]?.nachrichten.length ? d.tage[0].nachrichten.join('   +++   ') : '';
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: M[900], color: '#e8eef7', fontFamily: SCHRIFT, fontSize: { xs: 15, md: 18 }, px: { xs: 1.5, md: 4 }, pt: { xs: 1.5, md: 3 }, pb: 9 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: M[900], color: '#e8f1f2', fontFamily: SCHRIFT, fontSize: { xs: 15, md: 18 }, px: { xs: 1.5, md: 4 }, pt: { xs: 1.5, md: 3 }, pb: 9 }}>
       <Box component="header" sx={{ display: 'flex', alignItems: 'center', gap: 2, pb: 2.5, mb: 3, borderBottom: '1px solid rgba(255,255,255,.12)' }}>
         <Box sx={{ pr: 2, borderRight: '1px solid rgba(255,255,255,.2)' }}><Marke hell zusatz="" groesse={30} /></Box>
         <Box><Typography component="h1" sx={{ fontSize: { xs: 20, md: 28 }, fontWeight: 600, color: '#fff' }}>{fehlt ? 'Monitor nicht gefunden' : 'Vertretungsplan'}</Typography>

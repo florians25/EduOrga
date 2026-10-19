@@ -9,6 +9,7 @@ import { useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, Werkzeug } from '@/komponenten/ansicht';
 import { formular, frage } from '@/komponenten/dialoge';
 import { fehlerMelden } from '@/komponenten/hinweise';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { pfad } from './kern';
 import './einstellungen.css';
 
@@ -40,8 +41,8 @@ function Zeile({ g, d, lesen, speichern, loeschen }: { g: Gruppe | null; d: UgDa
     <tr>
       <td>{text('kurzname', 90, g ? undefined : 'Neue Gruppe')}</td>
       <td>{text('langname')}</td>
-      <td><Input size="small" type="date" style={{ width: 140 }} disabled={lesen} value={w.von} onChange={(_, x) => sofort({ von: x.value })} /></td>
-      <td><Input size="small" type="date" style={{ width: 140 }} disabled={lesen} value={w.bis} onChange={(_, x) => sofort({ bis: x.value })} /></td>
+      <td><DatumFeld size="small" disabled={lesen} wert={w.von} beiAenderung={(datum) => sofort({ von: datum })} /></td>
+      <td><DatumFeld size="small" disabled={lesen} wert={w.bis} beiAenderung={(datum) => sofort({ bis: datum })} /></td>
       {d.wochen.map((wo) => (
         <td key={wo} className="mitte"><Checkbox aria-label={`Woche ${wo}`} disabled={lesen} checked={w.wochen.has(wo)} onChange={(_, x) => { const s = new Set(w.wochen); if (x.checked) s.add(wo); else s.delete(wo); sofort({ wochen: s }); }} /></td>
       ))}

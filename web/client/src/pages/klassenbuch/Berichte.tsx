@@ -145,7 +145,7 @@ export default function Berichte({ teile }: SeitenProps) {
               <Box key={x} sx={{ mb: 2.5 }} className="nicht-drucken"><Typography variant="overline" color="text.secondary">{x}</Typography>
                 <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>{arten.filter(a => a.gruppe === x).map(reihe)}</Paper></Box>))
             : <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }} className="nicht-drucken">{sicht.map(reihe)}</Paper>}
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }} className="nicht-drucken"><InfoOutlined sx={{ fontSize: 16, verticalAlign: -3, mr: 0.5 }} />Notfallliste, BAföG- und Fahrkostenbescheinigungen benötigen Adress- bzw. Kontaktdaten, die UntPlan nicht überträgt.</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }} className="nicht-drucken"><InfoOutlined sx={{ fontSize: 16, verticalAlign: -3, mr: 0.5 }} />Notfallliste, BAföG- und Fahrkostenbescheinigungen benötigen Adress- bzw. Kontaktdaten, die EduOrga Studio nicht überträgt.</Typography>
           {panel && <ParameterDialog a={panel} p={standard(panel)} el={d.el} onClose={() => setPanel(null)} anzeigen={p => anzeigen(panel, p)} exportieren={(p, f) => void exportieren(panel, p, f)} />}
         </>
       )}</Geladen>

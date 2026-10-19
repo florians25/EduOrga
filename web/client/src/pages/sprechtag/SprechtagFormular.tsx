@@ -41,7 +41,7 @@ export function SprechtagFormular({ id }: { id: number | null }) {
     ]);
     return { opt, t: vorhanden?.sprechtag ?? NEU };
   }, [id]);
-  if (!darf) return <Seite titel="Sprechtag"><Alert severity="warning">Nur für die Administration.</Alert></Seite>;
+  if (!darf) return <Seite titel="Elternsprechtag"><Alert severity="warning">Nur für die Administration.</Alert></Seite>;
   return <Geladen g={g}>{d => <Formular id={id} opt={d.opt} t={d.t} />}</Geladen>;
 }
 
@@ -94,7 +94,7 @@ function Formular({ id, opt, t }: { id: number | null; opt: { lehrer: { kurz: st
 
   const schalter = (k: keyof typeof f, text: React.ReactNode) => <FormControlLabel sx={{ alignItems: 'flex-start', m: 0 }} control={<Switch checked={!!f[k]} onChange={e => set({ [k]: e.target.checked } as Partial<typeof f>)} />} label={<Box sx={{ pt: 1 }}>{text}</Box>} />;
   const karte = (titel: string, kinder: React.ReactNode, rechts?: React.ReactNode) => (
-    <Paper variant="outlined" sx={{ p: 2.5 }}><Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}><Typography variant="h3" sx={{ flex: 1 }}>{titel}</Typography>{rechts}</Stack>{kinder}</Paper>
+    <Paper variant="outlined" sx={{ overflow: 'hidden' }}><Stack direction="row" alignItems="center" gap={1} sx={{ px: 2.5, py: 1.1, minHeight: 44, bgcolor: 'flaechen.band', borderBottom: 1, borderColor: 'divider' }}><Typography variant="h3" component="h2" sx={{ flex: 1 }}>{titel}</Typography>{rechts}</Stack><Box sx={{ p: 2.5 }}>{kinder}</Box></Paper>
   );
   const zeitFeld = (label: string, k: 'einladungBis' | 'anmeldungVon' | 'anmeldungBis', hilfe?: string) => (
     <DatumZeitFeld label={label} wert={f[k] ?? ''} onWert={v => set({ [k]: v } as Partial<typeof f>)} hilfe={hilfe} />

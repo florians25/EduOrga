@@ -1,4 +1,4 @@
-// Stundenplanänderungen aus UntPlan Web: Zeitraum laden, markieren (Buchungen/Prüfungen), übernehmen oder ignorieren.
+// Stundenplanänderungen aus EduOrga Web: Zeitraum laden, markieren (Buchungen/Prüfungen), übernehmen oder ignorieren.
 import { Button, Checkbox, Field, Input } from '@fluentui/react-components';
 import { useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
@@ -10,6 +10,7 @@ import { dialogZeigen, meldung, StandardDialog } from '@/komponenten/dialoge';
 import { hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import { Tabelle, type Spalte, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { heute, plusTage, sachlich } from './kern';
 import './untplanweb.css';
 
@@ -84,7 +85,7 @@ export default function Stpl() {
   const gewaehlt = () => (t.current?.ausgewaehlte() || []).filter((z) => !z.gruppe && !z.erledigt).map((z) => z.id);
   const uebernehmen = async () => {
     const ids = gewaehlt();
-    if (!ids.length) { await meldung('Bitte zuerst Änderungen markieren, z. B. mit „Buchungen markieren“.', 'Stundenplanänderungen aus UntPlan Web'); return; }
+    if (!ids.length) { await meldung('Bitte zuerst Änderungen markieren, z. B. mit „Buchungen markieren“.', 'Stundenplanänderungen aus EduOrga Web'); return; }
     const r = await api.post<{ text: string; abgelehnt: unknown[] }>(api.dok('/untplanweb/stpl/uebernehmen'), { ids }, { quelle: a.id });
     await neuLaden(true);
     setStatus(sachlich(r.text));
@@ -107,7 +108,7 @@ export default function Stpl() {
   };
 
   return (
-    <AnsichtRahmen titel="Stundenplanänderungen aus UntPlan Web" laden={laedt}
+    <AnsichtRahmen titel="Stundenplanänderungen aus EduOrga Web" laden={laedt}
       werkzeuge={<>
         <Werkzeug text="Übernehmen" titel="Markierte Änderungen in den Stundenplan übernehmen" deaktiviert={!schreiben} aktion={uebernehmen} />
         <Werkzeug text="Ignorieren" titel="Markierte Änderungen nicht übernehmen" deaktiviert={!schreiben} aktion={ignorieren} />
@@ -120,8 +121,8 @@ export default function Stpl() {
         ]} />
       </>}
       filter={<>
-        <Feld titel="Von"><Input type="date" size="small" value={von} onChange={(_, d) => { if (d.value) setVon(d.value); }} /></Feld>
-        <Feld titel="Bis"><Input type="date" size="small" value={bis} onChange={(_, d) => { if (d.value) setBis(d.value); }} /></Feld>
+        <Feld titel="Von"><DatumFeld size="small" wert={von} beiAenderung={(datum) => { if (datum) setVon(datum); }} /></Feld>
+        <Feld titel="Bis"><DatumFeld size="small" wert={bis} beiAenderung={(datum) => { if (datum) setBis(datum); }} /></Feld>
         <Button size="small" onClick={vomServer}>Laden</Button>
         <Schalter text="Erledigte anzeigen" titel="Bereits übernommene oder ignorierte Änderungen anzeigen" an={erledigte} beiAenderung={setErledigte} />
       </>}

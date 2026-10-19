@@ -56,7 +56,7 @@ final class AppZustand: ObservableObject {
 
     var schulname: String {
         let name = sitzung?.schule?.name ?? ""
-        return name.isEmpty ? "UntPlan Next" : name
+        return name.isEmpty ? "EduOrga" : name
     }
 
     var benutzer: SitzungsBenutzer? { sitzung?.benutzer }

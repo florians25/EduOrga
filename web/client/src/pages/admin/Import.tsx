@@ -15,7 +15,7 @@ import { useLaden } from '../../lib/useLaden';
 import { Karte } from './Admin';
 
 const STATUS: Record<string, [Ton, string]> = { neu: ['ok', 'neu'], geaendert: ['pruefung', 'geändert'], unveraendert: ['neutral', 'unverändert'], uebersprungen: ['neutral', 'übersprungen'], fehler: ['entfall', 'Fehler'], ausgetreten: ['termin', 'ausgetreten'] };
-const QUELLE: Record<string, string> = { export: 'UntPlan-Export', web: 'Web-Verwaltung' };
+const QUELLE: Record<string, string> = { export: 'Studio-Export', web: 'Web-Verwaltung' };
 
 export function QuelleKarte({ nachher }: { nachher?: (q: string) => void }) {
   const g = useLaden(sig => holen<{ quelle: string }>('/api/app/admin/schuelerimport/quelle', sig), []);
@@ -28,7 +28,7 @@ export function QuelleKarte({ nachher }: { nachher?: (q: string) => void }) {
             if (!(await bestaetigen('Quelle der Schülerdaten', `Quelle auf „${QUELLE[v]}“ umstellen?`, 'Umstellen'))) return;
             try { const n = await senden<{ quelle: string; uebernommen?: number }>('/api/app/admin/schuelerimport/quelle', { quelle: v }, 'PUT'); toast(n.uebernommen ? `Umgestellt – ${n.uebernommen} Schüler*innen übernommen.` : 'Umgestellt.'); g.setDaten({ quelle: n.quelle }); nachher?.(n.quelle); } catch (err) { fehler(err); }
           }}>
-            {Object.entries(QUELLE).map(([id, t]) => <FormControlLabel key={id} value={id} control={<Radio />} sx={{ alignItems: 'flex-start', mb: 1 }} label={<Box sx={{ pt: 1 }}><b>{t}</b> – {id === 'export' ? 'Schüler*innen kommen mit jeder Übertragung aus der Desktop-App; Änderungen in UntPlanWeb ergänzen sie.' : 'Schüler*innen werden in UntPlanWeb gepflegt (Schülerverwaltung, CSV-Import); der Export überschreibt sie nicht.'}</Box>} />)}
+            {Object.entries(QUELLE).map(([id, t]) => <FormControlLabel key={id} value={id} control={<Radio />} sx={{ alignItems: 'flex-start', mb: 1 }} label={<Box sx={{ pt: 1 }}><b>{t}</b> – {id === 'export' ? 'Schüler*innen kommen mit jeder Übertragung aus der Desktop-App; Änderungen in EduOrga Web ergänzen sie.' : 'Schüler*innen werden in EduOrga Web gepflegt (Schülerverwaltung, CSV-Import); der Export überschreibt sie nicht.'}</Box>} />)}
           </RadioGroup>
           <Typography variant="body2" color="text.secondary">Beim Wechsel zur Web-Verwaltung werden die bisher übertragenen Schüler*innen übernommen.</Typography>
         </>
@@ -139,7 +139,7 @@ export function SchuelerImport() {
                     <FormControlLabel control={<Checkbox checked={opt.kontenEltern} onChange={e => setOpt({ ...opt, kontenEltern: e.target.checked })} />} label="Konten für Erziehungsberechtigte anlegen" />
                   </>}
                 </Stack>
-                {q === 'export' && <Alert severity="warning">Die Schülerdaten kommen aus dem UntPlan-Export. Importierte Änderungen ergänzen den Export; für eine vollständige Pflege in UntPlanWeb oben auf „Web-Verwaltung“ umstellen.</Alert>}
+                {q === 'export' && <Alert severity="warning">Die Schülerdaten kommen aus dem Studio-Export. Importierte Änderungen ergänzen den Export; für eine vollständige Pflege in EduOrga Web oben auf „Web-Verwaltung“ umstellen.</Alert>}
                 <Box><Button variant="outlined" onClick={() => ausfuehren(gr, false)}>Trockenlauf</Button></Box>
               </Stack>
             </Karte>

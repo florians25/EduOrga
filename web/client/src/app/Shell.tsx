@@ -1,10 +1,16 @@
-// Hülle der App: helle Seitenleiste links (Marke, Schule, Schuljahr, Bereiche mit Symbol und aufklappbaren Seiten, Konto unten),
-// einklappbar zur Symbolleiste; auf Telefon und Tablet als Schublade mit Kopfleiste. Rechts der Inhalt der aktuellen Seite.
-import { Suspense, useEffect, useMemo, useState, type MouseEvent } from 'react';
+// Hülle der App: Seitenleiste links in der Primärfarbe Petrol (Marke EduOrga, Schule, Schuljahr, Bereiche mit Symbol und aufklappbaren
+// Seiten, Konto unten), einklappbar zur Symbolleiste; auf Telefon und Tablet als Schublade mit Petrol-Kopfleiste. Rechts der Inhalt.
+// Kontomenü mit Erscheinungsbild (hell, dunkel, wie das System) und „Über EduOrga“.
+import { Suspense, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import {
   AppBar, Avatar, Badge, Box, Collapse, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, ListSubheader, Menu, MenuItem,
-  Select, Stack, Toolbar, Tooltip, Typography, useMediaQuery, useTheme,
+  Select, Stack, Toolbar, Tooltip, Typography, useColorScheme, useMediaQuery, useTheme,
 } from '@mui/material';
+import LightModeOutlined from '@mui/icons-material/LightModeOutlined';
+import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined';
+import ContrastOutlined from '@mui/icons-material/ContrastOutlined';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
+import CheckRounded from '@mui/icons-material/CheckRounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
 import KeyboardDoubleArrowLeftRounded from '@mui/icons-material/KeyboardDoubleArrowLeftRounded';
@@ -17,10 +23,11 @@ import NewReleasesOutlined from '@mui/icons-material/NewReleasesOutlined';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import { api, holen, senden } from '../api/client';
 import { useSitzung } from './sitzung';
-import { allePunkte, menue, navAus, type Bereich } from './menue';
+import { allePunkte, menue, navAus, ohneAlias, type Bereich } from './menue';
 import { InfocenterAnbieter, InfocenterKnopf, useInfocenter } from './Infocenter';
 import { useUpdatestand } from './Update';
-import { Marke, Zeichen } from '../components/Marke';
+import { Marke, Monogramm, PRODUKT } from '../components/Marke';
+import { UeberDialog } from '../components/Ueber';
 import { Fehler, Laden } from '../components/Seite';
 import { useHash, navigieren } from '../lib/router';
 import { lesen, schreiben } from '../lib/speicher';
@@ -41,7 +48,7 @@ function initialen(text: string) {
 export function Shell({ abmelden, neuStarten }: { abmelden: () => void; neuStarten: () => void }) {
   const theme = useTheme();
   const mobil = useMediaQuery(theme.breakpoints.down('lg'));
-  const teile = useHash();
+  const teile = ohneAlias(useHash());
   const s = useSitzung();
   const { ich, sitzung } = s;
   const m = useMemo(() => menue(ich), [ich]);
@@ -71,7 +78,7 @@ export function Shell({ abmelden, neuStarten }: { abmelden: () => void; neuStart
           const text = mehr === 1 ? 'Sie haben eine neue Mitteilung empfangen.' : `Sie haben ${mehr} neue Mitteilungen empfangen.`;
           if (!location.hash.startsWith('#/mitteilungen')) toast(text);
           if (ich.benachrichtigung && 'Notification' in window && Notification.permission === 'granted') {
-            const n = new Notification('Neue Mitteilung', { body: text, tag: 'untplan-mitteilung' });
+            const n = new Notification('Neue Mitteilung', { body: text, tag: 'untplan-mitteilung', icon: '/img/icon-192.png' });
             n.onclick = () => { window.focus(); location.hash = '#/mitteilungen'; n.close(); };
           }
         }
@@ -83,31 +90,31 @@ export function Shell({ abmelden, neuStarten }: { abmelden: () => void; neuStart
   const einklappen = (z: boolean) => { setZu(z); schreiben('untplan:leiste', z ? 'zu' : 'offen'); };
   const schmal = !mobil && zu;
   const leiste = <Leiste m={m} nav={nav} offen={offen} setOffen={setOffen} schmal={schmal} einklappen={einklappen} abmelden={abmelden} neuStarten={neuStarten} mobil={mobil} schliessen={() => setMobilOffen(false)} />;
-  const titel = allePunkte(m).find(p => p.nav === nav)?.text ?? 'UntPlan';
+  const titel = allePunkte(m).find(p => p.nav === nav)?.text ?? PRODUKT;
 
   return (
     <InfocenterAnbieter>
       <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: 'background.default' }}>
         {mobil ? (
           <>
-            <AppBar position="fixed" color="inherit" className="nicht-drucken" sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', zIndex: t => t.zIndex.drawer - 1 }}>
-              <Toolbar sx={{ gap: 1, minHeight: { xs: 56 } }}>
-                <IconButton edge="start" onClick={() => setMobilOffen(true)} aria-label="Menü öffnen"><MenuRounded /></IconButton>
-                <Box sx={{ color: 'primary.main', display: 'flex' }}><Zeichen groesse={22} /></Box>
+            <AppBar position="fixed" color="inherit" className="nicht-drucken" sx={{ bgcolor: 'nav.flaeche', color: 'nav.text', boxShadow: 'none', borderBottom: '3px solid', borderColor: 'primary.light', zIndex: t => t.zIndex.drawer - 1 }}>
+              <Toolbar sx={{ gap: 1.25, minHeight: { xs: 54 } }}>
+                <IconButton edge="start" onClick={() => setMobilOffen(true)} aria-label="Menü öffnen" sx={{ color: 'inherit' }}><MenuRounded /></IconButton>
+                <Box sx={{ display: 'flex', borderRadius: '4px', boxShadow: '0 0 0 1px rgba(255,255,255,.22)' }}><Monogramm groesse={24} /></Box>
                 <Typography sx={{ fontWeight: 600, flex: 1, minWidth: 0 }} noWrap>{titel}</Typography>
-                <InfocenterKnopf />
+                <InfocenterKnopf hell />
               </Toolbar>
             </AppBar>
-            <Drawer open={mobilOffen} onClose={() => setMobilOffen(false)} slotProps={{ paper: { sx: { width: Math.min(BREIT + 16, 320) } } }}>{leiste}</Drawer>
+            <Drawer open={mobilOffen} onClose={() => setMobilOffen(false)} slotProps={{ paper: { sx: { width: Math.min(BREIT + 16, 320), bgcolor: 'nav.flaeche', color: 'nav.text' } } }}>{leiste}</Drawer>
           </>
         ) : (
           <Box component="nav" className="nicht-drucken" sx={{ width: schmal ? SCHMAL : BREIT, flex: 'none', transition: 'width .16s ease' }}>
-            <Box sx={{ position: 'fixed', top: 0, bottom: 0, left: 0, width: schmal ? SCHMAL : BREIT, borderRight: 1, borderColor: 'divider', bgcolor: 'background.paper', transition: 'width .16s ease', zIndex: 1100 }}>
+            <Box sx={{ position: 'fixed', top: 0, bottom: 0, left: 0, width: schmal ? SCHMAL : BREIT, bgcolor: 'nav.flaeche', color: 'nav.text', transition: 'width .16s ease', zIndex: 1100 }}>
               {leiste}
             </Box>
           </Box>
         )}
-        <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2.5, lg: 3.5 }, pt: { xs: 9, lg: 3 }, pb: 6, '@media print': { p: 0 } }}>
+        <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2.5, lg: 3 }, pt: { xs: 9, lg: 2.5 }, pb: 6, '@media print': { p: 0 } }}>
           <FehlerGrenze schluessel={teile.join('/')}>
             <Suspense fallback={<Laden hoehe={320} />}>
               {Seite ? <Seite key={name} teile={teile.slice(1)} nav={nav} /> : <Fehler fehler={new Error('Seite nicht gefunden.')} />}
@@ -130,7 +137,7 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
   // neue Version verfügbar: Punkt an „Administration“ (bzw. „Übersicht & Synchronisation“ mit der Karte „Version & Updates“)
   const update = useUpdatestand().stand?.updateVerfuegbar ?? false;
   const updatePunkt = (g: Bereich) => update && g.id === 'admin';
-  const zahl = (an?: boolean) => (an && ungelesen ? <Badge badgeContent={ungelesen > 99 ? '99+' : ungelesen} color="primary" sx={{ mr: 1.5, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} /> : null);
+  const zahl = (an?: boolean) => (an && ungelesen ? <Badge badgeContent={ungelesen > 99 ? '99+' : ungelesen} color="error" sx={{ mr: 1.5, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} /> : null);
 
   const aktiv = (g: Bereich) => g.nav === nav || !!g.unter?.some(p => p.nav === nav);
   const kopfKlick = (g: Bereich, ev: MouseEvent<HTMLElement>) => {
@@ -139,23 +146,27 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
     setOffen(offen === g.id ? null : g.id);
   };
 
+  // Seitenleiste in Petrol: Text weiß, aktive Zeile in der Akzentfarbe mit heller Markierung links, Unterpunkte eingerückt
+  const zeile = { color: 'nav.text', borderRadius: '6px', '&:hover': { bgcolor: 'nav.hover' }, '&.Mui-focusVisible': { outline: '2px solid', outlineColor: 'nav.marke', outlineOffset: -2 } };
+  const aktivZeile = { bgcolor: 'nav.aktiv', color: '#fff', boxShadow: 'inset 3px 0 0 var(--mui-palette-nav-marke)', '&:hover': { bgcolor: 'nav.aktiv' } };
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Stack direction="row" alignItems="center" sx={{ px: schmal ? 0 : 2.25, pt: 2, pb: 1, minHeight: 64, justifyContent: schmal ? 'center' : 'space-between' }}>
-        <Box component="a" href="#/heute" onClick={schliessen} sx={{ textDecoration: 'none', color: 'inherit', minWidth: 0 }} title="UntPlan">
-          {schmal ? <Box sx={{ color: 'primary.main', display: 'flex' }}><Zeichen groesse={28} /></Box> : <Marke groesse={28} />}
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', color: 'nav.text' }}>
+      <Stack direction="row" alignItems="center" sx={{ px: schmal ? 0 : 2, pt: 1.75, pb: 1.25, minHeight: 60, justifyContent: schmal ? 'center' : 'space-between' }}>
+        <Box component="a" href="#/" onClick={schliessen} sx={{ textDecoration: 'none', color: 'inherit', minWidth: 0 }} title={`${PRODUKT} – Startseite`}>
+          {schmal ? <Box sx={{ display: 'flex', borderRadius: '5px', boxShadow: '0 0 0 1px rgba(255,255,255,.22)' }}><Monogramm groesse={30} /></Box> : <Marke hell groesse={28} />}
         </Box>
-        {!schmal && (mobil ? <IconButton onClick={schliessen} aria-label="Menü schließen"><CloseRounded /></IconButton> : <InfocenterKnopf />)}
+        {!schmal && (mobil ? <IconButton onClick={schliessen} aria-label="Menü schließen" sx={{ color: 'inherit' }}><CloseRounded /></IconButton> : <InfocenterKnopf hell />)}
       </Stack>
       {!schmal && (
-        <Box sx={{ px: 2.25, pb: 1.5 }}>
-          <Typography variant="body2" color="text.secondary" noWrap title={sitzung.schule.name}>{sitzung.schule.name}</Typography>
+        <Box sx={{ px: 2, pb: 1.5 }}>
+          <Typography variant="body2" sx={{ color: 'nav.text2', fontWeight: 500 }} noWrap title={sitzung.schule.name}>{sitzung.schule.name}</Typography>
           {s.schuljahre.length > 0 && (
             <Stack direction="row" alignItems="center" gap={1} sx={{ mt: 1 }}>
-              <Typography variant="caption" color="text.secondary">Schuljahr</Typography>
+              <Typography variant="caption" sx={{ color: 'nav.text2' }}>Schuljahr</Typography>
               <Tooltip title={`Aktuelles Schuljahr: ${s.schuljahre[0].text}`} placement="right">
                 <Select value={s.schuljahr.von} onChange={e => { s.schuljahrWaehlen(e.target.value); toast(`Schuljahr ${s.schuljahre.find(x => x.von === e.target.value)?.text} gewählt.`); }}
-                  variant="outlined" size="small" sx={{ fontSize: 13, fontWeight: 500, borderRadius: 999, '& .MuiSelect-select': { py: 0.4, pl: 1.5 },
+                  variant="outlined" size="small" sx={{ fontSize: 13, fontWeight: 600, borderRadius: '6px', color: 'nav.text', bgcolor: 'nav.hover', '& .MuiSelect-select': { py: 0.4, pl: 1.25 },
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'nav.linie' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'nav.text2' }, '& .MuiSvgIcon-root': { color: 'nav.text2' },
                     ...(s.schuljahr.aktuell ? {} : { bgcolor: 'status.pruefung.flaeche', color: 'status.pruefung.main' }) }}>
                   {s.schuljahre.map(x => <MenuItem key={x.von} value={x.von}>{x.text}</MenuItem>)}
                 </Select>
@@ -164,24 +175,23 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
           )}
         </Box>
       )}
-      <Divider />
-      <List component="div" sx={{ flex: 1, overflowY: 'auto', px: schmal ? 1 : 1.25, py: 1.25 }} aria-label="Navigation">
+      <Divider sx={{ borderColor: 'nav.linie' }} />
+      <List component="div" sx={{ flex: 1, overflowY: 'auto', px: schmal ? 1 : 1, py: 1, scrollbarColor: 'rgba(255,255,255,.25) transparent' }} aria-label="Navigation">
         {m.map(g => {
           const an = aktiv(g);
           const knopf = (
             <ListItemButton key={g.id} onClick={ev => kopfKlick(g, ev)} selected={an && (!g.unter || schmal)} aria-current={g.nav === nav ? 'page' : undefined}
               aria-expanded={g.unter && !schmal ? offen === g.id : undefined}
-              sx={{ mb: 0.25, minHeight: 42, px: schmal ? 0 : 1.25, justifyContent: schmal ? 'center' : 'flex-start',
-                color: an ? 'primary.main' : 'text.primary', '&.Mui-selected': { bgcolor: 'action.selected', color: 'primary.main' },
-                '& .MuiListItemIcon-root': { color: an ? 'primary.main' : 'text.secondary' } }}>
-              <ListItemIcon sx={{ minWidth: schmal ? 0 : 38, justifyContent: 'center' }}>
-                {g.zaehler && schmal ? <Badge variant="dot" color="primary" invisible={!ungelesen}>{g.icon}</Badge>
+              sx={{ ...zeile, mb: 0.25, minHeight: 38, px: schmal ? 0 : 1.25, justifyContent: schmal ? 'center' : 'flex-start',
+                '&.Mui-selected': aktivZeile, '& .MuiListItemIcon-root': { color: an ? '#fff' : 'nav.text2' } }}>
+              <ListItemIcon sx={{ minWidth: schmal ? 0 : 34, justifyContent: 'center', '& svg': { fontSize: 20 } }}>
+                {g.zaehler && schmal ? <Badge variant="dot" color="error" invisible={!ungelesen}>{g.icon}</Badge>
                   : updatePunkt(g) ? <Badge variant="dot" color="warning" title="Neue Version verfügbar">{g.icon}</Badge> : g.icon}
               </ListItemIcon>
               {!schmal && <ListItemText primary={g.text} slotProps={{ primary: { sx: { fontWeight: an ? 600 : 500, fontSize: 14 } } }} />}
               {!schmal && zahl(g.zaehler && offen !== g.id)}
               {!schmal && updatePunkt(g) && offen !== g.id && <Badge badgeContent="neu" color="warning" title="Neue Version verfügbar" sx={{ mr: 2, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} />}
-              {!schmal && g.unter && <ExpandMoreRounded fontSize="small" sx={{ color: 'text.secondary', transform: offen === g.id ? 'rotate(180deg)' : 'none', transition: 'transform .16s' }} />}
+              {!schmal && g.unter && <ExpandMoreRounded fontSize="small" sx={{ color: 'nav.text2', transform: offen === g.id ? 'rotate(180deg)' : 'none', transition: 'transform .16s' }} />}
             </ListItemButton>
           );
           return (
@@ -189,10 +199,10 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
               {schmal ? <Tooltip title={g.text} placement="right">{knopf}</Tooltip> : knopf}
               {g.unter && !schmal && (
                 <Collapse in={offen === g.id} timeout={160} unmountOnExit>
-                  <List component="div" disablePadding sx={{ ml: 3.1, pl: 1.25, borderLeft: 1, borderColor: 'divider', mb: 0.75 }}>
+                  <List component="div" disablePadding sx={{ ml: 2.6, pl: 1, borderLeft: '1px solid', borderColor: 'nav.linie', mb: 0.75 }}>
                     {g.unter.filter(p => !p.verborgen).map(p => (
                       <ListItemButton key={p.nav} component="a" href={p.href} onClick={schliessen} selected={p.nav === nav} aria-current={p.nav === nav ? 'page' : undefined}
-                        sx={{ minHeight: 34, py: 0.25, px: 1.25, mb: 0.25, '&.Mui-selected': { bgcolor: 'action.selected', color: 'primary.main', fontWeight: 600 } }}>
+                        sx={{ ...zeile, color: 'nav.text2', minHeight: 30, py: 0.25, px: 1.25, mb: '1px', '&:hover': { bgcolor: 'nav.hover', color: 'nav.text' }, '&.Mui-selected': { ...aktivZeile, fontWeight: 600 } }}>
                         <ListItemText primary={p.text} slotProps={{ primary: { sx: { fontSize: 13.5, fontWeight: 'inherit' } } }} />
                         {zahl(p.zaehler)}
                         {update && p.nav === 'admin-sync' && <Badge badgeContent="Update" color="warning" sx={{ mr: 2.5, '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} />}
@@ -212,10 +222,10 @@ function Leiste({ m, nav, offen, setOffen, schmal, einklappen, abmelden, neuStar
           <MenuItem key={p.nav} component="a" href={p.href} selected={p.nav === nav} onClick={() => setPopover(null)}>{p.text}</MenuItem>
         ))}
       </Menu>
-      <Divider />
+      <Divider sx={{ borderColor: 'nav.linie' }} />
       <Konto schmal={schmal} abmelden={abmelden} neuStarten={neuStarten} schliessen={schliessen} />
       {!mobil && (
-        <ListItemButton onClick={() => einklappen(!schmal)} sx={{ flex: 'none', mx: 1, mb: 1, minHeight: 36, justifyContent: schmal ? 'center' : 'flex-start', color: 'text.secondary' }}
+        <ListItemButton onClick={() => einklappen(!schmal)} sx={{ ...zeile, color: 'nav.text2', flex: 'none', mx: 1, mb: 1, minHeight: 32, justifyContent: schmal ? 'center' : 'flex-start' }}
           aria-label="Navigation ein- oder ausklappen" title="Navigation ein- oder ausklappen">
           {schmal ? <KeyboardDoubleArrowRightRounded fontSize="small" /> : <><KeyboardDoubleArrowLeftRounded fontSize="small" /><Typography variant="caption" sx={{ ml: 1 }}>Navigation einklappen</Typography></>}
         </ListItemButton>
@@ -242,19 +252,22 @@ function Konto({ schmal, abmelden, neuStarten, schliessen }: { schmal: boolean; 
     try { await api(`/api/app/konten/${id}`, { methode: 'DELETE' }); setKonten(k => (k ?? []).filter(x => x.id !== id)); } catch (err) { fehler(err); }
   };
   const andere = (konten ?? []).filter(k => !k.aktuell);
+  const { mode, setMode } = useColorScheme();
+  const [ueber, setUeber] = useState(false);
+  const modi: ['light' | 'dark' | 'system', string, ReactNode][] = [['light', 'Hell', <LightModeOutlined fontSize="small" />], ['dark', 'Dunkel', <DarkModeOutlined fontSize="small" />], ['system', 'Wie das System', <ContrastOutlined fontSize="small" />]];
   return (
     <>
-      <ListItemButton onClick={e => oeffnen(e.currentTarget)} aria-haspopup="menu" sx={{ flex: 'none', m: 1, mb: 0.5, py: 1, px: schmal ? 0 : 1.25, justifyContent: schmal ? 'center' : 'flex-start', gap: 1.25 }}>
+      <ListItemButton onClick={e => oeffnen(e.currentTarget)} aria-haspopup="menu" sx={{ flex: 'none', m: 1, mb: 0.5, py: 0.75, px: schmal ? 0 : 1.25, justifyContent: schmal ? 'center' : 'flex-start', gap: 1.25, borderRadius: '6px', color: 'nav.text', '&:hover': { bgcolor: 'nav.hover' } }}>
         <Badge variant="dot" color="error" invisible={!ic.ungelesen || !schmal} overlap="circular">
-          <Avatar sx={{ width: 34, height: 34, fontSize: 13, fontWeight: 600, bgcolor: 'primary.main' }}>{initialen(ich.anzeigename || ich.login)}</Avatar>
+          <Avatar sx={{ width: 32, height: 32, fontSize: 13, fontWeight: 600, bgcolor: 'nav.aktiv', color: '#fff', border: '1px solid', borderColor: 'nav.linie' }}>{initialen(ich.anzeigename || ich.login)}</Avatar>
         </Badge>
         {!schmal && (
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography sx={{ fontWeight: 600, fontSize: 13.5 }} noWrap>{ich.anzeigename || ich.login}</Typography>
-            <Typography variant="caption" color="text.secondary" noWrap component="div">{ich.login} · {ich.rollenname}</Typography>
+            <Typography variant="caption" sx={{ color: 'nav.text2' }} noWrap component="div">{ich.login} · {ich.rollenname}</Typography>
           </Box>
         )}
-        {!schmal && <ExpandMoreRounded fontSize="small" sx={{ color: 'text.secondary', transform: 'rotate(180deg)' }} />}
+        {!schmal && <ExpandMoreRounded fontSize="small" sx={{ color: 'nav.text2', transform: 'rotate(180deg)' }} />}
       </ListItemButton>
       <Menu anchorEl={anker} open={!!anker} onClose={() => setAnker(null)} anchorOrigin={{ vertical: 'top', horizontal: schmal ? 'right' : 'left' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'left' }} slotProps={{ paper: { sx: { minWidth: 260 } } }}>
@@ -263,6 +276,13 @@ function Konto({ schmal, abmelden, neuStarten, schliessen }: { schmal: boolean; 
           <ListItemIcon><NewReleasesOutlined fontSize="small" /></ListItemIcon>Neuigkeiten
           {ic.ungelesen > 0 && <Badge badgeContent={ic.ungelesen} color="error" sx={{ ml: 'auto', '& .MuiBadge-badge': { position: 'static', transform: 'none' } }} />}
         </MenuItem>
+        <Divider />
+        <ListSubheader sx={{ lineHeight: '30px' }}>Erscheinungsbild</ListSubheader>
+        {modi.map(([w, text, sym]) => (
+          <MenuItem key={w} onClick={() => setMode(w)} selected={(mode ?? 'system') === w} dense>
+            <ListItemIcon>{sym}</ListItemIcon><ListItemText primary={text} />{(mode ?? 'system') === w && <CheckRounded fontSize="small" sx={{ ml: 1, color: 'secondary.main' }} />}
+          </MenuItem>
+        ))}
         <Divider />
         {konten === null && <MenuItem disabled>Konten werden geladen …</MenuItem>}
         {andere.length > 0 && <ListSubheader sx={{ lineHeight: '32px' }}>Konto wechseln</ListSubheader>}
@@ -275,8 +295,10 @@ function Konto({ schmal, abmelden, neuStarten, schliessen }: { schmal: boolean; 
         ))}
         <MenuItem onClick={() => { setAnker(null); abmelden(); }}><ListItemIcon><PersonAddAltOutlined fontSize="small" /></ListItemIcon>Weiteres Konto anmelden</MenuItem>
         <Divider />
+        <MenuItem onClick={() => { setAnker(null); setUeber(true); }}><ListItemIcon><InfoOutlined fontSize="small" /></ListItemIcon>Über EduOrga</MenuItem>
         <MenuItem onClick={() => { setAnker(null); abmelden(); }}><ListItemIcon><LogoutRounded fontSize="small" /></ListItemIcon>Abmelden</MenuItem>
       </Menu>
+      <UeberDialog offen={ueber} onClose={() => setUeber(false)} />
     </>
   );
 }

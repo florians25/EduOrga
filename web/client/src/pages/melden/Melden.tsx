@@ -50,7 +50,7 @@ export default function Melden({ teile }: SeitenProps) {
     if (!stunden.length) for (let i = 1; i <= 10; i++) stunden.push({ nr: i, bezeichnung: String(i), beginn: '', ende: '' });
     return { el, stunden };
   }, []);
-  const titel = { uebersicht: 'Melden', abwesenheit: 'Abwesenheit melden', klausur: 'Prüfung eintragen', meine: 'Meine Meldungen' }[bereich]!;
+  const titel = { uebersicht: 'Meldungen im Überblick', abwesenheit: 'Abwesenheit melden', klausur: 'Prüfung eintragen', meine: 'Meine Meldungen' }[bereich]!;
   if (bereich === 'meine') return <Meine />;
   return (
     <Seite titel={titel} breit={bereich === 'uebersicht'}>
@@ -184,7 +184,7 @@ function Klausur({ stunden, klassen, lehrer }: { stunden: Zeit[]; klassen: Eleme
       renderInput={p => <TextField {...p} label={label} placeholder={wert.length ? '' : platzhalter} />} />
   );
   return (
-    <FormKarte icon={<FactCheckOutlined />} titel="Prüfung eintragen" unter="Die Prüfung steht sofort im Stundenplan und wird von UntPlan übernommen."
+    <FormKarte icon={<FactCheckOutlined />} titel="Prüfung eintragen" unter="Die Prüfung steht sofort im Stundenplan und wird von EduOrga Studio übernommen."
       fuss={<><Button variant="outlined" href="#/melden">Abbrechen</Button><Button variant="contained" startIcon={<SendRounded />} disabled={laeuft} onClick={async () => {
         if (!titel.trim()) { toast('Bitte einen Titel angeben.', true); return; }
         if (!kl.length) { toast('Bitte mindestens eine Klasse auswählen.', true); return; }

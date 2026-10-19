@@ -366,12 +366,12 @@ export function Personen({ weitere = [] }: { weitere?: string[] }) {
             {verwaltet && <Button variant="outlined" startIcon={<AddRounded />} onClick={() => setPerson({ p: null })}>{art === 'eltern' ? 'Erziehungsberechtigte*n' : 'Person'} erfassen</Button>}
             <Button variant="contained" startIcon={<PersonAddAltRounded />} disabled={!ohne} onClick={() => setKonten({ auswahl: null })}>Konten anlegen …</Button>
           </Stack>
-          {verwaltet && <Alert severity="info" sx={{ mb: 2 }}>{art === 'eltern' ? 'Erziehungsberechtigte werden in UntPlanWeb erfasst und mit ihren Kindern verknüpft; das Elternkonto erhält die Kinder automatisch.' : 'Sonstiges Personal (z. B. Sekretariat, Hausmeister, Schulsozialarbeit) wird in UntPlanWeb erfasst. Konten erhalten standardmäßig die Rolle Lehrkraft ohne Kürzel (Pläne und Vertretungsplan des Kollegiums).'}</Alert>}
+          {verwaltet && <Alert severity="info" sx={{ mb: 2 }}>{art === 'eltern' ? 'Erziehungsberechtigte werden in EduOrga Web erfasst und mit ihren Kindern verknüpft; das Elternkonto erhält die Kinder automatisch.' : 'Sonstiges Personal (z. B. Sekretariat, Hausmeister, Schulsozialarbeit) wird in EduOrga Web erfasst. Konten erhalten standardmäßig die Rolle Lehrkraft ohne Kürzel (Pläne und Vertretungsplan des Kollegiums).'}</Alert>}
           <Stack direction="row" gap={1} sx={{ mb: 2 }} flexWrap="wrap">
             <Plakette>{liste.length} {ARTEN[art]}</Plakette><Plakette ton="ok">{liste.length - ohne} mit Konto</Plakette><Plakette ton="pruefung">{ohne} ohne Konto</Plakette>
           </Stack>
           <Tabelle zeilen={sichtbar} schluessel={p => p.schluessel} auswahl={auswahl} setAuswahl={s => setAuswahl(new Set([...s].filter(x => !liste.find(p => p.schluessel === x)?.konto)))} max={400}
-            leer={liste.length ? 'Keine Personen gefunden.' : art === 'eltern' ? 'Noch keine Erziehungsberechtigten erfasst.' : art === 'personal' ? 'Noch kein sonstiges Personal erfasst.' : 'Keine Personen – bitte zuerst Daten aus UntPlan übertragen.'}
+            leer={liste.length ? 'Keine Personen gefunden.' : art === 'eltern' ? 'Noch keine Erziehungsberechtigten erfasst.' : art === 'personal' ? 'Noch kein sonstiges Personal erfasst.' : 'Keine Personen – bitte zuerst Daten aus EduOrga Studio übertragen.'}
             spalten={[
               { id: 'name', kopf: 'Name', sortWert: p => `${p.name} ${p.vorname}`, zelle: p => <Stack direction="row" gap={1.25} alignItems="center"><NamensAvatar name={personName(p) || p.kurz} groesse={30} /><Typography sx={{ fontWeight: 500 }}>{art === 'schueler' ? `${p.name}, ${p.vorname}` : personName(p) || p.kurz}</Typography></Stack> },
               { id: 'z', kopf: art === 'schueler' ? 'Klasse' : art === 'lehrer' ? 'Kürzel' : art === 'eltern' ? 'Kinder' : 'Funktion', sortWert: p => p.klasse || p.kurz || p.funktion,

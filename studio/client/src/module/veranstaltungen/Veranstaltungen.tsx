@@ -101,11 +101,14 @@ export default function Veranstaltungen() {
     await neuLaden(true);
   };
   const neu = async () => {
+    const alle = async (typ: string, text: string) => [{ id: -1, k: text, l: 'alle (wählbaren) Elemente' }, ...await elemente(typ)];
     const w = await formular('Neue Veranstaltung', [
-      { name: 'T', titel: 'Text', wert: 'Exkursion' }, { name: 'K', titel: 'Klassen', hinweis: 'Kurznamen, „Alle Klassen“ oder „Alle Klassen außer 5a“' },
-      { name: 'L', titel: 'Lehrkräfte', hinweis: 'Kurznamen oder „Alle Lehrkräfte“' }, { name: 'R', titel: 'Räume' },
-      { name: 'V', titel: 'Von', wert: datumText(zr.von) }, { name: 'SV', titel: 'Ab Stunde', art: 'zahl', wert: 1 },
-      { name: 'B', titel: 'Bis', wert: datumText(zr.von) }, { name: 'SB', titel: 'Bis Stunde', art: 'zahl', wert: zustand().grunddaten?.zeitraster.stunden.length || 8 },
+      { name: 'T', titel: 'Text', wert: 'Exkursion' },
+      { name: 'K', titel: 'Klassen', art: 'elemente', elemente: await alle('klasse', 'Alle Klassen'), hinweis: '„Alle Klassen außer …“ lässt sich danach in der Tabelle eintragen' },
+      { name: 'L', titel: 'Lehrkräfte', art: 'elemente', elemente: await alle('lehrer', 'Alle Lehrkräfte') },
+      { name: 'R', titel: 'Räume', art: 'elemente', elemente: await elemente('raum') },
+      { name: 'V', titel: 'Von', art: 'datum', wert: zr.von }, { name: 'SV', titel: 'Ab Stunde', art: 'zahl', wert: 1 },
+      { name: 'B', titel: 'Bis', art: 'datum', wert: zr.von }, { name: 'SB', titel: 'Bis Stunde', art: 'zahl', wert: zustand().grunddaten?.zeitraster.stunden.length || 8 },
     ], { okText: 'Anlegen', breite: '500px' });
     if (!w) return;
     const r = await api.post<Antwort>(vapfad(''), { feld: 'T', wert: w.T || 'Veranstaltung', datum: datumLesen(w.V, zr.von!) }, { quelle: a.id });
@@ -115,16 +118,18 @@ export default function Veranstaltungen() {
   };
 
   const ed = (z: VZeile) => schreiben && !!z;
+  // „Alle Lehrkräfte“, „Alle Klassen außer 5a“ … wertet der Server aus
+  const alleTeil = (t: string) => /^alle\b/i.test(t);
   const rot = (z: VZeile) => (z.offen ? 'vt-rot' : null);
   const spalten: Spalte<VZeile>[] = [
     { schluessel: 'nr', titel: 'Nr.', breite: 56, art: 'NurLesen', ausrichtung: 'rechts', klasse: rot },
-    { schluessel: 'k', titel: 'Klassen', pruefen: false, breite: 110, hinweis: 'Klassen – ihr Unterricht entfällt', art: 'ElementListe', refTyp: 'klasse', editierbarFuer: ed },
-    { schluessel: 'kt', titel: 'Klassenteil', pruefen: false, breite: 90, hinweis: 'Klassenteil – der übrige Unterricht findet parallel statt', art: 'ElementListe', refTyp: 'klasse', editierbarFuer: ed },
-    { schluessel: 'l', titel: 'Lehrkräfte', pruefen: false, breite: 130, art: 'ElementListe', refTyp: 'lehrer', editierbarFuer: ed, farbe: (z) => (z.offen ? 'var(--up-entfall-flaeche)' : null), klasse: rot },
-    { schluessel: 'r', titel: 'Räume', pruefen: false, breite: 80, art: 'ElementListe', refTyp: 'raum', editierbarFuer: ed },
-    { schluessel: 'v', titel: 'Von', breite: 96, editierbarFuer: ed },
+    { schluessel: 'k', titel: 'Klassen', zulassen: alleTeil, breite: 110, hinweis: 'Klassen – ihr Unterricht entfällt', art: 'ElementListe', refTyp: 'klasse', editierbarFuer: ed },
+    { schluessel: 'kt', titel: 'Klassenteil', zulassen: alleTeil, breite: 90, hinweis: 'Klassenteil – der übrige Unterricht findet parallel statt', art: 'ElementListe', refTyp: 'klasse', editierbarFuer: ed },
+    { schluessel: 'l', titel: 'Lehrkräfte', zulassen: alleTeil, breite: 130, art: 'ElementListe', refTyp: 'lehrer', editierbarFuer: ed, farbe: (z) => (z.offen ? 'var(--up-entfall-flaeche)' : null), klasse: rot },
+    { schluessel: 'r', titel: 'Räume', zulassen: alleTeil, breite: 80, art: 'ElementListe', refTyp: 'raum', editierbarFuer: ed },
+    { schluessel: 'v', titel: 'Von', breite: 96, art: 'Datum', editierbarFuer: ed },
     { schluessel: 'sv', titel: 'ab Std.', breite: 60, art: 'Ganzzahl', ausrichtung: 'rechts', editierbarFuer: ed },
-    { schluessel: 'b', titel: 'Bis', breite: 96, editierbarFuer: ed },
+    { schluessel: 'b', titel: 'Bis', breite: 96, art: 'Datum', editierbarFuer: ed },
     { schluessel: 'sb', titel: 'bis Std.', breite: 64, art: 'Ganzzahl', ausrichtung: 'rechts', editierbarFuer: ed },
     { schluessel: 'g', titel: 'Grund', breite: 72, art: 'Element', refTyp: 'abwesenheitsgrund', editierbarFuer: ed },
     { schluessel: 't', titel: 'Text', breite: 180, editierbarFuer: ed },
@@ -163,7 +168,7 @@ export default function Veranstaltungen() {
         <Rechts><Feld titel="Nr."><Input size="small" style={{ width: 80 }} inputMode="numeric" value={nr} title="Nummer eingeben und Enter: zur Veranstaltung springen" onChange={(_, d) => setNr(d.value)} onKeyDown={(e) => { if (e.key === 'Enter') zur(Number(nr)); }} /></Feld></Rechts>
       </>}
       filter={<Feld titel="Zeitraum"><ZeitraumAuswahl z={zr} /></Feld>}>
-      <Tabelle<VZeile> ref={t} name="veranstaltungen" zeilen={daten || []} spalten={spalten} id={(z) => z.id} sortierbar={false} zeilenHoehe={30} zustandSchluessel="tabelle.veranstaltungen"
+      <Tabelle<VZeile> ref={t} name="veranstaltungen" zeilen={daten || []} spalten={spalten} id={(z) => z.id} sortierbar={false} zustandSchluessel="tabelle.veranstaltungen"
         leerText="Im gewählten Zeitraum gibt es keine Veranstaltungen." neuText={schreiben ? 'Neue Veranstaltung …' : undefined}
         zeilenKlasse={(z) => (z.vergangen ? 'leise' : '')}
         neu={schreiben ? async (s, wert) => { const r = await feld(null, s.schluessel, wert); waehleSpaeter(r.id); return null; } : undefined}

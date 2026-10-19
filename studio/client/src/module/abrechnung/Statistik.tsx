@@ -8,6 +8,7 @@ import { useDaten } from '@/kern/laden';
 import { AnsichtRahmen, Feld, Werkzeug } from '@/komponenten/ansicht';
 import { MenueKnopf } from '@/komponenten/menue';
 import { Tabelle } from '@/komponenten/tabelle/Tabelle';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { useElemente } from '../gemeinsam';
 import './abrechnung.css';
 
@@ -47,8 +48,8 @@ export default function Statistik({ p }: AnsichtProps) {
       filter={<>
         <Feld titel="Auswertung"><Select size="small" style={{ width: 260 }} value={String(bericht)} onChange={(_, d) => setBericht(Number(d.value))}>{(berichte || []).map((x) => <option key={x.nr} value={x.nr}>{x.text}</option>)}</Select></Feld>
         <Feld titel="Lehrkraft"><Select size="small" disabled={!mitLehrer} value={lehrer ? String(lehrer) : ''} onChange={(_, d) => setLehrer(Number(d.value))}>{lehrkraefte.map((l) => <option key={l.id} value={l.id}>{l.k}</option>)}</Select></Feld>
-        <Feld titel="Von"><Input size="small" type="date" value={von} onChange={(_, d) => setVon(d.value)} /></Feld>
-        <Feld titel="Bis"><Input size="small" type="date" value={bis} onChange={(_, d) => setBis(d.value)} /></Feld>
+        <Feld titel="Von"><DatumFeld size="small" wert={von} beiAenderung={(datum) => setVon(datum)} /></Feld>
+        <Feld titel="Bis"><DatumFeld size="small" wert={bis} beiAenderung={(datum) => setBis(datum)} /></Feld>
         <Select size="small" value="0" title="Zeitraum übernehmen" onChange={(_, d) => zeitraum(Number(d.value))}>{['Zeitraum wählen', 'Aktueller Monat', 'Vormonat', 'Aktuelle Woche', 'Schuljahr'].map((t, i) => <option key={t} value={i}>{t}</option>)}</Select>
       </>}
       fuss={daten?.summe ? <span style={{ whiteSpace: 'pre-wrap' }}>{daten.summe}</span> : null}>

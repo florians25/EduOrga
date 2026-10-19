@@ -25,14 +25,20 @@ public sealed record StudioEreignis(string Art, long Version, string Bereich, st
 /// Ein geöffnetes Arbeitsdokument: das Core-<see cref="Dokument"/> im Speicher. Alle Zugriffe laufen über
 /// <see cref="LesenAsync{T}"/> bzw. <see cref="AendernAsync{T}"/> und sind damit je Dokument serialisiert (UntPlan.Core ist nicht
 /// threadsicher). Änderungen laufen über <see cref="Dokument.Aendern"/> und sind damit rückgängig zu machen; jede Änderung erhöht
-/// <see cref="Version"/> und wird als <see cref="StudioEreignis"/> an alle Abonnenten gemeldet.
+/// <see cref="Version"/>, wird als <see cref="StudioEreignis"/> an alle Abonnenten gemeldet und dem <see cref="Dokumentdienst"/>
+/// gemeldet, der sie kurz danach in die Datenbank schreibt (sofortiges Speichern, kein „Speichern“ nötig).
+/// <para>Speichern: unter der Dokumentsperre nur den Inhalt erzeugen (JSON), das Schreiben in die Datenbank (Komprimieren,
+/// Transaktion) läuft danach außerhalb der Dokumentsperre – Änderungen anderer Benutzer warten also nicht auf die Datenbank.
+/// Speichervorgänge eines Dokuments laufen nacheinander (<c>_speicherSperre</c>), damit nie ein älterer Stand einen neueren überschreibt.</para>
 /// </summary>
 public sealed class Arbeitsdokument
 {
     private readonly SemaphoreSlim _sperre = new(1, 1);
+    private readonly SemaphoreSlim _speicherSperre = new(1, 1);
     private readonly object _aboSperre = new();
     private readonly List<Channel<StudioEreignis>> _abos = new();
-    private readonly Action<Arbeitsdokument, byte[]> _speichern;
+    private readonly Action<Arbeitsdokument, byte[], bool, string> _speichern;
+    private readonly Action<Arbeitsdokument, AenderungsArt, string>? _geaendert;
 
     public string Id => Info.Id;
     public DokumentInfo Info { get; }
@@ -43,16 +49,24 @@ public sealed class Arbeitsdokument
     public DateTime LetzterZugriff { get; private set; } = DateTime.Now;
     public DateTime LetzteAenderung { get; private set; } = DateTime.MinValue;
     public DateTime? Gespeichert { get; private set; }
+    /// <summary>Gerade wird in die Datenbank geschrieben.</summary>
+    public bool Speichert { get; private set; }
+    /// <summary>Meldung des letzten fehlgeschlagenen Speichervorgangs (null = zuletzt erfolgreich).</summary>
+    public string? Speicherfehler { get; private set; }
+    /// <summary>Fehlgeschlagene Speicherversuche in Folge (für die Wartezeit bis zum nächsten Versuch).</summary>
+    public int Fehlversuche { get; private set; }
     /// <summary>Bereich der letzten Änderung (<see cref="AenderungsArt"/>), z. B. „Stammdaten“ – für gezielte Aktualisierung der Fenster.</summary>
     public string LetzterBereich { get; private set; } = "";
     public bool IstGeaendert => Dokument.IstGeaendert;
 
-    /// <param name="speichern">schreibt Beschreibung und Inhalt der Schuldatei (*.up) in die Datenbank</param>
-    internal Arbeitsdokument(DokumentInfo info, Dokument dokument, Action<Arbeitsdokument, byte[]> speichern)
+    /// <param name="speichern">schreibt Beschreibung und Inhalt der Schuldatei (*.up) in die Datenbank (Dokument, Inhalt, Sicherungspunkt, Benutzer)</param>
+    /// <param name="geaendert">nach jeder Änderung (außerhalb der Dokumentsperre aufgerufen): Speichern vormerken, direkte Übertragung …</param>
+    internal Arbeitsdokument(DokumentInfo info, Dokument dokument, Action<Arbeitsdokument, byte[], bool, string> speichern, Action<Arbeitsdokument, AenderungsArt, string>? geaendert = null)
     {
         Info = info;
         Dokument = dokument;
         _speichern = speichern;
+        _geaendert = geaendert;
         // Dokument.PlanaenderungenAbgleichen bleibt eingeschaltet, damit Dateien austauschbar bleiben.
     }
 
@@ -85,16 +99,18 @@ public sealed class Arbeitsdokument
     /// </summary>
     public async Task<T> AendernAsync<T>(string benutzer, string beschreibung, AenderungsArt art, Action<Schuldatei> aktion, Func<Dokument, T> danach, CancellationToken ct = default)
     {
+        T erg;
         await _sperre.WaitAsync(ct);
         try
         {
             Beruehrt();
             Dokument.Aendern(beschreibung, art, aktion);
-            var erg = danach(Dokument);
+            erg = danach(Dokument);
             Geaendert(benutzer, beschreibung, art);
-            return erg;
         }
         finally { _sperre.Release(); }
+        Gemeldet(art, benutzer);
+        return erg;
     }
 
     public Task AendernAsync(string benutzer, string beschreibung, AenderungsArt art, Action<Schuldatei> aktion, CancellationToken ct = default) =>
@@ -106,15 +122,25 @@ public sealed class Arbeitsdokument
     /// </summary>
     public async Task<T> AusfuehrenAsync<T>(string benutzer, Func<Dokument, (T Ergebnis, AenderungsArt? Art, string Beschreibung)> aktion, CancellationToken ct = default)
     {
+        T erg;
+        AenderungsArt? geaendert;
         await _sperre.WaitAsync(ct);
         try
         {
             Beruehrt();
-            var (erg, art, text) = aktion(Dokument);
-            if (art is { } a) Geaendert(benutzer, text, a);
-            return erg;
+            (erg, geaendert, var text) = aktion(Dokument);
+            if (geaendert is { } a) Geaendert(benutzer, text, a);
         }
         finally { _sperre.Release(); }
+        if (geaendert is { } g) Gemeldet(g, benutzer);
+        return erg;
+    }
+
+    /// <summary>Änderung an den Dokumentdienst melden (Speichern vormerken); Fehler dort dürfen die Änderung nicht scheitern lassen.</summary>
+    private void Gemeldet(AenderungsArt art, string benutzer)
+    {
+        try { _geaendert?.Invoke(this, art, benutzer); }
+        catch (Exception) { /* Speichern holt die Sicherheits-Autospeicherung nach */ }
     }
 
     private void Geaendert(string benutzer, string beschreibung, AenderungsArt art)
@@ -126,19 +152,59 @@ public sealed class Arbeitsdokument
         Senden(new StudioEreignis("aenderung", Version, art.ToString(), beschreibung, benutzer, LetzteAenderung));
     }
 
-    /// <summary>Speichert das Dokument in die Datenbank (auch ohne Änderungen, wenn <paramref name="immer"/>).</summary>
-    public async Task<bool> SpeichernAsync(string benutzer, bool immer = false, CancellationToken ct = default)
+    /// <summary>
+    /// Speichert das Dokument in die Datenbank (auch ohne Änderungen, wenn <paramref name="immer"/>; <paramref name="sicherungspunkt"/>
+    /// legt zusätzlich den aktuellen Stand als Sicherungspunkt ab). Liefert false, wenn nichts zu speichern war. Wirft bei einem
+    /// Datenbankfehler (das Dokument bleibt dann „geändert“, <see cref="Speicherfehler"/> nennt den Grund, alle Fenster erhalten
+    /// das Ereignis <c>speicherfehler</c>).
+    /// </summary>
+    public async Task<bool> SpeichernAsync(string benutzer, bool immer = false, CancellationToken ct = default, bool sicherungspunkt = false)
     {
-        await _sperre.WaitAsync(ct);
+        await _speicherSperre.WaitAsync(ct);
         try
         {
-            if (!immer && !Dokument.IstGeaendert) return false;
-            Dokument.Speichern(inhalt => _speichern(this, inhalt));
+            byte[]? inhalt = null;
+            long version;
+            await _sperre.WaitAsync(ct);
+            try
+            {
+                if (!immer && !sicherungspunkt && !Dokument.IstGeaendert) return false;
+                // gilt ab hier als gespeichert; Änderungen während des Schreibens setzen das Kennzeichen wieder
+                Dokument.Speichern(b => inhalt = b);
+                version = Version;
+                Speichert = true;
+            }
+            finally { _sperre.Release(); }
+            try
+            {
+                _speichern(this, inhalt!, sicherungspunkt, benutzer);
+            }
+            catch (Exception ex)
+            {
+                await _sperre.WaitAsync(CancellationToken.None);
+                try { Dokument.AlsGeaendertMarkieren(); }
+                finally { _sperre.Release(); }
+                Speichert = false;
+                Fehlversuche++;
+                Speicherfehler = Datenbankanbieter.IstDatenbankfehler(ex) ? "Die Datenbank ist nicht erreichbar – Änderungen sind noch nicht gespeichert." : ex.Message;
+                Senden(new StudioEreignis("speicherfehler", Version, "", Speicherfehler, benutzer, DateTime.Now));
+                throw;
+            }
+            Speichert = false;
+            Fehlversuche = 0;
+            Speicherfehler = null;
             Gespeichert = DateTime.Now;
-            Senden(new StudioEreignis("gespeichert", Version, "", "Gespeichert", benutzer, Gespeichert.Value));
+            Senden(new StudioEreignis("gespeichert", version, "", sicherungspunkt ? "Sicherungspunkt angelegt" : "Gespeichert", benutzer, Gespeichert.Value));
             return true;
         }
-        finally { _sperre.Release(); }
+        finally { _speicherSperre.Release(); }
+    }
+
+    /// <summary>Wartet, bis ein laufender Speichervorgang fertig ist (z. B. vor dem Entladen).</summary>
+    internal async Task SpeichervorgangAbwartenAsync()
+    {
+        await _speicherSperre.WaitAsync();
+        _speicherSperre.Release();
     }
 
     /// <summary>Inhalt der Schuldatei (*.up) für den Download, mit dem aktuellen Stand (auch ungespeichert).</summary>

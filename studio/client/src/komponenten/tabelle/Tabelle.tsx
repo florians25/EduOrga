@@ -26,7 +26,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button } from '@fluentui/react-components';
-import { ArrowSortDown16Regular, ArrowSortUp16Regular, Checkmark16Regular, ChevronDown12Regular, Dismiss12Regular, Filter12Filled } from '@fluentui/react-icons';
+import { ArrowSortDown16Regular, ArrowSortUp16Regular, CalendarLtr16Regular, Checkmark16Regular, ChevronDown12Regular, Dismiss12Regular, Filter12Filled } from '@fluentui/react-icons';
 import {
   forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,
   type ClipboardEvent, type KeyboardEvent, type MouseEvent as RMouseEvent, type ReactElement, type Ref,
@@ -163,6 +163,18 @@ function lokalSchreiben(k: string | null, z: GespeicherterZustand) {
   if (!k) return;
   try { localStorage.setItem(lokalSchluessel(k), JSON.stringify(z)); } catch { /* privat/voll */ }
 }
+
+/** „Mo 12.10.2026“ / „12.10.26“ / ISO → yyyy-mm-dd (für den Kalender), sonst heute */
+function isoAusText(t: string): string {
+  const x = t.trim().replace(/^(Mo|Di|Mi|Do|Fr|Sa|So),?\s+/i, '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(x)) return x;
+  const m = /^(\d{1,2})\.(\d{1,2})\.?(\d{2,4})?$/.exec(x);
+  const heute = new Date();
+  if (!m) return `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}-${String(heute.getDate()).padStart(2, '0')}`;
+  const j = m[3] ? (Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3])) : heute.getFullYear();
+  return `${j}-${m[2]!.padStart(2, '0')}-${m[1]!.padStart(2, '0')}`;
+}
+const textAusIso = (iso: string) => { const [j, m, t] = iso.split('-'); return `${t}.${m}.${j}`; };
 
 const zahlWert = (t: string): number | null => (/^\s*-?\d+([.,]\d+)?\s*$/.test(t) ? Number(t.replace(',', '.')) : null);
 const zahlText = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 });
@@ -355,6 +367,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   const rollen = useRef<HTMLDivElement>(null);
   const wurzel = useRef<HTMLDivElement>(null);
   const virt = useVirtualizer({ count: anzahl, getScrollElement: () => rollen.current, estimateSize: () => H, overscan: 10 });
+  useEffect(() => { virt.measure(); }, [H]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sichtbarMachen = (r: number, c: number) => {
     const k = rollen.current;
@@ -431,6 +444,8 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   const [editor, setEditor] = useState<Editor | null>(null);
   const editorRef = useRef(editor); editorRef.current = editor;
   const eingabe = useRef<HTMLInputElement | null>(null);
+  const editbox = useRef<HTMLDivElement | null>(null);
+  const kalender = useRef<HTMLInputElement | null>(null);
   const vorschlag = useRef<VorschlagslisteApi>(null);
 
   const editierbar = (s: Spalte<Z> | undefined, z: Z | undefined): boolean => {
@@ -1131,14 +1146,21 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
             );
           })}
           {editor && edZeile && edSpalte ? (
-            <div className={`tb-editbox${editor.fehler ? ' fehler' : ''}`} onMouseDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}
+            <div ref={editbox} className={`tb-editbox${editor.fehler ? ' fehler' : ''}`} onMouseDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}
               style={{ left: edX, top: editor.r * H, width: Math.max(sichtbar[editor.c]!.c.getSize(), edSpalte.art === 'ElementListe' ? 170 : edListe ? 110 : 60), height: H + 1 }}>
               <input ref={eingabe} key={editor.nr} className="tb-editor" spellCheck={false} autoComplete="off"
                 defaultValue={editor.wert ?? editor.start ?? text(edZeile, edSpalte)}
                 role={edListe || edFrei ? 'combobox' : undefined} aria-autocomplete={edListe || edFrei ? 'list' : undefined} aria-controls={edListe || edFrei ? `tb-vs-${editor.nr}` : undefined}
                 aria-invalid={editor.fehler ? true : undefined} aria-label={edSpalte.titel}
                 onKeyDown={editorTaste}
-                onBlur={() => setTimeout(() => { if (editorRef.current?.nr === editor.nr && document.activeElement !== eingabe.current) void editorBeenden(true, undefined, true); }, 150)} />
+                onBlur={() => setTimeout(() => { if (editorRef.current?.nr === editor.nr && !editbox.current?.contains(document.activeElement)) void editorBeenden(true, undefined, true); }, 150)} />
+              {edSpalte.art === 'Datum' ? <>
+                <button type="button" className="tb-editor-knopf" tabIndex={-1} aria-label="Kalender" title="Datum im Kalender wählen"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { const k = kalender.current; if (!k) return; k.value = isoAusText(eingabe.current?.value || ''); try { k.showPicker(); } catch { k.focus(); } }}><CalendarLtr16Regular /></button>
+                <input ref={kalender} type="date" className="tb-kalender" tabIndex={-1} aria-hidden
+                  onChange={(e) => { const v = e.target.value; if (!v || !eingabe.current) return; eingabe.current.value = textAusIso(v); void editorBeenden(true).then(() => setTimeout(fokus)); }} />
+              </> : null}
               {edListe ? (
                 <button type="button" className="tb-editor-knopf" tabIndex={-1} aria-label="Auswahlliste" title="Auswahlliste (Alt+↓)"
                   onMouseDown={(e) => { e.preventDefault(); vorschlag.current?.umschalten(); }}><ChevronDown12Regular /></button>

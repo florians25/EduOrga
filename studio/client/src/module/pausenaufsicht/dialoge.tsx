@@ -48,7 +48,7 @@ export function vorschlagDialog(v: Vorschlag): Promise<number | null> {
         <div className={s.spalte}>
           {v.ersetzt ? <p className={s.leise}>{`Alle Teile sind belegt – ersetzt wird ${v.ersetzt}.`}</p> : null}
           <div className={s.vorschlag}>
-            <Tabelle<VZeile> ref={t} name="pa-vorschlag" zeilen={zeilen} id={(z) => z.id} zeilenHoehe={30} sortierbar={false} leerText="Keine Lehrkraft verfügbar."
+            <Tabelle<VZeile> ref={t} name="pa-vorschlag" zeilen={zeilen} id={(z) => z.id} sortierbar={false} leerText="Keine Lehrkraft verfügbar."
               zeilenKlasse={(z) => (z.schlecht ? 'pa-schlecht' : '')}
               beiDoppelklick={(z) => schliessen(z.id)}
               spalten={v.spalten.map((titel, i) => ({

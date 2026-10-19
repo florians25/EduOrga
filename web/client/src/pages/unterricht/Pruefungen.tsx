@@ -1,5 +1,5 @@
 // Unterricht → Prüfungen: Suche, „Alle / Meine“, Art und Zeitraum; Liste mit Auswahl (für den Bericht), Art, Name, Klasse, Fach, Lehrkraft,
-// Datum, Von, Bis, Räume, Aufgegeben am, Text. Klausuren aus UntPlan und in UntPlanWeb vorgemerkte Prüfungen; Löschen nach Rückfrage.
+// Datum, Von, Bis, Räume, Aufgegeben am, Text. Klausuren aus EduOrga Studio und in EduOrga Web vorgemerkte Prüfungen; Löschen nach Rückfrage.
 import { useState } from 'react';
 import { Button, IconButton, Tooltip, Typography } from '@mui/material';
 import AddRounded from '@mui/icons-material/AddRounded';
@@ -23,13 +23,13 @@ export interface Pruefung {
   aufgegeben?: string; text: string; status: string; stundeVon: number; stundeBis: number; darfLoeschen: boolean;
 }
 
-/** Prüfung nach Rückfrage löschen: nicht übernommene werden zurückgezogen, übernommene gehen als Löschmeldung an UntPlan. */
+/** Prüfung nach Rückfrage löschen: nicht übernommene werden zurückgezogen, übernommene gehen als Löschmeldung an EduOrga Studio. */
 export async function pruefungLoeschen(p: Pruefung) {
   const stunden = p.stundeVon === p.stundeBis ? `${p.stundeVon}.` : `${p.stundeVon}.–${p.stundeBis}.`;
   if (!(await bestaetigen('Prüfung löschen', `Prüfung „${p.titel || 'Prüfung'}“ (${(p.klassen || []).join(', ')}) am ${datumDe(p.datum)}, ${stunden} Stunde löschen?`))) return false;
   try {
     const r = await senden<{ meldung?: unknown }>('/api/app/meldungen/klausur/loeschen', { datum: p.datum, stundeVon: p.stundeVon, stundeBis: p.stundeBis, klassen: p.klassen || [], titel: p.titel || null });
-    toast(r?.meldung ? 'Prüfung gelöscht – UntPlan übernimmt die Löschung beim nächsten Abgleich.' : 'Prüfung gelöscht.');
+    toast(r?.meldung ? 'Prüfung gelöscht – EduOrga Studio übernimmt die Löschung beim nächsten Abgleich.' : 'Prüfung gelöscht.');
     return true;
   } catch (err) { toast((err as Error).message, true); return false; }
 }

@@ -1,8 +1,8 @@
 // Stundenkachel nach der schulweiten Kartendarstellung (Administration | Darstellung der Stundenkarten, siehe darstellung.tsx).
-// Standard: helle neutrale Fläche mit kräftigerer 1-px-Linie (Radius 3 px), Fachfarbe als 8-px-Quadrat vor dem Fachkürzel; wahlweise
-// Akzentbalken links/oben, leichte Tönung in der Fachfarbe oder keine Fachfarbe, andere Fläche, Rahmen, Radius, Dichte und Inhalte.
+// Standard „Klassisch“: kompakte weiße Karte, die die Rasterzelle füllt, Fachfarbe als 4-px-Balken links mit leichter Tönung, Fach fett
+// oben links, Raum oben rechts; wahlweise Quadrat, Balken oben, nur Tönung oder keine Fachfarbe, andere Fläche, Rahmen, Radius, Dichte, Inhalte.
 // Kopfzeile Fach und Raum (Kürzel-Plakette), darunter Lehrkraft bzw. Klasse. Status ohne Wörter: Entfall rot durchgestrichen mit feiner
-// Schraffur, Änderung mit Petrol-Linie und petrolfarbenen Kürzel-Plaketten (bisheriger Wert grau durchgestrichen, offene Vertretung „?“),
+// Schraffur, Änderung mit violetter Linie (Standard „Klassisch“: dazu helle violette Fläche) und violetten Kürzel-Plaketten (bisheriger Wert grau durchgestrichen, offene Vertretung „?“),
 // Prüfung Bernstein-Linie, Termin und vertretene Stunde gestrichelt. Als Wort nur, was sich sonst nicht ablesen lässt (Prüfung, Termin,
 // Buchung, Verlegung) – auf Wunsch der Administration zusätzlich alle Statuswörter. Die Bedeutung steht im aria-label und in der
 // Kurzinfo beim Überfahren; Klick öffnet die Stundendetails.
@@ -14,7 +14,7 @@ import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import type { Karte, Wert } from '../../api/types';
 import { artVon, gueltigeFarbe, infoText, istEntfall, istOnline, kachelZeilen, kopfRaeume, plaketten, sichererLink, abwesendSet, statusText, titelText, KACHEL_PLAKETTEN, type Typ, type Plakette } from './logik';
 import { Kuerzel, WerteListe, wertText } from './Werte';
-import { DICHTE, nameVon, STANDARD, useDarstellung, type Kartendarstellung } from './darstellung';
+import { DICHTE, mitToenung, nameVon, STANDARD, useDarstellung, type Kartendarstellung } from './darstellung';
 
 /** Statusbezeichnung: 10–11 px Großbuchstaben in der Statusfarbe, ohne Fläche (keine Pillen). */
 export function PlaketteChip({ p, klein = false }: { p: Plakette; klein?: boolean }) {
@@ -52,7 +52,8 @@ export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = 
   const grund = d.flaeche === 'weiss' ? papier : d.flaeche === 'getoent' ? papier : pal.kachel.flaeche;
   const bilder: string[] = [];
   const fach = gueltigeFarbe(k.farbe);
-  if (d.fachfarbe === 'flaeche' && fach && art !== 'entfall' && art !== 'abwesend') { const ton = alpha(fach, d.deckkraft / 100); bilder.push(`linear-gradient(${ton}, ${ton})`); }
+  const statusFlaeche = d.statusflaeche && (art === 'aenderung' || art === 'pruefung');
+  if (mitToenung(d.fachfarbe) && fach && !statusFlaeche && art !== 'entfall' && art !== 'abwesend' && art !== 'termin') { const ton = alpha(fach, d.deckkraft / 100); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   if (d.flaeche === 'getoent') { const ton = alpha(pal.primary.main, 0.05); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   const bild = bilder.length ? { backgroundImage: bilder.join(', ') } : {};
   const basis = { backgroundColor: grund, border: `1px solid ${linie}`, ...bild };
@@ -65,8 +66,8 @@ export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = 
       backgroundColor: papier, backgroundImage: `repeating-linear-gradient(135deg, ${alpha(s.entfall.main, 0.09)} 0 1px, transparent 1px 6px)`,
       border: statusLinie(alpha(s.entfall.main, 0.45)), color: pal.text.secondary,
     };
-    case 'aenderung': return { ...basis, backgroundColor: statusGrund, border: statusLinie(s.aenderung.main) };
-    case 'pruefung': return { ...basis, backgroundColor: statusGrund, border: statusLinie(s.pruefung.main) };
+    case 'aenderung': return { ...basis, backgroundColor: statusFlaeche ? s.aenderung.flaeche : statusGrund, border: statusLinie(s.aenderung.main) };
+    case 'pruefung': return { ...basis, backgroundColor: statusFlaeche ? s.pruefung.flaeche : statusGrund, border: statusLinie(s.pruefung.main) };
     case 'termin': return { ...basis, backgroundColor: papier, border: statusLinie(alpha(pal.text.secondary, 0.7), 'dashed') };
     case 'abwesend': return { ...basis, backgroundColor: papier, border: statusLinie(alpha(pal.text.secondary, 0.7), 'dashed'), color: pal.text.secondary };
     case 'buchung': return { ...basis, backgroundColor: papier, border: statusLinie(s.frei.main, 'dashed') };
@@ -129,8 +130,8 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   const anzeige = (zeilenArt: string) => (d.zeile2Text === 'name' && namen ? (x: string) => nameVon(namen, zeilenArt === 'lehrer' ? 'lehrer' : 'klassen', x) : undefined);
   // Fachfarbe: Quadrat vor dem Fach, Balken links bzw. oben am Rand, Tönung der Fläche (kachelStil) oder keine
   const farbe = gueltigeFarbe(k.farbe);
-  const balken = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben') && !!k.fach && !!farbe;
-  const balkenLinks = balken && d.fachfarbe === 'balken-links' ? d.balkenbreite : 0;
+  const balken = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben' || d.fachfarbe === 'balken-flaeche') && !!k.fach && !!farbe;
+  const balkenLinks = balken && d.fachfarbe !== 'balken-oben' ? d.balkenbreite : 0;
   const balkenOben = balken && d.fachfarbe === 'balken-oben' ? d.balkenbreite : 0;
   const quadrat = d.fachfarbe === 'quadrat' && !!k.fach;
   const einzug = quadrat ? '14px' : 0;

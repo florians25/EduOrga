@@ -5,10 +5,10 @@ import {
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import {
-  ArrowRedo20Regular, ArrowUndo20Regular, Checkmark16Regular, ChevronDown16Regular, Navigation20Regular, Search20Regular, Save20Regular,
+  ArrowRedo20Regular, ArrowUndo20Regular, CalendarLtr20Regular, Checkmark16Regular, PeopleSwap20Regular, ChevronDown16Regular, Navigation20Regular, Search20Regular, Save20Regular,
 } from '@fluentui/react-icons';
 import { useEffect, useState } from 'react';
-import logo from '../../../../design/logo/monogramm.svg';
+import logo from '../../../../design/logo/edo-monogramm.svg';
 import { api } from '@/api/client';
 import type { DokumentListe } from '@/api/typen';
 import { befehl } from '@/kern/befehle';
@@ -24,13 +24,31 @@ import { UpdatePunkt, updateDialogZeigen, useVersionsstand } from './updatehinwe
 const useStile = makeStyles({
   leiste: {
     display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 12px 0 8px', flexShrink: 0,
-    backgroundColor: tokens.colorNeutralBackground1, borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground1, borderBottom: '3px solid var(--edo-modus)', boxSizing: 'border-box',
+    boxShadow: '0 1px 0 var(--edo-kopflinie)', position: 'relative', zIndex: 2,
   },
   marke: { display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '8px', userSelect: 'none' },
   logo: { width: '28px', height: '28px', display: 'block' },
-  wortmarke: { fontSize: '16px', whiteSpace: 'nowrap', '@media (max-width: 1440px)': { display: 'none' } },
-  wortmarkeFett: { fontWeight: tokens.fontWeightSemibold },
-  zusatz: { color: tokens.colorNeutralForeground3, marginLeft: '4px' },
+  wortmarke: { fontSize: '17px', whiteSpace: 'nowrap', letterSpacing: '-0.005em', '@media (max-width: 1440px)': { display: 'none' } },
+  wortmarkeFett: { fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
+  wortmarkeLeicht: { fontWeight: tokens.fontWeightRegular, color: tokens.colorNeutralForeground1 },
+  zusatz: { color: tokens.colorNeutralForeground3, marginLeft: '6px', fontWeight: tokens.fontWeightRegular },
+  modi: {
+    display: 'flex', gap: '2px', padding: '2px', borderRadius: tokens.borderRadiusMedium, border: `1px solid ${tokens.colorNeutralStroke1}`,
+    backgroundColor: tokens.colorNeutralBackground2, flexShrink: 0,
+  },
+  modusTab: {
+    borderRadius: '4px', padding: '4px 10px', minHeight: '28px',
+    '::after': { display: 'none' }, '::before': { display: 'none' },
+    ':hover': { backgroundColor: tokens.colorNeutralBackground1Hover },
+    '& .fui-Tab__content': { fontWeight: tokens.fontWeightMedium },
+    '@media (max-width: 1180px)': { '& .fui-Tab__content': { display: 'none' } },
+  },
+  modusGewaehlt: {
+    backgroundColor: 'var(--edo-modus)', color: '#ffffff',
+    ':hover': { backgroundColor: 'var(--edo-modus)' },
+    ':active': { backgroundColor: 'var(--edo-modus)' },
+  },
   trenner: { width: '1px', height: '24px', backgroundColor: tokens.colorNeutralStroke2, margin: '0 4px' },
   dokKnopf: { maxWidth: '280px', minWidth: '120px', flexShrink: 1, overflow: 'hidden', justifyContent: 'flex-start', padding: '2px 8px', height: '40px' },
   dokTexte: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0, flex: '1 1 auto', overflow: 'hidden', textAlign: 'left' },
@@ -162,7 +180,7 @@ function KontoMenue() {
               </MenuList>
             </MenuPopover>
           </Menu>
-          <MenuItem onClick={los(() => befehl('datei.backstage', { seite: 'ueber' }))}>Über UntPlan Studio</MenuItem>
+          <MenuItem onClick={los(() => befehl('datei.backstage', { seite: 'ueber' }))}>Über EduOrga Studio</MenuItem>
           <MenuDivider />
           <MenuItem onClick={los(async () => { await api.post('/api/abmeldung'); location.href = '/'; })}>Abmelden</MenuItem>
         </MenuList>
@@ -201,14 +219,14 @@ export function Kopfleiste() {
       </Tooltip>
       <div className={s.marke}>
         <img src={logo} alt="" className={s.logo} />
-        <span className={s.wortmarke}><span className={s.wortmarkeFett}>UntPlan</span><span className={s.zusatz}>Studio</span></span>
+        <span className={s.wortmarke} aria-label="EduOrga Studio"><span className={s.wortmarkeFett}>Edu</span><span className={s.wortmarkeLeicht}>Orga</span><span className={s.zusatz}>Studio</span></span>
       </div>
       <span className={s.trenner} />
       <DokumentMenue />
       <span className={s.trenner} />
-      <TabList size="small" selectedValue={modus} disabled={!d} onTabSelect={(_, x) => modusSetzen(x.value as typeof modus)} aria-label="Arbeitsmodus">
-        <Tab value="stundenplan">Stundenplanung</Tab>
-        <Tab value="vertretung">Vertretungsplanung</Tab>
+      <TabList size="small" selectedValue={modus} disabled={!d} onTabSelect={(_, x) => modusSetzen(x.value as typeof modus)} aria-label="Arbeitsmodus" className={s.modi}>
+        <Tab value="stundenplan" icon={<CalendarLtr20Regular />} title="Stundenplanung" className={mergeClasses('edo-modus-tab', s.modusTab, modus === 'stundenplan' && s.modusGewaehlt)}>Stundenplanung</Tab>
+        <Tab value="vertretung" icon={<PeopleSwap20Regular />} title="Vertretungsplanung" className={mergeClasses('edo-modus-tab', s.modusTab, modus === 'vertretung' && s.modusGewaehlt)}>Vertretungsplanung</Tab>
       </TabList>
       <div className={s.mitte}>
         {elemente.filter((e) => e.ort === 'mitte' && sichtbar(e)).map((e) => <e.komponente key={e.id} />)}

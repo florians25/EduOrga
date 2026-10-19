@@ -27,6 +27,8 @@ public sealed class UpwAuftrag
     public string? Ergebnis { get; set; }
     /// <summary>Anzeigefenster, das die Oberfläche danach öffnen kann (schuelerabwesenheiten, klassenbuch).</summary>
     public string? Danach { get; set; }
+    /// <summary>Export: Revision, die EduOrga Web bestätigt hat.</summary>
+    public int? Revision { get; set; }
 }
 
 /// <summary>Einstellungen für den automatischen Abgleich eines Dokuments mit UntPlanWeb (Studio-Datenbank, nicht in der Schuldatei).</summary>
@@ -43,6 +45,18 @@ public sealed class UpwAbgleich
     public string Ergebnis { get; set; } = "";
 }
 
+/// <summary>Direkte Übertragung der Vertretungen an EduOrga Web (Studio-Datenbank, Bereich <see cref="Ablagebereiche.UntPlanWebDirekt"/>).</summary>
+public sealed class UpwDirekt
+{
+    /// <summary>Geänderte Vertretungen automatisch kurz nach jeder Änderung übertragen.</summary>
+    public bool Automatisch { get; set; }
+    /// <summary>Höchstens so viele Sekunden nach einer Änderung übertragen (5–600; Änderungen in dieser Zeit gehen in ein Paket).</summary>
+    public int Sekunden { get; set; } = 30;
+}
+
+/// <summary>Ergebnis der letzten direkten Übertragung (ein Klick oder automatisch).</summary>
+public sealed record UpwUebertragung(DateTime Zeit, bool Ok, string Text, int? Revision, bool Automatisch, string Benutzer);
+
 /// <summary>
 /// Datenaustausch mit UntPlanWeb für das Studio: Aufträge mit Fortschritt (Export Stammdaten/Unterricht/Vertretungen, Import
 /// Absenzen/Studenten/Kurse) mit genau derselben Core-Logik wie das Desktop-Fenster, zwischengespeicherte Rückmeldungen für den
@@ -57,6 +71,8 @@ public sealed class UntPlanWebDienst
 
     private readonly ConcurrentDictionary<string, UpwAuftrag> _auftraege = new();
     private readonly ConcurrentDictionary<string, List<WebRueckmeldung>> _rueckmeldungen = new();
+    private readonly ConcurrentDictionary<string, UpwUebertragung> _uebertragungen = new();
+    private readonly ConcurrentDictionary<string, UpwDirekt> _direkt = new();
     private readonly StudioDatenbank _db;
     private readonly ILogger<UntPlanWebDienst> _log;
     private readonly object _sperre = new();
@@ -106,14 +122,7 @@ public sealed class UntPlanWebDienst
     {
         if (!export && teil is not (Absenzen or Studenten or Kurse)) throw StudioFehler.Ungueltig($"Unbekannter Import „{teil}“.");
         if (export && teil.Length > 0 && !WebTeile.Felder.ContainsKey(teil)) throw StudioFehler.Ungueltig($"Unbekannter Export „{teil}“.");
-        UpwAuftrag auftrag;
-        lock (_sperre)
-        {
-            if (Laufend(a.Id) is { } l) throw StudioFehler.Ungueltig($"Es läuft bereits eine Übertragung ({TeilName(l.Teil)}, gestartet von {l.Benutzer}).");
-            auftrag = new UpwAuftrag { Id = Guid.NewGuid().ToString("N")[..12], DokumentId = a.Id, Teil = teil, Export = export, Benutzer = benutzer, Text = "Wird gestartet …" };
-            _auftraege[auftrag.Id] = auftrag;
-        }
-        foreach (var alt in _auftraege.Values.Where(x => x.Fertig && DateTime.Now - x.Gestartet > TimeSpan.FromHours(2)).ToList()) _auftraege.TryRemove(alt.Id, out _);
+        var auftrag = AuftragAnlegen(a, teil, export, benutzer);
         _ = Task.Run(async () =>
         {
             try
@@ -131,6 +140,20 @@ public sealed class UntPlanWebDienst
             }
             finally { auftrag.Fertig = true; }
         });
+        return auftrag;
+    }
+
+    /// <summary>Neuer Auftrag; je Dokument läuft höchstens eine Übertragung gleichzeitig.</summary>
+    private UpwAuftrag AuftragAnlegen(Arbeitsdokument a, string teil, bool export, string benutzer)
+    {
+        UpwAuftrag auftrag;
+        lock (_sperre)
+        {
+            if (Laufend(a.Id) is { } l) throw StudioFehler.Ungueltig($"Es läuft bereits eine Übertragung ({TeilName(l.Teil)}, gestartet von {l.Benutzer}).");
+            auftrag = new UpwAuftrag { Id = Guid.NewGuid().ToString("N")[..12], DokumentId = a.Id, Teil = teil, Export = export, Benutzer = benutzer, Text = "Wird gestartet …" };
+            _auftraege[auftrag.Id] = auftrag;
+        }
+        foreach (var alt in _auftraege.Values.Where(x => x.Fertig && DateTime.Now - x.Gestartet > TimeSpan.FromHours(2)).ToList()) _auftraege.TryRemove(alt.Id, out _);
         return auftrag;
     }
 
@@ -160,13 +183,18 @@ public sealed class UntPlanWebDienst
         Fortschritt(auftrag, 45, $"{TeilName(teil)}: Übertragung an {p.Adresse} … ({paket.Tage.Count} Tage, {paket.Vertretungen.Count} Vertretungen)");
         var antwort = await UntPlanWebExport.HochladenAsync(p, paket);
         var jetzt = DateTime.Now;
-        await a.AendernAsync(benutzer, "UntPlanWeb-Übertragung", AenderungsArt.Einstellungen, d =>
+        // Revision und Zeitpunkt vermerken – ohne eigene Rückgängig-Stufe (sonst nähme Strg+Z nach jeder Übertragung zuerst diese
+        // zurück statt der letzten Planänderung); gespeichert wird wie jede Änderung sofort
+        await a.AusfuehrenAsync(benutzer, doc =>
         {
-            var e = d.Einstellungen.Portal;
-            e.Revision = antwort.Revision;
+            var e = doc.Daten.Einstellungen.Portal;
+            e.Revision = Math.Max(e.Revision, antwort.Revision);
             e.LetzteSynchronisation = jetzt;
             foreach (var t in teile.Length == 0 ? WebTeile.Felder.Keys.ToArray() : teile) e.LetzteUebertragung[t] = jetzt;
+            doc.Melden(AenderungsArt.Einstellungen);
+            return (true, (AenderungsArt?)AenderungsArt.Einstellungen, "UntPlanWeb-Übertragung");
         });
+        auftrag.Revision = antwort.Revision;
         Fortschritt(auftrag, 100, $"{TeilName(teil)}: an UntPlanWeb übertragen (Revision {antwort.Revision}) um {jetzt:HH:mm}.");
         auftrag.Ergebnis = "Die Datenübertragung nach UntPlanWeb war erfolgreich!";
     }
@@ -272,6 +300,60 @@ public sealed class UntPlanWebDienst
         catch (Exception) { /* bleibt auf dem Server; wird als übernommen erkannt */ }
     }
 
+    // ---------------------------------------------------------------------------------------------- direkte Übertragung der Vertretungen
+
+    public const string AutomatischBenutzer = "Automatische Übertragung";
+
+    /// <summary>Einstellung der direkten Übertragung (zwischengespeichert; Quelle ist die Studio-Datenbank).</summary>
+    public UpwDirekt Direkt(string dokId)
+    {
+        if (!Dokumentdienst.IdGueltig(dokId)) return new();
+        return _direkt.GetOrAdd(dokId, id =>
+        {
+            try { return _db.AblageLesen(Ablagebereiche.UntPlanWebDirekt, id) is { } inhalt ? JsonSerializer.Deserialize<UpwDirekt>(inhalt) ?? new() : new(); }
+            catch (JsonException) { return new(); }
+        });
+    }
+
+    public UpwDirekt DirektSpeichern(string dokId, UpwDirekt e)
+    {
+        if (!Dokumentdienst.IdGueltig(dokId)) throw StudioFehler.Ungueltig("Ungültige Dokument-Id.");
+        var neu = new UpwDirekt { Automatisch = e.Automatisch, Sekunden = Math.Clamp(e.Sekunden, 5, 600) };
+        _db.AblageSchreiben(Ablagebereiche.UntPlanWebDirekt, dokId, JsonSerializer.Serialize(neu));
+        _direkt[dokId] = neu;
+        return neu;
+    }
+
+    /// <summary>Letzte direkte Übertragung seit dem Start des Servers (sonst null).</summary>
+    public UpwUebertragung? LetzteUebertragung(string dokId) => _uebertragungen.GetValueOrDefault(dokId);
+
+    /// <summary>
+    /// Vertretungen jetzt an EduOrga Web senden (ein Klick bzw. automatisch): dasselbe Paket wie „Vertretungen*“ im Fenster UntPlan Web
+    /// (Stammdaten + Vertretungen; an den Tagen nur die geänderten Stunden, <c>NurAenderungen</c>). Läuft bereits eine Übertragung,
+    /// wird nicht gewartet (Fehler bzw. bei automatisch: später erneut). Meldet das Ergebnis allen Fenstern (Ereignis <c>untplanweb</c>).
+    /// </summary>
+    public async Task<UpwUebertragung> VertretungenSendenAsync(Arbeitsdokument a, string benutzer, bool automatisch, CancellationToken ct = default)
+    {
+        var auftrag = AuftragAnlegen(a, WebTeile.Vertretungen, true, benutzer);
+        UpwUebertragung erg;
+        try
+        {
+            await ExportierenAsync(a, WebTeile.Vertretungen, benutzer, auftrag);
+            erg = new UpwUebertragung(DateTime.Now, true, auftrag.Text, auftrag.Revision, automatisch, benutzer);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            auftrag.FehlerTitel = "UntPlanWeb-Übertragungsfehler!";
+            auftrag.Fehler = Verbindungsfehler(ex);
+            erg = new UpwUebertragung(DateTime.Now, false, auftrag.Fehler, null, automatisch, benutzer);
+            _log.LogWarning("Direkte Übertragung der Vertretungen ({Art}) von {Id}: {Fehler}", automatisch ? "automatisch" : "ein Klick", a.Id, ex.Message);
+        }
+        finally { auftrag.Fertig = true; }
+        _uebertragungen[a.Id] = erg;
+        a.Senden(new StudioEreignis("untplanweb", a.Version, "Vertretung", erg.Text, benutzer, erg.Zeit));
+        return erg;
+    }
+
     // ---------------------------------------------------------------------------------------------- automatischer Abgleich
 
     public UpwAbgleich Abgleich(string dokId)
@@ -358,7 +440,7 @@ public sealed class UpwAbgleichDienst : BackgroundService
                 }
                 e.Zuletzt = DateTime.Now;
                 try { _upw.AbgleichSpeichern(id, e); }
-                catch (Microsoft.Data.Sqlite.SqliteException ex) { _log.LogWarning("Automatischer UntPlanWeb-Abgleich {Id}: Ergebnis nicht gespeichert ({Fehler})", id, ex.Message); }
+                catch (System.Data.Common.DbException ex) { _log.LogWarning("Automatischer UntPlanWeb-Abgleich {Id}: Ergebnis nicht gespeichert ({Fehler})", id, ex.Message); }
             }
             try { await Task.Delay(TimeSpan.FromSeconds(30), ct); } catch (OperationCanceledException) { return; }
         }

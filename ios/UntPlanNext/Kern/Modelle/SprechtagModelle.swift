@@ -298,19 +298,171 @@ struct SprechtagLehrkraftKopf: Decodable, Sendable {
     }
 }
 
+/// Einladung einer Familie durch die Lehrkraft (mit gebuchtem Termin, falls vorhanden).
+struct SprechtagEinladung: Decodable, Identifiable, Sendable {
+    var id: Int
+    var schueler: SprechtagSchueler?
+    var erstellt: String
+    var benachrichtigt: Bool
+    /// Beginn des gebuchten Termins (leer = noch nicht gebucht)
+    var termin: String
+
+    enum CodingKeys: String, CodingKey { case id, schueler, erstellt, benachrichtigt, termin }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.zahl(.id) ?? 0
+        schueler = c.optional(.schueler)
+        erstellt = c.text(.erstellt)
+        // „benachrichtigt“ kommt als Wahrheitswert oder als Zeitpunkt
+        let roh = (c.textOderNil(.benachrichtigt) ?? "").lowercased()
+        benachrichtigt = !roh.isEmpty && roh != "false" && roh != "0"
+        termin = c.text(.termin)
+    }
+}
+
+/// Platz auf der Warteliste einer Lehrkraft.
+struct SprechtagWarteplatz: Decodable, Identifiable, Sendable {
+    var id: Int
+    var schueler: SprechtagSchueler?
+    var erstellt: String
+
+    enum CodingKeys: String, CodingKey { case id, schueler, erstellt }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.zahl(.id) ?? 0
+        schueler = c.optional(.schueler)
+        erstellt = c.text(.erstellt)
+    }
+}
+
 /// GET /api/app/sprechtag/{id}/lehrkraft
 struct SprechtagLehrkraftDaten: Decodable, Sendable {
     var sprechtag: SprechtagInfo?
     var lehrer: SprechtagLehrkraftKopf?
     var zeitfenster: [SprechtagZeitfenster]
+    var einladungen: [SprechtagEinladung]
+    var warteliste: [SprechtagWarteplatz]
+    /// Einladen noch möglich (sichtbar und vor Ende der Einladungsphase)
+    var einladenMoeglich: Bool
 
-    enum CodingKeys: String, CodingKey { case sprechtag, lehrer, zeitfenster }
+    enum CodingKeys: String, CodingKey { case sprechtag, lehrer, zeitfenster, einladungen, warteliste, einladenMoeglich }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         sprechtag = c.optional(.sprechtag)
         lehrer = c.optional(.lehrer)
         zeitfenster = c.liste(.zeitfenster)
+        einladungen = c.liste(.einladungen)
+        warteliste = c.liste(.warteliste)
+        einladenMoeglich = c.wahr(.einladenMoeglich)
+    }
+}
+
+/// Schüler*in zur Auswahl beim Einladen bzw. Eintragen (GET /api/app/sprechtag/{id}/schueler).
+struct SprechtagWahlSchueler: Decodable, Identifiable, Hashable, Sendable {
+    var id: Int
+    var vorname: String
+    var name: String
+    var klasse: String
+    /// Es gibt ein Elternkonto (Einladung wird zugestellt)
+    var elternkonto: Bool
+
+    enum CodingKeys: String, CodingKey { case id, vorname, name, klasse, elternkonto }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.zahl(.id) ?? 0
+        vorname = c.text(.vorname)
+        name = c.text(.name)
+        klasse = c.text(.klasse)
+        elternkonto = c.wahr(.elternkonto)
+    }
+
+    var anzeige: String { [name, vorname].filter { !$0.isEmpty }.joined(separator: ", ") }
+}
+
+struct SprechtagSchuelerauswahl: Decodable, Sendable {
+    var eigeneKlassen: [String]
+    var klassen: [String]
+    var schueler: [SprechtagWahlSchueler]
+
+    enum CodingKeys: String, CodingKey { case eigeneKlassen, klassen, schueler }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        eigeneKlassen = c.texte(.eigeneKlassen)
+        klassen = c.texte(.klassen)
+        schueler = c.liste(.schueler)
+    }
+}
+
+/// Eintrag der Sprechtagsliste (GET /api/app/sprechtag).
+struct SprechtagListeneintrag: Decodable, Identifiable, Sendable {
+    var sprechtag: SprechtagInfo?
+    var beteiligt: Bool
+    var termine: Int
+
+    var id: Int { sprechtag?.id ?? 0 }
+
+    enum CodingKeys: String, CodingKey { case sprechtag, beteiligt, termine }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sprechtag = c.optional(.sprechtag)
+        beteiligt = c.wahr(.beteiligt)
+        termine = c.zahl(.termine) ?? 0
+    }
+}
+
+struct SprechtagListe: Decodable, Sendable {
+    var sprechtage: [SprechtagListeneintrag]
+
+    enum CodingKeys: String, CodingKey { case sprechtage }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sprechtage = c.liste(.sprechtage)
+    }
+}
+
+/// POST /api/app/sprechtag/{id}/einladungen
+struct SprechtagEinladungDaten: Encodable, Sendable {
+    var schuelerIds: [Int]
+    var text: String?
+}
+
+/// POST /api/app/sprechtag/{id}/termine (Lehrkraft trägt einen Termin ein)
+struct SprechtagTerminDaten: Encodable, Sendable {
+    var schuelerId: Int
+    var beginn: String
+    var bemerkung: String?
+}
+
+/// POST /api/app/sprechtag/{id}/warteliste
+struct SprechtagWarteDaten: Encodable, Sendable {
+    var lehrer: String
+    var schuelerId: Int
+}
+
+/// Antwort auf POST /einladungen
+struct SprechtagEinladungAntwort: Decodable, Sendable {
+    var neu: Int
+    var benachrichtigt: Int
+    var ohneKonto: Int
+
+    enum CodingKeys: String, CodingKey { case neu, benachrichtigt, ohneKonto }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        neu = c.zahl(.neu) ?? 0
+        benachrichtigt = c.zahl(.benachrichtigt) ?? 0
+        if let n = c.zahl(.ohneKonto) {
+            ohneKonto = n
+        } else {
+            ohneKonto = c.texte(.ohneKonto).count
+        }
     }
 }
 
@@ -363,13 +515,18 @@ struct SprechtagKindLehrkraft: Decodable, Identifiable, Hashable, Sendable {
     var dauer: Int
     var online: Bool
     var ausgebucht: Bool
+    /// Eigener Platz auf der Warteliste (nil = nicht eingetragen)
+    var wartelisteId: Int?
+    var wartelistePosition: Int
 
     var id: String { kurz }
 
     enum CodingKeys: String, CodingKey {
         case kurz, name, faecher, klassenleitung, raum, abgesagt, eingeladen, einladungText, termin, zeitfenster
-        case dauer, online, ausgebucht
+        case dauer, online, ausgebucht, warteliste
     }
+
+    private enum WarteSchluessel: String, CodingKey { case id, position }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -388,6 +545,13 @@ struct SprechtagKindLehrkraft: Decodable, Identifiable, Hashable, Sendable {
         dauer = c.zahl(.dauer) ?? 0
         online = c.wahr(.online)
         ausgebucht = c.wahr(.ausgebucht)
+        if let w = try? c.nestedContainer(keyedBy: WarteSchluessel.self, forKey: .warteliste) {
+            wartelisteId = w.zahl(.id)
+            wartelistePosition = w.zahl(.position) ?? 0
+        } else {
+            wartelisteId = nil
+            wartelistePosition = 0
+        }
     }
 
     var anzeige: String { name.isEmpty ? kurz : name }
@@ -457,8 +621,10 @@ struct SprechtagElternDaten: Decodable, Sendable {
     /// Höchstzahl Termine je Familie (0 = unbegrenzt) und bereits gebuchte Termine der Familie
     var maxTermine: Int
     var gebuchtFamilie: Int
+    /// Warteliste für ausgebuchte Lehrkräfte eingeschaltet
+    var warteliste: Bool
 
-    enum CodingKeys: String, CodingKey { case sprechtag, buchbar, kinder, termine, maxTermine, gebuchtFamilie }
+    enum CodingKeys: String, CodingKey { case sprechtag, buchbar, kinder, termine, maxTermine, gebuchtFamilie, warteliste }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -468,6 +634,7 @@ struct SprechtagElternDaten: Decodable, Sendable {
         termine = c.liste(.termine)
         maxTermine = c.zahl(.maxTermine) ?? 0
         gebuchtFamilie = c.zahl(.gebuchtFamilie) ?? termine.count
+        warteliste = c.wahr(.warteliste)
     }
 }
 

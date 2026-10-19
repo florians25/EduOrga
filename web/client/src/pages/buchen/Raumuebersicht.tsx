@@ -241,7 +241,7 @@ export function Raumuebersicht({ rest }: { rest: string[] }) {
   };
 
   return (
-    <Seite titel="Raumübersicht" aktionen={<>
+    <Seite titel="Raumbelegung" aktionen={<>
       <Button variant="outlined" startIcon={<ListAltOutlined />} href="#/buchen/meine">Meine Buchungen</Button>
       {o?.raumBuchen !== false && <Button variant="contained" startIcon={<AddRounded />} href="#/buchen/raum">Raum buchen</Button>}
     </>}

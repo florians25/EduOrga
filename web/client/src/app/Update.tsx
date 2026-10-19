@@ -103,7 +103,7 @@ const datum = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('
 
 /** Update anstoßen (Watchtower bzw. Anforderungsdatei); true, wenn angestoßen. */
 export async function updateInstallieren(): Promise<boolean> {
-  if (!(await bestaetigen('Update installieren', 'Die Datenbank wird gesichert (SQLite) und das neueste Image geladen. UntPlanWeb startet danach neu und ist kurz nicht erreichbar.', 'Installieren'))) return false;
+  if (!(await bestaetigen('Update installieren', 'Die Datenbank wird gesichert (SQLite) und das neueste Image geladen. EduOrga Web startet danach neu und ist kurz nicht erreichbar.', 'Installieren'))) return false;
   try { const r = await senden<{ meldung: string }>('/api/app/admin/update/installieren', {}); toast(r.meldung); return true; } catch (err) { fehler(err); return false; }
 }
 
@@ -113,7 +113,7 @@ export function UpdateDialog({ stand: u, offen, schliessen }: { stand: Updatesta
   return (
     <Dialog open={offen} onClose={schliessen} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ pr: 6 }}>
-        {u.updateVerfuegbar ? `Neue Version ${u.neueste} verfügbar` : `UntPlanWeb ${u.version}`}
+        {u.updateVerfuegbar ? `Neue Version ${u.neueste} verfügbar` : `EduOrga Web ${u.version}`}
         <IconButton onClick={schliessen} aria-label="Schließen" sx={{ position: 'absolute', right: 12, top: 12 }}><CloseRounded /></IconButton>
       </DialogTitle>
       <DialogContent dividers>
@@ -160,7 +160,7 @@ export function UpdateHinweis() {
           <IconButton color="inherit" size="small" aria-label="Für diese Version ausblenden" title="Für diese Version ausblenden" onClick={() => ausblenden(u.neueste)}><CloseRounded fontSize="small" /></IconButton>
         </>}>
         <AlertTitle sx={{ mb: 0 }}>Neue Version {u.neueste} verfügbar</AlertTitle>
-        UntPlanWeb {u.version} ist installiert{u.veroeffentlicht ? ` · veröffentlicht am ${datum(u.veroeffentlicht)}` : ''}.
+        EduOrga Web {u.version} ist installiert{u.veroeffentlicht ? ` · veröffentlicht am ${datum(u.veroeffentlicht)}` : ''}.
       </Alert>
       <UpdateDialog stand={u} offen={offen} schliessen={() => setOffen(false)} />
     </>

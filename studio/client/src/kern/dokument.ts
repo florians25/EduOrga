@@ -1,5 +1,5 @@
-// Geöffnetes Arbeitsdokument: Öffnen/Schließen, Stand (Titel, Rückgängig), Ereignisverbindung (Server-Sent Events),
-// Speichern, Rückgängig/Wiederholen, Herunterladen.
+// Geöffnetes Arbeitsdokument: Öffnen/Schließen, Stand (Titel, Rückgängig, Speicherstand), Ereignisverbindung (Server-Sent Events),
+// Sicherungspunkt/Speichern, Rückgängig/Wiederholen, Herunterladen. Gespeichert wird auf dem Server automatisch nach jeder Änderung.
 import { api, dokumentIdSetzen } from '@/api/client';
 import type { Bereich, DokumentStand, Grunddaten } from '@/api/typen';
 import { an, melden } from './ereignisse';
@@ -87,6 +87,11 @@ function verbinden() {
     if (x.benutzer && x.benutzer !== zustand().benutzer?.name) melden('meldung', { text: `${x.benutzer}: ${x.beschreibung}`, art: 'info' });
   });
   quelle.addEventListener('gespeichert', () => standAktualisieren());
+  quelle.addEventListener('speicherfehler', () => standAktualisieren());
+  quelle.addEventListener('untplanweb', (e) => {
+    const x = JSON.parse((e as MessageEvent).data) as { beschreibung: string; benutzer: string; zeit: string };
+    melden('untplanweb.direkt', { text: x.beschreibung, benutzer: x.benutzer, zeit: x.zeit });
+  });
   quelle.addEventListener('geschlossen', (e) => {
     const x = JSON.parse((e as MessageEvent).data) as { benutzer?: string };
     if (x.benutzer !== zustand().benutzer?.name) melden('meldung', { text: `Das Dokument wurde von ${x.benutzer || 'jemand anderem'} geschlossen.`, art: 'warnung' });
@@ -111,11 +116,19 @@ function trennen() {
 
 // ---- Befehle rund ums Dokument (Kopfleiste, Tastatur) ----
 
+/** Sofort speichern (normalerweise nicht nötig – der Server speichert jede Änderung; z. B. „Erneut versuchen“ nach einem Fehler). */
 export async function speichern(): Promise<void> {
   if (!zustand().dokument) return;
   const stand = await api.post<DokumentStand>(api.dok('/speichern'));
   setzen({ dokument: stand });
-  melden('meldung', { text: 'Gespeichert.', art: 'ok' });
+}
+
+/** Strg+S: aktuellen Stand als Sicherungspunkt ablegen (ältere Fassung, die nicht automatisch verdrängt wird). */
+export async function sicherungspunkt(): Promise<void> {
+  if (!zustand().dokument) return;
+  const stand = await api.post<DokumentStand>(api.dok('/sicherungspunkt'));
+  setzen({ dokument: stand });
+  melden('meldung', { text: 'Sicherungspunkt angelegt.', art: 'ok' });
 }
 
 export async function rueckgaengig(): Promise<void> {

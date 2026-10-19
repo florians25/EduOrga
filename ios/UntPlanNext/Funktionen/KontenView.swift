@@ -68,7 +68,7 @@ struct KontenauswahlView: View {
                     }
                     .buttonStyle(.plain)
                 } footer: {
-                    Text("Für eine weitere Schule geben Sie deren UntPlan-Adresse ein; für ein weiteres Konto an derselben Schule wählen Sie sie aus.")
+                    Text("Für eine weitere Schule geben Sie deren EduOrga-Adresse ein (oder scannen den QR-Code der Schule); für ein weiteres Konto an derselben Schule wählen Sie sie aus.")
                 }
             }
             .listStyle(.insetGrouped)

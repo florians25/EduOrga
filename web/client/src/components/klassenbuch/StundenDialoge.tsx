@@ -322,7 +322,7 @@ export async function pruefungLoeschen(k: Karte): Promise<boolean> {
   if (!(await bestaetigen('Prüfung löschen', `Prüfung${k.text ? ` „${k.text}“` : ''} am ${datumDe(k.datum)} (${stdText(k.von, k.bis)} Stunde) löschen?`))) return false;
   try {
     await senden('/api/app/meldungen/klausur/loeschen', pruefungAlt(k));
-    toast('Prüfung gelöscht – UntPlan übernimmt die Löschung beim nächsten Import.');
+    toast('Prüfung gelöscht – EduOrga Studio übernimmt die Löschung beim nächsten Import.');
     return true;
   } catch (err) { toast((err as Error).message, true); return false; }
 }

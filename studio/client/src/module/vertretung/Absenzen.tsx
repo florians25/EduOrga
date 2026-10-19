@@ -14,7 +14,7 @@ import { formular, frage, meldung } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf, type MenueListe } from '@/komponenten/menue';
 import { Tabelle, type Spalte, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
-import { datumLesen, datumText, plusTage, tagText, vpfad } from './kern';
+import { datumLesen, plusTage, tagText, vpfad } from './kern';
 import { useZeitraum, ZeitraumAuswahl } from './steuer';
 
 const ARTEN = [{ art: 'lehrer', titel: 'Lehrkräfte', einzel: 'Lehrkraft', typ: 'lehrer' }, { art: 'klasse', titel: 'Klassen', einzel: 'Klasse', typ: 'klasse' }, { art: 'raum', titel: 'Räume', einzel: 'Raum', typ: 'raum' }];
@@ -38,15 +38,17 @@ export async function absenzenSpeichern(art: string, neu: NeueAbsenz[], alt: num
 async function absenzFormular(artName: string, titel: string, von0: string, letzte: number, z?: Partial<AZeile>) {
   const art = ARTEN.find((x) => x.art === artName) || ARTEN[0]!;
   const gruende = await elemente('abwesenheitsgrund');
+  const auswahl = await elemente(art.typ);
+  const lehrkraefte = art.art === 'klasse' ? await elemente('lehrer') : [];
   const w = await formular(titel, [
-    { name: 'element', titel: art.einzel, wert: z?.element || '', pflicht: true, hinweis: art.art === 'lehrer' ? 'Kurzname, z. B. MUE' : undefined },
-    { name: 'von', titel: 'Von', wert: datumText(z?.vonIso || von0), hinweis: 'TT.MM.JJJJ' },
+    { name: 'element', titel: art.einzel, art: 'element', elemente: auswahl, wert: z?.element || '', pflicht: true },
+    { name: 'von', titel: 'Von', art: 'datum', wert: z?.vonIso || von0 },
     { name: 'sv', titel: 'Ab Stunde', art: 'zahl', wert: z?.sv || 1 },
-    { name: 'bis', titel: 'Bis', wert: datumText(z?.bisIso || von0), hinweis: 'TT.MM.JJJJ' },
+    { name: 'bis', titel: 'Bis', art: 'datum', wert: z?.bisIso || von0 },
     { name: 'sb', titel: 'Bis Stunde', art: 'zahl', wert: z?.sb || letzte },
     { name: 'grund', titel: 'Grund', art: 'auswahl', wert: z?.grund || '', optionen: [{ wert: '', text: '' }, ...gruende.map((g) => ({ wert: g.k, text: g.l ? `${g.k} – ${g.l}` : g.k }))] },
     { name: 'text', titel: 'Text', wert: z?.text || '' },
-    ...(art.art === 'klasse' ? [{ name: 'begleit', titel: 'Begleitung', wert: z?.begleit || '', hinweis: 'Kurznamen der Lehrkräfte; gelten ebenfalls als abwesend (z. B. Klassenfahrt).' }] : []),
+    ...(art.art === 'klasse' ? [{ name: 'begleit', titel: 'Begleitung', art: 'elemente' as const, elemente: lehrkraefte, wert: z?.begleit || '', hinweis: 'Begleitende Lehrkräfte gelten ebenfalls als abwesend (z. B. Klassenfahrt).' }] : []),
   ], { okText: 'Speichern', breite: '480px' });
   if (!w) return null;
   const von = datumLesen(w.von, von0);
@@ -180,7 +182,7 @@ export default function Absenzen({ p }: AnsichtProps) {
     const z = tabelle.current?.aktiveZeile();
     if (!z || z.va) return;
     if (z.vonIso === z.bisIso) { hinweis('Eine eintägige Abwesenheit kann nicht geteilt werden.', 'warnung'); return; }
-    const w = await formular('Abwesenheit teilen', [{ name: 'ab', titel: 'Zweiter Teil beginnt am', wert: datumText(plusTage(z.vonIso, 1)), pflicht: true }], { okText: 'Teilen' });
+    const w = await formular('Abwesenheit teilen', [{ name: 'ab', titel: 'Zweiter Teil beginnt am', art: 'datum', wert: plusTage(z.vonIso, 1), pflicht: true }], { okText: 'Teilen' });
     if (!w) return;
     await api.post(vpfad('/absenzen/teilen'), { id: Number(z.nr), ab: datumLesen(w.ab, z.vonIso) }, { quelle: a.id });
     await laden();
@@ -233,9 +235,9 @@ export default function Absenzen({ p }: AnsichtProps) {
   const spalten = useMemo<Spalte<AZeile>[]>(() => [
     { schluessel: 'nr', titel: 'Nr.', breite: 64, art: 'NurLesen', ausrichtung: 'rechts' },
     { schluessel: 'element', titel: art.einzel, breite: 90, art: 'Element', refTyp: art.typ, editierbarFuer: nichtVa },
-    { schluessel: 'von', titel: 'Von', breite: 110, editierbarFuer: nichtVa, wert: (z) => tagText(z.vonIso) },
+    { schluessel: 'von', titel: 'Von', breite: 110, art: 'Datum', editierbarFuer: nichtVa, wert: (z) => tagText(z.vonIso) },
     { schluessel: 'sv', titel: 'ab Std.', breite: 64, art: 'Ganzzahl', editierbarFuer: nichtVa },
-    { schluessel: 'bis', titel: 'Bis', breite: 110, editierbarFuer: nichtVa, wert: (z) => tagText(z.bisIso) },
+    { schluessel: 'bis', titel: 'Bis', breite: 110, art: 'Datum', editierbarFuer: nichtVa, wert: (z) => tagText(z.bisIso) },
     { schluessel: 'sb', titel: 'bis Std.', breite: 68, art: 'Ganzzahl', editierbarFuer: nichtVa },
     { schluessel: 'grund', titel: 'Grund', breite: 80, art: 'Element', refTyp: 'abwesenheitsgrund', editierbarFuer: nichtVa },
     { schluessel: 'text', titel: 'Text', breite: 260, editierbarFuer: nichtVa },
@@ -277,7 +279,7 @@ export default function Absenzen({ p }: AnsichtProps) {
         <FussText rechts>Zeile verlassen speichert · Strg+Enter sofort · Esc verwirft</FussText>
       </>}>
       <div ref={element} style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <Tabelle<AZeile> ref={tabelle} name="abwesenheiten" spalten={spalten} zeilen={zeilen} sortierbar={false} zeilenHoehe={30}
+        <Tabelle<AZeile> ref={tabelle} name="abwesenheiten" spalten={spalten} zeilen={zeilen} sortierbar={false}
           leerText="Im gewählten Zeitraum ist niemand abwesend."
           neuText={schreiben ? 'Neue Abwesenheit …' : undefined}
           neu={schreiben ? async (s, wert) => {

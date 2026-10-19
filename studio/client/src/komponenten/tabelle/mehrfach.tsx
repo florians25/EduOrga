@@ -1,9 +1,10 @@
 // Dialog „Mehrfach ändern“: einen Wert in einer Spalte für alle markierten Zeilen setzen (Serienänderung wie in der
 // Desktop-Anwendung). Bei Listen (Klassen, Lehrkräfte …) wahlweise ersetzen, hinzufügen oder entfernen.
-import { Checkbox, Field, Input, Radio, RadioGroup, Select, Text } from '@fluentui/react-components';
+import { Checkbox, Field, Input, Radio, RadioGroup, Text } from '@fluentui/react-components';
 import { useEffect, useRef, useState } from 'react';
 import type { ElementOption } from '@/api/typen';
 import { dialogZeigen, StandardDialog } from '../dialoge';
+import { SuchAuswahl } from '../suchauswahl';
 import { auswahlOptionen, istListenart, pruefeWert, type PruefSpalte } from './pruefung';
 import { Vorschlagsliste, type VorschlagslisteApi } from './vorschlagsliste';
 
@@ -40,7 +41,7 @@ function MehrfachDialog({ spalten, vorgabe, anzahl, optionen, werte, schliessen 
 
   const anwenden = (w: boolean | null) => {
     if (!w) { schliessen(null); return; }
-    const roh = eingabe.current && s.art !== 'Bool' && s.art !== 'Auswahl' ? eingabe.current.value : wert;
+    const roh = eingabe.current && s.art !== 'Bool' && s.art !== 'Auswahl' && s.art !== 'Datum' ? eingabe.current.value : wert;
     const p = pruefeWert(s, roh, opts);
     if (!p.ok) { setFehler(p.fehler); return; }
     if (modus !== 'ersetzen' && !p.wert) { setFehler('Bitte mindestens einen Wert angeben.'); return; }
@@ -54,9 +55,8 @@ function MehrfachDialog({ spalten, vorgabe, anzahl, optionen, werte, schliessen 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }} data-testid="mehrfach-aendern">
         <Text>Setzt den Wert in allen {anzahl} markierten Zeilen. Zeilen, in denen die Spalte nicht änderbar ist, bleiben unverändert.</Text>
         <Field label="Spalte">
-          <Select value={schluessel} onChange={(_, d) => setSchluessel(d.value)} aria-label="Spalte">
-            {spalten.map((x) => <option key={x.schluessel} value={x.schluessel}>{x.titel}</option>)}
-          </Select>
+          <SuchAuswahl wert={schluessel} beiWahl={(w) => { if (w) setSchluessel(w); }} ariaLabel="Spalte"
+            optionen={spalten.map((x) => ({ wert: x.schluessel, text: x.titel }))} />
         </Field>
         {liste ? (
           <RadioGroup layout="horizontal" value={modus} onChange={(_, d) => setModus(d.value as MehrfachModus)}>
@@ -70,10 +70,11 @@ function MehrfachDialog({ spalten, vorgabe, anzahl, optionen, werte, schliessen 
           {s.art === 'Bool' ? (
             <Checkbox label="gesetzt (X)" checked={wert === 'X'} onChange={(_, d) => setWert(d.checked ? 'X' : '')} />
           ) : s.art === 'Auswahl' ? (
-            <Select value={wert} onChange={(_, d) => { setWert(d.value); setFehler(null); }} aria-label="Neuer Wert">
-              <option value="" />
-              {(s.auswahl || []).filter(Boolean).map((a) => <option key={a} value={a}>{a}</option>)}
-            </Select>
+            <SuchAuswahl key={schluessel} wert={wert} beiWahl={(w) => { setWert(w); setFehler(null); }} ariaLabel="Neuer Wert" platzhalter="Suchen …"
+              optionen={[{ wert: '', text: '(leer)' }, ...(s.auswahl || []).filter(Boolean).map((a) => ({ wert: a, text: a }))]} />
+          ) : s.art === 'Datum' ? (
+            <Input key={schluessel} type="date" aria-label="Neuer Wert" value={wert ? wert.split('.').reverse().join('-') : ''}
+              onChange={(_, d) => { setWert(d.value ? d.value.split('-').reverse().join('.') : ''); setFehler(null); }} />
           ) : (
             <>
               <Input ref={eingabe} key={schluessel} autoFocus autoComplete="off" spellCheck={false} role="combobox" aria-label="Neuer Wert"

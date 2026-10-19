@@ -39,7 +39,7 @@ export default function Sitzplan({ teile }: SeitenProps) {
       filter={g.daten && <ElementWahl liste={g.daten.el.klassen} wert={klasse} onWahl={k => navigieren(link('sitzplan', k))} platzhalter="Klasse wählen" breite={180} />}>
       <Geladen g={g}>{({ r }) => {
         if (!r || !d) return <Leer text="Keine Klassen vorhanden." />;
-        if (!r.schueler.length) return <Leer text="Für diese Klasse wurde keine Schülerliste aus UntPlan übertragen." />;
+        if (!r.schueler.length) return <Leer text="Für diese Klasse wurde keine Schülerliste aus EduOrga Studio übertragen." />;
         return d.gueltig
           ? <SitzplanAnordnung d={d} schueler={r.schueler} w={w} kachel={s => <SchuelerKarte s={s} w={w} />} />
           : <Alert severity="info" action={r.verwalten && <Button onClick={() => setEditor(true)}>Sitzplan erstellen</Button>}>Für die Klasse {klasse} ist noch kein Sitzplan hinterlegt.</Alert>;

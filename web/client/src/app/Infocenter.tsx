@@ -1,4 +1,4 @@
-// Infocenter: Glocke mit Zahl ungelesener Einträge (Infos der Schule, Neuigkeiten zu UntPlanWeb), Liste als Seitenleiste rechts.
+// Infocenter: Glocke mit Zahl ungelesener Einträge (Infos der Schule, Neuigkeiten zu EduOrga Web), Liste als Seitenleiste rechts.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Badge, Box, Button, Chip, Drawer, IconButton, InputAdornment, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import NotificationsNoneOutlined from '@mui/icons-material/NotificationsNoneOutlined';

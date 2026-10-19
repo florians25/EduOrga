@@ -1,7 +1,7 @@
 // Rahmen einer Ansicht: Seitenkopf (Bereich + Titel, auf Seiten) bzw. schmale Kopfzeile (im Nebenbereich und im
 // Arbeitsplatz), Werkzeugleiste, Filterleiste, Inhalt und Fußzeile. Dazu kleine Bausteine der Werkzeugleisten.
 import {
-  Button, Label, Select, Spinner, Switch, Text, Toolbar, ToolbarButton, ToolbarDivider, Tooltip, makeStyles, mergeClasses, tokens,
+  Button, Label, Spinner, Switch, Text, Toolbar, ToolbarButton, ToolbarDivider, Tooltip, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { ChevronLeft20Regular, ChevronRight20Regular, Dismiss20Regular, Open20Regular } from '@fluentui/react-icons';
 import { useEffect, useId, type ReactNode, type KeyboardEvent } from 'react';
@@ -11,39 +11,48 @@ import { bereichVon } from '@/shell/navigation';
 import { useSeitenort } from '@/shell/seitenort';
 import type { ElementOption } from '@/api/typen';
 import { fehlerMelden } from './hinweise';
+import { SuchAuswahl } from './suchauswahl';
 
 const useStile = makeStyles({
   rahmen: { display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, height: '100%', backgroundColor: tokens.colorNeutralBackground1, position: 'relative' },
-  seitenkopf: { padding: '14px 20px 6px 20px', display: 'flex', alignItems: 'flex-end', gap: '16px', flexShrink: 0 },
-  kopfText: { display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 },
-  pfad: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
-  titel: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  seitenkopf: {
+    padding: '10px 20px 8px 20px', display: 'flex', alignItems: 'flex-end', gap: '16px', flexShrink: 0,
+    backgroundColor: 'var(--edo-kopf-flaeche)',
+  },
+  seitenkopfAllein: { borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
+  kopfText: { display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, gap: '1px' },
+  pfad: {
+    display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--edo-modus)', fontSize: '11px', lineHeight: '16px',
+    fontWeight: tokens.fontWeightSemibold, letterSpacing: '0.05em', textTransform: 'uppercase',
+    '::before': { content: '""', width: '8px', height: '8px', borderRadius: '2px', backgroundColor: 'var(--edo-modus)', flexShrink: 0 },
+  },
+  titel: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: tokens.colorNeutralForeground1 },
   bereichKopf: {
     display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 4px 4px 12px', minHeight: '36px', flexShrink: 0,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`, backgroundColor: 'var(--edo-bereich-kopf)',
   },
-  bereichTitel: { flex: 1, fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: tokens.fontSizeBase300 },
+  bereichTitel: { flex: 1, fontWeight: tokens.fontWeightSemibold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: tokens.fontSizeBase300, color: tokens.colorNeutralForeground1 },
   werkzeuge: { whiteSpace: 'nowrap', padding: '2px 12px', flexShrink: 0, flexWrap: 'wrap', rowGap: '2px', borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, minHeight: '40px' },
-  werkzeugeSeite: { padding: '2px 16px' },
+  werkzeugeSeite: { padding: '2px 14px 4px 14px', backgroundColor: 'var(--edo-kopf-flaeche)' },
   werkzeugeBereich: { flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'thin', padding: '0 8px', '& > *': { flexShrink: 0 } },
   filterBereich: { padding: '6px 12px', gap: '6px 12px' },
   filter: {
     display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px 16px', padding: '8px 16px', flexShrink: 0,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2,
   },
   inhalt: { flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' },
   inhaltRollen: { overflow: 'auto' },
   fuss: {
     display: 'flex', alignItems: 'center', gap: '16px', padding: '4px 16px', minHeight: '28px', flexShrink: 0, flexWrap: 'wrap',
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`, color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200,
-    backgroundColor: tokens.colorNeutralBackground2,
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`, color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase200,
+    backgroundColor: 'var(--edo-kopf-flaeche)',
   },
   feld: { display: 'inline-flex', alignItems: 'center', gap: '6px' },
   feldTitel: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, whiteSpace: 'nowrap' },
   rechts: { marginLeft: 'auto' },
   laden: {
     position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5,
-    backgroundColor: 'rgba(255,255,255,0.35)', pointerEvents: 'none',
+    backgroundColor: 'color-mix(in srgb, var(--colorNeutralBackground1) 35%, transparent)', pointerEvents: 'none',
   },
   leer: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '48px 16px', color: tokens.colorNeutralForeground3, textAlign: 'center', flex: 1 },
   elementwahl: { display: 'inline-flex', alignItems: 'center', gap: '2px' },
@@ -72,13 +81,13 @@ export function AnsichtRahmen({ titel, aktionen, werkzeuge, filter, fuss, childr
   const dokName = useStudio((x) => x.dokument?.name);
   const seite = a.lage === 'seite';
   useEffect(() => {
-    if (seite) document.title = `${titel}${dokName ? ` – ${dokName}` : ''} – UntPlan Studio`;
+    if (seite) document.title = `${titel}${dokName ? ` – ${dokName}` : ''} – EduOrga Studio`;
   }, [seite, titel, dokName]);
   const bereich = seite ? (bereichVon(ort, modus) || (modus === 'vertretung' ? 'Vertretungsplanung' : 'Stundenplanung')) : null;
   return (
     <section className={mergeClasses(s.rahmen, className)} aria-label={titel} data-ansicht={a.typ} data-lage={a.lage}>
       {seite ? (
-        <header className={s.seitenkopf}>
+        <header className={mergeClasses(s.seitenkopf, !werkzeuge && s.seitenkopfAllein)}>
           <div className={s.kopfText}>
             <span className={s.pfad}>{bereich}</span>
             <h1 className={s.titel}>{titel}</h1>
@@ -169,10 +178,9 @@ export function ElementAuswahl({ typ, liste, wert, beiWahl, titel }: { typ: stri
       <Label htmlFor={id} className={s.feldTitel}>{titel || NAME[typ] || 'Element'}</Label>
       <span className={s.elementwahl}>
         <Tooltip content="Vorheriges Element (Bild auf)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronLeft20Regular />} onClick={() => blaettern(-1)} disabled={i <= 0} /></Tooltip>
-        <Select id={id} size="small" className={s.auswahl} value={wert != null ? String(wert) : ''} onKeyDown={taste} onChange={(_, d) => beiWahl(Number(d.value))}>
-          {wert == null ? <option value="">–</option> : null}
-          {liste.map((e) => <option key={e.id} value={e.id}>{e.l ? `${e.k} – ${e.l}` : e.k}</option>)}
-        </Select>
+        <SuchAuswahl id={id} size="small" className={s.auswahl} wert={wert != null ? String(wert) : ''} beiTaste={taste} platzhalter="–"
+          beiWahl={(w) => { if (w) beiWahl(Number(w)); }} ariaLabel={titel || NAME[typ] || 'Element'}
+          optionen={liste.map((e) => ({ wert: String(e.id), kurz: e.k, text: e.l ? `${e.k} – ${e.l}` : e.k }))} />
         <Tooltip content="Nächstes Element (Bild ab)" relationship="label"><Button size="small" appearance="subtle" icon={<ChevronRight20Regular />} onClick={() => blaettern(1)} disabled={i >= liste.length - 1} /></Tooltip>
       </span>
     </span>

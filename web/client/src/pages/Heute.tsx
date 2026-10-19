@@ -171,7 +171,7 @@ export default function Heute() {
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 3.5 }}>
                     <Typography variant="body2" color="text.secondary">Letzte Anmeldung</Typography>
                     <Typography sx={{ fontWeight: 500, mb: 1 }}>{d.letzteAnmeldung ? `${wochentag(d.letzteAnmeldung.slice(0, 10))}, ${zeitstempel(d.letzteAnmeldung)}` : '–'}</Typography>
-                    <Typography variant="body2" color="text.secondary">Letzte Planaktualisierung aus UntPlan</Typography>
+                    <Typography variant="body2" color="text.secondary">Letzte Planaktualisierung aus EduOrga Studio</Typography>
                     <Typography sx={{ fontWeight: 500 }}>{d.planAktualisiert ? `${wochentag(d.planAktualisiert.slice(0, 10))}, ${zeitstempel(d.planAktualisiert)}` : '–'}</Typography>
                   </Paper>
                   {!ich.kollegium && <Link href="#/plan/mein" sx={{ display: ich.element ? 'block' : 'none' }}>Zum Stundenplan</Link>}

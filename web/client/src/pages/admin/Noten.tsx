@@ -212,7 +212,7 @@ function ArtFormular({ a, schemen, onClose, fertig }: { a: PArt | null; schemen:
         <Stack direction="row" gap={3} flexWrap="wrap" alignItems="center">
           <RadioGroup row value={x.muendlich ? '1' : '0'} onChange={e => set({ muendlich: e.target.value === '1' })}><FormControlLabel value="0" control={<Radio />} label="Schriftlich" /><FormControlLabel value="1" control={<Radio />} label="Mündlich" /></RadioGroup>
           <FormControlLabel control={<Checkbox checked={x.angekuendigt} onChange={e => set({ angekuendigt: e.target.checked })} />} label="Angekündigte Prüfung" />
-          <FormControlLabel control={<Checkbox checked={x.uebergeben} onChange={e => set({ uebergeben: e.target.checked })} />} label="An UntPlan übergeben" />
+          <FormControlLabel control={<Checkbox checked={x.uebergeben} onChange={e => set({ uebergeben: e.target.checked })} />} label="An EduOrga Studio übergeben" />
         </Stack>
         <Stack direction="row" gap={2} alignItems="center">
           <TextField type="color" label="Vordergrund" value={x.vordergrund} onChange={e => set({ vordergrund: e.target.value })} sx={{ width: 120 }} />

@@ -31,6 +31,8 @@ public sealed class UntPlanWebApi : IStudioModul
     {
         d.AddSingleton<UntPlanWebDienst>();
         d.AddHostedService<UpwAbgleichDienst>();
+        d.AddSingleton<VertretungsUebertragung>();
+        d.AddHostedService(sp => sp.GetRequiredService<VertretungsUebertragung>());
     }
 
     /// <summary>Adresse aus Server, Port, https und optionalem Pfad.</summary>
@@ -110,6 +112,25 @@ public sealed class UntPlanWebApi : IStudioModul
             abgleich,
             schuelerAbwesenheiten = d.SchuelerAbwesenheiten.Count,
             klassenbuch = d.Klassenbuch.Count,
+        };
+    }
+
+    /// <summary>Stand der direkten Übertragung der Vertretungen (Kopfleiste „An EduOrga Web senden“, Einstellungen).</summary>
+    public static object DirektStand(Arbeitsdokument a, PortalEinstellungen p, UntPlanWebDienst upw, VertretungsUebertragung auto)
+    {
+        var e = upw.Direkt(a.Id);
+        var letzte = upw.LetzteUebertragung(a.Id);
+        var erfolgreich = p.LetzteUebertragung.TryGetValue(WebTeile.Vertretungen, out var z) ? z : (DateTime?)null;
+        return new
+        {
+            eingerichtet = !string.IsNullOrWhiteSpace(p.Adresse),
+            automatisch = e.Automatisch,
+            sekunden = e.Sekunden,
+            laufend = upw.Laufend(a.Id) is { } l ? new { teil = l.Teil, benutzer = l.Benutzer, text = l.Text } : null,
+            faellig = auto.Faellig(a.Id),
+            letzte = letzte is null ? null : new { zeit = letzte.Zeit, ok = letzte.Ok, text = letzte.Text, revision = letzte.Revision, automatisch = letzte.Automatisch, benutzer = letzte.Benutzer },
+            zuletztErfolgreich = letzte is { Ok: true } ? letzte.Zeit : erfolgreich,
+            revision = p.Revision,
         };
     }
 
@@ -340,6 +361,23 @@ public sealed class UntPlanWebApi : IStudioModul
                 datum = Format.Datum(x.Datum), stunde = x.Stunde, klassen = string.Join(",", x.Klassen), fach = x.Fach, lehrer = x.Lehrer, lehrstoff = x.Lehrstoff,
                 hausaufgabe = x.Hausaufgabe, faellig = x.Faellig is DateOnly f ? Format.Datum(f) : "", anwesenheit = x.AnwesenheitGeprueft ? "geprüft" : "",
             }).ToList()));
+
+        // ---- direkte Übertragung der Vertretungen (ein Klick, automatisch nach Änderungen) ----
+        g.MapGet("/direkt", async (Arbeitsdokument a, UntPlanWebDienst upw, VertretungsUebertragung auto) =>
+            DirektStand(a, await a.LesenAsync(doc => UntPlanWebDienst.Kopie(doc.Daten.Einstellungen.Portal)), upw, auto));
+        g.MapPut("/direkt", async (Arbeitsdokument a, UpwDirekt e, UntPlanWebDienst upw, VertretungsUebertragung auto) =>
+        {
+            upw.DirektSpeichern(a.Id, e);
+            return DirektStand(a, await a.LesenAsync(doc => UntPlanWebDienst.Kopie(doc.Daten.Einstellungen.Portal)), upw, auto);
+        });
+        g.MapPost("/vertretungen/senden", async (Arbeitsdokument a, ClaimsPrincipal p, UntPlanWebDienst upw, VertretungsUebertragung auto) =>
+        {
+            var portal = await a.LesenAsync(doc => UntPlanWebDienst.Kopie(doc.Daten.Einstellungen.Portal));
+            if (string.IsNullOrWhiteSpace(portal.Adresse))
+                throw StudioFehler.Ungueltig("Keine Verbindung zu EduOrga Web eingerichtet – bitte unter „UntPlan Web → Einstellungen“ Server, Schul-ID und API-Schlüssel eintragen.");
+            await upw.VertretungenSendenAsync(a, p.Benutzername(), automatisch: false);
+            return DirektStand(a, await a.LesenAsync(doc => UntPlanWebDienst.Kopie(doc.Daten.Einstellungen.Portal)), upw, auto);
+        });
 
         // ---- automatischer Abgleich ----
         g.MapGet("/abgleich", (Arbeitsdokument a, UntPlanWebDienst upw) => upw.Abgleich(a.Id));

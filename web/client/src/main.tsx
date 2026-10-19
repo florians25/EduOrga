@@ -15,7 +15,7 @@ window.addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); (win
 
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
-    <ThemeProvider theme={theme} defaultMode="light">
+    <ThemeProvider theme={theme} defaultMode="system">
       <CssBaseline enableColorScheme />
       <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="de">
         <App />

@@ -1,0 +1,9 @@
+client/node_modules/
+src/EduOrgaWebsite/wwwroot/
+src/EduOrgaWebsite/daten/
+bin/
+obj/
+client/public/fonts/
+client/public/logo/
+client/public/bilder/
+client/public/favicon.svg

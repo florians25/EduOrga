@@ -1,5 +1,5 @@
-// Stammdaten: Klassen, Schüler*innen, Lehrkräfte, Fächer und Räume aus UntPlan (nur lesen), Stundenplan-Versionen (Übertragungsverlauf),
-// die in UntPlanWeb gepflegten Abwesenheits-/Befreiungsgründe und Klassendienste sowie Notenschemen und Prüfungsarten (Noten.tsx).
+// Stammdaten: Klassen, Schüler*innen, Lehrkräfte, Fächer und Räume aus EduOrga Studio (nur lesen), Stundenplan-Versionen (Übertragungsverlauf),
+// die in EduOrga Web gepflegten Abwesenheits-/Befreiungsgründe und Klassendienste sowie Notenschemen und Prüfungsarten (Noten.tsx).
 import { useState } from 'react';
 import { Box, Button, FormControlLabel, IconButton, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material';
 import AddRounded from '@mui/icons-material/AddRounded';
@@ -24,7 +24,7 @@ const ARTEN: Record<string, { titel: string; spalten: [string, string][] }> = {
   lehrer: { titel: 'Lehrkräfte', spalten: [['kurz', 'Kürzel'], ['name', 'Nachname'], ['vorname', 'Vorname'], ['email', 'E-Mail']] },
   faecher: { titel: 'Fächer', spalten: [['kurz', 'Fach'], ['name', 'Langname'], ['farbe', 'Farbe']] },
   raeume: { titel: 'Räume', spalten: [['kurz', 'Raum'], ['name', 'Langname'], ['buchbar', 'buchbar (Web)']] },
-  versionen: { titel: 'Stundenplan-Versionen', spalten: [['revision', 'Revision'], ['empfangen', 'Empfangen'], ['programmversion', 'UntPlan'], ['klassen', 'Klassen'], ['lehrer', 'Lehrkräfte'], ['raeume', 'Räume'], ['tage', 'Tage'], ['vertretungen', 'Vertretungen'], ['von', 'Von'], ['bis', 'Bis']] },
+  versionen: { titel: 'Stundenplan-Versionen', spalten: [['revision', 'Revision'], ['empfangen', 'Empfangen'], ['programmversion', 'EduOrga Studio'], ['klassen', 'Klassen'], ['lehrer', 'Lehrkräfte'], ['raeume', 'Räume'], ['tage', 'Tage'], ['vertretungen', 'Vertretungen'], ['von', 'Von'], ['bis', 'Bis']] },
   gruende: { titel: 'Abwesenheitsgründe', spalten: [['kurz', 'Kürzel'], ['name', 'Bezeichnung'], ['art', 'Art'], ['entschuldigt', 'gilt als entschuldigt'], ['reihenfolge', 'Reihenfolge'], ['aktiv', 'aktiv']] },
   dienste: { titel: 'Dienste', spalten: [['kurz', 'Kürzel'], ['name', 'Bezeichnung'], ['reihenfolge', 'Reihenfolge'], ['aktiv', 'aktiv']] },
 };
@@ -69,7 +69,7 @@ function Liste({ art }: { art: string }) {
     try { await loeschen(`${pfad}/${x.id}`); void g.neu(); } catch (err) { fehler(err); }
   }}><DeleteOutlineRounded fontSize="small" /></IconButton> });
   return (
-    <Seite titel={a.titel} untertitel={!bearbeitbar && art !== 'versionen' ? 'Diese Stammdaten werden in UntPlan gepflegt und mit jeder Übertragung aktualisiert.' : art === 'versionen' ? 'Jede Übertragung aus UntPlan erzeugt eine neue Version des Stundenplans; aktiv ist immer die zuletzt empfangene.' : undefined}
+    <Seite titel={a.titel} untertitel={!bearbeitbar && art !== 'versionen' ? 'Diese Stammdaten werden in EduOrga Studio gepflegt und mit jeder Übertragung aktualisiert.' : art === 'versionen' ? 'Jede Übertragung aus EduOrga Studio erzeugt eine neue Version des Stundenplans; aktiv ist immer die zuletzt empfangene.' : undefined}
       aktionen={<>
         {bearbeitbar && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setForm({})}>Neu</Button>}
         <Button variant="outlined" startIcon={<DownloadRounded />} disabled={!liste.length} onClick={() => speichern(csv([a.spalten.map(([, t]) => t), ...liste.map(x => a.spalten.map(([k]) => (typeof x[k] === 'boolean' ? (x[k] ? 'ja' : 'nein') : x[k])))]), `${art}.csv`)}>Bericht</Button>

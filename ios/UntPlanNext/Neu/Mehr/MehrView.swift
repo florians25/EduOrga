@@ -74,7 +74,7 @@ struct MehrView: View {
                             .foregroundStyle(Farben.entfall)
                     }
                 } footer: {
-                    Text("UntPlan Next \(MehrView.version)")
+                    Text("EduOrga \(MehrView.version) · Einfach mehr Schulalltag.")
                         .frame(maxWidth: .infinity)
                         .padding(.top, 8)
                 }
@@ -239,7 +239,7 @@ struct MehrView: View {
                 Mehrzeile(titel: "Passwort ändern")
             }
             NavigationLink(value: Mehrseite.neues) {
-                Mehrzeile(titel: "Neu in UntPlan Next")
+                Mehrzeile(titel: "Neu in EduOrga")
             }
             NavigationLink(value: Mehrseite.ueber) {
                 Mehrzeile(titel: "Über")

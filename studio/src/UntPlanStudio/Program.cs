@@ -17,7 +17,7 @@ namespace UntPlanStudio;
 /// </summary>
 public partial class Program
 {
-    public const string Anwendungsname = "UntPlan Studio";
+    public const string Anwendungsname = "EduOrga Studio";
     /// <summary>Kopfzeile, die jede ändernde API-Anfrage tragen muss (Schutz gegen Cross-Site-Anfragen).</summary>
     public const string Schutzkopf = "X-UntPlan-Studio";
 
@@ -38,13 +38,20 @@ public partial class Program
     /// <summary>
     /// <c>dotnet UntPlanStudio.dll --sichern</c>: schreibt eine konsistente Kopie von <c>studio.db</c> nach
     /// <c>&lt;Datenordner&gt;/sicherungen/</c> und beendet sich (Datenordner aus STUDIO_DATEN wie beim Serverstart). Legt keine
-    /// Datenbank an und migriert nichts; läuft auch, während der Server läuft.
+    /// Datenbank an und migriert nichts; läuft auch, während der Server läuft. Mit <c>STUDIO_DB=mysql</c> nur ein Hinweis (Ergebnis 0):
+    /// MySQL/MariaDB wird mit mariadb-dump gesichert (installation/update.sh).
     /// </summary>
     private static int Sichern()
     {
         var konfiguration = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true).AddEnvironmentVariables().Build();
         var k = StudioKonfiguration.Laden(konfiguration, Directory.GetCurrentDirectory());
+        if (k.Datenbank == StudioDatenbankart.MySql)
+        {
+            // MySQL/MariaDB: kein mysqldump im Container – die Sicherung übernimmt der Datenbankserver (installation/update.sh)
+            Console.WriteLine(StudioDatenbank.MySqlSicherungHinweis);
+            return 0;
+        }
         if (!File.Exists(k.Datenbankpfad))
         {
             Console.Error.WriteLine($"Keine Datenbank unter {k.Datenbankpfad} – nichts zu sichern (Studio noch nie gestartet oder STUDIO_DATEN falsch?).");

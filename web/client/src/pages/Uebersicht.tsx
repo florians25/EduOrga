@@ -237,7 +237,7 @@ export default function Uebersicht() {
           zeilen: d.pruefungen.map(p => ({ links: tagKurz(p.datum), titel: p.titel, neben: (p.klassen ?? []).join(', '), rechts: <>{stdText(p.stundeVon, p.stundeBis)} Std.{p.raeume?.length ? ` · ${p.raeume.join(', ')}` : ''}{p.status === 'vorgemerkt' && <Plakette>vorgemerkt</Plakette>}</> })) }];
         if (kollegium && element) termine.push({ titel: 'Aufsichten · 7 Tage', href: '#/plan/mein', leer: 'Keine Aufsichten',
           zeilen: aufsichten.map(a => ({ links: tagKurz(a.datum), titel: a.gangName || a.gang, rechts: <>{a.beginn}–{a.ende}{a.status === 'vertretung' && <Plakette ton="aenderung">Vertretung</Plakette>}</> })) });
-        termine.push({ titel: 'Sprechtag', href: '#/sprechtag', zeilen: d.sprechtage.map(s => ({ links: s.datum ? tagKurz(s.datum) : '', titel: s.name, neben: s.text, href: `#/sprechtag/${s.id}` })) });
+        termine.push({ titel: 'Elternsprechtag', href: '#/sprechtag', zeilen: d.sprechtage.map(s => ({ links: s.datum ? tagKurz(s.datum) : '', titel: s.name, neben: s.text, href: `#/sprechtag/${s.id}` })) });
         karten.push(<UKarte key="term" symbol={<EventOutlined />} titel="Termine" gruppen={termine} />);
         const sortiert = [...ungelesen, ...d.mitteilungen.filter(m => m.gelesen)];
         karten.push(<UKarte key="mt" symbol={<MailOutline />} titel="Mitteilungen & Infos" href="#/mitteilungen" linkText="Posteingang" gruppen={[

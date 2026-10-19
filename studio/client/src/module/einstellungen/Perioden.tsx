@@ -8,6 +8,7 @@ import { useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen } from '@/komponenten/ansicht';
 import { formular, frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { de, isoAusDe, pfad } from './kern';
 import './einstellungen.css';
 
@@ -25,8 +26,8 @@ function Bearbeiten({ p, lesen, anzahl, senden, neu, loeschen }: { p: Periode; l
       <div className="es-formular" style={{ gridTemplateColumns: '120px minmax(0, 320px)' }}>
         <label>Name</label><Input size="small" disabled={lesen} value={w.name} onChange={(_, d) => setW({ ...w, name: d.value })} />
         <label>Bezeichnung</label><Input size="small" disabled={lesen} value={w.langname} onChange={(_, d) => setW({ ...w, langname: d.value })} />
-        <label>Von</label><Input size="small" type="date" disabled={lesen} value={w.von} onChange={(_, d) => setW({ ...w, von: d.value })} />
-        <label>Bis</label><Input size="small" type="date" disabled={lesen} value={w.bis} onChange={(_, d) => setW({ ...w, bis: d.value })} />
+        <label>Von</label><DatumFeld size="small" disabled={lesen} wert={w.von} beiAenderung={(datum) => setW({ ...w, von: datum })} />
+        <label>Bis</label><DatumFeld size="small" disabled={lesen} wert={w.bis} beiAenderung={(datum) => setW({ ...w, bis: datum })} />
         <p className="es-hinweis">{`Leer bedeutet bis ${de(p.ende)}.`}</p>
         <span /><Checkbox label="Fixiert" disabled={lesen} checked={w.fixiert} onChange={(_, d) => setW({ ...w, fixiert: !!d.checked })} />
         <p className="es-hinweis">Unterricht und Stundenplan sind dann gegen Änderungen gesperrt.</p>

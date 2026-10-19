@@ -37,7 +37,7 @@ public static class ListenPdf
         s.Linie(Rand, y - 10, s.Breite - Rand, y - 10, 0.5f);
         s.Text(Rand, y, 7.5f, PdfDokument.Kuerzen(titel, s.Breite * .5f, 7.5f));
         s.TextRechts(s.Breite - Rand, y, 7.5f, $"Seite {seite} von {PdfDokument.Seitenzahl}");
-        s.TextMittig(0, s.Breite, y, 7.5f, "UntPlan Studio");
+        s.TextMittig(0, s.Breite, y, 7.5f, "EduOrga Studio");
     }
 
     public static byte[] Bericht(Schuldatei d, Bericht b)

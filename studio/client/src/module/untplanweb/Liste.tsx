@@ -1,4 +1,4 @@
-// Aus UntPlan Web übernommene Listen: Fehlzeiten der Schüler bzw. Klassenbuch (nur lesen), mit Klassenfilter und Suche.
+// Aus EduOrga Web übernommene Listen: Fehlzeiten der Schüler bzw. Klassenbuch (nur lesen), mit Klassenfilter und Suche.
 import { Input, Select } from '@fluentui/react-components';
 import { useMemo, useState } from 'react';
 import { api } from '@/api/client';
@@ -11,11 +11,11 @@ type Z = Record<string, string | number> & { id: number };
 
 const LISTEN: Record<string, { titel: string; spalten: [string, string, number][] }> = {
   schuelerabwesenheiten: {
-    titel: 'Fehlzeiten der Schüler aus UntPlan Web',
+    titel: 'Fehlzeiten der Schüler aus EduOrga Web',
     spalten: [['datum', 'Datum', 85], ['stunde', 'Std.', 45], ['klasse', 'Klasse', 60], ['name', 'Name', 170], ['art', 'Art', 110], ['status', 'Status', 100], ['fach', 'Fach', 60], ['lehrer', 'Lehrkraft', 70], ['bemerkung', 'Bemerkung', 200]],
   },
   klassenbuch: {
-    titel: 'Klassenbuch aus UntPlan Web',
+    titel: 'Klassenbuch aus EduOrga Web',
     spalten: [['datum', 'Datum', 85], ['stunde', 'Std.', 45], ['klassen', 'Klasse(n)', 80], ['fach', 'Fach', 60], ['lehrer', 'Lehrkraft', 70], ['lehrstoff', 'Lehrstoff', 220], ['hausaufgabe', 'Hausaufgabe', 200], ['faellig', 'Fällig', 85], ['anwesenheit', 'Anwesenheit', 90]],
   },
 };
@@ -44,7 +44,7 @@ export default function UpwListe() {
           </Select>
         </Feld>
         <Input type="search" size="small" placeholder="Suchen" aria-label="Suchen" style={{ width: 200 }} value={suche} onChange={(_, d) => setSuche(d.value)} />
-        <FussText rechts>Übernommen aus UntPlan Web; Änderungen bitte dort vornehmen.</FussText>
+        <FussText rechts>Übernommen aus EduOrga Web; Änderungen bitte dort vornehmen.</FussText>
       </>}
       fuss={<span>{`${liste.length} von ${alle.length} Einträgen`}</span>}>
       <Tabelle<Z> name={`upw-${art}`} zeilen={liste} id={(z) => z.id} zustandSchluessel={`tabelle.untplanweb.${art}`} leerText="Keine übernommenen Einträge."

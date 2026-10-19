@@ -67,31 +67,38 @@ export function ZeitNavi({ datum, onDatum, art = 'woche', tage = 5 }: { datum: s
   );
 }
 
+// Datums- und Zeitfelder (MUI-Picker): Beschriftung steht immer oben im Rahmen (sonst läge eine lange Beschriftung im leeren Feld unter
+// dem Kalendersymbol), Mindestbreite je Art, damit „TT.MM.JJJJ hh:mm“, Löschen-Knopf und Kalendersymbol nebeneinander passen.
+const FELD_MIN = { datum: 168, zeit: 112, datumZeit: 232 } as const;
+const feldSx = (breite: number | string | undefined, min: number) => ({ width: breite ?? min, minWidth: min, maxWidth: '100%', flex: 'none',
+  '& .MuiInputBase-input': { textOverflow: 'clip' }, '& .MuiInputAdornment-root': { ml: 0.25 }, '& .MuiInputAdornment-root .MuiIconButton-root': { p: 0.5 } });
+const label = { shrink: true } as const;
+
 /** Datumsfeld (ISO-Wert). */
-export function DatumFeld({ label, wert, onWert, min, max, breite = 170, deaktiviert, pflicht }: {
-  label: string; wert: string | null; onWert: (d: string | null) => void; min?: string; max?: string; breite?: number | string; deaktiviert?: boolean; pflicht?: boolean;
+export function DatumFeld({ label: text, wert, onWert, min, max, breite = 176, deaktiviert, pflicht, hilfe }: {
+  label: string; wert: string | null; onWert: (d: string | null) => void; min?: string; max?: string; breite?: number | string; deaktiviert?: boolean; pflicht?: boolean; hilfe?: string;
 }) {
   return (
-    <DatePicker label={label} value={wert ? dayjs(wert) : null} onChange={(v: Dayjs | null) => onWert(v && v.isValid() ? v.format('YYYY-MM-DD') : null)}
+    <DatePicker label={text} value={wert ? dayjs(wert) : null} onChange={(v: Dayjs | null) => onWert(v && v.isValid() ? v.format('YYYY-MM-DD') : null)}
       minDate={min ? dayjs(min) : undefined} maxDate={max ? dayjs(max) : undefined} disabled={deaktiviert}
-      slotProps={{ textField: { size: 'small', sx: { width: breite }, required: pflicht }, field: { clearable: !pflicht } }} />
+      slotProps={{ textField: { size: 'small', sx: feldSx(breite, FELD_MIN.datum), required: pflicht, helperText: hilfe, InputLabelProps: label }, field: { clearable: !pflicht } }} />
   );
 }
 
 /** Uhrzeit (HH:mm, 24 Stunden) unabhängig von der Sprache des Browsers. */
-export function ZeitFeld({ label, wert, onWert, breite = 130, deaktiviert }: { label: string; wert: string; onWert: (z: string) => void; breite?: number | string; deaktiviert?: boolean }) {
+export function ZeitFeld({ label: text, wert, onWert, breite = 120, deaktiviert }: { label: string; wert: string; onWert: (z: string) => void; breite?: number | string; deaktiviert?: boolean }) {
   const v = /^\d{1,2}:\d{2}$/.test(wert) ? dayjs(`2000-01-01T${wert.padStart(5, '0')}`) : null;
   return (
-    <TimeField label={label} value={v} onChange={(x: Dayjs | null) => x && x.isValid() && onWert(x.format('HH:mm'))} ampm={false} disabled={deaktiviert} format="HH:mm"
-      slotProps={{ textField: { size: 'small', sx: { width: breite } } }} />
+    <TimeField label={text} value={v} onChange={(x: Dayjs | null) => x && x.isValid() && onWert(x.format('HH:mm'))} ampm={false} disabled={deaktiviert} format="HH:mm"
+      slotProps={{ textField: { size: 'small', sx: feldSx(breite, FELD_MIN.zeit), InputLabelProps: label } }} />
   );
 }
 
 /** Datum mit Uhrzeit (Wert „YYYY-MM-DDTHH:mm“ wie bei datetime-local). */
-export function DatumZeitFeld({ label, wert, onWert, breite = 220, hilfe }: { label: string; wert: string; onWert: (z: string) => void; breite?: number | string; hilfe?: string }) {
+export function DatumZeitFeld({ label: text, wert, onWert, breite = 244, hilfe }: { label: string; wert: string; onWert: (z: string) => void; breite?: number | string; hilfe?: string }) {
   const v = wert && dayjs(wert).isValid() ? dayjs(wert) : null;
   return (
-    <DateTimePicker label={label} value={v} onChange={(x: Dayjs | null) => onWert(x && x.isValid() ? x.format('YYYY-MM-DDTHH:mm') : '')} ampm={false}
-      slotProps={{ textField: { size: 'small', sx: { width: breite }, helperText: hilfe }, field: { clearable: true } }} />
+    <DateTimePicker label={text} value={v} onChange={(x: Dayjs | null) => onWert(x && x.isValid() ? x.format('YYYY-MM-DDTHH:mm') : '')} ampm={false}
+      slotProps={{ textField: { size: 'small', sx: feldSx(breite, FELD_MIN.datumZeit), helperText: hilfe, InputLabelProps: label }, field: { clearable: true } }} />
   );
 }

@@ -75,7 +75,7 @@ export function MeineBuchungen({ rest }: { rest: string[] }) {
           {b.text && <Typography variant="body2" sx={{ mt: 0.5 }}>{b.text}</Typography>}
         </Box>
         <Stack alignItems="flex-end" gap={1} sx={{ flexShrink: 0 }}>
-          {b.status === 'storniert' ? <Plakette ton="entfall">storniert</Plakette> : b.uebertragen ? <Plakette ton="ok" title="von UntPlan übernommen">übernommen</Plakette> : b.datum < heute ? <Plakette>vergangen</Plakette> : <Plakette ton="pruefung">gebucht</Plakette>}
+          {b.status === 'storniert' ? <Plakette ton="entfall">storniert</Plakette> : b.uebertragen ? <Plakette ton="ok" title="von EduOrga Studio übernommen">übernommen</Plakette> : b.datum < heute ? <Plakette>vergangen</Plakette> : <Plakette ton="pruefung">gebucht</Plakette>}
           {darf(b) && <Button size="small" onClick={() => setStorno({ b, n: b.serie ? serien.get(b.serie) ?? 0 : 0 })}>Stornieren</Button>}
         </Stack>
       </Stack>
@@ -115,7 +115,7 @@ export function MeineBuchungen({ rest }: { rest: string[] }) {
   return (
     <Seite titel={alle ? 'Alle Buchungen' : 'Meine Buchungen'} untertitel={g.daten ? `${anzahl('kommend')} kommende Buchungen` : undefined}
       aktionen={<>
-        <Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/raeume">Raumübersicht</Button>
+        <Button variant="outlined" startIcon={<GridViewOutlined />} href="#/buchen/raeume">Raumbelegung</Button>
         <Button variant="outlined" startIcon={<DownloadRounded />} disabled={!sichtbar.length} onClick={() => speichern(csv([
           ['Datum', 'Wochentag', 'Stunde von', 'Stunde bis', 'Beginn', 'Ende', 'Art', 'Raum', 'Ressourcen', 'Klassen', 'Lehrkraft', 'Fach', 'Titel', 'Bemerkung', 'Status', 'Serie', 'Gebucht von', 'Erstellt'],
           ...sichtbar.map(b => [datumDe(b.datum), b.wochentag, b.stundeVon, b.stundeBis, b.beginn, b.ende, b.artName, b.raum, b.ressourcen.map(r => `${r.menge > 1 ? `${r.menge}x ` : ''}${r.name}`).join(', '),

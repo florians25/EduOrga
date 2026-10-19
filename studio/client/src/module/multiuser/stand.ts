@@ -23,7 +23,7 @@ export const useMultiuser = create<{ stand: MultiuserStand | null; verlauf: Nach
 let nachrichtNach = 0;
 let takt = 0;
 
-const taetigkeit = () => { const t = document.title.replace(/ – UntPlan Studio$/, '').replace(/ – [^–]*$/, ''); return t === 'UntPlan Studio' ? '' : t; };
+const taetigkeit = () => { const t = document.title.replace(/ – EduOrga Studio$/, '').replace(/ – [^–]*$/, ''); return t === 'EduOrga Studio' ? '' : t; };
 
 function aufnehmen(neu: MultiuserStand) {
   const { verlauf } = useMultiuser.getState();

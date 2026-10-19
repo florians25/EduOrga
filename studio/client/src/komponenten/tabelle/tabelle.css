@@ -5,15 +5,15 @@
 }
 .tb-rollen { flex: 1; min-height: 0; overflow: auto; position: relative; }
 .tb-kopf {
-  position: sticky; top: 0; z-index: 3; display: flex; background: var(--colorNeutralBackground2);
-  border-bottom: 1px solid var(--colorNeutralStroke2); height: 32px; min-width: 100%;
+  position: sticky; top: 0; z-index: 3; display: flex; background: var(--colorNeutralBackground3);
+  border-bottom: 1px solid var(--colorNeutralStroke1); height: 32px; min-width: 100%;
 }
 .tb-kz {
   position: relative; flex-shrink: 0; display: flex; align-items: center; gap: 4px; padding: 0 8px; height: 32px;
-  font-size: 12px; font-weight: 500; color: var(--colorNeutralForeground2); white-space: nowrap; overflow: hidden;
+  font-size: 12px; font-weight: 600; color: var(--colorNeutralForeground1); white-space: nowrap; overflow: hidden;
   user-select: none; cursor: pointer; border-right: 1px solid var(--colorNeutralStroke3);
 }
-.tb-kz:hover { background: var(--colorNeutralBackground2Hover); }
+.tb-kz:hover { background: var(--colorNeutralBackground3Hover); }
 .tb-kz.rechts { justify-content: flex-end; }
 .tb-kz .tb-titel { overflow: hidden; text-overflow: ellipsis; }
 .tb-kz .tb-sort { color: var(--colorBrandForeground1); display: inline-flex; }
@@ -21,9 +21,13 @@
 .tb-breite { position: absolute; right: -3px; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 2; }
 .tb-breite:hover, .tb-breite.aktiv { background: var(--colorBrandStroke2); }
 .tb-platz { position: relative; }
-.tb-zeile { position: absolute; left: 0; display: flex; border-bottom: 1px solid var(--colorNeutralStroke3); background: var(--colorNeutralBackground1); }
+.tb-zeile { position: absolute; left: 0; display: flex; border-bottom: 1px solid var(--colorNeutralStroke2); background: var(--colorNeutralBackground1); }
+.tb-zeile.ungerade { background: var(--colorNeutralBackground2); }
 .tb-zeile:hover { background: var(--colorNeutralBackground1Hover); }
-.tb-zeile.gewaehlt { background: var(--colorBrandBackground2); }
+.tb-zeile.gewaehlt { background: var(--colorBrandBackground2); box-shadow: inset 3px 0 0 var(--colorBrandStroke1); }
+.tb-zeile.gewaehlt:hover { background: var(--colorBrandBackground2Hover); }
+/* bearbeitet, passt nicht mehr zum Spaltenfilter: bleibt bis zur nächsten Filteränderung sichtbar */
+.tb-zeile.tb-ausserfilter .tb-zelle { color: var(--colorNeutralForeground4); }
 .tb-zeile.tb-neu { color: var(--colorNeutralForeground3); font-style: normal; }
 .tb-zeile.gruppe-folge { border-top: none; }
 .tb-zeile.gruppe-folge .tb-zelle { color: var(--colorNeutralForeground2); }
@@ -42,9 +46,9 @@
   align-items: center; justify-content: center; background: var(--colorNeutralBackground1); cursor: pointer;
 }
 .tb-haken.an { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
-.tb-haken.an::after { content: ''; width: 7px; height: 4px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.tb-haken.an::after { content: ''; width: 7px; height: 4px; border-left: 2px solid var(--colorNeutralForegroundOnBrand); border-bottom: 2px solid var(--colorNeutralForegroundOnBrand); transform: translateY(-1px) rotate(-45deg); }
 .tb-farbpunkt { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--colorNeutralStroke1); flex-shrink: 0; }
-.tb-leer { position: absolute; left: 0; right: 0; text-align: center; color: var(--colorNeutralForeground3); pointer-events: none; }
+.tb-leer { position: absolute; top: 56px; left: 0; right: 0; text-align: center; color: var(--colorNeutralForeground3); pointer-events: none; }
 .tb-editor {
   position: absolute; z-index: 4; box-sizing: border-box; border: 2px solid var(--colorBrandStroke1); padding: 0 6px;
   font: inherit; font-size: 13px; outline: none; background: var(--colorNeutralBackground1); color: var(--colorNeutralForeground1);
@@ -67,7 +71,7 @@ select.tb-editor { padding: 0 2px; }
 .vs-leer { padding: 6px 8px; color: var(--colorNeutralForeground3); }
 
 /* Kopfbereich (Spaltenköpfe + Filterzeile) bleibt beim Rollen oben */
-.tb-kopfbereich { position: sticky; top: 0; z-index: 3; min-width: 100%; background: var(--colorNeutralBackground2); }
+.tb-kopfbereich { position: sticky; top: 0; z-index: 3; min-width: 100%; background: var(--colorNeutralBackground3); }
 .tb-kopfbereich .tb-kopf { position: static; }
 .tb-filterzeile { display: flex; height: 30px; border-bottom: 1px solid var(--colorNeutralStroke2); background: var(--colorNeutralBackground1); }
 .tb-filterzelle { flex-shrink: 0; position: relative; display: flex; align-items: center; padding: 0 3px; border-right: 1px solid var(--colorNeutralStroke3); box-sizing: border-box; }
@@ -85,9 +89,9 @@ select.tb-editor { padding: 0 2px; }
   flex-shrink: 0; width: 30px; display: flex; align-items: center; justify-content: center; position: sticky; left: 0; z-index: 2;
   background: inherit; border-right: 1px solid var(--colorNeutralStroke3); box-sizing: border-box;
 }
-.tb-mk-kopf { height: 32px; cursor: pointer; background: var(--colorNeutralBackground2); }
+.tb-mk-kopf { height: 32px; cursor: pointer; background: var(--colorNeutralBackground3); }
 .tb-haken.teil { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
-.tb-haken.teil::after { content: ''; width: 8px; height: 2px; background: #fff; }
+.tb-haken.teil::after { content: ''; width: 8px; height: 2px; background: var(--colorNeutralForegroundOnBrand); }
 
 /* Bereichsauswahl und Fehler */
 .tb-zelle.imbereich { background-image: linear-gradient(color-mix(in srgb, var(--colorBrandBackground) 16%, transparent), color-mix(in srgb, var(--colorBrandBackground) 16%, transparent)); }
@@ -106,7 +110,7 @@ select.tb-editor { padding: 0 2px; }
 .tb-editbox:has(.tb-editor-knopf) .tb-editor { padding-right: 24px; }
 .tb-editor-fehler {
   position: absolute; left: 0; top: 100%; margin-top: 2px; z-index: 5; max-width: 360px; width: max-content; padding: 4px 8px; border-radius: 4px;
-  background: var(--colorPaletteRedBackground3); color: #fff; font-size: 12px; box-shadow: var(--shadow8); white-space: normal;
+  background: var(--colorPaletteRedBackground3); color: var(--colorNeutralForegroundOnBrand); font-size: 12px; box-shadow: var(--shadow8); white-space: normal;
 }
 .tb-editor-fehler .leise { opacity: .8; }
 
@@ -122,5 +126,8 @@ select.tb-editor { padding: 0 2px; }
 .vs-eintrag { align-items: center; }
 .vs-haken { width: 12px; height: 12px; border: 1px solid var(--colorNeutralStrokeAccessible); border-radius: 2px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
 .vs-haken.an { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
-.vs-haken.an::after { content: ''; width: 6px; height: 3px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.vs-haken.an::after { content: ''; width: 6px; height: 3px; border-left: 2px solid var(--colorNeutralForegroundOnBrand); border-bottom: 2px solid var(--colorNeutralForegroundOnBrand); transform: translateY(-1px) rotate(-45deg); }
 .vs-fuss { padding: 4px 8px 2px; color: var(--colorNeutralForeground3); font-size: 11px; border-top: 1px solid var(--colorNeutralStroke3); margin-top: 4px; }
+
+.tb-kalender { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }
+.tb-editbox:has(.tb-kalender) .tb-editor { padding-right: 24px; }

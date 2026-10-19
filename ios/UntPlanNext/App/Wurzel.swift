@@ -166,25 +166,23 @@ struct AppTabView: View {
     }
 }
 
-/// Startbild, solange die Sitzung geprüft wird: Wortmarke und ein schmaler Ladebalken.
+/// Startbild, solange die Sitzung geprüft wird: Monogramm, Wortmarke, Slogan und ein schmaler Ladebalken.
 struct Startbild: View {
     var body: some View {
         VStack(spacing: 14) {
             Spacer()
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("UntPlan")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(Farben.text)
-                Text("Next")
-                    .font(.largeTitle.weight(.regular))
-                    .foregroundStyle(Farben.akzent)
-            }
+            EdoMonogramm(groesse: 72)
+            EdoWortmarke(schrift: .largeTitle)
+            Text(Marke.slogan)
+                .font(.subheadline)
+                .foregroundStyle(Farben.text2)
             Ladebalken(aktiv: true, hoehe: 3)
                 .frame(width: 120)
                 .clipShape(Capsule())
+                .padding(.top, 6)
             Text("Verbindung wird hergestellt …")
-                .font(.subheadline)
-                .foregroundStyle(Farben.text2)
+                .font(.footnote)
+                .foregroundStyle(Farben.text3)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

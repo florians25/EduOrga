@@ -1,13 +1,18 @@
-"""App-Symbol von UntPlan Next rendern (hell, dunkel, getönt; je 1024 px, Xcode erzeugt die übrigen Größen).
+"""App-Symbol von EduOrga für iOS rendern (hell, dunkel, getönt; je 1024 px, Xcode erzeugt die übrigen Größen).
 
 Aufruf (im Ordner ios/):
     python3 Gestaltung/appicon_rendern.py UntPlanNext/Assets.xcassets/AppIcon.appiconset [/pfad/vorschau.png]
 Benötigt nur Pillow.
 
-Abwandlung des Symbols von „UntPlan“, damit beide Apps nebeneinander auf dem Home-Bildschirm unterscheidbar sind:
-dasselbe Monogramm „UP“ (Geometrie wie design/logo/monogramm.svg, 64er-Raster, 6er-Strich), etwas kleiner und nach oben
-gerückt, auf Petrol (#0b5d57, Akzentfarbe von UntPlan Next) statt Marine-900; darunter die Jetzt-Linie (waagrechter
-Strich mit Punkt) in hellem Petrol. Flächig, ohne eigene Eckrundung (iOS legt die Maske selbst darüber), ohne Verläufe und Schatten.
+Vorlage ist das Monogramm für App-Symbole design/logo/edo-monogramm-eckig.svg (64er-Raster): vollflächige Kachel in der
+Primärfarbe #164C55, darauf das weiße „E“ (Pfad M18 14h28v6H24v9h14v6H24v9h22v6H18z) und das kleine helle
+Petrol-Quadrat (#7FC9C9, x 41, y 29, 6 × 6) am mittleren Balken. Flächig, ohne eigene Eckrundung (iOS legt die Maske
+selbst darüber), ohne Verläufe und Schatten.
+
+Varianten (ab iOS 18):
+- hell:   Petrol-Kachel, weißes E, helles Petrol-Quadrat (wie die SVG-Vorlage)
+- dunkel: durchsichtiger Grund (das System legt seinen dunklen Grund darunter), E in sehr hellem Petrol, Quadrat #5FB0B5
+- getönt: Graustufen auf durchsichtigem Grund, das System färbt ein (E weiß, Quadrat etwas schwächer)
 """
 import os
 import sys
@@ -19,84 +24,41 @@ VORSCHAU = sys.argv[2] if len(sys.argv) > 2 else None
 
 GROESSE = 1024
 UEBERABTASTUNG = 4          # glatte Kanten: groß zeichnen, dann verkleinern
-RASTER = 64                 # Zeichenfläche von monogramm.svg
-STRICH = 6
-# Monogramm verkleinert und nach oben gerückt (Platz für die Jetzt-Linie)
-MASSSTAB = 0.82
-VERSATZ_X = 64 * (1 - MASSSTAB) / 2 + 0.2
-VERSATZ_Y = 2.2
+RASTER = 64                 # Zeichenfläche von edo-monogramm-eckig.svg
+
+# „E“ als geschlossener Linienzug (aus dem SVG-Pfad M18 14h28v6H24v9h14v6H24v9h22v6H18z)
+E_PUNKTE = [(18, 14), (46, 14), (46, 20), (24, 20), (24, 29), (38, 29), (38, 35), (24, 35), (24, 44), (46, 44),
+            (46, 50), (18, 50)]
+# Helles Quadrat am mittleren Balken
+QUADRAT = (41, 29, 47, 35)
 
 VARIANTEN = {
-    # hell: Petrol #0b5d57 mit weißem UP, Jetzt-Linie in hellem Petrol
-    "AppIcon.png": {"grund": (0x0B, 0x5D, 0x57, 255), "zeichen": (255, 255, 255, 255), "linie": (0x8E, 0xDB, 0xD1, 255), "modus": "RGB"},
-    # dunkel (ab iOS 18): durchsichtiger Grund, UP in sehr hellem Petrol, Linie in Petrol #3fb3a6
-    "AppIcon-Dark.png": {"grund": None, "zeichen": (0xD5, 0xF0, 0xEC, 255), "linie": (0x3F, 0xB3, 0xA6, 255), "modus": "RGBA"},
-    # getönt (ab iOS 18): weiß auf durchsichtigem Grund, das System färbt ein (Linie etwas schwächer)
-    "AppIcon-Tinted.png": {"grund": None, "zeichen": (255, 255, 255, 255), "linie": (255, 255, 255, 150), "modus": "LA"},
+    "AppIcon.png": {"grund": (0x16, 0x4C, 0x55, 255), "zeichen": (255, 255, 255, 255), "quadrat": (0x7F, 0xC9, 0xC9, 255), "modus": "RGB"},
+    "AppIcon-Dark.png": {"grund": None, "zeichen": (0xEE, 0xF5, 0xF6, 255), "quadrat": (0x5F, 0xB0, 0xB5, 255), "modus": "RGBA"},
+    "AppIcon-Tinted.png": {"grund": None, "zeichen": (255, 255, 255, 255), "quadrat": (255, 255, 255, 150), "modus": "LA"},
 }
 
 
-def maske_u():
-    """Das Zeichen „UP“ (U und P teilen sich den mittleren Strich) als Graustufenmaske in Überabtastung."""
-    n = GROESSE * UEBERABTASTUNG
-    s = n / RASTER * MASSSTAB
-    ox = VERSATZ_X * n / RASTER
-    oy = VERSATZ_Y * n / RASTER
-    roh = Image.new("L", (n, n), 0)
-    d = ImageDraw.Draw(roh)
-    h = STRICH / 2
-    m = roh
-
-    def senkrecht(x, y1, y2):
-        """Senkrechter Strich; oben eckiges Ende (wie stroke-linecap: square), unten bündig."""
-        d.rectangle([(x - h) * s, (y1 - h) * s, (x + h) * s, y2 * s], fill=255)
-
-    def waagerecht(y, x1, x2):
-        """Waagerechter Strich von x1 (eckiges Ende) bis x2 (bündig an den Bogen)."""
-        d.rectangle([(x1 - h) * s, (y - h) * s, x2 * s, (y + h) * s], fill=255)
-
-    def bogen(cx, cy, r, start, ende):
-        a, i = (r + h) * s, (r - h) * s
-        ring = Image.new("L", (n, n), 0)
-        rd = ImageDraw.Draw(ring)
-        rd.pieslice([cx * s - a, cy * s - a, cx * s + a, cy * s + a], start, ende, fill=255)
-        rd.pieslice([cx * s - i, cy * s - i, cx * s + i, cy * s + i], start, ende, fill=0)
-        m.paste(255, (0, 0), ring)
-
-    # U: Schenkel bei x = 14 und x = 34 von y = 16 bis 34, Bogen Radius 10 um (24, 34)
-    senkrecht(14, 16, 34)
-    senkrecht(34, 16, 34)
-    bogen(24, 34, 10, 0, 180)
-    # P: Bogen Radius 8 um (42, 24) zwischen den Querstrichen y = 16 und y = 32, Schaft x = 34 bis y = 50
-    waagerecht(16, 34, 42)
-    waagerecht(32, 34, 42)
-    bogen(42, 24, 8, 270, 450)
-    d.rectangle([(34 - h) * s, 34 * s, (34 + h) * s, (50 + h) * s], fill=255)
-    verschoben = Image.new("L", (n, n), 0)
-    verschoben.paste(m, (int(ox), int(oy)))
-    return verschoben
-
-
-def maske_linie():
-    """Jetzt-Linie: waagrechter Strich (Stärke 3) von x = 12 bis 52 bei y = 55, Punkt (Radius 4,5) bei x = 44."""
+def maske(form):
+    """Graustufenmaske einer Form (Linienzug bzw. Rechteck im 64er-Raster) in Überabtastung."""
     n = GROESSE * UEBERABTASTUNG
     s = n / RASTER
     m = Image.new("L", (n, n), 0)
     d = ImageDraw.Draw(m)
-    y, st = 55.0, 1.5
-    d.rounded_rectangle([12 * s, (y - st) * s, 52 * s, (y + st) * s], radius=st * s, fill=255)
-    r = 4.5
-    d.ellipse([(44 - r) * s, (y - r) * s, (44 + r) * s, (y + r) * s], fill=255)
+    if isinstance(form, list):
+        d.polygon([(x * s, y * s) for x, y in form], fill=255)
+    else:
+        x1, y1, x2, y2 = form
+        d.rectangle([x1 * s, y1 * s, x2 * s - 1, y2 * s - 1], fill=255)
     return m
 
 
-def zeichnen(farben, maske, linie):
+def zeichnen(farben, e, q):
     n = GROESSE * UEBERABTASTUNG
     bild = Image.new("RGBA", (n, n), farben["grund"] or (0, 0, 0, 0))
-    strich = Image.new("RGBA", (n, n), farben["linie"])
-    bild.alpha_composite(Image.composite(strich, Image.new("RGBA", (n, n), (0, 0, 0, 0)), linie))
-    ebene = Image.new("RGBA", (n, n), farben["zeichen"])
-    bild.paste(ebene, (0, 0), maske)
+    bild.paste(Image.new("RGBA", (n, n), farben["zeichen"]), (0, 0), e)
+    quadrat = Image.new("RGBA", (n, n), farben["quadrat"])
+    bild.alpha_composite(Image.composite(quadrat, Image.new("RGBA", (n, n), (0, 0, 0, 0)), q))
     return bild.resize((GROESSE, GROESSE), Image.LANCZOS)
 
 
@@ -109,18 +71,18 @@ def ecken(n):
 
 def main():
     os.makedirs(AUSGABE, exist_ok=True)
-    maske = maske_u()
-    linie = maske_linie()
+    e = maske(E_PUNKTE)
+    q = maske(QUADRAT)
     fertig = {}
     for name, farben in VARIANTEN.items():
-        bild = zeichnen(farben, maske, linie)
+        bild = zeichnen(farben, e, q)
         fertig[name] = bild
         bild.convert(farben["modus"]).save(os.path.join(AUSGABE, name), optimize=True)
         print("geschrieben:", os.path.join(AUSGABE, name))
 
     if VORSCHAU:
         n, rand = 300, 40
-        v = Image.new("RGB", (rand + 3 * (n + rand), n + 2 * rand), (0xF4, 0xF6, 0xF8))
+        v = Image.new("RGB", (rand + 3 * (n + rand), n + 2 * rand), (0xF5, 0xF7, 0xF8))
         hell = fertig["AppIcon.png"].resize((n, n), Image.LANCZOS)
         dunkel = Image.new("RGBA", (n, n), (0x1C, 0x1C, 0x1E, 255))
         dunkel.alpha_composite(fertig["AppIcon-Dark.png"].resize((n, n), Image.LANCZOS))

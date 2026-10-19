@@ -1,4 +1,4 @@
-// UntPlan Web: Verbindung, Datenaustausch (Übertragen/Übernehmen mit Fortschritt), Anfangsdatum, automatischer Abgleich.
+// EduOrga Web: Verbindung, Datenaustausch (Übertragen/Übernehmen mit Fortschritt), Anfangsdatum, automatischer Abgleich.
 import { Button, Checkbox, Input, Link, MessageBar, MessageBarBody, MessageBarTitle, ProgressBar, Select, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { useEffect, useRef, useState } from 'react';
 import { api, dateiHerunterladen } from '@/api/client';
@@ -9,6 +9,7 @@ import { AnsichtRahmen, Trenner, Werkzeug } from '@/komponenten/ansicht';
 import { meldung } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { einstellungenDialog, heute, iso, sachlich, verfolgen, type Auftrag } from './kern';
 
 interface Teil { teil: string; titel: string; hinweis: string; datum: string; zuletzt: string; export: boolean }
@@ -135,7 +136,7 @@ export default function UntPlanWeb() {
       sperren(false);
       await neuLaden(true);
     }
-    if (ergebnis?.ergebnis) await meldung(sachlich(ergebnis.ergebnis), 'UntPlan Web');
+    if (ergebnis?.ergebnis) await meldung(sachlich(ergebnis.ergebnis), 'EduOrga Web');
     if (ergebnis?.danach) a.oeffnen('untplanweb.liste', { art: ergebnis.danach });
   }
 
@@ -172,12 +173,12 @@ export default function UntPlanWeb() {
   ];
 
   return (
-    <AnsichtRahmen titel="UntPlan Web" laden={!stand}
+    <AnsichtRahmen titel="EduOrga Web" laden={!stand}
       werkzeuge={<>
-        <Werkzeug text="Einstellungen" titel="Verbindung zu UntPlan Web (Server, Port, Schul-ID, API-Schlüssel) und Freigaben" deaktiviert={gesperrt} aktion={einstellungen} />
+        <Werkzeug text="Einstellungen" titel="Verbindung zu EduOrga Web (Server, Port, Schul-ID, API-Schlüssel) und Freigaben" deaktiviert={gesperrt} aktion={einstellungen} />
         <Trenner />
-        <Werkzeug text="Stundenplanänderungen" titel="Stundenplanänderungen aus UntPlan Web prüfen und übernehmen" aktion={() => a.oeffnen('untplanweb.stpl')} />
-        <Werkzeug text="Klausuren" titel="Klausuren (aus UntPlan Web übernommene: nur Aufsicht, Raum und Aktiv änderbar)" aktion={() => a.oeffnen('untplanweb.klausuren')} />
+        <Werkzeug text="Stundenplanänderungen" titel="Stundenplanänderungen aus EduOrga Web prüfen und übernehmen" aktion={() => a.oeffnen('untplanweb.stpl')} />
+        <Werkzeug text="Klausuren" titel="Klausuren (aus EduOrga Web übernommene: nur Aufsicht, Raum und Aktiv änderbar)" aktion={() => a.oeffnen('untplanweb.klausuren')} />
         <MenueKnopf text="Weitere Aktionen" eintraege={() => [
           { text: 'Übernommene Schülerfehlzeiten', aktion: () => a.oeffnen('untplanweb.liste', { art: 'schuelerabwesenheiten' }) },
           { text: 'Übernommenes Klassenbuch', aktion: () => a.oeffnen('untplanweb.liste', { art: 'klassenbuch' }) },
@@ -202,8 +203,7 @@ export default function UntPlanWeb() {
                 <option value="">Vorgabe wählen</option>
                 {stand.datumVorgaben.map((v) => <option key={v.text} value={iso(v.datum)}>{`${v.text} (${new Date(`${iso(v.datum)}T12:00:00`).toLocaleDateString('de-DE')})`}</option>)}
               </Select>
-              <Input type="date" size="small" aria-label="Anfangsdatum" disabled={gesperrt || !stand.anfangsdatumAktiv} value={iso(stand.anfangsdatum)}
-                onChange={(_, d) => { if (d.value) void anfangSetzen(stand.anfangsdatumAktiv, d.value); }} />
+              <DatumFeld size="small" aria-label="Anfangsdatum" disabled={gesperrt || !stand.anfangsdatumAktiv} wert={iso(stand.anfangsdatum)} beiAenderung={(datum) => { if (datum) void anfangSetzen(stand.anfangsdatumAktiv, datum); }} />
             </div>
             {status ? (
               status.art === 'fehler' ? (
@@ -217,9 +217,9 @@ export default function UntPlanWeb() {
                 <div className={s.meldung}><ProgressBar value={Math.max(0, Math.min(100, status.wert ?? 0)) / 100} /><span className={s.hinweis}>{sachlich(status.text)}</span></div>
               )
             ) : null}
-            <div className={s.gruppentitel}>An UntPlan Web übertragen</div>
+            <div className={s.gruppentitel}>An EduOrga Web übertragen</div>
             <div>{stand.zeilen.filter((z) => z.export).map(zeile)}</div>
-            <div className={s.gruppentitel}>Aus UntPlan Web übernehmen</div>
+            <div className={s.gruppentitel}>Aus EduOrga Web übernehmen</div>
             <div>{stand.zeilen.filter((z) => !z.export).map(zeile)}</div>
           </section>
           <section className={s.abschnitt}>

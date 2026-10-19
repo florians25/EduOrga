@@ -15,11 +15,12 @@ const KENNZAHLEN: [string, string][] = [
 ];
 
 const useStile = makeStyles({
-  seite: { padding: '8px 20px 32px 20px', display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1180px' },
+  rahmen: { backgroundColor: tokens.colorNeutralBackground2 },
+  seite: { padding: '12px 20px 32px 20px', display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1180px' },
   meta: { display: 'flex', gap: '16px', flexWrap: 'wrap', color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 },
   zahlen: {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', border: `1px solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: tokens.borderRadiusLarge, overflow: 'hidden', backgroundColor: tokens.colorNeutralBackground1,
+    borderRadius: tokens.borderRadiusLarge, overflow: 'hidden', backgroundColor: tokens.colorNeutralBackground1, boxShadow: 'var(--edo-karte-schatten)',
   },
   zahl: {
     display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: '14px 16px', border: 'none', textAlign: 'left',
@@ -30,8 +31,14 @@ const useStile = makeStyles({
   wert: { fontSize: '24px', lineHeight: '32px', fontWeight: tokens.fontWeightSemibold, fontVariantNumeric: 'tabular-nums' },
   zahlText: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 },
   spalten: { display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)', gap: '20px', '@media (max-width: 1000px)': { gridTemplateColumns: '1fr' } },
-  karte: { border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusLarge, backgroundColor: tokens.colorNeutralBackground1, display: 'flex', flexDirection: 'column' },
-  karteKopf: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
+  karte: {
+    border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusLarge, backgroundColor: tokens.colorNeutralBackground1,
+    display: 'flex', flexDirection: 'column', boxShadow: 'var(--edo-karte-schatten)', overflow: 'hidden',
+  },
+  karteKopf: {
+    display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: 'var(--edo-kopf-flaeche)',
+  },
   h2: { margin: 0, fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold, flex: 1 },
   bewertung: { display: 'flex', alignItems: 'baseline', gap: '10px', padding: '12px 16px 4px 16px', color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 },
   bewertungZahl: { fontSize: '20px', fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1, fontVariantNumeric: 'tabular-nums' },
@@ -61,7 +68,7 @@ export default function Uebersicht() {
   );
   const aktion = (text: string, f: () => unknown) => <button type="button" className={s.aktion} onClick={() => void f()}><span>{text}</span><ChevronRight20Regular /></button>;
   return (
-    <AnsichtRahmen titel={d.schulname || d.name} rollen werkzeuge={<Werkzeug text="Aktualisieren" icon={<ArrowClockwise20Regular />} aktion={() => neuLaden()} />}>
+    <AnsichtRahmen titel={d.schulname || d.name} rollen className={s.rahmen} werkzeuge={<Werkzeug text="Aktualisieren" icon={<ArrowClockwise20Regular />} aktion={() => neuLaden()} />}>
       <div className={s.seite}>
         <div className={s.meta}>
           {[d.schuljahr && `Schuljahr ${d.schuljahr}`, d.periode && `${d.periode}${d.periodeFixiert ? ' (fixiert)' : ''}`,
@@ -100,7 +107,7 @@ export default function Uebersicht() {
             {aktion('Gesamtübersicht Klassen', seite('uebersicht', { typ: 'klasse' }))}
             {aktion('Vertretungsplanung', () => { modusSetzen('vertretung'); arbeitsplatzOeffnen('tagesplanung'); })}
             {aktion('Stundenpläne drucken', () => befehl('druck.stundenplaene', { typ: 'klasse' }))}
-            {aktion('An UntPlan Web übertragen', () => befehl('untplanweb.oeffnen'))}
+            {aktion('An EduOrga Web übertragen', () => befehl('untplanweb.oeffnen'))}
           </section>
         </div>
       </div>

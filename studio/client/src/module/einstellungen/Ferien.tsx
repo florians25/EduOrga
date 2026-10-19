@@ -9,6 +9,7 @@ import { useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, FussText, Trenner, Werkzeug } from '@/komponenten/ansicht';
 import { formular, frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
+import { DatumFeld } from '@/komponenten/eingaben';
 import { datum, de, iso, isoAusDe, kw, MONATE, pfad, TAGE_KURZ } from './kern';
 import './einstellungen.css';
 
@@ -160,8 +161,8 @@ export default function FerienAnsicht() {
                     <tr key={fe.id} className={`klickbar${markiert.has(fe.id) ? ' gewaehlt' : ''}`} onClick={(e) => zeileKlick(e, fe)}>
                       <td><TextZelle wert={fe.kurzname} breite={80} gesperrt={lesen} setzen={(v) => void feldAendern(fe, 'kurzname', v)} /></td>
                       <td><TextZelle wert={fe.langname} gesperrt={lesen} setzen={(v) => void feldAendern(fe, 'langname', v)} /></td>
-                      <td><Input size="small" type="date" style={{ width: 140 }} disabled={lesen} value={fe.von} onChange={(_, x) => { if (x.value) void feldAendern(fe, 'von', x.value); }} /></td>
-                      <td><Input size="small" type="date" style={{ width: 140 }} disabled={lesen} value={fe.bis} onChange={(_, x) => { if (x.value) void feldAendern(fe, 'bis', x.value); }} /></td>
+                      <td><DatumFeld size="small" disabled={lesen} wert={fe.von} beiAenderung={(datum) => { if (datum) void feldAendern(fe, 'von', datum); }} /></td>
+                      <td><DatumFeld size="small" disabled={lesen} wert={fe.bis} beiAenderung={(datum) => { if (datum) void feldAendern(fe, 'bis', datum); }} /></td>
                       <td className="zahl">{fe.tage}</td>
                       <td><TextZelle wert={fe.wocheDanach} breite={50} gesperrt={lesen} setzen={(v) => void feldAendern(fe, 'wocheDanach', v)} /></td>
                       <td className="mitte"><Checkbox aria-label="Wochen zählen" disabled={lesen} checked={fe.wochennummerierung} onChange={(_, x) => void feldAendern(fe, 'wochennummerierung', x.checked ? 'X' : '')} /></td>
