@@ -297,6 +297,8 @@ public sealed partial class VertretungApi
                 var basis = new { id = v.Id, stunde = v.Stunde, stundeText = Vertretungsplan.StundeText(v), klassen = ix.KKlassen(v.NeueKlassenIds), fach = v.Art == VertretungsArt.Pausenaufsicht ? ix.K(ElementTyp.Gang, v.GangId) : ix.KFach(v.FachId), lehrer = ix.KLehrer(v.LehrerId) };
                 if (!jeId.TryGetValue(v.Id, out var n)) { ohne.Add(basis); continue; }
                 string art; int? lehrer = null, raum = null; string text, grund = "";
+                if (v.VeranstaltungOffen && n.VertreterId is int vl && v.VeranstaltungId is int pvid && d.Veranstaltungen.FirstOrDefault(x => x.Id == pvid)?.LehrerAm(v.Datum).Contains(vl) == true)
+                { ohne.Add(basis); continue; }
                 if (v.Offen && n.VertreterId is int l)
                 {
                     art = "lehrer"; lehrer = l; text = ix.KLehrer(l);
@@ -322,7 +324,11 @@ public sealed partial class VertretungApi
                 {
                     var v = d.Vertretungen.FirstOrDefault(x => x.Id == e.Id);
                     if (v is null || v.Fixiert || !v.OffenOderRaumOffen) continue;
-                    if (e.Lehrer is int lv && v.VeranstaltungOffen && v.VeranstaltungId is int vaId) { VeranstaltungsLogik.ErsatzSetzen(d, vaId, v.Datum, v.ErsatzFuerLehrerId, lv); continue; }
+                    if (e.Lehrer is int lv && v.VeranstaltungOffen && v.VeranstaltungId is int vaId)
+                    {
+                        if (d.Veranstaltungen.FirstOrDefault(x => x.Id == vaId) is { } va && !va.LehrerAm(v.Datum).Contains(lv)) VeranstaltungsLogik.ErsatzSetzen(d, vaId, v.Datum, v.ErsatzFuerLehrerId, lv);
+                        continue;
+                    }
                     if (e.Lehrer is int l && v.Offen) Vertretungen.VertreterSetzen(d, v, l, false, B(p));
                     else if (e.Entfall && v.Offen) Vertretungen.EntfallUmschalten(d, v, B(p));
                     else if (e.Raum is int r && v.RaumOffen) Raumvertretungen.Zuordnen(d, v, r, false, RaumKollisionsLoesung.MitKollision, B(p));

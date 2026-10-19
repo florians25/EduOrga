@@ -198,8 +198,8 @@ extension View {
                         RoundedRectangle(cornerRadius: balkenBreite / 2, style: .continuous)
                             .fill(s.balken)
                             .frame(width: balkenBreite)
-                            .padding(.vertical, 3)
-                            .padding(.leading, 3)
+                            .padding(.vertical, 4)
+                            .padding(.leading, 4)
                     }
                 }
                 .shadow(color: s.rand == nil ? Farben.karteSchatten : .clear, radius: 0.75, x: 0, y: 0.75)

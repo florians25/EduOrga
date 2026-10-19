@@ -22,7 +22,7 @@ struct Kartendarstellung: Decodable, Equatable, Sendable {
     /// fein | kraeftig | keiner
     var rahmen = "fein"
     /// 0–8 px
-    var eckenradius = 2
+    var eckenradius = 5
     /// kompakt | normal | grosszuegig
     var dichte = "kompakt"
     /// kuerzel | name

@@ -235,6 +235,23 @@ extension ApiClient {
     }
 
     /// Terminplan als PDF (Lehrkraft: plan.pdf, Eltern: elternplan.pdf).
+    /// PUT /sprechtag/{id}/raum – eigener Raum bzw. Online-Gespräch mit Link (nur mit `darfRaum`).
+    func sprechtagRaumSetzen(_ id: Int, _ daten: SprechtagRaumDaten) async throws {
+        let _: BeliebigeAntwort = try await anfrage("PUT", "/sprechtag/\(id)/raum", koerper: try encoder.encode(daten))
+    }
+
+    /// PUT /sprechtag/{id}/termine/{tid} – Termin verschieben bzw. Notiz ändern (Lehrkraft; die Familie wird bei einer
+    /// Verschiebung benachrichtigt).
+    func sprechtagTerminAendern(_ id: Int, termin: Int, _ daten: SprechtagVerschiebeDaten) async throws {
+        let _: BeliebigeAntwort = try await anfrage("PUT", "/sprechtag/\(id)/termine/\(termin)", koerper: try encoder.encode(daten))
+    }
+
+    /// DELETE /sprechtag/{id}/termine/{tid} – Termin stornieren (Eltern nur im Anmeldezeitraum; Lehrkraft benachrichtigt die
+    /// Familie).
+    func sprechtagTerminStornieren(_ id: Int, termin: Int) async throws {
+        let _: BeliebigeAntwort = try await anfrage("DELETE", "/sprechtag/\(id)/termine/\(termin)", koerper: nil)
+    }
+
     func sprechtagPdf(_ id: Int, eltern: Bool) async throws -> Data {
         try await datei("/sprechtag/\(id)/" + (eltern ? "elternplan.pdf" : "plan.pdf"))
     }

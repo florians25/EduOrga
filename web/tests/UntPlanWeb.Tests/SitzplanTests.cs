@@ -160,7 +160,7 @@ public class SitzplanTests
             Assert.Equal("application/pdf", r.Content.Headers.ContentType?.MediaType);
             var bytes = await r.Content.ReadAsByteArrayAsync();
             Assert.StartsWith("%PDF-1.4", System.Text.Encoding.ASCII.GetString(bytes, 0, 8));
-            Assert.Contains("Lehrerpult", System.Text.Encoding.Latin1.GetString(bytes));
+            Assert.Contains("Lehrerpult", UntPlan.Druck.PdfPruefung.Text(bytes));
         }
     }
 

@@ -232,4 +232,51 @@ public class WebOberflaecheTests
         Assert.Contains("#/admin/stundenkarten", Lesen("src", "app", "menue.tsx"));
         Assert.Contains("'stundenkarten'", Lesen("src", "pages", "admin", "Admin.tsx"));
     }
+
+    [Fact]
+    public void Klassenbuch_Unterrichtsstunde_als_grosses_Fenster_mit_Reitern_und_Unternavigation()
+    {
+        // Stunde aus Plan, Klassenbuch und Offenen Stunden: großes zentriertes Fenster statt Seitenleiste, Reiter, Blättern, Tasten, Autospeichern
+        var details = Lesen("src", "components", "plan", "Stundendetails.tsx");
+        Assert.Contains("<Dialog open", details);
+        Assert.DoesNotContain("<Drawer", details);
+        Assert.Contains("min(1360px, 94vw)", details);
+        foreach (var x in new[] { "'Stunde'", "'Anwesenheit'", "'Einträge'", "'Prüfungen'", "'Verlauf'", "ArrowLeft", "Alle Änderungen gespeichert", "Stand der Dokumentation" })
+            Assert.Contains(x, details);
+        var stunde = Lesen("src", "components", "klassenbuch", "stunde", "ReiterStunde.tsx");
+        foreach (var x in new[] { "Thema und Inhalt", "Hausaufgaben", "Fällig am", "nächste Stunde", "vormerken(" }) Assert.Contains(x, stunde);
+        var anw = Lesen("src", "components", "klassenbuch", "stunde", "ReiterAnwesenheit.tsx");
+        foreach (var x in new[] { "'Anwesend'", "'Abwesend'", "'Verspätet'", "Sitzplan", "Gemeldet", "Befreit" }) Assert.Contains(x, anw);
+        // Klassenbuch-Bereich: Unternavigation statt vieler Menüpunkte, alte Adressen bleiben (verborgene Punkte mit Rechteprüfung)
+        var bereich = Lesen("src", "components", "klassenbuch", "Bereich.tsx");
+        foreach (var x in new[] { "'Unterricht'", "'Schüler*innen'", "'Klasse'", "allePunkte(menue(ich))" }) Assert.Contains(x, bereich);
+        Assert.Contains("KlassenbuchRahmen", Lesen("src", "app", "Shell.tsx"));
+        var menue = Lesen("src", "app", "menue.tsx");
+        foreach (var adresse in new[] { "'#/offen'", "'#/eintraege'", "'#/hausaufgaben'", "'#/befreiungen'", "'#/dienste'", "'#/berichte'", "'#/sitzplan'", "'#/klassenbuch/-/woche'" })
+            Assert.Contains(adresse, menue);
+        Assert.True(Regex.Matches(menue, "verborgen: true").Count >= 8);
+        // Wochenübersicht mit Stand je Stunde; Eltern melden Abwesenheiten
+        var kb = Lesen("src", "pages", "klassenbuch", "Klassenbuch.tsx");
+        foreach (var x in new[] { "Dokumentiert", "Entfallen", "Geplant", "Nur offene" }) Assert.Contains(x, kb);
+        Assert.Contains("/api/app/familie/meldungen", Lesen("src", "pages", "familie", "Meldungen.tsx"));
+        Assert.Contains("/bestaetigen", Lesen("src", "pages", "klassenbuch", "Abwesenheitsmeldungen.tsx"));
+    }
+
+    [Fact]
+    public void Stundenplan_grauer_Balken_ohne_Fachfarbe_und_gleichzeitige_Stunden_mit_Plus()
+    {
+        // ohne Fachfarbe grauer Balken – eigene Themenfarbe für hell und dunkel, nicht halbtransparent
+        var theme = Lesen("src", "theme.ts");
+        Assert.Equal(2, Regex.Matches(theme, @"balken: '#[0-9a-f]{6}'").Count);
+        var kachel = Lesen("src", "components", "plan", "Kachel.tsx");
+        Assert.Contains("palette.kachel.balken", kachel);
+        Assert.Contains("bgcolor: farbe ?? grau", kachel);
+        Assert.DoesNotContain("farbe ? 1 : 0.5", kachel);
+        // gleichzeitige Stunden: erste Stunde über die volle Breite, „+X“ rechts, Klick listet alle
+        var raster = Lesen("src", "components", "plan", "Wochenraster.tsx");
+        Assert.Contains("parallelGruppen", raster);
+        Assert.Contains("+{versteckt.length}", raster);
+        Assert.Contains("Stunden gleichzeitig", raster);
+        Assert.Contains("<Popover", raster);
+    }
 }

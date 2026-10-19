@@ -227,7 +227,7 @@ const h = require('./hilfe.cjs');
     // Prüfen und veröffentlichen: Stand, Zahlen, Belastung
     await page.click(`${tp} [data-schritt=pruefen]`);
     await page.waitForSelector(`${tp} [data-testid=pruefen] .ta-statusliste`, { timeout: 15000 });
-    await page.waitForSelector(`${tp} [data-testid=belastung] .ta-bzeile:not(.kopf)`, { timeout: 15000 });
+    await page.waitForFunction((s) => !!document.querySelector(`${s} [data-testid=belastung] .ta-bzeile:not(.kopf)`) || /niemand vertreten/.test(document.querySelector(`${s} [data-bereich=belastung]`)?.textContent || ''), tp, { timeout: 15000 });
     await page.waitForSelector(`${tp} [data-testid=pruefen] [data-testid=pruefen-senden]`, { timeout: 10000 });
     await foto('13-tagesablauf-pruefen');
     schritt('Prüfen und veröffentlichen: Tagesbilanz, Belastung, Senden');

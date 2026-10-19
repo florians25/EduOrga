@@ -70,7 +70,7 @@ die Oberfläche selbst; `index.html`, `monitor.html` und `assets/` werden nicht 
 
 ### Anforderungskatalog (UW-03 … UW-17)
 
-- **Navigation bleibt frei (UW-03):** Stundendetails und Dialoge liegen rechts; die Seitenleiste bleibt bedienbar.
+- **Unterrichtsstunde (UW-03):** Stundendetails als großes, zentriertes Fenster mit Reitern (vorher Seitenleiste rechts); Dialoge darüber.
 - **Startseite (UW-05):** Datum, letzte Anmeldung und Planaktualisierung, *Nachrichten zum Tag* (RSS-Feed, Bearbeiten für
   Schulleitung/Administration, formatierte Tagestexte), Hinweis auf offene Stunden und *Mein nächster Unterricht* als Liste
   (Art, Stunde, Zeit, Klasse, Lehrkraft, Fach, Raum, Hinweise, Klassenbuch, Lehrstoff, Hausaufgaben). Ohne Unterricht heute zeigt
@@ -84,7 +84,7 @@ die Oberfläche selbst; `index.html`, `monitor.html` und `assets/` werden nicht 
 - **Klassenbuch (UW-09):** Übersicht je Woche mit Lehrstoff, Abwesenheitskontrolle und Einträgen; Klassendienste mit Zeitansicht;
   Berichte in Abschnitten mit Anzeige, PDF und CSV. Die Schuljahr-Auswahl in der Seitenleiste bestimmt den Zeitraum der Listen.
 - **Dialoge (UW-10):** *Lehrstoff* (mit Vorstunden zum Übernehmen, Lehrform, Anmerkung, „Geändert am … von …“), *Abwesenheit*
-  und *Klassenbucheintrag* (mit „Noch mögliche Zeichen“) als Fenster über den Stundendetails.
+  und *Klassenbucheintrag* (mit „Noch mögliche Zeichen“) als Fenster über der Unterrichtsstunde; Lehrstoff steht direkt im Reiter *Stunde*.
 - **Kopf der Stundendetails (UW-11, UW-12):** Klasse, Gruppe, Lehrkraft und Raum verlinken auf den Stundenplan; Änderungen als
   „B070 → C197“ (alter Wert durchgestrichen); Schilder für zusätzlichen Unterricht und Veranstaltungen.
 - **Raumbuchung am Desktop (UW-13, UW-14):** Raum-Chip mit *Ersetzen*/*Löschen*, Plus für einen weiteren Raum, Auswahlliste mit
@@ -118,7 +118,7 @@ Seiten (je nach Rolle):
 | **Mitteilungen** | Posteingang, Gesendet, Entwürfe, Empfängerlisten; neue Mitteilung mit Anhängen, Antworten, Weiterleiten, Drucken |
 | **Stundenplan** | Mein Stundenplan, Klasse, Lehrkraft, Raum, Tag - Klassen, Tag - Lehrkräfte, Tag - Räume, Vertretungsplan (Klassenkonten: Mein Stundenplan, Weitere Stundenpläne) |
 | **Unterricht** | Meine Unterrichte (Periode, Termine, Räume, CSV), Offene Stunden, Prüfungen |
-| **Klassenbuch** | Übersicht, Offene Stunden, Klassenbucheinträge, Hausaufgaben, Klassendienste, Abwesenheiten, Fehlzeiten, Befreiungen, Sitzplan, Berichte |
+| **Klassenbuch** | eigener Bereich mit Unternavigation: Wochenübersicht, Meine Stunden, Offene Stunden, Inhalte & Hausaufgaben, Hausaufgaben · Abwesenheiten (mit Meldungen der Eltern), Fehlzeiten, Befreiungen, Klassenbucheinträge · Klassendienste, Sitzplan, Auswertungen, Einstellungen |
 | **Melden & Buchen** | Abwesenheit melden, Raum buchen, Prüfung eintragen, Meine Meldungen |
 | **Unterricht** (Schülerverwaltung) | *Schüler\*in*: anzeigen, anlegen, bearbeiten, löschen je nach Rolle (siehe Rollen) |
 | **Stammdaten** (Administration) | Klassen, Lehrkräfte, Fächer, Räume, Schüler*innen (aus EduOrga Studio, lesend), Abwesenheitsgründe, Klassendienste, Versionen (Übertragungsverlauf) |
@@ -143,17 +143,12 @@ Im Einzelnen:
   - **Veranstaltungen** als Zusatzkarten mit Klassen, teilnehmenden Lehrkräften (gekürzt „BEC, BRA, FIS +12“, vollständig in den Details)
     und Raum; Veranstaltungen mit Raum stehen auch im Raumplan und in *Tag - Räume*.
   - Ferien, Feiertage und freie Tage (auch die in der Administration angelegten) als Fläche mit Schloss; Elementwahl mit Vor/Zurück (auch Alt+←/→).
-  - Stundendetails: Kopf „Klassen | Unterricht | Fach“ und „Tag | Datum | Zeit | Raum | Lehrkraft“, Reiter
-    *Klassenbuch* und *Details*.
-    - *Klassenbuch*: Schülerkacheln mit Foto-Platzhalter und Statuspunkt (Alle auswählen, Auswahl löschen, abwesend, verspätet,
-      Klassenbucheintrag), Lehrstoff mit Stift, *Abwesende Schüler*innen* als Liste (Auswahl, Stift, Von,
-      Beginnzeit, Bis, Endzeit, Grund, Status, Text) mit *Verlängern* (Fehlen aus der Vorstunde in diese Stunde übernehmen) und
-      Symbolen „auf Tagesbeginn“/„bis Stundenende“, Hausaufgaben (Liste mit *Neue Hausaufgabe*, Fälligkeit – vorbelegt eine Woche
-      später –, Bemerkung, erledigt, löschen; fällige Hausaufgaben der Stunde), Klassenbucheinträge mit „+“, Klassendienste, *Ticket erstellen* (Mitteilung an Schulleitung/Administration); unten die Statusleiste „Lehrstoffeintragung vorhanden“ und
-      „Abwesenheiten wurden kontrolliert“ (sonst Knöpfe *Lehrstoff eingeben*, *Abwesenheiten kontrollieren*).
-    - *Details*: nur „Findet online statt“ (nur Anzeige, festgelegt in EduOrga Studio), Lehrstoff und Vertretungstext (wenn vorhanden), Hausaufgaben, *Notizen für Schüler*innen*
-      und *Notizen für Lehrkräfte*; unten *Vorherige Stunde*, *Nächste Stunde*, *Prüfung erstellen* (Prüfungssperren werden beachtet)
-      und *Raum buchen*. Gebuchter Raum und Prüfung stehen sofort als Änderung bzw. Prüfung (gelb) im Plan.
+  - **Gleichzeitige Stunden** in einer Stunde: in der Woche (und ab fünf Stunden in der Tagesansicht) steht die erste Stunde über die
+    volle Breite, rechts oben ein kleines **„+X“**; ein Klick darauf listet alle gleichzeitigen Stunden (Fach, Lehrkraft bzw. Klasse,
+    Stunde, Raum, Status), jede öffnet ihre Stunde. Stunden ohne Fachfarbe zeigen immer den **grauen Balken** links (hell und dunkel
+    gut sichtbar, Themenfarbe `kachel.balken`).
+  - **Unterrichtsstunde:** Ein Klick auf eine Stunde öffnet ein großes, zentriertes Fenster (ca. 94 % × 90 % des Bildschirms, auf dem
+    Telefon Vollbild) – siehe *Klassenbuch* unten. Termine, Buchungen und Vormerkungen zeigen nur ihre Angaben (kleines Fenster).
   - Bereitschaften, Raumbuchungen und Vormerkungen; Druck, Telefonansicht mit Tagesauswahl.
 - **Tagesübersicht** (Kollegium): alle Klassen, Lehrkräfte oder Räume eines Tages auf einen Blick.
 - **Vertretungsplan** als Schüler- oder Lehrerversion; die Schülerversion zeigt keine Abwesenheitsgründe, Bereitschaften oder Aufsichten.
@@ -164,20 +159,59 @@ Im Einzelnen:
   „öffentlich“ für den RSS-Feed (`/rss/nachrichten.xml`, in den Ansichtseinstellungen einschaltbar).
 - **Melden & Buchen** (Lehrkräfte): Abwesenheit melden, freien Raum buchen (nur Räume „buchbar (Web)“), Prüfung eintragen. Die Meldungen gehen
   als Rückmeldungen an EduOrga Studio; Buchungen erscheinen sofort als „vorgemerkt“.
-- **Klassenbuch:**
-  - Wochenübersicht je Klasse mit Lehrstoff, Hausaufgabe, Anwesenheitsprüfung und Fehlenden je Stunde, Vermerke je Tag.
-  - **Offene Stunden:** eigene oder alle Stunden ohne Abwesenheitskontrolle bzw. Lehrstoff (Zeitraum wählbar), *Prüfen* und *Eingeben*
-    öffnen die Stundendetails, Mitteilung an die ausgewählten Lehrkräfte, Bericht.
-  - Anwesenheit in den Stundendetails (alle anwesend vorbelegt, abwesend/verspätet). Dafür überträgt EduOrga Studio die Schülerliste.
+- **Klassenbuch** – eigener Bereich mit **Unternavigation** (am Desktop links neben dem Inhalt, auf Tablet/Telefon als Reiterleiste),
+  im Hauptmenü nur die Einstiege *Wochenübersicht · Meine Stunden · Offene Stunden · Abwesenheiten*; alle bisherigen Adressen
+  (`#/offen`, `#/eintraege`, `#/hausaufgaben`, `#/abwesenheiten`, `#/entschuldigen`, `#/befreiungen`, `#/dienste`, `#/berichte`,
+  `#/sitzplan`, `#/kbeinstellungen`, `#/klassenbuch/<Klasse>/(woche|fehlzeiten|verlauf|vermerke)`) bleiben gültig, dazu Aliase wie
+  `#/offene-stunden`, `#/wochenuebersicht`, `#/klassendienste`, `#/auswertungen`. Angezeigt wird nur, was das Konto darf (gleiche
+  Rechte wie der Server: Kollegium, Klassenleitung, Schulleitung/Administration; Eltern und Schüler*innen haben eigene Seiten).
+  - **Unterricht:** *Wochenübersicht* einer Klasse (Raster Mo–Fr, auf dem Telefon Tagesliste) mit dem **Stand jeder Stunde** –
+    *Dokumentiert* (Thema und Anwesenheitskontrolle), *Offen* (mit „Thema fehlt“/„Anwesenheit offen“), *Entfallen*, *Geplant* –,
+    Kennzahlen, Filter *Nur offene*, *Gehe zu* (Datum), Legende und Klassenbucheinträge der Woche; *Meine Stunden* (alle eigenen
+    Unterrichte des Schuljahres, Schulleitung/Administration: Suche nach Klasse, Lehrkraft, Fach); **Offene Stunden** als Arbeitsliste;
+    *Inhalte & Hausaufgaben*; *Hausaufgaben*.
+  - **Schüler\*innen:** *Abwesenheiten* mit Reiter **Meldungen der Eltern** (siehe unten), *Fehlzeiten der Klasse*, *Fehlzeiten eigener
+    Unterricht*, *Befreiungen*, *Klassenbucheinträge*.
+  - **Klasse:** *Klassendienste* (Liste und Zeitansicht, automatische Verteilung), *Sitzplan*, *Auswertungen* (Berichte mit Vorschau,
+    Druck, CSV), *Einstellungen*.
+  - **Fenster „Unterrichtsstunde“** (aus Stundenplan, Wochenübersicht, Meine Stunden, Offene Stunden, Startseite): fester Kopf mit Fach,
+    Datum, Stunde und Zeit, Klasse, Lehrkraft, Raum (Links auf die Pläne, Änderungen „alt → neu“), Stand der Dokumentation, Blättern
+    (*2 von 9*, Alt+←/→), Wahl *Ganzer Block / Einzelstunde* und Menü *…* (Klassenbuch der Klasse, Mitteilung, Ticket an
+    Schulleitung/Administration, Anzeige der Schülerliste, Drucken, Tastenkürzel). Reiter (Alt+1…5):
+    - *Stunde*: **Thema und Inhalt** (Lehrstoff, Lehrform, Anmerkung, Lehrstoff aus Vorwochen übernehmen/anhängen), **Hausaufgaben**
+      direkt anlegen mit Fälligkeit (Vorschlag *nächste Stunde* bzw. *in einer Woche*, Strg+Enter), **Bemerkungen** für Schüler*innen
+      und für Lehrkräfte, „Findet online statt“ (nur Anzeige, festgelegt in EduOrga Studio), Hinweise (Vertretungstext, Prüfung,
+      Verlegung), Räume ersetzen/hinzufügen, Klassendienste des Tages.
+    - *Anwesenheit*: schnelle **Liste** (je Schüler*in *Anwesend · Abwesend · Verspätet · Früher weg* mit Minuten, Entschuldigungsstatus,
+      Bearbeiten mit Zeitraum/Grund/Status) oder **Sitzplan** (Klick = anwesend/abwesend), Mehrfachauswahl (*Abwesend*, *Abwesenheit mit
+      Zeitraum …*, *Klassenbucheintrag …*), Hinweise auf **gemeldete Abwesenheiten** der Eltern (*Als abwesend eintragen*),
+      Abwesenheiten aus einer früheren Stunde (*Für diese Stunde übernehmen*) und **Befreiungen**; *Anwesenheit bestätigen* bzw.
+      *Alle anwesend – bestätigen* schließt die Kontrolle ab.
+    - *Einträge*: Klassenbucheinträge der Klasse (dieser Tag, 7 Tage, Schuljahr; nach Schüler*in und Kategorie), *Neuer Eintrag*.
+    - *Prüfungen*: Prüfungen der Klasse vier Wochen zurück bis drei Monate voraus, *Prüfung in dieser Stunde erstellen* bzw. bearbeiten/löschen.
+    - *Verlauf*: alle Stunden dieses Unterrichts (8 Wochen bzw. Halbjahr) mit Thema, Hausaufgabe und Abwesenden; jede Zeile öffnet die Stunde.
+    - Alle Eingaben werden **automatisch gespeichert** (kurz nach der Eingabe, beim Verlassen eines Felds, beim Blättern und Schließen;
+      Strg+S sofort); der Fuß zeigt *Alle Änderungen gespeichert · 10:42* bzw. einen Fehler mit *Erneut versuchen*.
+  - **Abwesenheitsmeldungen (Eltern melden → Klassenleitung bestätigt):** Eltern- und Schülerkonten melden unter *Abwesenheit melden*
+    ganze Tage (höchstens 30, bis 14 Tage rückwirkend, bis 90 Tage voraus) mit Grund und Nachricht und sehen den Status (*gemeldet*,
+    *bestätigt*, *abgelehnt* mit Antwort); solange nicht bearbeitet, lässt sich die Meldung zurückziehen. Die Klassenleitung (bzw. wer
+    Abwesenheiten aller Klassen verwaltet) sieht die Meldungen unter *Klassenbuch → Abwesenheiten → Meldungen der Eltern* (Zahl auch in
+    der Unternavigation) und **bestätigt** sie – dabei entsteht die Abwesenheit für alle Unterrichtsstunden der Tage, auf Wunsch gleich
+    entschuldigt (Recht *Entschuldigen*) – oder **lehnt** sie mit Begründung **ab**. Lehrkräfte sehen gemeldete Abwesenheiten in der
+    Anwesenheit ihrer Stunde (ohne Nachrichtentext).
   - **Abwesenheiten:** neu anlegen (mehrere Tage/Stunden, Grund), bearbeiten, löschen, zusammenfassen, entschuldigen, zuletzt verwendete
-    Texte; Filter nach Zeitraum, Klasse, Grund und Status, CSV; Reiter *Meine Abwesenheiten*.
+    Texte; Filter nach Zeitraum, Klasse, Grund und Status, CSV; Reiter *Meine Abwesenheiten*. Dafür überträgt EduOrga Studio die Schülerliste.
   - **Fehlzeiten:** Summen je Schüler (Stunden, Tage, entschuldigt, unentschuldigt, offen, Verspätungen), ganze Fehltage in einem Schritt.
-  - **Klassendienste:** Dienste (z. B. Klassenordner, Tafeldienst) je Schüler und Zeitraum, Wochenansicht, automatische Verteilung.
-  - **Befreiungen:** Schüler*innen von einem Fach befreien; Befreite sind in den Stundendetails markiert.
-  - **Sitzplan** je Klasse (Raster, Schüler per Auswahl setzen).
   - **Klassenbucheinträge**, **Hausaufgaben** wie bisher; Klassenkonten zusätzlich mit Reiter *Lehrstoff*.
-  - **Berichte:** 18 Berichte in Gruppen (Fehlzeiten, Abwesenheiten je Schüler/Klasse/Grund, Entschuldigungsschreiben, Lehrstoff,
-    Hausaufgaben, Klassenbucheinträge, offene Stunden, Klassendienste, Befreiungen …) – Vorschau, Druck und CSV.
+
+| Wochenübersicht | Unterrichtsstunde | Anwesenheit |
+|---|---|---|
+| ![Klassenbuch: Wochenübersicht](docs/bilder/klassenbuch.png) | ![Unterrichtsstunde](docs/bilder/stundendetails.png) | ![Anwesenheit](docs/bilder/klassenbuch-anwesenheit.png) |
+
+| Offene Stunden | Abwesenheiten: Meldungen der Eltern | Eltern: Abwesenheit melden |
+|---|---|---|
+| ![Offene Stunden](docs/bilder/offene-stunden.png) | ![Meldungen der Eltern](docs/bilder/abwesenheiten.png) | ![Abwesenheit melden](docs/bilder/abwesenheit-melden.png) |
+
 - **Prüfungen:** Klausuren aus EduOrga Studio und in EduOrga Web vorgemerkte Prüfungen, Filter nach Zeitraum, Klasse und Lehrkraft, CSV.
 - **Mitteilungen** zwischen Kollegium, Schulleitung und Klassen (Gruppen, Klassen, einzelne Benutzer, eigene Empfängerlisten),
   Entwürfe und Anhänge (bis 5 Dateien à 10 MB).
@@ -224,6 +258,8 @@ Zusätzlich zu Plan, Vertretungen, Klassenbuch und Mitteilungen (alle unter `/ap
 | `GET /api/app/klassenbucheintraege?von=&bis=&klasse=&art=` | Vermerke über alle oder eine Klasse |
 | `GET /api/app/abwesenheiten?von=&bis=&klasse=&status=` | Schülerabwesenheiten, Stunden eines Tages zusammengefasst |
 | `POST/PUT /api/app/abwesenheiten`, `POST …/loeschen`, `POST …/zusammenfassen`, `GET …/texte` | Abwesenheiten anlegen, ändern, löschen, zusammenfassen, letzte Texte |
+| `GET/POST /api/app/familie/meldungen`, `DELETE …/{id}` | Abwesenheitsmeldungen der Eltern bzw. Schüler*innen (nur zugeordnete Kinder; zurückziehen, solange nicht bearbeitet) |
+| `GET /api/app/abwesenheiten/meldungen?status=&klasse=`, `POST …/{id}/bestaetigen` { entschuldigt, antwort }, `POST …/{id}/ablehnen` { antwort } | Meldungen der eigenen Klassen (Klassenleitung, Recht „Abwesenheiten aller Klassen“) bestätigen (trägt die Abwesenheit ganztägig ein) bzw. ablehnen; `GET /api/app/klassenbuch/anwesenheit` liefert zusätzlich `meldungen` des Tages |
 | `GET /api/app/berichte/fehlzeiten?klasse=&von=&bis=&format=csv` | Fehlzeitenbericht (JSON oder CSV) |
 | `GET /api/app/berichte/lehrstoff?klasse=&von=&bis=&format=csv` | Lehrstoffbericht (JSON oder CSV) |
 | `GET /api/app/berichte/liste`, `GET /api/app/berichte/erstellen/{art}?…&format=csv` | alle Berichtsarten, Bericht erstellen |

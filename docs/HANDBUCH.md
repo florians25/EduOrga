@@ -699,11 +699,61 @@ und Text. Kommentare lassen sich anlegen, bearbeiten und löschen; *Element öff
 ## 10. Ausgabe
 
 - *Ausgabe → Drucken:* Stundenpläne, Lehrer- und Raumpläne (**Strg+P**), Vertretungsplan sowie Berichte. In der
-  **Druckauswahl** wählen Sie Planart, Elemente, Stundenplanformat, kompakt (zwei Pläne je Seite) und Fachfarben statt
-  grau. Die Ausgabe erfolgt als PDF in der Druckvorschau, die Sie im Browser drucken oder herunterladen.
+  **Druckauswahl** wählen Sie Planart, Elemente, Stundenplanformat, kompakt (zwei Pläne je Seite), *Fächer grau
+  hinterlegen* und *Woche mit Vertretungen und Änderungen*. Die Ausgabe erfolgt als PDF in der Druckvorschau, die Sie im
+  Browser drucken oder herunterladen.
 - *Ausgabe → Berichte und Listen:* Listen und Statistiken als PDF, HTML oder CSV, teils mit Zeitraum.
 - *Ausgabe → Aushang (HTML):* alle Pläne als statische Webseiten (z. B. für die Homepage oder einen Aushang).
 - *Ausgabe → Kalenderdateien (iCal):* Stundenplan einer Lehrkraft für einen Zeitraum als iCalendar-Datei (`.ics`).
+
+### Druckdesign (PDF)
+
+Alle PDF-Ausdrucke von EduOrga Studio und EduOrga Web haben dasselbe schlichte Schulformular-Layout und sind für
+Schwarz-Weiß-Laserdrucker gedacht (keine Farben, nur Graustufen; bei 100 % bzw. „Tatsächliche Größe“ drucken):
+
+- **A4** hoch oder quer, Rand 14 mm, Schrift IBM Plex Sans (eingebettet, Text lässt sich suchen und kopieren).
+- **Kopf** auf jeder Seite: Schule (und Anschrift) links, „Seite x von y“ und Schuljahr rechts, darunter eine Linie;
+  auf der ersten Seite Titel und Zeitraum bzw. Periode, auf Folgeseiten der Titel klein mit „Fortsetzung“.
+- **Fuß:** „Gedruckt am … um … Uhr von …“, bei internen Listen „Nur für den Dienstgebrauch“ bzw. „Vertraulich“, rechts
+  klein „EduOrga“.
+- **Tabellen:** Kopf halbfett auf Grau (auf jeder Seite wiederholt), feine Zeilenlinien, Zahlen rechtsbündig, lange
+  Texte umbrochen, Gruppenköpfe (nach einem Seitenwechsel mit „Fortsetzung“ wiederholt), Zwischen- und Gesamtsummen;
+  lange Listen mit hellgrauen Wechselzeilen, Listen zum Ausfüllen mit senkrechten Linien.
+- **Stundenpläne:** klassisches Raster mit Stundennummer und Zeiten, Pausen als schmale graue Bänder, Doppelstunden
+  zusammengefasst; je Stunde Fach (halbfett), Lehrkraft bzw. Klasse und Raum; rechts die Unterrichtsliste mit
+  Wochenstunden, unten Kopplungen (Fußnoten 1), 2) …) und Fächer. Im **Wochenplan mit Änderungen** gilt:
+  Entfall = schraffiert und durchgestrichen mit „entfällt“, Vertretung/Änderung = „»“, bisher durchgestrichen und neu
+  halbfett, zusätzliche oder verlegte Stunde = gestrichelt mit „+“, Prüfung = doppelt umrandet; die Zeichen stehen in der
+  Legende unter dem Plan. Fachfarben erscheinen nur auf Wunsch als Grautöne.
+- **Vertretungsplan (Aushang):** je Tag eine Seite mit dem Datum als Titel, Mitteilungen im Kasten, abwesende Klassen
+  bzw. Lehrkräfte und blockierte Räume, darunter die Tabelle gruppiert nach Klasse (bzw. Lehrkraft) mit Std., Fach,
+  Lehrkraft, Vertretung, Raum, Art und Bemerkung; bei Entfall steht halbfett „entfällt“ und die Lehrkraft ist
+  durchgestrichen. *Weitere Aktionen → Aushang mit großer Schrift* druckt 14 pt im Querformat für das Schwarze Brett
+  (Parameter `gross=true`); die Schriftgröße des Seitenlayouts gilt sonst.
+- **Berichte im Studio** (*Ausgabe → Berichte*): Stammdaten und Unterricht, Vertretungsplanung, **Abrechnung**
+  (Vertretungsabrechnung mit Unterschriftsfeld, Mehrarbeit NRW je Lehrkraft, Vertretungs-Übersicht), **Pausen und
+  Prüfungen** (Pausenaufsichtsplan je Aufsichtsbereich, Aufsichten je Lehrkraft, Klausurplan) und **Kurse**
+  (Kursliste, Teilnehmerlisten zum Abhaken).
+- **Formulare in EduOrga Web:** Klassenbuch-Berichte, Fehlzeiten- und Abwesenheitsexport der Familien,
+  **Entschuldigung** (Angaben, Tabelle der Fehlzeiten, Grund zum Ausfüllen, Unterschrift, Vermerk der Schule),
+  Sprechtag (Terminplan je Lehrkraft mit freien Zeilen zum Eintragen, Gesamtplan nach Lehrkraft gegliedert, Termine der
+  Familie), **Zugangsdaten** als Karten zum Ausschneiden (2 × 5 je Seite), Sitzplan und der Vertretungsplan
+  (*Vertretungen → PDF* bzw. *Aushang groß*, `/api/app/vertretungen.pdf`).
+
+Beispiele (erzeugt aus den Tests mit `EDUORGA_DRUCKMUSTER=<Ordner>`) liegen in [`bilder/druck`](bilder/druck/):
+
+| Ausdruck | Muster |
+|---|---|
+| Stundenplan Klasse | ![](bilder/druck/stundenplan-klasse.png) |
+| Wochenplan mit Änderungen | ![](bilder/druck/stundenplan-woche-aenderungen.png) |
+| Stundenpläne kompakt | ![](bilder/druck/stundenplan-kompakt.png) |
+| Vertretungsplan Klassen | ![](bilder/druck/vertretungsplan-klassen.png) |
+| Aushang große Schrift | ![](bilder/druck/vertretungsplan-aushang-gross.png) |
+| Bericht Lehrkräfte Soll/Ist | ![](bilder/druck/bericht-lehrer-sollist.png) |
+| Pausenaufsichtsplan | ![](bilder/druck/bericht-pausenaufsicht.png) |
+| Entschuldigung (Web) | ![](bilder/druck/web-entschuldigung.png) |
+| Sprechtag Terminplan (Web) | ![](bilder/druck/web-sprechtag-lehrkraft.png) |
+| Zugangsdaten (Web) | ![](bilder/druck/web-zugangsdaten.png) |
 
 ---
 

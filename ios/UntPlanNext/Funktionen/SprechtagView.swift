@@ -36,6 +36,13 @@ struct SprechtagView: View {
     @State private var eintragen: SprechtagZeitfenster? = nil
     @State private var teilnahmeAbsagen = false
     @State private var vorschau: URL? = nil
+    /// Lehrkraft: Notiz zu einem Termin, Termin verschieben, Raum bzw. Online-Gespräch
+    @State private var notizTermin: SprechtagTermin? = nil
+    @State private var notizText = ""
+    @State private var verschieben: SprechtagTermin? = nil
+    @State private var raumOffen = false
+    /// Erinnerung vor jedem Termin (Minuten, 0 = aus)
+    @AppStorage(Sprechtagerinnerung.schluessel) private var erinnerung: Int = 15
 
     enum Filter: Hashable {
         case alle
@@ -204,6 +211,37 @@ struct SprechtagView: View {
             .environmentObject(zustand)
         }
         .quickLookPreview($vorschau)
+        .alert("Notiz zum Termin", isPresented: Binding(get: { notizTermin != nil }, set: { if !$0 { notizTermin = nil } }),
+               presenting: notizTermin) { t in
+            TextField("Notiz (für Sie und die Administration)", text: $notizText, axis: .vertical)
+            Button("Sichern") {
+                Task { await terminAendern(t, beginn: nil, bemerkung: notizText) }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        } message: { t in
+            Text("\(t.beginn) Uhr · \(t.schueler?.anzeige ?? "")")
+        }
+        .sheet(item: $verschieben) { t in
+            SprechtagVerschiebenBlatt(termin: t, fenster: lehrkraft?.zeitfenster ?? []) { beginn in
+                verschieben = nil
+                Task { await terminAendern(t, beginn: beginn, bemerkung: nil) }
+            }
+        }
+        .sheet(isPresented: $raumOffen) {
+            if let d = lehrkraft {
+                SprechtagRaumBlatt(id: id, daten: d) { text in
+                    meldung = text
+                    Task { await laden() }
+                }
+                .environmentObject(zustand)
+            }
+        }
+        .onChange(of: erinnerung) { _, neu in
+            Task {
+                if neu > 0 { await Planmitteilungen.erlaubnisAnfragen() }
+                await erinnerungenPlanen()
+            }
+        }
     }
 
     // MARK: - Kopf
@@ -239,6 +277,24 @@ struct SprechtagView: View {
                         }
                     }
                 }
+            }
+            if !istEltern, aenderbar, let d = lehrkraft, d.darfRaum {
+                Button {
+                    raumOffen = true
+                } label: {
+                    Label("Raum und Online-Gespräch …", systemImage: "door.left.hand.open")
+                }
+            }
+            if info != nil {
+                Picker(selection: $erinnerung) {
+                    Text("Aus").tag(0)
+                    ForEach(Sprechtagerinnerung.stufen.filter { $0 > 0 }, id: \.self) { m in
+                        Text("\(m) Minuten vorher").tag(m)
+                    }
+                } label: {
+                    Label("Erinnerung an Termine", systemImage: "bell")
+                }
+                .pickerStyle(.menu)
             }
             if info != nil && !nurLesen {
                 Button {
@@ -299,7 +355,12 @@ struct SprechtagView: View {
                         Plakette(text: "Teilnahme abgesagt", farbe: Farben.entfall)
                     }
                     Spacer(minLength: 4)
-                    if !istEltern, let raum = lehrkraft?.lehrer?.raum, !raum.isEmpty {
+                    if !istEltern, lehrkraft?.lehrer?.online == true {
+                        Text("Online-Gespräche")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Farben.text2)
+                            .lineLimit(1)
+                    } else if !istEltern, let raum = lehrkraft?.lehrer?.raum, !raum.isEmpty {
                         Text("Raum \(raum)")
                             .font(.system(size: 14))
                             .foregroundStyle(Farben.text2)
@@ -419,7 +480,7 @@ struct SprechtagView: View {
             if !liste.isEmpty { Text("Zeitfenster") }
         } footer: {
             if aenderbar && !liste.isEmpty {
-                Text("Nach links wischen oder lange drücken: Termine absagen, freie Zeiten sperren bzw. freigeben oder eine Familie eintragen.")
+                Text("Nach links wischen oder lange drücken: Termine absagen, verschieben oder mit Notiz versehen, freie Zeiten sperren bzw. freigeben oder eine Familie eintragen.")
             }
         }
         if !d.einladungen.isEmpty || d.einladenMoeglich {
@@ -494,6 +555,19 @@ struct SprechtagView: View {
                 } label: {
                     Label("Absagen", systemImage: "xmark.circle")
                 }
+                Button {
+                    notizText = t.bemerkung
+                    notizTermin = t
+                } label: {
+                    Label("Notiz", systemImage: "note.text")
+                }
+                .tint(Farben.akzent)
+                Button {
+                    verschieben = t
+                } label: {
+                    Label("Verschieben", systemImage: "arrow.up.arrow.down")
+                }
+                .tint(Farben.aenderung)
             } else if f.gesperrt {
                 Button {
                     Task { await sperren([f.beginn], gesperrt: false) }
@@ -800,6 +874,44 @@ struct SprechtagView: View {
             if let text = zustand.fehlertext(error) { fehler = text }
         }
         geladen = true
+        await erinnerungenPlanen()
+    }
+
+    /// Lokale Erinnerungen an die eigenen Termine (Eltern: Termine der Familie, Lehrkraft: gebuchte Zeitfenster).
+    private func erinnerungenPlanen() async {
+        guard let info else { return }
+        var termine: [Sprechtagerinnerung.Termin] = []
+        if istEltern, let e = eltern {
+            termine = e.termine.map { t in
+                Sprechtagerinnerung.Termin(id: t.id, beginn: t.beginn, ende: t.ende,
+                                           titel: [t.lehrerName.isEmpty ? t.lehrer : t.lehrerName, t.schueler?.anzeige ?? ""]
+                                               .filter { !$0.isEmpty }.joined(separator: " · "),
+                                           ort: t.online ? "online" : (t.raum.isEmpty ? "" : "Raum \(t.raum)"))
+            }
+        } else if let d = lehrkraft, (d.lehrer?.abgesagt ?? "").isEmpty {
+            let ort = d.lehrer?.online == true ? "online" : ((d.lehrer?.raum ?? "").isEmpty ? "" : "Raum \(d.lehrer?.raum ?? "")")
+            termine = d.zeitfenster.compactMap { f in
+                guard let t = f.termin else { return nil }
+                return Sprechtagerinnerung.Termin(id: t.id, beginn: t.beginn, ende: t.ende,
+                                                  titel: [t.schueler?.anzeige ?? "", t.schueler?.klasse ?? ""].filter { !$0.isEmpty }.joined(separator: " · "),
+                                                  ort: ort)
+            }
+        }
+        if info.abgesagt { termine = [] }
+        await Sprechtagerinnerung.planen(sprechtag: id, name: info.titel, datum: info.datum, termine: termine, lehrkraft: !istEltern)
+    }
+
+    /// Termin verschieben bzw. Notiz ändern (Lehrkraft).
+    private func terminAendern(_ t: SprechtagTermin, beginn: String?, bemerkung: String?) async {
+        arbeitet = "t\(t.id)"
+        defer { arbeitet = nil }
+        do {
+            try await zustand.api.sprechtagTerminAendern(id, termin: t.id, SprechtagVerschiebeDaten(beginn: beginn, bemerkung: bemerkung))
+            meldung = beginn != nil ? "Termin auf \(beginn ?? "") Uhr verschoben – die Familie wird benachrichtigt." : "Notiz gespeichert."
+            await laden()
+        } catch {
+            if let text = zustand.fehlertext(error) { fehler = text }
+        }
     }
 
     private func absagen(_ a: Absage) async {
@@ -1009,5 +1121,138 @@ struct Fliesslayout: Layout {
             zeile = max(zeile, g.height)
         }
         return (punkte, CGSize(width: weiteste, height: y + zeile))
+    }
+}
+
+// MARK: - Termin verschieben (Lehrkraft)
+
+/// Freie bzw. gesperrte Zeit für einen gebuchten Termin wählen.
+struct SprechtagVerschiebenBlatt: View {
+    let termin: SprechtagTermin
+    let fenster: [SprechtagZeitfenster]
+    let waehlen: (String) -> Void
+    @Environment(\.dismiss) private var schliessen
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    let frei = fenster.filter { !$0.gebucht }
+                    if frei.isEmpty {
+                        Text("Keine freie Zeit mehr.")
+                            .foregroundStyle(Farben.text2)
+                    }
+                    ForEach(frei) { f in
+                        Button {
+                            waehlen(f.beginn)
+                        } label: {
+                            HStack {
+                                Text("\(f.beginn)–\(f.ende)")
+                                    .monospacedDigit()
+                                    .foregroundStyle(Farben.text)
+                                Spacer()
+                                Text(f.gesperrt ? "gesperrt" : "frei")
+                                    .font(.footnote)
+                                    .foregroundStyle(f.gesperrt ? Farben.text3 : Farben.ok)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Neue Zeit für \(termin.schueler?.anzeige ?? "den Termin") (bisher \(termin.beginn) Uhr)")
+                } footer: {
+                    Text("Die Familie wird über die Verschiebung benachrichtigt. Gesperrte Zeiten werden dabei freigegeben.")
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Termin verschieben")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") { schliessen() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+// MARK: - Raum und Online-Gespräch (Lehrkraft)
+
+struct SprechtagRaumBlatt: View {
+    let id: Int
+    let daten: SprechtagLehrkraftDaten
+    let fertig: (String) -> Void
+    @EnvironmentObject var zustand: AppZustand
+    @Environment(\.dismiss) private var schliessen
+    @State private var raum = ""
+    @State private var online = false
+    @State private var link = ""
+    @State private var speichert = false
+    @State private var fehler: String? = nil
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("Gespräche online", isOn: $online)
+                    if online {
+                        TextField("Link (https://…)", text: $link)
+                            .keyboardType(.URL)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                } footer: {
+                    Text("Online-Gespräche: Die Familien sehen den Link bei ihrem Termin.")
+                }
+                if !online {
+                    Section("Raum") {
+                        Picker("Raum", selection: $raum) {
+                            Text("Kein Raum").tag("")
+                            ForEach(daten.raeume) { r in
+                                Text(r.anzeige).tag(r.kurz)
+                            }
+                        }
+                        .pickerStyle(.navigationLink)
+                    }
+                }
+                if let fehler {
+                    Section {
+                        Text(fehler).foregroundStyle(Farben.entfall)
+                    }
+                }
+            }
+            .navigationTitle("Raum und Online")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") { schliessen() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if speichert {
+                        ProgressView()
+                    } else {
+                        Button("Sichern") { Task { await sichern() } }
+                    }
+                }
+            }
+            .onAppear {
+                raum = daten.lehrer?.raum ?? ""
+                online = daten.lehrer?.online ?? false
+                link = daten.lehrer?.link ?? ""
+            }
+        }
+    }
+
+    private func sichern() async {
+        speichert = true
+        defer { speichert = false }
+        do {
+            try await zustand.api.sprechtagRaumSetzen(id, SprechtagRaumDaten(raum: online ? nil : raum, online: online,
+                                                                           link: online ? link.trimmingCharacters(in: .whitespaces) : nil))
+            fertig(online ? "Gespräche finden online statt." : (raum.isEmpty ? "Raum entfernt." : "Raum \(raum) gespeichert."))
+            schliessen()
+        } catch {
+            fehler = zustand.fehlertext(error) ?? "Speichern fehlgeschlagen."
+        }
     }
 }

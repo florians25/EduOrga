@@ -284,8 +284,12 @@ struct SprechtagLehrkraftKopf: Decodable, Sendable {
     var raum: String
     var abgesagt: String
     var absageGrund: String
+    /// Gesprächsdauer der Lehrkraft (Minuten) und Online-Gespräche mit Link
+    var dauer: Int
+    var online: Bool
+    var link: String
 
-    enum CodingKeys: String, CodingKey { case kurz, name, raum, abgesagt, absageGrund }
+    enum CodingKeys: String, CodingKey { case kurz, name, raum, abgesagt, absageGrund, dauer, online, link }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -295,6 +299,9 @@ struct SprechtagLehrkraftKopf: Decodable, Sendable {
         let roh = c.text(.abgesagt)
         abgesagt = roh == "false" ? "" : roh
         absageGrund = c.text(.absageGrund)
+        dauer = c.zahl(.dauer) ?? 0
+        online = c.wahr(.online)
+        link = c.text(.link)
     }
 }
 
@@ -346,8 +353,11 @@ struct SprechtagLehrkraftDaten: Decodable, Sendable {
     var warteliste: [SprechtagWarteplatz]
     /// Einladen noch möglich (sichtbar und vor Ende der Einladungsphase)
     var einladenMoeglich: Bool
+    /// Raum bzw. Online selbst wählen (Administration oder Option „Raumwahl“) und die wählbaren Räume
+    var darfRaum: Bool
+    var raeume: [SprechtagRaum]
 
-    enum CodingKeys: String, CodingKey { case sprechtag, lehrer, zeitfenster, einladungen, warteliste, einladenMoeglich }
+    enum CodingKeys: String, CodingKey { case sprechtag, lehrer, zeitfenster, einladungen, warteliste, einladenMoeglich, darfRaum, raeume }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -357,6 +367,8 @@ struct SprechtagLehrkraftDaten: Decodable, Sendable {
         einladungen = c.liste(.einladungen)
         warteliste = c.liste(.warteliste)
         einladenMoeglich = c.wahr(.einladenMoeglich)
+        darfRaum = c.wahr(.darfRaum)
+        raeume = c.liste(.raeume)
     }
 }
 
@@ -654,4 +666,35 @@ struct SprechtagAbsageDaten: Encodable, Sendable {
 struct SprechtagSperrDaten: Encodable, Sendable {
     var beginne: [String]
     var gesperrt: Bool
+}
+
+/// Wählbarer Raum (GET /sprechtag/{id}/lehrkraft → raeume).
+struct SprechtagRaum: Decodable, Identifiable, Hashable, Sendable {
+    var kurz: String
+    var name: String
+
+    var id: String { kurz }
+
+    enum CodingKeys: String, CodingKey { case kurz, name }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        kurz = c.text(.kurz)
+        name = c.text(.name)
+    }
+
+    var anzeige: String { name.isEmpty || name == kurz ? kurz : "\(kurz) – \(name)" }
+}
+
+/// PUT /api/app/sprechtag/{id}/raum – Raum, Online-Gespräch und Link der eigenen Lehrkraft.
+struct SprechtagRaumDaten: Encodable, Sendable {
+    var raum: String?
+    var online: Bool?
+    var link: String?
+}
+
+/// PUT /api/app/sprechtag/{id}/termine/{tid} – Termin verschieben (Beginn) bzw. Notiz (Bemerkung) ändern.
+struct SprechtagVerschiebeDaten: Encodable, Sendable {
+    var beginn: String?
+    var bemerkung: String?
 }

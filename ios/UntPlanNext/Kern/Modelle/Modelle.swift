@@ -1424,8 +1424,10 @@ struct Anwesenheitsliste: Decodable, Sendable {
     var ende: String
     /// Gewählte Einzelstunde (nil = ganzer Block)
     var einzelstunde: Int?
+    /// Von Eltern bzw. Schüler*innen gemeldete Abwesenheiten für diesen Tag (gemeldet bzw. bestätigt)
+    var meldungen: [GemeldeteAbwesenheit]
 
-    enum CodingKeys: String, CodingKey { case schueler, fehlzeiten, geprueft, darf, vorstunden, verwalten, beginn, ende, einzelstunde }
+    enum CodingKeys: String, CodingKey { case schueler, fehlzeiten, geprueft, darf, vorstunden, verwalten, beginn, ende, einzelstunde, meldungen }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -1438,10 +1440,48 @@ struct Anwesenheitsliste: Decodable, Sendable {
         beginn = c.text(.beginn)
         ende = c.text(.ende)
         einzelstunde = c.zahl(.einzelstunde)
+        meldungen = c.liste(.meldungen)
     }
 
     /// Wurden die Abwesenheiten der Stunde bereits kontrolliert?
     var kontrolliert: Bool { !(geprueft ?? "").isEmpty }
+}
+
+/// Gemeldete Abwesenheit (Abwesenheitsmeldung der Eltern bzw. Schüler*innen) in der Anwesenheit einer Stunde.
+struct GemeldeteAbwesenheit: Decodable, Identifiable, Sendable {
+    var id: Int
+    var schuelerId: Int
+    var von: String
+    var bis: String
+    var grund: String
+    /// gemeldet | bestaetigt
+    var status: String
+    var gemeldet: String
+    var text: String
+
+    enum CodingKeys: String, CodingKey { case id, schuelerId, von, bis, grund, status, gemeldet, text }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.zahl(.id) ?? 0
+        schuelerId = c.zahl(.schuelerId) ?? 0
+        von = String(c.text(.von).prefix(10))
+        bis = String(c.text(.bis).prefix(10))
+        grund = c.text(.grund)
+        status = c.text(.status)
+        gemeldet = c.text(.gemeldet)
+        text = c.text(.text)
+    }
+}
+
+/// POST /api/app/klassenbuch/abwesenheit/verlaengern – Abwesenheit der Vorstunde für diese Stunde übernehmen.
+struct AbwesenheitVerlaengernDaten: Encodable, Sendable {
+    var datum: String
+    var stunde: Int
+    var unterricht: Int
+    var schuelerIds: [Int]
+    var bis: String = "stunde"
+    var einzelstunde: Int? = nil
 }
 
 /// Eintrag beim Speichern der Anwesenheit (nur Abweichungen).

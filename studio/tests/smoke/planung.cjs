@@ -101,8 +101,10 @@ const h = require('./hilfe.cjs');
     await h.eintrag(page, 'planung.optimierung');
     await page.waitForSelector('[data-ansicht="optimierung.lauf"]');
     await h.werkzeug(page, 'optimierung.lauf', 'Neue Optimierung');
-    await page.waitForSelector('[role=dialog]:has-text("Optimierung starten") select');
-    await page.locator('[role=dialog] select').first().selectOption('A');
+    // Verfahren: durchsuchbare Auswahl (Combobox) – erster Eintrag ist Verfahren A
+    await page.waitForSelector('[role=dialog]:has-text("Optimierung starten") [role=combobox][aria-label=Verfahren]');
+    await page.locator('[role=dialog] [role=combobox][aria-label=Verfahren]').click();
+    await page.locator('[role=listbox] [role=option]').first().click();
     await page.locator('[role=dialog] input[type=number]').first().fill('3');
     await foto('10-steuerdaten');
     await h.dialogKnopf(page, 'Optimierung starten');

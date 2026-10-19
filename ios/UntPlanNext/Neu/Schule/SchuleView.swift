@@ -49,7 +49,10 @@ enum Stammdaten {
     }
 }
 
-/// Reiter „Schule“: alle Bereiche von EduOrga Web, die unterwegs gebraucht werden – je nach Rolle:
+/// Reiter „Schule“: nur das Wichtigste für unterwegs (Plan, Heute und Postfach sind eigene Reiter) – je nach Rolle:
+/// Klassenbuch (Lehrkräfte), Vertretungen, Prüfungen, Hausaufgaben, Abwesenheit melden bzw. Entschuldigungen und der
+/// Elternsprechtag. Raum-/Gerätebuchung, Befreiungen, Klassendienste, Sitzplan-Editor und Infocenter-Extras sind in der
+/// App ausgeblendet (in EduOrga Web weiter verfügbar). Früher:
 /// - Lehrkräfte: Klassenbuch (offene Stunden, Einträge, Hausaufgaben, Klassendienste, Abwesenheiten und
 ///   Entschuldigungen, Befreiungen, Sitzplan), Prüfungen und Vertretungsplan, Melden (Abwesenheit, Prüfung, Meine
 ///   Meldungen), Buchen (Raum, Ressource, Meine Buchungen), Sprechtag, Neuigkeiten.
@@ -82,14 +85,6 @@ struct SchuleView: View {
                 } else {
                     klassenkonto
                 }
-                Section("Infos") {
-                    NavigationLink(value: Schulziel.neuigkeiten) {
-                        Mehrzeile(titel: "Neuigkeiten", wert: ungelesen > 0 ? "\(ungelesen) neu" : nil)
-                    }
-                    NavigationLink(value: Schulziel.termine) {
-                        Mehrzeile(titel: "Termine")
-                    }
-                }
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Schule")
@@ -118,19 +113,10 @@ struct SchuleView: View {
             NavigationLink(value: Schulziel.hausaufgabenKollegium) {
                 Mehrzeile(titel: "Hausaufgaben")
             }
-            NavigationLink(value: Schulziel.dienste) {
-                Mehrzeile(titel: "Klassendienste")
-            }
             if (zustand.entschuldigungsrechte?.irgendwas ?? false) || b?.fehlzeiten == true {
                 NavigationLink(value: Schulziel.entschuldigungen) {
                     Mehrzeile(titel: b?.fehlzeiten == true ? "Abwesenheiten und Entschuldigungen" : "Fehlzeiten eigener Unterricht")
                 }
-            }
-            NavigationLink(value: Schulziel.befreiungen) {
-                Mehrzeile(titel: "Befreiungen")
-            }
-            NavigationLink(value: Schulziel.sitzplan) {
-                Mehrzeile(titel: "Sitzplan")
             }
         } header: {
             Text("Klassenbuch")
@@ -138,23 +124,23 @@ struct SchuleView: View {
             Text("Lehrstoff, Hausaufgaben und Anwesenheit einer Stunde tragen Sie direkt in der Stunde ein (Stunde im Plan antippen).")
         }
         Section("Unterricht") {
+            if zustand.darf("vertretung.lehrer") || zustand.darf("vertretung.schueler") {
+                NavigationLink(value: Schulziel.vertretungsplan) {
+                    Mehrzeile(titel: "Vertretungen")
+                }
+            }
             NavigationLink(value: Schulziel.pruefungen) {
                 Mehrzeile(titel: "Prüfungen")
             }
-            if zustand.darf("vertretung.lehrer") || zustand.darf("vertretung.schueler") {
-                NavigationLink(value: Schulziel.vertretungsplan) {
-                    Mehrzeile(titel: "Vertretungsplan")
+            if zustand.darf("pruefung.anlegen") {
+                NavigationLink(value: Schulziel.pruefungEintragen) {
+                    Mehrzeile(titel: "Prüfung eintragen")
                 }
             }
         }
         Section("Melden") {
             NavigationLink(value: Schulziel.abwesenheitMelden) {
                 Mehrzeile(titel: "Abwesenheit melden")
-            }
-            if zustand.darf("pruefung.anlegen") {
-                NavigationLink(value: Schulziel.pruefungEintragen) {
-                    Mehrzeile(titel: "Prüfung eintragen")
-                }
             }
             NavigationLink(value: Schulziel.meineMeldungen) {
                 Mehrzeile(titel: "Meine Meldungen", wert: meldungenOffen > 0 ? "\(meldungenOffen) offen" : nil)
@@ -163,27 +149,14 @@ struct SchuleView: View {
                 Mehrzeile(titel: "Meine Abwesenheiten")
             }
         }
-        if zustand.darf("buchung.raum") || zustand.darf("buchung.ressourcen") {
-            Section("Buchen") {
-                if zustand.darf("buchung.raum") {
-                    NavigationLink(value: Schulziel.raumBuchen) {
-                        Mehrzeile(titel: "Raum buchen")
-                    }
-                }
-                if zustand.darf("buchung.ressourcen") {
-                    NavigationLink(value: Schulziel.ressourceBuchen) {
-                        Mehrzeile(titel: "Ressource buchen")
-                    }
-                }
-                NavigationLink(value: Schulziel.meineBuchungen) {
-                    Mehrzeile(titel: "Meine Buchungen")
-                }
-            }
-        }
-        Section("Sprechtag") {
+        Section {
             NavigationLink(value: Schulziel.sprechtage) {
-                Mehrzeile(titel: "Sprechtage")
+                Mehrzeile(titel: "Elternsprechtag")
             }
+        } header: {
+            Text("Elternsprechtag")
+        } footer: {
+            Text("Zeiten sperren und freigeben, Buchungen sehen, Familien einladen, Notizen und Ihr Ablauf.")
         }
     }
 
@@ -203,16 +176,22 @@ struct SchuleView: View {
             }
             if zustand.darf("vertretung.schueler") || zustand.darf("vertretung.lehrer") {
                 NavigationLink(value: Schulziel.vertretungsplan) {
-                    Mehrzeile(titel: "Vertretungsplan")
+                    Mehrzeile(titel: "Vertretungen")
                 }
             }
         } header: {
             Text(zustand.istEltern ? "Meine Kinder" : "Mein Unterricht")
         }
         if zustand.istEltern || zustand.darf("sprechtag.verwalten", vorgabe: false) || (b?.rolle.lowercased() == "schueler") {
-            Section("Sprechtag") {
+            Section {
                 NavigationLink(value: Schulziel.sprechtage) {
-                    Mehrzeile(titel: zustand.istEltern ? "Sprechtage und Termine buchen" : "Sprechtage")
+                    Mehrzeile(titel: zustand.istEltern ? "Elternsprechtag – Termine buchen" : "Elternsprechtag")
+                }
+            } header: {
+                Text("Elternsprechtag")
+            } footer: {
+                if zustand.istEltern {
+                    Text("Einladungen und freie Zeiten der Lehrkräfte, buchen und absagen, Warteliste, Ihr Ablauf mit Erinnerung.")
                 }
             }
         }

@@ -201,9 +201,9 @@ struct PlanSeite: View {
     private var zoomGeste: some Gesture {
         MagnifyGesture(minimumScaleDelta: 0.04)
             .onEnded { wert in
-                if modus == .woche && wert.magnification > 1.15 {
+                if modus == .woche && wert.magnification > 1.3 {
                     tagWaehlen(aktuellerTag)
-                } else if modus == .tag && wert.magnification < 0.87 {
+                } else if modus == .tag && wert.magnification < 0.75 {
                     ansichtWechseln(true)
                 }
             }

@@ -385,7 +385,7 @@ export default function Arbeitsliste() {
     const f = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return;
       const t = e.target as HTMLElement | null;
-      if (t && (t.closest('input, textarea, select, [contenteditable=true], [data-tabelle], [role=dialog], [role=menu], [role=listbox]'))) return;
+      if (t && (t.closest('input, textarea, select, [contenteditable=true], [data-tabelle], [role=dialog], [role=menu], [role=listbox]:not([data-testid=arbeitsliste])'))) return;
       if (document.querySelector('[role=dialog]')) return;
       if (tasteRef.current(e)) e.preventDefault();
     };
