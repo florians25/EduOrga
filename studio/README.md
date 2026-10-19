@@ -85,12 +85,15 @@ Tests:
 
 ```bash
 dotnet test studio/tests/UntPlanStudio.Tests -c Release      # API-Tests, Modulregister, Startseite, Typprüfung (Node)
+# zusätzlich mit MySQL/MariaDB (Benutzer mit Recht zum Anlegen von Datenbanken; ohne die Variable werden diese Tests übersprungen):
+STUDIO_TEST_MYSQL="Server=127.0.0.1;Port=3306;User ID=root;Password=…" dotnet test studio/tests/UntPlanStudio.Tests -c Release
 # Oberflächentests (Server muss laufen, Playwright + Chromium nötig; STUDIO_URL Standard http://127.0.0.1:5501):
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke.cjs            # Rundgang über alle Seiten
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/planung.cjs          # Planen, Ziehen, Optimierung
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs       # Vertretungsplanung
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/druck.cjs            # Einstellungen, Druck, Formate
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke-austausch.cjs  # UntPlan Web, Module, MultiUser
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/speichern.cjs         # Speicherstand, Sicherungspunkt, „An Web senden“
 ```
 
 ## Container

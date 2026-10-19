@@ -1,3 +1,4 @@
+import QuickLook
 import SwiftUI
 
 /// Sprechtag (Elternsprechtag) – aus „Heute“ bzw. „Mehr“ als Blatt (iPhone mit Ziehgriff, iPad festes Detailblatt).
@@ -30,6 +31,11 @@ struct SprechtagView: View {
     @State private var meldung: String? = nil
     @State private var buchung: Buchungswahl? = nil
     @State private var sammel: Sammelaktion? = nil
+    /// Lehrkraft: Familien einladen, Termin in freie Zeit eintragen, Teilnahme absagen
+    @State private var einladen = false
+    @State private var eintragen: SprechtagZeitfenster? = nil
+    @State private var teilnahmeAbsagen = false
+    @State private var vorschau: URL? = nil
 
     enum Filter: Hashable {
         case alle
@@ -174,6 +180,30 @@ struct SprechtagView: View {
         } message: { s in
             Text(s.sperren ? "Gesperrte Zeiten können nicht gebucht werden." : "Die Zeiten können danach wieder gebucht werden.")
         }
+        .alert("Teilnahme absagen?", isPresented: $teilnahmeAbsagen) {
+            TextField("Grund (optional)", text: $grund)
+            Button("Absagen", role: .destructive) {
+                Task { await teilnahmeAendern(absagen: true) }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Alle Ihre Termine an diesem Sprechtag werden abgesagt; die Familien werden benachrichtigt.")
+        }
+        .sheet(isPresented: $einladen) {
+            SprechtagEinladenBlatt(id: id) { text in
+                meldung = text
+                Task { await laden() }
+            }
+            .environmentObject(zustand)
+        }
+        .sheet(item: $eintragen) { f in
+            SprechtagEintragenBlatt(id: id, fenster: f) {
+                meldung = "Termin um \(f.beginn) Uhr eingetragen."
+                Task { await laden() }
+            }
+            .environmentObject(zustand)
+        }
+        .quickLookPreview($vorschau)
     }
 
     // MARK: - Kopf
@@ -184,6 +214,38 @@ struct SprechtagView: View {
                 Task { await laden() }
             } label: {
                 Text("Aktualisieren")
+            }
+            if !istEltern, let d = lehrkraft {
+                if d.einladenMoeglich && aenderbar {
+                    Button {
+                        einladen = true
+                    } label: {
+                        Label("Familien einladen", systemImage: "envelope")
+                    }
+                }
+                if aenderbar {
+                    if (d.lehrer?.abgesagt ?? "").isEmpty {
+                        Button(role: .destructive) {
+                            grund = ""
+                            teilnahmeAbsagen = true
+                        } label: {
+                            Label("Teilnahme absagen", systemImage: "person.crop.circle.badge.xmark")
+                        }
+                    } else {
+                        Button {
+                            Task { await teilnahmeAendern(absagen: false) }
+                        } label: {
+                            Label("Teilnahme wieder aufnehmen", systemImage: "person.crop.circle.badge.checkmark")
+                        }
+                    }
+                }
+            }
+            if info != nil && !nurLesen {
+                Button {
+                    Task { await pdfOeffnen() }
+                } label: {
+                    Label(istEltern ? "Meine Termine als PDF" : "Terminplan als PDF", systemImage: "doc.richtext")
+                }
             }
             if !istEltern, aenderbar, let d = lehrkraft {
                 let frei = d.zeitfenster.filter(\.frei).map(\.beginn)
@@ -357,7 +419,68 @@ struct SprechtagView: View {
             if !liste.isEmpty { Text("Zeitfenster") }
         } footer: {
             if aenderbar && !liste.isEmpty {
-                Text("Nach links wischen oder lange drücken: Termine absagen, freie Zeiten sperren bzw. freigeben.")
+                Text("Nach links wischen oder lange drücken: Termine absagen, freie Zeiten sperren bzw. freigeben oder eine Familie eintragen.")
+            }
+        }
+        if !d.einladungen.isEmpty || d.einladenMoeglich {
+            Section {
+                if d.einladungen.isEmpty {
+                    Text("Noch keine Einladungen. Laden Sie Familien gezielt zum Gespräch ein – sie werden benachrichtigt und sehen die Einladung beim Buchen.")
+                        .font(.footnote)
+                        .foregroundStyle(Farben.text2)
+                }
+                ForEach(d.einladungen) { e in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(e.schueler?.anzeige ?? "Schüler*in")
+                                .foregroundStyle(Farben.text)
+                            Text([e.schueler?.klasse ?? "", e.benachrichtigt ? "benachrichtigt" : "ohne Elternkonto"].filter { !$0.isEmpty }.joined(separator: " · "))
+                                .font(.footnote)
+                                .foregroundStyle(Farben.text3)
+                        }
+                        Spacer()
+                        if !e.termin.isEmpty {
+                            Statusmarke(text: "\(e.termin) Uhr", farbe: Farben.akzent)
+                        } else {
+                            Statusmarke(text: "offen", farbe: Farben.text3)
+                        }
+                    }
+                    .swipeActions(edge: .trailing) {
+                        if aenderbar {
+                            Button(role: .destructive) {
+                                Task { await einladungLoeschen(e) }
+                            } label: {
+                                Label("Löschen", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+                if d.einladenMoeglich && aenderbar {
+                    Button {
+                        einladen = true
+                    } label: {
+                        Label("Familien einladen", systemImage: "envelope")
+                    }
+                }
+            } header: {
+                Text("Einladungen")
+            }
+        }
+        if !d.warteliste.isEmpty {
+            Section("Warteliste") {
+                ForEach(Array(d.warteliste.enumerated()), id: \.element.id) { i, w in
+                    HStack {
+                        Text("\(i + 1).")
+                            .monospacedDigit()
+                            .foregroundStyle(Farben.text3)
+                        Text(w.schueler?.anzeige ?? "Schüler*in")
+                            .foregroundStyle(Farben.text)
+                        Spacer()
+                        Text(w.schueler?.klasse ?? "")
+                            .font(.footnote)
+                            .foregroundStyle(Farben.text3)
+                    }
+                }
             }
         }
     }
@@ -385,6 +508,12 @@ struct SprechtagView: View {
                     Label("Sperren", systemImage: "lock")
                 }
                 .tint(Farben.text3)
+                Button {
+                    eintragen = f
+                } label: {
+                    Label("Eintragen", systemImage: "person.badge.plus")
+                }
+                .tint(Farben.akzent)
             }
         }
     }
@@ -595,8 +724,30 @@ struct SprechtagView: View {
                 Statusmarke(text: "Gebucht: \(t.beginn)–\(t.ende) Uhr", farbe: Farben.akzent)
             } else if l.abgesagt {
                 Statusmarke(text: "Nimmt nicht teil", farbe: Farben.text3)
+            } else if let wid = l.wartelisteId {
+                HStack {
+                    Statusmarke(text: l.wartelistePosition > 0 ? "Warteliste: Platz \(l.wartelistePosition)" : "Auf der Warteliste", farbe: Farben.warnung)
+                    Spacer()
+                    if buchbar {
+                        Button("Verlassen") {
+                            Task { await wartelisteVerlassen(wid) }
+                        }
+                        .font(.subheadline)
+                        .buttonStyle(.borderless)
+                    }
+                }
             } else if l.zeitfenster.isEmpty || l.ausgebucht {
-                Statusmarke(text: l.ausgebucht ? "Ausgebucht" : "Keine freien Zeiten", farbe: Farben.text3)
+                HStack {
+                    Statusmarke(text: l.ausgebucht ? "Ausgebucht" : "Keine freien Zeiten", farbe: Farben.text3)
+                    Spacer()
+                    if buchbar && l.ausgebucht && (eltern?.warteliste ?? false) {
+                        Button("Auf die Warteliste") {
+                            Task { await wartelisteEintragen(l, kind: kind) }
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .buttonStyle(.borderless)
+                    }
+                }
             } else if buchbar {
                 Fliesslayout(abstand: 6) {
                     ForEach(l.zeitfenster) { f in
@@ -674,6 +825,63 @@ struct SprechtagView: View {
                 meldung = gesperrt ? "\(beginne.count) Zeiten gesperrt." : "\(beginne.count) Zeiten freigegeben."
             }
             await laden()
+        } catch {
+            if let text = zustand.fehlertext(error) { fehler = text }
+        }
+    }
+
+    private func teilnahmeAendern(absagen: Bool) async {
+        arbeitet = "teilnahme"
+        defer { arbeitet = nil }
+        do {
+            if absagen {
+                try await zustand.api.sprechtagTeilnahmeAbsagen(id, grund: grund.trimmingCharacters(in: .whitespaces).isEmpty ? nil : grund)
+                meldung = "Teilnahme abgesagt."
+            } else {
+                try await zustand.api.sprechtagTeilnahmeWiederaufnehmen(id)
+                meldung = "Teilnahme wieder aufgenommen."
+            }
+            grund = ""
+            await laden()
+        } catch {
+            if let text = zustand.fehlertext(error) { fehler = text }
+        }
+    }
+
+    private func einladungLoeschen(_ e: SprechtagEinladung) async {
+        do {
+            try await zustand.api.sprechtagEinladungLoeschen(id, einladung: e.id)
+            await laden()
+        } catch {
+            if let text = zustand.fehlertext(error) { fehler = text }
+        }
+    }
+
+    private func wartelisteEintragen(_ l: SprechtagKindLehrkraft, kind: SprechtagKind) async {
+        arbeitet = "w\(l.kurz)"
+        defer { arbeitet = nil }
+        do {
+            try await zustand.api.sprechtagWartelisteEintragen(id, SprechtagWarteDaten(lehrer: l.kurz, schuelerId: kind.id))
+            meldung = "Auf die Warteliste von \(l.anzeige) eingetragen – Sie werden benachrichtigt, wenn ein Termin frei wird."
+            await laden()
+        } catch {
+            if let text = zustand.fehlertext(error) { fehler = text }
+        }
+    }
+
+    private func wartelisteVerlassen(_ platz: Int) async {
+        do {
+            try await zustand.api.sprechtagWartelisteVerlassen(id, platz: platz)
+            await laden()
+        } catch {
+            if let text = zustand.fehlertext(error) { fehler = text }
+        }
+    }
+
+    private func pdfOeffnen() async {
+        do {
+            let daten = try await zustand.api.sprechtagPdf(id, eltern: istEltern)
+            vorschau = try Dateiablage.ablegen(daten, name: istEltern ? "Sprechtag-Termine.pdf" : "Sprechtag-Terminplan.pdf")
         } catch {
             if let text = zustand.fehlertext(error) { fehler = text }
         }
