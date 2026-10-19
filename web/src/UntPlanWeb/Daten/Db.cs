@@ -97,7 +97,8 @@ public sealed class Db
         var c = new SqliteConnection(_verbindung);
         c.Open();
         using var cmd = c.CreateCommand();
-        cmd.CommandText = "PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;";
+        // secure_delete: gelöschte Inhalte werden in der Datei überschrieben (Löschfristen, Art. 17 DSGVO) statt als freie Seiten liegen zu bleiben
+        cmd.CommandText = "PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA secure_delete=ON;";
         cmd.ExecuteNonQuery();
         return c;
     }
@@ -731,6 +732,21 @@ public sealed class Db
         );
         CREATE INDEX ix_abwesenheitsmeldungen_klasse ON abwesenheitsmeldungen (klasse, status);
         CREATE INDEX ix_abwesenheitsmeldungen_schueler ON abwesenheitsmeldungen (schueler_id, von);
+        """),
+
+        // 40: Datenschutz – Löschprotokoll der Aufbewahrungsfristen (nur Anzahlen), gesperrte Personen (Einschränkung der Verarbeitung
+        //    nach Art. 18 DSGVO, solange Aufbewahrungsfristen laufen), Kenntnisnahme der Datenschutzhinweise je Konto – nur Standard-SQL
+        Nr(40, """
+        CREATE TABLE loeschprotokoll (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, zeit VARCHAR(30) NOT NULL, ausgeloest VARCHAR(100) NOT NULL DEFAULT '', kategorie VARCHAR(40) NOT NULL,
+            anzahl INTEGER NOT NULL DEFAULT 0, grenze VARCHAR(10) NOT NULL DEFAULT '', details VARCHAR(1000) NOT NULL DEFAULT ''
+        );
+        CREATE TABLE datenschutz_sperren (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, art VARCHAR(20) NOT NULL, ref_id INTEGER NOT NULL, grund VARCHAR(500) NOT NULL DEFAULT '',
+            bis VARCHAR(10) NOT NULL DEFAULT '', erstellt VARCHAR(30) NOT NULL DEFAULT '', von VARCHAR(100) NOT NULL DEFAULT '', UNIQUE (art, ref_id)
+        );
+        ALTER TABLE benutzer ADD COLUMN datenschutz_kenntnis VARCHAR(30) NOT NULL DEFAULT '';
+        CREATE INDEX ix_benutzer_anmeldungen_zeit ON benutzer_anmeldungen (zeit);
         """),
     };
 

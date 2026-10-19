@@ -139,6 +139,13 @@ Der Container läuft ohne Root-Rechte (Benutzer `app`), alle Daten liegen im Vol
 
 ## Daten und Sicherung
 
+> **Datenschutz:** Studio enthält Stammdaten von Lehrkräften (u. a. Personalnummer, Kontaktdaten, Geburtsdatum,
+> Ermäßigungen, Abwesenheiten mit Gründen) und Schüler*innen (Name, Klasse, Kurswahlen). Zugriff nur mit Konto
+> (Passwörter mindestens 8 Zeichen, PBKDF2), Rechte je Gruppe und Bereich; Löschen eines Dokuments entfernt alle älteren
+> Fassungen, SQLite überschreibt gelöschte Inhalte (`secure_delete`); Sicherungen bleiben bis zum Ablauf von
+> `STUDIO_SICHERUNGEN_BEHALTEN`. An EduOrga Web gehen Abwesenheitsgründe und E-Mail-Adressen nur, wenn eingeschaltet –
+> als *vertraulich* markierte Gründe nie. Leitfaden: [`docs/datenschutz/`](../docs/datenschutz/README.md).
+
 Das Studio hat eine **eigene Datenbank**, unabhängig von EduOrga Web: SQLite (Standard, keine Einrichtung nötig) oder
 MySQL/MariaDB (`STUDIO_DB=mysql`, siehe unten). Im Datenordner (`STUDIO_DATEN`, im Container `/data`) liegen:
 
@@ -191,7 +198,7 @@ STUDIO_DATEN=/pfad/zum/datenordner dotnet UntPlanStudio.dll --passwort-setzen ad
 STUDIO_DATEN=/pfad/zum/datenordner dotnet UntPlanStudio.dll --passwort-setzen chefin --anlegen
 ```
 
-Mindestens 6 Zeichen (wie in der Oberfläche); Ergebnis 0 = gesetzt, 1 = Fehler (Meldung auf stderr, bei unbekanntem Benutzer mit
+Mindestens 8 Zeichen (wie in der Oberfläche); Ergebnis 0 = gesetzt, 1 = Fehler (Meldung auf stderr, bei unbekanntem Benutzer mit
 der Liste der Administratoren). In der Gesamtinstallation erledigt das `./passwort.sh studio [benutzer]` (siehe
 `installation/README.md`).
 

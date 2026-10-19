@@ -124,7 +124,8 @@ enum Planmitteilungen {
             for a in liste {
                 let inhalt = UNMutableNotificationContent()
                 inhalt.title = "Plan geändert"
-                inhalt.body = a.text
+                // datensparsam (Standard): keine Fächer, Klassen oder Räume auf dem Sperrbildschirm
+                inhalt.body = Datenschutz.mitDetails ? a.text : Datenschutz.allgemeinerText
                 inhalt.sound = .default
                 inhalt.threadIdentifier = "planaenderungen"
                 inhalt.userInfo = [datumSchluessel: a.datum]
@@ -137,7 +138,7 @@ enum Planmitteilungen {
             inhalt.title = "\(liste.count) Änderungen im Plan"
             var zeilen = liste.prefix(4).map(\.text)
             if liste.count > 4 { zeilen.append("+ \(liste.count - 4) weitere") }
-            inhalt.body = zeilen.joined(separator: "\n")
+            inhalt.body = Datenschutz.mitDetails ? zeilen.joined(separator: "\n") : Datenschutz.allgemeinerText
             inhalt.sound = .default
             inhalt.threadIdentifier = "planaenderungen"
             inhalt.userInfo = [datumSchluessel: liste[0].datum]

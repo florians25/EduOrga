@@ -162,6 +162,32 @@ Eine App für alle Schulen: EduOrga-Adresse der Schule eingeben bzw. QR-Code sca
 > Unterstützung von Claude (Anthropic). Jede Schule bzw. jeder Betreiber ist für Einsatz, Betrieb und Datenschutz
 > selbst verantwortlich.
 
+## Datenschutz
+
+- **Keine Analyse-, Werbe- oder Absturzberichtsdienste**, keine Fremdbibliotheken mit Netzzugriff. Die App spricht nur mit
+  dem EduOrga-Server der gewählten Schule (HTTPS) und – für Sofort-Benachrichtigungen – mit Apple (APNs).
+- **Zugangsdaten** im Schlüsselbund (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, kein iCloud-Abgleich);
+  Serveradresse, Kontenliste, Einstellungen, Planstand und Schreibpuffer in den UserDefaults. **Abmelden** entfernt
+  Zugangsdaten, Sitzung, Planstand und nicht gesendete Klassenbuch-Einträge des Kontos (`AppZustand.abmelden`).
+- **Mitteilungen datensparsam** (`Kern/Dienste/Datenschutz.swift`): Planänderungen und Sprechtag-Erinnerungen zeigen
+  standardmäßig keine Namen, Fächer, Klassen oder Räume („Einzelheiten in der App.“); Profil → Einstellungen →
+  *Einzelheiten in Mitteilungen* schaltet die ausführlichen Texte ein. Push-Nachrichten vom Server sind ebenfalls
+  standardmäßig allgemein (Schalter in EduOrga Web, *Verwaltung → Datenschutz*).
+- **Datenschutzhinweise der Schule**: Link in der Anmeldung (Schritt 2) und unter Profil → Einstellungen
+  (`https://<Schule>/datenschutz`).
+- **Datenschutz-Manifest** `UntPlanNext/PrivacyInfo.xcprivacy`: kein Tracking, keine Tracking-Domains, UserDefaults mit
+  Grund `CA92.1`. Wer weitere Required-Reason-APIs einführt (z. B. Dateizeitstempel, Systemstartzeit), ergänzt das Manifest.
+- **App-Store-Datenschutzangaben („Privacy Nutrition Label“), Hinweise für den Herausgeber** – Entscheidung und
+  Verantwortung beim Herausgeber der App, **zu prüfen**:
+  - Der Herausgeber erhält keine Daten: Alle Inhalte (Konten, Pläne, Klassenbuch, Mitteilungen, Gerätetoken) gehen an
+    den Server der jeweiligen Schule, die sie als Verantwortliche verarbeitet. Nach Apples Definition („collect“ = an
+    den Entwickler bzw. dessen Partner übermittelt) kommt daher „Keine Daten erfasst“ in Betracht; alternativ die
+    Kategorien *Kontaktinformationen* (Name, E-Mail), *Benutzerinhalte* (Nachrichten, Fotos als Anhang), *Kennungen*
+    (Benutzer-ID, Gerätetoken) jeweils „mit der Identität verknüpft“, Zweck *App-Funktionalität*, **kein Tracking**.
+  - Kein App Tracking Transparency nötig (kein Tracking). Kamera (`NSCameraUsageDescription`) nur für QR-Code und
+    Fotos als Anhang.
+  - Datenschutzrichtlinie des Herausgebers (Pflichtfeld im App Store) verweist zusätzlich auf die Hinweise der Schule.
+
 ## App-Symbol
 
 ```

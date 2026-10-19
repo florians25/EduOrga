@@ -162,6 +162,7 @@ export function menue(b: Benutzer): Bereich[] {
       { nav: 'admin-aktive', href: '#/admin/aktive', text: 'Aktive Benutzer' },
       { nav: 'admin-zugriff', href: '#/admin/zugriff', text: 'Wartungsmodus' },
       { nav: 'admin-protokoll', href: '#/admin/protokoll', text: 'Protokoll' },
+      { nav: 'admin-datenschutz', href: '#/admin/datenschutz', text: 'Datenschutz' },
       { nav: 'admin-ueber', href: '#/admin/ueber', text: 'Über EduOrga' },
     ] });
   } else {

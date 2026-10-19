@@ -343,6 +343,7 @@ final class AppZustand: ObservableObject {
         let id = Kontenspeicher.aktivId ?? Schluesselbund.konto(login: login, server: api.serverAdresse)
         Schluesselbund.loeschen(konto: id)
         Kontenspeicher.sitzungVergessen(fuer: id)
+        Schreibpuffer.shared.kontoEntfernen(id)
         konten.removeAll { $0.id == id }
         Kontenspeicher.speichern(konten)
         Kontenspeicher.aktivId = nil

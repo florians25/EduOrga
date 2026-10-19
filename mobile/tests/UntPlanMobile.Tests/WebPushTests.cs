@@ -107,9 +107,15 @@ public class WebPushTests
         // gleicher Stand: nichts
         Assert.Empty(Planvergleich.Vergleich(Planvergleich.Stand(alt, heute), Planvergleich.Stand(alt, heute), heute));
         // Nachricht für den Service Worker
-        var j = JsonNode.Parse(Planvergleich.Nachricht(new() { "a", "b", "c", "d", "e" }, "Julia Schneider"))!;
+        var j = JsonNode.Parse(Planvergleich.Nachricht(new() { "a", "b", "c", "d", "e" }, "Julia Schneider", details: true))!;
         Assert.Equal("5 Änderungen im Stundenplan · Julia Schneider", j["title"]!.GetValue<string>());
         Assert.EndsWith("… und 1 weitere", j["body"]!.GetValue<string>());
+        // Standard: datensparsam – kein Name, kein Fach/Klasse/Raum auf dem Sperrbildschirm
+        var knapp = JsonNode.Parse(Planvergleich.Nachricht(new() { "Do. 15.10. 3. Std.: Vertretung M 7b R205" }, "Julia Schneider"))!;
+        Assert.Equal("Änderung im Stundenplan", knapp["title"]!.GetValue<string>());
+        Assert.Equal("Bitte den Stundenplan in der App ansehen.", knapp["body"]!.GetValue<string>());
+        Assert.DoesNotContain("Julia", knapp.ToJsonString());
+        Assert.DoesNotContain("7b", knapp.ToJsonString());
         // am Wochenende zählen die beiden kommenden Wochen
         Assert.Equal(new[] { new DateOnly(2026, 10, 19), new DateOnly(2026, 10, 26) }, Planvergleich.Wochen(new DateOnly(2026, 10, 17)));
         Assert.Equal(new[] { new DateOnly(2026, 10, 12), new DateOnly(2026, 10, 19) }, Planvergleich.Wochen(heute));

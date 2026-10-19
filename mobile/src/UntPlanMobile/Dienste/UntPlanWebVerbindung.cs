@@ -47,6 +47,9 @@ public sealed class UntPlanWebVerbindung
     public Task<JsonNode?> AufrufAsync(HttpContext c, HttpMethod methode, string pfad, object? daten = null, bool anmeldungNoetig = true) =>
         AufrufMitInhaltAsync(c, methode, pfad, daten != null ? JsonContent.Create(daten, daten.GetType(), options: Json) : null, anmeldungNoetig);
 
+    /// <summary>Öffentliche Seite von EduOrga Web ohne Sitzung abrufen (z. B. <c>datenschutz</c>).</summary>
+    public Task<HttpResponseMessage> RohAsync(string pfad, CancellationToken ct) => _http.GetAsync(pfad.TrimStart('/'), ct);
+
     /// <summary>Datei als multipart/form-data an UntPlanWeb (z. B. Anhang einer Mitteilung).</summary>
     public Task<JsonNode?> HochladenAsync(HttpContext c, string pfad, string feld, string dateiname, string typ, Stream inhalt)
     {

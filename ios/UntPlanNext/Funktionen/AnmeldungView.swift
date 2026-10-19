@@ -424,6 +424,11 @@ struct AnmeldungView: View {
             }
             .buttonStyle(PrimaerKnopfStil(aktiv: bereitZurAnmeldung))
             .disabled(!bereitZurAnmeldung || laedt)
+            if let s = server, let url = Datenschutz.hinweise(server: s.adresse) {
+                Link("Datenschutzhinweise der Schule", destination: url)
+                    .font(.footnote)
+                    .tint(Farben.akzent)
+            }
             if hinzufuegen {
                 Text("Das bisherige Konto bleibt angemeldet; unter „Profil“ (Avatar oben rechts) → „Konten und Schulen“ wechseln Sie jederzeit zurück.")
                     .font(.footnote)

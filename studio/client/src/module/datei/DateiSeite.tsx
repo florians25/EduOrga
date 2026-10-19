@@ -228,7 +228,7 @@ function SeiteKonto() {
       <Eigenschaften zeilen={[['Name', b.anzeigename], ['Benutzername', b.name], ['Rolle', b.rolle]]} />
       <div className={s.knoepfe}>
         <Button onClick={async () => {
-          const w = await formular('Passwort ändern', [{ name: 'alt', titel: 'Bisheriges Passwort', art: 'passwort', pflicht: true }, { name: 'neu', titel: 'Neues Passwort', art: 'passwort', pflicht: true, hinweis: 'mindestens 6 Zeichen' }]);
+          const w = await formular('Passwort ändern', [{ name: 'alt', titel: 'Bisheriges Passwort', art: 'passwort', pflicht: true }, { name: 'neu', titel: 'Neues Passwort', art: 'passwort', pflicht: true, hinweis: 'mindestens 8 Zeichen' }]);
           if (!w) return;
           await api.post('/api/ich/passwort', w).then(() => hinweis('Passwort geändert.', 'ok')).catch(fehlerMelden);
         }}>Passwort ändern …</Button>
@@ -252,7 +252,7 @@ function SeiteBenutzer() {
           const w = await formular('Neuer Benutzer', [
             { name: 'name', titel: 'Benutzername', pflicht: true }, { name: 'anzeigename', titel: 'Anzeigename' },
             { name: 'rolle', titel: 'Rolle', art: 'auswahl', wert: 'Planer', optionen: [{ wert: 'Planer', text: 'Planer (bearbeiten)' }, { wert: 'Leser', text: 'Leser (nur lesen)' }, { wert: 'Admin', text: 'Administrator' }] },
-            { name: 'passwort', titel: 'Passwort', art: 'passwort', pflicht: true, hinweis: 'mindestens 6 Zeichen' }], { okText: 'Anlegen' });
+            { name: 'passwort', titel: 'Passwort', art: 'passwort', pflicht: true, hinweis: 'mindestens 8 Zeichen' }], { okText: 'Anlegen' });
           if (!w) return;
           await api.post('/api/benutzer', w).then(() => neuLaden()).catch(fehlerMelden);
         }}>Benutzer anlegen …</Button>

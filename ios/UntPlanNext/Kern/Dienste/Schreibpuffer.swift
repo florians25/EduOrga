@@ -58,6 +58,13 @@ final class Schreibpuffer: ObservableObject {
         speichern()
     }
 
+    /// Konto vom Gerät entfernt (Abmelden): nicht gesendete Klassenbuch-Daten dieses Kontos löschen (Datenschutz,
+    /// ohne Sitzung könnten sie ohnehin nicht mehr gesendet werden).
+    func kontoEntfernen(_ konto: String) {
+        auftraege.removeAll { $0.konto == konto }
+        speichern()
+    }
+
     /// Alle Aufträge des aktiven Kontos der Reihe nach senden; bei fehlender Verbindung aufhören.
     func senden() async {
         guard !sendet, !offen.isEmpty else { return }

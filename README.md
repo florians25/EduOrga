@@ -33,6 +33,15 @@ v1.2.0`. Die Abläufe bauen die Images `ghcr.io/florians25/untplannext-*` mit de
 und legen das GitHub-Release an; Administratoren von Studio und Web sehen daraufhin den Hinweis auf die neue Version.
 Builds vom Branch `master` tragen `<VERSION>-dev.<Lauf>` und erzeugen keinen Hinweis.
 
+## Datenschutz
+
+Die Schule ist Verantwortliche für alle Daten in EduOrga; die Programme laufen auf dem Server der Schule bzw. ihres
+Betreibers, ohne Cloud, Telemetrie, Tracking oder Inhalte von fremden Servern. Leitfaden für Schulen in NRW (Rollen,
+DSGVO, SchulG NRW §§ 120–122, VO-DV I/II, Löschfristen, DSFA, Schritte bis zum Start) mit Vorlagen für das Verzeichnis
+von Verarbeitungstätigkeiten, die technischen und organisatorischen Maßnahmen und einen AV-Vertrag:
+**[`docs/datenschutz/`](docs/datenschutz/README.md)**. In EduOrga Web unter *Verwaltung → Datenschutz*: Aufbewahrung &
+Löschung mit Fristen und Löschprotokoll, Auskunft und Löschung von Personen, Datenschutzhinweise (`/datenschutz`).
+
 ## Funktionen
 
 - **Schuldaten:** Schuljahr, NRW-Schulformen, Zeitraster mit Vormittag, Nachmittag, fixer oder flexibler Mittagspause und Pausen, NRW-Ferien und -Feiertage (inkl. beweglicher Feiertage), A/B-Wochen, Perioden.

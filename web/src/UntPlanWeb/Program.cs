@@ -83,6 +83,9 @@ public class Program
         builder.Services.AddHostedService<Sprechtagerinnerung>();
         builder.Services.AddSingleton<Unterrichtsgruppen>();
         builder.Services.AddSingleton<Systemwartung>();
+        // Datenschutz: Aufbewahrung/Löschung, Auskunft, Datenschutzhinweise; täglicher Löschlauf nach den eingeschalteten Fristen
+        builder.Services.AddSingleton<Datenschutzdienst>();
+        builder.Services.AddHostedService<Aufbewahrungsdienst>();
 
         builder.Services.ConfigureHttpJsonOptions(o =>
         {
@@ -98,8 +101,10 @@ public class Program
             o.Cookie.Name = "untplanweb";
             o.Cookie.HttpOnly = true;
             o.Cookie.SameSite = SameSiteMode.Strict;
-            o.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-            o.ExpireTimeSpan = TimeSpan.FromDays(14);
+            // UNTPLANWEB_SICHERE_COOKIES=1: Anmeldecookie nur über HTTPS (hinter Caddy/Reverse-Proxy empfohlen); Standard: wie die Anfrage
+            o.Cookie.SecurePolicy = konfig.SichereCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+            // Sitzungsdauer (UNTPLANWEB_SITZUNG_TAGE, Standard 14 Tage, gleitend)
+            o.ExpireTimeSpan = TimeSpan.FromDays(konfig.SitzungTage);
             o.SlidingExpiration = true;
             // API: 401 statt Weiterleitung auf eine Anmeldeseite
             o.Events.OnRedirectToLogin = c => { c.Response.StatusCode = 401; return Task.CompletedTask; };
@@ -198,6 +203,7 @@ public class Program
         UnterrichtKlassenApi.Abbilden(app);
         WartungApi.Abbilden(app);
         AbwesenheitsmeldungApi.Abbilden(app);
+        DatenschutzApi.Abbilden(app);
         app.MapGet("/monitor/{token}", (string token, IWebHostEnvironment env) => env.WebRootFileProvider.GetFileInfo("monitor.html") is { Exists: true, PhysicalPath: { } pfad }
             ? Results.File(pfad, "text/html; charset=utf-8") : OhneOberflaeche());
         // Oberfläche (web/client, React) noch nicht gebaut: kurzer Hinweis statt 404 – sonst liefert UseDefaultFiles wwwroot/index.html

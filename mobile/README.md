@@ -187,6 +187,7 @@ EduOrga Mobile wertet `X-Forwarded-Proto` und `X-Forwarded-Host` aus und setzt d
 | `UNTPLANMOBILE_UPDATE_PRUEFEN` | `0` = nicht nach neuen Versionen suchen | an |
 | `UNTPLANMOBILE_UPDATE_URL` | Quelle der neuesten Version (wie `UNTPLANWEB_UPDATE_URL`, z. B. `ghcr://florians25/untplannext-mobile`) | GitHub-Releases von florians25/UntPlanNext |
 | `UNTPLANMOBILE_UPDATE_TAG_PRAEFIX` | nur Tags mit diesem Präfix berücksichtigen | – |
+| `UNTPLANMOBILE_PUSH_DETAILS` | `1` = Einzelheiten (Tag, Stunde, Fach, Klasse, Raum, Profilname) in Push-Nachrichten | aus (datensparsam) |
 
 ### Installation mit MariaDB/MySQL
 
@@ -293,10 +294,17 @@ vorn – UntPlan übernimmt ihn als Vertretungsraum, die übrigen als Zusatzräu
 eine offene Raumänderung; ergibt sich wieder die ursprüngliche Raumliste, wird sie nur zurückgezogen. Neue Räume müssen
 buchbar und frei sein.
 
+## Datenschutz
+
+- **Datenschutzhinweise der Schule:** `GET /datenschutz` zeigt die Seite von EduOrga Web (ohne Anmeldung); verlinkt auf der Anmeldeseite und unter „Mehr“.
+- **Gerätespeicher:** Abmelden und Profilwechsel löschen `localStorage` (bis auf das Erscheinungsbild) sowie im Cache des Service Workers die
+  zwischengespeicherten API-Antworten, die Startseite mit dem Plan und den Stand der Planwache; die App-Hülle (Skripte, Schriften, Symbole) bleibt.
+- **Push** datensparsam (siehe unten), Protokolle ohne Benutzernamen. Leitfaden: [`docs/datenschutz/`](../docs/datenschutz/README.md).
+
 ## Mehrere Profile und Benachrichtigungen (Web-Push)
 
 - **Mehrere Profile je Gerät:** Unter „Mehr → Weiteres Profil anmelden“ meldet sich ein weiteres Konto an, ohne das bisherige abzumelden. Gewechselt wird über die Kontozeile unter „Mehr“. Die Sitzungen liegen verschlüsselt (ASP.NET Data Protection) im Datenordner von EduOrga Mobile; das Gerät trägt nur eine Zufallskennung als Cookie. „Abmelden“ meldet nur das aktuelle Profil ab.
-- **Benachrichtigung sofort nach dem Import:** EduOrga Mobile prüft jede Minute (`UNTPLANMOBILE_PUSH_INTERVALL`, Sekunden, `0` = aus) den Planstand von EduOrga Web. Ändert sich der eigene Plan eines Profils mit eingeschalteten Benachrichtigungen, geht ein Web-Push (RFC 8291/8292, eigene Implementierung ohne Fremdbibliothek) an das Gerät. Am iPhone/iPad funktioniert das in der App vom Homescreen ab iOS 16.4; HTTPS ist Voraussetzung.
+- **Benachrichtigung sofort nach dem Import:** EduOrga Mobile prüft jede Minute (`UNTPLANMOBILE_PUSH_INTERVALL`, Sekunden, `0` = aus) den Planstand von EduOrga Web. Ändert sich der eigene Plan eines Profils mit eingeschalteten Benachrichtigungen, geht ein Web-Push (RFC 8291/8292, eigene Implementierung ohne Fremdbibliothek) an das Gerät. Der Inhalt ist standardmäßig datensparsam – „Änderung im Stundenplan · Bitte den Stundenplan in der App ansehen.“, ohne Fach, Klasse, Raum oder Namen (Sperrbildschirm); Einzelheiten nur mit `UNTPLANMOBILE_PUSH_DETAILS=1`. Am iPhone/iPad funktioniert das in der App vom Homescreen ab iOS 16.4; HTTPS ist Voraussetzung.
 - **Datenordner:** `UNTPLANMOBILE_DATEN` (im Container `/data`, Volume `untplanmobile-daten`) enthält `konten.json`, `vapid.json` (VAPID-Schlüssel, beim ersten Start erzeugt) und die Data-Protection-Schlüssel. Kontakt für die Push-Dienste: `UNTPLANMOBILE_VAPID_KONTAKT` (`mailto:` oder `https:`).
 
 ## Entwicklung

@@ -157,6 +157,10 @@ public class PushTests
         var json = JsonNode.Parse(inhalt)!;
         Assert.Equal("2026-10-15", json["datum"]!.GetValue<string>());
         Assert.Equal("Änderung im Stundenplan", json["aps"]!["alert"]!["title"]!.GetValue<string>());
+        // datensparsam (Standard): kein Fach, keine Klasse, keine Stunde im Inhalt, der über APNs läuft und auf dem Sperrbildschirm erscheint
+        var body = json["aps"]!["alert"]!["body"]!.GetValue<string>();
+        Assert.Equal("Bitte den Stundenplan in der App ansehen.", body);
+        Assert.DoesNotContain(klasse, inhalt);
         Assert.Contains(apns.Anfragen, x => x.Anfrage.RequestUri!.Host == "api.push.apple.com");
         Assert.DoesNotContain(push.Geraete(), g => g.Token == Token2);   // 410 → entfernt
         Assert.Contains(push.Geraete(), g => g.Token == Token1);

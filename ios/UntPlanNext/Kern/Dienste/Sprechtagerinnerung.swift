@@ -52,7 +52,8 @@ enum Sprechtagerinnerung {
             guard wann > jetzt else { continue }
             let inhalt = UNMutableNotificationContent()
             inhalt.title = "Sprechtag um \(t.beginn) Uhr"
-            inhalt.body = [t.titel, t.ort].filter { !$0.isEmpty }.joined(separator: " · ")
+            // datensparsam (Standard): keine Namen von Kindern bzw. Lehrkräften auf dem Sperrbildschirm
+            inhalt.body = Datenschutz.mitDetails ? [t.titel, t.ort].filter { !$0.isEmpty }.joined(separator: " · ") : Datenschutz.allgemeinerText
             inhalt.sound = .default
             inhalt.threadIdentifier = "sprechtag-\(sprechtag)"
             await hinzufuegen(zentrale, id: p + "\(t.id)", inhalt: inhalt, wann: wann)

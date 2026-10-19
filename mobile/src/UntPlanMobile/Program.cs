@@ -138,6 +138,21 @@ public class Program
             return Results.Text(h.ServiceWorker, "text/javascript; charset=utf-8");
         });
         app.MapGet("/gesundheit", () => Results.Ok(new { ok = true }));
+        // Datenschutzhinweise der Schule: Seite von EduOrga Web (ohne Anmeldung) unter der Adresse der App
+        app.MapGet("/datenschutz", async (UntPlanWebVerbindung web, HttpContext c) =>
+        {
+            c.Response.Headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+            try
+            {
+                using var antwort = await web.RohAsync("datenschutz", c.RequestAborted);
+                if (antwort.IsSuccessStatusCode)
+                    return Results.Content(await antwort.Content.ReadAsStringAsync(c.RequestAborted), "text/html; charset=utf-8");
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) { }
+            return Results.Content("<!doctype html><html lang=\"de\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Datenschutz</title>" +
+                "<body style=\"font-family:system-ui,sans-serif;margin:2rem;color:#24363B\"><h1>Datenschutzhinweise</h1><p>Die Datenschutzhinweise der Schule sind gerade nicht erreichbar. " +
+                "Bitte später erneut versuchen oder in EduOrga Web unter „Datenschutz“ nachlesen.</p></body></html>", "text/html; charset=utf-8", statusCode: 503);
+        });
 
         app.UseStaticFiles(new StaticFileOptions
         {

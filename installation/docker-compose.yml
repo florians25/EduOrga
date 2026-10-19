@@ -62,6 +62,8 @@ services:
       # sqlite (Standard) oder mysql – bei mysql läuft der Container „untplannext-mariadb“ (Profil mariadb)
       UNTPLANWEB_DB: ${UNTPLANWEB_DB:-sqlite}
       UNTPLANWEB_DB_CONNECTION: ${UNTPLANWEB_DB_CONNECTION:-}
+      UNTPLANWEB_SICHERE_COOKIES: ${UNTPLANWEB_SICHERE_COOKIES:-0}
+      UNTPLANWEB_SITZUNG_TAGE: ${UNTPLANWEB_SITZUNG_TAGE:-14}
       UNTPLANWEB_MOBILE_INTERN_URL: ${UNTPLANWEB_MOBILE_INTERN_URL:-}
       UNTPLANWEB_UPDATE_WATCHTOWER_URL: ${UNTPLANWEB_UPDATE_WATCHTOWER_URL:-}
       UNTPLANWEB_UPDATE_WATCHTOWER_TOKEN: ${WATCHTOWER_TOKEN:-}
@@ -81,6 +83,8 @@ services:
       # UntPlan Web aus Sicht des Containers (Dienstname im Compose-Netz)
       UNTPLANWEB_URL: http://untplannext-web:8080
       UNTPLANMOBILE_VAPID_KONTAKT: ${UNTPLANMOBILE_VAPID_KONTAKT:-}
+      # 1 = Einzelheiten (Tag, Stunde, Fach, Klasse, Raum) in Push-Nachrichten; Standard: nur „Änderung im Stundenplan“
+      UNTPLANMOBILE_PUSH_DETAILS: ${UNTPLANMOBILE_PUSH_DETAILS:-0}
     volumes:
       - untplannext-mobile-daten:/data
 

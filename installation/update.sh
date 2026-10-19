@@ -15,6 +15,13 @@
 #   UntPlan Web      SQLite → Volume untplannext-web-daten, Ordner /data/sicherungen
 #                    MariaDB → komprimierter SQL-Abzug in ./sicherungen
 #   Es bleiben jeweils die neuesten SICHERUNGEN_BEHALTEN (Standard 14).
+#
+# Verschlüsselte Sicherungen (empfohlen, sobald ./sicherungen den Server verlässt, z. B. auf ein NAS oder Band):
+#   SICHERUNG_AGE_EMPFAENGER=age1…   (öffentlicher Schlüssel bzw. Datei mit Empfängern; mehrere durch Komma getrennt; Programm „age“)
+#   SICHERUNG_GPG_EMPFAENGER=…       (Schlüssel-ID bzw. E-Mail eines öffentlichen GPG-Schlüssels; Programm „gpg“)
+#   Dann werden die MariaDB-Abzüge verschlüsselt geschrieben (…sql.gz.age bzw. .gpg) und die SQLite-Sicherungen zusätzlich
+#   verschlüsselt nach ./sicherungen kopiert (…db.gz.age bzw. .gpg). Der private Schlüssel gehört NICHT auf den Server.
+#   Wiederherstellen: age -d -i schluessel.txt datei.sql.gz.age | gunzip …  bzw.  gpg -d datei.sql.gz.gpg | gunzip …
 set -eu
 cd "$(dirname "$0")"
 
@@ -27,6 +34,8 @@ STUDIO_DATENBANK=${STUDIO_DATENBANK:-eduorga_studio}
 SICHERUNGEN_BEHALTEN=${SICHERUNGEN_BEHALTEN:-$(wert SICHERUNGEN_BEHALTEN)}
 SICHERUNGEN=${SICHERUNGEN:-./sicherungen}
 BEHALTEN=${SICHERUNGEN_BEHALTEN:-14}
+SICHERUNG_AGE_EMPFAENGER=${SICHERUNG_AGE_EMPFAENGER:-$(wert SICHERUNG_AGE_EMPFAENGER)}
+SICHERUNG_GPG_EMPFAENGER=${SICHERUNG_GPG_EMPFAENGER:-$(wert SICHERUNG_GPG_EMPFAENGER)}
 SICHERN=1; AKTUALISIEREN=1; ANGEFORDERT=0; NUR=""
 for a in "$@"; do
   case "$a" in
@@ -40,15 +49,53 @@ for a in "$@"; do
   esac
 done
 
+verschluesselt() { [ -n "$SICHERUNG_AGE_EMPFAENGER$SICHERUNG_GPG_EMPFAENGER" ]; }
+endung() { if [ -n "$SICHERUNG_AGE_EMPFAENGER" ]; then echo .age; elif [ -n "$SICHERUNG_GPG_EMPFAENGER" ]; then echo .gpg; fi; }
+chiffre() { # Standardeingabe → (verschlüsselt) Standardausgabe
+  if [ -n "$SICHERUNG_AGE_EMPFAENGER" ]; then
+    set --
+    for r in $(echo "$SICHERUNG_AGE_EMPFAENGER" | tr ',' ' '); do if [ -f "$r" ]; then set -- "$@" -R "$r"; else set -- "$@" -r "$r"; fi; done
+    age "$@"
+  elif [ -n "$SICHERUNG_GPG_EMPFAENGER" ]; then
+    set --
+    for r in $(echo "$SICHERUNG_GPG_EMPFAENGER" | tr ',' ' '); do set -- "$@" -r "$r"; done
+    gpg --batch --yes --trust-model always --encrypt "$@"
+  else
+    cat
+  fi
+}
+if [ -n "$SICHERUNG_AGE_EMPFAENGER" ] && ! command -v age >/dev/null 2>&1; then
+  echo "SICHERUNG_AGE_EMPFAENGER ist gesetzt, aber „age“ ist nicht installiert (z. B. apt install age) – abgebrochen." >&2; exit 1
+fi
+if [ -z "$SICHERUNG_AGE_EMPFAENGER" ] && [ -n "$SICHERUNG_GPG_EMPFAENGER" ] && ! command -v gpg >/dev/null 2>&1; then
+  echo "SICHERUNG_GPG_EMPFAENGER ist gesetzt, aber „gpg“ ist nicht installiert – abgebrochen." >&2; exit 1
+fi
+aufraeumen() { # aufraeumen <Präfix> <Muster> → nur die neuesten $BEHALTEN behalten
+  # shellcheck disable=SC2086
+  ls -1t "$SICHERUNGEN"/$1-*$2 2>/dev/null | tail -n +"$((BEHALTEN + 1))" | while read -r alt; do rm -f "$alt"; done
+}
+sqlite_export() { # sqlite_export <Dienst> <Muster im Container> <Präfix>: neueste SQLite-Sicherung verschlüsselt nach $SICHERUNGEN
+  verschluesselt || return 0
+  mkdir -p "$SICHERUNGEN"
+  neueste=$(docker compose exec -T "$1" sh -c "ls -1t $2 2>/dev/null | head -n 1" | tr -d '\r')
+  [ -n "$neueste" ] || return 1
+  datei="$SICHERUNGEN/$3-$stempel.db.gz$(endung)"
+  docker compose exec -T "$1" cat "$neueste" | gzip | chiffre > "$datei"
+  [ -s "$datei" ] || { rm -f "$datei"; return 1; }
+  echo "  $datei (verschlüsselt)"
+  aufraeumen "$3" ".db.gz*"
+}
+
 laeuft() { docker compose ps --services --status running 2>/dev/null | grep -qx "$1"; }
 mariadb_abzug() { # mariadb_abzug <Datenbank> <Dateipräfix> → komprimierter SQL-Abzug in $SICHERUNGEN, alte aufräumen
   mkdir -p "$SICHERUNGEN"
-  datei="$SICHERUNGEN/$2-$stempel.sql.gz"
+  datei="$SICHERUNGEN/$2-$stempel.sql.gz$(endung)"
   docker compose exec -T -e DB="$1" untplannext-mariadb sh -c 'exec mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --single-transaction --quick \
-    --routines --default-character-set=utf8mb4 --max-allowed-packet=256M "$DB"' | gzip > "$datei"
-  [ "$(gzip -dc "$datei" 2>/dev/null | head -c 64 | wc -c)" -gt 0 ] || { rm -f "$datei"; return 1; }
+    --routines --default-character-set=utf8mb4 --max-allowed-packet=256M "$DB"' | gzip | chiffre > "$datei"
+  if verschluesselt; then [ "$(wc -c < "$datei")" -gt 256 ] || { rm -f "$datei"; return 1; }
+  else [ "$(gzip -dc "$datei" 2>/dev/null | head -c 64 | wc -c)" -gt 0 ] || { rm -f "$datei"; return 1; }; fi
   echo "  $datei"
-  ls -1t "$SICHERUNGEN"/"$2"-*.sql.gz 2>/dev/null | tail -n +"$((BEHALTEN + 1))" | while read -r alt; do rm -f "$alt"; done
+  aufraeumen "$2" ".sql.gz*"
 }
 gewaehlt() { [ -z "$NUR" ] || echo "$NUR" | grep -qw "$1"; }
 
@@ -68,21 +115,25 @@ if [ "$SICHERN" = 1 ]; then
     else
       docker compose exec -T untplannext-studio dotnet UntPlanStudio.dll --sichern \
         || { echo "Sicherung von EduOrga Studio fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
+      sqlite_export untplannext-studio "/data/sicherungen/studio-*.db" untplannext-studio \
+        || { echo "Verschlüsselte Kopie der Studio-Sicherung fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
     fi
   fi
   if gewaehlt untplannext-web && laeuft untplannext-web; then
     echo "Sichere UntPlan Web …"
     if [ "${UNTPLANWEB_DB:-sqlite}" = mysql ] && laeuft untplannext-mariadb; then
       mkdir -p "$SICHERUNGEN"
-      datei="$SICHERUNGEN/untplannext-web-$stempel.sql.gz"
+      datei="$SICHERUNGEN/untplannext-web-$stempel.sql.gz$(endung)"
       docker compose exec -T untplannext-mariadb sh -c 'exec mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --single-transaction --quick \
-        --routines --default-character-set=utf8mb4 "$MARIADB_DATABASE"' | gzip > "$datei"
+        --routines --default-character-set=utf8mb4 "$MARIADB_DATABASE"' | gzip | chiffre > "$datei"
       [ -s "$datei" ] || { rm -f "$datei"; echo "Sicherung der MariaDB fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
       echo "  $datei"
-      ls -1t "$SICHERUNGEN"/untplannext-web-*.sql.gz 2>/dev/null | tail -n +"$((BEHALTEN + 1))" | while read -r alt; do rm -f "$alt"; done
+      aufraeumen untplannext-web ".sql.gz*"
     else
       docker compose exec -T untplannext-web dotnet UntPlanWeb.dll --sichern \
         || { echo "Sicherung von UntPlan Web fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
+      sqlite_export untplannext-web "/data/sicherungen/untplanweb-*.db" untplannext-web \
+        || { echo "Verschlüsselte Kopie der Web-Sicherung fehlgeschlagen – Update abgebrochen." >&2; exit 1; }
     fi
   fi
 fi

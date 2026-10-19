@@ -2,6 +2,20 @@ UntPlan – Stunden- und Vertretungsplanung für Schulen in NRW.
 
 ## UntPlan Next
 
+### Datenschutz (DSGVO, Schulen in NRW)
+- Leitfaden und Vorlagen unter `docs/datenschutz/`: Verzeichnis von Verarbeitungstätigkeiten, TOM, unverbindliche
+  AV-Vertrags-Gliederung, DSFA-Checkliste, Schritte bis zum Start.
+- EduOrga Web, *Verwaltung → Datenschutz*: Aufbewahrungsfristen je Kategorie (Vorgaben nach VO-DV I § 9 – von der Schule
+  zu prüfen) mit Probelauf, täglichem Löschlauf und Löschprotokoll; Anmeldeprotokoll mit IP-Adressen ab Werk 30 Tage.
+- Auskunft (Art. 15) als PDF/JSON, Löschung von Schüler*innen mit Sperre während laufender Aufbewahrungsfristen
+  (Art. 18), Anonymisierung von Konten.
+- Datenschutzhinweise der Schule unter `/datenschutz` (Vorlage mit Platzhaltern), verlinkt in Web, Mobile und iOS;
+  Hinweis zur Kenntnisnahme für Schüler- und Elternkonten.
+- Push-Nachrichten und lokale Mitteilungen der iOS-App standardmäßig ohne Einzelheiten; PWA löscht beim Abmelden die
+  zwischengespeicherten Daten.
+- Sicherungen optional mit age bzw. GPG verschlüsselt (`SICHERUNG_AGE_EMPFAENGER`, `SICHERUNG_GPG_EMPFAENGER`);
+  `UNTPLANWEB_SICHERE_COOKIES`, `UNTPLANWEB_SITZUNG_TAGE`; SQLite mit `secure_delete`; Studio-Passwörter mindestens 8 Zeichen.
+
 ### UntPlan Studio statt Desktop-Anwendung
 - Die Planung läuft vollständig als Web-Anwendung **UntPlan Studio** im Browser; die Windows-Desktop-Anwendung entfällt
   (kein Installer, keine lokale Installation). Alle Berechnungen – Planung, Optimierung, Vertretungsvorschläge,

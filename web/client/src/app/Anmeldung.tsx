@@ -66,6 +66,8 @@ function Rahmen({ sitzung, titel, untertitel, children }: { sitzung: Sitzung | n
           <Typography variant="caption">{PRODUKT} · {SLOGAN}</Typography>
           <Typography variant="caption">·</Typography>
           <Link component="button" type="button" variant="caption" onClick={() => setUeber(true)}>Über EduOrga</Link>
+          <Typography variant="caption">·</Typography>
+          <Link variant="caption" href="/datenschutz" target="_blank" rel="noopener">Datenschutz</Link>
         </Stack>
       </Box>
       <UeberDialog offen={ueber} onClose={() => setUeber(false)} />

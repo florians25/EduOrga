@@ -133,7 +133,7 @@ public static class AppApi
 
         // ---------------------------------------------------------------- Sitzung und Einrichtung
 
-        api.MapGet("/sitzung", (HttpContext c, Daten.Db db, Einstellungen e, Benutzerdienst bd, Paketdienst p, Mitteilungsdienst m, Verwaltungsdienst vw, Entschuldigungsdienst ed) =>
+        api.MapGet("/sitzung", (HttpContext c, Daten.Db db, Einstellungen e, Benutzerdienst bd, Paketdienst p, Mitteilungsdienst m, Verwaltungsdienst vw, Entschuldigungsdienst ed, Datenschutzdienst ds) =>
         {
             var b = c.Ich();
             return Results.Json(new
@@ -159,7 +159,11 @@ public static class AppApi
                     planWochenZurueck = b.Planfenster.Zurueck, planWochenVor = b.Planfenster.Vor,
                     // Mitteilungen: Senderecht (Verfassen) und Antwortrecht für das Untermenü (Gesendet, Entwürfe, Verfassen)
                     mitteilungen = new { senden = m.DarfSenden(b), antworten = m.DarfAntworten(b) },
+                    // Schüler- und Elternkonten: Datenschutzhinweise noch nicht (in dieser Fassung) zur Kenntnis genommen → Hinweis nach der Anmeldung
+                    datenschutzHinweis = ds.KenntnisOffen(b),
                 },
+                // Datenschutzhinweise der Schule (Seite ohne Anmeldung)
+                datenschutz = "/datenschutz",
                 ungelesen = b is null ? 0 : m.Ungelesen(b.Id),
                 // Ansichtseinstellungen der Administration (Wochenende, Uhrzeiten auf Karten, Startseite)
                 ansicht = b is null ? null : vw.Einstellung("ansicht"),

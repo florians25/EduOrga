@@ -25,6 +25,8 @@ struct MehrView: View {
     @State private var sprechtage: [SprechtagKarte] = []
     @State private var sprechtagWahl: SprechtagWahl? = nil
     @State private var wahl: Stundenwahl? = nil
+    /// „Einzelheiten in Mitteilungen“ (Standard: aus – datensparsam auf dem Sperrbildschirm)
+    @AppStorage(Datenschutz.detailsSchluessel) private var mitteilungenDetails = false
     @Environment(\.horizontalSizeClass) private var groessenklasse
     @Environment(\.dismiss) private var schliessen
 
@@ -231,6 +233,17 @@ struct MehrView: View {
             if zustand.darfPlanmitteilungen {
                 PlanmitteilungenSchalter()
             }
+            Toggle(isOn: $mitteilungenDetails) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Einzelheiten in Mitteilungen")
+                        .foregroundStyle(Farben.text)
+                    Text("Aus: Mitteilungen auf dem Sperrbildschirm nennen keine Namen, Fächer, Klassen oder Räume.")
+                        .font(.footnote)
+                        .foregroundStyle(Farben.text2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(Farben.akzent)
             NavigationLink(value: Mehrseite.benachrichtigungen) {
                 Mehrzeile(titel: "Benachrichtigungen")
             }
@@ -248,6 +261,11 @@ struct MehrView: View {
             }
             NavigationLink(value: Mehrseite.ueber) {
                 Mehrzeile(titel: "Über")
+            }
+            if let url = Datenschutz.hinweiseAktuell {
+                Link(destination: url) {
+                    Mehrzeile(titel: "Datenschutzhinweise der Schule", pfeil: true)
+                }
             }
         }
     }

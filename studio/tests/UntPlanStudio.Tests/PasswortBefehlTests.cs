@@ -42,7 +42,7 @@ public sealed class PasswortBefehlTests : IDisposable
         var c = await _f.AngemeldetAsync();
         var (erg, _, fehler) = Ausfuehren("kurz\n", "--passwort-setzen", "admin");
         Assert.Equal(1, erg);
-        Assert.Contains("mindestens 6 Zeichen", fehler);
+        Assert.Contains("mindestens 8 Zeichen", fehler);
         (erg, _, fehler) = Ausfuehren("", "--passwort-setzen", "admin");
         Assert.Equal(1, erg);
         Assert.Contains("Kein Passwort", fehler);

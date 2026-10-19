@@ -82,10 +82,16 @@ public static class Planvergleich
         return new[] { m, m.AddDays(7) };
     }
 
-    /// <summary>Inhalt der Push-Nachricht (JSON, vom Service Worker angezeigt).</summary>
-    public static byte[] Nachricht(List<string> zeilen, string? konto)
+    /// <summary>
+    /// Inhalt der Push-Nachricht (JSON, vom Service Worker angezeigt). Standard ist datensparsam: nur die Zahl der Änderungen, kein Fach,
+    /// keine Klasse, kein Raum und kein Name – die Nachricht erscheint auf dem Sperrbildschirm. Einzelheiten nur mit
+    /// <c>UNTPLANMOBILE_PUSH_DETAILS=1</c> (Entscheidung der Schule). Der Inhalt ist Ende-zu-Ende verschlüsselt (RFC 8291).
+    /// </summary>
+    public static byte[] Nachricht(List<string> zeilen, string? konto, bool details = false)
     {
         var titel = zeilen.Count == 1 ? "Änderung im Stundenplan" : $"{zeilen.Count} Änderungen im Stundenplan";
+        if (!details)
+            return JsonSerializer.SerializeToUtf8Bytes(new { title = titel, body = "Bitte den Stundenplan in der App ansehen.", tag = "planwacht", url = "./" });
         if (!string.IsNullOrEmpty(konto)) titel += $" · {konto}";
         var text = string.Join("\n", zeilen.Take(4)) + (zeilen.Count > 4 ? $"\n… und {zeilen.Count - 4} weitere" : "");
         return JsonSerializer.SerializeToUtf8Bytes(new { title = titel, body = text, tag = "planwacht", url = "./" });
@@ -107,6 +113,7 @@ public sealed class Pushwache : BackgroundService
     private readonly IHttpClientFactory _http;
     private readonly ILogger<Pushwache> _log;
     private readonly TimeSpan _intervall;
+    private readonly bool _details;
     private string? _planstand;
     private DateTimeOffset _vollZuletzt = DateTimeOffset.MinValue;
 
@@ -120,6 +127,7 @@ public sealed class Pushwache : BackgroundService
         _http = http;
         _log = log;
         _intervall = TimeSpan.FromSeconds(int.TryParse(konfig["UNTPLANMOBILE_PUSH_INTERVALL"], out var s) ? Math.Max(0, s) : 60);
+        _details = (konfig["UNTPLANMOBILE_PUSH_DETAILS"] ?? "") is "1" or "true" or "ja";
     }
 
     protected override async Task ExecuteAsync(CancellationToken stop)
@@ -192,12 +200,12 @@ public sealed class Pushwache : BackgroundService
             }
         }
         catch (NichtAngemeldetException) { return 0; }
-        catch (UntPlanWebFehler ex) { _log.LogInformation("Pushwache: Plan von {Login} nicht abrufbar ({Fehler}).", konto.Login, ex.Message); return 0; }
+        catch (UntPlanWebFehler ex) { _log.LogInformation("Pushwache: Plan eines Kontos nicht abrufbar ({Fehler}).", ex.Message); return 0; }
 
         var zeilen = konto.Stand is null ? new List<string>() : Planvergleich.Vergleich(konto.Stand, neu, zeit.Heute);
         _speicher.StandSetzen(geraet, konto.Id, neu);
         if (zeilen.Count == 0) return 0;
-        return await SendenAsync(abos, Planvergleich.Nachricht(zeilen, mehrereKonten ? konto.Name : null), ct);
+        return await SendenAsync(abos, Planvergleich.Nachricht(zeilen, mehrereKonten ? konto.Name : null, _details), ct);
     }
 
     public async Task<int> SendenAsync(List<PushAbo> abos, byte[] nachricht, CancellationToken ct)

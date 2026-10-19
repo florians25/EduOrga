@@ -144,8 +144,9 @@ public class ProfileUndPushTests
         Assert.Contains("k=" + vapid, kopf);
         var nachricht = JsonNode.Parse(Encoding.UTF8.GetString(WebPush.Entschluesseln(inhalt, ua, auth)))!;
         Assert.Equal("Änderung im Stundenplan", nachricht["title"]!.GetValue<string>());
-        Assert.Contains("Mi. 14.10. 1. Std.", nachricht["body"]!.GetValue<string>());
-        Assert.Contains(raum, nachricht["body"]!.GetValue<string>());
+        // datensparsam (Standard, ohne UNTPLANMOBILE_PUSH_DETAILS): weder Tag/Stunde noch Raum im Inhalt
+        Assert.Equal("Bitte den Stundenplan in der App ansehen.", nachricht["body"]!.GetValue<string>());
+        Assert.DoesNotContain(raum, nachricht.ToJsonString());
         // abgelaufenes Abo (410) wurde entfernt
         Assert.DoesNotContain(speicher.Abos(geraet), a => a.Endpoint.EndsWith("/weg"));
 

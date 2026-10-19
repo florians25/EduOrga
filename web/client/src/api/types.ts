@@ -25,6 +25,8 @@ export interface Benutzer {
   planWochenZurueck: number | null;
   planWochenVor: number | null;
   mitteilungen?: { senden: boolean; antworten: boolean };
+  /** Schüler- und Elternkonten: Datenschutzhinweise (in dieser Fassung) noch nicht zur Kenntnis genommen. */
+  datenschutzHinweis?: boolean;
 }
 
 export interface Sitzung {

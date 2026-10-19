@@ -3,7 +3,7 @@
 // Kontomenü mit Erscheinungsbild (hell, dunkel, wie das System) und „Über EduOrga“.
 import { Suspense, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import {
-  AppBar, Avatar, Badge, Box, Collapse, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, ListSubheader, Menu, MenuItem,
+  AppBar, Avatar, Badge, Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, Link, IconButton, List, ListItemButton, ListItemIcon, ListItemText, ListSubheader, Menu, MenuItem,
   Select, Stack, Toolbar, Tooltip, Typography, useColorScheme, useMediaQuery, useTheme,
 } from '@mui/material';
 import LightModeOutlined from '@mui/icons-material/LightModeOutlined';
@@ -21,6 +21,7 @@ import SwitchAccountOutlined from '@mui/icons-material/SwitchAccountOutlined';
 import PersonAddAltOutlined from '@mui/icons-material/PersonAddAltOutlined';
 import NewReleasesOutlined from '@mui/icons-material/NewReleasesOutlined';
 import CloseRounded from '@mui/icons-material/CloseRounded';
+import PrivacyTipOutlined from '@mui/icons-material/PrivacyTipOutlined';
 import { api, holen, senden } from '../api/client';
 import { useSitzung } from './sitzung';
 import { allePunkte, menue, navAus, ohneAlias, type Bereich } from './menue';
@@ -127,7 +128,36 @@ export function Shell({ abmelden, neuStarten }: { abmelden: () => void; neuStart
           </FehlerGrenze>
         </Box>
       </Box>
+      {ich.datenschutzHinweis && <DatenschutzHinweis />}
     </InfocenterAnbieter>
+  );
+}
+
+/** Erste Anmeldung von Schüler- und Elternkonten (und nach jeder neuen Fassung): Hinweis auf die Datenschutzhinweise der Schule (Art. 13 DSGVO). */
+function DatenschutzHinweis() {
+  const [offen, setOffen] = useState(true);
+  const bestaetigen = async () => {
+    try { await senden('/api/app/datenschutz/kenntnis', {}); setOffen(false); } catch (err) { fehler(err); }
+  };
+  return (
+    <Dialog open={offen} maxWidth="sm" fullWidth aria-labelledby="datenschutz-titel">
+      <DialogTitle id="datenschutz-titel">Hinweise zum Datenschutz</DialogTitle>
+      <DialogContent>
+        <Typography sx={{ mb: 1.5 }}>
+          Die Schule verarbeitet in EduOrga Web personenbezogene Daten (z. B. Stundenplan, Abwesenheiten, Mitteilungen) zur Erfüllung ihres Bildungs- und
+          Erziehungsauftrags. Sie sehen nur Ihre eigenen Daten bzw. die Ihrer Kinder.
+        </Typography>
+        <Typography sx={{ mb: 1.5 }}>
+          Wer verantwortlich ist, wie lange Daten gespeichert werden und welche Rechte Sie haben (Auskunft, Berichtigung, Löschung, Beschwerde), steht in den{' '}
+          <Link href="/datenschutz" target="_blank" rel="noopener">Datenschutzhinweisen der Schule</Link>.
+        </Typography>
+        <Typography variant="body2" color="text.secondary">Eine Einwilligung ist dafür nicht nötig; mit „Zur Kenntnis genommen“ blenden Sie diesen Hinweis aus.</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button href="/datenschutz" target="_blank" rel="noopener">Hinweise öffnen</Button>
+        <Button variant="contained" onClick={bestaetigen}>Zur Kenntnis genommen</Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
@@ -301,6 +331,7 @@ function Konto({ schmal, abmelden, neuStarten, schliessen }: { schmal: boolean; 
         ))}
         <MenuItem onClick={() => { setAnker(null); abmelden(); }}><ListItemIcon><PersonAddAltOutlined fontSize="small" /></ListItemIcon>Weiteres Konto anmelden</MenuItem>
         <Divider />
+        <MenuItem component="a" href="/datenschutz" target="_blank" rel="noopener" onClick={() => setAnker(null)}><ListItemIcon><PrivacyTipOutlined fontSize="small" /></ListItemIcon>Datenschutz</MenuItem>
         <MenuItem onClick={() => { setAnker(null); setUeber(true); }}><ListItemIcon><InfoOutlined fontSize="small" /></ListItemIcon>Über EduOrga</MenuItem>
         <MenuItem onClick={() => { setAnker(null); abmelden(); }}><ListItemIcon><LogoutRounded fontSize="small" /></ListItemIcon>Abmelden</MenuItem>
       </Menu>

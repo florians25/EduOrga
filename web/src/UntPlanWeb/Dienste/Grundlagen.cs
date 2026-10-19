@@ -23,6 +23,10 @@ public sealed class Konfiguration
     /// Ohne Angabe sind Rücksprünge auf denselben Rechnernamen (anderer Port) erlaubt.
     /// </summary>
     public List<string> MobilAdressen { get; init; } = new();
+    /// <summary>Gültigkeit des Anmeldecookies in Tagen (gleitend), UNTPLANWEB_SITZUNG_TAGE (1–90, Standard 14).</summary>
+    public int SitzungTage { get; init; } = 14;
+    /// <summary>Anmelde- und Gerätecookie nur über HTTPS (UNTPLANWEB_SICHERE_COOKIES=1).</summary>
+    public bool SichereCookies { get; init; }
 
     public static Konfiguration Laden(IConfiguration c) => new()
     {
@@ -33,6 +37,8 @@ public sealed class Konfiguration
         SchulId = Leer(c["UNTPLANWEB_SCHUL_ID"]),
         ApiSchluessel = Leer(c["UNTPLANWEB_API_SCHLUESSEL"]),
         MobilAdressen = (c["UNTPLANWEB_MOBILE_URL"] ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
+        SitzungTage = int.TryParse(c["UNTPLANWEB_SITZUNG_TAGE"], out var t) ? Math.Clamp(t, 1, 90) : 14,
+        SichereCookies = (c["UNTPLANWEB_SICHERE_COOKIES"] ?? "") is "1" or "true" or "ja",
     };
 
     private static string? Leer(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();

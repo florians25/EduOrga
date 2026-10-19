@@ -258,6 +258,18 @@ public sealed class Pushdienst
         return ("Änderungen im Stundenplan", $"{liste.Count} Änderungen ab {Tag(erste)} {d:dd.MM.} – bitte den Stundenplan prüfen.");
     }
 
+    /// <summary>
+    /// Datensparsame Benachrichtigung (Standard): nur ein allgemeiner Hinweis, keine Fächer, Klassen oder Zeiten. Der Inhalt läuft über den
+    /// Apple Push Notification service und erscheint auf dem Sperrbildschirm; Einzelheiten zeigt die App nach dem Öffnen.
+    /// </summary>
+    public static (string Titel, string Text) Datensparsam(IReadOnlyList<PlanAenderung> liste) =>
+        (liste.Count == 1 ? "Änderung im Stundenplan" : "Änderungen im Stundenplan", "Bitte den Stundenplan in der App ansehen.");
+
+    /// <summary>Einzelheiten (Tag, Stunde, Fach, Klasse) in der Benachrichtigung? Nur, wenn die Administration es ausdrücklich einschaltet.</summary>
+    public bool MitDetails => _e.Lesen("push_details") is "1";
+
+    public void DetailsSetzen(bool ja) => _e.Schreiben("push_details", ja ? "1" : "0");
+
     /// <summary>Nach einem Paket-Import: Änderungen ermitteln und im Hintergrund senden (nie blockierend, Fehler werden nur protokolliert).</summary>
     private void NachImport(Stand? alt, Stand neu)
     {
@@ -279,7 +291,7 @@ public sealed class Pushdienst
                     var aenderungen = Aenderungen(alt, neu, konten.Select(x => x.Kuerzel!), heute);
                     foreach (var (kuerzel, liste) in aenderungen)
                     {
-                        var (titel, text) = Nachricht(liste);
+                        var (titel, text) = MitDetails ? Nachricht(liste) : Datensparsam(liste);
                         await SendenAsync(konten.Where(x => Ci.Equals(x.Kuerzel, kuerzel)).Select(x => x.Id), titel, text, liste.Min(a => a.Datum)!);
                     }
                 }

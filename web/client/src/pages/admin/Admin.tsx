@@ -1,7 +1,7 @@
 // Administration: Übersicht & Synchronisation (Verbindung mit EduOrga Studio, Datenstand, Schule, Version & Updates), Nachrichten zum Tag,
 // Freie Tage & Ferien, Import, Export, Aktive Benutzer, Zugriff ent-/sperren, Über EduOrga, Rechte und Rollen, Benutzer, Personen & Konten,
 // Zuordnungsgruppen, Rückmeldungen, Prüfungssperren, Verspätungen & Fehlzeiten, Ansichtseinstellungen, Darstellung der Stundenkarten,
-// Monitoransichten, Protokoll.
+// Monitoransichten, Protokoll, Datenschutz (Aufbewahrung & Löschung, Auskunft, Datenschutzhinweise).
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import {
   Alert, Box, Button, Checkbox, FormControlLabel, IconButton, InputAdornment, Link, MenuItem, Paper, Stack, Switch, TextField, Tooltip, Typography,
@@ -32,6 +32,7 @@ const SchuelerImport = lazy(() => import('./Import').then(m => ({ default: m.Sch
 const QuelleKarte = lazy(() => import('./Import').then(m => ({ default: m.QuelleKarte })));
 const Wartung = lazy(() => import('./Wartung'));
 const Stundenkarten = lazy(() => import('./Stundenkarten'));
+const Datenschutz = lazy(() => import('./Datenschutz'));
 
 const BEREICHE: { id: string; text: string; admin: boolean; recht?: string }[] = [
   { id: 'sync', text: 'System & Datenabgleich', admin: true }, { id: 'nachrichten', text: 'Nachrichten zum Tag', admin: false },
@@ -44,6 +45,7 @@ const BEREICHE: { id: string; text: string; admin: boolean; recht?: string }[] =
   { id: 'verspaetung', text: 'Verspätungen & Fehlzeiten', admin: true }, { id: 'ansicht', text: 'Ansichtseinstellungen', admin: true },
   { id: 'stundenkarten', text: 'Darstellung der Stundenkarten', admin: true },
   { id: 'monitore', text: 'Monitoransichten', admin: true }, { id: 'protokoll', text: 'Protokoll', admin: true },
+  { id: 'datenschutz', text: 'Datenschutz', admin: true },
 ];
 export const ROLLEN: Record<string, string> = { admin: 'Administration', leitung: 'Schulleitung', lehrer: 'Lehrkraft', schueler: 'Schüler*in / Klasse', eltern: 'Erziehungsberechtigte*r' };
 export const kurzZeit = (s: string | null | undefined) => (s ? new Date(s.replace(' ', 'T')).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' }) : '');
@@ -103,6 +105,7 @@ export default function Admin({ teile }: SeitenProps) {
     </Stack>,
     stundenkarten: () => <Stundenkarten />,
     monitore: () => <Monitore />, protokoll: () => <Protokoll />,
+    datenschutz: () => <Datenschutz teil={weitere[0]} />,
   };
   return (
     <Seite titel={bereich.text}>

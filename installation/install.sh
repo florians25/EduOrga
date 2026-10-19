@@ -230,6 +230,9 @@ umask 077
   echo "UNTPLAN_VERSION=latest"
   echo "ZEITZONE=$ZEITZONE"
   echo "SICHERUNGEN_BEHALTEN=14"
+  echo "# Sicherungen in ./sicherungen verschlüsseln (empfohlen, siehe docs/datenschutz/TOM.md): öffentlicher age-Schlüssel bzw. GPG-Empfänger"
+  echo "# SICHERUNG_AGE_EMPFAENGER=age1..."
+  echo "# SICHERUNG_GPG_EMPFAENGER=sicherung@meine-schule.de"
   if [ "$HTTPS" = 1 ]; then
     echo "# Programme nur lokal erreichbar, nach außen über Caddy (HTTPS)"
     echo "BIND_ADRESSE=127.0.0.1"
@@ -263,6 +266,9 @@ umask 077
     echo "# UntPlan Web (eigene Datenbank: $DB)"
     echo "UNTPLANWEB_ADMIN_PASSWORT=$WEB_PW"
     echo "UNTPLANWEB_DB=$DB"
+    echo "UNTPLANWEB_SICHERE_COOKIES=$HTTPS"
+    echo "# Gültigkeit der Anmeldung in Tagen (gleitend, 1–90)"
+    echo "UNTPLANWEB_SITZUNG_TAGE=14"
     if [ "$DB" = mysql ]; then
       echo "UNTPLANWEB_DB_CONNECTION=\"Server=untplannext-mariadb;Port=3306;Database=untplanweb;User ID=untplanweb;Password=$MARIADB_PW\""
     fi

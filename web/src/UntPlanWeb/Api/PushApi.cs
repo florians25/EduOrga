@@ -14,7 +14,7 @@ public static class PushApi
 {
     public sealed record GeraetDaten(string? Token, string? Plattform, string? Umgebung, string? Bundle);
     /// <summary>schluessel: Inhalt der .p8-Datei; null = unverändert, "" = entfernen.</summary>
-    public sealed record PushEinstellungDaten(string? Schluessel, string? KeyId, string? TeamId, string? Topic);
+    public sealed record PushEinstellungDaten(string? Schluessel, string? KeyId, string? TeamId, string? Topic, bool? Details = null);
 
     private static Benutzer Ich(HttpContext c) => c.Ich() ?? throw new NichtAngemeldetException();
 
@@ -43,12 +43,13 @@ public static class PushApi
         {
             Admin(c);
             var k = push.Konfiguration();
-            return Results.Json(new { konfiguriert = k.Vollstaendig, schluesselHinterlegt = k.Schluessel.Length > 0, keyId = k.KeyId, teamId = k.TeamId, topic = k.Topic, geraete = push.Geraete().Count });
+            return Results.Json(new { konfiguriert = k.Vollstaendig, schluesselHinterlegt = k.Schluessel.Length > 0, keyId = k.KeyId, teamId = k.TeamId, topic = k.Topic, geraete = push.Geraete().Count, details = push.MitDetails });
         });
         api.MapPut("/admin/push", (PushEinstellungDaten d, HttpContext c, Pushdienst push, Protokoll prot) =>
         {
             var b = Admin(c);
             push.KonfigurationSpeichern(d.Schluessel, d.KeyId, d.TeamId, d.Topic);
+            if (d.Details is bool details) push.DetailsSetzen(details);
             prot.Schreiben(b.Login, "Sofort-Benachrichtigungen eingerichtet", d.Schluessel is null ? "" : d.Schluessel.Length == 0 ? "Schlüssel entfernt" : "Schlüssel hinterlegt");
             return Results.Json(new { ok = true, konfiguriert = push.Konfiguration().Vollstaendig });
         });

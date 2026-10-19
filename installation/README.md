@@ -18,6 +18,9 @@ in einem eigenen Volume – Studio kann ohne Web betrieben, gesichert und aktual
 | `untplannext-caddy` | optional, HTTPS mit automatischem Zertifikat | Volumes `untplannext-caddy-daten`, `untplannext-caddy-config` |
 | `untplannext-watchtower` | optional, Update aus der Administration von UntPlan Web (nur Web und Mobile) | – |
 
+> **Datenschutz:** Vor dem Start mit echten Daten bitte [`docs/datenschutz/README.md`](../docs/datenschutz/README.md)
+> durchgehen (AV-Vertrag, Verzeichnis, TOM, Fristen, Datenschutzhinweise) und die Sicherungen verschlüsseln (siehe unten).
+
 ## Voraussetzungen
 
 * Linux-Server mit Docker Engine und dem Compose-Plugin (`docker compose version`)
@@ -105,6 +108,18 @@ Datenbank-Migrationen laufen beim Start der Programme automatisch.
 
 Es bleiben jeweils die neuesten 14 Sicherungen (`SICHERUNGEN_BEHALTEN` in `.env`).
 
+**Sicherungen verschlüsseln** (empfohlen, sobald `./sicherungen` den Server verlässt): In `.env` einen öffentlichen
+Schlüssel eintragen – `SICHERUNG_AGE_EMPFAENGER=age1…` ([age](https://age-encryption.org), `apt install age`; auch eine
+Datei mit Empfängern oder mehrere durch Komma) oder `SICHERUNG_GPG_EMPFAENGER=<Schlüssel-ID>` (gpg). Dann schreibt
+`update.sh` MariaDB-Abzüge nur verschlüsselt (`…sql.gz.age` bzw. `.gpg`) und legt von den SQLite-Sicherungen eine
+verschlüsselte Kopie in `./sicherungen` ab (`…db.gz.age`). Fehlt das Programm, bricht das Update ab. Schlüsselpaar
+**nicht auf dem Server** erzeugen bzw. aufbewahren: `age-keygen -o schluessel.txt` auf einem anderen Rechner, nur den
+öffentlichen Schlüssel eintragen. Wiederherstellen: `age -d -i schluessel.txt datei.sql.gz.age | gunzip | …` (wie unten).
+
+Weitere datenschutzrelevante Einstellungen in `.env`: `UNTPLANWEB_SICHERE_COOKIES` (bei HTTPS `1`),
+`UNTPLANWEB_SITZUNG_TAGE` (Gültigkeit der Anmeldung, Standard 14), `UNTPLANMOBILE_PUSH_DETAILS=1` (Einzelheiten in
+Push-Nachrichten der PWA; Standard aus), `STUDIO_UPDATE_PRUEFEN=0`/`UNTPLANWEB_UPDATE_PRUEFEN=0` (keine Anfragen an GitHub).
+
 **Automatisch:** z. B. jede Nacht per cron `30 3 * * * cd /opt/untplannext && ./update.sh >> update.log 2>&1`.
 **Aus der Oberfläche:** mit Watchtower (bei der Einrichtung auswählen) startet *Administration → Übersicht →
 Update installieren* in UntPlan Web das Update von Web und Mobile; alternativ ohne Watchtower per cron
@@ -141,7 +156,7 @@ Das Skript fragt das Passwort verdeckt zweimal ab und gibt es über die Standard
 `docker compose exec -T untplannext-studio dotnet UntPlanStudio.dll --passwort-setzen <benutzer>` bzw.
 `… untplannext-web dotnet UntPlanWeb.dll --passwort-setzen <login>` weiter (ohne Terminal liest es eine Zeile von der
 Standardeingabe, z. B. `printf '%s\n' "$PW" | ./passwort.sh web`). Es gelten dieselben Regeln wie in der Oberfläche
-(Studio mindestens 6 Zeichen, Web die Passwortrichtlinie, mindestens 8 Zeichen). Bei UntPlan Web wird außerdem die Sperre nach
+(Studio mindestens 8 Zeichen, Web die Passwortrichtlinie, mindestens 8 Zeichen). Bei UntPlan Web wird außerdem die Sperre nach
 Fehlversuchen aufgehoben und ein gesperrtes Konto entsperrt. Gibt es den Benutzer nicht, nennt die Meldung die vorhandenen
 Administratoren; mit `--anlegen` wird er als Administrator angelegt. Ältere Installationen ohne `passwort.sh`: `./install.sh`
 erneut aufrufen (lädt das Skript, die Einstellungen bleiben erhalten).

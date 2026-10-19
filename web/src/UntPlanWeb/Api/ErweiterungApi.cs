@@ -58,7 +58,7 @@ public static class ErweiterungApi
         g = Sicherheit.Zufall(40);
         c.Response.Cookies.Append(Geraetecookie, g, new CookieOptions
         {
-            HttpOnly = true, SameSite = SameSiteMode.Strict, Secure = c.Request.IsHttps, MaxAge = TimeSpan.FromDays(365), IsEssential = true, Path = "/",
+            HttpOnly = true, SameSite = SameSiteMode.Strict, Secure = c.Request.IsHttps || c.RequestServices.GetService<Konfiguration>()?.SichereCookies == true, MaxAge = TimeSpan.FromDays(365), IsEssential = true, Path = "/",
         });
         return g;
     }

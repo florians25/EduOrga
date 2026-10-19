@@ -891,7 +891,7 @@ Alle Schuldateien liegen auf dem Server. Mehrere Personen können gleichzeitig a
 
 ### Konten und Rollen
 
-Im Kontomenü (Kopfleiste rechts) ändern Sie unter *Konto und Passwort* Ihr Passwort (mindestens 6 Zeichen) und melden
+Im Kontomenü (Kopfleiste rechts) ändern Sie unter *Konto und Passwort* Ihr Passwort (mindestens 8 Zeichen) und melden
 sich ab. Administratoren legen unter *Benutzerverwaltung* Konten an, setzen Passwörter und vergeben eine Rolle:
 
 | Rolle | Rechte |

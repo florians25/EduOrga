@@ -5453,6 +5453,7 @@ async function profilListe(){
          zur Anmeldung — in beiden Fällen sauber neu aufbauen. */
       if (r && (r.switched || r.loggedOut)){
         try { localStorage.clear(); } catch (e2){}
+        await datenCacheLeeren();
         if (r.loggedOut) try { sessionStorage.setItem('sso:versucht', '1'); } catch (e2){}
         location.reload();
         return;
@@ -5472,6 +5473,7 @@ async function profilListe(){
       /* Gemerkte Wochen und Einstellungen des anderen Kontos verwerfen,
          das Erscheinungsbild bleibt. */
       try { const th = localStorage.getItem('tt.theme'); localStorage.clear(); if (th) localStorage.setItem('tt.theme', th); } catch (e2){}
+      await datenCacheLeeren();
       /* Nach dem Wechsel gehört alles einem anderen Konto — sauber neu
          aufbauen, statt Reste des alten stehen zu lassen. */
       location.reload();
@@ -8248,6 +8250,24 @@ async function doLogin(){
   btn.disabled = false; btn.textContent = 'Anmelden';
 }
 
+/* Datenschutz: Beim Abmelden bzw. Kontowechsel die im Gerät zwischengespeicherten
+   Daten des Kontos löschen – API-Antworten und die Seite mit den Startdaten im
+   Cache des Service Workers sowie den Stand der Planwache. Die App-Hülle
+   (Skripte, Schriften, Symbole) bleibt. */
+async function datenCacheLeeren(){
+  try {
+    if (!('caches' in window)) return;
+    for (const k of await caches.keys()){
+      if (k === 'untplan-planwacht'){ await caches.delete(k); continue; }
+      const c = await caches.open(k);
+      for (const r of await c.keys()){
+        const u = new URL(r.url);
+        if (u.pathname.includes('/api/') || u.pathname.endsWith('/') || u.pathname.endsWith('/index.html')) await c.delete(r);
+      }
+    }
+  } catch (e){ /* ohne Cache-Zugriff weiter */ }
+}
+
 $('#loginSubmit').addEventListener('click', doLogin);
 ['#loginUser', '#loginPass'].forEach(sel =>
   $(sel).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); }));
@@ -8264,6 +8284,7 @@ $('#btnLogout').addEventListener('click', async () => {
     }).then(x => x.json());
   } catch (e){}
   try { const th = localStorage.getItem('tt.theme'); localStorage.clear(); if (th) localStorage.setItem('tt.theme', th); } catch (e){}
+  await datenCacheLeeren();
   /* nach dem Abmelden nicht sofort wieder automatisch über UntPlanWeb
      anmelden — außer ein weiteres Profil des Geräts hat übernommen */
   if (!(r && r.switched)) try { sessionStorage.setItem('sso:versucht', '1'); } catch (e){}

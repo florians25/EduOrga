@@ -51,7 +51,7 @@ public sealed class Benutzerdienst
             var passwort = k.AdminPasswort;
             if (passwort is null)
             {
-                passwort = Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant();
+                passwort = Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
                 log.LogWarning("EduOrga Studio: Admin-Konto \"{Benutzer}\" mit erzeugtem Passwort {Passwort} angelegt (STUDIO_ADMIN_PASSWORT setzen, um es vorzugeben).", k.AdminBenutzer, passwort);
             }
             var admin = new StudioBenutzer { Name = k.AdminBenutzer, Anzeigename = "Administrator", Rolle = Rollen.Admin, Hash = _hasher.HashPassword(k.AdminBenutzer, passwort) };
@@ -138,7 +138,8 @@ public sealed class Benutzerdienst
 
     private static void PasswortPruefen(string passwort)
     {
-        if (string.IsNullOrEmpty(passwort) || passwort.Length < 6) throw StudioFehler.Ungueltig("Das Passwort muss mindestens 6 Zeichen lang sein.");
+        // Studio enthält Stammdaten von Lehrkräften und Schüler*innen: mindestens 8 Zeichen (wie EduOrga Web)
+        if (string.IsNullOrEmpty(passwort) || passwort.Length < 8) throw StudioFehler.Ungueltig("Das Passwort muss mindestens 8 Zeichen lang sein.");
     }
 
     private List<StudioBenutzer> Lesen() =>

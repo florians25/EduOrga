@@ -368,6 +368,9 @@ Anmeldung als `admin` / `admin12345`. Die Beispielwoche wird automatisch auf die
 | `UNTPLANWEB_UPDATE_MODUS` | „Update installieren“: `aus`, `watchtower` oder `datei` | `watchtower`, wenn eine Watchtower-Adresse gesetzt ist, sonst `aus` |
 | `UNTPLANWEB_UPDATE_WATCHTOWER_URL`, `…_TOKEN` | HTTP-API von Watchtower, z. B. `http://watchtower:8080/v1/update`, und deren Token | – |
 | `UNTPLANWEB_MOBILE_INTERN_URL` | Adresse von EduOrga Mobile aus Sicht des Servers (Versionsanzeige in der Administration), z. B. `http://untplanmobile:8081` | – |
+| `UNTPLANWEB_SITZUNG_TAGE` | Gültigkeit der Anmeldung in Tagen (gleitend, 1–90) | `14` |
+| `UNTPLANWEB_SICHERE_COOKIES` | `1` = Anmelde- und Gerätecookie nur über HTTPS (hinter Caddy/Reverse-Proxy empfohlen) | wie die Anfrage |
+| `UNTPLANWEB_AUFBEWAHRUNG` | `0` = täglichen Löschlauf nach den Aufbewahrungsfristen abschalten (z. B. Testsysteme) | an |
 
 ### Installation mit MariaDB/MySQL
 
@@ -529,12 +532,43 @@ Klassenbucheinträge (Lehrstoff, Notizen) sind zeitlich nicht begrenzt. „Finde
 (je Unterricht bzw. Stunde) und lässt sich in EduOrga Web nicht mehr einstellen; `PUT /api/app/klassenbuch/online` und die
 Felder `online`/`onlineLink` von `PUT /api/app/klassenbuch/stunde` werden für ältere Apps angenommen, aber ignoriert.
 
+## Datenschutz
+
+Leitfaden und Vorlagen (Verzeichnis nach Art. 30, TOM nach Art. 32, AV-Vertrag, DSFA-Checkliste):
+[`docs/datenschutz/`](../docs/datenschutz/README.md). In der Oberfläche unter *Verwaltung → Datenschutz* (`#/admin/datenschutz`, nur Administration):
+
+- **Aufbewahrung & Löschung:** Fristen je Kategorie (Anmeldeprotokoll, gemerkte Geräte, Verwaltungsprotokoll, Push-Geräte, Mitteilungen,
+  Abwesenheitsmeldungen, Klassenbuch, Elternsprechtag, Buchungen) mit Vorgaben – Klassenbuch 10 Jahre und übrige Schülerdaten 5 Jahre nach
+  VO-DV I § 9, Fristbeginn mit Ablauf des Kalenderjahres, in dem das Schuljahr endete (von der Schule zu prüfen). Technische Protokolle sind ab Werk
+  begrenzt (Anmeldeprotokoll mit IP-Adressen 30 Tage), inhaltliche Kategorien löschen erst nach dem Einschalten. Probelauf, „jetzt löschen“,
+  täglicher Löschlauf (`Aufbewahrungsdienst`, erster Lauf 10 Minuten nach dem Start), Löschprotokoll nur mit Anzahlen.
+- **Auskunft & Löschung von Personen:** Auskunft (Art. 15) als PDF/JSON je Schüler*in bzw. Konto; Löschen einer Schülerin bzw. eines Schülers –
+  innerhalb der Aufbewahrungsfrist Sperre (Art. 18: ausgeblendet, Klassenbuch-/Abwesenheitsdaten bleiben bis Fristende, dann automatisch gelöscht),
+  sonst vollständige Löschung; Konten anonymisieren (Mitteilungen bleiben als „Gelöschtes Konto“).
+- **Datenschutzhinweise:** Vorlage nach Art. 13/14 mit den Angaben der Schule, öffentlich unter `/datenschutz` (Anmeldeseite, Kontomenü, Apps);
+  Schüler- und Elternkonten bestätigen nach der Anmeldung die Kenntnisnahme (keine Einwilligung), erneut nach jeder neuen Fassung.
+- **Sofort-Benachrichtigungen (iOS)** standardmäßig ohne Einzelheiten („Änderung im Stundenplan“); Einzelheiten nur mit Schalter.
+
+| Aufruf (`/api/app/admin/datenschutz…`) | Zweck |
+|---|---|
+| `GET/PUT /aufbewahrung` `{ regeln: [{ id, aktiv, wert }] }` | Fristen mit Probelauf (`anzahl`, `grenze` je Kategorie) |
+| `POST /aufbewahrung/ausfuehren` `{ kategorien? }` | Löschlauf (eingeschaltete bzw. genannte Kategorien) |
+| `GET /loeschprotokoll`, `GET /sperren` | Löschprotokoll, gesperrte Personen |
+| `GET /personen?suche=` | Konten und Schüler*innen (auch gesperrte) |
+| `GET /auskunft?benutzer=\|schueler=&format=json\|pdf` | Auskunft nach Art. 15 |
+| `GET/POST /schueler/{id}/loeschen` `{ bestaetigt, grund }` | Löschplan bzw. Löschen/Sperren |
+| `POST /benutzer/{id}/anonymisieren` | Konto anonymisieren |
+| `GET/PUT /hinweise` | Angaben der Datenschutzhinweise |
+| `GET /datenschutz`, `GET /api/app/datenschutz`, `POST /api/app/datenschutz/kenntnis` | Seite (ohne Anmeldung), Angaben für Apps, Kenntnisnahme |
+
 ## Sicherheit
 
 - Passwörter sind mit PBKDF2 gehasht (ASP.NET Core Identity). Nach 5 Fehlversuchen wird die Anmeldung für 5 Minuten gesperrt.
   Mindestlänge und Zeichenregeln für Passwörter sind unter *Administration → Rechte und Rollen* einstellbar.
 - Gemerkte Konten („Konto wechseln“) sind an einen zufälligen Gerätecookie gebunden, der nur als Hash gespeichert wird.
-- Sitzungscookie mit `HttpOnly` und `SameSite=Strict`. Ändernde Aufrufe brauchen einen eigenen Kopf (Schutz vor CSRF).
+- Sitzungscookie mit `HttpOnly` und `SameSite=Strict`, über HTTPS `Secure` (`UNTPLANWEB_SICHERE_COOKIES=1` erzwingt es), Gültigkeit
+  `UNTPLANWEB_SITZUNG_TAGE`. Ändernde Aufrufe brauchen einen eigenen Kopf (Schutz vor CSRF).
+- SQLite mit `secure_delete`: gelöschte Inhalte werden in der Datenbankdatei überschrieben.
 - Content-Security-Policy ohne Fremdquellen. Die Seite lädt keine externen Schriften, Skripte oder Tracker.
 - Der API-Schlüssel wird nur als SHA-256-Hash gespeichert.
 - Für den Betrieb im Internet HTTPS verwenden (siehe oben).

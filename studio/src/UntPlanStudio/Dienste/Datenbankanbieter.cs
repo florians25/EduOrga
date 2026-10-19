@@ -93,7 +93,8 @@ public sealed class SqliteAnbieter : Datenbankanbieter
         var c = new SqliteConnection(verbindung);
         c.Open();
         using var cmd = c.CreateCommand();
-        cmd.CommandText = "PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;";
+        // secure_delete: gelöschte Dokumente und Fassungen werden in der Datei überschrieben (Löschung nach Art. 17 DSGVO wirksam)
+        cmd.CommandText = "PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON; PRAGMA secure_delete=ON;";
         cmd.ExecuteNonQuery();
         return c;
     }
