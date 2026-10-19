@@ -86,6 +86,10 @@ enum Farben {
     static let kachelFlaeche = Color(hell: 0xF7F9FA, dunkel: 0x172A2E)
     /// Feine Linie der Stundenkarten (wie im Web #c3ced2)
     static let kachelRand = Color(hell: 0xC3CED2, dunkel: 0x33494E)
+    /// Hellgrauer Grund des Wochenrasters (Karten liegen weiß darauf)
+    static let rasterGrund = Color(hell: 0xEDF0F2, dunkel: 0x11171C)
+    /// Feine Stundenlinien im Wochenraster
+    static let rasterLinie = Color(hell: 0xD7DDE1, dunkel: 0x26313A)
     /// Eigene Abwesenheit hinter den Stunden
     static let abwesendFlaeche = Color(hell: 0xDCE1E7, dunkel: 0x2A323D)
 

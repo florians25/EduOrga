@@ -201,12 +201,19 @@ public sealed class AutospeichernTests
             _aus.WriteLine($"gzip (Fastest): {ms.Length / 1024.0 / 1024:F2} MB in {sw.Elapsed.TotalMilliseconds:F0} ms");
         }
         var ergebnisse = new List<string>();
-        foreach (var komprimieren in new[] { true, false })
+        var laeufe = new List<(bool Komprimieren, bool MySql)> { (true, false), (false, false) };
+        if (MySqlTestzusatz.Admin != null) laeufe.Add((true, true));
+        foreach (var (komprimieren, mysql) in laeufe)
         {
             var ordner = Path.Combine(Path.GetTempPath(), "untplanstudio-gross-" + Guid.NewGuid().ToString("N"));
+            string? mysqlName = null;
             try
             {
-                var db = new StudioDatenbank(new StudioKonfiguration { Datenordner = ordner, Komprimieren = komprimieren }, NullLogger<StudioDatenbank>.Instance);
+                var k = new StudioKonfiguration { Datenordner = ordner, Komprimieren = komprimieren };
+                Directory.CreateDirectory(ordner);
+                var db = mysql
+                    ? new StudioDatenbank(new MySqlAnbieter(MySqlTestzusatz.NeueDatenbank(out mysqlName)), k, NullLogger.Instance, false)
+                    : new StudioDatenbank(k, NullLogger<StudioDatenbank>.Instance);
                 var info = new DokumentInfo { Id = "0123456789abcdef", Name = "Groß" };
                 db.DokumentAnlegen(info, inhalt);
                 var regel = new Fassungsregel(TimeSpan.FromMinutes(10));
@@ -220,8 +227,9 @@ public sealed class AutospeichernTests
                     zeiten.Add(sw.Elapsed.TotalMilliseconds);
                 }
                 var typisch = zeiten.Skip(1).OrderBy(x => x).ElementAt(zeiten.Count / 2 - 1); // Median ohne ersten Lauf (JIT)
-                var dateigroesse = new FileInfo(db.Pfad).Length + (File.Exists(db.Pfad + "-wal") ? new FileInfo(db.Pfad + "-wal").Length : 0);
-                ergebnisse.Add($"{(komprimieren ? "komprimiert" : "unkomprimiert")}: Speichern typisch {typisch:F0} ms (alle: {string.Join(", ", zeiten.Select(z => z.ToString("F0")))}), Datenbank {dateigroesse / 1024.0 / 1024:F1} MB");
+                var dateigroesse = mysql ? 0 : new FileInfo(db.Pfad).Length + (File.Exists(db.Pfad + "-wal") ? new FileInfo(db.Pfad + "-wal").Length : 0);
+                ergebnisse.Add($"{(mysql ? "MariaDB" : "SQLite")} {(komprimieren ? "komprimiert" : "unkomprimiert")}: Speichern typisch {typisch:F0} ms (alle: {string.Join(", ", zeiten.Select(z => z.ToString("F0")))})"
+                    + (mysql ? "" : $", Datenbank {dateigroesse / 1024.0 / 1024:F1} MB"));
                 Assert.Equal(dok.Inhalt(), db.DokumentInhalt(info.Id));
                 Assert.Single(db.DokumentSicherungen(info.Id));
                 Assert.True(typisch < 1500, $"Speichern zu langsam: {typisch:F0} ms");
@@ -229,6 +237,7 @@ public sealed class AutospeichernTests
             finally
             {
                 SqliteConnection.ClearAllPools();
+                if (mysqlName != null) MySqlTestzusatz.Loeschen(mysqlName);
                 try { Directory.Delete(ordner, true); } catch (IOException) { }
             }
         }
