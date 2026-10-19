@@ -63,14 +63,27 @@ ios/
   (`AccentColor`, Knöpfe, Auswahl, Links, Jetzt-Linie – 5,4 : 1 auf Weiß; Dunkelmodus `#5FB0B5`, 6,8 : 1),
   Hintergrund `#F5F7F8`, Text `#24363B`. Statusfarben wie `design/tokens.css`: **Änderung/Vertretung Violett**
   `#6d4fc2`, **Termin Magenta** `#a3347c`, Prüfung Bernstein `#a15c07`, Entfall Rot `#b42318`, Ferien Blau `#2f6f9f`.
-- **Stundenkarten (Woche, Tag, Zeitachse):** klassisches Grunddesign – in diese Richtung bekannter Stundenplanportale,
-  aber eigenständig (eigene Proportionen, Schrift, Statusformen, Wörter und Symbole): hellgrauer Rastergrund mit feinen
-  Stundenlinien, schlichte Tagesköpfe, **weiße Karten ohne Rahmen**, Radius 2, schmaler **3-pt-Balken innen links**
-  (grau bzw. Fachfarbe), oben links Fach (halbfett), darunter Lehrkraft bzw. Klasse und Raum; Doppelstunden als eine
-  hohe Karte. Status: Entfall rot durchgestrichen und schraffiert, Änderung violett (Balken, helle Fläche, „alt →
-  neu“), Prüfung Bernstein, offene Vertretung/Termin/Buchung/abgegeben gestrichelt. Die schulweite
-  **Kartendarstellung** aus `/api/app/sitzung` (`darstellung`, `web/src/UntPlanWeb/Dienste/Kartendarstellung.cs`)
-  steuert Inhalte (Fach als Kürzel bzw. Name, Raum, Zeile 2, Statuswörter), Fachfarbe an/aus und die Statusfläche.
+- **Planraster und Stundenkarten (Woche, Tag, Zeitachse)** – gleiche Werte wie die PWA (`mobile/README.md`, Abschnitt
+  „Planraster“): hellgraue Rasterfläche (`#edf1f2`, dunkel `#0b0f13`), **eine Zeile je Stunde, alle gleich hoch**
+  (verfügbare Höhe ÷ Stunden bis zur letzten belegten, mindestens der 6., begrenzt auf 44–104 pt), Pausen als Band
+  zwischen den Zeilen (ab 15 Minuten 16 pt in `#e2e8ea`/`#080b0e`, kürzere 3 pt), Doppel- und Blockstunden reichen genau
+  über ihre Zeilen samt Band (Karte = Zeilenoberkante + 1 pt, Höhe − 2 pt). Zeitspalte 32 pt mit Nummer, Beginn und
+  (ab 52 pt Zeilenhöhe) Ende, bündig zur Zeile. Jetzt-Linie 2 pt am heutigen Tag, 1 pt (35 %) über die Woche, Punkt am
+  Rand der Zeitspalte; sie liegt hinter den Karten. **Karte:** weiß (`#1a2128` dunkel), flacher Schatten bzw. dunkle
+  Kontur, Radius 4–6 (Schulwert, Standard 5), **4-pt-Balken** innen links (4 pt Abstand, grau `#b4bec4`/`#56626c` ohne
+  Fachfarbe, sonst Fachfarbe), drei Zeilen à 14 pt: **Lehrkraft bzw. Klasse fett** · Fach · Raum (Reihenfolge „Fach
+  oben“ per Kartendarstellung). Status: Entfall rot durchgestrichen, fein schraffiert, rötliche Linie; Änderung violette
+  Linie und Fläche, geänderter Wert violett unterstrichen bzw. „alt → neu“; Prüfung Bernstein-Linie und -Fläche; offene
+  Vertretung gestrichelt violett mit „?“; Termin/Veranstaltung gestrichelt. Statuswort unten links nur, wo Platz ist.
+  - **Gleichzeitige Stunden** – keine Zählkarte: die vordere Stunde (Änderungen zuerst) bleibt voll breit, oben rechts in
+    ihrer Zelle (3 pt Abstand) steht ein kleines, **neutrales „+X“** (hellgraues Rechteck mit feiner Linie, Radius 4 –
+    den Status zeigt die Karte selbst). Antippen öffnet das Blatt „X Stunden zur selben Zeit“; eine Zeile antippen
+    öffnet ihre Details. In der Tagesliste stehen gleichzeitige Stunden untereinander.
+  - **Ganztägige und mehrstündige Termine** (Elternsprechtag, Pädagogischer Tag …, ab drei Stunden bzw. drei Zeitstunden)
+    stehen nicht als hohe gestrichelte Säule im Raster, sondern als schmales **Banner im Tageskopf** (Titel und Zeit, bis
+    zwei Zeilen, dahinter „+n“) – die Stunden bleiben lesbar.
+  - Die schulweite **Kartendarstellung** aus `/api/app/sitzung` (`darstellung`) steuert Inhalte (Fach als Kürzel bzw.
+    Name, Raum, Zeile 2, Reihenfolge, Statuswörter), Fachfarbe an/aus, Radius, Balkenbreite und die Statusfläche.
 - **Liquid Glass** nur auf der Bedienebene (Tab-Leiste, Wochenleiste der Tagesansicht, Werkzeugknöpfe, Filterchips,
   Knöpfe über dem Kopf der Stundenansicht); Inhalte deckend.
 - SF Pro mit Dynamic Type, Abstände im 8-pt-Raster, Tippflächen mindestens 44 pt.
@@ -78,37 +91,60 @@ ios/
 ## Oberfläche
 
 Tab-Leiste: **Heute · Plan · Postfach · Schule · Suche**. Profil, Konten und Einstellungen öffnen sich als Blatt über
-den **Avatar oben rechts**.
+den **Avatar oben rechts** (im Reiter „Plan“ über das Menü „…“, damit Tag | Woche Platz in der Leiste hat).
 
 - **Einrichtung** – ruhige Einstiegsseite mit Monogramm, Wortmarke und Slogan. Schritt 1: EduOrga-Adresse der Schule
   (Prüfung schon beim Tippen: Format, dann Server und Schulname mit Häkchen bzw. verständlichem Fehler), **QR-Code
   scannen** (AVFoundation; erkennt `untplannext://einrichten?server=…`, Adressen mit `?server=` und reine Adressen),
   **Zuletzt verwendet** (Schulen bleiben auch nach dem Abmelden zur Hand). Schritt 2: Anmeldung mit Benutzername,
   Passwort (zeigen/verbergen) und „Passwort merken“; gespeicherte Konten zum Wechsel.
-- **Plan** – öffnet mit der **Woche als Raster** (Standard; auch bestehende Installationen einmalig umgestellt): Spalten
-  Montag–Freitag über die ganze Breite, schmale Stundenspalte mit Nummer und Uhrzeit, die Zeilen so hoch, dass der ganze
-  Schultag auf den Bildschirm passt (gerollt wird erst bei sehr vielen Stunden; im Querformat höhere Zeilen und mehr
-  Inhalt). Heute hervorgehoben mit **Jetzt-Linie**, große Pausen als Spalt, gleichzeitige Stunden nebeneinander bzw.
-  „+n“, Pausenaufsichten als kleine Marke. **Waagrecht wischen = andere Woche**, Aufziehen mit zwei Fingern bzw. Menü
-  „Dichte der Woche“ (kompakt, normal, komfortabel), **Antippen = große Stundenansicht**, **langes Drücken =
-  Kontextmenü** (Raumplan, Plan der Lehrkraft/Klasse, Teilen, Online-Link), Tageskopf antippen = Tag. Die Tagesansicht
-  (Liste bzw. Zeitachse, waagrecht wischen = Tag, schwebende Wochenleiste) bleibt über das Menü erreichbar.
-- **Große Stundenansicht** – wie bisher; für Lehrkräfte das Klassenbuch der Stunde: Lehrstoff, Hausaufgaben,
-  **Schüler*innen mit Schnellwahl** (Symbol antippen: anwesend, abwesend, verspätet 5–30 Minuten, weitere Angaben;
-  Wischen wie bisher, Entschuldigen), **Sitzplan der Stunde** (Anwesenheit am Platz antippen), Klassenbucheinträge,
-  Klassendienste, Raum ersetzen bzw. hinzufügen.
-- **Schule** – je nach Rolle:
-  - Lehrkräfte: **Klassenbuch** (offene Stunden mit Zeitbereich und Lehrstoff per Wischen, Klassenbucheinträge,
-    Hausaufgaben, Klassendienste, Abwesenheiten und Entschuldigungen, Befreiungen, Sitzplan), **Prüfungen** (nach
-    Kalenderwochen, eintragen, löschen), **Vertretungsplan**, **Melden** (Abwesenheit melden, Prüfung eintragen, Meine
-    Meldungen mit Zurückziehen, Meine Abwesenheiten), **Buchen** (Raum bzw. Ressource einmalig oder wöchentlich, Meine
-    Buchungen mit Storno einzeln oder als Serie), **Sprechtage** (eigene Zeiten, Familien einladen, Termin eintragen,
-    absagen, sperren, Teilnahme absagen, Warteliste, Terminplan als PDF).
-  - Schüler*innen und Eltern: Hausaufgaben, Abwesenheiten (Eltern: **Entschuldigungsschreiben als PDF**), Prüfungen,
-    Vertretungsplan, Sprechtage (Eltern: Termine buchen, absagen, **Warteliste**, Termine als PDF).
-  - Alle: **Neuigkeiten** (Infos der Schule und Neues in EduOrga, mit Gelesen-Vermerk), Termine.
-  Rechte aus der Sitzung (`benutzer.rechte`, z. B. `buchung.raum`, `pruefung.anlegen`, `vertretung.*`) blenden
-  Einträge aus; der Server prüft zusätzlich.
+- **Plan** – Woche (Standard) oder Tag. **Umschalten ohne Untermenü:** Segmentschalter **Tag | Woche** mitten in der
+  Navigationsleiste, **zwei Finger** (aufziehen > 1,3 = Tag, zusammenziehen < 0,75 = Woche) und **Tageskopf antippen** =
+  dieser Tag; der Wechsel ist animiert (die Woche „zoomt“ in den Tag und zurück). Links oben der Planname mit KW (Menü:
+  eigener Plan, Favoriten, weitere Pläne, Suche), rechts „Heute“ und das Menü (Dichte der Woche bzw. Liste/Zeitachse,
+  Gehe zu Datum, Profil und Einstellungen). Woche: waagrecht wischen = andere Woche, Antippen = Stundendetails, langes
+  Drücken = Kontextmenü (Raumplan, Plan der Lehrkraft/Klasse, Teilen, Online-Link). **Tag:** Liste mit Uhrzeiten links
+  und großen, gut lesbaren Karten in derselben Kartensprache, laufende Stunde mit Rahmen, Restzeit und Fortschritt,
+  dazwischen die **Jetzt-Linie** mit Uhrzeit, Pausen und Freistunden als kompakte Zeile; waagrecht wischen = Tag,
+  schwebende Wochenleiste. Alternativ Zeitachse (Menü).
+- **Stundendetails** – ruhige, gegliederte Seite im Stil der gruppierten Listen des Systems (kein farbiger Kopf, keine
+  Schmuck-Plaketten): Navigationsleiste mit Datum, Schließen und Teilen; **Titelzeile** (Fachbalken, Fach ausgeschrieben
+  und Kürzel, Zeit, Status als Text, Fortschritt der laufenden Stunde); **Angaben** als Schlüssel/Wert (Zeit, Raum,
+  Lehrkraft, Klasse, Status, Fach/Verlegung „alt → neu“, fehlende Klassen); Abschnitte Vertretungstext bzw.
+  Information/Prüfung, **Online-Unterricht beitreten**, **Thema**, **Hausaufgaben**, **Notizen**, für Lehrkräfte
+  **Klassenbuch** (Einträge gelten für Block/Einzelstunde, Anwesenheit, Lehrstoff, Klassenbucheinträge) und „Im Plan
+  anzeigen“. Gleichzeitige Stunden: Segmentschalter oben.
+- **Anwesenheit** (Lehrkräfte, wie in EduOrga Web): Kopf „24 / 27 anwesend · 2 abwesend · 1 verspätet“, gemeldete
+  Abwesenheiten der Eltern (mit „Als abwesend eintragen“), Abwesenheiten aus der Vorstunde („Für diese Stunde
+  übernehmen“), je Schüler*in ein Segmentschalter **Anwesend · Abwesend · Verspätet · Entsch.** (Verspätung mit
+  Minuten-Stepper; „Entsch.“ nur mit Recht – öffnet den Entschuldigungsdialog), langes Drücken: Abwesenheit mit Zeitraum,
+  früher gegangen, Klassenbucheintrag. Unten **„Alle anwesend“** und **„Anwesenheit bestätigen“**. Gleiche API wie das
+  Web: `GET`/`PUT /api/app/klassenbuch/anwesenheit` (jede Änderung sendet den ganzen Stand der Stunde, der Reihe nach;
+  ohne Netz in den Schreibpuffer), `POST /klassenbuch/abwesenheit/verlaengern`.
+- **Schule** – nur das Wichtigste (Plan, Heute und Postfach sind eigene Reiter):
+  - Lehrkräfte: **Klassenbuch** (offene Stunden, Klassenbucheinträge, Hausaufgaben, Abwesenheiten und
+    Entschuldigungen), **Unterricht** (Vertretungen, Prüfungen, Prüfung eintragen), **Melden** (Abwesenheit melden, Meine
+    Meldungen, Meine Abwesenheiten), **Elternsprechtag**.
+  - Schüler*innen und Eltern: Hausaufgaben, Abwesenheiten und Entschuldigungen (Eltern: Entschuldigungsschreiben als
+    PDF), Prüfungen, Vertretungen, Elternsprechtag.
+  - **Ausgeblendet** (in EduOrga Web weiter verfügbar; Code bleibt, ist aber nicht mehr verlinkt): Raum-/Ressourcen-
+    buchung, Befreiungen, Klassendienste, Sitzplan-Editor (auch in den Stundendetails), Raumtausch in den Details,
+    Infocenter-Extras (Neuigkeiten, Termine).
+  Rechte aus der Sitzung (`benutzer.rechte`, z. B. `pruefung.anlegen`, `vertretung.*`) blenden Einträge aus; der Server
+  prüft zusätzlich.
+- **Elternsprechtag** (`/api/app/sprechtag`, wie `web/src/UntPlanWeb/Api/SprechtagApi.cs`):
+  - Eltern: Einladungen und Lehrkräfte je Kind mit freien Zeiten (Überschneidungen markiert), **buchen**
+    (`POST /{id}/buchen`), **absagen** mit Grund (`POST /{id}/termine/{tid}/absagen`), **Warteliste** bei ausgebuchten
+    Lehrkräften (`POST/DELETE /{id}/warteliste`), **eigener Ablauf** („Meine Termine“ nach Uhrzeit, Raum bzw.
+    Online-Link), Termine als PDF (`/{id}/elternplan.pdf`).
+  - Lehrkräfte: Zeitfenster (Alle | Gebucht | Frei) mit Buchungen, **sperren/freigeben** einzeln und gesammelt
+    (`PUT /{id}/sperren`), **Familien einladen** (`POST/DELETE /{id}/einladungen`), **Termin eintragen**
+    (`POST /{id}/termine`), **verschieben** und **Notiz** (`PUT /{id}/termine/{tid}`, Familie wird bei Verschiebung
+    benachrichtigt), absagen, **Raum bzw. Online-Gespräch mit Link** (`PUT /{id}/raum`, nur mit `darfRaum`), Teilnahme
+    absagen/wieder aufnehmen, Warteliste, Terminplan als PDF.
+  - **Erinnerungen** als lokale Mitteilungen (beide Seiten): je Termin 10/15/30/60 Minuten vorher (Menü „Erinnerung an
+    Termine“, Standard 15), Lehrkräfte zusätzlich ein Überblick vor dem ersten Termin; bei jedem Laden neu geplant
+    (`Kern/Dienste/Sprechtagerinnerung.swift`).
 - **Offline:** Lehrstoff, Hausaufgaben, Klassenbucheinträge und Anwesenheit, die ohne Verbindung gespeichert werden,
   landen im **Schreibpuffer** (je Konto) und werden gesendet, sobald das Netz zurück ist (Netzbeobachtung), die App in
   den Vordergrund kommt oder „Senden“ gewählt wird; bis dahin zeigt die App den lokalen Stand („wartet auf

@@ -802,6 +802,13 @@ Portal für Lehrkräfte, Schülerinnen, Schüler und Eltern und übernimmt Rück
   übernommenen nur Aufsicht, Raum und Aktiv); Listen der **Schülerabwesenheiten** und des **Klassenbuchs** ansehen.
 - **Paket als Datei** speichert das Paket offline als JSON-Datei.
 - Schema und Schnittstelle stehen in [UNTPLANWEB.md](UNTPLANWEB.md).
+- **Klassenbuch in EduOrga Web:** Lehrkräfte öffnen eine Stunde aus Stundenplan oder Klassenbuch in einem großen Fenster
+  *Unterrichtsstunde* (Reiter *Stunde* mit Thema, Hausaufgaben und Bemerkungen, *Anwesenheit* als Liste oder Sitzplan, *Einträge*,
+  *Prüfungen*, *Verlauf*; alles wird automatisch gespeichert, Alt+←/→ blättert). Der Bereich *Klassenbuch* hat eine eigene
+  Unternavigation (Wochenübersicht mit Stand je Stunde, Meine Stunden, Offene Stunden, Abwesenheiten, Fehlzeiten, Befreiungen,
+  Einträge, Klassendienste, Sitzplan, Auswertungen). Eltern melden Abwesenheiten online; die Klassenleitung bestätigt sie unter
+  *Abwesenheiten → Meldungen der Eltern* (dabei entstehen die Fehlstunden) – EduOrga Studio übernimmt sie wie alle Fehlzeiten mit
+  dem Import der Schülerabwesenheiten. Einzelheiten: [web/README.md](../web/README.md).
 
 ---
 
