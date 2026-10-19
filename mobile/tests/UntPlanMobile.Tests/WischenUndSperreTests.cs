@@ -161,7 +161,7 @@ public class WischenUndSperreTests
         Assert.DoesNotContain("corners", AppJs);
         // Statusfarben und Dunkelmodus kommen aus den Grundwerten (tokens.css)
         Assert.Contains(":root[data-thema=\"dunkel\"]{", css);
-        Assert.Contains("--up-aenderung: #0b7a75;", Datei("wwwroot", "assets", "css", "tokens.css"));
+        Assert.Contains("--up-aenderung: #6d4fc2;", Datei("wwwroot", "assets", "css", "tokens.css"));
     }
 
     [Fact]

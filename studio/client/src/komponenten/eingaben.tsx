@@ -68,7 +68,7 @@ export function datumLesen(text: string): Date | null {
 
 const formatDatum = (wochentag: boolean) => (d?: Date) => (d ? `${wochentag ? `${TAGE_KURZ[d.getDay()]} ` : ''}${zwei(d.getDate())}.${zwei(d.getMonth() + 1)}.${d.getFullYear()}` : '');
 
-const DATUMSFORMAT = {
+export const DATUMSFORMAT = {
   formatDay: (d: Date) => String(d.getDate()),
   formatYear: (d: Date) => String(d.getFullYear()),
   formatMonth: (d: Date) => MONATE[d.getMonth()],

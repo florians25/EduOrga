@@ -141,7 +141,7 @@ export function FachMarke({ farbe, groesse = 8, sx }: { farbe: string | null | u
   if (d.fachfarbe === 'keine') return null;
   if (mitBalken(d.fachfarbe))
     return <Box component="span" aria-hidden data-fachmarke="balken" sx={{ display: 'inline-block', width: Math.max(3, d.balkenbreite), height: Math.round(groesse * 2), borderRadius: '1px', flex: 'none', alignSelf: 'center',
-      bgcolor: f ?? 'transparent', border: f ? 0 : 1, borderColor: 'text.disabled', ...sx }} />;
+      bgcolor: f ?? 'kachel.balken', ...sx }} />;
   return <Box component="span" aria-hidden data-fachmarke="quadrat" sx={{ display: 'inline-block', width: groesse, height: groesse, borderRadius: '1px', flex: 'none', bgcolor: f ?? 'transparent',
     border: f ? 0 : 1, borderColor: 'text.disabled', boxShadow: f ? 'inset 0 0 0 1px rgba(0,0,0,.08)' : 'none', ...sx }} />;
 }

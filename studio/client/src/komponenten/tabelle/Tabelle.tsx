@@ -38,6 +38,8 @@ import { frage } from '../dialoge';
 import { fehlerMelden, hinweis } from '../hinweise';
 import { menue, type MenueListe } from '../menue';
 import { mehrfachDialog, mehrfachWert } from './mehrfach';
+import { Calendar } from '@fluentui/react-datepicker-compat';
+import { DATUMSFORMAT, KALENDER_DE, ausIso } from '../eingaben';
 import { auswahlOptionen, filterPasst, istListenart, pruefeWert, tsvLesen, tsvSchreiben } from './pruefung';
 import { Vorschlagsliste, type VorschlagslisteApi } from './vorschlagsliste';
 import './tabelle.css';
@@ -447,7 +449,8 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
   const editorRef = useRef(editor); editorRef.current = editor;
   const eingabe = useRef<HTMLInputElement | null>(null);
   const editbox = useRef<HTMLDivElement | null>(null);
-  const kalender = useRef<HTMLInputElement | null>(null);
+  // Datumsspalten: Kalender (Fluent Calendar wie im DatumFeld) unter dem Eingabefeld; Tippen geht weiter („19.10.2026“, „19.10.“)
+  const [kalender, setKalender] = useState<{ nr: number; wert: string } | null>(null);
   const vorschlag = useRef<VorschlagslisteApi>(null);
 
   const editierbar = (s: Spalte<Z> | undefined, z: Z | undefined): boolean => {
@@ -501,6 +504,7 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
     const ed = { r, c, start, nr: Date.now() };
     editorRef.current = ed;
     setEditor(ed);
+    setKalender(s!.art === 'Datum' && start === undefined ? { nr: ed.nr, wert: isoAusText(text(z, s)) } : null);
   };
 
   const eigenenEditorOeffnen = (r: number, c: number) => {
@@ -552,6 +556,9 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
         setTimeout(fokus);
       });
     };
+    const ed = editorRef.current;
+    const datum = !!ed && sichtbarRef.current[ed.c]?.s.art === 'Datum';
+    if (datum && ((e.altKey && e.key === 'ArrowDown') || e.key === 'F4')) { e.preventDefault(); setKalender((k) => (k ? null : { nr: ed!.nr, wert: isoAusText(eingabe.current?.value || '') })); return; }
     if (e.key === 'Enter') { e.preventDefault(); weiter(e.ctrlKey || e.metaKey ? 0 : e.shiftKey ? -1 : 1, 0); }
     else if (e.key === 'Tab') { e.preventDefault(); weiter(0, e.shiftKey ? -1 : 1); }
     else if (e.key === 'Escape') { e.preventDefault(); void editorBeenden(false); setTimeout(fokus); }
@@ -1171,11 +1178,21 @@ function TabelleInnen<Z>(props: TabelleProps<Z>, ref: Ref<TabelleApi<Z>>) {
                 onKeyDown={editorTaste}
                 onBlur={() => setTimeout(() => { if (editorRef.current?.nr === editor.nr && !editbox.current?.contains(document.activeElement)) void editorBeenden(true, undefined, true); }, 150)} />
               {edSpalte.art === 'Datum' ? <>
-                <button type="button" className="tb-editor-knopf" tabIndex={-1} aria-label="Kalender" title="Datum im Kalender wählen"
+                <button type="button" className="tb-editor-knopf" tabIndex={-1} aria-label="Kalender" title="Datum im Kalender wählen (Alt+↓)"
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => { const k = kalender.current; if (!k) return; k.value = isoAusText(eingabe.current?.value || ''); try { k.showPicker(); } catch { k.focus(); } }}><CalendarLtr16Regular /></button>
-                <input ref={kalender} type="date" className="tb-kalender" tabIndex={-1} aria-hidden
-                  onChange={(e) => { const v = e.target.value; if (!v || !eingabe.current) return; eingabe.current.value = textAusIso(v); void editorBeenden(true).then(() => setTimeout(fokus)); }} />
+                  onClick={() => setKalender((k) => (k?.nr === editor.nr ? null : { nr: editor.nr, wert: isoAusText(eingabe.current?.value || '') }))}><CalendarLtr16Regular /></button>
+                {kalender?.nr === editor.nr ? (
+                  <div className="tb-kalenderflaeche" data-testid="tabelle-kalender" onMouseDown={(e) => { if (!(e.target as HTMLElement).closest('input')) e.preventDefault(); }}>
+                    <Calendar value={ausIso(kalender.wert) ?? undefined} firstDayOfWeek={1} firstWeekOfYear={2} showWeekNumbers showGoToToday highlightSelectedMonth
+                      strings={KALENDER_DE} dateTimeFormatter={DATUMSFORMAT}
+                      onSelectDate={(d) => {
+                        if (!d || !eingabe.current) return;
+                        eingabe.current.value = textAusIso(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+                        setKalender(null);
+                        void editorBeenden(true).then(() => setTimeout(fokus));
+                      }} />
+                  </div>
+                ) : null}
               </> : null}
               {edListe ? (
                 <button type="button" className="tb-editor-knopf" tabIndex={-1} aria-label="Auswahlliste" title="Auswahlliste (Alt+↓)"

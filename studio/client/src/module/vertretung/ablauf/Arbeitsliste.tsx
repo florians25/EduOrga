@@ -214,6 +214,7 @@ export default function Arbeitsliste() {
   const schreiben = useDarfSchreiben();
   const block = useKandidaten((x) => x.block);
   const werte = useKandidaten((x) => x.werte);
+  const kStand = useKandidaten((x) => x.stand);
   const [filter, setFilter] = useState<Filter>('offen');
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [probe, setProbe] = useState<Probe | null>(null);
@@ -256,7 +257,7 @@ export default function Arbeitsliste() {
   });
   const sichtbar = virt.getVirtualItems();
   // Kandidaten der sichtbaren (und der nächsten) Karten anfordern
-  const sichtKey = `${sichtbar[0]?.index ?? 0}-${sichtbar[sichtbar.length - 1]?.index ?? 0}-${ids.length}-${Object.keys(werte).length}`;
+  const sichtKey = `${sichtbar[0]?.index ?? 0}-${sichtbar[sichtbar.length - 1]?.index ?? 0}-${ids.length}-${kStand}`;
   useEffect(() => {
     if (filter !== 'offen' || !sichtbar.length) return;
     const von = sichtbar[0]!.index, bis = Math.min(ids.length - 1, sichtbar[sichtbar.length - 1]!.index + 4);

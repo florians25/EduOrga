@@ -132,5 +132,7 @@ select.tb-editor { padding: 0 2px; }
 .vs-haken.an::after { content: ''; width: 6px; height: 3px; border-left: 2px solid var(--colorNeutralForegroundOnBrand); border-bottom: 2px solid var(--colorNeutralForegroundOnBrand); transform: translateY(-1px) rotate(-45deg); }
 .vs-fuss { padding: 4px 8px 2px; color: var(--colorNeutralForeground3); font-size: 11px; border-top: 1px solid var(--colorNeutralStroke3); margin-top: 4px; }
 
-.tb-kalender { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }
-.tb-editbox:has(.tb-kalender) .tb-editor { padding-right: 24px; }
+.tb-kalenderflaeche {
+  position: absolute; left: 0; top: calc(100% + 2px); z-index: 20; background: var(--colorNeutralBackground1); border: 1px solid var(--colorNeutralStroke1);
+  border-radius: 8px; box-shadow: var(--shadow16);
+}

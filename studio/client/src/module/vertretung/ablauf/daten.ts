@@ -54,8 +54,8 @@ export const vorschlaegeAnwenden = (eintraege: { id: number; lehrer?: number | n
 // ---------------------------------------------------------------------------------------------
 // Kandidaten je Stunde: gebündelt laden (höchstens 12 je Anfrage), bei Änderungen der Vertretungen verwerfen
 
-interface KandidatenZustand { werte: Record<number, KandidatenInfo | null>; block: boolean }
-export const useKandidaten = create<KandidatenZustand>(() => ({ werte: {}, block: true }));
+interface KandidatenZustand { werte: Record<number, KandidatenInfo | null>; block: boolean; stand: number }
+export const useKandidaten = create<KandidatenZustand>(() => ({ werte: {}, block: true, stand: 0 }));
 const angefragt = new Set<number>();
 let warteschlange: number[] = [];
 let zeitgeber: ReturnType<typeof setTimeout> | null = null;
@@ -92,7 +92,7 @@ export function kandidatenLeeren() {
   stand++;
   angefragt.clear();
   warteschlange = [];
-  useKandidaten.setState({ werte: {} });
+  useKandidaten.setState((x) => ({ werte: {}, stand: x.stand + 1 }));
 }
 export function blockSetzen(block: boolean) { useKandidaten.setState({ block }); kandidatenLeeren(); }
 

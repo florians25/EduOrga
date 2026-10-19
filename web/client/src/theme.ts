@@ -20,7 +20,7 @@ export const farben = {
 
 export interface StatusFarbe { main: string; flaeche: string }
 /** Flächen des Stundenplans: Kachel, kräftigere Kachellinie, Kopf/Zeitspalte, Überfahren, Pausenband. */
-export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string; raster: string }
+export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string; raster: string; /** Balken links ohne Fachfarbe (grau, hell und dunkel deutlich sichtbar). */ balken: string }
 /** Seitenleiste in der Primärfarbe: Fläche, Text, Zweittext, Überfahren, aktive Zeile (leichte Tönung), 3-px-Kante der aktiven Zeile, Linie. */
 export interface NavFarben { flaeche: string; text: string; text2: string; hover: string; aktiv: string; marke: string; linie: string }
 /** Kopfbänder von Abschnitten und Tabellen (leichte Petrol-Tönung, damit nicht alles weiß ist). */
@@ -72,7 +72,7 @@ export const theme = createTheme({
         divider: S[200],
         action: { hover: alpha(M[700], 0.06), selected: M[50] },
         status: status(false),
-        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2' },
+        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2', balken: '#a9b6bb' },
         nav: { flaeche: M[700], text: '#ffffff', text2: 'rgba(255,255,255,.72)', hover: 'rgba(255,255,255,.05)', aktiv: 'rgba(255,255,255,.12)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.14)' },
         flaechen: { kopf: '#eef3f4', band: '#f2f6f7', rand: '#cfd9dc' },
         marine: farben.marine,
@@ -91,7 +91,7 @@ export const theme = createTheme({
         divider: '#26393e',
         action: { hover: 'rgba(255,255,255,.06)', selected: '#173a3f' },
         status: status(true),
-        kachel: { flaeche: '#172a2e', rand: '#33494e', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20' },
+        kachel: { flaeche: '#172a2e', rand: '#33494e', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20', balken: '#6b8287' },
         nav: { flaeche: '#0c2a2f', text: '#e8f1f2', text2: 'rgba(232,241,242,.66)', hover: 'rgba(255,255,255,.04)', aktiv: 'rgba(255,255,255,.09)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.10)' },
         flaechen: { kopf: '#172a2e', band: '#152629', rand: '#2c4146' },
         marine: farben.marine,

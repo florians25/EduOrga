@@ -132,9 +132,12 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   const anzeige = (zeilenArt: string) => (d.zeile2Text === 'name' && namen ? (x: string) => nameVon(namen, zeilenArt === 'lehrer' ? 'lehrer' : 'klassen', x) : undefined);
   // Fachfarbe: Quadrat vor dem Fach, Balken links bzw. oben am Rand, Tönung der Fläche (kachelStil) oder keine
   const farbe = gueltigeFarbe(k.farbe);
-  const balken = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben' || d.fachfarbe === 'balken-flaeche') && !!k.fach && !!farbe;
+  // Jede Unterrichtsstunde zeigt den Balken – ohne Fachfarbe grau (eigene Themenfarbe kachel.balken, hell und dunkel deutlich sichtbar)
+  const stunde = !!k.fach || !!k.unterricht;
+  const grau = (t.vars ?? t).palette.kachel.balken;
+  const balken = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben' || d.fachfarbe === 'balken-flaeche') && stunde;
   // Streifen innen links mit Abstand zum Rand und runden Enden – in der Fachfarbe, ohne Fachfarbe grau
-  const innen = d.fachfarbe === 'balken-innen' && !!k.fach;
+  const innen = d.fachfarbe === 'balken-innen' && stunde;
   const innenEinzug = innen ? 4 + d.balkenbreite + 2 : 0;
   // Zeilenfolge Lehrkraft bzw. Klasse · Fach · Raum (untereinander) – nur, wenn die Karte hoch genug ist
   const stapel = d.reihenfolge === 'element' && !kompakt && !!k.fach;
@@ -181,10 +184,10 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
           '&:hover': { ...hover, zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
           ...style,
         }}>
-        {balken && <Box aria-hidden data-fachbalken="" sx={{ position: 'absolute', bgcolor: farbe, opacity: entfall ? 0.35 : 1,
+        {balken && <Box aria-hidden data-fachbalken="" data-ohne-fachfarbe={farbe ? undefined : ''} sx={{ position: 'absolute', bgcolor: farbe ?? grau, opacity: entfall ? 0.35 : 1,
           ...(balkenLinks ? { left: 0, top: 0, bottom: 0, width: balkenLinks } : { left: 0, right: 0, top: 0, height: balkenOben }) }} />}
-        {innen && <Box aria-hidden data-fachbalken="innen" sx={{ position: 'absolute', left: 4, top: 4, bottom: 4, width: d.balkenbreite, borderRadius: '2px',
-          bgcolor: farbe ?? 'text.disabled', opacity: entfall ? 0.35 : farbe ? 1 : 0.5 }} />}
+        {innen && <Box aria-hidden data-fachbalken="innen" data-ohne-fachfarbe={farbe ? undefined : ''} sx={{ position: 'absolute', left: 4, top: 4, bottom: 4, width: d.balkenbreite, borderRadius: '2px',
+          bgcolor: farbe ?? grau, opacity: entfall ? 0.35 : 1 }} />}
         {stapel ? (
           <>
             <Typography component="div" noWrap sx={{ fontWeight: 600, fontSize: fachGroesse, lineHeight: `${dichte.kopf}px`, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, flex: 'none' }}>
