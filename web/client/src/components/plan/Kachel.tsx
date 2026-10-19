@@ -48,7 +48,9 @@ export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = 
   const papier = pal.background.paper;
   const kraeftig = d.rahmen === 'kraeftig';
   const breite = kraeftig ? 2 : 1;
-  const linie = d.rahmen === 'keiner' ? 'transparent' : kraeftig ? alpha(pal.text.primary, 0.42) : pal.kachel.rand;
+  const linie = d.rahmen === 'keiner' || d.rahmen === 'schatten' ? 'transparent' : kraeftig ? alpha(pal.text.primary, 0.42) : pal.kachel.rand;
+  // „Schatten“: weiße Karte ohne Linie, leicht abgehoben (eigene, sehr flache Schattenkante)
+  const schatten = d.rahmen === 'schatten' ? { boxShadow: '0 1px 1.5px rgba(12,44,49,.16), 0 0 0 0.5px rgba(12,44,49,.06)' } : {};
   const grund = d.flaeche === 'weiss' ? papier : d.flaeche === 'getoent' ? papier : pal.kachel.flaeche;
   const bilder: string[] = [];
   const fach = gueltigeFarbe(k.farbe);
@@ -56,7 +58,7 @@ export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = 
   if (mitToenung(d.fachfarbe) && fach && !statusFlaeche && art !== 'entfall' && art !== 'abwesend' && art !== 'termin') { const ton = alpha(fach, d.deckkraft / 100); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   if (d.flaeche === 'getoent') { const ton = alpha(pal.primary.main, 0.05); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   const bild = bilder.length ? { backgroundImage: bilder.join(', ') } : {};
-  const basis = { backgroundColor: grund, border: `1px solid ${linie}`, ...bild };
+  const basis = { backgroundColor: grund, border: `1px solid ${linie}`, ...schatten, ...bild };
   const s = pal.status;
   const statusLinie = (farbe: string, art: 'solid' | 'dashed' = 'solid') => `${breite}px ${art} ${farbe}`;
   // Status-Kacheln: weiße bzw. getönte Fläche, Linie in der Statusfarbe (auch bei „ohne Rahmen“)
@@ -131,6 +133,12 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   // Fachfarbe: Quadrat vor dem Fach, Balken links bzw. oben am Rand, Tönung der Fläche (kachelStil) oder keine
   const farbe = gueltigeFarbe(k.farbe);
   const balken = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben' || d.fachfarbe === 'balken-flaeche') && !!k.fach && !!farbe;
+  // Streifen innen links mit Abstand zum Rand und runden Enden – in der Fachfarbe, ohne Fachfarbe grau
+  const innen = d.fachfarbe === 'balken-innen' && !!k.fach;
+  const innenEinzug = innen ? 4 + d.balkenbreite + 2 : 0;
+  // Zeilenfolge Lehrkraft bzw. Klasse · Fach · Raum (untereinander) – nur, wenn die Karte hoch genug ist
+  const stapel = d.reihenfolge === 'element' && !kompakt && !!k.fach;
+  const ersteZeile = stapel ? zeilen.find(z => z.art !== 'mitklassen') ?? null : null;
   const balkenLinks = balken && d.fachfarbe !== 'balken-oben' ? d.balkenbreite : 0;
   const balkenOben = balken && d.fachfarbe === 'balken-oben' ? d.balkenbreite : 0;
   const quadrat = d.fachfarbe === 'quadrat' && !!k.fach;
@@ -166,7 +174,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
       slotProps={{ tooltip: { sx: { bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', boxShadow: '0 8px 24px rgba(21,26,33,.14)', p: 1.5, maxWidth: 360 } }, arrow: { sx: { color: 'background.paper', '&:before': { border: 1, borderColor: 'divider' } } } }}>
       <Box role="button" tabIndex={0} aria-label={titelText(k)} onClick={() => onOpen?.(k)} onKeyDown={tasten} data-karte="" data-art={art} data-fachfarbe={d.fachfarbe}
         sx={{
-          position: 'relative', ...kachelStil(k, typ, t, d), borderRadius: `${d.eckenradius}px`, pl: `${dichte.px + balkenLinks}px`, pr: `${dichte.px}px`, pt: `${py + balkenOben}px`, pb: `${py}px`,
+          position: 'relative', ...kachelStil(k, typ, t, d), borderRadius: `${d.eckenradius}px`, pl: `${dichte.px + balkenLinks + innenEinzug}px`, pr: `${dichte.px}px`, pt: `${py + balkenOben}px`, pb: `${py}px`,
           overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default',
           display: 'flex', flexDirection: 'column', gap: '1px', fontSize: dichte.zeile, lineHeight: 1.25, color: entfall ? undefined : 'text.primary', fontVariantNumeric: 'tabular-nums',
           opacity: gedimmt ? 0.3 : vorbei ? 0.72 : 1, containerType: 'inline-size', transition: 'opacity .12s, background-color .12s, border-color .12s',
@@ -175,6 +183,26 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
         }}>
         {balken && <Box aria-hidden data-fachbalken="" sx={{ position: 'absolute', bgcolor: farbe, opacity: entfall ? 0.35 : 1,
           ...(balkenLinks ? { left: 0, top: 0, bottom: 0, width: balkenLinks } : { left: 0, right: 0, top: 0, height: balkenOben }) }} />}
+        {innen && <Box aria-hidden data-fachbalken="innen" sx={{ position: 'absolute', left: 4, top: 4, bottom: 4, width: d.balkenbreite, borderRadius: '2px',
+          bgcolor: farbe ?? 'text.disabled', opacity: entfall ? 0.35 : farbe ? 1 : 0.5 }} />}
+        {stapel ? (
+          <>
+            <Typography component="div" noWrap sx={{ fontWeight: 600, fontSize: fachGroesse, lineHeight: `${dichte.kopf}px`, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, flex: 'none' }}>
+              {ersteZeile ? <WerteListe werte={ersteZeile.werte} entfall={entfall} abwesend={ersteZeile.art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && ersteZeile.art === 'lehrer'} anzeige={anzeige(ersteZeile.art)} /> : titel}
+            </Typography>
+            {ersteZeile && <Typography component="div" noWrap sx={{ fontSize: dichte.zeile, lineHeight: `${dichte.zeilenhoehe}px`, color: entfall ? 'text.secondary' : 'text.primary', textDecoration: durch, flex: 'none' }}>{titel}</Typography>}
+            {raeume.length > 0 && (
+              <Typography component="div" noWrap sx={{ fontSize: dichte.zeile, lineHeight: `${dichte.zeilenhoehe}px`, color: 'text.secondary', textDecoration: durch, flex: 'none' }}>
+                {!entfall && raeume.every(w => !w.alt && !w.neu) ? raeume.map(w => w.k).join(', ') : <WerteListe werte={raeume} entfall={entfall} mitAlt trenner=" " />}
+              </Typography>
+            )}
+            {!mittel && zeilen.filter(z => z !== ersteZeile).map((z, i) => (
+              <Typography key={i} component="div" noWrap sx={{ fontSize: dichte.zeile, lineHeight: `${dichte.zeilenhoehe}px`, color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: durch }}>
+                <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && z.art === 'lehrer'} anzeige={anzeige(z.art)} />
+              </Typography>
+            ))}
+          </>
+        ) : <>
         <Stack direction="row" alignItems="center" gap={0.75} sx={{ minWidth: 0, flex: 'none', height: dichte.kopf }}>
           {quadrat && <FachQuadrat farbe={k.farbe} />}
           <Typography component="span" noWrap sx={{ fontWeight: 600, fontSize: fachGroesse, lineHeight: `${dichte.kopf}px`, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, minWidth: 0, flex: '0 1 auto' }}>{titel}</Typography>
@@ -199,7 +227,9 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
             ))}
           </Box>
         )}
-        {!kompakt && (pl.length > 0 || hatSymbole || zeit) && (
+        </>}
+        {stapel && mittel && (pl[0] || hatSymbole) && <Stack direction="row" gap={0.5} alignItems="center" sx={{ position: 'absolute', right: 5, bottom: 3 }}>{pl[0] && <PlaketteChip p={pl[0]} klein />}{symbole}</Stack>}
+        {!kompakt && !(stapel && mittel) && (pl.length > 0 || hatSymbole || zeit) && (
           <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: 'auto', pl: k.fach ? einzug : 0, minWidth: 0, flex: 'none', flexWrap: 'nowrap', overflow: 'hidden', height: 15, '@container (max-width: 64px)': { display: 'none' } }}>
             {pl.slice(0, mittel ? 2 : 3).map((p, i) => <PlaketteChip key={i} p={p} klein={!gross} />)}
             {zeit && <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary' }}>{zeit}</Typography>}

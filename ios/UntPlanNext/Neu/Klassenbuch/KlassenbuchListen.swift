@@ -35,9 +35,9 @@ struct OffeneStundenView: View {
         }
     }
 
-    private var tage: [(String, [OffeneStunde])] {
+    private var tage: [Listengruppe<OffeneStunde>] {
         let gruppen = Dictionary(grouping: zeilen, by: \.datum)
-        return gruppen.keys.sorted(by: >).map { ($0, (gruppen[$0] ?? []).sorted { $0.von < $1.von }) }
+        return gruppen.keys.sorted(by: >).map { Listengruppe(id: $0, liste: (gruppen[$0] ?? []).sorted { $0.von < $1.von }) }
     }
 
     var body: some View {
@@ -70,9 +70,9 @@ struct OffeneStundenView: View {
                            text: (antwort?.gesamt ?? 0) > 0 ? "Im gewählten Zeitraum sind Abwesenheiten und Lehrstoff vollständig eingetragen."
                                : "Im gewählten Zeitraum gibt es keine gehaltenen Stunden.")
             }
-            ForEach(tage, id: \.0) { tag in
-                Section(Datumsformat.anzeige(tag.0, "EEEE, d. MMMM")) {
-                    ForEach(tag.1) { z in
+            ForEach(tage) { tag in
+                Section(Datumsformat.anzeige(tag.id, "EEEE, d. MMMM")) {
+                    ForEach(tag.liste) { z in
                         Button {
                             Haptik.tippen()
                             wahl = Stundenwahl(quelle: "offen-\(z.id)", karten: [z.karte], typ: "lehrer", element: z.lehrer)
@@ -505,10 +505,10 @@ struct HausaufgabenListeView: View {
     @State private var kinder: [Kind] = []
     @State private var kind: Int? = nil
 
-    private var gruppen: [(String, [HausaufgabeZeile])] {
+    private var gruppen: [Listengruppe<HausaufgabeZeile>] {
         let alle = liste ?? []
         let g = Dictionary(grouping: alle) { $0.faellig ?? $0.datum }
-        return g.keys.sorted().map { ($0, (g[$0] ?? []).sorted { $0.fach < $1.fach }) }
+        return g.keys.sorted().map { Listengruppe(id: $0, liste: (g[$0] ?? []).sorted { $0.fach < $1.fach }) }
     }
 
     var body: some View {
@@ -541,9 +541,9 @@ struct HausaufgabenListeView: View {
             if let liste, liste.isEmpty {
                 LeereListe(titel: "Keine Hausaufgaben", symbol: "checklist", text: "In den nächsten Wochen sind keine Hausaufgaben eingetragen.")
             }
-            ForEach(gruppen, id: \.0) { g in
-                Section("Fällig " + kurzdatum(g.0)) {
-                    ForEach(g.1) { h in
+            ForEach(gruppen) { g in
+                Section("Fällig " + kurzdatum(g.id)) {
+                    ForEach(g.liste) { h in
                         VStack(alignment: .leading, spacing: 3) {
                             HStack {
                                 Text(h.fach)
@@ -1024,4 +1024,10 @@ struct FamilieAbwesenheitenSeite: View {
             fehler = zustand.fehlertext(error) ?? "Das Schreiben konnte nicht erstellt werden."
         }
     }
+}
+
+/// Gruppe einer Liste (z. B. je Tag) mit Schlüssel.
+struct Listengruppe<Element>: Identifiable {
+    let id: String
+    let liste: [Element]
 }
