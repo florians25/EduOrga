@@ -120,17 +120,44 @@ struct HeuteView: View {
 
     // MARK: - Kopf und Fußnote
 
-    /// Unter dem großen Titel eine sachliche Tageszeile: Datum und Woche.
+    /// Heute unterrichtsfrei (Ferien, Feiertag, freier Tag) – aus `kalender` bzw. bei älteren Servern aus dem Wochenplan.
+    private func freiHeute(_ h: Heute) -> Freizeitraum? {
+        if let k = h.kalender { return k.frei }
+        guard let f = h.ferien ?? ferien, h.karten.isEmpty else { return nil }
+        return Freizeitraum(name: f.titel, von: f.von, bis: f.bis, art: "ferien")
+    }
+
+    /// Das tatsächliche Datum (in den Ferien und am Wochenende liefert der Server schon den nächsten Schultag).
+    private var heuteIso: String {
+        heute?.kalender?.heute ?? Datumsformat.iso(Date())
+    }
+
+    /// Kopf unter dem großen Titel: Wochentag und Datum groß (ohne Begrüßung), darunter Woche bzw. „Ferien“ – zwei
+    /// ruhige Zeilen statt eines Satzes.
     private var kopf: some View {
-        let datum = heute?.datum ?? Datumsformat.iso(Date())
-        var zeile = Datumsformat.anzeige(datum, "EEEE, d. MMMM")
-        if let w = heute?.woche, !w.isEmpty {
-            zeile += " · " + (w.count == 1 ? "\(w)-Woche" : w)
+        let frei = heute.flatMap { freiHeute($0) }
+        let datum = heuteIso
+        var zusatz: [String] = []
+        if frei == nil, let h = heute, h.datum.prefix(10) == datum.prefix(10), !h.woche.isEmpty {
+            zusatz.append(h.woche.count == 1 ? "\(h.woche)-Woche" : h.woche)
         }
-        return Text(zeile)
-            .font(.subheadline)
-            .foregroundStyle(Farben.text2)
-            .accessibilityAddTraits(.isHeader)
+        if let d = Datumsformat.datum(datum) {
+            zusatz.append("KW \(Datumsformat.kalenderwoche(d))")
+        }
+        if let f = frei { zusatz.append(f.name.isEmpty ? Kalendertext.art(f) : f.name) }
+        return VStack(alignment: .leading, spacing: 2) {
+            Text(Datumsformat.anzeige(datum, "EEEE, d. MMMM"))
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Farben.text)
+            if !zusatz.isEmpty {
+                Text(zusatz.joined(separator: " · "))
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .foregroundStyle(Farben.text2)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
     }
 
     /// Ganz unten klein: Stand aus EduOrga Studio (getrennt von der Ladezeit der App) und die Schule.
@@ -189,9 +216,30 @@ struct HeuteView: View {
             let hinweis = (h.sperrhinweis ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             HeuteHinweiskarte(titel: "Nicht freigegeben",
                               text: hinweis.isEmpty ? "Dieser Zeitraum ist für Ihr Konto noch nicht einsehbar." : hinweis)
-        } else if stunden.isEmpty, let f = h.ferien ?? ferien {
-            HeuteHinweiskarte(titel: f.titel.isEmpty ? "Ferien" : f.titel, text: f.zeitraum)
+        } else if let frei = freiHeute(h) {
+            // Ferien bzw. freier Tag: ruhige Ferienfläche statt leerer Stunden; darunter der nächste Schultag
+            let schultag = h.kalender?.naechsterSchultag ?? ""
+            let tagIso = schultag.isEmpty ? (stunden.isEmpty ? "" : h.datum) : schultag
+            HeuteFerienKarte(frei: frei, heute: heuteIso, naechsterSchultag: tagIso,
+                             ersteStunde: stunden.first { Statuslehre.findetStatt($0) }) {
+                zustand.tagAnfrage = tagIso.isEmpty ? h.datum : tagIso
+                zustand.reiter = .plan
+            }
+            Tageszahlen(zahlen: tageszahlen(h, alle: alle)) {
+                zustand.reiter = .postfach
+            }
+            hinweisbereich(h)
+            if let k = h.kalender { HeuteKalenderliste(kalender: k) }
+            if !stunden.isEmpty {
+                stundenliste(stunden, alle: alle, h: h, istHeute: false)
+            }
         } else {
+            if !istHeute, h.kalender != nil, !stunden.isEmpty {
+                // Wochenende: der Server zeigt schon den nächsten Schultag
+                Text("Nächster Schultag: " + Datumsformat.anzeige(h.datum, "EEEE, d. MMMM"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Farben.text2)
+            }
             if stunden.isEmpty && morgen == nil {
                 HeuteHinweiskarte(titel: "Kein Unterricht",
                                   text: istHeute ? "Heute ist kein Unterricht geplant." : "An diesem Tag ist kein Unterricht geplant.")
@@ -211,6 +259,7 @@ struct HeuteView: View {
             if !stunden.isEmpty {
                 stundenliste(stunden, alle: alle, h: h, istHeute: istHeute)
             }
+            if let k = h.kalender { HeuteKalenderliste(kalender: k) }
         }
     }
 
@@ -233,7 +282,7 @@ struct HeuteView: View {
     private func stundenliste(_ stunden: [Kachel], alle: [Kachel], h: Heute, istHeute: Bool) -> some View {
         VStack(alignment: .leading, spacing: Stilmass.raster) {
             HStack(alignment: .firstTextBaseline) {
-                Text(istHeute ? "Stunden" : Datumsformat.anzeige(h.datum, "EEEE"))
+                Text(istHeute ? "Stunden" : Datumsformat.anzeige(h.datum, "EEEE, d.M."))
                     .font(.headline)
                     .foregroundStyle(Farben.text)
                     .accessibilityAddTraits(.isHeader)
@@ -531,7 +580,7 @@ struct HeuteView: View {
             if zustand.ungelesen != neu.ungelesen { zustand.ungelesen = neu.ungelesen }
             if zustand.offeneStunden != neu.offeneStunden { zustand.offeneStunden = neu.offeneStunden }
             fehler = nil
-            if neu.ferien == nil {
+            if neu.ferien == nil && neu.kalender == nil {
                 ferien = await ferienSuchen(neu)
             } else {
                 ferien = nil

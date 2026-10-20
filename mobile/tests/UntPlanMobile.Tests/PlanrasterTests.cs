@@ -145,8 +145,8 @@ public class PlanrasterTests
         // Tag | Woche ohne Untermenü, Aufziehen/Zusammenziehen
         Assert.Contains("id=\"planSeg\"", html);
         Assert.Contains("setView('day', pickDefaultDay())", js);
-        // Ecken 2–6 px (Standard 4), grauer Balken ohne Fachfarbe (hell und dunkel)
-        Assert.Contains("Math.min(6, Math.max(2, d.eckenradius ?? 4))", js);
+        // Ecken 2–6 px (Standard 2, Stundenkarte v7), grauer Balken ohne Fachfarbe (hell und dunkel)
+        Assert.Contains("Math.min(6, Math.max(2, d.eckenradius ?? 2))", js);
         Assert.Contains(".card.ohne-fach::before{ background:var(--balken-grau); }", css);
         Assert.Contains("--balken-grau:      #b4bec4;", css);
         Assert.Contains("--balken-grau:      #56626c;", css);

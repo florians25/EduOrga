@@ -414,7 +414,7 @@ struct HeuteFokus: View {
                 .foregroundStyle(Farben.text2)
                 .lineLimit(1)
             Text(r.wert)
-                .font(.title2.weight(.semibold))
+                .font(.title.weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(f.laeuft ? Farben.akzent : Farben.text)
                 .lineLimit(1)
@@ -494,17 +494,20 @@ struct HeuteFokus: View {
             }
             fusszeile(f, jetzt: jetzt)
         }
-        .padding(.leading, Kartenmass.leiste + 12)
-        .padding(.trailing, 14)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .padding(.top, 14 + Kartenmass.streifen)
+        .padding(.bottom, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }
 
-    /// Leiste links in der Sprache der Stundenkarte (Fachfarbe, Änderung grün, sonst grau).
-    private func leistenfarbe(_ k: Kachel) -> Color {
-        let stil = Klassikstil.fuer(k, darstellung)
-        return stil.mitBalken ? stil.balken : Farben.balkenGrau
+    /// Streifen oben in der Sprache der Stundenkarte v7: laufende Stunde Petrol, sonst Status- bzw. Fachfarbe
+    /// (geändert grün, Prüfung gelb); reguläre Stunde ohne Fachfarbe ohne Streifen.
+    private func streifenfarbe(_ f: HeuteFokuslage) -> Color? {
+        let stil = Klassikstil.fuer(f.kachel, darstellung)
+        let status: Color? = stil.oben ? stil.streifen : (stil.mitBalken ? stil.balken : nil)
+        if f.laeuft && f.kachel.kartenart == .normal { return Farben.akzent }
+        return status
     }
 
     @ViewBuilder
@@ -514,7 +517,6 @@ struct HeuteFokus: View {
             Rectangle()
                 .fill(Farben.rand)
                 .frame(height: 1)
-                .padding(.leading, Kartenmass.leiste + 12)
             Button {
                 Haptik.fest()
                 klassenbuch()
@@ -536,8 +538,7 @@ struct HeuteFokus: View {
                         .foregroundStyle(Farben.pfeil)
                         .accessibilityHidden(true)
                 }
-                .padding(.leading, Kartenmass.leiste + 12)
-                .padding(.trailing, 14)
+                .padding(.horizontal, 16)
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
@@ -567,13 +568,14 @@ struct HeuteFokus: View {
             aktionszeile(k)
         }
         .kartenflaeche()
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(leistenfarbe(k))
-                .frame(width: Kartenmass.leiste)
-                .frame(maxHeight: .infinity)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+        .overlay(alignment: .top) {
+            if let farbe = streifenfarbe(f) {
+                Rectangle()
+                    .fill(farbe)
+                    .frame(height: Kartenmass.streifen)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
         }
         .clipShape(form)
     }
@@ -582,18 +584,20 @@ struct HeuteFokus: View {
 /// Fortschritt der laufenden Stunde: 6-pt-Balken in Petrol auf neutralem Grau, eckig mit kleinem Radius.
 struct Fortschrittslinie: View {
     let anteil: Double
+    var farbe: Color = Farben.akzent
+    var hoehe: CGFloat = 6
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 2, style: .circular)
+                Rectangle()
                     .fill(Farben.neutralFlaeche)
-                RoundedRectangle(cornerRadius: 2, style: .circular)
-                    .fill(Farben.akzent)
+                Rectangle()
+                    .fill(farbe)
                     .frame(width: max(0, min(1, anteil)) * geo.size.width)
             }
         }
-        .frame(height: 6)
+        .frame(height: hoehe)
         .animation(.easeOut(duration: 0.12), value: anteil)
         .accessibilityHidden(true)
     }
@@ -669,16 +673,17 @@ struct HeuteStundenzeile: View {
                     rechts
                 }
             } else {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
                     hauptteil
                     Spacer(minLength: 4)
                     rechts
                 }
             }
         }
-        .padding(.leading, (stil.mitBalken ? Kartenmass.leiste : 0) + 9)
+        .padding(.leading, (stil.mitBalken ? Kartenmass.leiste : 0) + 12)
         .padding(.trailing, 12)
-        .padding(.vertical, 9)
+        .padding(.vertical, 8)
+        .padding(.top, stil.obenEinzug)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .klassikKarte(stil)
         .overlay {
@@ -687,6 +692,13 @@ struct HeuteStundenzeile: View {
                     .strokeBorder(Farben.akzent, lineWidth: 2)
             }
         }
+    }
+
+    /// Zweite Zeile: Klasse bzw. Lehrkraft und Raum (geänderte Werte grün „neu (b̶i̶s̶h̶e̶r̶)“).
+    private var nebenzeilen: [Kachelzeile] {
+        var liste: [Kachelzeile] = kachel.personenzeilen.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
+        if let r = kachel.zeile("raum"), !r.text.trimmingCharacters(in: .whitespaces).isEmpty { liste.append(r) }
+        return liste
     }
 
     @ViewBuilder
@@ -698,14 +710,16 @@ struct HeuteStundenzeile: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
         } else {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
                 Kartenfach(kachel: kachel, text: kachel.fachText(darstellung), schrift: .body.weight(.semibold), farbe: Farben.text)
                     .layoutPriority(1)
-                if let r = kachel.zeile("raum"), !r.text.trimmingCharacters(in: .whitespaces).isEmpty {
-                    Kartenwert(zeile: r, karte: kachel.karte, entfall: entfall, schrift: .subheadline, farbe: Farben.text2)
-                }
-                ForEach(Array(geaenderteZeilen.enumerated()), id: \.offset) { _, z in
-                    Kartenwert(zeile: z, karte: kachel.karte, schrift: .subheadline, farbe: Farben.text2)
+                if !nebenzeilen.isEmpty {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        ForEach(Array(nebenzeilen.enumerated()), id: \.offset) { _, z in
+                            Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall,
+                                       schrift: .subheadline.weight(z.nurText ? .regular : .semibold), farbe: Farben.text2)
+                        }
+                    }
                 }
             }
         }
@@ -783,7 +797,7 @@ struct HeuteHinweiskarte: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(titel)
-                .font(.title2.weight(.semibold))
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(Farben.text)
             if !text.isEmpty {
                 Text(text)

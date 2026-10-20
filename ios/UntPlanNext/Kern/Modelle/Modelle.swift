@@ -787,17 +787,20 @@ struct Heute: Decodable, Sendable {
     var ferien: Ferienzeit?
     /// Sprechtage für die Startseite (wie /sprechtag/start); nil = Feld fehlt (älterer Server).
     var sprechtage: [SprechtagKarte]?
+    /// Ferien und freie Tage (heute frei, nächste Ferien, nächste Feiertage, nächster Schultag); nil = älterer Server.
+    var kalender: Schulkalender?
 
     enum CodingKeys: String, CodingKey {
         case paket, datum, wochentag, woche, jetzt, element, typ, karten, aufsichten, hinweise, ereignisse, nachrichten
         case termine, aenderungen, ungelesen, offeneStunden, hausaufgaben, meldungen, gesperrt, sperrhinweis
         case ferien, frei, freiArt, freiGrund, freiVon, freiBis
-        case sprechtage
+        case sprechtage, kalender
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         paket = c.wahr(.paket)
+        kalender = c.optional(.kalender)
         datum = String(c.text(.datum).prefix(10))
         wochentag = c.text(.wochentag)
         woche = c.text(.woche)
@@ -827,6 +830,56 @@ struct Heute: Decodable, Sendable {
         }
         let sprechtagListe: [SprechtagKarte] = c.liste(.sprechtage)
         sprechtage = c.contains(.sprechtage) ? sprechtagListe : nil
+    }
+}
+
+/// Freier Zeitraum aus `kalender` (Ferien, Feiertag, freier Tag) mit ISO-Datum.
+struct Freizeitraum: Decodable, Sendable, Equatable {
+    var name: String
+    var von: String
+    var bis: String
+    /// ferien | feiertag | frei
+    var art: String
+
+    enum CodingKeys: String, CodingKey { case name, von, bis, art }
+
+    init(name: String, von: String, bis: String, art: String) {
+        self.name = name
+        self.von = von
+        self.bis = bis
+        self.art = art
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = c.text(.name)
+        von = String(c.text(.von).prefix(10))
+        bis = String(c.text(.bis).prefix(10))
+        art = c.textOderNil(.art) ?? "ferien"
+    }
+
+    var istFerien: Bool { art == "ferien" }
+}
+
+/// Kalenderlage für „Heute“ (GET /api/app/heute, Feld `kalender`).
+struct Schulkalender: Decodable, Sendable {
+    /// Heutiges Datum (ISO) – kann vom gezeigten Schultag (`Heute.datum`) abweichen
+    var heute: String
+    /// Heute unterrichtsfrei (Ferien, Feiertag, freier Tag); nil = Schultag bzw. Wochenende
+    var frei: Freizeitraum?
+    var naechsteFerien: Freizeitraum?
+    var freieTage: [Freizeitraum]
+    var naechsterSchultag: String
+
+    enum CodingKeys: String, CodingKey { case heute, frei, naechsteFerien, freieTage, naechsterSchultag }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        heute = String(c.text(.heute).prefix(10))
+        frei = c.optional(.frei)
+        naechsteFerien = c.optional(.naechsteFerien)
+        freieTage = c.liste(.freieTage)
+        naechsterSchultag = String(c.text(.naechsterSchultag).prefix(10))
     }
 }
 

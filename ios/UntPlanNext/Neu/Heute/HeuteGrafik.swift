@@ -198,7 +198,7 @@ struct Tagesbandzeichnung {
             if vorbei { k.opacity = 0.42 }
             abschnitt(t.art, in: rechteck, kontext: &k)
             if let j = jetzt, t.von <= j, j < t.bis {
-                let rahmen = Path(roundedRect: rechteck.insetBy(dx: -2, dy: -2), cornerRadius: 4, style: .circular)
+                let rahmen = Path(roundedRect: rechteck.insetBy(dx: -2, dy: -2), cornerRadius: 2, style: .circular)
                 kontext.stroke(rahmen, with: .color(Farben.akzent), lineWidth: 2)
             }
         }
@@ -262,15 +262,15 @@ struct Tagesbandzeichnung {
     }
 
     private func abschnitt(_ art: Bandart, in r: CGRect, kontext: inout GraphicsContext) {
-        let form = Path(roundedRect: r, cornerRadius: 3, style: .circular)
-        let innen = Path(roundedRect: r.insetBy(dx: 0.75, dy: 0.75), cornerRadius: 2.5, style: .circular)
+        let form = Path(roundedRect: r, cornerRadius: 1, style: .circular)
+        let innen = Path(roundedRect: r.insetBy(dx: 0.75, dy: 0.75), cornerRadius: 1, style: .circular)
         switch art {
         case .regulaer:
             kontext.fill(form, with: .color(Farben.balkenGrau))
         case .aenderung:
             kontext.fill(form, with: .color(Farben.aenderung))
         case .pruefung:
-            kontext.fill(form, with: .color(Farben.pruefung))
+            kontext.fill(form, with: .color(Farben.pruefungStreifen))
         case .entfall:
             kontext.fill(form, with: .color(Farben.entfallChip))
             kontext.stroke(innen, with: .color(Farben.entfall), lineWidth: 1.5)

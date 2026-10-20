@@ -272,27 +272,19 @@ Zurück-Pfeil) bzw. „Mein Plan“ im Menü des Titels; Favorit an/aus im Menü
   landen im **Schreibpuffer** (je Konto) und werden gesendet, sobald das Netz zurück ist (Netzbeobachtung), die App in
   den Vordergrund kommt oder „Senden“ gewählt wird; bis dahin zeigt die App den lokalen Stand („wartet auf
   Verbindung“). Andere Schreibzugriffe melden einen klaren Fehler.
-- **Heute** (`Neu/Heute/HeuteView.swift`, `HeuteBereiche.swift`) – radikal reduziert, ruhig und sachlich: eine Ebene
-  (keine Karten in Karten), keine Symbol-Kacheln, **ein Akzent** (Petrol für „Jetzt“, Fortschritt und Links), sonst
-  Grautöne und die Statusfarben der Kennzeichen. Von oben:
-  1. großer Titel „Heute“, darunter eine Tageszeile „Dienstag, 20. Oktober · A-Woche“;
-  2. **Fokuskarte** (`HeuteFokus`, `HeuteFokuslage`): „Jetzt · noch 23 Min.“ bzw. „Als Nächstes · in 12 Min.“ (nach
-     Schulschluss bzw. an freien Tagen die erste Stunde des nächsten Schultags, „Als Nächstes · Mittwoch, 7:45“) – Fach
-     groß (`.title`, ausgeschrieben), „Raum 105“, Lehrkraft bzw. Klasse, „9:45–10:30 · 3. Std.“, Kennzeichen („Gal
-     (G̶o̶r̶)“, „verlegt von …“, „zusätzlich“), bei der laufenden Stunde eine dünne Fortschrittslinie (3 pt); antippen =
-     Stundendetails; Lehrkräfte darunter „Klassenbuch erfassen“ (wenn „Stunde jetzt“ diese Stunde ist);
-  3. **Heute** (bzw. der Wochentag) – alle Stunden des Tages, je eine Zeile `HeuteStundenzeile`: Beginn · Fach · Raum,
-     geänderte Lehrkraft/Klasse und Statuskennzeichen direkt in der Zeile, laufende Stunde mit Uhrzeit in Petrol und
-     „jetzt“, vergangene blass; rechts oben „Im Plan“; bei Bedienungshilfen-Schriftgrößen untereinander;
-  4. höchstens zwei weitere Abschnitte, nur wenn es etwas gibt: **Hinweise der Schule** (Abwesenheit, Nachrichten,
-     Veranstaltungen, Hinweise – zwei einzeilige Zeilen, „Alle“ zeigt alles vollständig) und je Rolle **Zu erledigen**
-     (Lehrkräfte: „2 Klassenbuch-Einträge offen“ → offene Stunden, „1 Aufsicht · Hof“ → Details der Aufsicht bzw. „3
-     Aufsichten“ → Liste, „Klassenbuch erfassen“ zum Nachtragen) bzw. **Demnächst** (Schüler*innen, Eltern: „1
-     Hausaufgabe für morgen“ → Hausaufgaben, „1 Prüfung diese Woche“ → Prüfungen);
-  5. **„Mehr anzeigen“** (auf dem Gerät gemerkt): Änderungen als Liste, nächster Schultag, Übersicht (Termine,
-     Abwesenheiten, Entschuldigungen, Hausaufgaben, Aufsichten, Sprechtage). Mitteilungen im Reiter „Postfach“;
-  6. ganz unten klein **Stand EduOrga Studio** und der Name der Schule.
-  Dynamic Type über Textstile, VoiceOver je Zeile ein ganzer Satz („Jetzt, noch 23 Minuten. 3. Stunde, M, …“).
+- **Heute** (`Neu/Heute/HeuteView.swift`, `HeuteBereiche.swift`, `HeuteGrafik.swift`, `HeuteKalender.swift`) – ruhiges
+  Tagesbriefing nach design/DESIGN.md, Abschnitt 10.1 „Heute“: Kopf „Mittwoch, 14. Oktober“ / „A-Woche · KW 42“ (immer das
+  tatsächliche Datum), **Tagesband**, **Fokuskarte** (Streifen oben wie die Karte v7, Restzeit groß), **Tageszahlen** (nur Werte
+  über null), Notizen der Schule, **Stunden** als Karten v7 (Fach, darunter Klasse/Lehrkraft und Raum, Änderungen grün),
+  **Kalender** (nächste Ferien „Weihnachtsferien · 23.12.–6.1. · in 64 Tagen“, Feiertage), „Mehr anzeigen“, Stand EduOrga Studio.
+  **In den Ferien bzw. an freien Tagen** statt leerer Stunden die **Ferienfläche** („Herbstferien · bis Samstag, 31.10. · noch
+  13 Tage“, nächster Schultag mit erster Stunde) und darunter die Stunden des nächsten Schultags. Daten: `kalender` aus
+  `GET /api/app/heute` (`Schulkalender`, `Freizeitraum`); ältere Server: Feld `ferien` bzw. Wochenplan.
+  Entwurf ohne Xcode (HTML-Nachbau 390 × 844): `docs/bilder/entwurf-v7-heute.png`, `entwurf-v7-ferien.png`,
+  `entwurf-v7-woche.png` (je auch `-dunkel`).
+- **Stundenkarte v7** (`Neu/Plan/Kartengestaltung.swift`, `Kartenmass`, `Klassikstil.streifen`): Radius 2, Linie 1 pt #c9d2d7,
+  regulär ohne Farbstreifen, Status als 3-pt-Streifen oben (geändert grün, Entfall rot, Prüfung gelb #b7791f), Tags als reiner
+  farbiger Text; Vorlage „Klassisch“ (Fachfarbe `balken-links`/`balken-flaeche`) behält die Leiste links.
 - **Postfach, Suche, Profil** – wie bisher (Profil jetzt als eigener Reiter, Suche als Blatt); im Profil zusätzlich **Benachrichtigungen** (E-Mail-Adresse und
   „Bei neuen Mitteilungen per E-Mail benachrichtigen“) und unter **Darstellung** die Dichte der Woche.
 
