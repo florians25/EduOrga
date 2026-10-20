@@ -52,23 +52,24 @@
 
   <!-- ==================== STUNDENPLAN ==================== -->
   <main class="screen screen--plan is-active" id="screenPlan">
-    <header class="topbar" id="topbar">
+    <!-- Kopf wie iOS: links „Mein Plan“ (nur bei einem gesuchten Plan), mittig Planname mit Pfeil und darunter der
+         Zeitraum „KW 43 · Okt. 2026 · A-Woche“, rechts genau ein Kalenderknopf -->
+    <header class="topbar topbar--ios" id="topbar">
+      <div class="topbar__links">
+        <button type="button" class="knopf knopf--still topbar__mein" id="btnMeinPlan" hidden>Mein Plan</button>
+      </div>
       <button class="topbar__title" id="btnEntityPicker" aria-haspopup="dialog">
-        <span class="topbar__name" id="entityLabel">–</span>
-        <svg class="ico ico--chev" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+        <span class="topbar__zeile"><span class="topbar__name" id="entityLabel">–</span>
+        <svg class="ico ico--chev" aria-hidden="true"><use href="#i-chevron-down"></use></svg></span>
+        <span class="topbar__zeitraum" id="planZeitraum">–</span>
         <span class="topbar__stand" id="planStand" hidden></span>
       </button>
       <div class="topbar__actions" id="topbarActions">
-        <button type="button" class="knopf knopf--still topbar__mein" id="btnMeinPlan" hidden>Mein Plan</button>
-        <span class="seg plan-seg" id="planSeg" role="group" aria-label="Ansicht">
-          <button type="button" data-v="day" aria-pressed="false">Tag</button>
-          <button type="button" data-v="week" aria-pressed="true">Woche</button>
-        </span>
         <button class="icon-btn" id="btnInfo" aria-label="Angaben zum Plan" hidden>
           <svg class="ico" aria-hidden="true"><use href="#i-info"></use></svg>
         </button>
-        <button class="icon-btn" id="btnMenu" aria-label="Ansicht und Optionen">
-          <svg class="ico" aria-hidden="true"><use href="#i-ellipsis-vertical"></use></svg>
+        <button class="icon-btn icon-btn--akzent" id="btnKalender" aria-label="Kalender: Heute, Gehe zu Datum">
+          <svg class="ico" aria-hidden="true"><use href="#i-calendar-days"></use></svg>
         </button>
       </div>
     </header>
@@ -97,7 +98,26 @@
       <div class="gridpane" id="gridPane"><!-- js --></div>
     </div>
 
+    <!-- Agenda: die Woche als Liste (wie iOS) -->
+    <div class="agenda" id="agenda" hidden></div>
+
     <div class="week-hint" id="weekHint" aria-hidden="true"></div>
+
+    <!-- Planleiste unten (wie iOS): Ansichten Agenda | Woche | Tag, rechts „Nur Änderungen“ und „Auswahl und Filter“ -->
+    <div class="planleiste" id="planleiste">
+      <span class="planleiste__kapsel plan-seg" id="planSeg" role="group" aria-label="Ansicht">
+        <button type="button" data-v="agenda" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-list"></use></svg><span>Agenda</span></button>
+        <button type="button" data-v="week" aria-pressed="true"><svg class="ico" aria-hidden="true"><use href="#i-calendar-range"></use></svg><span>Woche</span></button>
+        <button type="button" data-v="day" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-rectangle-vertical"></use></svg><span>Tag</span></button>
+      </span>
+      <button type="button" class="planleiste__rund" id="btnNurAenderungen" aria-pressed="false" aria-label="Nur Änderungen">
+        <svg class="ico" aria-hidden="true"><use href="#i-triangle"></use></svg>
+      </button>
+      <button type="button" class="planleiste__rund" id="btnMenu" aria-label="Auswahl und Filter">
+        <svg class="ico" aria-hidden="true"><use href="#i-sliders-horizontal"></use></svg>
+        <i class="planleiste__punkt" id="filterPunkt" hidden></i>
+      </button>
+    </div>
   </main>
 
   <!-- ==================== HEUTE ==================== -->
@@ -107,39 +127,43 @@
       <span class="kopf__titel" aria-hidden="true">Heute</span>
       <span class="kopf__aktionen"></span>
     </header>
-    <div class="seite__inhalt">
+    <div class="seite__inhalt heute">
       <div class="titelblock">
         <h1 class="grosstitel">Heute</h1>
-        <p class="untertitel"><span id="startDatum">–</span><span class="untertitel__tag" id="startTag" hidden></span></p>
-        <p class="schulname" id="startSchool">EduOrga Mobile</p>
       </div>
+      <!-- Tagesbriefing wie iOS (ansichten.js): Kopf, Tagesband, Fokus, Tageszahlen, Notizen, Stunden, Kalender bzw. Ferien -->
+      <div id="heuteInhalt" class="heute__inhalt" aria-live="polite"></div>
 
-      <!-- Infos zum Tag (Nachrichten, Veranstaltungen) -->
+      <button type="button" class="heute__mehr" id="heuteMehrKnopf" aria-expanded="false">
+        <span>Mehr anzeigen</span><svg class="ico" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+      </button>
+      <div id="heuteMehr" hidden>
+        <h2 class="heute__abschnitt">Übersicht</h2>
+        <div class="rows">
+          <button class="row row--nav" id="btnAppointments">
+            <span class="row__main"><b>Termine und Prüfungen</b></span>
+            <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+          </button>
+          <button class="row row--nav" id="btnAbsences">
+            <span class="row__main"><b>Meine Abwesenheiten</b><i id="absSub"></i></span>
+            <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+          </button>
+          <button class="row row--nav" id="btnClassLead" hidden>
+            <span class="row__main"><b>Klassenleitung</b><i id="clSub"></i></span>
+            <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+          </button>
+          <!-- Sprechtag: Lehrkräfte sehen ihre Termine (frei, gebucht, gesperrt), Eltern buchen -->
+          <button class="row row--nav" id="btnSprechtag" hidden>
+            <span class="row__main"><b>Sprechtag</b><i id="sptSub"></i></span>
+            <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+          </button>
+        </div>
+      </div>
+      <p class="heute__fuss" id="heuteFuss"></p>
+      <!-- ältere Ansicht (Rückfall ohne ansichten.js) -->
       <section class="newsstrip" id="startNews" hidden aria-label="Infos zum Tag"></section>
-
-      <h2 class="gruppe__titel">Nächste Stunden</h2>
-      <section class="karte nextbox" id="startNext"></section>
-
-      <h2 class="gruppe__titel">Übersicht</h2>
-      <div class="rows">
-        <button class="row row--nav" id="btnAppointments">
-          <span class="row__main"><b>Termine und Prüfungen</b></span>
-          <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
-        </button>
-        <button class="row row--nav" id="btnAbsences">
-          <span class="row__main"><b>Meine Abwesenheiten</b><i id="absSub"></i></span>
-          <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
-        </button>
-        <button class="row row--nav" id="btnClassLead" hidden>
-          <span class="row__main"><b>Klassenleitung</b><i id="clSub"></i></span>
-          <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
-        </button>
-        <!-- Sprechtag: Lehrkräfte sehen ihre Termine (frei, gebucht, gesperrt), Eltern buchen -->
-        <button class="row row--nav" id="btnSprechtag" hidden>
-          <span class="row__main"><b>Sprechtag</b><i id="sptSub"></i></span>
-          <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
-        </button>
-      </div>
+      <section class="karte nextbox" id="startNext" hidden></section>
+      <p hidden><span id="startDatum"></span><span id="startTag"></span><span id="startSchool"></span></p>
     </div>
   </main>
 
@@ -250,18 +274,33 @@
   <main class="screen screen--profile seite" id="screenProfile">
     <header class="kopf">
       <span class="kopf__links"></span>
-      <span class="kopf__titel" aria-hidden="true">Mehr</span>
+      <span class="kopf__titel" aria-hidden="true">Schule</span>
       <span class="kopf__aktionen"></span>
     </header>
     <div class="seite__inhalt">
       <div class="titelblock">
-        <h1 class="grosstitel" id="mehrTitel">Mehr</h1>
+        <h1 class="grosstitel" id="mehrTitel">Schule</h1>
         <p class="schulname" id="mehrSchule"></p>
       </div>
 
       <!-- Schulfunktionen nach Rolle (schule.js): Lehrkräfte, Schüler*innen, Eltern -->
       <div id="schulMenue"></div>
 
+    </div>
+  </main>
+
+
+  <!-- ==================== PROFIL (eigener Reiter wie iOS) ==================== -->
+  <main class="screen screen--konto seite" id="screenKonto">
+    <header class="kopf">
+      <span class="kopf__links"></span>
+      <span class="kopf__titel" aria-hidden="true">Profil</span>
+      <span class="kopf__aktionen"></span>
+    </header>
+    <div class="seite__inhalt">
+      <div class="titelblock">
+        <h1 class="grosstitel">Profil</h1>
+      </div>
       <!-- Konto: Anfangsbuchstabe, Anmeldename, Rolle; Antippen wechselt das Profil -->
       <h2 class="gruppe__titel">Konto</h2>
       <div class="rows">
@@ -274,6 +313,14 @@
         </button>
         <button class="row row--nav" id="btnAddProfile">
           <span class="row__main"><b>Weiteres Profil anmelden</b></span>
+          <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+        </button>
+      </div>
+
+      <h2 class="gruppe__titel">Benachrichtigungen</h2>
+      <div class="rows">
+        <button class="row row--nav" id="btnProfilSeite">
+          <span class="row__main"><b>Profil und Benachrichtigungen</b><i>E-Mail-Adresse, Benachrichtigung bei neuen Mitteilungen</i></span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
       </div>
@@ -365,23 +412,29 @@
   </main>
 
   <!-- ==================== UNTERE LEISTE ==================== -->
-  <nav class="tabbar" id="tabbar" role="tablist" aria-label="Bereiche">
+  <!-- ==================== UNTERE LEISTE (wie iOS: Heute · Plan · Postfach · Schule · Profil) ==================== -->
+  <nav class="tabbar tabbar--5" id="tabbar" role="tablist" aria-label="Bereiche">
     <button class="tab" data-screen="start" role="tab" aria-selected="false">
-      <svg class="ico" aria-hidden="true"><use href="#i-house"></use></svg>
+      <svg class="ico" aria-hidden="true"><use href="#i-sun"></use></svg>
       <span>Heute</span>
     </button>
     <button class="tab is-active" data-screen="plan" role="tab" aria-selected="true">
-      <svg class="ico" aria-hidden="true"><use href="#i-calendar-days"></use></svg>
+      <svg class="ico" aria-hidden="true"><use href="#i-calendar"></use></svg>
       <span>Plan</span>
     </button>
     <button class="tab" data-screen="msg" role="tab" aria-selected="false">
       <svg class="ico" aria-hidden="true"><use href="#i-inbox"></use></svg>
       <span>Postfach</span>
       <i class="tab__dot" id="msgDot" hidden></i>
+      <b class="tab__zahl" id="msgZahl" hidden></b>
     </button>
     <button class="tab" data-screen="profile" role="tab" aria-selected="false">
-      <svg class="ico" aria-hidden="true" id="tabMehrSymbol"><use href="#i-ellipsis"></use></svg>
-      <span id="tabMehrText">Mehr</span>
+      <svg class="ico" aria-hidden="true" id="tabMehrSymbol"><use href="#i-layout-grid"></use></svg>
+      <span id="tabMehrText">Schule</span>
+    </button>
+    <button class="tab" data-screen="konto" role="tab" aria-selected="false">
+      <svg class="ico" aria-hidden="true"><use href="#i-circle-user"></use></svg>
+      <span>Profil</span>
     </button>
   </nav>
 </div>
@@ -552,15 +605,18 @@
 
 <!-- ==================== MENÜ DES PLANS ==================== -->
 <div class="scrim scrim--clear" id="scrimMenu" hidden></div>
-<section class="sheet sheet--menu" id="sheetMenu" role="dialog" aria-modal="true" aria-label="Ansicht und Optionen" hidden>
+<section class="sheet sheet--menu" id="sheetMenu" role="dialog" aria-modal="true" aria-label="Auswahl und Filter" hidden>
+  <!-- Blatt „Auswahl und Filter“ (wie iOS): Layout, Reduzieren, Einblenden, Kennzeichnungen -->
   <div class="menu-list" role="menu">
-    <button class="menu-item" data-act="pickweek" role="menuitem">
-      <span class="menu-item__label">Gehe zu Datum</span>
-    </button>
-
-    <div class="menu-sep" role="separator"></div>
     <p class="menu-section">Ansicht</p>
-
+    <button class="menu-item menu-item--view" data-act="view-agenda" role="menuitemradio">
+      <span class="menu-item__label">Agenda</span>
+      <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
+    </button>
+    <button class="menu-item menu-item--view" data-act="view-week" role="menuitemradio">
+      <span class="menu-item__label">Woche</span>
+      <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
+    </button>
     <button class="menu-item menu-item--view" data-act="view-day" role="menuitemradio">
       <span class="menu-item__label">Tag</span>
       <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
@@ -573,8 +629,11 @@
       <span class="menu-item__label">3 Tage</span>
       <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
     </button>
-    <button class="menu-item menu-item--view" data-act="view-week" role="menuitemradio">
-      <span class="menu-item__label">Woche</span>
+
+    <div class="menu-sep" role="separator"></div>
+    <p class="menu-section">Reduzieren</p>
+    <button class="menu-item menu-item--toggle" id="menuNurAenderungen" data-act="toggle-aenderungen" role="menuitemcheckbox" aria-checked="false">
+      <span class="menu-item__label">Nur Änderungen</span>
       <span class="menu-item__check" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
     </button>
 
@@ -586,9 +645,14 @@
     </button>
 
     <div class="menu-sep" role="separator"></div>
-
+    <button class="menu-item" data-act="pickweek" role="menuitem">
+      <span class="menu-item__label">Gehe zu Datum</span>
+    </button>
     <button class="menu-item" data-act="legend" role="menuitem">
       <span class="menu-item__label">Kennzeichnungen</span>
+    </button>
+    <button class="menu-item" data-act="reload" role="menuitem">
+      <span class="menu-item__label">Plan aktualisieren</span>
     </button>
   </div>
 </section>
@@ -813,5 +877,6 @@ window.TT_FASSUNG = "__FASSUNG__";
 <script src="assets/js/planwacht.js?v=__FASSUNG__"></script>
 <script src="assets/js/app.js?v=__FASSUNG__"></script>
 <script src="assets/js/schule.js?v=__FASSUNG__"></script>
+<script src="assets/js/ansichten.js?v=__FASSUNG__"></script>
 </body>
 </html>

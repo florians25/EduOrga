@@ -65,7 +65,7 @@ const tageAnsicht = () => TAGE_ANSICHT[state.view] || 0;
 
 const state = {
   source:   'demo',            // demo | db | scrape
-  view:     ['day', 'day2', 'day3', 'week'].includes(store.get('view', 'week')) ? store.get('view', 'week') : 'week',
+  view:     ['agenda', 'day', 'day2', 'day3', 'week'].includes(store.get('view', 'week')) ? store.get('view', 'week') : 'week',
   day:      null,              // gewählter Tag in der Tagesansicht
   kind:     null,              // vom Server gemeldete Planart
   entities: S.ENTITIES.slice(),
@@ -82,7 +82,10 @@ const state = {
     showCancelled: store.get('showCancelled', true),
     /* Eigene Abwesenheiten im eigenen Plan als grauer Balken hinter den
        Stunden (⋮-Menü „Abwesenheiten anzeigen“, bleibt gespeichert). */
-    showAbsences:  store.get('showAbsences', true)
+    showAbsences:  store.get('showAbsences', true),
+    /* „Nur Änderungen“ (Dreieck in der Planleiste, wie iOS): regulärer Unterricht, reguläre Aufsichten und
+       Bereitschaften treten aus dem Plan; Änderungen, Entfall, Prüfungen, Termine und Ferien bleiben. */
+    nurAenderungen: store.get('nurAenderungen', false)
   }
 };
 
@@ -448,7 +451,9 @@ async function loadWeek(entity, weekStart, token){
                 /* Mitteilungen je Tag (gelbe Notiz über der ersten Stunde) */
                 notes: (quelle && quelle.notes) || {},
                 /* Datenstand: letzte Übertragung aus EduOrga Studio */
-                studioStand: (quelle && quelle.studioStand) || '' };
+                studioStand: (quelle && quelle.studioStand) || '',
+                /* Wochenbuchstabe („A“, „B“) für den Untertitel des Plans */
+                woche: (quelle && quelle.woche) || '' };
     /* Aus dem Speicher statt vom Server: Stand der Daten merken („Stand hh:mm“) */
     if (quelle && quelle._stand) w.stand = quelle._stand;
     /* Wochenbegrenzung der Rolle: Der Server liefert die Woche leer und
@@ -472,7 +477,7 @@ async function loadWeek(entity, weekStart, token){
     bootUsed = true;
     const byDate = {};
     dates.forEach(x => { byDate[x] = stampDates((BOOT.days && BOOT.days[x]) || [], x); });
-    store.set(cacheKey(entity, weekStart), { byDate, bands: BOOT.bands || [], kind: BOOT.kind, absences: BOOT.absences || {}, notes: BOOT.notes || {}, studioStand: BOOT.studioStand || '', zeit: Date.now(),
+    store.set(cacheKey(entity, weekStart), { byDate, bands: BOOT.bands || [], kind: BOOT.kind, absences: BOOT.absences || {}, notes: BOOT.notes || {}, studioStand: BOOT.studioStand || '', woche: BOOT.woche || '', zeit: Date.now(),
                                              gesperrt: !!BOOT.gesperrt, sperrhinweis: BOOT.sperrhinweis || '' });
     /* Ohne Netz kommt die Seite samt Woche aus dem Speicher des Service Workers – dann mit Stand */
     if (navigator.onLine === false){
@@ -494,7 +499,7 @@ async function loadWeek(entity, weekStart, token){
       const byDate = {};
       dates.forEach(x => { byDate[x] = stampDates((d.days && d.days[x]) || [], x); });
       if (d._stand) toast('Offline — Stand ' + d._stand);
-      if (!d._stand) store.set(cacheKey(entity, weekStart), { byDate, bands: d.bands || [], kind: d.kind, absences: d.absences || {}, notes: d.notes || {}, studioStand: d.studioStand || '', zeit: Date.now(),
+      if (!d._stand) store.set(cacheKey(entity, weekStart), { byDate, bands: d.bands || [], kind: d.kind, absences: d.absences || {}, notes: d.notes || {}, studioStand: d.studioStand || '', woche: d.woche || '', zeit: Date.now(),
                                                gesperrt: !!wochenSperre(d), sperrhinweis: (wochenSperre(d) || {}).hinweis || '' });
       store.set('lastSync', Date.now());
       return fertig(byDate, d.bands || [], d);
@@ -1232,7 +1237,36 @@ if (typeof window !== 'undefined') window.UntPlanParallel = { assignParallel, is
 /* Tageskopf wie in iOS und Web: „17.11“ (600) über dem Wochentag „Mo“. */
 const kopfDatum = dd => `${String(dd.getDate()).padStart(2, '0')}.${String(dd.getMonth() + 1).padStart(2, '0')}`;
 
+/* Punkt neben dem Wochentag (wie iOS): rot = Entfall am Tag, grün = Änderungen; gesprochen über den Namen des Knopfs. */
+function tagesPunkt(d){
+  const around = state.around || {};
+  const l = ((state.week && state.week.byDate) || {})[d] || ((around.prev || {}).byDate || {})[d] || ((around.next || {}).byDate || {})[d] || [];
+  if (l.some(c => c.blockType === 'cancelled' || c.blockType === 'class-absent')) return '<i class="dayhead__punkt is-entfall" aria-label="Entfall"></i>';
+  if (l.some(c => c.blockType === 'change')) return '<i class="dayhead__punkt is-aenderung" aria-label="Änderungen"></i>';
+  return '';
+}
+
+/* Zeitraum unter dem Plannamen (wie iOS): „KW 43 · Okt. 2026 · A-Woche“, im Tag „Di 20.10.2026“; mit „Nur Änderungen“
+   dahinter „· Änderungen“ in Petrol. */
+const MONATE_KURZ = ['Jan.', 'Feb.', 'März', 'Apr.', 'Mai', 'Juni', 'Juli', 'Aug.', 'Sept.', 'Okt.', 'Nov.', 'Dez.'];
+function zeitraumSetzen(){
+  const el = $('#planZeitraum');
+  if (!el) return;
+  let text;
+  if (tageAnsicht() === 1 && state.day){
+    const d = parseISO(state.day);
+    text = `${['So','Mo','Di','Mi','Do','Fr','Sa'][d.getDay()]} ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  } else {
+    const bezug = (tageAnsicht() && state.day) ? parseISO(state.day) : parseISO(state.weekStart);
+    const woche = (state.week && state.week.woche) || '';
+    text = [`KW ${isoWeek(bezug)}`, `${MONATE_KURZ[bezug.getMonth()]} ${bezug.getFullYear()}`, woche ? (woche.length === 1 ? woche + '-Woche' : woche) : '']
+      .filter(Boolean).join(' · ');
+  }
+  el.innerHTML = esc(text) + (state.opts.nurAenderungen ? ' <b class="topbar__nur">· Änderungen</b>' : '');
+}
+
 function renderWeekHead(){
+  zeitraumSetzen();
   const dates = weekDates(state.weekStart);
   const mo = parseISO(state.weekStart);
   /* In der Tagesansicht gelten KW und Monat für den gezeigten Tag. */
@@ -1259,7 +1293,7 @@ function renderWeekHead(){
          einzige, breite Spalte. KW und Monat stehen links wie dort. */
       return `<button class="dayhead ${n === 1 ? 'dayhead--day' : ''} ${d === today ? 'is-today' : ''}" data-day="${d}">
          <span class="dayhead__num">${kopfDatum(dd)}</span>
-         <span class="dayhead__name">${WD_SHORT[(dd.getDay()+6)%7].replace('.', '')}</span>
+         <span class="dayhead__name">${WD_SHORT[(dd.getDay()+6)%7].replace('.', '')}${tagesPunkt(d)}</span>
        </button>`;
     }).join('');
     stripRuhe($('#headStrip'));
@@ -1284,7 +1318,7 @@ function renderWeekHead(){
     const sel = state.view === 'day' && d === state.day;
     return `<button class="dayhead ${d === today ? 'is-today' : ''} ${sel ? 'is-picked' : ''}" data-day="${d}">
       <span class="dayhead__num">${kopfDatum(dd)}</span>
-      <span class="dayhead__name">${WD_SHORT[i % 5].replace('.', '')}</span>
+      <span class="dayhead__name">${WD_SHORT[i % 5].replace('.', '')}${tagesPunkt(d)}</span>
     </button>`;
   }).join('');
   stripRuhe($('#headStrip'));
@@ -1466,7 +1500,31 @@ function standZeigen(){
   if (knopf) knopf.classList.toggle('mit-stand', !!st);
 }
 
+/* Karte bleibt bei „Nur Änderungen“: alles, was vom Regelplan abweicht, dazu Prüfungen, Termine, Ferien und Hinweise. */
+function istAbweichung(c){
+  if (!c) return false;
+  if (['change', 'cancelled', 'class-absent', 'klausur', 'event', 'gs', 'absence', 'holiday'].includes(c.blockType)) return true;
+  if (c.holiday || c.openSub || c.teacherOpen || c.movedTo || c.movedFrom || c.extra) return true;
+  if ((c.changed || []).length) return true;
+  return false;
+}
+function gefiltert(byDate){
+  if (!state.opts.nurAenderungen) return byDate;
+  const aus = {};
+  Object.keys(byDate || {}).forEach(d => { aus[d] = (byDate[d] || []).filter(istAbweichung); });
+  return aus;
+}
+
 function renderGrid(){
+  ansichtKlasse();
+  zeitraumSetzen();
+  if (state.view === 'agenda'){
+    const around = state.around || {};
+    state.allByDate = Object.assign({}, (around.prev || {}).byDate, state.week.byDate, (around.next || {}).byDate);
+    if (window.EDOAnsichten) window.EDOAnsichten.agenda(gefiltert(state.week.byDate || {}));
+    standZeigen();
+    return;
+  }
   const nTage = tageAnsicht();
   /* „isDay“ ist die Tagesansicht im engeren Sinn (eine Spalte, Feld links
      und Stunden daneben). 2 und 3 Tage verhalten sich wie die Woche, nur
@@ -1484,8 +1542,8 @@ function renderGrid(){
 
   /* Karten aller drei Wochen an einem Ort. */
   const around = state.around || {};
-  const byDate = Object.assign({},
-    (around.prev || {}).byDate, state.week.byDate, (around.next || {}).byDate);
+  const byDate = gefiltert(Object.assign({},
+    (around.prev || {}).byDate, state.week.byDate, (around.next || {}).byDate));
   /* Auch die Nachbarwochen sind anklickbar — der Streifen zeigt sie ja. */
   state.allByDate = byDate;
   /* Abwesenheitsbalken ebenso aus allen drei Wochen. */
@@ -2644,9 +2702,18 @@ function scrollToNow(){
    --------------------------------------------------------------------- */
 const WD_LONG = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
 
+/* Agenda (Liste) bzw. Raster: die Planseite trägt die Ansicht als Klasse (app.css blendet Raster bzw. Liste aus). */
+function ansichtKlasse(){
+  const seite = $('#screenPlan');
+  if (seite) seite.classList.toggle('is-agenda', state.view === 'agenda');
+  const ag = $('#agenda');
+  if (ag) ag.hidden = state.view !== 'agenda';
+}
+
 function setView(view, day){
   state.view = view;
   store.set('view', view);
+  ansichtKlasse();
   if (tageAnsicht()){
     state.day = schultag(day || state.day || pickDefaultDay());
     /* Der Tag muss in der geladenen Woche liegen */
@@ -3259,7 +3326,7 @@ function showScreen(name){
      alles, wofür ihnen das Recht fehlt. */
   if (state.isStudent) rechteAnwenden();
   const map = { plan:'#screenPlan', start:'#screenStart', msg:'#screenMsg',
-                profile:'#screenProfile', list:'#screenList', schule:'#screenSchule' };
+                profile:'#screenProfile', konto:'#screenKonto', list:'#screenList', schule:'#screenSchule' };
   Object.entries(map).forEach(([k, sel]) => $(sel).classList.toggle('is-active', k === name));
   /* Jetzt erst hat der Plan Ausmaße. Was im Verborgenen gezeichnet wurde,
      konnte nicht vermessen werden — hier wird es nachgeholt, sobald der
@@ -3267,7 +3334,7 @@ function showScreen(name){
   if (name === 'plan') requestAnimationFrame(feinKuerzung);
   $$('.tab').forEach(t => {
     /* Die Listen gehören zu der Seite, von der sie geöffnet wurden. */
-    const on = t.dataset.screen === (name === 'list' ? listeZurueck : name === 'schule' ? 'profile' : name);
+    const on = t.dataset.screen === (name === 'list' ? listeZurueck : name === 'schule' ? (state.schulUrsprung || 'profile') : name);
     t.classList.toggle('is-active', on);
     t.setAttribute('aria-selected', on ? 'true' : 'false');
   });
@@ -3345,6 +3412,16 @@ async function startPlanLaden(){
 }
 
 function renderStart(){
+  /* Tagesbriefing wie iOS (ansichten.js); die frühere Liste „Nächste Stunden“ bleibt als Rückfall. */
+  if (window.EDOAnsichten){
+    const eigenE = state.entities.find(e => e.type === 'mine') || state.entities[0];
+    const ich = planKey(state.entity) === planKey(eigenE);
+    const q = (startWeek && startWeek.byDate) || (ich ? (state.allByDate || state.week.byDate) : {});
+    window.EDOAnsichten.heute({ byDate: q, gesperrt: !!(startWeek ? startWeek.gesperrt : (ich && state.week && state.week.gesperrt)),
+                                studioStand: (startWeek && startWeek.studioStand) || (ich && state.week && state.week.studioStand) || '',
+                                notes: (startWeek && startWeek.notes) || {} });
+    return;
+  }
   const now = new Date();
   const WD = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 
@@ -3628,7 +3705,14 @@ async function renderMessages(){
   else msgPunktHolen();
 }
 
-function msgPunkt(items){ $('#msgDot').hidden = !items.some(m => m.read === false); }
+/* Postfach-Reiter: Zahl der ungelesenen Mitteilungen als kleine Zahl (wie iOS), der Punkt bleibt für ältere Hüllen. */
+function msgPunkt(items){
+  const n = items.filter(m => m.read === false).length;
+  const z = $('#msgZahl');
+  if (z){ z.hidden = !n; z.textContent = n > 99 ? '99+' : String(n); $('#msgDot').hidden = true; }
+  else $('#msgDot').hidden = !n;
+  state.ungelesen = n;
+}
 async function msgPunktHolen(){
   try { msgPunkt((await msgFetch('list', { box:'inbox' })).items); } catch (e) {}
 }
@@ -5738,6 +5822,8 @@ function markMenuView(){
     b.classList.toggle('is-active', on);
     b.setAttribute('aria-checked', on ? 'true' : 'false');
   });
+  const nur = $('#menuNurAenderungen');
+  if (nur){ nur.classList.toggle('is-active', !!state.opts.nurAenderungen); nur.setAttribute('aria-checked', state.opts.nurAenderungen ? 'true' : 'false'); }
   /* „Abwesenheiten anzeigen“ gilt nur für den eigenen Plan. */
   const abw = $('#menuAbsences');
   if (abw){
@@ -5774,6 +5860,12 @@ async function datenNeuLaden(){
 }
 
 $('#btnMenu').addEventListener('click', () => { markMenuView(); SH.menu.open(); });
+/* Kalenderknopf rechts oben (wie iOS): Gehe zu Datum mit „Heute“. */
+$('#btnKalender').addEventListener('click', () => {
+  state.calSel = tageAnsicht() ? state.day : (weekDates(state.weekStart).includes(iso(new Date())) ? iso(new Date()) : state.weekStart);
+  state.calMonth = parseISO(state.calSel);
+  renderCalendar(); SH.week.open();
+});
 $$('#sheetMenu .menu-item').forEach(b => b.addEventListener('click', () => {
   const act = b.dataset.act;
   SH.menu.close();
@@ -5798,8 +5890,9 @@ $$('#sheetMenu .menu-item').forEach(b => b.addEventListener('click', () => {
     if (act === 'toggle-absences'){
       state.opts.showAbsences = !state.opts.showAbsences;
       store.set('showAbsences', state.opts.showAbsences);
-      renderGrid();
+      renderGrid(); planSegSetzen();
     }
+    if (act === 'toggle-aenderungen') nurAenderungenSetzen(!state.opts.nurAenderungen);
   }, 200);
 }));
 
@@ -8695,16 +8788,28 @@ const stundenText = c => (c.span || 1) > 1 ? `${c.lesson}.–${c.lesson + c.span
    dazu Aufziehen (Tag) und Zusammenziehen (Woche) mit zwei Fingern. */
 function planSegSetzen(){
   $$('#planSeg button').forEach(b => {
-    const an = b.dataset.v === 'day' ? state.view === 'day' : state.view === 'week';
+    const an = b.dataset.v === 'day' ? !!tageAnsicht() : b.dataset.v === state.view;
     b.classList.toggle('is-on', an); b.setAttribute('aria-pressed', an ? 'true' : 'false');
   });
+  const nur = $('#btnNurAenderungen');
+  if (nur){ nur.classList.toggle('is-on', !!state.opts.nurAenderungen); nur.setAttribute('aria-pressed', state.opts.nurAenderungen ? 'true' : 'false'); }
+  const punkt = $('#filterPunkt');
+  if (punkt) punkt.hidden = state.opts.showAbsences !== false && state.opts.showCancelled !== false;
 }
 $$('#planSeg button').forEach(b => b.addEventListener('click', () => {
-  if (b.dataset.v === state.view) return;
+  if (b.dataset.v === state.view || (b.dataset.v === 'day' && tageAnsicht())) return;
   buzz();
   setView(b.dataset.v, b.dataset.v === 'day' ? pickDefaultDay() : undefined);
   if (typeof markMenuView === 'function') markMenuView();
 }));
+/* „Nur Änderungen“: regulärer Unterricht tritt aus Woche, Tag und Agenda (bleibt auf dem Gerät gespeichert). */
+function nurAenderungenSetzen(an){
+  state.opts.nurAenderungen = !!an;
+  store.set('nurAenderungen', state.opts.nurAenderungen);
+  planSegSetzen(); zeitraumSetzen(); renderGrid();
+  if (typeof markMenuView === 'function') markMenuView();
+}
+{ const b = $('#btnNurAenderungen'); if (b) b.addEventListener('click', () => { buzz(); nurAenderungenSetzen(!state.opts.nurAenderungen); toast(state.opts.nurAenderungen ? 'Nur Änderungen' : 'Alle Stunden'); }); }
 (() => {
   const flaeche = $('#gridScroll');
   if (!flaeche) return;
@@ -8747,6 +8852,10 @@ async function stundeOeffnen(datum, stunde, unterricht){
 }
 window.EDO = {
   state, esc, sym, toast, buzz, showScreen, kopfAbgleichen, sptBlatt, listeOeffnen, stundeOeffnen,
+  /* Brücke zu ansichten.js (Heute, Agenda wie iOS) */
+  openDetail, studioStandText, darstellungSetzen, gotoWeek, setView, cardLines, viewKind, isoWeek,
+  eigeneWoche: async (mo) => { const e = state.entities.find(x => x.type === 'mine') || state.entities[0]; return e ? loadWeekShared(e, mo) : null; },
+  klassenbuchOeffnen: (date, lesson, uid, quelle) => { openDetail(date, lesson, uid, quelle); state.detailReiter = 'klassenbuch'; renderDetail(); },
   build: () => BUILD,
   sprechtagOeffnen: () => { spt.id = 0; spt.liste = null; spt.filter = 'alle'; listeOeffnen('sprechtag'); }
 };

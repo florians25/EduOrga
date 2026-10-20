@@ -2934,3 +2934,216 @@ body.show-card-times .card__times{ display:flex; }
 .kennz .muster.card--change.is-offen{ outline-width:1px; outline-offset:-1px; }
 .sw--change{ box-shadow:inset 0 3px 0 var(--st-aenderung), inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 45%, transparent); }
 [data-fachfarbe="balken-oben"] .card.card--change.is-offen::before{ display:none; }
+
+/* =====================================================================
+   Angleichung an die iOS-App (ios/UntPlanNext/Neu/**, design/DESIGN.md
+   Abschnitt 10.1): untere Leiste mit fünf Reitern (Heute · Plan ·
+   Postfach · Schule · Profil), Plan mit Kopf „Mein Plan ▾ / KW 43 · Okt.
+   2026 · A-Woche“ und Kalenderknopf, Planleiste unten (Agenda | Woche |
+   Tag, „Nur Änderungen“, „Auswahl und Filter“), Agenda als Liste und
+   „Heute“ als ruhiges Tagesbriefing. Inhaltsflächen Radius 6, 1-px-Rand,
+   keine Karten in Karten; keine Verläufe, kein Weichzeichner.
+   ===================================================================== */
+/* ---------- Untere Leiste: fünf Reiter, Zahl der ungelesenen Mitteilungen ---------- */
+.tabbar.tabbar--5{ grid-template-columns:repeat(5, 1fr); padding:0 2px var(--sab); }
+.tabbar--5 .tab{ font-size:10px; font-weight:500; gap:2px; }
+.tabbar--5 .tab .ico{ width:25px; height:25px; stroke-width:1.6; }
+.tabbar--5 .tab.is-active .ico{ stroke-width:1.9; }
+.tab__zahl{ position:absolute; top:5px; left:calc(50% + 4px); min-width:18px; height:18px; padding:0 5px; border-radius:9px;
+  background:var(--st-entfall); color:#fff; font-size:11px; font-weight:600; line-height:18px; text-align:center; font-style:normal;
+  font-variant-numeric:tabular-nums; box-shadow:0 0 0 2px var(--up-flaeche); }
+
+/* ---------- Plan: Kopf wie iOS ---------- */
+.topbar.topbar--ios{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:4px; padding:var(--sat) 6px 0 8px;
+  border-bottom:0; }
+.topbar__links{ display:flex; align-items:center; min-width:0; }
+.topbar--ios .topbar__actions{ justify-content:flex-end; }
+.topbar--ios .topbar__title{ flex-direction:column; align-items:center; justify-content:center; gap:0; height:46px; max-width:220px; padding:0 8px; }
+.topbar__zeile{ display:inline-flex; align-items:center; gap:3px; min-width:0; max-width:100%; font-size:15px; font-weight:600; line-height:19px; }
+.topbar--ios .ico--chev{ width:14px; height:14px; }
+.topbar__zeitraum{ font-size:11px; font-weight:400; line-height:14px; color:var(--up-text-2); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.topbar__nur{ font-weight:600; color:var(--up-akzent); }
+.topbar--ios .topbar__stand{ display:none; }
+.icon-btn--akzent{ color:var(--up-akzent); }
+/* Tageskopf: Punkt neben dem Wochentag (grün = Änderungen, rot = Entfall) */
+.dayhead__punkt{ display:inline-block; width:5px; height:5px; margin-left:3px; border-radius:50%; vertical-align:middle; }
+.dayhead__punkt.is-aenderung{ background:var(--st-aenderung); }
+.dayhead__punkt.is-entfall{ background:var(--st-entfall); }
+
+/* ---------- Planleiste unten (schwebend über dem Raster, über der Tab-Leiste) ---------- */
+.screen--plan .gridscroll{ margin-bottom:0; }
+.screen--plan .gridpane{ padding-bottom:76px; }
+.planleiste{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); z-index:30;
+  display:flex; align-items:center; gap:10px; max-width:calc(100% - 24px); }
+.planleiste__kapsel{ display:flex; padding:3px; border-radius:24px; background:color-mix(in srgb, var(--up-flaeche) 94%, transparent);
+  border:.5px solid var(--up-rand); box-shadow:0 4px 16px rgba(12,44,49,.14); }
+.planleiste__kapsel button{ width:60px; height:40px; border-radius:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+  color:var(--up-text-2); font-size:10.5px; font-weight:600; line-height:12px; transition:background-color .12s, color .12s; }
+.planleiste__kapsel button .ico{ width:15px; height:15px; stroke-width:2.2; }
+.planleiste__kapsel button.is-on{ background:var(--up-akzent); color:#fff; }
+:root[data-thema="dunkel"] .planleiste__kapsel button.is-on{ color:#0c2c31; }
+.planleiste__rund{ position:relative; width:44px; height:44px; border-radius:22px; display:flex; align-items:center; justify-content:center;
+  background:color-mix(in srgb, var(--up-flaeche) 94%, transparent); border:.5px solid var(--up-rand); color:var(--up-text-2);
+  box-shadow:0 4px 16px rgba(12,44,49,.14); }
+.planleiste__rund .ico{ width:19px; height:19px; stroke-width:2; }
+.planleiste__rund.is-on{ background:var(--up-akzent); color:#fff; border-color:transparent; }
+.planleiste__rund.is-on .ico{ fill:currentColor; }
+.planleiste__punkt{ position:absolute; top:7px; right:7px; width:8px; height:8px; border-radius:50%; background:var(--up-akzent); }
+.planleiste button:focus-visible{ outline:2px solid var(--up-fokus); outline-offset:2px; }
+.screen--plan .week-hint{ bottom:76px; }
+
+/* ---------- Agenda (Agenda.swift): je Tag links „17“ über „Mo“, rechts je Stunde eine flache Zeile ---------- */
+.screen--plan.is-agenda .gridscroll, .screen--plan.is-agenda .weekhead, .screen--plan.is-agenda .dayswitch{ display:none !important; }
+.agenda{ flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; background:var(--up-hintergrund);
+  padding:8px 16px 96px; border-top:1px solid var(--up-rand); }
+.ag-tag{ display:grid; grid-template-columns:44px minmax(0,1fr); gap:10px; padding:10px 0; border-bottom:1px solid var(--up-rand); }
+.ag-tag:last-child{ border-bottom:0; }
+.ag-datum{ display:flex; flex-direction:column; align-items:flex-start; padding-top:2px; color:var(--up-text); text-align:left; }
+.ag-datum b{ font-size:22px; font-weight:700; line-height:26px; font-variant-numeric:tabular-nums; }
+.ag-datum span{ font-size:12px; color:var(--up-text-2); }
+.ag-tag.is-heute .ag-datum, .ag-tag.is-heute .ag-datum span{ color:var(--up-akzent); }
+.ag-liste{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.ag-zeile{ position:relative; overflow:hidden; display:grid; grid-template-columns:24px 38px minmax(0,1fr) auto; align-items:center; gap:8px;
+  min-height:44px; padding:6px 10px 4px 6px; text-align:left; background:var(--karte); border-radius:2px;
+  box-shadow:inset 0 0 0 1px var(--kachel-linie, #c9d2d7); color:var(--up-text); }
+.ag-zeile .h-streifen{ height:3px; }
+.ag-nr{ font-size:20px; font-weight:400; text-align:center; font-variant-numeric:tabular-nums; }
+.ag-zeit{ display:flex; flex-direction:column; font-size:11px; line-height:13px; color:var(--up-text-2); font-variant-numeric:tabular-nums; }
+.ag-haupt{ min-width:0; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; row-gap:0; }
+.ag-haupt > b{ font-size:15px; font-weight:700; }
+.ag-haupt .h-neben{ font-size:13px; }
+.ag-rechts{ font-size:12px; }
+.ag-zeile--aend{ background:var(--up-aenderung-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 45%, transparent); }
+.ag-zeile--ent{ background:var(--up-entfall-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-entfall) 35%, transparent); }
+.ag-zeile--ent .ag-haupt{ text-decoration:line-through; text-decoration-color:color-mix(in srgb, var(--st-entfall) 80%, transparent); }
+.ag-zeile--ent .ag-haupt > b{ color:var(--up-entfall-text); }
+.ag-zeile--pr{ background:var(--up-pruefung-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--up-pruefung-streifen, #b7791f) 50%, transparent); }
+.ag-zeile--offen{ box-shadow:none; outline:1px dashed var(--up-offen); outline-offset:-1px; }
+.ag-zeile--ev{ background:var(--up-ereignis-flaeche); box-shadow:inset 0 0 0 1px var(--up-ereignis-rand); }
+.ag-zeile--ev .ag-haupt > b{ color:var(--up-ereignis-text); font-weight:600; }
+.ag-zeile--auf, .ag-zeile--still{ background:var(--up-flaeche); box-shadow:inset 0 0 0 1px var(--up-rand); }
+.ag-zeile--auf .ag-haupt > b{ font-weight:500; color:var(--up-text-2); }
+.ag-zeile.is-vorbei{ opacity:.62; }
+.ag-zeile.is-jetzt{ box-shadow:inset 0 0 0 2px var(--up-akzent); }
+.ag-ferien{ padding:10px 12px; border-radius:2px; background:var(--up-frei-flaeche); color:var(--st-frei); }
+.ag-ferien b{ display:block; font-size:15px; font-weight:600; } .ag-ferien span{ font-size:13px; }
+.ag-notiz{ padding:7px 10px; border-radius:2px; background:var(--up-mitteilung-flaeche); color:var(--up-mitteilung-text); box-shadow:inset 0 0 0 1px var(--up-mitteilung-rand); font-size:13px; }
+.ag-keine{ padding:12px 0; font-size:14px; color:var(--up-text-3); }
+.ag-leer{ padding:24px 4px; color:var(--up-text-2); font-size:14px; }
+
+/* ---------- Heute: Tagesbriefing ---------- */
+.heute .titelblock{ padding-bottom:4px; }
+.heute__inhalt{ display:flex; flex-direction:column; gap:24px; }
+.h-kopf{ display:flex; flex-direction:column; gap:2px; padding:0 4px; }
+.h-kopf b{ font-size:20px; font-weight:600; line-height:25px; color:var(--up-text); }
+.h-kopf span{ font-size:15px; color:var(--up-text-2); font-variant-numeric:tabular-nums; }
+.h-zusatz{ margin:-12px 4px 0; font-size:15px; font-weight:600; color:var(--up-text-2); }
+.h-flaeche{ position:relative; overflow:hidden; background:var(--up-flaeche); border:1px solid var(--up-rand); border-radius:var(--up-radius); }
+.h-streifen{ position:absolute; left:0; right:0; top:0; height:3px; pointer-events:none; }
+.h-hinweis{ display:flex; flex-direction:column; gap:4px; padding:16px; }
+.h-hinweis b{ font-size:18px; font-weight:600; } .h-hinweis span{ font-size:15px; color:var(--up-text-2); }
+/* Tagesband */
+.h-band{ position:relative; display:block; width:100%; height:58px; padding:0; text-align:left; }
+.h-band:focus-visible{ outline:2px solid var(--up-fokus); outline-offset:3px; }
+.h-bandflaeche{ position:absolute; left:0; right:0; top:0; bottom:0; }
+.h-bandzeit, .h-jetztzeit{ position:absolute; top:0; font-size:11px; line-height:14px; color:var(--up-text-2); font-variant-numeric:tabular-nums; }
+.h-bandzeit--rechts{ right:0; }
+.h-jetztzeit{ transform:translateX(-50%); color:var(--up-akzent); font-weight:600; }
+.h-seg{ position:absolute; top:18px; height:20px; border-radius:1px; background:var(--balken-grau); }
+.h-seg--aend{ background:var(--st-aenderung); }
+.h-seg--pr{ background:var(--up-pruefung-streifen, #b7791f); }
+.h-seg--ent{ background:var(--up-entfall-flaeche); box-shadow:inset 0 0 0 1.5px var(--st-entfall); }
+.h-seg--ent::after{ content:""; position:absolute; left:3px; right:3px; top:9px; height:1.5px; background:var(--st-entfall); }
+.h-seg--offen{ background:var(--karte); outline:1.5px dashed var(--up-text-3); outline-offset:-1.5px; }
+.h-seg--ev{ background:var(--up-ereignis-flaeche); box-shadow:inset 0 0 0 1.5px var(--up-ereignis-rand); }
+.h-seg--still{ background:var(--up-schiefer-100); outline:1.5px dashed var(--up-rand-stark); outline-offset:-1.5px; }
+.h-seg.is-vorbei{ opacity:.42; }
+.h-seg.is-jetzt{ outline:2px solid var(--up-akzent); outline-offset:2px; }
+.h-nr{ position:absolute; top:42px; font-size:11px; line-height:14px; text-align:center; color:var(--up-text-2); font-variant-numeric:tabular-nums; overflow:hidden; }
+.h-nr.is-jetzt{ color:var(--up-akzent); font-weight:600; }
+.h-aufsicht{ position:absolute; top:26px; height:4px; border-radius:1px; background:var(--up-text-3); }
+.h-aufsicht.is-aend{ background:var(--st-aenderung); }
+.h-jetzt{ position:absolute; top:15px; width:2px; height:26px; margin-left:-1px; background:var(--up-akzent); }
+/* Fokuskarte */
+.h-fokus__haupt{ position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:12px; width:100%; padding:17px 16px 14px; text-align:left; color:var(--up-text); }
+.h-fokus__kopf{ grid-column:1; font-size:15px; } .h-fokus__kopf b{ font-weight:600; } .h-fokus__kopf b.is-jetzt{ color:var(--up-akzent); }
+.h-fokus__kopf span{ color:var(--up-text-2); font-variant-numeric:tabular-nums; }
+.h-fokus__fach{ grid-column:1; margin-top:4px; font-size:22px; font-weight:600; line-height:27px; overflow-wrap:anywhere; }
+.h-fokus__ang{ grid-column:1; margin-top:4px; font-size:17px; color:var(--up-text-2); display:flex; flex-wrap:wrap; gap:4px 10px; }
+.h-fokus__ang > span:first-child{ color:var(--up-text); font-weight:600; }
+.h-fokus__rest{ grid-column:2; grid-row:1 / span 3; text-align:right; align-self:start; }
+.h-fokus__rest small{ display:block; font-size:12px; color:var(--up-text-2); }
+.h-fokus__rest b{ font-size:28px; font-weight:600; line-height:32px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.h-fokus__rest b.is-jetzt{ color:var(--up-akzent); }
+.h-fokus__zeit{ grid-column:1 / span 2; margin-top:8px; font-size:15px; color:var(--up-text-2); font-variant-numeric:tabular-nums; }
+.h-fort{ grid-column:1 / span 2; position:relative; display:block; height:6px; margin-top:12px; background:var(--up-schiefer-100); }
+.h-fort i{ position:absolute; left:0; top:0; bottom:0; background:var(--up-akzent); }
+.h-fort--frei{ height:4px; margin-top:12px; } .h-fort--frei i{ background:var(--st-frei); }
+:root[data-thema="dunkel"] .h-fort{ background:#222a34; }
+.h-fortzeit{ grid-column:1 / span 2; display:flex; justify-content:space-between; margin-top:4px; font-size:12px; color:var(--up-text-2); font-variant-numeric:tabular-nums; }
+.h-aktion{ display:flex; align-items:center; gap:8px; width:100%; min-height:44px; padding:0 16px; border-top:1px solid var(--up-rand); text-align:left; font-size:15px; }
+.h-aktion b{ color:var(--up-akzent); font-weight:600; } .h-aktion .ico{ margin-left:auto; }
+.h-fokus__haupt:focus-visible, .h-aktion:focus-visible{ outline:2px solid var(--up-fokus); outline-offset:-2px; }
+/* Tageszahlen */
+.h-zahlen{ display:flex; }
+.h-zahl{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:1px; padding:10px 12px; min-height:44px; text-align:left; }
+.h-zahl + .h-zahl{ border-left:1px solid var(--up-rand); }
+.h-zahl b{ font-size:22px; font-weight:600; line-height:27px; color:var(--up-text); font-variant-numeric:tabular-nums; }
+.h-zahl b.is-aend{ color:var(--up-aenderung-text); } .h-zahl b.is-warn{ color:var(--st-pruefung); } .h-zahl b.is-akzent{ color:var(--up-akzent); }
+.h-zahl span{ font-size:12px; line-height:15px; color:var(--up-text-2); }
+.h-zahl:focus-visible{ outline:2px solid var(--up-fokus); outline-offset:-2px; }
+/* Notizen der Schule */
+.h-notizen{ display:flex; flex-direction:column; gap:6px; }
+.h-notiz{ padding:9px 12px; border-radius:2px; background:var(--up-mitteilung-flaeche); color:var(--up-mitteilung-text); box-shadow:inset 0 0 0 1px var(--up-mitteilung-rand); }
+.h-notiz b{ display:block; font-size:13px; font-weight:600; } .h-notiz span{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:15px; }
+.h-link{ align-self:flex-start; min-height:32px; font-size:15px; font-weight:600; color:var(--up-akzent); }
+/* Abschnitte und Stunden */
+.h-abschnitt-block{ display:flex; flex-direction:column; gap:8px; }
+.h-abschnitt, .heute__abschnitt{ display:flex; align-items:baseline; justify-content:space-between; margin:0 4px; font-size:17px; font-weight:600; color:var(--up-text); }
+.heute__abschnitt{ margin:4px 4px 8px; }
+.h-stunden{ display:flex; flex-direction:column; gap:6px; }
+.h-zeile{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; color:var(--up-text); }
+.h-zeile.is-vorbei{ opacity:.55; }
+.h-zeit{ flex:0 0 42px; display:flex; flex-direction:column; align-items:flex-end; font-variant-numeric:tabular-nums; }
+.h-zeit b{ font-size:15px; font-weight:400; } .h-zeit b.is-jetzt{ color:var(--up-akzent); font-weight:600; }
+.h-zeit small{ font-size:11px; color:var(--up-text-3); }
+.h-karte{ position:relative; overflow:hidden; flex:1 1 auto; min-width:0; min-height:52px; display:flex; align-items:center; gap:8px;
+  padding:11px 12px 8px; background:var(--karte); border-radius:2px; box-shadow:inset 0 0 0 1px var(--kachel-linie, #c9d2d7); }
+.h-karte__haupt{ min-width:0; flex:1 1 auto; display:flex; flex-direction:column; gap:2px; }
+.h-fach{ font-size:17px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.h-neben{ display:flex; flex-wrap:wrap; gap:0 10px; font-size:15px; color:var(--up-text-2); min-width:0; }
+.h-karte__rechts{ flex:0 0 auto; font-size:13px; }
+.h-karte--aend{ background:var(--up-aenderung-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 45%, transparent); }
+.h-karte--ent{ background:var(--up-entfall-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-entfall) 35%, transparent); }
+.h-karte--ent .h-karte__haupt{ text-decoration:line-through; text-decoration-color:color-mix(in srgb, var(--st-entfall) 80%, transparent); }
+.h-karte--ent .h-fach{ color:var(--up-entfall-text); }
+.h-karte--pr{ background:var(--up-pruefung-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--up-pruefung-streifen, #b7791f) 50%, transparent); }
+.h-karte--offen{ box-shadow:none; outline:1px dashed var(--up-offen); outline-offset:-1px; }
+.h-karte--ev{ background:var(--up-ereignis-flaeche); box-shadow:inset 0 0 0 1px var(--up-ereignis-rand); }
+.h-karte--ev .h-fach{ color:var(--up-ereignis-text); font-size:15px; }
+.h-karte.is-jetzt{ outline:2px solid var(--up-akzent); outline-offset:-1px; }
+.h-gr{ color:var(--up-aenderung-text); font-weight:600; } .h-gr s{ font-weight:400; text-decoration-thickness:1px; }
+.h-offen{ color:var(--up-offen-text); font-weight:600; }
+.h-status{ font-weight:600; white-space:nowrap; } .h-status--entfall{ color:var(--up-entfall-text); } .h-status--aenderung{ color:var(--up-aenderung-text); }
+.h-status--jetzt{ color:var(--up-akzent); }
+.h-wort{ font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--up-pruefung-text, #7a4f05); }
+.h-zeile:focus-visible .h-karte{ outline:2px solid var(--up-fokus); outline-offset:1px; }
+/* Ferienfläche und Kalender */
+.h-ferien__kopf{ display:flex; flex-direction:column; gap:6px; padding:19px 16px 14px; }
+.h-ferien__kopf small{ font-size:13px; font-weight:600; color:var(--st-frei); }
+.h-ferien__kopf b{ font-size:22px; font-weight:600; line-height:27px; }
+.h-ferien__kopf > span{ font-size:15px; color:var(--up-text-2); font-variant-numeric:tabular-nums; }
+.h-schultag{ display:flex; align-items:center; gap:10px; width:100%; padding:12px 16px; min-height:44px; border-top:1px solid var(--up-rand); text-align:left; color:var(--up-text); }
+.h-schultag > span{ display:flex; flex-direction:column; flex:1 1 auto; }
+.h-schultag small{ font-size:13px; color:var(--up-text-2); } .h-schultag b{ font-size:17px; font-weight:600; } .h-schultag span span{ font-size:15px; color:var(--up-text-2); }
+.h-liste .h-eintrag{ display:flex; align-items:baseline; gap:10px; padding:11px 16px; min-height:44px; flex-wrap:wrap; }
+.h-liste .h-eintrag + .h-eintrag{ border-top:1px solid var(--up-rand); }
+.h-eintrag__titel{ font-size:17px; } .h-eintrag__zr{ font-size:15px; color:var(--up-text-2); font-variant-numeric:tabular-nums; }
+.h-eintrag b{ margin-left:auto; font-size:15px; font-weight:600; color:var(--st-frei); font-variant-numeric:tabular-nums; }
+.heute__mehr{ display:flex; align-items:center; gap:6px; min-height:44px; margin:12px 4px 0; font-size:15px; font-weight:600; color:var(--up-akzent); }
+.heute__mehr .ico{ width:14px; height:14px; stroke-width:2.4; transition:transform .12s; }
+.heute__mehr.is-offen .ico{ transform:rotate(180deg); }
+.heute__fuss{ margin:16px 4px 8px; font-size:12px; line-height:1.5; color:var(--up-text-3); font-variant-numeric:tabular-nums; }
+.heute__fuss .is-alt{ color:var(--st-pruefung); }
+@media (prefers-reduced-motion: reduce){ .planleiste__kapsel button, .heute__mehr .ico{ transition:none; } }
+@media (min-width:700px){ .planleiste{ bottom:16px; } }

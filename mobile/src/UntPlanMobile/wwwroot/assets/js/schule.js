@@ -129,13 +129,14 @@ const stapel = [];
 function oeffnen(seite, daten){
   if (!SEITEN[seite]) return;
   if (SEITEN[seite].direkt){ SEITEN[seite].direkt(daten || {}); return; }
-  if (state.screen !== 'schule') stapel.length = 0;
+  /* Von welchem Reiter der Stapel ausging (Schule bzw. Profil): dorthin führt „Zurück“, dieser Reiter bleibt markiert. */
+  if (state.screen !== 'schule'){ stapel.length = 0; state.schulUrsprung = state.screen === 'konto' ? 'konto' : 'profile'; }
   stapel.push({ seite, daten: daten || {} });
   zeigen();
 }
 function zurueck(){
   stapel.pop();
-  if (!stapel.length){ E.showScreen('profile'); return; }
+  if (!stapel.length){ E.showScreen(state.schulUrsprung || 'profile'); return; }
   zeigen();
 }
 function neuZeichnen(){ if (stapel.length) zeigen(true); }
@@ -147,7 +148,7 @@ async function zeigen(still){
   $('#schuleTitel').textContent = titel;
   $('#schuleUntertitel').textContent = '';
   $('#schuleAktionen').innerHTML = '';
-  $('#schuleZurueckText').textContent = vorher ? kurzTitel(vorher) : (rolle().kollegium ? 'Schule' : 'Mehr');
+  $('#schuleZurueckText').textContent = vorher ? kurzTitel(vorher) : (state.schulUrsprung === 'konto' ? 'Profil' : 'Schule');
   const seite = $('#screenSchule');
   if (state.screen !== 'schule') E.showScreen('schule');
   if (!still) seite.scrollTop = 0;
@@ -161,6 +162,8 @@ async function zeigen(still){
 }
 const kurzTitel = e => { const d = SEITEN[e.seite]; const t = typeof d.titel === 'function' ? d.titel(e.daten) : d.titel; return d.kurz || t; };
 $('#schuleZurueck').addEventListener('click', zurueck);
+/* Profil-Reiter: „Profil und Benachrichtigungen“ als Unterseite (zurück zum Profil) */
+{ const b = $('#btnProfilSeite'); if (b) b.addEventListener('click', () => oeffnen('profil')); }
 /* Ein Tipp auf einen Reiter der unteren Leiste beginnt dort von vorn. */
 $$('.tab').forEach(t => t.addEventListener('click', () => { stapel.length = 0; }));
 const untertitel = t => { $('#schuleUntertitel').textContent = t || ''; };
@@ -179,9 +182,9 @@ function menueZeichnen(){
   const ziel = $('#schulMenue');
   if (!ziel) return;
   const R = rolle();
-  const tabText = R.kollegium ? 'Schule' : 'Mehr';
+  /* Wie iOS heißt der Reiter für alle Rollen „Schule“ (Profil ist ein eigener Reiter). */
+  const tabText = 'Schule';
   const tabEl = $('#tabMehrText'); if (tabEl) tabEl.textContent = tabText;
-  const tabSym = $('#tabMehrSymbol use'); if (tabSym) tabSym.setAttribute('href', R.kollegium ? '#i-school' : '#i-ellipsis');
   const t1 = $('#mehrTitel'); if (t1) t1.textContent = tabText;
   const kt = $('#screenProfile .kopf__titel'); if (kt) kt.textContent = tabText;
   const sch = $('#mehrSchule'); if (sch) sch.textContent = (window.TT_BOOT && window.TT_BOOT.school) || '';
@@ -215,7 +218,6 @@ function menueZeichnen(){
   }
   html.push(gruppe('Information', [
     navZeile('neuigkeiten', 'Neuigkeiten', 'Infos der Schule und Neues in EduOrga', '<span id="sfUngelesen"></span>'),
-    navZeile('profil', 'Profil und Benachrichtigungen'),
   ].join('')));
   ziel.innerHTML = html.join('');
   $$('[data-seite]', ziel).forEach(b => b.addEventListener('click', () => oeffnen(b.dataset.seite)));

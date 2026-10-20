@@ -18,6 +18,9 @@ public sealed record WochenAntwort(
     /// <summary>Datenstand: letzte Übertragung aus EduOrga Studio („yyyy-MM-dd HH:mm:ss“, Feld „stand“ des Wochenplans).</summary>
     [System.Text.Json.Serialization.JsonPropertyName("studioStand")]
     public string? StudioStand { get; init; }
+    /// <summary>Wochenbuchstabe der Woche („A“, „B“; leer ohne Wochenzyklus) – Untertitel des Plans „KW 43 · Okt. 2026 · A-Woche“.</summary>
+    [System.Text.Json.Serialization.JsonPropertyName("woche")]
+    public string? Woche { get; init; }
 }
 
 /// <summary>
@@ -159,7 +162,7 @@ public sealed class Wochendienst
         var mitteilungen = plan.Tage.Where(t => !t.Frei && (t.Mitteilungen?.Count ?? 0) > 0).ToDictionary(t => t.Datum, t => t.Mitteilungen!);
         return new WochenAntwort(true, plan.Montag, art, Entitaet(k, art, plan.Element),
             Kachelbau.Stundenzeiten(plan.Zeitraster.Count > 0 ? plan.Zeitraster : zeiten), tage, new List<object>(), Absences: abwesenheiten)
-        { Notes = mitteilungen.Count > 0 ? mitteilungen : null, StudioStand = plan.Stand };
+        { Notes = mitteilungen.Count > 0 ? mitteilungen : null, StudioStand = plan.Stand, Woche = string.IsNullOrWhiteSpace(plan.Woche) ? null : plan.Woche.Trim() };
     }
 
     /// <summary>Eigene Abwesenheiten (Schüler*in bzw. Kind) der Woche aus UntPlanWeb; ohne Zugriff bzw. bei Fehlern keine.</summary>
@@ -297,6 +300,7 @@ public sealed class Wochendienst
                 absences = woche.Absences,
                 notes = woche.Notes,
                 studioStand = woche.StudioStand,
+                woche = woche.Woche,
                 today = Kachelbau.Iso(DateOnly.FromDateTime(jetzt)),
                 now = jetzt.ToString("HH:mm", CultureInfo.InvariantCulture),
                 names = Namen(k),

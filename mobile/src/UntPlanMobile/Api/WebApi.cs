@@ -22,6 +22,8 @@ public static class WebApi
     /// <summary>Freigegebene Endpunkte von EduOrga Web (Vertrag der PWA, gleich den Funktionen der iOS-App).</summary>
     public static readonly Regel[] Regeln =
     {
+        // Heute (wie die iOS-App): Tagesbriefing mit Ferien und freien Tagen (kalender), Tageszahlen, Notizen der Schule
+        new("heute", "GET"),
         // Prüfungen, Vertretungsplan, Hausaufgaben
         new("pruefungen", "GET"),
         new("vertretungen", "GET"),
