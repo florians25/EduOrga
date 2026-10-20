@@ -1,7 +1,8 @@
 # EduOrga Website
 
 Produkt-Website von **EduOrga** („Einfach mehr Schulalltag.“): Überblick, die Anwendungen Studio, Web, Mobile und die
-App für iPhone und iPad, Installation, Handbuch sowie Hinweis, Impressum und Datenschutz. Marke, Farben und rechtlicher
+App für iPhone und iPad mit ehrlichem Stand der Plattformen, Installation Schritt für Schritt, Dokumentation je Anwendung,
+Rückmeldung über GitHub sowie Hinweis, Impressum und Datenschutz. Marke, Farben und rechtlicher
 Hinweis folgen [`design/MARKE.md`](../design/MARKE.md).
 
 Die Website ist **nicht Teil der Installation an Schulen**. Betrieben wird sie getrennt mit
@@ -11,22 +12,37 @@ Ideen laufen über GitHub: [Issues](https://github.com/florians25/EduOrga/issues
 
 ![Startseite](docs/bilder/start-desktop.png)
 
-| Anwendungen | Studio | Handbuch | Telefon |
+| Studio | Mobile und iOS | Installation | Dokumentation |
 |---|---|---|---|
-| ![Anwendungen](docs/bilder/anwendungen-desktop.png) | ![Studio](docs/bilder/studio-desktop.png) | ![Handbuch](docs/bilder/handbuch-desktop.png) | ![Telefon](docs/bilder/start-telefon.png) |
+| ![Studio](docs/bilder/studio-desktop.png) | ![Mobile und iOS](docs/bilder/ios-desktop.png) | ![Installation](docs/bilder/installation-desktop.png) | ![Dokumentation](docs/bilder/dokumentation-desktop.png) |
+
+| Telefon | Menü | Rückmeldung | Ganze Startseite |
+|---|---|---|---|
+| ![Telefon](docs/bilder/start-telefon.png) | ![Menü](docs/bilder/menue-telefon.png) | ![Rückmeldung](docs/bilder/rueckmeldung-desktop.png) | [1440 px](docs/bilder/start-ganz-desktop.png) · [390 px](docs/bilder/start-ganz-telefon.png) |
+
+Weitere Aufnahmen in [`docs/bilder/`](docs/bilder/): `web-desktop.png`, `mobile-desktop.png`, `mobile-telefon.png`,
+`installation-telefon.png`, `impressum-desktop.png` (Playwright, Chromium, 1440 × 900 bzw. 390 × 844).
 
 ## Seiten
 
 | Adresse | Inhalt |
 |---|---|
-| `/` | Bühne mit Slogan und Bildschirmfotos (Studio im Browserfenster, Web auf dem Telefon), Statusleiste, die Anwendungen, Installation, Handbuch |
-| `/studio`, `/web`, `/mobile` | je Anwendung: Beschreibung, Funktionen, weitere Ansichten, Technik; `/mobile#ios` die App für iPhone und iPad |
-| `/installation` | Befehle aus [`installation/README.md`](../installation/README.md): Installation, Container und Ports, Update, Passwort, Einstellungen |
-| `/handbuch` | Kapitel von [`docs/HANDBUCH.md`](../docs/HANDBUCH.md) (verlinkt auf GitHub), weitere Dokumentation, Rückmeldung über GitHub |
+| `/` | Startseite für Schulleitungen: Leitsatz, Studio im Browserfenster und Wochenplan im iPhone-Rahmen, „Ein Schulmorgen“ (Krankmeldung bis Plan auf dem Telefon), **Stand der Plattformen**, Für wen (Schulleitung, Stundenplanung, Lehrkräfte, Schüler*innen und Eltern), Vertretung in Minuten, Änderungen auf allen Geräten, Klassenbuch, Sprechtag und Mitteilungen, Datenschutz und Betrieb (DSGVO, eigener Server, offener Quellcode, Barrierefreiheit, Druck/PDF, Umstieg), Funktionen je Anwendung, So funktioniert’s, Rückmeldung über GitHub, häufige Fragen |
+| `/studio`, `/web` | je Anwendung: Beschreibung, Titelbild, Funktionen, weitere Ansichten, Technik |
+| `/mobile` | EduOrga Mobile (PWA), Stand der Apps, `#ios` die App für iPhone und iPad (**noch nicht im App Store veröffentlicht**), `#android` (**in Arbeit**); `/ios` und `/android` leiten dorthin |
+| `/installation` | Anleitung in zwölf Schritten nach `installation/README.md` und den Skripten: Voraussetzungen, `install.sh` mit seinen Fragen, Domain und HTTPS (Caddy oder vorhandener Reverse-Proxy mit nginx-Beispiel), erster Login und `passwort.sh`, Studio mit Web verbinden, SQLite oder MariaDB, `update.sh`, Sicherung und Wiederherstellung, Einstellungen, Fehlerbehebung, Deinstallieren |
+| `/dokumentation` | Kapitel je Anwendung aus `client/src/doku.ts`: Überblick, Studio (Erste Schritte, Stammdaten, Stundenplan, Tagesplanung und Vertretung, Veröffentlichen), Web, Mobile, iOS, Datenschutz und Rollen, Betrieb; Kapitel des Handbuchs (`docs/HANDBUCH.md`) mit Links auf GitHub; `/handbuch` leitet auf `/dokumentation#handbuch` |
+| `/rueckmeldung` | Fehler, Wünsche und Fragen über GitHub – direkt zu den Formularen `.github/ISSUE_TEMPLATE/fehler.yml` und `wunsch.yml` |
 | `/hinweis`, `/impressum`, `/datenschutz` | rechtlicher Hinweis und Vorlagen mit Platzhaltern für die Betreiberangaben |
 
-**Statusleiste** unter der Bühne: „Entwicklungsstand `<VERSION>` · Noch keine Veröffentlichung (bzw. Aktuelle Version
-`<Tag>` vom `<Datum>`) · Letzte Änderung `<Datum>`“ und der Link „Projektstand & Änderungen“ (Releases, solange es keine
+**Bildschirmfotos der iPhone-App:** `vorbereiten.mjs` übernimmt `ios/docs/bilder/plan-woche-hell.png`,
+`plan-woche-dunkel.png`, `stunde-details.png` und `stunde-klassenbuch.png` (920 × 2000) nach `public/bilder/ios/`. Fehlt
+eine Datei, nimmt es stattdessen das gleich gestaltete Bild von EduOrga Mobile (`mobile/docs/bilder/plan-woche.png`,
+`dunkel-plan-woche.png`, `stundendetails.png`, `stundendetails-klassenbuch.png`); die Bildunterschrift nennt das dann.
+Der Build schlägt nicht fehl ([`ios/docs/bilder/README.md`](../ios/docs/bilder/README.md)).
+
+**Stand der Plattformen** auf der Startseite: „Entwicklungsstand `<VERSION>` · Noch keine Veröffentlichung (bzw. Aktuelle Version
+`<Tag>` vom `<Datum>`) · Letzte Änderung `<Datum>`“ und der Link „Projektstand und Änderungen“ (Releases, solange es keine
 gibt die Liste der Commits). Die Werte ermittelt `client/scripts/vorbereiten.mjs` **beim Build** und schreibt sie nach
 `client/src/stand.json` (Build-Ausgabe, nicht eingecheckt):
 
@@ -36,6 +52,7 @@ gibt die Liste der Commits). Die Werte ermittelt `client/scripts/vorbereiten.mjs
 | Letzte Änderung, Commit | `WEBSITE_COMMIT_DATUM`/`WEBSITE_COMMIT`, sonst `git log -1`, sonst Zeitpunkt des Builds |
 | Neueste Veröffentlichung | `WEBSITE_RELEASE` (`-` = keine) und `WEBSITE_RELEASE_DATUM`, sonst GitHub-API `releases/latest` (5 s Zeitlimit, `WEBSITE_OFFLINE=1` schaltet die Abfrage ab) |
 | Kapitel des Handbuchs | Überschriften `## N. …` in `docs/HANDBUCH.md` |
+| Bildschirmfotos der iPhone-App | `ios/docs/bilder/*.png`, sonst Ersatz aus `mobile/docs/bilder` (`echt`, Breite, Höhe je Bild) |
 
 **Datenschutz:** keine externen Schriften, Skripte oder Dienste (Content-Security-Policy `default-src 'self'`), kein
 Tracking, keine Cookies, keine Formulare, keine Datenbank.
@@ -45,8 +62,8 @@ Tracking, keine Cookies, keine Formulare, keine Datenbank.
 ```text
 website/
 ├── client/                    Oberfläche: React 18, TypeScript (strict), Vite, React Router – ohne UI-Bibliothek
-│   ├── scripts/vorbereiten.mjs  Schrift, Logo (design/), Bildschirmfotos (studio|web|mobile/docs/bilder) → public/, Stand → src/stand.json
-│   └── src/                   seiten/, bausteine/ (Rahmen, Browserfenster, Telefon, Befehle), inhalt.ts (Texte), stand.ts, stil.css
+│   ├── scripts/vorbereiten.mjs  Schrift, Logo (design/), Bildschirmfotos (studio|web|mobile|ios/docs/bilder, docs/bilder/druck) → public/, Stand → src/stand.json
+│   └── src/                   seiten/, bausteine/ (Rahmen, Browserfenster, Telefon, Befehle), inhalt.ts (Texte), doku.ts (Dokumentation), stand.ts, stil.css
 ├── src/EduOrgaWebsite/        Server: ASP.NET Core 8, liefert wwwroot aus (Schutzköpfe, SPA-Rückfall, /api/gesundheit, /api/info)
 ├── tests/EduOrgaWebsite.Tests xUnit-Tests (WebApplicationFactory)
 ├── docs/bilder/               Bildschirmfotos (Playwright)
@@ -86,7 +103,7 @@ Tests:
 dotnet test website/tests/EduOrgaWebsite.Tests -c Release
 ```
 
-Sie prüfen: alle Seitenadressen liefern die Oberfläche (ohne Cookies), Schutzköpfe und Content-Security-Policy,
+Sie prüfen: alle Seitenadressen liefern die Oberfläche (ohne Cookies), jede dieser Adressen steht als Route in `client/src/main.tsx`, Schutzköpfe und Content-Security-Policy,
 Zwischenspeichern der Assets, Gesundheit, Betreiberangaben aus der Umgebung, frühere Portaladressen antworten mit 404.
 
 ## Einstellungen (Umgebungsvariablen)

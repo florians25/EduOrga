@@ -434,7 +434,7 @@ code {
 /* ---- Bühne (Startseite) ------------------------------------------------------------------------------------------ */
 
 .buehne {
-  padding: 96px 0 0;
+  padding: 80px 0 0;
 }
 
 .buehne > .breite:first-child {
@@ -1880,6 +1880,7 @@ code {
   }
   .hauptnav-mobil {
     display: flex !important;
+    gap: 6px;
     border-bottom: 0 !important;
   }
   .abschnitt,
