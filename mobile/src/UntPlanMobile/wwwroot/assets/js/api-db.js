@@ -20,8 +20,13 @@ const TT_DB = (() => {
   };
 
   async function call(params){
+    /* Immer frisch vom Server (kein HTTP-Cache). Ohne Netz antwortet der
+       Service Worker mit der zuletzt geladenen Kopie und dem Kopf
+       „X-EduOrga-Stand“ (Zeitpunkt des Abrufs) – die App zeigt dann
+       „Offline — Stand hh:mm“. */
     const res = await fetch(url(params), {
       credentials: 'same-origin',
+      cache: 'no-store',
       headers: { 'Accept': 'application/json' }
     });
     if (res.status === 401) { const e = new Error('not_authenticated'); e.auth = true; throw e; }
@@ -36,6 +41,11 @@ const TT_DB = (() => {
       err.server = true;
       err.status = res.status;
       throw err;
+    }
+    const stand = res.headers.get('X-EduOrga-Stand');
+    if (stand){
+      const t = new Date(stand);
+      data._stand = isNaN(t) ? stand : t.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' });
     }
     return data;
   }

@@ -180,13 +180,13 @@ public class SchulfunktionenTests
         // Eltern haben kein Klassenbuch – EduOrga Web lehnt ab
         Assert.False((await e.GetAsync("/api/web/klassenbuch/offene-stunden")).IsSuccessStatusCode);
 
-        // Startdaten: Rolle, Familie und Rechte für das Menü „Mehr“, Kartendarstellung der Schule (Standard „Klassisch“)
+        // Startdaten: Rolle, Familie und Rechte für das Menü „Mehr“, Kartendarstellung der Schule (Standard „EduOrga Standard“)
         var meta = await Umgebung.HolenAsync(e, "/api/mobile?action=meta");
         Assert.Equal("eltern", meta["user"]!["rolle"]!.GetValue<string>());
         Assert.True(meta["user"]!["familie"]!.GetValue<bool>());
         Assert.Equal(kind.Id, meta["user"]!["schuelerIds"]![0]!.GetValue<int>());
-        Assert.Equal("balken-innen", meta["darstellung"]!["fachfarbe"]!.GetValue<string>());
-        Assert.Equal("element", meta["darstellung"]!["reihenfolge"]!.GetValue<string>());
+        Assert.Equal("balken-flaeche", meta["darstellung"]!["fachfarbe"]!.GetValue<string>());
+        Assert.Equal("zeilen", meta["darstellung"]!["reihenfolge"]!.GetValue<string>());
 
         using var l = await u.AngemeldetAsync("sne");
         var seite = await (await l.GetAsync("/")).Content.ReadAsStringAsync();

@@ -277,7 +277,7 @@ public class WebOberflaecheTests
         Assert.Equal(2, Regex.Matches(theme, @"balken: '#[0-9a-f]{6}'").Count);
         var kachel = Lesen("src", "components", "plan", "Kachel.tsx");
         Assert.Contains("palette.kachel.balken", kachel);
-        Assert.Contains("bgcolor: farbe ?? grau", kachel);
+        Assert.Contains("farbe ?? pal.kachel.balken", kachel);
         Assert.DoesNotContain("farbe ? 1 : 0.5", kachel);
         // gleichzeitige Stunden: erste Stunde über die volle Breite, „+X“ rechts, Klick listet alle
         var raster = Lesen("src", "components", "plan", "Wochenraster.tsx");

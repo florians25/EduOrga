@@ -10,7 +10,12 @@ namespace UntPlanMobile.Dienste;
 public sealed record WochenAntwort(
     bool Ok, string WeekStart, string Kind, object Entity, Dictionary<string, object> LessonTimes,
     Dictionary<string, List<Kachel>> Days, List<object> Bands, bool? Gesperrt = null, string? Sperrhinweis = null,
-    Dictionary<string, List<Abwesenheitsbalken>>? Absences = null);
+    Dictionary<string, List<Abwesenheitsbalken>>? Absences = null)
+{
+    /// <summary>Mitteilungen je Tag (Tagestexte aus UntPlanWeb, Feld „mitteilungen“ des Tageskopfs): helle gelbe Notiz über der ersten Stunde.</summary>
+    [System.Text.Json.Serialization.JsonPropertyName("notes")]
+    public Dictionary<string, List<string>>? Notes { get; init; }
+}
 
 /// <summary>
 /// Eigene Abwesenheit an einem Tag als grauer Balken hinter den Stunden („Mein Plan“): Beginn und Ende (HH:mm) und Text
@@ -148,8 +153,10 @@ public sealed class Wochendienst
             abwesenheiten = plan.Tage.Select(t => (t.Datum, Balken: BalkenDesTages(t, raster, zeitraeume, plan.Abwesenheiten)))
                 .Where(x => x.Balken.Count > 0).ToDictionary(x => x.Datum, x => x.Balken);
         }
+        var mitteilungen = plan.Tage.Where(t => !t.Frei && (t.Mitteilungen?.Count ?? 0) > 0).ToDictionary(t => t.Datum, t => t.Mitteilungen!);
         return new WochenAntwort(true, plan.Montag, art, Entitaet(k, art, plan.Element),
-            Kachelbau.Stundenzeiten(plan.Zeitraster.Count > 0 ? plan.Zeitraster : zeiten), tage, new List<object>(), Absences: abwesenheiten);
+            Kachelbau.Stundenzeiten(plan.Zeitraster.Count > 0 ? plan.Zeitraster : zeiten), tage, new List<object>(), Absences: abwesenheiten)
+        { Notes = mitteilungen.Count > 0 ? mitteilungen : null };
     }
 
     /// <summary>Eigene Abwesenheiten (Schüler*in bzw. Kind) der Woche aus UntPlanWeb; ohne Zugriff bzw. bei Fehlern keine.</summary>
@@ -285,6 +292,7 @@ public sealed class Wochendienst
                 gesperrt = woche.Gesperrt,
                 sperrhinweis = woche.Sperrhinweis,
                 absences = woche.Absences,
+                notes = woche.Notes,
                 today = Kachelbau.Iso(DateOnly.FromDateTime(jetzt)),
                 now = jetzt.ToString("HH:mm", CultureInfo.InvariantCulture),
                 names = Namen(k),

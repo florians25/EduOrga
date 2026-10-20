@@ -46,11 +46,13 @@ public class PlanrasterTests
             + Abschnitt(AppJs, "DARSTELLUNG") + """
             const D = window.EduOrgaDarstellung;
             const std = D.mitStandard(null);
-            pruefe([std.fachfarbe, std.reihenfolge, std.raster, std.statusflaeche], ['balken-innen', 'element', 'grau', true]);
+            pruefe([std.fachfarbe, std.reihenfolge, std.raster, std.statusflaeche], ['balken-flaeche', 'zeilen', 'grau', true]);
             const zeilen = [{ key:'class', text:'5a', primary:true }, { key:'subject', text:'M' }, { key:'room', text:'R101' }];
             const txt = l => l.map(x => x.key + ':' + x.text + (x.primary ? '*' : ''));
-            // Standard: Klasse · Fach · Raum, erste Zeile fett
-            pruefe(txt(D.zeilen(zeilen, {}, 'teacher', std)), ['class:5a*', 'subject:M', 'room:R101']);
+            // Standard „EduOrga Standard“: Fach · Klasse · Lehrkraft · Raum, erste Zeile fett
+            pruefe(txt(D.zeilen(zeilen, {}, 'teacher', std)), ['subject:M*', 'class:5a', 'room:R101']);
+            // „Klassisch“: Lehrkraft bzw. Klasse oben
+            pruefe(txt(D.zeilen(zeilen, {}, 'teacher', D.mitStandard({ reihenfolge:'element' }))), ['class:5a*', 'subject:M', 'room:R101']);
             // „Fach und Raum oben“ und Fach als Name
             pruefe(txt(D.zeilen(zeilen, {}, 'teacher', D.mitStandard({ reihenfolge:'fach', fach:'name' }), (a, c) => c === 'M' ? 'Mathematik' : c)),
                    ['subject:Mathematik*', 'class:5a', 'room:R101']);
@@ -69,6 +71,48 @@ public class PlanrasterTests
             Assert.True(p.ExitCode == 0, fehler);
         }
         finally { File.Delete(skript); }
+    }
+
+    [Fact]
+    public void Aenderungstypen_wie_auf_allen_Plattformen()
+    {
+        var node = Node();
+        if (node is null) return;
+        var skript = Path.Combine(Path.GetTempPath(), "edo-aenderung-" + Guid.NewGuid().ToString("N") + ".js");
+        File.WriteAllText(skript, "const window = {};\nconst pruefe = (ist, soll) => { const a = JSON.stringify(ist), b = JSON.stringify(soll); if (a !== b) { console.error(a + ' statt ' + b); process.exit(1); } };\n"
+            + Abschnitt(AppJs, "AENDERUNG") + """
+            const A = window.UntPlanAenderung;
+            const f = c => { const x = A.statusFeld(c); return x ? x.zeichen + ' ' + x.text + ' ' + x.ton : null; };
+            // Entfall, verschoben auf/von (Wochentag Datum Stunde | Beginn), Zusatz
+            pruefe(f({ blockType:'cancelled' }), '× entfällt entfall');
+            pruefe(f({ blockType:'cancelled', moved:'von', movedTo:{ date:'2026-10-21', from:'12:20', lesson:6 } }), '× auf Mi 21.10. 6 | 12:20 entfall');
+            pruefe(f({ blockType:'change', moved:'nach', movedFrom:{ date:'2026-10-19', from:'09:45', lesson:3 } }), '⊕ von Mo 19.10. 3 | 09:45 aenderung');
+            pruefe(f({ blockType:'change', extra:true }), '⊕ Zusatz aenderung');
+            pruefe(f({ blockType:'change' }), null);
+            pruefe(f({ blockType:'normal' }), null);
+            // Feld: „+neu (bisher)“, „+neu“, „(bisher)“
+            pruefe(A.feldText('Gal', 'Gor'), '+Gal (Gor)');
+            pruefe(A.feldText('105', '303'), '+105 (303)');
+            pruefe(A.feldText('B070', ''), '+B070');
+            pruefe(A.feldText('', 'Abr', true), '(Abr)');
+            // Kürzen: Fach bleibt, geänderte Zeile geht vor
+            const z = [{ key:'subject' }, { key:'class' }, { key:'teacher' }, { key:'room', changed:true }];
+            pruefe(A.zeilenKuerzen(z, 2).map(l => l.key), ['subject', 'room']);
+            """);
+        try
+        {
+            using var p = Process.Start(new ProcessStartInfo(node, skript) { RedirectStandardError = true, UseShellExecute = false })!;
+            var fehler = p.StandardError.ReadToEnd();
+            p.WaitForExit(15000);
+            Assert.True(p.ExitCode == 0, fehler);
+        }
+        finally { File.Delete(skript); }
+        // Stundenkarte: Felder, schraffierte Kante, rote Fläche beim Entfall, Legende „Änderungstyp | Darstellung“, Mitteilung
+        Assert.Contains(".feld--entfall{ background:var(--up-entfall-feld);", AppCss);
+        Assert.Contains("background-color:var(--up-entfall-flaeche);", AppCss);
+        Assert.Contains("repeating-linear-gradient(135deg, var(--st-aenderung) 0 2px", AppCss);
+        Assert.Contains("<table class=\"legende-tab\"", Datei("Vorlagen", "index.html"));
+        Assert.Contains("class=\"notiz\"", AppJs);
     }
 
     [Fact]

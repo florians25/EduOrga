@@ -444,7 +444,11 @@ async function loadWeek(entity, weekStart, token){
       byDate[d] = l;
     });
     const w = { byDate, bands: bands || [], key: weekKey(entity, weekStart),
-                absences: (quelle && quelle.absences) || {} };
+                absences: (quelle && quelle.absences) || {},
+                /* Mitteilungen je Tag (gelbe Notiz über der ersten Stunde) */
+                notes: (quelle && quelle.notes) || {} };
+    /* Aus dem Speicher statt vom Server: Stand der Daten merken („Stand hh:mm“) */
+    if (quelle && quelle._stand) w.stand = quelle._stand;
     /* Wochenbegrenzung der Rolle: Der Server liefert die Woche leer und
        meldet sie als gesperrt — gezeigt wird das Schloss mit dem Hinweis. */
     const sp = wochenSperre(quelle);
@@ -466,8 +470,13 @@ async function loadWeek(entity, weekStart, token){
     bootUsed = true;
     const byDate = {};
     dates.forEach(x => { byDate[x] = stampDates((BOOT.days && BOOT.days[x]) || [], x); });
-    store.set(cacheKey(entity, weekStart), { byDate, bands: BOOT.bands || [], kind: BOOT.kind, absences: BOOT.absences || {},
+    store.set(cacheKey(entity, weekStart), { byDate, bands: BOOT.bands || [], kind: BOOT.kind, absences: BOOT.absences || {}, notes: BOOT.notes || {}, zeit: Date.now(),
                                              gesperrt: !!BOOT.gesperrt, sperrhinweis: BOOT.sperrhinweis || '' });
+    /* Ohne Netz kommt die Seite samt Woche aus dem Speicher des Service Workers – dann mit Stand */
+    if (navigator.onLine === false){
+      toast('Offline — Stand ' + (BOOT.now || '?'));
+      return fertig(byDate, BOOT.bands || [], Object.assign({}, BOOT, { _stand: BOOT.now || '?' }));
+    }
     store.set('lastSync', Date.now());
     return fertig(byDate, BOOT.bands || [], BOOT);
   }
@@ -482,7 +491,8 @@ async function loadWeek(entity, weekStart, token){
       }
       const byDate = {};
       dates.forEach(x => { byDate[x] = stampDates((d.days && d.days[x]) || [], x); });
-      store.set(cacheKey(entity, weekStart), { byDate, bands: d.bands || [], kind: d.kind, absences: d.absences || {},
+      if (d._stand) toast('Offline — Stand ' + d._stand);
+      if (!d._stand) store.set(cacheKey(entity, weekStart), { byDate, bands: d.bands || [], kind: d.kind, absences: d.absences || {}, notes: d.notes || {}, zeit: Date.now(),
                                                gesperrt: !!wochenSperre(d), sperrhinweis: (wochenSperre(d) || {}).hinweis || '' });
       store.set('lastSync', Date.now());
       return fertig(byDate, d.bands || [], d);
@@ -495,8 +505,9 @@ async function loadWeek(entity, weekStart, token){
       const c = store.get(cacheKey(entity, weekStart), null);
       if (c){
         if (c.kind && aktuell()) state.kind = c.kind;
-        toast(serverMsg ? 'Serverfehler: ' + serverMsg : 'Offline — gespeicherte Woche');
-        return fertig(c.byDate, c.bands || [], c);
+        const stand = c.zeit ? new Date(c.zeit).toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' }) : '';
+        toast(serverMsg ? 'Serverfehler: ' + serverMsg : 'Offline — gespeicherte Woche' + (stand ? ', Stand ' + stand : ''));
+        return fertig(c.byDate, c.bands || [], Object.assign({}, c, { _stand: stand || '?' }));
       }
       toast(serverMsg ? 'Serverfehler: ' + serverMsg : 'Woche konnte nicht geladen werden');
       return fertig(Object.fromEntries(dates.map(x => [x, []])), []);
@@ -552,6 +563,53 @@ function plusWert(card, key, text){
 }
 if (typeof window !== 'undefined') window.UntPlanPlus = { plusWert };
 /* PLUS-ENDE */
+
+/* AENDERUNG-BEGINN (wird von den Tests ausgeführt) */
+/* Änderungstypen der Stundenkarte – dieselben Regeln wie in EduOrga Web und
+   iOS (design/DESIGN.md, Abschnitt 10): jede Änderung grün mit dem Feld
+   „+neu (bisher)“ auf der betroffenen Zeile, fehlender Wert „(bisher)“,
+   Entfall rot mit allem durchgestrichen. Unten auf der Karte ein eigenes
+   Feld: „× entfällt“, „× auf Di 21.10. 6 | 12:20“ (verschoben auf),
+   „⊕ von Mo 20.10. 3 | 09:45“ (verschoben von), „⊕ Zusatz“. */
+const WT_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+function verlegungKurz(v){
+  if (!v || !/^\d{4}-\d{2}-\d{2}/.test(v.date || '')) return '';
+  const [y, m, d] = v.date.slice(0, 10).split('-');
+  const wd = WT_KURZ[new Date(+y, +m - 1, +d).getDay()];
+  return `${wd} ${d}.${m}.${v.lesson ? ' ' + v.lesson : ''}${v.from ? ' | ' + v.from : ''}`;
+}
+function statusFeld(card){
+  if (!card) return null;
+  if (card.blockType === 'cancelled' && card.moved === 'von'){
+    const z = verlegungKurz(card.movedTo);
+    return { ton:'entfall', zeichen:'×', text: z ? 'auf ' + z : 'verschoben' };
+  }
+  if (card.blockType === 'cancelled') return { ton:'entfall', zeichen:'×', text:'entfällt' };
+  if (card.blockType === 'change' && card.moved === 'nach'){
+    const z = verlegungKurz(card.movedFrom);
+    return { ton:'aenderung', zeichen:'⊕', text: z ? 'von ' + z : 'verschoben' };
+  }
+  if (card.blockType === 'change' && card.extra) return { ton:'aenderung', zeichen:'⊕', text:'Zusatz' };
+  return null;
+}
+/* Text im Feld eines geänderten Werts: „+neu (bisher)“, „+neu“ bzw. „(bisher)“. */
+function feldText(jetzt, vorher, weg){
+  const j = String(jetzt || '').trim(), v = String(vorher || '').trim();
+  if (weg) return `(${v || j})`;
+  const neu = j.startsWith('+') ? j : '+' + j;
+  return v && v.toUpperCase() !== j.replace(/^\+/, '').toUpperCase() ? `${neu} (${v})` : neu;
+}
+/* Zeilen kürzen: die erste bleibt, geänderte gehen vor, unveränderte fallen von unten weg. */
+function zeilenKuerzen(lines, max){
+  if (lines.length <= max) return lines;
+  const geaendert = l => !!(l.changed || l.removed || (l.tokens && l.tokens.some(t => (t.state || 'ok') !== 'ok' || t.plus)));
+  const bleibt = new Set([lines[0]]);
+  lines.forEach(l => { if (bleibt.size < max && geaendert(l)) bleibt.add(l); });
+  lines.forEach(l => { if (bleibt.size < max) bleibt.add(l); });
+  return lines.filter(l => bleibt.has(l));
+}
+if (typeof window !== 'undefined') window.UntPlanAenderung = { verlegungKurz, statusFeld, feldText, zeilenKuerzen };
+/* AENDERUNG-ENDE */
 const KACHEL_VIDEO = sym('video', 'ticon ticon--video');
 /* Schloss (Linien) für gesperrte Wochen. */
 const SPERRE_SCHLOSS = sym('lock');
@@ -725,13 +783,15 @@ if (typeof window !== 'undefined') window.UntPlanRaum = { raumTokens };
 
 /* DARSTELLUNG-BEGINN (wird von den Tests ausgeführt) */
 /* Darstellung der Stundenkarten (schulweit, Administration von EduOrga Web,
-   kommt mit den Startdaten als `darstellung`). Standard „Klassisch“: weiße
-   Karten auf hellgrauem Raster, Fachfarbe als 4-px-Streifen innen links
-   (grau ohne Fachfarbe), drei Zeilen Lehrkraft bzw. Klasse · Fach · Raum. */
+   kommt mit den Startdaten als `darstellung`). Standard „EduOrga Standard“
+   (design/DESIGN.md, Abschnitt 10 – gleich auf allen Plattformen): helle
+   Karten auf hellgrauem Raster, 4-px-Kante links (grau, mit Fachfarbe in der
+   Fachfarbe samt leichter Tönung), je eine Zeile Fach · Klasse · Lehrkraft ·
+   Raum. */
 const DARSTELLUNG_STANDARD = {
-  fachfarbe:'balken-innen', balkenbreite:4, deckkraft:12, flaeche:'weiss', rahmen:'schatten', eckenradius:2, dichte:'kompakt',
+  fachfarbe:'balken-flaeche', balkenbreite:4, deckkraft:12, flaeche:'weiss', rahmen:'schatten', eckenradius:4, dichte:'kompakt',
   fach:'kuerzel', raum:true, zeile2:true, zeile2Text:'kuerzel', kuerzel:'text', statuswoerter:false, statusflaeche:true,
-  reihenfolge:'element', raster:'grau'
+  reihenfolge:'zeilen', raster:'grau'
 };
 function darstellungMitStandard(d){
   const x = Object.assign({}, DARSTELLUNG_STANDARD, d && typeof d === 'object' ? d : {});
@@ -759,6 +819,11 @@ function darstellungZeilen(lines, card, kind, d, langname){
   if (d.reihenfolge === 'fach'){
     const i = out.findIndex(l => l.key === 'subject');
     if (i > 0) out = [out[i], ...out.slice(0, i), ...out.slice(i + 1)];
+  }
+  /* „zeilen“: Fach · Klasse · Lehrkraft · Raum, je eine Zeile */
+  if (d.reihenfolge === 'zeilen'){
+    const rang = { subject:0, class:1, teacher:2, room:3 };
+    out = out.map((l, i) => ({ l, i })).sort((a, b) => ((rang[a.l.key] ?? 9) - (rang[b.l.key] ?? 9)) || a.i - b.i).map(x => x.l);
   }
   return out.map((l, i) => ({ ...l, primary: i === 0 }));
 }
@@ -1142,6 +1207,9 @@ if (typeof window !== 'undefined') window.UntPlanParallel = { assignParallel, is
 /* =====================================================================
    Rendering: Wochenkopf
    ===================================================================== */
+/* Tageskopf wie in iOS und Web: „17.11“ (600) über dem Wochentag „Mo“. */
+const kopfDatum = dd => `${String(dd.getDate()).padStart(2, '0')}.${String(dd.getMonth() + 1).padStart(2, '0')}`;
+
 function renderWeekHead(){
   const dates = weekDates(state.weekStart);
   const mo = parseISO(state.weekStart);
@@ -1168,8 +1236,8 @@ function renderWeekHead(){
       /* Derselbe Kopf wie in der Woche: „Fr.“ über „16“ — nur eben eine
          einzige, breite Spalte. KW und Monat stehen links wie dort. */
       return `<button class="dayhead ${n === 1 ? 'dayhead--day' : ''} ${d === today ? 'is-today' : ''}" data-day="${d}">
+         <span class="dayhead__num">${kopfDatum(dd)}</span>
          <span class="dayhead__name">${WD_SHORT[(dd.getDay()+6)%7].replace('.', '')}</span>
-         <span class="dayhead__num">${dd.getDate()}.${dd.getMonth() + 1}.</span>
        </button>`;
     }).join('');
     stripRuhe($('#headStrip'));
@@ -1193,8 +1261,8 @@ function renderWeekHead(){
     const dd = parseISO(d);
     const sel = state.view === 'day' && d === state.day;
     return `<button class="dayhead ${d === today ? 'is-today' : ''} ${sel ? 'is-picked' : ''}" data-day="${d}">
+      <span class="dayhead__num">${kopfDatum(dd)}</span>
       <span class="dayhead__name">${WD_SHORT[i % 5].replace('.', '')}</span>
-      <span class="dayhead__num">${dd.getDate()}.${dd.getMonth() + 1}.</span>
     </button>`;
   }).join('');
   stripRuhe($('#headStrip'));
@@ -1396,7 +1464,9 @@ function renderGrid(){
      abgesetzt; jetzt liegt sie so dicht davor wie die Pausenaufsichten
      zwischen zwei Stunden (gut 1,5 px sichtbare Luft). */
   const PRE_PILLE = 23, PRE_LUFT = 0.5;
-  const hatVorErste = dates.some(d => (byDate[d] || []).some(c => c._pausePre
+  /* Mitteilungen (Tagestexte) aller drei Wochen: gelbe Notiz über der ersten Stunde */
+  const notizen = Object.assign({}, (around.prev || {}).notes, state.week.notes, (around.next || {}).notes);
+  const hatVorErste = dates.some(d => (notizen[d] || []).length || (byDate[d] || []).some(c => c._pausePre
     && (state.opts.showCancelled || c.blockType !== 'cancelled')));
   const preInset = hatVorErste ? PRE_PILLE + PRE_LUFT + 1 : 0;
   if (pane) pane.classList.toggle('has-pre', hatVorErste);
@@ -1462,7 +1532,7 @@ function renderGrid(){
   /* Je Stunde: Nummer, darunter Beginn und Ende; Pausen als graues Band. */
   L.rows.forEach(r => {
     html += r.no
-      ? `<div class="slotrow" style="top:${r.y}px">
+      ? `<div class="slotrow" style="top:${r.y}px;height:${L.zeile}px">
            <span class="slotrow__no">${r.no}</span>
            <span class="slotrow__time">${r.label}</span>
            <span class="slotrow__time slotrow__time--ende">${r.ende}</span>
@@ -1575,6 +1645,13 @@ function renderGrid(){
     const inset = hasBand ? 'var(--day-gap) + 18px' : 'var(--day-gap)';
     const dayW = `calc(${colW} - (${inset}))`;
     html += `<div class="daycol" style="left:calc(${colAt(ci)} + var(--day-gap) / 2);width:${dayW}">`;
+    const notizTag = (notizen[date] || []).filter(Boolean);
+    const terminVorErste = cards.some(c => c._pausePre && !c._supervision && c.blockType !== 'supervision');
+    if (notizTag.length){
+      const t = notizTag.join(' · ');
+      html += `<button class="notiz" type="button" data-notiz="${esc(t)}" aria-label="Mitteilung: ${esc(t)}"
+                 style="top:${L.pre - PRE_PILLE - PRE_LUFT}px;height:${PRE_PILLE}px;${terminVorErste ? 'left:calc(50% + 1px);width:calc(50% - 1px);' : ''}">${esc(t)}</button>`;
+    }
 
     /* Eigene Abwesenheit („Mein Plan“): grauer Balken hinter den Stunden.
        Die Karten liegen voll lesbar darüber; „Abwesend“ steht dezent nur in
@@ -1694,9 +1771,12 @@ function renderGrid(){
 
       /* Passen nicht alle Zeilen in die Karte, wird gekürzt und unten rechts
          ein Zeichen gesetzt — dann ohne Info-Punkt. */
-      const maxLines = Math.max(1, Math.floor((h - 9) / karteZeile()));
+      const zeilenPlatz = Math.max(1, Math.floor((h - 9) / karteZeile()));
+      /* Feld unten („× entfällt“, „⊕ von …“, „⊕ Zusatz“): eine eigene Zeile, wenn neben dem Fach Platz ist */
+      const feld = (!isHoliday && !isStandby && !isSup && !card.overlay && zeilenPlatz >= 2) ? statusFeld(card) : null;
+      const maxLines = Math.max(1, zeilenPlatz - (feld ? 1 : 0));
       const cut = !isHoliday && !isStandby && !card.overlay && lines.length > maxLines;
-      if (cut) lines = lines.slice(0, maxLines);
+      if (cut) lines = zeilenKuerzen(lines, maxLines);
       const past = (() => { const e = cardEndDate(card); return e && e < now; })();
 
       const cls = ['card'];
@@ -1737,6 +1817,8 @@ function renderGrid(){
         cls.push('is-past');
 
       let style = `top:${topFinal}px;height:${h}px;`;
+      /* Neben einer Mitteilung teilt sich der ganztägige Termin die Zeile über der ersten Stunde */
+      if (card._pausePre && notizTag.length && !isSup) style += 'width:calc(50% - 1px);';
       let more = 0;
       if (card.overlay && card._hit){
         /* Genau dieselbe Aufteilung wie bei jeder anderen parallelen
@@ -1809,6 +1891,16 @@ function renderGrid(){
          offener Raum. Nur wo eine Vertretung eingeteilt ist (Kopplung), steht
          das alte Kürzel ohne Fläche und das neue hervorgehoben. */
       const zeileInnen = l => {
+        const entfallen = card.blockType === 'cancelled';
+        /* Klasse fehlt: „(5b)“ im Feld – rot beim Entfall, sonst grün */
+        if (l.key === 'class' && card.classAbsent && !l.tokens)
+          return `<span class="feld feld--${entfallen ? 'entfall' : 'aenderung'}">${esc(feldText(l.text, l.text, true))}</span>`;
+        /* Fachänderung: „+BI (MU)“ */
+        if (l.key === 'subject' && !entfallen && card.subjectOrig && !l.tokens
+            && String(card.subjectOrig).toUpperCase() !== String(card.subject || '').toUpperCase() && l.text === card.subject)
+          return `<span class="badge">${esc(feldText(card.subject, card.subjectOrig))}</span>`;
+        /* Entfall: alles schlicht, durchgestrichen (app.css) */
+        if (entfallen && !l.tokens) return esc(l.text);
         const offenGruen = l.removed && (l.key === 'teacher' || l.key === 'room')
           && card.blockType !== 'cancelled';
         const cls2 = 'badge' + (l.removed ? ' badge--removed' : '') + (offenGruen ? ' badge--open' : '') + (l.key === 'room' ? ' badge--raum' : '');
@@ -1832,7 +1924,8 @@ function renderGrid(){
                 : esc(t.text);
               return `<span class="tok tok--${t.state}">${kern}${komma}</span>`;
             }).join('')
-          : l.changed ? `<span class="${cls2}">${esc(l.removed ? l.text : werteListe(l.text).map(x => plusWert(card, l.key, x)).join(KACHEL_TRENNER))}</span>${offenGruen ? '<span class="badge--frage" aria-label="offen">?</span>' : ''}` : esc(l.text);
+          : l.changed ? `<span class="${cls2}">${esc(l.removed ? feldText('', l.text, true)
+                : feldText(werteListe(l.text).map(x => plusWert(card, l.key, x).replace(/^\+/, '')).join(KACHEL_TRENNER), kachelWert(card[l.key + 'Orig'])))}</span>` : esc(l.text);
       };
 
       const body = isHoliday
@@ -1951,6 +2044,7 @@ function renderGrid(){
         eckzeichen = `<span class="card__ecke">${['online', 'hw', 'info'].filter(n => vorrang.includes(n)).map(ikon).join('')}</span>`;
       }
       if (online) cls.push('has-online');
+      if (feld) cls.push('has-feld', 'feld-' + feld.ton);
 
       /* Statusplakette oben rechts – nur auf Kacheln, die breit genug sind
          (Container-Abfrage in app.css); auf schmalen Wochenspalten tragen
@@ -1978,6 +2072,7 @@ function renderGrid(){
                  data-date="${date}" data-lesson="${card.lesson}" data-idx="${card._uid}"
                  ${isHoliday ? '' : 'type="button"'}>
         ${body}
+        ${feld ? `<span class="card__line card__line--feld"><span class="feld feld--${feld.ton}"><b aria-hidden="true">${feld.zeichen}</b> ${esc(feld.text)}</span></span>` : ''}
         ${eckzeichen}
         ${plakette ? `<span class="card__status">${esc(plakette)}</span>` : ''}
         ${(isHoliday || isSup) ? '' : `<span class="card__times"><span>${timeA}</span><span>${timeB}</span></span>`}
@@ -2048,11 +2143,12 @@ function renderGrid(){
           const e = cardEndDate(x); return e && e < now;
         });
         /* Eigene Lösung statt Zählkarte: die vordere Stunde bleibt voll
-           breit, oben rechts in ihrer Rasterzelle steht ein kleines „+X“.
+           breit, innen am rechten Rand der Zelle (senkrecht mittig) steht
+           der Reiter „+X“.
            Tippen öffnet ein Blatt mit allen Stunden dieser Zeit. */
         void hh;
         html += `<button class="plusbadge${ton.replace(/parcount/g, 'plusbadge')}${vorbei ? ' is-past' : ''}"
-                   style="top:${t + 3}px" data-more="${date}" data-von="${st.von}" data-bis="${st.bis}"
+                   style="top:${t + Math.max(3, Math.round(hh / 2 - 10))}px" data-more="${date}" data-von="${st.von}" data-bis="${st.bis}"
                    aria-label="${st.karten.length} weitere ${st.karten.length === 1 ? 'Stunde' : 'Stunden'} zur selben Zeit" type="button">+${st.karten.length}</button>`;
       });
     }
@@ -5107,6 +5203,10 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) planNachladen();
 });
+/* Ebenso, sobald das Fenster den Fokus bekommt bzw. das Netz zurück ist:
+   Änderungen erscheinen sofort, ohne Neuladen der Seite. */
+window.addEventListener('focus', () => planNachladen());
+window.addEventListener('online', () => planNachladen());
 function bindSheet(sheetSel, scrimSel){
   const sheet = $(sheetSel), scrim = $(scrimSel);
   scrim.addEventListener('click', () => closeSheet(sheet, scrim));
@@ -8151,6 +8251,8 @@ document.addEventListener('click', e => {
   if (e.target.closest('#gridPane') && !rasterTippGueltig()){ e.stopPropagation(); return; }
   const more = e.target.closest('#gridPane .plusbadge, #gridPane .parcount');
   if (more){ paralleleZeigen(more.dataset.more, +(more.dataset.von || 0), +(more.dataset.bis || 99)); return; }
+  const notiz = e.target.closest('#gridPane .notiz');
+  if (notiz){ toast(notiz.dataset.notiz || ''); return; }
 
   const card = e.target.closest('#gridPane .card');
   if (card) openDetail(card.dataset.date, +card.dataset.lesson, +(card.dataset.idx || 0));

@@ -311,7 +311,7 @@ public static class Kachelbau
     }
 
     private static KachelVerlegung? Verlegungsseite(PlanVerlegung? v) =>
-        v is null || string.IsNullOrWhiteSpace(v.Datum) ? null : new KachelVerlegung(v.Datum, v.Beginn ?? "", v.Ende ?? "", VerlegungSeite(v) ?? "");
+        v is null || string.IsNullOrWhiteSpace(v.Datum) ? null : new KachelVerlegung(v.Datum, v.Beginn ?? "", v.Ende ?? "", VerlegungSeite(v) ?? "", v.Stunde);
 
     /// <summary>Eine Seite der Verlegung: „09.10.2026 | 11:30 - 13:00“ (ohne Ende nur der Beginn, ohne Zeit nur das Datum).</summary>
     public static string? VerlegungSeite(PlanVerlegung? v)

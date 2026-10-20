@@ -47,7 +47,7 @@ public sealed record PlanAufsicht(string Datum, int NachStunde, string Beginn, s
 public sealed record PlanEreignis(string Titel, string Art, int Von, int Bis, bool Ganztaegig, List<string> Klassen, List<string> Lehrer, List<string> Raeume);
 
 public sealed record PlanTag(string Datum, string Wochentag, string Woche, bool Frei, string? FreiGrund, bool Tagesaktuell,
-    List<string> Hinweise, List<PlanEreignis> Ereignisse, string? FreiArt = null);
+    List<string> Hinweise, List<PlanEreignis> Ereignisse, string? FreiArt = null, List<string>? Mitteilungen = null);
 
 public sealed record PlanZeit(int Nr, string Bezeichnung, string Beginn, string Ende);
 
@@ -107,7 +107,9 @@ public sealed record KachelVerlegung(
     [property: JsonPropertyName("from")] string Beginn,
     [property: JsonPropertyName("to")] string Ende,
     /// <summary>Anzeige „09.10.2026 | 11:30 - 13:00“ (ohne Ende nur der Beginn).</summary>
-    [property: JsonPropertyName("text")] string Text = "");
+    [property: JsonPropertyName("text")] string Text = "",
+    /// <summary>Stunde der Gegenseite (0 = unbekannt) – für das Feld „× auf Di 21.10. 6 | 12:20“ bzw. „⊕ von Mo 20.10. 3 | 09:45“.</summary>
+    [property: JsonPropertyName("lesson")] int Stunde = 0);
 
 /// <summary>
 /// Eine Kachel im Raster. blockType: normal, change, cancelled, klausur, event, absence (Veranstaltung),

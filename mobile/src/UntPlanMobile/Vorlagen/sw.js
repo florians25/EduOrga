@@ -1,5 +1,5 @@
 /* =====================================================================
-   sw.js — App-Shell offline, Daten stale-while-revalidate
+   sw.js — App-Shell offline, Plandaten immer zuerst vom Netz (Cache nur als Rückfall ohne Netz)
    ---------------------------------------------------------------------
    Die Fassung setzt der Server ein (Prüfwert über alle Dateien der
    Oberfläche). Jede Änderung an CSS oder JS ergibt damit einen neuen
@@ -71,18 +71,18 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Stundenplandaten (api/…): Netz zuerst, Kopie im Cache
+  /* Stundenplandaten (api/…): immer zuerst das Netz, ohne HTTP-Cache – so
+     erscheinen Änderungen sofort. Die Kopie im Cache dient nur als Rückfall
+     ohne Netz und trägt den Zeitpunkt des Abrufs im Kopf „X-EduOrga-Stand“;
+     die App zeigt damit „Offline — Stand hh:mm“. */
   if (url.pathname.includes('/api/')){
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache:'no-store' })
         .then(res => {
-          if (res && res.ok){
-            const copy = res.clone();
-            caches.open(VERSION).then(c => c.put(req, copy));
-          }
+          if (res && res.ok) mitStand(res.clone()).then(kopie => caches.open(VERSION).then(c => c.put(req, kopie))).catch(() => null);
           return res;
         })
-        .catch(() => caches.match(req).then(hit => hit || offlineJson()))
+        .catch(() => caches.open(VERSION).then(c => c.match(req)).then(hit => hit || offlineJson()))
     );
     return;
   }
@@ -136,6 +136,13 @@ self.addEventListener('fetch', e => {
    Gibt man nichts zurück, bricht der Aufruf in Safari mit „Load failed“ ab —
    und die App meldete das als „Nicht gespeichert“, obwohl gar nichts
    gespeichert werden sollte. */
+/* Kopie einer Antwort mit dem Zeitpunkt des Abrufs (für „Stand hh:mm“). */
+async function mitStand(res){
+  const kopf = new Headers(res.headers);
+  kopf.set('X-EduOrga-Stand', new Date().toISOString());
+  return new Response(await res.blob(), { status:res.status, statusText:res.statusText, headers:kopf });
+}
+
 function offlineJson(){
   return new Response(
     JSON.stringify({ ok:false, error:'Keine Verbindung', offline:true }),

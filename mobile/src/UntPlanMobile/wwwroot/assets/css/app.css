@@ -63,7 +63,7 @@
 
 :root[data-thema="dunkel"]{
   --st-entfall:       #f08a80;
-  --st-aenderung:     #ab95f3;
+  --st-aenderung:     #5cbf86;
   --st-pruefung:      #e2a347;
   --st-termin:        #e48bc4;
   --raster:           #0b0f13;
@@ -671,7 +671,7 @@ a{ color:var(--up-primaer); }
 .tok{ white-space:nowrap; }
 .tok i, .tok__trenn{ font-style:normal; color:inherit; }
 
-/* Geänderter Wert: violett und unterstrichen */
+/* Geänderter Wert (ältere Fassung; überschrieben im Abschnitt „Stundenkarte (alle Plattformen)“ am Ende) */
 .badge{
   display:inline;
   color:var(--st-aenderung);
@@ -707,7 +707,7 @@ a{ color:var(--up-primaer); }
 }
 .card.is-past .badge:not(.badge--removed){ color:color-mix(in srgb, var(--st-aenderung) 80%, var(--up-text-2)); }
 
-/* Vertretung, Änderung, Raumwechsel: violette Linie und helle Statusfläche */
+/* Vertretung, Änderung, Raumwechsel: grüne Linie und helle Statusfläche */
 .card--change{ box-shadow:inset 0 0 0 1px var(--st-aenderung); }
 .mit-statusflaeche .card--change{ background-color:var(--up-aenderung-flaeche); }
 .card--change.is-past{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 55%, transparent); }
@@ -2585,3 +2585,132 @@ body.show-card-times .card__times{ display:flex; }
   .lstsearch{ display:flex; }
   .tabbar{ padding-left:calc(50% - 300px); padding-right:calc(50% - 300px); }
 }
+
+/* =====================================================================
+   Stundenkarte (alle Plattformen) – design/DESIGN.md, Abschnitt 10
+   ---------------------------------------------------------------------
+   Dieselben Regeln wie EduOrga Web und iOS: helle Karte, 4-px-Kante links
+   (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), je eine
+   Zeile Fach · Klasse · Lehrkraft · Raum. Jede Änderung grün: Fläche
+   --up-aenderung-flaeche, schräg schraffierte Kante, der geänderte Wert im
+   Feld „+neu (bisher)“. Entfall rot: Fläche --up-entfall-flaeche,
+   schraffierte rote Kante, alles durchgestrichen, Feld „× entfällt“.
+   Verlegung „× auf …“ bzw. „⊕ von …“, Zusatz „⊕ Zusatz“.
+   ===================================================================== */
+.card{ border-radius:var(--kradius, 4px); }
+.card__line{ line-height:14px; }
+.card__line--primary{ font-size:13px; }
+.card__line--primary + .card__line{ color:var(--up-text-2); }
+
+/* Feld (Chip): Fläche und Schrift der Status-Tönung, nie durchgestrichen */
+.badge, .badge.badge--removed.badge--open, .feld{
+  display:inline-block; max-width:100%;
+  padding:0 3px; margin:0; border-radius:3px;
+  line-height:14px; vertical-align:top;
+  background:var(--up-aenderung-feld); color:var(--up-aenderung-text);
+  font-weight:600; text-decoration:none;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.badge.badge--removed:not(.badge--open){ background:none; color:inherit; font-weight:inherit; padding:0;
+  text-decoration:line-through; text-decoration-thickness:var(--strike); }
+.feld--entfall{ background:var(--up-entfall-feld); color:var(--up-entfall-text); }
+.feld b{ font-weight:600; }
+.badge--frage{ display:none; }
+.card.is-past .badge:not(.badge--removed){ color:var(--up-aenderung-text); opacity:.8; }
+.card__line--feld{ margin-top:auto; padding-top:1px; overflow:visible; }
+.card__line--feld + .card__ecke, .card.has-feld .card__status{ display:none; }
+
+/* Schraffierte Kante (Änderung grün, Entfall rot) – bündig links, auch bei Vorlagen ohne Balken */
+.card--change::before, .card--cancelled::before, .card--released::before{
+  display:block; left:0; top:0; bottom:0; right:auto; width:var(--balken, 4px); height:auto; border-radius:0; opacity:1;
+}
+.card--change::before, .card--released::before{
+  background:repeating-linear-gradient(135deg, var(--st-aenderung) 0 2px, color-mix(in srgb, var(--st-aenderung) 28%, transparent) 2px 4.5px);
+}
+.card--cancelled::before{
+  background:repeating-linear-gradient(135deg, var(--st-entfall) 0 2px, color-mix(in srgb, var(--st-entfall) 28%, transparent) 2px 4.5px);
+}
+.card--change, .card--released{
+  background-color:var(--up-aenderung-flaeche);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 40%, transparent);
+  padding-left:calc(var(--balken, 4px) + 5px);
+}
+.card--change.is-past, .card--released.is-past{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 25%, transparent); }
+.card--released .card__line{ color:var(--up-text-2); }
+.card--cancelled, .card--class-absent{
+  background-color:var(--up-entfall-flaeche); background-image:none;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-entfall) 30%, transparent);
+  padding-left:calc(var(--balken, 4px) + 5px);
+}
+.card--cancelled .card__line, .card--class-absent .card__line{
+  color:var(--up-entfall-text);
+  text-decoration:line-through; text-decoration-thickness:var(--strike);
+  text-decoration-color:color-mix(in srgb, var(--st-entfall) 80%, transparent);
+}
+.card--cancelled .card__line--primary{ color:var(--st-entfall); }
+.card--cancelled .card__line--feld{ text-decoration:none; }
+.card--cancelled .feld, .card--cancelled .feld--entfall{ display:inline-block; padding:0 3px; background:var(--up-entfall-feld); color:var(--up-entfall-text); font-weight:600; }
+
+/* Veranstaltung, Termin: warmer Block ohne Kante */
+.card--gs, .card--absence, .card--event{
+  background-color:var(--up-ereignis-flaeche);
+  border:1px solid var(--up-ereignis-rand);
+  border-radius:var(--kradius, 4px);
+}
+.card--gs .card__line, .card--absence .card__line, .card--event .card__line{ color:var(--up-ereignis-text); }
+.card--gs .card__line--primary, .card--event .card__line--primary, .card--absence .card__line--primary{ color:var(--up-ereignis-text); }
+
+/* Mitteilung: helle gelbe Notiz über der ersten Stunde (Tippen zeigt den Text) */
+.notiz{
+  position:absolute; left:0; width:100%; z-index:3;
+  padding:0 5px; border-radius:3px; text-align:left;
+  background:var(--up-mitteilung-flaeche); color:var(--up-mitteilung-text);
+  box-shadow:inset 0 0 0 1px var(--up-mitteilung-rand);
+  font-size:11px; line-height:22px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* Zeitspalte: Beginn oben, Stundennummer mittig, Ende unten */
+.slotrow__no{ top:50%; transform:translateY(-50%); font-size:14px; line-height:16px; }
+.slotrow__time{ top:3px; }
+.slotrow__time--ende{ top:auto; bottom:3px; }
+.is-eng .slotrow__time{ display:none; }
+
+/* Tageskopf: „17.11“ (600) über „Mo“ */
+.dayhead__num{ margin-top:0; font-size:14.5px; font-weight:600; color:var(--up-text); }
+.dayhead__name{ margin-top:1px; font-size:11.5px; font-weight:400; color:var(--up-text-2); }
+.dayhead.is-today .dayhead__name{ font-weight:500; }
+
+/* Reiter „+N“: innen am rechten Rand der Zelle, senkrecht mittig, rechts bündig */
+.plusbadge{
+  right:0; min-width:22px; height:20px; padding:0 4px;
+  border-radius:4px 0 0 4px;
+  background:var(--up-primaer-flaeche); color:var(--up-akzent);
+  box-shadow:inset 0 0 0 .75px var(--up-primaer-rand);
+  font-size:11.5px; line-height:20px;
+}
+.plusbadge--change{ background:var(--up-aenderung-feld); color:var(--up-aenderung-text); box-shadow:inset 0 0 0 .75px color-mix(in srgb, var(--st-aenderung) 45%, transparent); }
+.plusbadge--cancel{ background:var(--up-entfall-feld); color:var(--up-entfall-text); box-shadow:inset 0 0 0 .75px color-mix(in srgb, var(--st-entfall) 45%, transparent); }
+:root[data-thema="dunkel"] .plusbadge{ color:var(--up-akzent); }
+:root[data-thema="dunkel"] .plusbadge--change{ color:var(--up-aenderung-text); }
+:root[data-thema="dunkel"] .plusbadge--cancel{ color:var(--up-entfall-text); }
+.card.has-plus{ padding-right:24px; }
+
+/* Legende „Änderungstyp | Darstellung“ */
+.legende-tab{ width:100%; border-collapse:collapse; font-size:13px; }
+.legende-tab th{ text-align:left; font-size:12px; font-weight:600; color:var(--up-text-2); padding:6px 16px; border-bottom:1px solid var(--up-rand); }
+.legende-tab td{ vertical-align:top; padding:10px 16px; border-bottom:1px solid var(--up-linie); }
+.legende-tab td:first-child b{ display:block; font-weight:600; color:var(--up-text); }
+.legende-tab td:first-child span{ color:var(--up-text-2); font-size:12.5px; }
+.legende-tab .muster{ position:relative; width:96px; min-height:62px; overflow:hidden; display:flex; flex-direction:column;
+  padding:3px 3px 3px 9px; border-radius:4px; background:var(--karte); box-shadow:var(--karte-rahmen); }
+.legende-tab .muster::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--balken-grau); }
+.legende-tab .muster.card--change, .legende-tab .muster.card--cancelled{ position:relative; }
+.legende-tab .muster .card__line{ position:relative; }
+.legende-tab .muster--notiz{ padding:5px 6px; background:var(--up-mitteilung-flaeche); color:var(--up-mitteilung-text);
+  box-shadow:inset 0 0 0 1px var(--up-mitteilung-rand); font-size:11.5px; line-height:14px; }
+.legende-tab .muster--notiz::before{ display:none; }
+.legend__satz{ margin:0 16px 8px; font-size:13px; color:var(--up-text-2); }
+.sheet--legend{ max-height:88vh; overflow-y:auto; }
+.sw--change{ background:var(--up-aenderung-flaeche); box-shadow:inset 3px 0 0 var(--st-aenderung), inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 40%, transparent); }
+.sw--change u{ text-decoration:none; color:var(--up-aenderung-text); font-weight:600; }
+.sw--event{ background:var(--up-ereignis-flaeche); border:1px solid var(--up-ereignis-rand); }

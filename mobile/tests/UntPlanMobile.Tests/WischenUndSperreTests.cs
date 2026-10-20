@@ -137,23 +137,22 @@ public class WischenUndSperreTests
     public void Kacheln_nach_dem_Designsystem()
     {
         var css = AppCss;
-        // Standard „Klassisch“: weiße Karte mit flachem Schatten auf grauem Raster, Fachfarbe als Streifen innen links;
+        // Grundkarte: weiße Karte mit flachem Schatten auf grauem Raster, Fachfarbe als Streifen innen links;
         // Tönung nur in den Varianten „Farbfläche“ bzw. „Balken mit Tönung“ der Schule
         Assert.Contains("background-color:var(--karte);\n  box-shadow:var(--karte-rahmen);", css);
         Assert.Contains("--raster:           #edf1f2;", css);
         Assert.Contains("background-color:color-mix(in srgb, var(--fach) var(--toenung, 12%), var(--karte));", css);
         // vergangene Stunden: schwächer, Zustände bleiben erkennbar
         Assert.Contains(".card.is-past{ --anteil:var(--kachel-anteil-vorbei);", css);
-        // Änderung: violette Linie und helle Statusfläche, geänderter Wert unterstrichen, offene Vertretung mit „?“
-        Assert.Contains(".card--change{ box-shadow:inset 0 0 0 1px var(--st-aenderung); }", css);
-        Assert.Contains(".mit-statusflaeche .card--change{ background-color:var(--up-aenderung-flaeche); }", css);
-        Assert.Contains(".badge--frage{", css);
-        Assert.Contains("text-decoration:underline;", css);
-        Assert.Contains(".badge.badge--removed.badge--open{", css);
-        // Entfall schraffiert, Prüfung bernstein, Veranstaltung gestrichelt violett, Ferien hellblau
-        Assert.Contains("repeating-linear-gradient(-45deg, var(--schraffur) 0 1px, transparent 1px 6px)", css);
+        // Änderung (design/DESIGN.md, Abschnitt 10): grüne Fläche, schraffierte grüne Kante, geänderter Wert im grünen Feld
+        Assert.Contains("background-color:var(--up-aenderung-flaeche);", css);
+        Assert.Contains("background:var(--up-aenderung-feld); color:var(--up-aenderung-text);", css);
+        Assert.Contains(".badge.badge--removed.badge--open", css);
+        // Entfall rot und durchgestrichen, Prüfung bernstein, Veranstaltung als warmer Block, Ferien hellblau
+        Assert.Contains("background-color:var(--up-entfall-flaeche);", css);
+        Assert.Contains("text-decoration:line-through;", css);
         Assert.Contains("background-color:var(--up-pruefung-flaeche);", css);
-        Assert.Contains("border:1px dashed color-mix(in srgb, var(--up-text-2) 60%, transparent);", css);
+        Assert.Contains("background-color:var(--up-ereignis-flaeche);", css);
         Assert.Contains("background-color:var(--up-frei-flaeche);", css);
         // „ohne mich“: gepunkteter Rahmen statt Eckklammern
         Assert.Contains("outline:1.5px dotted", css);
@@ -161,7 +160,7 @@ public class WischenUndSperreTests
         Assert.DoesNotContain("corners", AppJs);
         // Statusfarben und Dunkelmodus kommen aus den Grundwerten (tokens.css)
         Assert.Contains(":root[data-thema=\"dunkel\"]{", css);
-        Assert.Contains("--up-aenderung: #6d4fc2;", Datei("wwwroot", "assets", "css", "tokens.css"));
+        Assert.Contains("--up-aenderung: #2f855a;", Datei("wwwroot", "assets", "css", "tokens.css"));
     }
 
     [Fact]

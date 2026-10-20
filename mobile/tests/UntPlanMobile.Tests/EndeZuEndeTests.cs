@@ -69,6 +69,10 @@ public class EndeZuEndeTests
         Assert.Contains(Kacheln(woche, "2026-10-16"), k => k["openSub"]!.GetValue<bool>() && k["teacherOpen"]?.GetValue<bool>() == true);
         Assert.Contains(Kacheln(woche, "2026-10-16"), k => k["blockType"]!.GetValue<string>() == "supervision" && k["_supAbsent"]?.GetValue<bool>() == true);
         Assert.Contains(Kacheln(woche, "2026-10-14"), k => k["blockType"]!.GetValue<string>() == "absence" && k["subject"]!.GetValue<string>() == "Lehrerkonferenz");
+        // Mitteilungen (Tagestexte) je Tag für die gelbe Notiz – im Kollegium auch die nur fürs Kollegium
+        var notizen = woche["notes"]!["2026-10-14"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+        Assert.Contains(notizen, x => x.StartsWith("Lehrerkonferenz um 14:15"));
+        Assert.Contains(notizen, x => x.StartsWith("Heute 7. Stunde Lehrerkonferenz"));
 
         // Klassenplan mit Entfall (Projekttag) und Herbstferien in der Woche danach
         var klasse = await Umgebung.HolenAsync(c, "/api/mobile?action=week&date=2026-10-14&type=class&id=5a");
