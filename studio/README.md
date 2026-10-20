@@ -24,8 +24,9 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
 
 * **Seiten statt Fenster:** Jede Aufgabe ist eine Seite mit eigener Adresse (Lesezeichen, Zurück-Taste des Browsers).
   Aufgaben, die mehrere Inhalte gleichzeitig brauchen, sind feste **Arbeitsplätze** – *Manuell planen* (Unterricht und
-  Klassenplan), *Tagesplanung* der Vertretung (Tagesübersicht Klassen × Stunden mit der Entscheidung daneben, verschiebbare Minipläne;
-  wahlweise Lehrkräfte, offene Stunden eine nach der anderen oder Tabelle; Wer ist frei?, Abwesenheiten und Veröffentlichen auf Abruf),
+  Klassenplan), *Tagesplanung* der Vertretung („Fall für Fall“: links die Klassen mit offenen Fällen in fester Reihenfolge,
+  in der Mitte der ganze Tag der Klasse als eine Leiste, rechts die besten Lehrkräfte für den ganzen Block – siehe unten; im Menü
+  *Ansicht* weiterhin die Übersichten Klassen bzw. Lehrkräfte × Stunden, die Liste der offenen Stunden und die Tabelle),
   *Verlegen und Tauschen*. Inhalte, die aus einer Seite heraus geöffnet werden (z. B. der Unterricht zu einem Plan),
   erscheinen rechts daneben; „Öffnen“ macht daraus eine eigene Seite.
 * **Navigation** links (in schmalen Fenstern über den Menüknopf): *Stammdaten, Unterricht, Planung, Stundenpläne, Oberstufe, Auswertung, Ausgabe,
@@ -46,6 +47,26 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   letzten Übertragung. In *EduOrga Web → Einstellungen* lässt sich „Vertretungen automatisch übertragen“ einschalten: dann geht jede
   Änderung der Vertretungsplanung spätestens nach der eingestellten Zeit (Standard 30 s, Änderungen dazwischen in einem Paket) ohne
   Klick hinaus. Fehlgeschlagene automatische Übertragungen werden mit wachsendem Abstand wiederholt.
+* **Tagesplanung „Fall für Fall“** (Standard): gebaut für den Morgen, an dem 15 von 300 Lehrkräften fehlen. Ein *Fall* ist eine
+  Stunde bzw. ein Block (Doppelstunde = ein Fall). Links die Klassen mit Fällen in fester Reihenfolge („5a · 2 offen“ → „erledigt“
+  an derselben Stelle; wahlweise *Abwesende*), in der Mitte der Tag der Klasse als Leiste mit festen Spalten je Stunde und ihre
+  Fälle, rechts die fünf besten Lehrkräfte für den ganzen Block mit Gründen in Worten („frei 1.–2. · Bereitschaft · unterrichtet
+  die 5a · Fach Englisch“) und *Übernehmen* mit einem Klick bzw. Enter. Daneben *Entfall*, *Verlegen* (eine andere Stunde der
+  Klasse in die Lücke vorziehen – die Leiste zeigt „von 6.“ bzw. „verlegt auf 1.“ an ihren Stunden), *Zusammenlegen*, *Ohne
+  Lehrkraft* und *Eigene Lösung* (Lehrkraft frei wählen, Raum, Vormerkung). Danach ist der nächste offene Fall gewählt; nichts
+  ordnet sich um. *Vorschläge für alle* schlägt blockweise für alle offenen Fälle eine Lösung vor (zur Prüfung, ohne Änderung).
+  Tasten: ↑/↓, 1–5, Enter, E, V, B, O, Z (rückgängig).
+
+  | 13-Zoll-Notebook (1280 × 800) | Nach dem Übernehmen | Verlegen: Stunde vorgezogen |
+  |---|---|---|
+  | ![Doppelstunde](docs/bilder/tagesplanung-1280-doppelstunde.png) | ![Übernommen](docs/bilder/tagesplanung-1280-uebernommen.png) | ![Vorgezogen](docs/bilder/tagesplanung-1280-vorgezogen.png) |
+
+  | 1440 × 900 | Vorschläge für alle | Nach abwesender Lehrkraft |
+  |---|---|---|
+  | ![Doppelstunde 1440](docs/bilder/tagesplanung-1440-doppelstunde.png) | ![Vorschläge](docs/bilder/tagesplanung-1440-vorschlaege.png) | ![Abwesende](docs/bilder/tagesplanung-1440-abwesende.png) |
+
+  Aufnahmen mit der Lastschule aus dem Test (`Grossschule.cs`: 300 Lehrkräfte, 60 Klassen) und 15 Abwesenheiten (57 Fälle,
+  72 offene Stunden). Kandidaten für einen Block kommen in etwa 0,1–0,4 s vom Server, die Vorschläge für alle in wenigen Sekunden.
 * **Übersicht:** Kennzahlen der Schuldatei, Planqualität und häufige Aufgaben.
 * **Darstellung:** Marke EduOrga (`design/MARKE.md`): Primärfarbe Petrol #164C55 (Logo, Seitenleiste, Knöpfe), Akzent #28747A
   (aktive Bereiche, Links, Fokus), Seitenhintergrund #F5F7F8, Text #24363B; Fluent-Thema aus der Petrol-Reihe (`client/src/theme.ts`).
@@ -103,6 +124,9 @@ STUDIO_TEST_MYSQL="Server=127.0.0.1;Port=3306;User ID=root;Password=…" dotnet 
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke.cjs            # Rundgang über alle Seiten
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/planung.cjs          # Planen, Ziehen, Optimierung
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs       # Vertretungsplanung
+# Tagesplanung „Fall für Fall“ mit großer Schule (300 Lehrkräfte, 60 Klassen, 15 Abwesenheiten) bei 1280×800 und 1440×900:
+STUDIO_GROSSSCHULE=/tmp/gross.up dotnet test studio/tests/UntPlanStudio.Tests --filter GrosseSchuleMitFuenfzehnAbwesenheiten
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 STUDIO_GROSSSCHULE=/tmp/gross.up node studio/tests/smoke/tagesplanung-gross.cjs
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/druck.cjs            # Einstellungen, Druck, Formate
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke-austausch.cjs  # UntPlan Web, Module, MultiUser
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/speichern.cjs         # Speicherstand, Sicherungspunkt, „An Web senden“

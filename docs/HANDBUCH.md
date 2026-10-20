@@ -432,31 +432,86 @@ Mit dem Datum wechselt automatisch die gültige Periode.
 
 ### Tagesplanung
 
-*Vertretungsplanung → Tagesplanung* ist der Arbeitsplatz für den Planungstag. Standard ist die **Tagesübersicht nach
-Klassen**: auf einen Blick, was heute in jeder Klasse passiert, und offene Stunden direkt dort lösen. Das Datum blättern Sie wie überall in der Kopfleiste (**Strg+Bild↑ / Strg+Bild↓**, eine Woche mit
-**Strg+Umschalt+Bild↑ / Strg+Umschalt+Bild↓**). Auf Bildschirmen unter 1440 px Breite (z. B. MacBook 13") klappt die
+*Vertretungsplanung → Tagesplanung* ist der Arbeitsplatz für den Planungstag. Standard ist **Fall für Fall**: eine Klasse
+nach der anderen, ein Block nach dem anderen – gebaut für den Morgen, an dem in einer großen Schule (300 Lehrkräfte)
+plötzlich 15 Lehrkräfte fehlen. Das Datum blättern Sie wie überall in der Kopfleiste (**Strg+Bild↑ / Strg+Bild↓**, eine Woche
+mit **Strg+Umschalt+Bild↑ / Strg+Umschalt+Bild↓**). Auf Bildschirmen unter 1440 px Breite (z. B. MacBook 13") klappt die
 Seitenleiste auf dieser Seite von selbst ein; der Menüknopf oben links bzw. **Strg+B** zeigt sie wieder.
 
-**Kopf (eine Zeile):** Tag und Wochentyp, die Zahl der offenen Stunden (rot), Entfälle und Kollisionen; rechts
+**Kopf (eine Zeile):** Tag und Wochentyp, „**37 offen · 12 erledigt** · 15 abwesend“ (Fälle; Kollisionen rot), rechts
 
-- **Klassen | Lehrkräfte | Offene Stunden | Tabelle** – die Tagesübersicht nach Klassen (Standard) bzw. Lehrkräften, die
-  Liste der offenen Stunden mit Entscheidung oder die dichte Tabelle (siehe unten; die Wahl wird je Benutzer gemerkt),
-- **Miniplan** (in der Tagesübersicht, P) – ein kleiner, frei verschiebbarer Plan der Lehrkraft (bzw. in der
-  Lehrkräfteübersicht der Klasse) der gewählten Stunde, der der Auswahl folgt; **Pläne** (in *Offene Stunden* und
-  *Tabelle*, P) blendet rechts die Tagespläne von Klasse und Lehrkraft, *Wer ist frei?* und *Alle Kandidaten* ein,
-- **Abwesenheiten** (mit Anzahl) – öffnet das Blatt zum Erfassen (auch Taste **N**),
+- **Abwesenheiten erfassen** – das Blatt mit der Schnellerfassung: mehrere Lehrkräfte auf einmal tippen (Kürzel oder Name,
+  Enter), ganztägig oder ab/bis Stunde, Grund; darunter die Abwesenheiten des Tages (auch Taste **N**),
+- **Vorschläge für alle** – für jeden offenen Fall die beste Lösung (siehe unten), zur Prüfung, noch ohne Änderung,
 - **Veröffentlichen** – öffnet das Blatt *Prüfen und veröffentlichen*; daneben der Stand der letzten Übertragung an
   EduOrga Web („Gesendet · 10:42“, auf schmalen Bildschirmen in der Kurzinfo),
-- **…** – Wer ist frei?, Alle Kandidaten, *Ganze Woche* (Tabelle und Pläne zeigen die Woche, dazu der Wochenstreifen
-  mit den offenen Stunden je Tag), *Blöcke gemeinsam besetzen*, Alle Abwesenheiten (Strg+M), Kalender und Tagestexte,
-  Belastung, Automatische Vertretung und Einstellungen.
+- **Ansicht** – *Fall für Fall* (Standard), *Übersicht nach Klassen*, *Übersicht nach Lehrkräften*, *Offene Stunden als Liste*,
+  *Tabelle* (die Wahl wird je Benutzer gemerkt); in den Übersichten außerdem **Miniplan** (P), in Liste und Tabelle **Pläne** (P),
+- **…** – Wer ist frei?, Alle Kandidaten, *Ganze Woche* und *Blöcke gemeinsam besetzen* (Liste und Tabelle), Alle
+  Abwesenheiten (Strg+M), Kalender und Tagestexte, Belastung, Automatische Vertretung und Einstellungen.
+
+#### Fall für Fall (Standard)
+
+![Fall für Fall: Doppelstunde der 10i, die fünf besten Lehrkräfte für beide Stunden](../studio/docs/bilder/tagesplanung-1280-doppelstunde.png)
+
+Ein **Fall** ist eine Stunde bzw. ein Block, der vertreten werden muss: aufeinanderfolgende Stunden desselben Unterrichts
+derselben fehlenden Lehrkraft (die Doppelstunde Englisch 1.–2. ist *ein* Fall). Ein Fall bleibt stehen, wenn er gelöst ist –
+die Seite ordnet sich beim Arbeiten nie um.
+
+- **Links** stehen die Klassen mit Fällen in **fester Reihenfolge** (Jahrgang, Name): „5a · 2 offen“. Ist alles gelöst, steht
+  an derselben Stelle ruhig „erledigt“. Über der Liste wechselt **Klassen | Abwesende** zur Liste der abwesenden Lehrkräfte
+  („BEN · ganztägig · K · 4 offen“) – dann zeigt die Mitte den Tag der Lehrkraft. Fälle ohne Klasse (Pausenaufsichten,
+  Termine) stehen am Ende unter *Aufsichten*.
+- **In der Mitte** steht der **ganze Tag der Klasse als eine Leiste** – je Stunde eine feste Spalte mit der Stundenkarte wie in
+  den Plänen: regulär neutral; **offen** grau gestrichelt mit „fehlt“; **vertreten** grün, neue Lehrkraft vorn, die bisherige
+  durchgestrichen in Klammern („MOR (K̶E̶R̶)“); **Entfall** rot und durchgestrichen; eine **verlegte** Stunde zeigt an ihrem alten
+  Platz „verlegt auf 1.“ (rot) und am neuen „von 6.“ (grün). Nach jeder Entscheidung ändern die Karten nur ihren Inhalt –
+  nichts springt. Darunter **Zu vertreten**: die Fälle der Klasse in der Reihenfolge der Stunden mit ihrem Stand („offen“,
+  „MOR“, „Entfall“, „KL aus der 6. vorgezogen“). Ein Klick auf eine Karte oder Zeile wählt den Fall; Doppelklick auf eine Karte
+  öffnet den Plan der Lehrkraft als Miniplan, *Wochenplan* den Plan der Klasse.
+- **Rechts** steht die **Entscheidung** zum gewählten Fall: Stunde(n) und Zeit, Klasse und Fach, *KER fehlt* (Klick: Tag der
+  Lehrkraft als Miniplan), Grund, Raum. Darunter **Vertretung für beide Stunden** (bzw. die Stunde): die **fünf besten
+  Lehrkräfte, die in allen Stunden des Blocks frei sind**, jede mit ihren Gründen in Worten – „frei 1.–2. · Bereitschaft ·
+  unterrichtet die 10i · Fach Mathematik · heute schon 1 Vertretung“, Warnungen wie „Höchstzahl erreicht“ oder „Zeitwunsch:
+  lieber nicht“ rot. **Übernehmen** trägt die Lehrkraft für den ganzen Block ein (ein Klick; die erste ist vorgewählt, Enter);
+  *Weitere anzeigen* holt die nächsten zehn. Ist niemand in allen Stunden frei, steht das dort.
+- **Andere Lösung:** **Entfall** (E; „Randstunde“, wenn er hier üblich ist), **Verlegen** (V – eine andere Stunde der Klasse in
+  die Lücke vorziehen: heute zuerst, Randstunden zuerst, „Randstunde, keine neue Lücke“ bzw. „neue Lücke in der 4.“; die
+  möglichen Stunden sind in der Leiste markiert; *Plan der Klasse öffnen* zum Verschieben per Ziehen), **Zusammenlegen mit 7h
+  (KAI)** (B – eine Lehrkraft betreut nebenher), **Ohne Lehrkraft** (O) und **Eigene Lösung** (Lehrkraft frei wählen – mit
+  Rückfrage bei Überschneidung –, Raum zuordnen, Als Vormerkung beiseitelegen, Alle Kandidaten, In der Tabelle bearbeiten).
+  Optional ein **Hinweis für den Vertretungsplan** („Aufgaben im Lernraum“).
+- Nach jeder Entscheidung ist der **nächste offene Fall** gewählt – erst in derselben Klasse, dann in der nächsten. Oben
+  rechts steht „10i 1.–2. M: MOR eingetragen“ mit **Rückgängig** (Z). Ein gelöster Fall zeigt sein Ergebnis mit
+  *Zurücksetzen*.
+
+**Vorschläge für alle:** Der Server schlägt für jeden offenen Fall die beste Lösung vor – blockweise und der Reihe nach (wer
+für die 1.–2. Stunde eingeplant ist, steht für spätere Fälle derselben Zeit nicht mehr zur Verfügung), sonst Entfall bei
+Randstunden. Geändert wird noch nichts: In der Mitte erscheint „56 Vorschläge zur Prüfung“ mit **Alle übernehmen** und
+**Verwerfen**, jede Zeile zeigt „Vorschlag MUE“, die Entscheidung oben den Vorschlag mit *Übernehmen* (bzw. Enter). Alle
+übernommenen Vorschläge sind eine Rückgängig-Stufe.
+
+| Taste (Fall für Fall) | Wirkung |
+|---|---|
+| ↑ / ↓ | vorheriger / nächster Fall (über die Klassen hinweg) |
+| Bild↑ / Bild↓ | vorherige / nächste Klasse |
+| 1 – 5 | Lehrkraft wählen |
+| Enter | gewählte Lehrkraft (bzw. den Vorschlag) übernehmen |
+| E, V, B, O | Entfall, Verlegen, Zusammenlegen, ohne Lehrkraft |
+| Z | letzte Änderung rückgängig |
+| Esc | Verlegen schließen |
+| N | Abwesenheit erfassen |
+
+Auch große Schulen bleiben flüssig: Der Server liefert die Fälle des Tages und den Tag aller Klassen in einem Zug, die
+Kandidaten nur für den gewählten und die nächsten beiden offenen Fälle (bei 300 Lehrkräften etwa 0,1–0,4 s je Block); die
+Vorschläge für alle 57 Fälle eines Tages mit 15 Abwesenheiten brauchen wenige Sekunden.
 
 **Änderungen aus EduOrga Web:** Beim Öffnen der Tagesplanung fragt Studio, wenn EduOrga Web verbunden ist und noch nicht
 bearbeitete Rückmeldungen oder Stundenplanänderungen vorliegen: „Wollen Sie folgende Änderungen aus EduOrga Web
 übernehmen?“ mit der Liste. **Ja** übernimmt sie, **Nein** markiert sie nach einer Warnung als ignoriert (sie werden
 nicht erneut angeboten), **Später** fragt beim nächsten Öffnen wieder. Liegt nichts vor, erscheint keine Frage.
 
-**Tagesübersicht nach Klassen (Standard).** Zeilen sind die Klassen, nach Jahrgang gegliedert (Klick auf die Kopfzeile
+**Übersicht nach Klassen** (Menü *Ansicht*). Zeilen sind die Klassen, nach Jahrgang gegliedert (Klick auf die Kopfzeile
 klappt einen Jahrgang ein, gemerkt), Spalten die Stunden des Tages. Kopf und Klassenspalte bleiben beim Blättern stehen;
 auch große Schulen mit 70 und mehr Klassen bleiben flüssig. Jede Zelle zeigt die Stunde kompakt – Fach und Raum oben,
 Lehrkraft darunter – und ihren Stand:
@@ -507,7 +562,7 @@ Klasse:** Plan, *ganztägig abwesend (Ausflug …)*, Abwesenheit entfernen; Dopp
 | A, N | Empfehlungen für alle prüfen, Abwesenheit erfassen |
 | Esc | Mehrfachauswahl aufheben |
 
-**Tagesübersicht nach Lehrkräften.** Dieselbe Matrix mit den Lehrkräften als Zeilen: zuerst die abwesenden (Gruppe
+**Übersicht nach Lehrkräften** (Menü *Ansicht*). Dieselbe Matrix mit den Lehrkräften als Zeilen: zuerst die abwesenden (Gruppe
 *Abwesend*, Zeitraum schraffiert), dann alle anderen. Die Zellen zeigen Fach, Raum und Klasse; eine vertretene Stunde der
 abwesenden Lehrkraft „6ab → MEY“, offene Stunden mit „?“, Bereitschaften als ruhige Kachel. Rechtsklick auf eine Lehrkraft:
 ganztägig bzw. stundenweise abwesend melden.
@@ -522,7 +577,7 @@ ein Klick auf eine geänderte Stunde im Miniplan wählt sie in der Tagesübersic
 der Matrix, damit die Entscheidung frei bleibt; auch auf einem 13-Zoll-Bildschirm (1280×720) bleibt die Seite ohne
 waagrechtes Blättern.
 
-**Offene Stunden.** Links stehen die offenen Stunden des Tages, nach Stunden gegliedert („2. Stunde 08:45–09:30 · 4“),
+**Offene Stunden als Liste** (Menü *Ansicht*). Links stehen die offenen Stunden des Tages, nach Stunden gegliedert („2. Stunde 08:45–09:30 · 4“),
 eine Zeile je Stunde: Klasse · Fach · fehlende Lehrkraft (durchgestrichen), rechts ggf. *Klausur* (Aufsicht), *Raum*
 (nur der Raum fehlt) oder der Block („2.–3.“). Reiter **Offen** und **Gelöst** mit Anzahl. Rechts steht die
 **Entscheidung** zur gewählten Stunde:

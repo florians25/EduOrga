@@ -61,6 +61,16 @@ Zusammenlegen → Pläne prüfen (Kollisionen, Raum) → veröffentlichen; im La
 * **Lehrkräfte als zweite Sicht** derselben Matrix (abwesende zuerst; vertretene Stunden „→ SRO“).
 * Die frühere Liste bleibt als *Offene Stunden*, die Tabelle als *Tabelle*.
 
+## Nachtrag: „Fall für Fall“ (Rückmeldung aus der Praxis)
+
+Die Matrix als Hauptansicht war für eine große Schule zu voll: 60 Klassen × 8 Stunden, Zahlen in jedem Spaltenkopf, die
+Auswahl sprang nach jeder Entscheidung in eine andere Zeile, und Doppelstunden mussten Stunde für Stunde besetzt werden.
+Seit Oktober 2026 ist daher **Fall für Fall** die Standardansicht (Handbuch, Abschnitt Tagesplanung): links die Klassen mit
+offenen Fällen in fester Reihenfolge, in der Mitte der Tag *einer* Klasse als Leiste mit festen Spalten, rechts die besten
+Lehrkräfte für den ganzen Block mit Gründen in Worten. Ein Fall ist eine Stunde bzw. ein Block und bleibt nach dem Lösen
+stehen; Verlegungen erscheinen an ihren Stunden („von 6.“, „verlegt auf 1.“). Die Matrix bleibt als *Übersicht nach
+Klassen* bzw. *Lehrkräften* im Menü *Ansicht*.
+
 ## Quellen
 
 1. Untis-Hilfe „Substitution suggestion“: https://www.untis.at/HTML/WebHelp/uk/untis/vp_vertretungsvorschlag.htm
