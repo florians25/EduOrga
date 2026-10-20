@@ -48,10 +48,11 @@
   --up-entfall-feld: #f7d3cf;     /* Feld (Chip) auf der Stundenkarte */
   --up-aenderung: #2f855a;        /* jede Änderung: Vertretung, Raum-/Fach-/Lehrerwechsel, Verlegung, Zusatz (Grün) */
   --up-aenderung-flaeche: #e6f4ea;
-  --up-aenderung-text: #1d5c3a;   /* Schrift im grünen Feld „+Gal (Gor)“ */
+  --up-aenderung-text: #267349;   /* grüne Schrift für kleine Texte und Tags (≥ 5:1 auf #e6f4ea) */
   --up-aenderung-feld: #c9e8d4;   /* Feld (Chip) auf der Stundenkarte */
   --up-offen: #7d8b90;            /* offene Vertretung: neutral, gestrichelte Leiste (nie rot) */
-  --up-offen-text: #3d4d52;
+  --up-offen-text: #4d5866;
+  --up-offen-feld: #ebeef2;
   --up-mitteilung: #8a6d0b;       /* Mitteilung im Plan (helle gelbe Notiz) */
   --up-mitteilung-flaeche: #fdf5c9;
   --up-mitteilung-rand: #eddc8c;
@@ -147,9 +148,8 @@
     --up-aenderung-feld: #1f4630;
     --up-offen: #8a9aa0;
     --up-offen-text: #d3dde0;
-    --up-offen: #8a9aa0;
-  --up-offen-text: #d3dde0;
-  --up-mitteilung: #e8cf6a;
+    --up-offen-feld: #26363b;
+    --up-mitteilung: #e8cf6a;
     --up-mitteilung-flaeche: #2e2a14;
     --up-mitteilung-rand: #5a5020;
     --up-mitteilung-text: #efe2a8;
@@ -187,6 +187,9 @@
   --up-aenderung-flaeche: #15281d;
   --up-aenderung-text: #b5e6c8;
   --up-aenderung-feld: #1f4630;
+  --up-offen: #8a9aa0;
+  --up-offen-text: #d3dde0;
+  --up-offen-feld: #26363b;
   --up-mitteilung: #e8cf6a;
   --up-mitteilung-flaeche: #2e2a14;
   --up-mitteilung-rand: #5a5020;

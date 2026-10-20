@@ -571,7 +571,7 @@ if (typeof window !== 'undefined') window.UntPlanPlus = { plusWert };
    iOS (design/DESIGN.md, Abschnitt 10): jede Änderung grün (3-px-Leiste,
    Kennzeichen am Rand, Tag auf der betroffenen Zeile), Entfall rot mit allem
    durchgestrichen, offene Vertretung neutral. Tags in eigener Wortwahl:
-   „Gal statt Gor“, „Raum 105 statt 303“, „B070 zusätzlich“, „Gor fehlt“,
+   „Gal ← Gor“, „105 ← 303“, „neu B070“, „Abr fehlt“ (Schüler*innen: „Vertretung folgt“),
    unten „entfällt“, „verlegt → Di 21.10., 6. Std“, „verlegt ← Mo 20.10.,
    3. Std“, „zusätzlich“. */
 const WT_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
@@ -595,11 +595,11 @@ function statusFeld(card){
   if (card.blockType === 'change' && card.extra) return { ton:'aenderung', text:'zusätzlich' };
   return null;
 }
-/* Text im Tag eines geänderten Werts: „neu statt bisher“, „neu zusätzlich“ bzw. „bisher fehlt“ (Raum mit „Raum “ davor). */
-function feldText(jetzt, vorher, weg, praefix = ''){
+/* Text im Tag eines geänderten Werts: „neu ← bisher“ („Gal ← Gor“, „105 ← 303“), „neu B070“ bzw. „bisher fehlt“. */
+function feldText(jetzt, vorher, weg){
   const j = String(jetzt || '').trim().replace(/^\+/, ''), v = String(vorher || '').trim();
   if (weg) return `${v || j} fehlt`;
-  return v && v.toUpperCase() !== j.toUpperCase() ? `${praefix}${j} statt ${v}` : `${praefix}${j} zusätzlich`;
+  return v && v.toUpperCase() !== j.toUpperCase() ? `${j} ← ${v}` : `neu ${j}`;
 }
 /* Zeilen kürzen: die erste bleibt, geänderte gehen vor, unveränderte fallen von unten weg. */
 function zeilenKuerzen(lines, max){
@@ -1450,10 +1450,12 @@ function standZeigen(){
     if (!x) return;
     x.hidden = !st;
     if (!st) return;
-    x.textContent = (x === el ? `Stand ${st.voll.replace(/^\S+ /, '')} · ${st.rel}` : st.text) + (st.alt ? ' · Daten evtl. nicht aktuell' : '');
+    x.textContent = (x === el ? `Stand ${st.rel}` : st.text) + (st.alt ? (x === el ? ' · evtl. veraltet' : ' · Daten evtl. nicht aktuell') : '');
     x.title = 'Letzte Übertragung aus EduOrga Studio: ' + st.voll;
     x.classList.toggle('is-alt', st.alt);
   });
+  const knopf = document.getElementById('btnEntityPicker');
+  if (knopf) knopf.classList.toggle('mit-stand', !!st);
 }
 
 function renderGrid(){
@@ -1929,6 +1931,9 @@ function renderGrid(){
           return `<span class="badge">${esc(feldText(card.subject, card.subjectOrig))}</span>`;
         /* Entfall: alles schlicht, durchgestrichen (app.css) */
         if (entfallen && !l.tokens) return esc(l.text);
+        /* Zusatzstunde bzw. hierher verlegte Stunde: Lehrkraft schlicht – das Status-Tag unten sagt es schon */
+        if ((card.extra || card.moved === 'nach') && l.key === 'teacher' && !l.tokens && !l.removed && !kachelWert(card.teacherOrig))
+          return esc(werteListe(l.text).map(x => String(x).replace(/^\+/, '')).join(KACHEL_TRENNER));
         const offenGruen = l.removed && (l.key === 'teacher' || l.key === 'room')
           && card.blockType !== 'cancelled';
         const cls2 = 'badge' + (l.removed ? ' badge--removed' : '') + (offenGruen ? ' badge--open' : '') + (l.key === 'room' ? ' badge--raum' : '');
@@ -1955,7 +1960,7 @@ function renderGrid(){
           /* Offene Vertretung: neutral (nie rot) – Kollegium „(Abr)“, Schüler*innen und Eltern „Vertretung folgt“ */
           : offenGruen ? `<span class="feld feld--offen">${esc(state.isStudent ? 'Vertretung folgt' : feldText('', l.text, true))}</span>`
           : l.changed ? `<span class="${cls2}">${esc(l.removed ? feldText('', l.text, true)
-                : feldText(werteListe(l.text).map(x => plusWert(card, l.key, x).replace(/^\+/, '')).join(KACHEL_TRENNER), kachelWert(card[l.key + 'Orig']), false, l.key === 'room' ? 'Raum ' : ''))}</span>` : esc(l.text);
+                : feldText(werteListe(l.text).map(x => plusWert(card, l.key, x).replace(/^\+/, '')).join(KACHEL_TRENNER), kachelWert(card[l.key + 'Orig'])))}</span>` : esc(l.text);
       };
 
       const body = isHoliday

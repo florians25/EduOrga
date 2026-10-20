@@ -90,10 +90,10 @@ public class PlanrasterTests
             pruefe(f({ blockType:'change', extra:true }), 'zusätzlich aenderung');
             pruefe(f({ blockType:'change' }), null);
             pruefe(f({ blockType:'normal' }), null);
-            // Tags: „neu statt bisher“, „Raum neu statt bisher“, „neu zusätzlich“, „bisher fehlt“
-            pruefe(A.feldText('Gal', 'Gor'), 'Gal statt Gor');
-            pruefe(A.feldText('105', '303', false, 'Raum '), 'Raum 105 statt 303');
-            pruefe(A.feldText('B070', ''), 'B070 zusätzlich');
+            // Tags: „neu ← bisher“, „neu B070“, „bisher fehlt“
+            pruefe(A.feldText('Gal', 'Gor'), 'Gal ← Gor');
+            pruefe(A.feldText('105', '303'), '105 ← 303');
+            pruefe(A.feldText('B070', ''), 'neu B070');
             pruefe(A.feldText('', 'Abr', true), 'Abr fehlt');
             // Datenstand
             const st = A.studioStandText('2026-10-20 14:32:00', new Date(2026, 9, 20, 14, 37));

@@ -215,7 +215,7 @@ und „EduOrga-Kennzeichnung“) und **EduOrga iOS** (`ios/UntPlanNext/Neu/Plan/
 (Web/PWA) bzw. pt (iOS). **Eigene Gestaltung:** Welche Änderungsarten ein Plan zeigen muss, ist fachlich vorgegeben (Vertretung,
 Raum, Fach, Entfall, Verlegung, Zusatz, Mitteilung) – Formen, Wortwahl, Reihenfolge und Legende sind EduOrga und lehnen sich bewusst
 nicht an andere Stundenplanprogramme an (keine Schraffur, keine runden Plus-/Kreuz-Pillen, keine übernommenen Legendentabellen).
-Sachlich und ruhig: eine Leiste, ein Kennzeichen, kurze Tags in ganzen Wörtern.
+Sachlich und ruhig: eine Leiste, ein Kennzeichen, kurze Tags. Barrierefreiheit im Einzelnen auch in `ios/README.md`.
 
 **Grundkarte („EduOrga Standard“, Standard der Kartendarstellung)**
 * Kompakt, füllt die Rasterzelle (1–1,5 px Luft), nie breiter als ihre Spalte; Radius 4 (iOS 6); flacher Schatten bzw. feine Kontur.
@@ -234,27 +234,27 @@ Sachlich und ruhig: eine Leiste, ein Kennzeichen, kurze Tags in ganzen Wörtern.
   gelbe Notiz** (`--up-mitteilung-*`) im Tageskopf (Web) bzw. über der ersten Stunde (PWA, iOS).
 
 **Kennzeichnung (fest, in jeder Vorlage)**
-* **Geändert – Grün** (`--up-aenderung` #2f855a, Fläche #e6f4ea, Schrift #1d5c3a; dunkel #5cbf86 / #15281d / #b5e6c8): **durchgehende
-  3-px-Leiste** links, helle grüne Fläche, feine Linie (40 %), **Kennzeichen** (Punkt 6 px) oben rechts, das Geänderte als **Tag** auf
-  seiner Zeile.
+* **Geändert – Grün** (`--up-aenderung` #2f855a für Leiste/Linie/Kennzeichen, Fläche #e6f4ea, **Schrift #267349** (≥ 5:1); dunkel
+  #5cbf86 / #15281d / #b5e6c8): **durchgehende 3-px-Leiste** links, helle grüne Fläche, feine Linie (40 %), **Kennzeichen** (Quadrat
+  5 × 5 px) oben rechts, das Geänderte als **Tag** auf seiner Zeile; geänderte Zeilen 600.
 * **Entfällt – Rot** (`--up-entfall` #b42318, Fläche #fdecea, Schrift #8f1d14; dunkel #f07167 / #2e1916 / #ffc9c3): rote Leiste, rote
   Fläche, Kennzeichen, **der ganze Inhalt durchgestrichen**, Fach rot; der Status-Tag bleibt lesbar (nicht durchgestrichen).
-* **Vertretung folgt – Neutral:** offene Vertretung ist **kein Entfall und nie rot** – weiße Karte, **grau gestrichelte Leiste**,
-  grauer Tag (Fläche weiß, Linie `--up-text-3`, Schrift #3d4d52 / dunkel #d3dde0). Kollegium: „Abr fehlt“; Schüler*innen und Eltern:
+* **Offen – Grau:** offene Vertretung ist **kein Entfall und nie rot** – weiße Karte, **graue Leiste und gestrichelter Rand**, grauer
+  Tag gestrichelt (Fläche #ebeef2, Schrift #4d5866; dunkel #26363b / #d3dde0). Kollegium: „Abr fehlt“; Schüler*innen und Eltern:
   „Vertretung folgt“.
-* **Tag:** eigene kompakte Marke – umrandet (1 px in der Statusfarbe) auf heller Fläche, Radius 3, 3–4 px seitlich, **12 px/600** (so
-  groß wie die Zeilen), Schrift in der dunklen Statusfarbe, nie durchgestrichen, einzeilig mit „…“.
+* **Tag:** eigene kompakte Marke – **getönt mit feiner Linie** (Fläche der Statusfarbe, 1 px Linie 55 %; offen gestrichelt), Radius 3,
+  3–4 px seitlich, **mindestens 12 px/600** (so groß wie die Zeilen), Schrift in der dunklen Statusfarbe, nie durchgestrichen, einzeilig mit „…“.
 * Prüfung bleibt Bernstein (Linie, helle Fläche, Wort „Prüfung“), Buchung blau gestrichelt.
 
 **Tags und Datenquelle** (Daten: `Plandienst.cs` → `/api/app/plan`; PWA über `Kachelbau.cs`)
 
 | Fall | Tag (Zeile) | Plandaten |
 |---|---|---|
-| Vertretung | „Gal statt Gor“ (Lehrkraft) | Wert `{ k: "Gal", alt: "Gor" }` |
-| Raumänderung | „Raum 105 statt 303“ (Raum) | Raum `{ k: "105", alt: "303" }` |
-| Fachänderung | „BI statt MU“ (Fach) | `fachAlt` (PWA `subjectOrig`) |
-| hinzugekommen | „B070 zusätzlich“ | Wert `{ k: "B070", neu: true }` ohne `alt` |
-| Lehrkraft fehlt, noch keine Vertretung | „Abr fehlt“ bzw. „Vertretung folgt“ – neutral | `{ k: "", alt: "Abr" }`, `vertretungOffen` (PWA `teacherOpen`) |
+| Vertretung | „Gal ← Gor“ (Lehrkraft) | Wert `{ k: "Gal", alt: "Gor" }` |
+| Raumänderung | „105 ← 303“ (Raum) | Raum `{ k: "105", alt: "303" }` |
+| Fachänderung | „BI ← MU“ (Fach) | `fachAlt` (PWA `subjectOrig`) |
+| hinzugekommen | „neu B070“ | Wert `{ k: "B070", neu: true }` ohne `alt` |
+| Lehrkraft fehlt, noch keine Vertretung | „Abr fehlt“ bzw. „Vertretung folgt“ – grau, gestrichelt | `{ k: "", alt: "Abr" }`, `vertretungOffen` (PWA `teacherOpen`) |
 | Klasse fehlt | „5b fehlt“ (rot, mit „entfällt“) | `abwesendeKlassen` (PWA `classAbsent`) |
 | Entfall | unten „entfällt“ | Status `entfall` bzw. `abwesend` ohne `lehrerAbwesend` |
 | verlegt (hier entfallen) | unten „verlegt → Di 21.10., 6. Std“ (rot) | `verlegung = "von"`, `verlegungNach { datum, stunde, beginn }` (PWA `movedTo.lesson`) |
@@ -263,14 +263,15 @@ Sachlich und ruhig: eine Leiste, ein Kennzeichen, kurze Tags in ganzen Wörtern.
 | Mitteilung | gelbe Notiz | `tage[].mitteilungen` (PWA `notes`) – neu, abwärtskompatibel |
 
 **Legende „Kennzeichnungen“** (Web: Knopf „Legende“ und Hilfe zum Stundenplan; PWA: Blatt „Kennzeichnungen“; iOS: im Blatt „Auswahl
-und Filter“): vier Gruppen in dieser Reihenfolge – **Geändert, Entfällt, Vertretung folgt, Termine und Hinweise** – je eine kleine
-Musterkarte, ein Satz und darunter die Tags mit je einem Satz (Liste, keine Tabelle).
+und Filter“): fünf Gruppen in dieser Reihenfolge – **Unterricht, Geändert, Offen, Entfällt, Hinweise** – links je eine kleine
+Musterkarte, rechts Titel, ein Satz und die Tags mit je einem Satz (Liste, keine Tabelle).
 
 **Barrierefreiheit (WCAG 2.1 AA)**
-* Kontraste geprüft: Tag-Schrift #1d5c3a auf Weiß ≥ 7:1, #8f1d14 auf Weiß ≥ 8:1, Neutral #3d4d52 auf Weiß ≥ 9:1; Zeilen #4b5d62 auf
+* Kontraste geprüft: grüne Schrift #267349 auf #e6f4ea 5,1:1 (auf Weiß 5,8:1), #8f1d14 auf #fdecea 7,8:1, Grau #4d5866 auf #ebeef2
+  6,2:1; Zeilen #4b5d62 auf
   #e6f4ea 6,1:1 bzw. auf #fdecea 6,0:1; Mitteilung #5c4a0f auf #fdf5c9 7,8:1; Termin #5c4a22 auf #f7f1e3 7,6:1. **#2f855a nur für
   Leisten, Linien und Kennzeichen** (Nicht-Text ≥ 3:1), nie als Schrift auf #e6f4ea (4,0:1).
-* **Nie nur Farbe:** Status steht immer auch als Wort („statt“, „fehlt“, „zusätzlich“, „entfällt“, „verlegt →/←“), Entfall zusätzlich
+* **Nie nur Farbe:** Status steht immer auch als Zeichen bzw. Wort („←“ mit ausgeschriebenem zugänglichem Namen „… statt …“, „neu“, „fehlt“, „zusätzlich“, „entfällt“, „verlegt →/←“), Entfall zusätzlich
   durchgestrichen, offene Vertretung gestrichelt.
 * Jede Karte hat einen **ausgeschriebenen zugänglichen Namen** (Fach, Stunde und Uhrzeit, Klasse, Lehrkraft, Raum, jede Änderung, z. B.
   „Raumänderung: 105 statt 303“), ist per Tastatur erreichbar (Enter/Leertaste öffnet die Details) und hat einen sichtbaren Fokusring

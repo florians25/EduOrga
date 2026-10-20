@@ -100,7 +100,7 @@ public class WebOberflaecheTests
         Assert.Contains("line-through", kachel);
         Assert.Contains("kartenbild(k, typ)", kachel);
         var aenderung = Lesen("src", "components", "plan", "aenderung.ts");
-        foreach (var muster in new[] { "`${praefix}${k} statt ${alt}`", "`${alt} fehlt`", "'Vertretung folgt'", "'entfällt'", "`verlegt → ${ziel}`", "`verlegt ← ${von}`", "'zusätzlich'", "`${k.fach} statt ${k.fachAlt}`", "praefix: 'Raum '" })
+        foreach (var muster in new[] { "`${k} ← ${alt}`", "`neu ${k}`", "`${alt} fehlt`", "'Vertretung folgt'", "'entfällt'", "`verlegt → ${ziel}`", "`verlegt ← ${von}`", "'zusätzlich'", "`${k.fach} ← ${k.fachAlt}`" })
             Assert.Contains(muster, aenderung);
         var darstellung = Lesen("src", "components", "plan", "darstellung.tsx");
         // Standard „EduOrga Standard“: helle Karte auf hellgrauem Raster, Kante links (Fachfarbe mit Tönung), Fach · Klasse · Lehrkraft · Raum

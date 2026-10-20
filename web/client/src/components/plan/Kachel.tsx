@@ -1,9 +1,8 @@
 // Stundenkarte (design/DESIGN.md, Abschnitt 10 „Stundenkarte (alle Plattformen)“) nach der schulweiten Kartendarstellung
 // (Administration | Darstellung der Stundenkarten, siehe darstellung.tsx). Standard „EduOrga Standard“: kompakte helle Karte, die ihre
-// Rasterzelle füllt, 4-px-Kante links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), darunter je eine Zeile Fach (600),
-// Klasse, Lehrkraft, Raum. Änderungen nach den gemeinsamen Regeln (aenderung.ts): jede Änderung grün mit schräg schraffierter Kante und dem
-// Feld „+neu (bisher)“ auf der betroffenen Zeile, Entfall rot mit allem durchgestrichen und dem Feld „× entfällt“, Verlegung „× auf …“ bzw.
-// „⊕ von …“, Zusatz „⊕ Zusatz“. Prüfung Bernstein, Veranstaltung als warmer Block ohne Kante, Buchung gestrichelt. Die übrigen Vorlagen
+// Rasterzelle füllt, 4-px-Leiste links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), darunter je eine Zeile Fach (600),
+// Klasse, Lehrkraft, Raum. Kennzeichnung nach den gemeinsamen Regeln (aenderung.ts): durchgehende 3-px-Leiste und 5-px-Kennzeichen in der
+// Statusfarbe, Tags „Gal ← Gor“, „105 ← 303“, „neu B070“; Entfall rot und durchgestrichen („entfällt“, „verlegt → …“); offen grau. Prüfung Bernstein, Veranstaltung als warmer Block ohne Kante, Buchung gestrichelt. Die übrigen Vorlagen
 // (Klassisch, Kompakt, Sachlich …) ändern Fachfarbe, Fläche, Rahmen, Radius, Dichte und Zeilenfolge – die Statusdarstellung bleibt gleich.
 // Die Bedeutung steht im aria-label und in der Kurzinfo beim Überfahren; Klick öffnet die Stundendetails.
 import { memo, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
@@ -37,16 +36,17 @@ export function FachQuadrat({ farbe, groesse = 8, sx }: { farbe: string | null |
 /** Farbe mit Deckkraft – auch für CSS-Variablen (var(--…)), die alpha() nicht zerlegen kann. */
 export const mischen = (farbe: string, wert: number) => (farbe.startsWith('var(') ? `color-mix(in srgb, ${farbe} ${Math.round(wert * 1000) / 10}%, transparent)` : alpha(farbe, wert));
 
-/** Leiste links in der Statusfarbe (Änderung grün, Entfall rot) – durchgehend, 3 px; offene Vertretung grau gestrichelt. */
+/** Leiste links in der Statusfarbe (Änderung grün, Entfall rot, offen grau) – durchgehend, 3 px. */
 export const leiste = (farbe: string, offen = false) => (offen ? `repeating-linear-gradient(180deg, ${farbe} 0 4px, transparent 4px 7px)` : farbe);
 
-/** Tag auf der Karte: „Gal statt Gor“, „Raum 105 statt 303“, „entfällt“ – umrandet, helle Fläche, Schrift in der Statusfarbe (WCAG AA), nie durchgestrichen. */
+/** Tag auf der Karte: „Gal ← Gor“, „105 ← 303“, „neu B070“, „entfällt“ – getönt mit feiner Linie (offen gestrichelt), Radius 3, Schrift ≥ 5:1 (WCAG AA), nie durchgestrichen. */
 export function Feld({ ton, children, titel, klein = false }: { ton: Ton; children: ReactNode; titel?: string; klein?: boolean }) {
   return (
     <Box component="span" title={titel} data-feld={ton}
       sx={{ display: 'inline-flex', alignItems: 'center', gap: '3px', maxWidth: '100%', height: klein ? 15 : 16, px: '3px', borderRadius: '3px', fontSize: klein ? 11 : 12, lineHeight: 1,
         fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', boxSizing: 'border-box',
-        bgcolor: 'background.paper', color: `status.${ton}.text`, border: '1px solid', borderColor: `status.${ton}.main`, textDecoration: 'none', fontVariantNumeric: 'tabular-nums' }}>{children}</Box>
+        bgcolor: ton === 'offen' ? 'status.offen.feld' : `status.${ton}.flaeche`, color: `status.${ton}.text`, border: '1px', borderStyle: ton === 'offen' ? 'dashed' : 'solid',
+        borderColor: (t: Theme) => mischen((t.vars ?? t).palette.status[ton].main, ton === 'offen' ? 0.9 : 0.55), textDecoration: 'none', fontVariantNumeric: 'tabular-nums' }}>{children}</Box>
   );
 }
 
@@ -92,7 +92,7 @@ export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = 
   if (art === 'pruefung') return { backgroundColor: d.statusflaeche ? s.pruefung.flaeche : grund, border: statusLinie(s.pruefung.main), ...schatten };
   if (art === 'buchung') return { backgroundColor: papier, border: statusLinie(s.frei.main, 'dashed') };
   if (bild.ton === 'aenderung') return { backgroundColor: d.statusflaeche ? s.aenderung.flaeche : grund, border: statusLinie(mischen(s.aenderung.main, 0.4)), ...schatten };
-  if (bild.ton === 'offen') return { backgroundColor: grund, border: `1px solid ${linie}`, ...schatten };
+  if (bild.ton === 'offen') return { backgroundColor: grund, border: `1px dashed ${mischen(s.offen.main, 0.9)}` };
   if (mitToenung(d.fachfarbe) && fach) { const ton = mischen(fach, d.deckkraft / 100); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   if (d.flaeche === 'getoent') { const ton = mischen(pal.primary.main, 0.05); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   return { backgroundColor: grund, border: `1px solid ${linie}`, ...schatten, ...(bilder.length ? { backgroundImage: bilder.join(', ') } : {}) };
@@ -235,7 +235,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
       <Stack key={z.art} direction="row" alignItems="center" gap={0.75} sx={{ minWidth: 0, flex: 'none', height: erste ? dichte.kopf : zh }}>
         {erste && quadrat && <FachQuadrat farbe={k.farbe} />}
         <Typography component="div" noWrap data-zeile={z.art}
-          sx={{ minWidth: 0, flex: '0 1 auto', fontSize: erste ? fachGroesse : dichte.zeile, lineHeight: `${erste ? dichte.kopf : zh}px`, fontWeight: erste ? 600 : 400,
+          sx={{ minWidth: 0, flex: '0 1 auto', fontSize: erste ? fachGroesse : dichte.zeile, lineHeight: `${erste ? dichte.kopf : zh}px`, fontWeight: erste || z.geaendert ? 600 : 400,
             color: erste ? (entfall ? 'status.entfall.main' : termin ? 'kachel.ereignisText' : 'text.primary') : textFarbe, textDecoration: durch, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {erste && fachName && z.art === 'fach' ? fachName : <Teile teile={z.teile} anzeige={anzeige(z)} />}
         </Typography>
@@ -261,10 +261,10 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
           '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
           ...style,
         }}>
-        {kante && <Box aria-hidden data-fachbalken={innen && !bild.ton ? 'innen' : bild.ton === 'offen' ? 'gestrichelt' : bild.ton ? 'status' : 'links'} data-ohne-fachfarbe={farbe ? undefined : ''}
+        {kante && <Box aria-hidden data-fachbalken={innen && !bild.ton ? 'innen' : bild.ton ? 'status' : 'links'} data-ohne-fachfarbe={farbe ? undefined : ''}
           sx={{ position: 'absolute', ...(innen && !bild.ton ? { left: 4, top: 4, bottom: 4, borderRadius: '2px' } : { left: 0, top: 0, bottom: 0 }), width: kantenBreite,
-            background: leiste(kantenFarbe, bild.ton === 'offen') }} />}
-        {bild.ton && <Box aria-hidden data-kennzeichen={bild.ton} sx={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: '50%', bgcolor: kantenFarbe, '@container (max-width: 44px)': { display: 'none' } }} />}
+            background: leiste(kantenFarbe) }} />}
+        {bild.ton && <Box aria-hidden data-kennzeichen={bild.ton} sx={{ position: 'absolute', top: 4, right: 4, width: 5, height: 5, borderRadius: 0, bgcolor: kantenFarbe, '@container (max-width: 44px)': { display: 'none' } }} />}
         {balkenOben > 0 && <Box aria-hidden data-fachbalken="oben" sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: balkenOben, bgcolor: farbe ?? pal.kachel.balken }} />}
         {zeilenInhalt}
         {termin && hoehe >= 44 && <Typography component="div" noWrap sx={{ mt: 'auto', fontSize: 10.5, lineHeight: '14px', color: 'kachel.ereignisText', opacity: 0.85 }}>{k.beginn && k.ende ? `${k.beginn}–${k.ende}` : 'ganztägig'}</Typography>}

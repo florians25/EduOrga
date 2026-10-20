@@ -13,7 +13,7 @@ export const farben = {
   primaer: '#164c55', akzent: '#28747a', hintergrund: '#f5f7f8', text: '#24363b', logoAkzent: '#7fc9c9',
   // Stundenkarte (design/DESIGN.md, Abschnitt 10): Entfall rot mit allem durchgestrichen, jede Änderung grün (Feld „+neu (bisher)“)
   entfall: '#b42318', entfallFlaeche: '#fdecea', entfallText: '#8f1d14', entfallFeld: '#f7d3cf',
-  aenderung: '#2f855a', aenderungFlaeche: '#e6f4ea', aenderungText: '#1d5c3a', aenderungFeld: '#c9e8d4',
+  aenderung: '#2f855a', aenderungFlaeche: '#e6f4ea', aenderungText: '#267349', aenderungFeld: '#c9e8d4',
   pruefung: '#a15c07', pruefungFlaeche: '#fdf4e3',
   termin: '#a3347c', terminFlaeche: '#faeef5',
   frei: '#2f6f9f', freiFlaeche: '#edf4fa',
@@ -53,7 +53,7 @@ const status = (dunkel: boolean) => ({
   entfall: { main: dunkel ? '#f07167' : farben.entfall, flaeche: dunkel ? '#2e1916' : farben.entfallFlaeche, text: dunkel ? '#ffc9c3' : farben.entfallText, feld: dunkel ? '#4a2420' : farben.entfallFeld },
   aenderung: { main: dunkel ? '#5cbf86' : farben.aenderung, flaeche: dunkel ? '#15281d' : farben.aenderungFlaeche, text: dunkel ? '#b5e6c8' : farben.aenderungText, feld: dunkel ? '#1f4630' : farben.aenderungFeld },
   // offene Vertretung: neutral grau (nie rot), Kante gestrichelt, Feld „(Abr)“ bzw. „Vertretung folgt“
-  offen: { main: dunkel ? '#8a9aa0' : '#7d8b90', flaeche: dunkel ? '#132226' : '#ffffff', text: dunkel ? '#d3dde0' : '#3d4d52', feld: dunkel ? '#26363b' : '#e6eaec' },
+  offen: { main: dunkel ? '#8a9aa0' : '#7d8b90', flaeche: dunkel ? '#26363b' : '#ebeef2', text: dunkel ? '#d3dde0' : '#4d5866', feld: dunkel ? '#26363b' : '#ebeef2' },
   pruefung: { main: dunkel ? '#e9a640' : farben.pruefung, flaeche: dunkel ? '#2b2111' : farben.pruefungFlaeche },
   termin: { main: dunkel ? '#e27bbd' : farben.termin, flaeche: dunkel ? '#331a2b' : farben.terminFlaeche },
   frei: { main: dunkel ? '#78b3e0' : farben.frei, flaeche: dunkel ? '#132331' : farben.freiFlaeche },

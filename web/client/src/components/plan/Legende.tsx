@@ -1,5 +1,5 @@
 // Legende und Filter: Arten der Stunden mit Anzahl in dieser Woche; Klick hebt eine Art hervor (die übrigen treten zurück).
-// Dazu die „Kennzeichnungen“: je Gruppe (geändert, entfällt, Vertretung folgt, Termine und Hinweise) eine Musterkarte und die Tags mit
+// Dazu die „Kennzeichnungen“: je Gruppe (Unterricht, Geändert, Offen, Entfällt, Hinweise) eine Musterkarte und die Tags mit
 // einem Satz – gleiche Regeln wie die Stundenkarte (aenderung.ts).
 import { Box, ButtonBase, Stack, Tooltip, Typography, useTheme } from '@mui/material';
 import type { Karte } from '../../api/types';
@@ -91,12 +91,13 @@ export function Musterkarte({ g }: { g: Kennzeichengruppe }) {
   const pal = (t.vars ?? t).palette;
   const entfall = g.ton === 'entfall';
   const flaeche = g.ton && g.ton !== 'offen' ? pal.status[g.ton].flaeche : pal.background.paper;
+  const offen = g.ton === 'offen';
   const kante = g.ton ? pal.status[g.ton].main : pal.kachel.balken;
   return (
     <Box aria-hidden data-muster={g.id} sx={{ position: 'relative', width: 132, flex: 'none', pl: '9px', pr: '12px', py: '4px', borderRadius: '4px', bgcolor: flaeche, overflow: 'hidden',
-      boxShadow: g.ton && g.ton !== 'offen' ? `inset 0 0 0 1px ${mischen(kante, 0.35)}` : '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)', fontVariantNumeric: 'tabular-nums' }}>
-      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: leiste(kante, g.ton === 'offen') }} />
-      {g.ton && <Box sx={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: '50%', bgcolor: kante }} />}
+      border: offen ? `1px dashed ${mischen(kante, 0.9)}` : 0, boxShadow: g.ton && !offen ? `inset 0 0 0 1px ${mischen(kante, 0.35)}` : '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)', fontVariantNumeric: 'tabular-nums' }}>
+      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: leiste(kante) }} />
+      {g.ton && <Box sx={{ position: 'absolute', top: 4, right: 4, width: 5, height: 5, borderRadius: 0, bgcolor: kante }} />}
       {g.muster.map((z, i) => (
         <Typography key={i} component="div" noWrap sx={{ fontSize: i ? 12 : 13, lineHeight: i ? '17px' : '18px', fontWeight: i ? 400 : 600, textDecoration: entfall ? 'line-through' : 'none',
           color: entfall ? (i ? 'status.entfall.text' : 'status.entfall.main') : i ? 'text.secondary' : 'text.primary' }}>

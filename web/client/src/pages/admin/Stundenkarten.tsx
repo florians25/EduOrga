@@ -96,7 +96,7 @@ function Vorschau({ d }: { d: Kartendarstellung }) {
         <Wochenraster plan={PLAN} onOpen={() => undefined} optionen={{ nurTag: ansicht === 'tag' ? 0 : null }} />
       </Paper>
       <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1 }}>
-        Beispiele: Doppelstunde, Vertretung „BEC statt HOF“, Raumänderung, verlegte Stunde mit „+1“ (gleichzeitig), Entfall, „WEI fehlt“ (Vertretung folgt), Prüfung, Online-Unterricht, Termin, Fachänderung, Zusatz.
+        Beispiele: Doppelstunde, Vertretung „BEC ← HOF“, Raumänderung, verlegte Stunde mit „+1“ (gleichzeitig), Entfall, „WEI fehlt“ (Vertretung folgt), Prüfung, Online-Unterricht, Termin, Fachänderung, Zusatz.
       </Typography>
       <Typography variant="h4" component="h3" sx={{ mt: 2, mb: 1 }}>Listen und Stundendetails</Typography>
       <Paper variant="outlined" sx={{ p: 1.5 }}>

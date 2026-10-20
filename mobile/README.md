@@ -113,16 +113,16 @@ Das Planraster der PWA ist die Referenz für alle Oberflächen (iOS spiegelt die
 
 | Fall | Darstellung |
 |---|---|
-| Geändert (Vertretung, Raum, Fach, Verlegung, Zusatz) | grüne 3-px-Leiste, helle grüne Fläche (`--up-aenderung-flaeche`), Kennzeichen oben rechts; Tag auf der Zeile: „Gal statt Gor“, „Raum 105 statt 303“, „BI statt MU“, „B070 zusätzlich“; unten „verlegt ← Mo 20.10., 3. Std“ bzw. „zusätzlich“ |
+| Geändert (Vertretung, Raum, Fach, Verlegung, Zusatz) | grüne 3-px-Leiste, helle grüne Fläche (`--up-aenderung-flaeche`), Kennzeichen (5 × 5 px) oben rechts; Tag auf der Zeile: „Gal ← Gor“, „105 ← 303“, „BI ← MU“, „neu B070“; geänderte Zeilen 600; unten „verlegt ← Mo 20.10., 3. Std“ bzw. „zusätzlich“ |
 | Entfällt | rote 3-px-Leiste, helle rote Fläche, **alles durchgestrichen**; unten „entfällt“ bzw. „verlegt → Di 21.10., 6. Std“; „5b fehlt“ bei abwesender Klasse |
-| Vertretung folgt (offen) | neutral: weiße Karte, grau gestrichelte Leiste, Tag „Abr fehlt“ (Kollegium) bzw. „Vertretung folgt“ (Schüler*innen, Eltern) – nie rot |
-| Tag | umrandet auf heller Fläche, Radius 3 px, 12 px/600, Schrift in der dunklen Statusfarbe (WCAG AA), nie durchgestrichen |
+| Offen (Vertretung folgt) | grau: weiße Karte, graue Leiste, gestrichelter Rand, gestrichelter Tag „Abr fehlt“ (Kollegium) bzw. „Vertretung folgt“ (Schüler*innen, Eltern) – nie rot |
+| Tag | getönt mit feiner Linie (offen gestrichelt), Radius 3 px, ≥ 12 px/600, grüne Schrift #267349 (≥ 5:1), nie durchgestrichen |
 | Prüfung | 1-px-Linie `--up-pruefung`, Fläche `--up-pruefung-flaeche`, Wort „Prüfung“ |
 | Termin/Veranstaltung | ruhiger beiger Block (`--up-ereignis-*`) ohne Leiste |
 | Mitteilung | helle gelbe Notiz über der ersten Stunde (`--up-mitteilung-*`), Tippen zeigt den Text |
 | Ferien | ganzer Tag `--up-frei-flaeche` mit Name und Zeitraum |
 
-Legende: Blatt **„Kennzeichnungen“** (Menü „⋮“) mit den Gruppen Geändert · Entfällt · Vertretung folgt · Termine und Hinweise.
+Legende: Blatt **„Kennzeichnungen“** (Menü „⋮“) mit den Gruppen Unterricht · Geändert · Offen · Entfällt · Hinweise.
 Jede Karte trägt einen ausgeschriebenen zugänglichen Namen; `prefers-reduced-motion` schaltet Übergänge ab.
 
 **Aktualität:** Plandaten immer zuerst vom Netz (`cache: no-store`, Service Worker „Netz zuerst“), Kopie nur als Rückfall ohne Netz

@@ -2793,3 +2793,36 @@ body.show-card-times .card__times{ display:flex; }
 .kennz__text dd{ margin:0; font-size:12.5px; color:var(--up-text-2); }
 .notiz-muster{ display:inline-block; padding:0 5px; border-radius:3px; background:var(--up-mitteilung-flaeche); color:var(--up-mitteilung-text); box-shadow:inset 0 0 0 1px var(--up-mitteilung-rand); }
 @media (max-width:360px){ .kennz__gruppe{ grid-template-columns:1fr; } }
+/* Angleichung an iOS: Kennzeichen 5 × 5 px eckig, Tags getönt mit feiner Linie (offen gestrichelt), geänderte Zeilen 600,
+   offene Vertretung graue Leiste und gestrichelter Rand */
+.card--change::after, .card--released::after, .card--cancelled::after{ width:5px; height:5px; border-radius:0; }
+.badge, .badge.badge--removed.badge--open, .feld{
+  background:var(--up-aenderung-flaeche); color:var(--up-aenderung-text);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 55%, transparent);
+}
+.feld--entfall, .card--cancelled .feld, .card--cancelled .feld--entfall{ background:var(--up-entfall-flaeche); color:var(--up-entfall-text);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-entfall) 55%, transparent); }
+.feld--offen{ background:var(--up-offen-feld); color:var(--up-offen-text); box-shadow:none; outline:1px dashed var(--up-offen); outline-offset:-1px; }
+.card__line--badge{ font-weight:600; }
+.card--change.is-offen{ background-color:var(--karte); box-shadow:none; outline:1px dashed var(--up-offen); outline-offset:-1px; }
+.card--change.is-offen::before{ background:var(--up-offen); }
+.card--change.is-offen::after{ background:var(--up-offen); }
+.kennz .muster.card--change.is-offen{ box-shadow:none; outline:1px dashed var(--up-offen); outline-offset:-1px; }
+.kennz .muster.card--change::before{ background:var(--st-aenderung); }
+.kennz .muster.card--cancelled::before{ background:var(--st-entfall); }
+.kennz .muster.card--change.is-offen::before{ background:var(--up-offen); }
+.kennz .muster.card--change, .kennz .muster.card--cancelled{ padding-left:9px; }
+.topbar__title{ position:relative; }
+.topbar__title.mit-stand{ padding-bottom:11px; }
+.topbar__stand{ left:8px; bottom:1px; max-width:calc(100% - 8px); }
+/* Status vor Fachtönung: geänderte, entfallene und offene Karten nie in der Fachfarbe getönt */
+.gridpane .card.card--change, .gridpane .card.card--released{ background-color:var(--up-aenderung-flaeche); }
+.gridpane .card.card--cancelled, .gridpane .card.card--class-absent{ background-color:var(--up-entfall-flaeche); }
+.gridpane .card.card--change.is-offen{ background-color:var(--karte); }
+.topbar__stand{ max-width:52vw; overflow:visible; }
+.kennz .muster.card--change{ background-color:var(--up-aenderung-flaeche); }
+.kennz .muster.card--cancelled{ background-color:var(--up-entfall-flaeche); }
+.kennz .muster.card--change.is-offen{ background-color:var(--karte); }
+.kennz__text dl{ display:block; }
+.kennz__text dt{ margin:8px 0 2px; }
+.kennz__text dd{ margin:0; }
