@@ -42,7 +42,11 @@ public class SeitenTests
     [InlineData("/web")]
     [InlineData("/mobile")]
     [InlineData("/installation")]
+    [InlineData("/dokumentation")]
     [InlineData("/handbuch")]
+    [InlineData("/rueckmeldung")]
+    [InlineData("/ios")]
+    [InlineData("/android")]
     [InlineData("/hinweis")]
     [InlineData("/impressum")]
     [InlineData("/datenschutz")]
@@ -55,6 +59,30 @@ public class SeitenTests
         Assert.Equal("text/html", r.Content.Headers.ContentType?.MediaType);
         Assert.Contains("<div id=\"root\">", await r.Content.ReadAsStringAsync());
         Assert.False(r.Headers.Contains("Set-Cookie"));
+    }
+
+    /// <summary>Die Oberfläche kennt jede Seitenadresse, die der Server ausliefern soll (website/client/src/main.tsx).</summary>
+    [Theory]
+    [InlineData("studio")]
+    [InlineData("web")]
+    [InlineData("mobile")]
+    [InlineData("installation")]
+    [InlineData("dokumentation")]
+    [InlineData("handbuch")]
+    [InlineData("rueckmeldung")]
+    [InlineData("ios")]
+    [InlineData("android")]
+    [InlineData("hinweis")]
+    [InlineData("impressum")]
+    [InlineData("datenschutz")]
+    public void Oberflaeche_kennt_die_Seitenadresse(string pfad)
+    {
+        var verzeichnis = new DirectoryInfo(AppContext.BaseDirectory);
+        while (verzeichnis is not null && !File.Exists(Path.Combine(verzeichnis.FullName, "website", "client", "src", "main.tsx")))
+            verzeichnis = verzeichnis.Parent;
+        Assert.NotNull(verzeichnis);
+        var routen = File.ReadAllText(Path.Combine(verzeichnis!.FullName, "website", "client", "src", "main.tsx"));
+        Assert.Contains($"path=\"{pfad}\"", routen);
     }
 
     [Fact]

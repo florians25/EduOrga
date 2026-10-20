@@ -13,7 +13,9 @@ on:
       - 'studio/docs/bilder/**'
       - 'web/docs/bilder/**'
       - 'mobile/docs/bilder/**'
+      - 'ios/docs/bilder/**'
       - 'docs/HANDBUCH.md'
+      - 'docs/bilder/druck/**'
       - 'VERSION'
       - '.github/workflows/website.yml'
   pull_request:

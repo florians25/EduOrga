@@ -1,20 +1,22 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { DISCUSSIONS, ISSUES, RECHTLICHER_HINWEIS, RELEASES, REPO, SLOGAN } from "../inhalt";
-import { STAND } from "../stand";
+import { DISCUSSIONS, ISSUE_FEHLER, ISSUE_WUNSCH, RECHTLICHER_HINWEIS, RELEASES, REPO, SLOGAN } from "../inhalt";
+import { STAND, STAND_LINK } from "../stand";
 
 const NAVIGATION = [
-  { pfad: "/", text: "Überblick" },
   { pfad: "/studio", text: "Studio" },
   { pfad: "/web", text: "Web" },
-  { pfad: "/mobile", text: "Mobile" },
-  { pfad: "/handbuch", text: "Handbuch" },
+  { pfad: "/mobile", text: "Mobile und iOS" },
+  { pfad: "/installation", text: "Installation" },
+  { pfad: "/dokumentation", text: "Dokumentation" },
+  { pfad: "/rueckmeldung", text: "Rückmeldung" },
 ];
 
-export function Marke({ hell = false }: { hell?: boolean }) {
+/** Monogramm und Wortmarke – unverändert aus design/logo. */
+export function Marke() {
   return (
-    <span className={hell ? "marke marke-hell" : "marke"}>
-      <img src="/logo/edo-monogramm.svg" alt="" width={26} height={26} />
+    <span className="marke">
+      <img src="/logo/edo-monogramm.svg" alt="" width={28} height={28} />
       <span className="marke-wort">
         <b>Edu</b>Orga
       </span>
@@ -29,7 +31,7 @@ export function Rahmen() {
   useEffect(() => {
     setOffen(false);
     if (ort.hash) {
-      const ziel = document.getElementById(ort.hash.slice(1));
+      const ziel = document.getElementById(decodeURIComponent(ort.hash.slice(1)));
       if (ziel) {
         ziel.scrollIntoView();
         return;
@@ -38,35 +40,47 @@ export function Rahmen() {
     window.scrollTo(0, 0);
   }, [ort.pathname, ort.hash]);
 
+  useEffect(() => {
+    if (!offen) return;
+    const taste = (e: KeyboardEvent) => e.key === "Escape" && setOffen(false);
+    window.addEventListener("keydown", taste);
+    return () => window.removeEventListener("keydown", taste);
+  }, [offen]);
+
   return (
     <div className="seite">
       <a className="sprungmarke" href="#inhalt">
         Zum Inhalt springen
       </a>
-      <header className="kopf">
+      <header className={offen ? "kopf kopf-offen" : "kopf"}>
         <div className="kopf-innen breite">
-          <Link to="/" className="kopf-marke" aria-label="EduOrga – Überblick">
+          <Link to="/" className="kopf-marke" aria-label="EduOrga – Startseite">
             <Marke />
           </Link>
-          <nav id="hauptnav" className={offen ? "hauptnav offen" : "hauptnav"} aria-label="Hauptnavigation">
+          <nav id="hauptnav" className="hauptnav" aria-label="Hauptnavigation">
             {NAVIGATION.map((n) => (
-              <NavLink key={n.pfad} to={n.pfad} end={n.pfad === "/"} className={({ isActive }) => (isActive ? "aktiv" : undefined)}>
+              <NavLink key={n.pfad} to={n.pfad} className={({ isActive }) => (isActive ? "aktiv" : undefined)}>
                 {n.text}
               </NavLink>
             ))}
-            <a href={REPO} className="hauptnav-mobil-extern" rel="noopener noreferrer">
-              Quellcode <span aria-hidden>↗</span>
+            <a href={REPO} className="hauptnav-mobil" rel="noopener noreferrer">
+              Quellcode auf GitHub <span aria-hidden>↗</span>
             </a>
           </nav>
-          <a href={REPO} className="kopf-extern" rel="noopener noreferrer">
-            Quellcode <span aria-hidden>↗</span>
-          </a>
+          <div className="kopf-rechts">
+            <a href={REPO} className="kopf-extern" rel="noopener noreferrer">
+              GitHub <span aria-hidden>↗</span>
+            </a>
+            <Link to="/installation" className="knopf knopf-primaer knopf-klein">
+              Installieren
+            </Link>
+          </div>
           <button type="button" className="menueknopf" aria-expanded={offen} aria-controls="hauptnav" onClick={() => setOffen(!offen)}>
             {offen ? "Schließen" : "Menü"}
           </button>
         </div>
       </header>
-      <main id="inhalt">
+      <main id="inhalt" tabIndex={-1}>
         <Outlet />
       </main>
       <footer className="fuss">
@@ -74,6 +88,14 @@ export function Rahmen() {
           <div className="fuss-marke">
             <Marke />
             <p>{SLOGAN}</p>
+            <p className="fuss-stand">
+              Entwicklungsstand {STAND.version}
+              {STAND.commit && <> · {STAND.commit}</>}
+              <br />
+              <a href={STAND_LINK} rel="noopener noreferrer">
+                Projektstand und Änderungen
+              </a>
+            </p>
           </div>
           <FussSpalte titel="Anwendungen">
             <Link to="/studio">EduOrga Studio</Link>
@@ -81,15 +103,17 @@ export function Rahmen() {
             <Link to="/mobile">EduOrga Mobile</Link>
             <Link to="/mobile#ios">App für iPhone und iPad</Link>
           </FussSpalte>
-          <FussSpalte titel="Projekt">
+          <FussSpalte titel="Dokumentation">
             <Link to="/installation">Installation</Link>
-            <Link to="/handbuch">Handbuch</Link>
-            <a href={REPO} rel="noopener noreferrer">Quellcode auf GitHub</a>
+            <Link to="/dokumentation">Dokumentation</Link>
+            <Link to="/handbuch">Handbuch Studio</Link>
             <a href={RELEASES} rel="noopener noreferrer">Versionen</a>
           </FussSpalte>
           <FussSpalte titel="Rückmeldung">
-            <a href={ISSUES} rel="noopener noreferrer">Fehler melden (Issues)</a>
-            <a href={DISCUSSIONS} rel="noopener noreferrer">Ideen und Fragen (Discussions)</a>
+            <a href={ISSUE_FEHLER} rel="noopener noreferrer">Fehler melden</a>
+            <a href={ISSUE_WUNSCH} rel="noopener noreferrer">Idee oder Wunsch</a>
+            <a href={DISCUSSIONS} rel="noopener noreferrer">Fragen und Austausch</a>
+            <a href={REPO} rel="noopener noreferrer">Quellcode auf GitHub</a>
           </FussSpalte>
           <FussSpalte titel="Rechtliches">
             <Link to="/hinweis">Hinweis</Link>
@@ -99,10 +123,6 @@ export function Rahmen() {
         </div>
         <div className="breite fuss-unten">
           <p>{RECHTLICHER_HINWEIS}</p>
-          <p className="fuss-stand">
-            Entwicklungsstand {STAND.version}
-            {STAND.commit && <> · {STAND.commit}</>}
-          </p>
         </div>
       </footer>
     </div>
@@ -123,12 +143,12 @@ function FussSpalte({ titel, children }: { titel: string; children: ReactNode })
   );
 }
 
-/** Kopfbereich einer Unterseite: kleine Einordnung, Titel und Einleitung. */
+/** Kopfbereich einer Unterseite: Einordnung, Titel und Einleitung. */
 export function Seitenkopf({ titel, einleitung, ueber, children }: { titel: ReactNode; einleitung?: ReactNode; ueber?: string; children?: ReactNode }) {
   return (
     <section className="seitenkopf">
       <div className="breite">
-        {ueber && <p className="marke-klein">{ueber}</p>}
+        {ueber && <p className="einordnung">{ueber}</p>}
         <h1>{titel}</h1>
         {einleitung && <p className="seitenkopf-text">{einleitung}</p>}
         {children}

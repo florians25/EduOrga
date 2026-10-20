@@ -1,5 +1,5 @@
 # EduOrga Website – Container-Image (statische Produktseiten mit kleinem ASP.NET-Core-Server, ohne Datenbank). Build-Kontext ist die Wurzel des Repositorys,
-# weil die Oberfläche Gestaltung (design/) und Bildschirmfotos (studio/, web/, mobile/docs/bilder) übernimmt:
+# weil die Oberfläche Gestaltung (design/) und Bildschirmfotos (studio/, web/, mobile/, ios/docs/bilder) übernimmt:
 #   docker build -f website/Dockerfile -t untplannext-website .
 
 # 1) Oberfläche (React + TypeScript, website/client) mit Vite bauen → website/src/EduOrgaWebsite/wwwroot
@@ -13,8 +13,11 @@ COPY design/logo/ /quelle/design/logo/
 COPY studio/docs/bilder/ /quelle/studio/docs/bilder/
 COPY web/docs/bilder/ /quelle/web/docs/bilder/
 COPY mobile/docs/bilder/ /quelle/mobile/docs/bilder/
+# Bildschirmfotos der iPhone-App (fehlen sie, nimmt vorbereiten.mjs die von EduOrga Mobile)
+COPY ios/docs/ /quelle/ios/docs/
 COPY VERSION /quelle/VERSION
 COPY docs/HANDBUCH.md /quelle/docs/HANDBUCH.md
+COPY docs/bilder/druck/ /quelle/docs/bilder/druck/
 COPY website/client/ ./
 # Stand für die Statusleiste (ohne .git im Build-Kontext; der Workflow übergibt die Werte)
 ARG WEBSITE_COMMIT=""

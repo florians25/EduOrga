@@ -1,5 +1,6 @@
 // Übernimmt Schrift, Logo und Bildschirmfotos aus dem Repository nach public/ (Build-Ausgabe, nicht eingecheckt).
-// So zeigt die Website immer die aktuellen Bilder aus studio/docs/bilder, web/docs/bilder und mobile/docs/bilder.
+// So zeigt die Website immer die aktuellen Bilder aus studio/docs/bilder, web/docs/bilder, mobile/docs/bilder und
+// ios/docs/bilder (fehlende iPhone-Bilder ersetzt sie durch die gleich gestalteten von EduOrga Mobile).
 // Außerdem schreibt es src/stand.json (ebenfalls Build-Ausgabe): Version aus VERSION, neueste GitHub-Veröffentlichung,
 // Datum der letzten Änderung und die Kapitel des Handbuchs (docs/HANDBUCH.md).
 //
@@ -31,12 +32,15 @@ const dateien = [
   ["design/logo/edo-monogramm.svg", "favicon.svg"],
 ];
 const bilder = {
-  studio: ["uebersicht", "planen", "vertretung", "suche"],
-  web: ["stundenplan", "heute", "vertretungsplan", "klassenbuch", "stundendetails", "monitor", "stundenplan-telefon", "heute-telefon"],
-  mobile: ["heute", "plan-woche", "stundendetails", "postfach"],
+  studio: ["uebersicht", "planen", "vertretung", "suche", "rechte", "dunkel"],
+  web: ["stundenplan", "heute", "vertretungsplan", "klassenbuch", "klassenbuch-anwesenheit", "stundendetails", "monitor", "administration", "uebersicht", "offene-stunden", "stundenplan-telefon", "heute-telefon"],
+  mobile: ["heute", "plan-woche", "plan-tag", "stundendetails", "stundendetails-klassenbuch", "dunkel-plan-woche", "postfach", "sprechtag-eltern", "sprechtag-lehrkraft", "vertretungsplan", "schueler", "pruefungen", "zeichenerklaerung"],
 };
 for (const [modul, namen] of Object.entries(bilder))
   for (const n of namen) dateien.push([`${modul}/docs/bilder/${n}.png`, `bilder/${modul}/${n}.png`]);
+// Druckmuster (PDF-Ausgaben aus den Tests, docs/bilder/druck)
+for (const n of ["vertretungsplan-klassen", "stundenplan-woche-aenderungen", "web-sprechtag-lehrkraft", "web-entschuldigung"])
+  dateien.push([`docs/bilder/druck/${n}.png`, `bilder/druck/${n}.png`]);
 
 let fehlend = 0;
 for (const [von, nach] of dateien) {
@@ -46,6 +50,38 @@ for (const [von, nach] of dateien) {
   copyFileSync(quelle, join(ziel, nach));
 }
 console.log(`Website: ${dateien.length - fehlend} Dateien nach public/ übernommen.`);
+
+// --- Bildschirmfotos der iPhone-App ---------------------------------------------------------------------------------
+// ios/docs/bilder/<name>.png (920 × 2000) → public/bilder/ios/<name>.png. Fehlt eine Datei, steht dort stattdessen das
+// gleich gestaltete Bildschirmfoto von EduOrga Mobile – die Website zeigt so nie ein kaputtes Bild, der Build läuft weiter.
+const IOS_BILDER = {
+  "plan-woche-hell": "mobile/docs/bilder/plan-woche.png",
+  "plan-woche-dunkel": "mobile/docs/bilder/dunkel-plan-woche.png",
+  "stunde-details": "mobile/docs/bilder/stundendetails.png",
+  "stunde-klassenbuch": "mobile/docs/bilder/stundendetails-klassenbuch.png",
+};
+function pngGroesse(datei) {
+  try {
+    const kopf = readFileSync(datei).subarray(0, 24);
+    if (kopf.toString("latin1", 12, 16) !== "IHDR") return null;
+    return { breite: kopf.readUInt32BE(16), hoehe: kopf.readUInt32BE(20) };
+  } catch {
+    return null;
+  }
+}
+const iosBilder = {};
+mkdirSync(join(ziel, "bilder/ios"), { recursive: true });
+for (const [name, ersatz] of Object.entries(IOS_BILDER)) {
+  const echt = join(wurzel, `ios/docs/bilder/${name}.png`);
+  const quelle = existsSync(echt) ? echt : join(wurzel, ersatz);
+  const nach = join(ziel, `bilder/ios/${name}.png`);
+  if (!existsSync(quelle)) { console.warn(`Hinweis: weder ios/docs/bilder/${name}.png noch ${ersatz} vorhanden.`); continue; }
+  copyFileSync(quelle, nach);
+  const g = pngGroesse(quelle) ?? { breite: 920, hoehe: 2000 };
+  iosBilder[name] = { datei: `/bilder/ios/${name}.png`, echt: quelle === echt, ...g };
+}
+const iosEcht = Object.values(iosBilder).filter((b) => b.echt).length;
+console.log(`Website: ${iosEcht} von ${Object.keys(IOS_BILDER).length} Bildschirmfotos der iPhone-App vorhanden${iosEcht < Object.keys(IOS_BILDER).length ? " (Rest aus EduOrga Mobile)" : ""}.`);
 
 // --- Stand des Projekts ---------------------------------------------------------------------------------------------
 const REPO_API = "https://api.github.com/repos/florians25/EduOrga";
@@ -96,6 +132,7 @@ const stand = {
   gebaut: new Date().toISOString(),
   veroeffentlichung: await neuesteVeroeffentlichung(),
   handbuch: kapitel(lesen("docs/HANDBUCH.md")),
+  ios: iosBilder,
 };
 writeFileSync(resolve(hier, "../src/stand.json"), JSON.stringify(stand, null, 2) + "\n");
 console.log(`Website: Stand ${stand.version}, ${stand.veroeffentlichung ? `Veröffentlichung ${stand.veroeffentlichung.tag}` : "noch keine Veröffentlichung"}, letzte Änderung ${stand.letzteAenderung}.`);

@@ -1,53 +1,127 @@
 import { Link } from "react-router-dom";
-import { Befehle, Browserfenster, Knopf, Pfeillink, Telefon } from "../bausteine/Bausteine";
-import { DATEI, DISCUSSIONS, INSTALLATION, ISSUES, MODUL_LISTE, RELEASES, type Modul } from "../inhalt";
+import { Abschnittskopf, Befehle, Browserfenster, iosBild, IOS_BILDER_ECHT, Knopf, Pfeillink, Standwort, Telefon } from "../bausteine/Bausteine";
+import {
+  DISCUSSIONS,
+  FAQ,
+  GRUNDSAETZE,
+  INSTALLATION,
+  ISSUE_FEHLER,
+  ISSUE_NEU,
+  ISSUE_WUNSCH,
+  MORGEN,
+  PLATTFORMEN,
+  SCHRITTE,
+  UEBERSICHT,
+  UEBERSICHT_SPALTEN,
+  VORTEILE,
+  ZIELGRUPPEN,
+  type Bild,
+  type Vorteil,
+} from "../inhalt";
 import { datumLang, STAND, STAND_LINK } from "../stand";
 
-const [STUDIO, WEB, MOBILE, IOS] = MODUL_LISTE;
-const bild = (m: Modul, datei: string) => m.bilder.find((b) => b.datei.endsWith(`/${datei}.png`)) ?? m.bilder[0];
+const B = (datei: string, titel: string, telefon = false): Bild => ({ datei, titel, telefon });
 
 export function Start() {
   return (
     <>
       <Buehne />
-      <Statusleiste />
-      <Anwendungen />
-      <InstallationKurz />
-      <HandbuchKurz />
+      <Morgen />
+      <Plattformstand />
+      <FuerWen />
+      <VorteilZeile v={VORTEILE.planung} bild={<Browserfenster bild={B("/bilder/studio/vertretung.png", "EduOrga Studio: Tagesplanung mit offenen Stunden, Empfehlung und Miniplan der Lehrkraft")} adresse="studio.meine-schule.de" />} />
+      <VorteilZeile
+        v={VORTEILE.aktuell}
+        gespiegelt
+        bild={
+          <div className="geraete">
+            <Browserfenster bild={{ ...B("/bilder/web/stundenplan.png", "EduOrga Web: Klassenplan der Woche mit Änderungen, Entfall und Terminen"), breite: 2880, hoehe: 2000 }} adresse="plan.meine-schule.de" />
+            <Telefon bild={iosBild("plan-woche-hell")} klasse="geraete-telefon" />
+          </div>
+        }
+      />
+      <VorteilZeile
+        v={VORTEILE.klassenbuch}
+        bild={
+          <div className="telefonpaar">
+            <Telefon bild={iosBild("stunde-klassenbuch")} />
+            <Telefon bild={B("/bilder/mobile/schueler.png", "EduOrga Mobile: Anwesenheitskontrolle der Klasse", true)} klasse="telefon-versetzt" />
+          </div>
+        }
+      />
+      <VorteilZeile
+        v={VORTEILE.kommunikation}
+        gespiegelt
+        bild={
+          <div className="telefonpaar">
+            <Telefon bild={B("/bilder/mobile/sprechtag-eltern.png", "EduOrga Mobile: Elternsprechtag aus Sicht der Eltern", true)} />
+            <Telefon bild={B("/bilder/mobile/sprechtag-lehrkraft.png", "EduOrga Mobile: Elternsprechtag aus Sicht der Lehrkraft mit freien und gebuchten Zeiten", true)} klasse="telefon-versetzt" />
+          </div>
+        }
+      />
+      <Grundsaetze />
+      <Uebersicht />
+      <SoFunktioniert />
+      <Rueckmeldung />
+      <Fragen />
+      <Schluss />
     </>
   );
 }
 
 function Buehne() {
   return (
-    <section className="buehne">
-      <div className="breite buehne-raster">
+    <section className="buehne" aria-labelledby="buehne-titel">
+      <div className="breite">
         <div className="buehne-text">
-          <p className="marke-klein">EduOrga · Stundenplanung und Schulorganisation</p>
-          <h1 className="buehne-titel">
-            <span>Einfach mehr</span>
-            <span className="buehne-titel-akzent">Schulalltag.</span>
+          <p className="einordnung">Stundenplanung und Schulorganisation</p>
+          <h1 id="buehne-titel">
+            Stundenplan, Vertretung und Klassenbuch. <span>In einem System, das Ihrer Schule gehört.</span>
           </h1>
-          <p className="buehne-wert">
-            Stunden- und Vertretungsplanung, digitales Klassenbuch und Kommunikation. EduOrga verbindet die Planung im
-            Schulbüro mit einem Portal für Kollegium, Klassen und Eltern.
+          <p className="buehne-einleitung">
+            EduOrga plant Stunden- und Vertretungspläne im Browser und bringt jede Änderung in kurzer Zeit zu Kollegium,
+            Schülerinnen, Schülern und Eltern – auf PC, Tablet und Telefon. Betrieben auf dem eigenen Server, ohne
+            Cloud-Pflicht, mit offenem Quellcode.
           </p>
-          <div className="buehne-aktionen">
-            <Knopf zu="/installation">
-              EduOrga installieren <span aria-hidden>→</span>
+          <div className="aktionen">
+            <Knopf zu="/installation">Installation ansehen</Knopf>
+            <Knopf zu="/#funktionen" art="zweit">
+              Alle Funktionen
             </Knopf>
-            <Pfeillink zu="/handbuch">Handbuch öffnen</Pfeillink>
           </div>
-          <p className="buehne-fakten">Im Browser · Selbst hostbar · Quelloffen entwickelt</p>
         </div>
+        <ul className="buehne-fakten" aria-label="Kurz gesagt">
+          <li>
+            <strong>Eigener Server</strong>
+            <span>Docker, SQLite oder MariaDB</span>
+          </li>
+          <li>
+            <strong>Keine Cloud-Pflicht</strong>
+            <span>keine Telemetrie, kein Tracking</span>
+          </li>
+          <li>
+            <strong>Offener Quellcode</strong>
+            <span>vollständig auf GitHub</span>
+          </li>
+          <li>
+            <strong>WCAG 2.1 AA</strong>
+            <span>Kontraste geprüft, Tastatur, Fokus</span>
+          </li>
+        </ul>
+      </div>
+      <div className="breite">
         <figure className="buehne-bild">
           <div className="buehne-flaeche">
-            <Browserfenster bild={bild(STUDIO, "planen")} adresse="studio.meine-schule.de" laden="eager" />
-            <Telefon bild={bild(WEB, "stundenplan-telefon")} laden="eager" klasse="buehne-telefon" />
+            <Browserfenster
+              bild={B("/bilder/studio/planen.png", "EduOrga Studio: Manuell planen mit Unterrichtsliste und Klassenplan der 5a")}
+              adresse="studio.meine-schule.de"
+              laden="eager"
+              klasse="buehne-fenster"
+            />
+            <Telefon bild={iosBild("plan-woche-hell")} laden="eager" klasse="buehne-telefon" />
           </div>
           <figcaption>
-            <span>EduOrga Studio und Web</span>
-            Originalansichten mit Beispieldaten
+            EduOrga Studio im Browser, daneben der Wochenplan {IOS_BILDER_ECHT ? "in der App für iPhone" : "auf dem Telefon"}. Originalansichten mit Beispieldaten.
           </figcaption>
         </figure>
       </div>
@@ -55,193 +129,310 @@ function Buehne() {
   );
 }
 
-function Statusleiste() {
+function Morgen() {
+  return (
+    <section className="abschnitt abschnitt-morgen" aria-labelledby="morgen-titel">
+      <div className="breite">
+        <Abschnittskopf
+          id="morgen-titel"
+          ueber="Ein Schulmorgen, Beispiel"
+          titel="Sechs Minuten von der Krankmeldung bis zum Plan auf dem Telefon."
+        />
+        <ol className="zeitleiste">
+          {MORGEN.map((m) => (
+            <li key={m.zeit}>
+              <time>{m.zeit}</time>
+              <h3>{m.titel}</h3>
+              <p>{m.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+function Plattformstand() {
   const v = STAND.veroeffentlichung;
   return (
-    <div className="statusleiste">
-      <div className="breite statusleiste-innen">
-        <p>
-          <span>
-            Entwicklungsstand <strong>{STAND.version}</strong>
-          </span>
-          <span className="trenner" aria-hidden>
-            ·
-          </span>
-          <span>
-            {v ? (
-              <>
-                Aktuelle Version <strong>{v.tag}</strong>
-                {v.datum && <> vom {datumLang(v.datum)}</>}
-              </>
-            ) : (
-              "Noch keine Veröffentlichung"
-            )}
-          </span>
-          <span className="trenner" aria-hidden>
-            ·
-          </span>
-          <span>
-            Letzte Änderung <time dateTime={STAND.letzteAenderung}>{datumLang(STAND.letzteAenderung)}</time>
-          </span>
-        </p>
-        <Pfeillink zu={STAND_LINK}>Projektstand &amp; Änderungen</Pfeillink>
+    <section className="abschnitt abschnitt-linie" id="stand" aria-labelledby="stand-titel">
+      <div className="breite zweispaltig">
+        <Abschnittskopf
+          id="stand-titel"
+          ueber="Stand der Plattformen"
+          titel="Was heute läuft – und was noch nicht."
+          text={
+            <>
+              Entwicklungsstand {STAND.version}
+              {v ? <> · Aktuelle Version {v.tag}{v.datum && <> vom {datumLang(v.datum)}</>}</> : " · noch keine Veröffentlichung"} · letzte Änderung{" "}
+              <time dateTime={STAND.letzteAenderung}>{datumLang(STAND.letzteAenderung)}</time>.
+            </>
+          }
+        >
+          <Pfeillink zu={STAND_LINK}>Projektstand und Änderungen</Pfeillink>
+        </Abschnittskopf>
+        <ul className="plattformen">
+          {PLATTFORMEN.map((p) => (
+            <li key={p.name}>
+              <div className="plattform-name">
+                <Link to={p.pfad}>{p.name}</Link>
+                <span>{p.art}</span>
+              </div>
+              <div className="plattform-stand">
+                <Standwort stand={p.stand}>{p.standText}</Standwort>
+                <span>{p.hinweis}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
-    </div>
+    </section>
   );
 }
 
-function Kernpunkte({ m }: { m: Modul }) {
+function FuerWen() {
   return (
-    <ul className="kernpunkte">
-      {m.kernpunkte.map((k) => (
-        <li key={k}>{k}</li>
-      ))}
-    </ul>
-  );
-}
-
-function Anwendungen() {
-  return (
-    <section className="abschnitt" id="anwendungen" aria-labelledby="anwendungen-titel">
+    <section className="abschnitt abschnitt-flaeche" id="fuer-wen" aria-labelledby="fuer-wen-titel">
       <div className="breite">
-        <div className="abschnittskopf">
-          <p className="marke-klein" id="anwendungen-titel">
-            Die Anwendungen
-          </p>
-          <p className="abschnittskopf-satz">
-            Studio übernimmt die Planung. <span>Web und Mobile stellen die Informationen im Schulalltag bereit.</span>
-          </p>
-        </div>
-
-        <article className="anwendung">
-          <div className="anwendung-text">
-            <p className="anwendung-rolle">{STUDIO.rolle}</p>
-            <h3>{STUDIO.name}</h3>
-            <p>{STUDIO.kurz}. Stammdaten, Unterricht, automatische und manuelle Planung, Vertretungen und Pausenaufsichten in einer Oberfläche, mit mehreren Planenden gleichzeitig.</p>
-            <Kernpunkte m={STUDIO} />
-            <Pfeillink zu={STUDIO.pfad}>Mehr zu Studio</Pfeillink>
-          </div>
-          <div className="anwendung-bild">
-            <Browserfenster bild={bild(STUDIO, "vertretung")} adresse="studio.meine-schule.de" />
-          </div>
-        </article>
-
-        <article className="anwendung anwendung-gespiegelt">
-          <div className="anwendung-text">
-            <p className="anwendung-rolle">{WEB.rolle}</p>
-            <h3>{WEB.name}</h3>
-            <p>Pläne, Vertretungen und Klassenbuch für Lehrkräfte, Schulleitung, Klassen und Eltern – auf PC, Tablet und Telefon. Studio überträgt die Daten, Meldungen aus dem Portal gehen zurück.</p>
-            <Kernpunkte m={WEB} />
-            <Pfeillink zu={WEB.pfad}>Mehr zu Web</Pfeillink>
-          </div>
-          <div className="anwendung-bild">
-            <Browserfenster bild={bild(WEB, "stundenplan")} adresse="plan.meine-schule.de" />
-          </div>
-        </article>
-
-        <article className="anwendung">
-          <div className="anwendung-text">
-            <p className="anwendung-rolle">{MOBILE.rolle}</p>
-            <h3>{MOBILE.name}</h3>
-            <p>{MOBILE.kurz}. Holt alle Daten von EduOrga Web; angemeldet wird mit dem vorhandenen Konto.</p>
-            <Kernpunkte m={MOBILE} />
-            <Pfeillink zu={MOBILE.pfad}>Mehr zu Mobile</Pfeillink>
-          </div>
-          <div className="anwendung-bild">
-            <div className="anwendung-telefone">
-              <Telefon bild={bild(MOBILE, "heute")} />
-              <Telefon bild={bild(MOBILE, "plan-woche")} />
-              <Telefon bild={bild(MOBILE, "stundendetails")} klasse="telefon-dritt" />
-            </div>
-          </div>
-        </article>
-
-        <article className="anwendung anwendung-ios">
-          <div className="anwendung-text">
-            <p className="anwendung-rolle">{IOS.rolle}</p>
-            <h3>App für iPhone und iPad</h3>
-            <p>{IOS.kurz}. Heute, Plan, Postfach und Suche – mit der Gestaltung des Systems und deckenden, gut lesbaren Inhalten.</p>
-            <Pfeillink zu={IOS.pfad}>Mehr zur App</Pfeillink>
-          </div>
-          <div className="anwendung-ios-fakten">
-            <Kernpunkte m={IOS} />
-            <dl className="fakten">
-              {IOS.technik.map(([k, v]) => (
-                <div key={k}>
-                  <dt>{k}</dt>
-                  <dd>{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </article>
-      </div>
-    </section>
-  );
-}
-
-function InstallationKurz() {
-  return (
-    <section className="abschnitt abschnitt-linie" id="installation" aria-labelledby="installation-titel">
-      <div className="breite zweispaltig">
-        <div>
-          <p className="marke-klein">Installation</p>
-          <h2 className="abschnitt-titel" id="installation-titel">
-            Ein Skript richtet alles auf dem eigenen Server ein.
-          </h2>
-          <p className="abschnitt-text">
-            Jedes Programm läuft als eigener Docker-Container mit eigener Datenbank. Das Skript fragt ab, was installiert
-            wird, erzeugt Passwörter, richtet auf Wunsch HTTPS ein und startet die Container.
-          </p>
-          <p className="abschnitt-text klein">Voraussetzung: Linux-Server mit Docker Engine und dem Compose-Plugin.</p>
-        </div>
-        <div className="installation-befehle">
-          <Befehle titel="Als root auf dem Server" text={INSTALLATION.installieren} />
-          <Befehle titel="Später aktualisieren" text={"cd /opt/untplannext\n./update.sh"} />
-          <div className="linkzeile">
-            <Pfeillink zu="/installation">Update, Passwort, Ports</Pfeillink>
-            <Pfeillink zu={DATEI("installation/README.md")}>Anleitung im Repository</Pfeillink>
-          </div>
+        <Abschnittskopf id="fuer-wen-titel" ueber="Für wen" titel="Ein System für alle, die Schule organisieren – und alle, die davon erfahren müssen." />
+        <div className="zielgruppen">
+          {ZIELGRUPPEN.map((z) => (
+            <article key={z.titel}>
+              <h3>{z.titel}</h3>
+              <p className="zielgruppe-satz">{z.satz}</p>
+              <ul>
+                {z.punkte.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-function HandbuchKurz() {
-  const kapitel = STAND.handbuch.slice(0, 8);
+function VorteilZeile({ v, bild, gespiegelt }: { v: Vorteil; bild: React.ReactNode; gespiegelt?: boolean }) {
   return (
-    <section className="abschnitt abschnitt-linie" aria-labelledby="handbuch-titel">
-      <div className="breite zweispaltig">
-        <div>
-          <p className="marke-klein">Handbuch</p>
-          <h2 className="abschnitt-titel" id="handbuch-titel">
-            Dokumentation, die mit dem Code entsteht.
-          </h2>
-          <p className="abschnitt-text">
-            Das Benutzerhandbuch beschreibt EduOrga Studio Schritt für Schritt. Zu Web, Mobile, der App und der Installation
-            gibt es eigene Beschreibungen im Repository.
-          </p>
-          <div className="linkzeile">
-            <Pfeillink zu="/handbuch">Alle Kapitel</Pfeillink>
-            <Pfeillink zu={RELEASES}>Versionshinweise</Pfeillink>
-          </div>
-        </div>
-        <div>
-          <ol className="kapitelliste">
-            {kapitel.map((k) => (
-              <li key={k.nummer}>
-                <a href={`${DATEI("docs/HANDBUCH.md")}#${k.anker}`} rel="noopener noreferrer">
-                  <span className="kapitel-nummer">{String(k.nummer).padStart(2, "0")}</span>
-                  {k.titel}
-                </a>
-              </li>
+    <section className="abschnitt vorteil-abschnitt" id={v.id} aria-labelledby={`${v.id}-titel`}>
+      <div className={gespiegelt ? "breite vorteil vorteil-gespiegelt" : "breite vorteil"}>
+        <div className="vorteil-text">
+          <p className="einordnung">{v.ueber}</p>
+          <h2 id={`${v.id}-titel`}>{v.titel}</h2>
+          <p className="einleitung">{v.text}</p>
+          <ul className="haken">
+            {v.punkte.map((p) => (
+              <li key={p}>{p}</li>
             ))}
-          </ol>
-          <p className="rueckmeldung">
-            Fehler gefunden oder eine Idee? <a href={ISSUES} rel="noopener noreferrer">Issue anlegen</a> oder in den{" "}
-            <a href={DISCUSSIONS} rel="noopener noreferrer">Discussions</a> fragen. <Link to="/handbuch#rueckmeldung">Mehr dazu</Link>
-          </p>
+          </ul>
+          <Pfeillink zu={v.link.zu}>{v.link.text}</Pfeillink>
+        </div>
+        <div className="vorteil-bild">{bild}</div>
+      </div>
+    </section>
+  );
+}
+
+function Grundsaetze() {
+  return (
+    <section className="abschnitt abschnitt-dunkel" id="grundsaetze" aria-labelledby="grundsaetze-titel">
+      <div className="breite">
+        <Abschnittskopf
+          id="grundsaetze-titel"
+          ueber="Datenschutz und Betrieb"
+          titel="Die Daten Ihrer Schule bleiben in Ihrer Schule."
+          text="EduOrga ist für den Betrieb auf eigener Hardware gebaut. Was andere als Dienst aus der Cloud anbieten, läuft hier auf dem Server, den Sie kontrollieren."
+        />
+        <div className="grundsaetze">
+          {GRUNDSAETZE.map((g) => (
+            <article key={g.titel}>
+              <h3>{g.titel}</h3>
+              <p>{g.text}</p>
+              {g.link && <Pfeillink zu={g.link.zu}>{g.link.text}</Pfeillink>}
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Uebersicht() {
+  return (
+    <section className="abschnitt" id="funktionen" aria-labelledby="funktionen-titel">
+      <div className="breite zweispaltig zweispaltig-oben">
+        <Abschnittskopf
+          id="funktionen-titel"
+          ueber="Funktionen im Überblick"
+          titel="Was in welcher Anwendung steckt."
+          text="Geplant wird in Studio. Web, Mobile und die App für iPhone und iPad bringen die Ergebnisse in den Schulalltag – mit denselben Daten und derselben Kennzeichnung."
+        >
+          <div className="linkspalte">
+            <Pfeillink zu="/studio">EduOrga Studio</Pfeillink>
+            <Pfeillink zu="/web">EduOrga Web</Pfeillink>
+            <Pfeillink zu="/mobile">Mobile und iOS</Pfeillink>
+          </div>
+        </Abschnittskopf>
+        <div className="tabellenrahmen">
+          <table className="tabelle uebersicht">
+            <caption className="unsichtbar">Funktionen je Anwendung</caption>
+            <thead>
+              <tr>
+                <th scope="col">Funktion</th>
+                {UEBERSICHT_SPALTEN.map((s) => (
+                  <th key={s} scope="col" className="mitte">
+                    {s}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            {UEBERSICHT.map((g) => (
+              <tbody key={g.gruppe}>
+                <tr className="gruppe">
+                  <th scope="rowgroup" colSpan={5}>
+                    {g.gruppe}
+                  </th>
+                </tr>
+                {g.zeilen.map(([name, ...werte]) => (
+                  <tr key={name}>
+                    <th scope="row">{name}</th>
+                    {werte.map((w, i) => (
+                      <td key={i} className="mitte">
+                        {w ? (
+                          <>
+                            <span className="ja" aria-hidden />
+                            <span className="unsichtbar">ja</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="nein" aria-hidden>
+                              –
+                            </span>
+                            <span className="unsichtbar">nein</span>
+                          </>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            ))}
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SoFunktioniert() {
+  return (
+    <section className="abschnitt abschnitt-linie" id="so-gehts" aria-labelledby="so-gehts-titel">
+      <div className="breite">
+        <Abschnittskopf id="so-gehts-titel" ueber="So funktioniert’s" titel="In drei Schritten zum ersten veröffentlichten Plan." />
+        <ol className="schritte">
+          {SCHRITTE.map((s, i) => (
+            <li key={s.titel}>
+              <span className="schritt-nummer" aria-hidden>
+                {i + 1}
+              </span>
+              <h3>{s.titel}</h3>
+              <p>{s.text}</p>
+              {s.befehl && <code className="schritt-befehl">{s.befehl}</code>}
+              <Pfeillink zu={s.link.zu}>{s.link.text}</Pfeillink>
+            </li>
+          ))}
+        </ol>
+        <div className="schritte-befehl">
+          <Befehle titel="Als root auf dem Server" text={INSTALLATION.laden} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Rueckmeldung() {
+  return (
+    <section className="abschnitt abschnitt-flaeche" id="rueckmeldung" aria-labelledby="rueckmeldung-titel">
+      <div className="breite zweispaltig">
+        <Abschnittskopf
+          id="rueckmeldung-titel"
+          ueber="Rückmeldung"
+          titel="Ideen, Wünsche und Fehler direkt auf GitHub melden."
+          text="EduOrga entsteht mit den Schulen, die es nutzen. Jede Meldung ist öffentlich nachvollziehbar – vom Eingang bis zur Lösung. Bitte keine personenbezogenen Daten einstellen."
+        />
+        <ul className="meldewege">
+          <li>
+            <a href={ISSUE_FEHLER} rel="noopener noreferrer">
+              <strong>
+                Fehler melden <span aria-hidden>↗</span>
+              </strong>
+              <span>Formular mit Anwendung, Version, Schritten und Bildschirmfotos</span>
+            </a>
+          </li>
+          <li>
+            <a href={ISSUE_WUNSCH} rel="noopener noreferrer">
+              <strong>
+                Idee oder Wunsch <span aria-hidden>↗</span>
+              </strong>
+              <span>Situation im Schulalltag beschreiben, Vorschlag machen</span>
+            </a>
+          </li>
+          <li>
+            <a href={DISCUSSIONS} rel="noopener noreferrer">
+              <strong>
+                Fragen und Austausch <span aria-hidden>↗</span>
+              </strong>
+              <span>Einsatz an der Schule, Erfahrungen, offene Fragen</span>
+            </a>
+          </li>
+          <li>
+            <a href={ISSUE_NEU} rel="noopener noreferrer">
+              <strong>
+                Alle Vorlagen <span aria-hidden>↗</span>
+              </strong>
+              <span>Auswahl der Formulare auf GitHub</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function Fragen() {
+  return (
+    <section className="abschnitt" id="fragen" aria-labelledby="fragen-titel">
+      <div className="breite zweispaltig zweispaltig-oben">
+        <Abschnittskopf id="fragen-titel" ueber="Häufige Fragen" titel="Was Schulleitungen vorher wissen möchten." />
+        <div className="fragen">
+          {FAQ.map((f) => (
+            <details key={f.frage}>
+              <summary>{f.frage}</summary>
+              <p>{f.antwort}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Schluss() {
+  return (
+    <section className="schluss" aria-labelledby="schluss-titel">
+      <div className="breite schluss-innen">
+        <div>
+          <h2 id="schluss-titel">Einfach mehr Schulalltag.</h2>
+          <p>Ein Skript richtet alles ein. Die Beispielschule in EduOrga Studio zeigt sofort, wie geplant wird.</p>
+        </div>
+        <div className="aktionen">
+          <Knopf zu="/installation" art="hell">
+            Installation ansehen
+          </Knopf>
+          <Pfeillink zu="/dokumentation" klasse="pfeillink-hell">
+            Dokumentation
+          </Pfeillink>
         </div>
       </div>
     </section>

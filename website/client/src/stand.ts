@@ -9,6 +9,8 @@ export interface Stand {
   gebaut: string;
   veroeffentlichung: { tag: string; datum: string | null; adresse: string | null } | null;
   handbuch: { nummer: number; titel: string; anker: string }[];
+  /** Bildschirmfotos der iPhone-App (echt = aus ios/docs/bilder, sonst Ersatz aus EduOrga Mobile) */
+  ios?: Record<string, { datei: string; echt: boolean; breite: number; hoehe: number }>;
 }
 
 export const STAND: Stand = daten as Stand;
