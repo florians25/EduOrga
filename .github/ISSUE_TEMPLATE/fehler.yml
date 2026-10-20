@@ -1,0 +1,84 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie erwartet – in EduOrga Studio, Web, Mobile, der App für iPhone und iPad oder bei der Installation.
+title: "Fehler: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für die Meldung. Je genauer die Schritte, desto schneller lässt sich der Fehler nachstellen.
+
+        **Bitte keine personenbezogenen Daten** von Schülerinnen, Schülern, Eltern oder Lehrkräften einstellen – weder im
+        Text noch auf Bildschirmfotos (Namen, Kürzel echter Personen, E-Mail-Adressen). Zugangsdaten, Passwörter und den
+        Inhalt der `.env` nie veröffentlichen.
+  - type: dropdown
+    id: anwendung
+    attributes:
+      label: Anwendung
+      description: Wo tritt der Fehler auf?
+      options:
+        - EduOrga Studio (Planung im Browser)
+        - EduOrga Web (Portal)
+        - EduOrga Mobile (App fürs Telefon, PWA)
+        - EduOrga für iPhone und iPad (iOS)
+        - Installation, Update oder Betrieb (install.sh, update.sh, passwort.sh, Docker)
+        - Website
+        - Weiß ich nicht
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Steht unter „Über EduOrga“ bzw. in der Administration (z. B. 1.0.0-dev.123). Bei Docker auch `docker compose images`.
+      placeholder: "1.0.0-dev.123"
+    validations:
+      required: false
+  - type: input
+    id: umgebung
+    attributes:
+      label: Umgebung
+      description: Browser bzw. Gerät und Betriebssystem, bei Installationsfehlern Linux-Distribution und Docker-Version.
+      placeholder: "z. B. Firefox 131 unter Windows 11, iPhone 15 mit iOS 26, Debian 12 mit Docker 27"
+    validations:
+      required: false
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Schritte zum Nachstellen
+      description: Was wurde der Reihe nach getan?
+      placeholder: |
+        1. In EduOrga Studio „Vertretungsplanung“ öffnen
+        2. Tagesplanung für Montag wählen
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Erwartetes Verhalten
+      description: Was hätte passieren sollen?
+    validations:
+      required: true
+  - type: textarea
+    id: tatsaechlich
+    attributes:
+      label: Tatsächliches Verhalten
+      description: Was ist stattdessen passiert? Fehlermeldungen bitte wörtlich übernehmen.
+    validations:
+      required: true
+  - type: textarea
+    id: protokoll
+    attributes:
+      label: Protokoll (optional)
+      description: Bei Fehlern auf dem Server z. B. die letzten Zeilen aus `docker compose logs --tail 100 untplannext-web`. Vorher auf Namen und Passwörter prüfen.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: bilder
+    attributes:
+      label: Bildschirmfotos (optional)
+      description: Bilder lassen sich hier hineinziehen. Bitte nur mit Beispieldaten oder unkenntlich gemachten Namen.
+    validations:
+      required: false

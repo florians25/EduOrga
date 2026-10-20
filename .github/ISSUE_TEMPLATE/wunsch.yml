@@ -1,0 +1,69 @@
+name: Idee oder Wunsch
+description: Eine neue Funktion, eine Verbesserung oder eine Idee für den Schulalltag vorschlagen.
+title: "Wunsch: "
+labels: ["wunsch"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für die Idee. Am hilfreichsten ist eine Beschreibung der Situation im Schulalltag – die Lösung darf offen bleiben.
+        Offene Fragen und Diskussionen passen auch in die [Discussions](https://github.com/florians25/EduOrga/discussions).
+  - type: dropdown
+    id: anwendung
+    attributes:
+      label: Anwendung
+      description: Worauf bezieht sich der Wunsch?
+      multiple: true
+      options:
+        - EduOrga Studio (Planung im Browser)
+        - EduOrga Web (Portal)
+        - EduOrga Mobile (App fürs Telefon, PWA)
+        - EduOrga für iPhone und iPad (iOS)
+        - Installation, Update oder Betrieb
+        - Dokumentation oder Website
+        - Allgemein
+    validations:
+      required: true
+  - type: dropdown
+    id: rolle
+    attributes:
+      label: Aus Sicht von
+      multiple: true
+      options:
+        - Schulleitung
+        - Stundenplanung bzw. Vertretungsplanung
+        - Lehrkraft
+        - Schülerin oder Schüler
+        - Eltern
+        - Administration bzw. IT-Betreuung
+    validations:
+      required: false
+  - type: textarea
+    id: situation
+    attributes:
+      label: Situation
+      description: Was soll im Alltag einfacher werden? Was ist heute umständlich?
+      placeholder: "z. B. Morgens müssen wir Vertretungen für Klausuraufsichten einzeln eintragen …"
+    validations:
+      required: true
+  - type: textarea
+    id: vorschlag
+    attributes:
+      label: Vorschlag
+      description: Wie könnte es aussehen? Ablauf, Ort in der Oberfläche, Beispiele.
+    validations:
+      required: true
+  - type: textarea
+    id: alternativen
+    attributes:
+      label: Bisherige Lösung oder Alternativen (optional)
+      description: Wie wird es heute gelöst, und welche anderen Wege wären denkbar?
+    validations:
+      required: false
+  - type: textarea
+    id: bilder
+    attributes:
+      label: Skizzen oder Bildschirmfotos (optional)
+      description: Bitte ohne personenbezogene Daten.
+    validations:
+      required: false

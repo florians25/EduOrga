@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Fragen, Erfahrungen und Austausch
+    url: https://github.com/florians25/EduOrga/discussions
+    about: Fragen zum Einsatz an der Schule, Erfahrungen und allgemeine Ideen gehören in die Discussions.
+  - name: Dokumentation und Installation
+    url: https://github.com/florians25/EduOrga/blob/master/docs/INSTALLATION.md
+    about: Schritt-für-Schritt-Anleitung, Update, Sicherung und Fehlerbehebung.
