@@ -24,7 +24,7 @@ public sealed record Stundentausch2(StundenRef A, StundenRef B);
 /// bzw. setzen mit „Soll behindernder Unterricht entplant werden?“, Mehrfachauswahl (entplanen, fixieren), alle entplanen/fixieren,
 /// Raum zuordnen/löschen (Raumliste), Tauschvorschläge und Tausch.
 /// </summary>
-public sealed class PlanungApi : IStudioModul
+public sealed partial class PlanungApi : IStudioModul
 {
     public string Name => "planung";
 
@@ -40,7 +40,7 @@ public sealed class PlanungApi : IStudioModul
     private static List<Planstunde> Gezogen(Schuldatei d, Planstunde p, bool einzeln) =>
         einzeln ? new List<Planstunde> { p } : Planungsdienst.BlockVon(d, p);
 
-    private static string Grund(Schuldatei d, DatenIndex ix, Unterricht u, int tag, int stunde, int laenge, ICollection<Planstunde>? ignorieren, Feldstatus st, IReadOnlyCollection<Planstunde>? gezogen)
+    internal static string Grund(Schuldatei d, DatenIndex ix, Unterricht u, int tag, int stunde, int laenge, ICollection<Planstunde>? ignorieren, Feldstatus st, IReadOnlyCollection<Planstunde>? gezogen)
     {
         switch (st)
         {
@@ -134,6 +134,52 @@ public sealed class PlanungApi : IStudioModul
         };
     }
 
+    /// <summary>Zielstatus je Feld beim Ziehen (Status, Grund) für eine verplante Stunde bzw. ihren Block oder nicht verplante Stunden.</summary>
+    internal sealed record Zielfelder(Unterricht Unterricht, List<Planstunde>? Gezogen, Feldstatus[][] Werte, string[][] Status, string[][] Gruende, int Laenge, int Versatz);
+
+    /// <summary>
+    /// Zielstatus aller Felder beim Ziehen (Block bzw. einzelne Stunde, gezogen an der Stunde tag/stunde) mit Gründen je Feld.
+    /// Ohne tag/stunde: nicht verplante Stunden des Unterrichts als Block der Länge „laenge“.
+    /// </summary>
+    internal static Zielfelder Ziele(Dokument doc, int unterricht, int? tag, int? stunde, bool einzeln, int? laenge)
+    {
+        var d = doc.Daten;
+        var ix = doc.Index;
+        var u = ix.Unterrichte.GetValueOrDefault(unterricht) ?? throw StudioFehler.NichtGefunden($"Der Unterricht U-Nr. {unterricht}");
+        var z = d.Zeitraster;
+        List<Planstunde>? gezogen = null;
+        var versatz = 0;
+        var n = Math.Clamp(laenge ?? 1, 1, z.StundenProTag);
+        if (tag is int tg && stunde is int st)
+        {
+            var p = Stunde(d, unterricht, tg, st);
+            gezogen = Gezogen(d, p, einzeln).OrderBy(x => x.Stunde).ToList();
+            versatz = p.Stunde - gezogen[0].Stunde;
+            n = gezogen.Count;
+        }
+        var werte = new Feldstatus[z.TageProWoche][];
+        var status = new string[z.TageProWoche][];
+        var gruende = new string[z.TageProWoche][];
+        for (var t = 0; t < z.TageProWoche; t++)
+        {
+            werte[t] = new Feldstatus[z.StundenProTag];
+            status[t] = new string[z.StundenProTag];
+            gruende[t] = new string[z.StundenProTag];
+            for (var s = 1; s <= z.StundenProTag; s++)
+            {
+                var start = s - versatz;
+                Feldstatus fs;
+                if (start < 1 || start + n - 1 > z.StundenProTag) fs = Feldstatus.Kollision;
+                else fs = gezogen is null ? Planungsdienst.Status(d, ix, u, t, start, n) : Planungsdienst.Zielstatus(d, ix, gezogen, t, start);
+                werte[t][s - 1] = fs;
+                status[t][s - 1] = fs.ToString();
+                var eigen = gezogen != null && gezogen[0].Tag == t && gezogen[0].Stunde == start;
+                gruende[t][s - 1] = eigen ? "aktuelle Position" : Grund(d, ix, u, t, start, n, gezogen, fs, gezogen);
+            }
+        }
+        return new Zielfelder(u, gezogen, werte, status, gruende, n, versatz);
+    }
+
     public void EndpunkteRegistrieren(StudioRouten r)
     {
         var g = r.Dokument.MapGroup("/planung");
@@ -142,38 +188,8 @@ public sealed class PlanungApi : IStudioModul
         // Ohne tag/stunde: nicht verplante Stunden des Unterrichts als Block der Länge „laenge“.
         g.MapGet("/zielstatus", (Arbeitsdokument a, int unterricht, int? tag, int? stunde, bool? einzeln, int? laenge) => a.LesenAsync(doc =>
         {
-            var d = doc.Daten;
-            var ix = doc.Index;
-            var u = ix.Unterrichte.GetValueOrDefault(unterricht) ?? throw StudioFehler.NichtGefunden($"Der Unterricht U-Nr. {unterricht}");
-            var z = d.Zeitraster;
-            List<Planstunde>? gezogen = null;
-            var versatz = 0;
-            var n = Math.Clamp(laenge ?? 1, 1, z.StundenProTag);
-            if (tag is int tg && stunde is int st)
-            {
-                var p = Stunde(d, unterricht, tg, st);
-                gezogen = Gezogen(d, p, einzeln == true).OrderBy(x => x.Stunde).ToList();
-                versatz = p.Stunde - gezogen[0].Stunde;
-                n = gezogen.Count;
-            }
-            var status = new string[z.TageProWoche][];
-            var gruende = new string[z.TageProWoche][];
-            for (var t = 0; t < z.TageProWoche; t++)
-            {
-                status[t] = new string[z.StundenProTag];
-                gruende[t] = new string[z.StundenProTag];
-                for (var s = 1; s <= z.StundenProTag; s++)
-                {
-                    var start = s - versatz;
-                    Feldstatus fs;
-                    if (start < 1 || start + n - 1 > z.StundenProTag) fs = Feldstatus.Kollision;
-                    else fs = gezogen is null ? Planungsdienst.Status(d, ix, u, t, start, n) : Planungsdienst.Zielstatus(d, ix, gezogen, t, start);
-                    status[t][s - 1] = fs.ToString();
-                    var eigen = gezogen != null && gezogen[0].Tag == t && gezogen[0].Stunde == start;
-                    gruende[t][s - 1] = eigen ? "aktuelle Position" : Grund(d, ix, u, t, start, n, gezogen, fs, gezogen);
-                }
-            }
-            return new { status, gruende, laenge = n, versatz };
+            var z = Ziele(doc, unterricht, tag, stunde, einzeln == true, laenge);
+            return new { status = z.Status, gruende = z.Gruende, laenge = z.Laenge, versatz = z.Versatz };
         }));
 
         // Stunde bzw. Block verschieben (Tausch, falls geprüft möglich; sonst Frage nach behinderndem Unterricht)
@@ -361,5 +377,7 @@ public sealed class PlanungApi : IStudioModul
                 pa.Raeume = Planungsdienst.RaeumeSuchen(d, ix, ix.Unterrichte[pa.UnterrichtId], pa.Tag, pa.Stunde, new[] { pa });
                 pb.Raeume = Planungsdienst.RaeumeSuchen(d, ix, ix.Unterrichte[pb.UnterrichtId], pb.Tag, pb.Stunde, new[] { pb });
             }, _ => new { ok = true }));
+
+        PlantafelRegistrieren(g);
     }
 }
