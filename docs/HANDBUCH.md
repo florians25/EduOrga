@@ -844,11 +844,77 @@ Hinweisen (z. B. Bereitschaft, Raumänderung, verlegt von …).
 
 ## 9. Auswertung und weitere Module
 
+### Deputat und Unterrichtsverteilung (NRW)
+
+*Unterricht → Deputat und Verteilung* (Befehlssuche: „Deputat“) bündelt die Lehrerarbeitszeit der Schule. Voreingestellt
+ist das **Landesprofil Nordrhein-Westfalen** (VO zu § 93 Abs. 2 SchulG); unter *Einstellungen …* lässt sich „Allgemein (ohne
+Landesregeln)“ wählen – dann wird nichts automatisch berechnet. Die Werte, ihre Quellen und offene Punkte stehen in
+[`studio/docs/RECHERCHE-DEPUTAT-NRW.md`](../studio/docs/RECHERCHE-DEPUTAT-NRW.md).
+
+Über allen Reitern steht eine Zeile mit den Zahlen der Schule: Pflichtstunden der Schulform, **Stellen** (Summe der
+Beschäftigungsumfänge / Pflichtstunden), **Bedarf** ((Unterricht + Ermäßigungen + Anrechnungen + Leitungszeit − Mehrarbeit) /
+Pflichtstunden) und Bilanz, Soll, Ist, offene Stunden, **Anrechnungstopf** und **Leitungszeit** (vergeben von verfügbar) und
+die Zahl der Lehrkräfte über bzw. unter dem Soll. Rot heißt „zu viel“ (über Soll, Topf überzogen, ohne Lehrbefähigung), Bernstein
+„noch offen bzw. zu wenig“.
+
+![Deputat der Lehrkräfte mit Rechnung einer Lehrkraft](../studio/docs/bilder/deputat-lehrkraefte.png)
+
+**Reiter Lehrkräfte** – je Lehrkraft:
+
+| Spalte | Bedeutung |
+|---|---|
+| Pflichtstd. | Pflichtstunden einer Vollzeitkraft der Schulform (Gymnasium 25,5, Grundschule 28 …). Eine Eingabe gilt nur für diese Lehrkraft (z. B. Werkstattlehrkraft 30, Abendgymnasium 22); leer = Schulform. |
+| Umfang | Beschäftigungsumfang = Unterrichtsverpflichtung je Woche (bisher „Wochensoll“). Eingabe als Stunden („19,5“), „Vollzeit“ oder Prozent („75 %“). Daneben der Anteil. |
+| Geburtsdatum, Alter | Für die Altersermäßigung. Statt des Datums genügt das Alter (daraus wird das Geburtsjahr). Die Ermäßigung gilt ab dem Schuljahr (1. August), das auf die Vollendung des 55. bzw. 60. Lebensjahres folgt: ab 55 eine Stunde (Teilzeit ab 50 %: 0,5), ab 60 drei Stunden (Teilzeit ab 75 %: 2, ab 50 %: 1,5). |
+| GdB | Grad der Behinderung: ab 50 zwei, ab 70 drei, ab 90 vier Stunden bei Vollzeit, bei Teilzeit gestaffelt. |
+| Alter-Erm., SB-Erm. | berechnete Ermäßigungen. Wer bis zu einer Stunde unter den Pflichtstunden liegt, erhält die volle Ermäßigung. |
+| sonst. Erm., Anrechnung, Leitung | Einträge aus *Ermäßigungen und Anrechnungen …* (Doppelklick auf die Zeile oder Knopf rechts): je Eintrag Art (Ermäßigung, Anrechnung aus dem Topf, Leitungszeit), Grund und Stunden. Ältere Einträge ohne Art werden am Grund erkannt („Schulleitung“ → Leitungszeit). Ein Eintrag „Altersermäßigung“ bzw. „Schwerbehinderung“ ersetzt die Berechnung. |
+| Mehrarbeit | regelmäßige Mehrarbeit bzw. Vorgriffsstunden je Woche (+), Ausgleich (−). |
+| Soll, Ist, Differenz | Soll = Umfang − Ermäßigungen − Anrechnungen − Leitungszeit + Mehrarbeit (nie unter 0). Ist = Wertrechnung (Wochenstunden × Werte-Faktor, anteilig bei A/B-Wochen und befristetem Unterricht, jede Kopplungszeile mit Lehrkraft zählt, + Wertkorrektur). |
+
+Rechts steht die Rechnung der gewählten Lehrkraft Schritt für Schritt und darunter die Hinweise (über/unter Soll, Unterricht
+ohne eingetragene Lehrbefähigung, nur Geburtsjahr bekannt, Ermäßigungen größer als der Umfang). Im Kontextmenü: „Ohne
+Altersermäßigung“ (Verzicht, Altersteilzeit). Dasselbe Soll gilt in *Soll und Ist*, im Lehrervorschlag und bei der
+automatischen Unterrichtszuordnung. Ältere Schuldateien ohne die neuen Angaben behalten ihr Soll (Wochensoll − Ermäßigungen).
+
+*Einstellungen …*: Landesprofil, **Grundstellen** (aus der Stellenberechnung der Schule; leer = aus den Umfängen
+geschätzt) und **Grundstellen Sek II** (Gymnasium/Gesamtschule), offene Ganztagsschule, Topf und Leitungszeit von Hand,
+Ermäßigungen berechnen ja/nein, Toleranz für die Abweichung. Der Topf ist Grundstellen × Faktor der Schulform (Grundschule
+0,2, Hauptschule 0,6, Realschule/Sekundarschule/Sek I 0,5, Sek II 1,2, Förderschule 0,4, Weiterbildungskolleg 1,0), die
+Leitungszeit 9 + 0,7 je Stelle bis zur 50. + 0,3 je weitere (Grundschule + 2, offener Ganztag + 1).
+
+![Anrechnungen einer Lehrkraft](../studio/docs/bilder/deputat-anrechnungen.png)
+
+**Reiter Verteilung** – Matrix Lehrkräfte × Klassen (oder × Fächer, Schalter *Klassen | Fächer*), links fest Soll, Ist und
+Differenz. Ein Kurs über mehrere Klassen wird gleichmäßig auf die Klassen verteilt, sodass die Zeilensumme dem Ist entspricht.
+Rot unterstrichen: Unterricht ohne eingetragene Lehrbefähigung. *Fach* filtert Lehrkräfte und offene Unterrichte.
+
+- **Offene Unterrichte** (rechts): Kopplungszeilen mit Fach, aber ohne Lehrkraft. Ein Klick zeigt die Vorschläge
+  (Lehrbefähigung, freies Deputat reicht, Klassenleitung, kennt die Klasse) mit freiem Deputat; *Zuweisen* oder ein Klick auf
+  das unterstrichene Kürzel in der Matrix trägt die Lehrkraft ein. Soll/Ist und die Kopfzeile ändern sich sofort.
+- **Zelle anklicken:** zeigt den Unterricht dieser Lehrkraft in der Klasse bzw. im Fach; *Entfernen* macht die Zeile wieder offen.
+- Jede Zuweisung ist mit Strg+Z rückgängig zu machen.
+
+![Unterrichtsverteilung mit offenem Unterricht und Vorschlägen](../studio/docs/bilder/deputat-zuweisen.png)
+
+**Reiter Stundentafel** – links die Abweichungen zwischen der schulinternen Stundentafel (*Unterricht → Stundentafel*) und dem
+Unterricht je Klasse und Fach, rechts beim Gymnasium die **Kontingentprüfung G9** (APO-S I, Anlage 3a): Summen der Jahrgänge
+5/6 und 7–10 je Lernbereich gegen die Kontingente und die Gesamtsumme 182–188. Andere Schulformen prüfen nur die schulinterne
+Stundentafel.
+
+![Stundentafel und Kontingente](../studio/docs/bilder/deputat-stundentafel.png)
+
+**Ausgabe:** *Deputat als PDF* (Querformat, mit Summen), *Deputat als CSV* (Semikolon, UTF-8) und *Unterrichtsverteilung als
+UVD.TXT (SchILD-NRW)*: eine Zeile je Kopplungszeile und Klasse mit Klasse, Jahrgang, Kursart, Wochenstunden, Fach, Lehrkraft und
+Kurs. Die Spaltenfolge folgt Angaben aus dem SchILD-Umfeld, eine amtliche Schnittstellenbeschreibung lag nicht vor – den
+ersten Import bitte an einer Testdatenbank prüfen. Die UVD-Datei der amtlichen Statistik (ASDPC) ist ein anderes Format und
+wird nicht erzeugt.
+
 ### Soll und Ist (Wertrechnung)
 
 *Auswertung → Soll und Ist*:
 
-- **Lehrer Soll/Ist:** Soll = Wochensoll − Ermäßigungen. Ist = Summe der Werte (Wochenstunden × Werte-Faktor, anteilig
+- **Lehrer Soll/Ist:** Soll wie im Deputat (ohne Geburtsdatum, GdB und Mehrarbeit: Wochensoll − Ermäßigungen). Ist = Summe der Werte (Wochenstunden × Werte-Faktor, anteilig
   bei A/B-Wochen und befristetem Unterricht) + Wertkorrektur. Wochensoll und Wertkorrektur sind direkt änderbar.
 - **Unterrichtsmatrix** (*Auswertung → Unterrichtsmatrix*): Klassen × Fächer mit Lehrkräften, Stunden oder beidem;
   Doppelklick öffnet den Unterricht der Klasse.

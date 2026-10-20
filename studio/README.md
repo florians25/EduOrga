@@ -38,6 +38,12 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   Statuspunkt, Stand in der Kurzinfo), Rückgängig/Wiederholen mit Speicherstand („Gespeichert · 14:32“, unter 1500 px nur
   das Symbol), aktive Benutzer, Suche (Strg+K – findet jede Funktion) und Konto. Bis 1366 px Breite passt alles ohne
   Abschneiden.
+* **Deputat und Unterrichtsverteilung** (*Unterricht → Deputat und Verteilung*): Deputatsrechnung je Lehrkraft nach
+  Landesprofil (NRW voreingestellt: Pflichtstunden je Schulform × Beschäftigungsumfang, Alters- und Schwerbehindertenermäßigung,
+  Anrechnungen aus dem Topf, Leitungszeit, Mehrarbeit/Vorgriff → Soll; Ist aus der Wertrechnung), Summen der Schule (Stellen,
+  Bedarf, Anrechnungstopf, Leitungszeit), Verteilungsmatrix Lehrkräfte × Klassen/Fächer mit offenen Unterrichten und Zuweisen
+  per Klick, Stundentafel- und Kontingentprüfung (G9), Ausgabe als PDF, CSV und UVD.TXT für SchILD-NRW. Regeln und Quellen:
+  [`docs/RECHERCHE-DEPUTAT-NRW.md`](docs/RECHERCHE-DEPUTAT-NRW.md), Handbuch Abschnitt 9.
 * **Speichern gibt es nicht mehr als Schritt:** Jede Änderung (auch Rückgängig/Wiederholen) landet nach weniger als einer
   Sekunde in der Datenbank. Die Kopfleiste zeigt ruhig den Stand: *Gespeichert · 14:32*, kurz *Speichert …* oder bei einem
   Problem *Nicht gespeichert* mit *Erneut versuchen* (der Server versucht es ohnehin selbst wieder). **Strg+S** legt einen
@@ -128,6 +134,7 @@ NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertr
 STUDIO_GROSSSCHULE=/tmp/gross.up dotnet test studio/tests/UntPlanStudio.Tests --filter GrosseSchuleMitFuenfzehnAbwesenheiten
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 STUDIO_GROSSSCHULE=/tmp/gross.up node studio/tests/smoke/tagesplanung-gross.cjs
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/druck.cjs            # Einstellungen, Druck, Formate
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/deputat.cjs          # Deputat und Unterrichtsverteilung (1280×800)
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke-austausch.cjs  # UntPlan Web, Module, MultiUser
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/speichern.cjs         # Speicherstand, Sicherungspunkt, „An Web senden“
 ```

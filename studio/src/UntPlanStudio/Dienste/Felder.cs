@@ -153,7 +153,9 @@ public static class Felder
                 l.Add(F("Wochensoll", "Wochensoll", FeldArt.Dezimal, e => ((Lehrer)e).Wochensoll, (e, v) => ((Lehrer)e).Wochensoll = (decimal)v!, "Werte", true, 70));
                 l.Add(T("Ermaessigungen", "Ermäßigungen", e => string.Join("; ", ((Lehrer)e).Ermaessigungen.Select(x => $"{x.Grund}:{Format.Zahl(x.Wert)}")),
                     (e, v) => ((Lehrer)e).Ermaessigungen = ErmaessigungenParsen((string)v!), "Werte", false, 140));
-                l.Add(F("Soll", "Soll (abzgl. Erm.)", FeldArt.NurLesen, e => ((Lehrer)e).Soll, null, "Werte", false, 70));
+                l.Add(F("Soll", "Soll (abzgl. Erm.)", FeldArt.NurLesen, e => UntPlan.Core.Module.Deputat.Soll(doc.Daten, doc.Index, (Lehrer)e), null, "Werte", false, 70));
+                l.Add(F("Gdb", "GdB", FeldArt.Ganzzahl, e => ((Lehrer)e).Gdb, (e, v) => ((Lehrer)e).Gdb = Math.Clamp((int)v!, 0, 100), "Werte"));
+                l.Add(F("Mehrarbeit", "Mehrarbeit/Vorgriff", FeldArt.Dezimal, e => ((Lehrer)e).Mehrarbeit, (e, v) => ((Lehrer)e).Mehrarbeit = (decimal)v!, "Werte"));
                 l.Add(F("Ist", "Ist (Wert)", FeldArt.NurLesen, e => UntPlan.Core.Module.Wertrechnung.Ist(doc.Daten, doc.Index, (Lehrer)e), null, "Werte", false, 60));
                 l.Add(F("Wertkorrektur", "Wertkorrektur", FeldArt.Dezimal, e => ((Lehrer)e).Wertkorrektur, (e, v) => ((Lehrer)e).Wertkorrektur = (decimal)v!, "Werte"));
                 l.Add(T("Email", "E-Mail", e => ((Lehrer)e).Email, (e, v) => ((Lehrer)e).Email = (string)v!, "Allgemeine Daten", false, 150));
