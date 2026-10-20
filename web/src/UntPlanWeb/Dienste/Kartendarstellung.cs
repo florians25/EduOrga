@@ -6,16 +6,17 @@ namespace UntPlanWeb.Dienste;
 /// <summary>
 /// Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten): schulweit gültig für Wochenraster, Tagesansicht,
 /// Tagesseiten, Startseite und Stundendetails. Gespeichert als JSON in der Tabelle einstellungen (Schlüssel
-/// <see cref="Kartendarstellungen.Schluessel"/>); fehlende Angaben erhalten ihren Standard. Standard ist die Vorlage „Klassisch“:
-/// kompakte weiße Karten mit leichtem Schatten auf hellgrauem Raster, Fachfarbe als 4-px-Streifen innen links (grau ohne Fachfarbe),
-/// drei Zeilen Lehrkraft bzw. Klasse (fett) · Fach · Raum, Radius 2 px, Änderungen und Prüfungen in der hellen Statusfläche. Die Statusdarstellung (Linie, Schraffur,
+/// <see cref="Kartendarstellungen.Schluessel"/>); fehlende Angaben erhalten ihren Standard. Standard ist die Vorlage „EduOrga Standard“
+/// (design/DESIGN.md, Abschnitt 10, gleich auf allen Plattformen): kompakte helle Karten mit flachem Schatten auf hellgrauem Raster,
+/// 4-px-Kante links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), je eine Zeile Fach · Klasse · Lehrkraft · Raum,
+/// Radius 4 px, Änderungen grün und Prüfungen bernstein in der hellen Statusfläche, Entfall rot. Die Statusdarstellung (Linie, Schraffur,
 /// Durchstreichung, Kürzel-Plaketten) bleibt in jeder Variante erhalten; optional stehen zusätzlich die Statuswörter auf den Kacheln.
 /// </summary>
 public sealed record Kartendarstellung
 {
     /// <summary>Fachfarbe: balken-innen (Streifen innen links, grau ohne Fachfarbe) | balken-flaeche (Balken links und Tönung) | balken-links |
     /// balken-oben | quadrat | flaeche | keine.</summary>
-    public string Fachfarbe { get; init; } = "balken-innen";
+    public string Fachfarbe { get; init; } = "balken-flaeche";
     /// <summary>Breite des Fachfarbbalkens in px (2–6).</summary>
     public int Balkenbreite { get; init; } = 4;
     /// <summary>Deckkraft der Fachfarb-Tönung in Prozent (6–30), bei <see cref="Fachfarbe"/> = flaeche bzw. balken-flaeche.</summary>
@@ -25,7 +26,7 @@ public sealed record Kartendarstellung
     /// <summary>Rahmen: schatten (keine Linie, leicht abgehoben) | fein | kraeftig | keiner.</summary>
     public string Rahmen { get; init; } = "schatten";
     /// <summary>Eckenradius in px (0–8).</summary>
-    public int Eckenradius { get; init; } = 2;
+    public int Eckenradius { get; init; } = 4;
     /// <summary>Dichte: kompakt | normal | grosszuegig (Innenabstand, Schriftgrößen).</summary>
     public string Dichte { get; init; } = "kompakt";
     /// <summary>Zeile 1: Fach als kuerzel | name.</summary>
@@ -40,10 +41,11 @@ public sealed record Kartendarstellung
     public string Kuerzel { get; init; } = "text";
     /// <summary>Statuswörter (Entfall, Offen, Vertreten …) zusätzlich auf den Kacheln anzeigen.</summary>
     public bool Statuswoerter { get; init; }
-    /// <summary>Geänderte Stunden und Prüfungen zusätzlich in der hellen Statusfläche (Änderung violett, Prüfung bernstein).</summary>
+    /// <summary>Geänderte Stunden und Prüfungen zusätzlich in der hellen Statusfläche (Änderung grün, Prüfung bernstein).</summary>
     public bool Statusflaeche { get; init; } = true;
-    /// <summary>Zeilenfolge: element (Lehrkraft bzw. Klasse · Fach · Raum untereinander) | fach (Fach und Raum oben, darunter Lehrkraft/Klasse).</summary>
-    public string Reihenfolge { get; init; } = "element";
+    /// <summary>Zeilenfolge: zeilen (Fach · Klasse · Lehrkraft · Raum je eine Zeile) | element (Lehrkraft bzw. Klasse · Fach · Raum
+    /// untereinander) | fach (Fach und Raum oben, darunter Lehrkraft/Klasse).</summary>
+    public string Reihenfolge { get; init; } = "zeilen";
     /// <summary>Fläche des Stundenrasters: grau | weiss.</summary>
     public string Raster { get; init; } = "grau";
 }
@@ -55,7 +57,7 @@ public static class Kartendarstellungen
     public static readonly string[] Fachfarben = { "balken-innen", "balken-flaeche", "balken-links", "balken-oben", "quadrat", "flaeche", "keine" };
     public static readonly string[] Flaechen = { "neutral", "weiss", "getoent" };
     public static readonly string[] Rahmenarten = { "schatten", "fein", "kraeftig", "keiner" };
-    public static readonly string[] Reihenfolgen = { "element", "fach" };
+    public static readonly string[] Reihenfolgen = { "zeilen", "element", "fach" };
     public static readonly string[] Rasterarten = { "grau", "weiss" };
     public static readonly string[] Dichten = { "kompakt", "normal", "grosszuegig" };
     public static readonly string[] Texte = { "kuerzel", "name" };

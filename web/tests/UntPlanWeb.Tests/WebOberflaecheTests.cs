@@ -86,25 +86,32 @@ public class WebOberflaecheTests
     [Fact]
     public void Stundenplan_klassisch_kompakt_mit_klarem_Status_und_ohne_Pillen()
     {
-        // Kachel: Status über Linie/Schraffur/Kürzel-Plaketten statt Wörtern; Fachfarbe je nach Darstellung als Balken, Quadrat oder Tönung
+        // Kachel: gemeinsame Änderungsregeln (aenderung.ts) – grün mit schraffierter Kante und Feld „+neu (bisher)“, Entfall rot und durchgestrichen
         var kachel = Lesen("src", "components", "plan", "Kachel.tsx");
         Assert.Contains("FachQuadrat", kachel);
         Assert.Contains("kachel.flaeche", kachel);
         Assert.Contains("KACHEL_PLAKETTEN", kachel);
         Assert.Contains("mitToenung(d.fachfarbe)", kachel);
         Assert.Contains("data-fachbalken", kachel);
-        // Änderungen und Prüfungen in der hellen Statusfläche (Vertretung violett), Entfall nie getönt, sondern schraffiert
         Assert.Contains("s.aenderung.flaeche", kachel);
+        Assert.Contains("s.entfall.flaeche", kachel);
         Assert.Contains("repeating-linear-gradient(135deg", kachel);
+        Assert.Contains("line-through", kachel);
+        Assert.Contains("kartenbild(k, typ)", kachel);
+        var aenderung = Lesen("src", "components", "plan", "aenderung.ts");
+        foreach (var muster in new[] { "`+${k} (${alt})`", "`(${alt})`", "'entfällt'", "`auf ${ziel}`", "`von ${von}`", "'Zusatz'", "`+${k.fach} (${k.fachAlt})`" })
+            Assert.Contains(muster, aenderung);
         var darstellung = Lesen("src", "components", "plan", "darstellung.tsx");
-        // Standard „Klassisch“: weiße Karte mit leichtem Schatten auf hellgrauem Raster, Streifen innen links, Lehrkraft/Klasse · Fach · Raum
-        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'balken-innen', balkenbreite: 4,[^}]*flaeche: 'weiss', rahmen: 'schatten', eckenradius: 2, dichte: 'kompakt',[^}]*kuerzel: 'text', statuswoerter: false, statusflaeche: true,\s*reihenfolge: 'element', raster: 'grau'", darstellung);
-        Assert.Contains("data-fachbalken=\"innen\"", kachel);
-        Assert.Contains("d.reihenfolge === 'element'", kachel);
+        // Standard „EduOrga Standard“: helle Karte auf hellgrauem Raster, Kante links (Fachfarbe mit Tönung), Fach · Klasse · Lehrkraft · Raum
+        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'balken-flaeche', balkenbreite: 4,[^}]*flaeche: 'weiss', rahmen: 'schatten', eckenradius: 4, dichte: 'kompakt',[^}]*kuerzel: 'text', statuswoerter: false, statusflaeche: true,\s*reihenfolge: 'zeilen', raster: 'grau'", darstellung);
+        Assert.Contains("data-fachbalken={innen && !bild.ton ? 'innen'", kachel);
+        Assert.Contains("d.reihenfolge !== 'element'", kachel);
         Assert.Contains("d.raster === 'grau'", Lesen("src", "components", "plan", "Wochenraster.tsx"));
-        Assert.Contains("'Lehrkraft/Klasse · Fach · Raum'", Lesen("src", "pages", "admin", "Stundenkarten.tsx"));
-        Assert.Contains("{ id: 'klassisch', name: 'Klassisch (Standard)'", darstellung);
-        foreach (var v in new[] { "'kompakt'", "'sachlich'", "'akzent'", "'flaeche'", "'minimal'" }) Assert.Contains($"id: {v}", darstellung);
+        Assert.Contains("'Fach · Klasse · Lehrkraft · Raum'", Lesen("src", "pages", "admin", "Stundenkarten.tsx"));
+        Assert.Contains("{ id: 'standard', name: 'EduOrga Standard'", darstellung);
+        foreach (var v in new[] { "'klassisch'", "'kompakt'", "'sachlich'", "'akzent'", "'flaeche'", "'minimal'" }) Assert.Contains($"id: {v}", darstellung);
+        // Legende „Änderungstyp | Darstellung“
+        Assert.Contains("LegendeTabelle", Lesen("src", "components", "plan", "Legende.tsx"));
         // kompakte Karten füllen die Rasterzelle (Abstand je Dichte)
         Assert.Contains("luecke: 1", darstellung);
         Assert.Contains("DICHTE[d.dichte].luecke", Lesen("src", "components", "plan", "Wochenraster.tsx"));
@@ -164,9 +171,9 @@ public class WebOberflaecheTests
             var ohneTechnik = inhalt.Replace("X-UntPlanWeb", "").Replace("UntPlanNext", "").Replace("ausUntPlan", "").Replace("kapazitaetUntPlan", "");
             Assert.False(ohneTechnik.Contains("UntPlan"), pfad);
         }
-        // Farben: Primär Petrol, Akzent, Hintergrund, Text; Statusfarbe Änderung violett, Termin magenta
+        // Farben: Primär Petrol, Akzent, Hintergrund, Text; Statusfarbe Änderung grün, Termin magenta
         var thema = Lesen("src", "theme.ts");
-        foreach (var f in new[] { "#28747a", "#f5f7f8", "#24363b", "#6d4fc2", "#a3347c" }) Assert.Contains(f, thema);
+        foreach (var f in new[] { "#28747a", "#f5f7f8", "#24363b", "#2f855a", "#a3347c" }) Assert.Contains(f, thema);
         Assert.Contains("nav: {", thema);                                // Seitenleiste in der Primärfarbe
         Assert.Contains("dark: {", thema);                               // Dunkelmodus mit eigener Petrol-Palette
         Assert.Contains("useColorScheme", Lesen("src", "app", "Shell.tsx"));

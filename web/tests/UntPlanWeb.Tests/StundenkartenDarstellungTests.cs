@@ -6,7 +6,7 @@ using UntPlanWeb.Dienste;
 namespace UntPlanWeb.Tests;
 
 /// <summary>
-/// Administration | Darstellung der Stundenkarten: Standard = Vorlage „Klassisch“ (Streifen innen, Schatten, Lehrkraft/Klasse · Fach · Raum, graues Raster), Lesen für alle Angemeldeten (auch in der Sitzung),
+/// Administration | Darstellung der Stundenkarten: Standard = Vorlage „EduOrga Standard“ (Kante links mit Tönung, Schatten, Fach · Klasse · Lehrkraft · Raum, graues Raster), Lesen für alle Angemeldeten (auch in der Sitzung),
 /// Ändern und Zurücksetzen nur durch die Administration, Prüfung der Werte, Speicherung in der Tabelle einstellungen
 /// (keine Schemaänderung; ältere bzw. unvollständige gespeicherte Angaben erhalten die Standardwerte).
 /// </summary>
@@ -15,18 +15,18 @@ public class StundenkartenDarstellungTests
     private const string Url = "/api/app/darstellung";
 
     [Fact]
-    public async Task Standard_ist_die_klassische_Darstellung_und_fuer_alle_lesbar()
+    public async Task Standard_ist_EduOrga_Standard_und_fuer_alle_lesbar()
     {
         await using var s = await Testserver.StartenAsync();
         var schueler = await s.AlsAsync("6a", "schueler", "6a");
         var d = await Testserver.HolenAsync(schueler, Url);
-        Assert.Equal("balken-innen", d["fachfarbe"]!.GetValue<string>());
+        Assert.Equal("balken-flaeche", d["fachfarbe"]!.GetValue<string>());
         Assert.Equal(4, d["balkenbreite"]!.GetValue<int>());
         Assert.Equal("weiss", d["flaeche"]!.GetValue<string>());
         Assert.Equal("schatten", d["rahmen"]!.GetValue<string>());
-        Assert.Equal("element", d["reihenfolge"]!.GetValue<string>());
+        Assert.Equal("zeilen", d["reihenfolge"]!.GetValue<string>());
         Assert.Equal("grau", d["raster"]!.GetValue<string>());
-        Assert.Equal(2, d["eckenradius"]!.GetValue<int>());
+        Assert.Equal(4, d["eckenradius"]!.GetValue<int>());
         Assert.Equal("kompakt", d["dichte"]!.GetValue<string>());
         Assert.Equal("kuerzel", d["fach"]!.GetValue<string>());
         Assert.True(d["raum"]!.GetValue<bool>());
@@ -37,7 +37,7 @@ public class StundenkartenDarstellungTests
 
         // in der Sitzung enthalten; ohne Anmeldung weder dort noch über den Endpunkt
         var sitzung = await Testserver.HolenAsync(schueler, "/api/app/sitzung");
-        Assert.Equal("balken-innen", sitzung["darstellung"]!["fachfarbe"]!.GetValue<string>());
+        Assert.Equal("balken-flaeche", sitzung["darstellung"]!["fachfarbe"]!.GetValue<string>());
         var anonym = s.Client();
         Assert.Equal(HttpStatusCode.Unauthorized, (await anonym.GetAsync(Url)).StatusCode);
         Assert.Null((await Testserver.HolenAsync(anonym, "/api/app/sitzung"))["darstellung"]);
@@ -68,12 +68,12 @@ public class StundenkartenDarstellungTests
 
         // fehlende Angaben im PUT erhalten ihren Standard
         var teil = await Testserver.JsonAsync(await admin.PutAsJsonAsync(Url, new { fachfarbe = "flaeche", deckkraft = 20 }));
-        Assert.Equal(("flaeche", 20, "weiss", 2), (teil["fachfarbe"]!.GetValue<string>(), teil["deckkraft"]!.GetValue<int>(), teil["flaeche"]!.GetValue<string>(), teil["eckenradius"]!.GetValue<int>()));
+        Assert.Equal(("flaeche", 20, "weiss", 4), (teil["fachfarbe"]!.GetValue<string>(), teil["deckkraft"]!.GetValue<int>(), teil["flaeche"]!.GetValue<string>(), teil["eckenradius"]!.GetValue<int>()));
 
         // zurücksetzen
         var standard = await Testserver.JsonAsync(await admin.DeleteAsync(Url));
-        Assert.Equal("balken-innen", standard["fachfarbe"]!.GetValue<string>());
-        Assert.Equal("balken-innen", (await Testserver.HolenAsync(lehrer, Url))["fachfarbe"]!.GetValue<string>());
+        Assert.Equal("balken-flaeche", standard["fachfarbe"]!.GetValue<string>());
+        Assert.Equal("balken-flaeche", (await Testserver.HolenAsync(lehrer, Url))["fachfarbe"]!.GetValue<string>());
         Assert.Null(new Einstellungen(s.Dienst<Db>()).Lesen(Kartendarstellungen.Schluessel));
     }
 
