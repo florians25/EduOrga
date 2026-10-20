@@ -391,7 +391,8 @@ oben – so sehen Sie, wann die Lehrkraft frei ist und ob der Wunschraum passt.
 **Werkzeuge.** *Fixieren* (gewählte Stunde, alle Stunden der Zeile bzw. lösen), *Entplanen* (gewählte Stunde, alle Stunden der Zeile
 mit Rückfrage – fixierte bleiben), *Optimierung* (automatische Planung, Abschnitt 5) und *Weitere* (…): Karten automatisch, immer
 zwei bzw. eine Zeile, Fachfarben, Vorrat zeigen, Diagnose, Zeitwünsche, alle Stunden fixieren bzw. lösen, alle Stunden entplanen.
-Die Karten sind schlicht (fast eckig, weiß mit feiner Linie); Fachfarben erscheinen nur, wenn sie in den Stammdaten der Fächer stehen. Jede Änderung ist eine Rückgängig-Stufe (Strg+Z, Strg+Y bzw. Kopfleiste).
+Die Karten sind schlicht (fast eckig, weiß mit feiner Linie); Fachfarben erscheinen nur, wenn sie in den Stammdaten der Fächer stehen –
+dann als schmaler Streifen oben an der Karte. Jede Änderung ist eine Rückgängig-Stufe (Strg+Z, Strg+Y bzw. Kopfleiste).
 
 ![Plantafel – Steckbrett](../studio/docs/bilder/plantafel-1440-steckbrett.png)
 

@@ -1,6 +1,6 @@
 /* Plantafel der Stundenplanung (Steckbrett, Vorrat, Klasse mit verknüpften Plänen). Karten nach „Stundenkarte v7“
-   (design/DESIGN.md Abschnitt 10): nahezu eckig (Radius 2), keine Leiste links, neutral weiß mit feiner 1-px-Linie; nur mit Fachfarbe
-   leicht getönt (14 %) und die Linie in der Fachfarbe. Statusstreifen oben gibt es in der Planung nicht (keine Änderungen).
+   (design/DESIGN.md Abschnitt 10): nahezu eckig (Radius 2), keine Leiste links, weiß mit feiner neutraler 1-px-Linie; hat die Schule
+   Fachfarben, steht die Fachfarbe als 3-px-Streifen oben (keine Tönung der Fläche). Inhalt bei allen Karten gleich hoch eingerückt.
    Raster ruhig: Stundenlinien sehr hell, Tage durch 2-px-Linien getrennt, Kopf und Zeilenköpfe bleiben stehen. */
 .pt-flaeche { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
 
@@ -9,7 +9,7 @@
   position: relative; flex: 1 1 auto; min-height: 120px; overflow: auto; outline: none; background: var(--colorNeutralBackground1);
   font-size: 12px; color: var(--colorNeutralForeground1); overscroll-behavior: contain;
   --pt-linie: color-mix(in srgb, var(--colorNeutralStroke3) 55%, transparent); --pt-tag-linie: var(--colorNeutralStroke1);
-  --pt-karte-linie: var(--up-karte-linie, #b7c2c8);
+  --pt-karte-linie: var(--up-karte-linie, #c9d2d7);
 }
 .pt-brett:focus-visible { box-shadow: inset 0 0 0 2px var(--colorStrokeFocus2); }
 .pt-kopf { position: sticky; top: 0; z-index: 6; height: 42px; background: var(--edo-bereich-kopf, var(--colorNeutralBackground3)); border-bottom: 1px solid var(--colorNeutralStroke1); }
@@ -63,16 +63,20 @@
   background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--pt-karte-linie);
   font-size: 11.5px; line-height: 14px; color: var(--colorNeutralForeground1); transition: background-color 120ms;
 }
-.pt-chip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 14%, var(--colorNeutralBackground1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fachfarbe) 55%, var(--pt-karte-linie)); }
+.pt-chip, .pt-vchip, .pt-kchip { padding-top: 3px; }
+.pt-chip[style*="--fachfarbe"]::before, .pt-vchip[style*="--fachfarbe"]::before, .pt-kchip[style*="--fachfarbe"]::before,
+.pt-klasse .ra-eintrag[style*="--fachfarbe"]::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--fachfarbe);
+}
 .pt-chip.ziehbar { cursor: grab; }
 .pt-chip .f { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: clip; display: flex; gap: 3px; align-items: baseline; }
 .pt-chip .f .w { font-weight: 500; font-size: 10px; color: var(--colorNeutralForeground3); }
 .pt-chip .z { font-size: 10.5px; color: var(--colorNeutralForeground2); white-space: nowrap; overflow: hidden; text-overflow: clip; letter-spacing: -0.01em; }
 .pt-chip.schmal { padding: 0 1px 0 2px; font-size: 10.5px; }
 .pt-chip:hover { background: var(--edo-karte-neutral-hover, var(--colorNeutralBackground1Hover)); }
-.pt-chip[style*="--fachfarbe"]:hover { background: color-mix(in srgb, var(--fachfarbe) 22%, var(--colorNeutralBackground1)); }
+.pt-chip.gekoppelt { padding-right: 4px; }
 .pt-chip.gekoppelt::after {
-  content: ''; position: absolute; top: 0; right: 0; width: 0; height: 0; border-style: solid; border-width: 0 6px 6px 0;
+  content: ''; position: absolute; top: 0; right: 0; width: 0; height: 0; border-style: solid; border-width: 0 5px 5px 0;
   border-color: transparent var(--colorNeutralForeground3) transparent transparent;
 }
 .pt-chip.fix { background-image: linear-gradient(var(--colorNeutralForeground3), var(--colorNeutralForeground3)); background-size: 4px 4px; background-position: right 3px bottom 3px; background-repeat: no-repeat; }
@@ -148,10 +152,9 @@
 .pt-vchips { display: flex; flex-wrap: wrap; gap: 3px; }
 .pt-vchip {
   position: relative; height: 22px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 2px; padding: 0 3px 0 4px; margin: 0; border: none;
-  border-radius: 2px; overflow: hidden; background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--up-karte-linie, #b7c2c8);
+  border-radius: 2px; overflow: hidden; background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--up-karte-linie, #c9d2d7);
   font: inherit; font-size: 11.5px; color: var(--colorNeutralForeground1); cursor: grab; user-select: none; touch-action: none;
 }
-.pt-vchip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 14%, var(--colorNeutralBackground1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fachfarbe) 55%, var(--up-karte-linie, #b7c2c8)); }
 .pt-vchip .f { font-weight: 600; white-space: nowrap; overflow: hidden; flex: 1; text-align: left; }
 .pt-vchip .n { font-size: 10.5px; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; }
 .pt-vchip.gekoppelt::after { content: ''; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 6px 6px 0; border-color: transparent var(--colorNeutralForeground3) transparent transparent; }
@@ -173,9 +176,8 @@
 .pt-k-vfuss { padding: 8px 12px; border-top: 1px solid var(--colorNeutralStroke2); }
 .pt-kchip {
   position: relative; display: grid; grid-template-columns: 1fr auto; column-gap: 8px; padding: 5px 8px; border-radius: 2px; overflow: hidden;
-  background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--up-karte-linie, #b7c2c8); cursor: grab; user-select: none; touch-action: none; font-size: 12px;
+  background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--up-karte-linie, #c9d2d7); cursor: grab; user-select: none; touch-action: none; font-size: 12px;
 }
-.pt-kchip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 14%, var(--colorNeutralBackground1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fachfarbe) 55%, var(--up-karte-linie, #b7c2c8)); }
 .pt-kchip .f { font-weight: 600; font-size: 13px; }
 .pt-kchip .z { color: var(--colorNeutralForeground2); text-align: right; }
 .pt-kchip .l { grid-column: 1 / -1; color: var(--colorNeutralForeground3); font-size: 11px; }
@@ -191,7 +193,6 @@
 .pt-vk-kopf .bev { margin-left: auto; font-weight: 500; font-size: 12px; color: var(--colorNeutralForeground2); }
 .pt-vk.bevorzugt { border-style: dashed; }
 .pt-vk .ra { flex: 0 0 auto; overflow: visible; }
-.pt-klasse .ra.kompakt .ra-eintrag { padding-left: 4px; }
 .pt-vk .ra-gitter, .pt-vk .ra.kompakt .ra-gitter { min-width: 0; }
 
 /* Zielstufen im Klassenplan (Stundenplanraster: Klasse ziel-<stufe>) und in den verknüpften Plänen (pt-zf-<stufe>) */
@@ -202,9 +203,11 @@
 .pt-klasse .ra-feld.ziel-hart, .pt-klasse .ra-feld.pt-zf-hart { background: color-mix(in srgb, var(--up-entfall) 14%, transparent); box-shadow: none; }
 .pt-klasse .ra-feld.ziel-eigen, .pt-klasse .ra-feld.pt-zf-eigen { box-shadow: inset 0 0 0 1.5px var(--colorNeutralForeground3); }
 .pt-klasse .ra-feld.drueber { box-shadow: inset 0 0 0 2px var(--colorBrandStroke1) !important; }
-/* Stundenkarte v7 im Klassenplan der Plantafel: Radius 2, keine Leiste, feine 1-px-Linie; Fachfarbe nur als Tönung und Linie */
-.pt-klasse .ra-eintrag { border: none; border-radius: 2px; padding-left: 6px; box-shadow: inset 0 0 0 1px var(--up-karte-linie, #b7c2c8); background: var(--colorNeutralBackground1); }
-.pt-klasse .ra-eintrag[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 14%, var(--colorNeutralBackground1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fachfarbe) 55%, var(--up-karte-linie, #b7c2c8)); }
+/* Stundenkarte v7 im Klassenplan der Plantafel: Radius 2, keine Leiste, feine 1-px-Linie; Fachfarbe als 3-px-Streifen oben */
+.pt-klasse .ra-eintrag, .pt-klasse .ra-eintrag[style*="--fachfarbe"] {
+  border: none; border-radius: 2px; padding: 6px 6px 3px 6px; box-shadow: inset 0 0 0 1px var(--up-karte-linie, #c9d2d7); background: var(--colorNeutralBackground1);
+}
+.pt-klasse .ra.kompakt .ra-eintrag { padding: 4px 3px 1px 4px; }
 .pt-klasse .ra-eintrag.gewaehlt, .pt-klasse .ra-eintrag.markiert { box-shadow: inset 0 0 0 1px var(--colorBrandStroke1), 0 0 0 2px var(--colorBrandStroke1); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -212,4 +215,4 @@
 }
 
 /* Fachfarben ausgeschaltet (Ansicht): neutrale Karten im Klassenplan und in den verknüpften Plänen */
-.pt-klasse.ohne-farben .ra-eintrag[style*="--fachfarbe"] { background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--up-karte-linie, #b7c2c8); }
+.pt-klasse.ohne-farben .ra-eintrag[style*="--fachfarbe"]::before { display: none; }

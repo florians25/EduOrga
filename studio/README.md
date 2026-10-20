@@ -65,8 +65,8 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
     auch wenn er dort noch nicht liegt), alle mit derselben Färbung beim Ziehen.
   * Werkzeuge: *Fixieren* und *Entplanen* (gewählte Stunde, ganze Zeile mit Rückfrage), *Optimierung* (automatische Planung) und
     *Weitere* (…): Kartendichte, Fachfarben, Vorrat, Diagnose, Zeitwünsche, alle fixieren/lösen, alle entplanen. Karten nach
-    Stundenkarte v7: Radius 2, keine Leiste, neutral weiß mit feiner Linie; Fachfarben nur, wenn sie in den Stammdaten stehen (dann
-    leicht getönt). Rückgängig/Wiederholen in der Kopfleiste (Strg+Z/Strg+Y).
+    Stundenkarte v7: Radius 2, keine Leiste, weiß mit feiner neutraler Linie; Fachfarben nur, wenn sie in den Stammdaten stehen (dann
+    als 3-px-Streifen oben). Rückgängig/Wiederholen in der Kopfleiste (Strg+Z/Strg+Y).
 
   | Steckbrett (1440 × 900) | Ziehen aus dem Vorrat | Klasse mit verknüpften Plänen |
   |---|---|---|
