@@ -57,6 +57,7 @@
         <span class="topbar__name" id="entityLabel">–</span>
         <svg class="ico ico--chev" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
       </button>
+      <span class="topbar__stand" id="planStand" role="status" hidden></span>
       <div class="topbar__actions" id="topbarActions">
         <span class="seg plan-seg" id="planSeg" role="group" aria-label="Ansicht">
           <button type="button" data-v="day" aria-pressed="false">Tag</button>
@@ -317,7 +318,7 @@
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>
         <button class="row row--nav" id="btnRefresh">
-          <span class="row__main"><b>Daten aktualisieren</b></span>
+          <span class="row__main"><b>Daten aktualisieren</b><span class="row__sub" id="studioStand" hidden></span></span>
           <span class="row__hint" id="lastSync">–</span>
           <svg class="ico ico--chev2" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
         </button>

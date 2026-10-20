@@ -6,7 +6,8 @@ import SwiftUI
 
 /// Prüfungen der nächsten Wochen (Kollegium: alle bzw. eigene oder einer Klasse; Familie/Klassenkonto: eigene Klasse),
 /// nach Kalenderwochen gruppiert wie der Prüfungskalender im Web. Vorgemerkte Prüfungen sind markiert; Lehrkräfte
-/// löschen eigene künftige Prüfungen per Wischen.
+/// tragen mit „+“ ein, ändern eigene künftige Prüfungen per Antippen (Datum, Stunden, Raum, Aufsicht – auch verlegen)
+/// und löschen sie per Wischen bzw. im Formular.
 struct PruefungenView: View {
     @EnvironmentObject var zustand: AppZustand
     @State private var liste: [Pruefung]? = nil
@@ -15,6 +16,7 @@ struct PruefungenView: View {
     @State private var klasse = ""
     @State private var zuLoeschen: Pruefung? = nil
     @State private var neu = false
+    @State private var bearbeiten: Pruefung? = nil
 
     private var wochen: [Listengruppe<Pruefung>] {
         let alle = (liste ?? []).sorted { ($0.datum, $0.stundeVon) < ($1.datum, $1.stundeVon) }
@@ -55,7 +57,21 @@ struct PruefungenView: View {
             ForEach(wochen) { w in
                 Section(wochentitel(w.id)) {
                     ForEach(w.liste) { p in
-                        zeile(p)
+                        Group {
+                            if p.darfLoeschen && zustand.darf("pruefung.anlegen") {
+                                // eigene künftige Prüfung: Antippen öffnet „Prüfung ändern“ (Datum, Stunden, Raum …)
+                                Button {
+                                    bearbeiten = p
+                                } label: {
+                                    zeile(p)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityHint("Öffnet die Prüfung zum Ändern")
+                            } else {
+                                zeile(p)
+                            }
+                        }
                             .swipeActions(edge: .trailing) {
                                 if p.darfLoeschen {
                                     Button(role: .destructive) {
@@ -91,6 +107,12 @@ struct PruefungenView: View {
         .sheet(isPresented: $neu, onDismiss: { Task { await laden() } }) {
             NavigationStack {
                 PruefungEintragenView(alsBlatt: true)
+            }
+            .environmentObject(zustand)
+        }
+        .sheet(item: $bearbeiten, onDismiss: { Task { await laden() } }) { p in
+            NavigationStack {
+                PruefungFormular(modus: .bearbeiten(p), alsBlatt: true)
             }
             .environmentObject(zustand)
         }
@@ -177,11 +199,58 @@ struct PruefungenView: View {
     }
 }
 
-/// Prüfung eintragen (POST /meldungen/klausur): Titel, Datum, Stunden, Klassen, Aufsicht, Räume, Bemerkung.
+/// Prüfung eintragen (Reiter „Schule“) – dünne Hülle um `PruefungFormular`.
 struct PruefungEintragenView: View {
     var alsBlatt: Bool = false
+
+    var body: some View {
+        PruefungFormular(modus: .neu(nil), alsBlatt: alsBlatt)
+    }
+}
+
+/// Vorbelegung einer neuen Prüfung (aus einer Stunde: Datum, Stunden, Klassen, Raum, Lehrkraft, Fach).
+struct Pruefungsvorlage {
+    var datum: String
+    var von: Int
+    var bis: Int
+    var klassen: [String]
+    var raeume: [String]
+    var aufsicht: [String]
+    var titel: String
+
+    /// Aus der Karte einer Stunde.
+    static func aus(_ karte: Karte, raeume: [Wert]? = nil) -> Pruefungsvorlage {
+        func aktuell(_ werte: [Wert]) -> [String] {
+            werte.map { $0.k.isEmpty ? ($0.alt ?? "") : $0.k }.filter { !$0.isEmpty }
+        }
+        let fach = karte.fachName.isEmpty ? karte.fach : karte.fachName
+        return Pruefungsvorlage(datum: karte.datum, von: max(1, karte.von), bis: max(karte.von, karte.bis),
+                                klassen: aktuell(karte.klassen), raeume: aktuell(raeume ?? karte.raeume),
+                                aufsicht: aktuell(karte.lehrer), titel: fach)
+    }
+}
+
+/// Klausur bzw. Prüfung eintragen oder ändern – gleiche Endpunkte wie EduOrga Web (Unterricht → Prüfungen bzw. Dialog der
+/// Stunde): neu `POST /meldungen/klausur`, ändern/verlegen `POST /meldungen/klausur/verlegen`, löschen
+/// `POST /meldungen/klausur/loeschen`. Felder: Art (Prüfungsarten der Schule, sonst Klausur/Klassenarbeit/Test …),
+/// Titel/Thema, Datum, Stunden (Dauer), Klassen, Räume, Aufsicht, Hinweis. Recht „Prüfungen eintragen“
+/// (`pruefung.anlegen`); der Server prüft zusätzlich. Konflikte (Prüfungssperre: zu viele Prüfungen am Tag bzw. in der
+/// Woche, kein Unterricht, Raumkonflikt …) meldet der Server – sie stehen deutlich über dem Knopf; vorab zeigt das Formular,
+/// wie viele Prüfungen die Klassen in dieser Woche schon haben.
+struct PruefungFormular: View {
+    enum Modus {
+        case neu(Pruefungsvorlage?)
+        case bearbeiten(Pruefung)
+    }
+
+    let modus: Modus
+    var alsBlatt: Bool = false
+    /// Nach dem Speichern bzw. Löschen (Meldung für die Anzeige)
+    var fertig: ((String) -> Void)? = nil
+
     @EnvironmentObject var zustand: AppZustand
     @Environment(\.dismiss) private var schliessen
+    @State private var art = ""
     @State private var titel = ""
     @State private var datum = Datumsformat.tage(7, nach: Date())
     @State private var von = 3
@@ -191,59 +260,139 @@ struct PruefungEintragenView: View {
     @State private var raeume: Set<String> = []
     @State private var text = ""
     @State private var elemente: Elemente? = nil
+    @State private var arten: [Pruefungsart] = Pruefungsart.vorgabe
     @State private var speichert = false
-    @State private var fehler: String? = nil
-    @State private var fertig = false
+    @State private var konflikt: String? = nil
+    @State private var schonInWoche: [String: Int] = [:]
+    @State private var bereit = false
+    @State private var loeschenFragen = false
+    @State private var erfolg: String? = nil
+
+    private var bisher: Pruefung? {
+        if case .bearbeiten(let p) = modus { return p }
+        return nil
+    }
 
     private var stunden: [Zeit] { elemente?.stunden.filter { $0.nr > 0 } ?? [] }
+    private var darf: Bool { zustand.istKollegium && zustand.darf("pruefung.anlegen") }
+    private var titelFertig: String { titel.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private var artenListe: [String] {
+        var liste = arten.map(\.anzeige)
+        if !art.isEmpty && !liste.contains(art) { liste.insert(art, at: 0) }
+        return liste
+    }
 
     var body: some View {
         Form {
+            if !darf {
+                Section {
+                    Text("Ihr Konto darf keine Prüfungen eintragen (Recht „Prüfungen eintragen“).")
+                        .foregroundStyle(Farben.text2)
+                }
+            }
             Section {
-                TextField("Titel, z. B. Deutsch Klassenarbeit", text: $titel)
-                DatePicker("Datum", selection: $datum, in: Date()..., displayedComponents: .date)
+                Picker("Art", selection: $art) {
+                    Text("Ohne Angabe").tag("")
+                    ForEach(artenListe, id: \.self) { a in
+                        Text(a).tag(a)
+                    }
+                }
+                TextField("Titel bzw. Thema, z. B. Deutsch Klassenarbeit", text: $titel)
+                    .textInputAutocapitalization(.sentences)
+            } header: {
+                Text("Prüfung")
+            }
+            Section {
+                DatePicker("Datum", selection: $datum, in: Datumsformat.kalender.startOfDay(for: Date())..., displayedComponents: .date)
                 stundenPicker("Von", $von)
                 stundenPicker("Bis", $bis)
+                LabeledContent("Dauer", value: dauerText)
+            } header: {
+                Text("Termin")
             }
-            Section("Beteiligte") {
-                NavigationLink {
-                    Mehrfachauswahl(titel: "Klassen", liste: elemente?.klassen ?? [], auswahl: $klassen)
-                } label: {
-                    LabeledContent("Klassen", value: klassen.isEmpty ? "Wählen" : klassen.sorted().joined(separator: ", "))
-                }
-                NavigationLink {
-                    Mehrfachauswahl(titel: "Aufsicht", liste: elemente?.lehrer ?? [], auswahl: $aufsicht)
-                } label: {
-                    LabeledContent("Aufsicht (optional)", value: aufsicht.sorted().joined(separator: ", "))
+            Section {
+                if bisher == nil {
+                    NavigationLink {
+                        Mehrfachauswahl(titel: "Klassen", liste: elemente?.klassen ?? [], auswahl: $klassen)
+                    } label: {
+                        LabeledContent("Klassen", value: klassen.isEmpty ? "Wählen" : klassen.sorted().joined(separator: ", "))
+                    }
+                } else {
+                    LabeledContent("Klassen", value: klassen.sorted().joined(separator: ", "))
                 }
                 NavigationLink {
                     Mehrfachauswahl(titel: "Räume", liste: elemente?.raeume ?? [], auswahl: $raeume)
                 } label: {
                     LabeledContent("Räume (optional)", value: raeume.sorted().joined(separator: ", "))
                 }
+                NavigationLink {
+                    Mehrfachauswahl(titel: "Aufsicht", liste: elemente?.lehrer ?? [], auswahl: $aufsicht)
+                } label: {
+                    LabeledContent("Aufsicht (optional)", value: aufsicht.sorted().joined(separator: ", "))
+                }
+            } header: {
+                Text("Beteiligte")
+            } footer: {
+                if let hinweis = wochenHinweis {
+                    Text(hinweis)
+                        .foregroundStyle(Farben.warnung)
+                }
             }
             Section {
-                TextField("Bemerkung (optional)", text: $text, axis: .vertical)
+                TextField("Hinweis (optional), z. B. Taschenrechner erlaubt", text: $text, axis: .vertical)
+                    .lineLimit(1...5)
             } footer: {
-                Text("Die Prüfung steht sofort als vorgemerkt im Plan und wird von der Planung übernommen.")
+                Text(bisher == nil
+                     ? "Die Prüfung steht sofort als vorgemerkt im Plan; EduOrga Studio übernimmt sie beim nächsten Abgleich."
+                     : "Geänderte Prüfungen werden neu vorgemerkt; EduOrga Studio übernimmt die Änderung beim nächsten Abgleich.")
             }
-            if let fehler {
-                Section { Text(fehler).foregroundStyle(Farben.entfall) }
+            if let konflikt {
+                Section {
+                    Label {
+                        Text(konflikt)
+                            .foregroundStyle(Farben.text)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(Farben.entfall)
+                    }
+                    .accessibilityElement(children: .combine)
+                } header: {
+                    Text("Nicht gespeichert")
+                        .foregroundStyle(Farben.entfall)
+                }
             }
             Section {
                 Button {
-                    Task { await eintragen() }
+                    Task { await speichern() }
                 } label: {
                     HStack {
                         Spacer()
-                        if speichert { ProgressView() } else { Text("Prüfung eintragen").fontWeight(.semibold) }
+                        if speichert {
+                            ProgressView()
+                        } else {
+                            Text(bisher == nil ? "Prüfung eintragen" : "Änderungen speichern").fontWeight(.semibold)
+                        }
                         Spacer()
                     }
                 }
-                .disabled(titel.trimmingCharacters(in: .whitespaces).isEmpty || klassen.isEmpty || speichert)
+                .disabled(!darf || titelFertig.isEmpty || klassen.isEmpty || speichert)
+                if bisher?.darfLoeschen == true {
+                    Button(role: .destructive) {
+                        loeschenFragen = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Prüfung löschen")
+                            Spacer()
+                        }
+                    }
+                    .disabled(speichert)
+                }
             }
         }
-        .navigationTitle("Prüfung eintragen")
+        .navigationTitle(bisher == nil ? "Prüfung eintragen" : "Prüfung ändern")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .toolbar {
@@ -253,46 +402,168 @@ struct PruefungEintragenView: View {
                 }
             }
         }
-        .alert("Prüfung eingetragen", isPresented: $fertig) {
-            Button("OK") { schliessen() }
+        .confirmationDialog("Prüfung löschen?", isPresented: $loeschenFragen, titleVisibility: .visible) {
+            Button("Löschen", role: .destructive) { Task { await loeschen() } }
+            Button("Abbrechen", role: .cancel) {}
         } message: {
-            Text("Die Prüfung ist vorgemerkt. Den Stand sehen Sie unter „Meine Meldungen“.")
+            Text("Die Prüfung wird aus dem Plan genommen; EduOrga Studio übernimmt die Löschung beim nächsten Abgleich.")
         }
-        .task {
-            elemente = await Stammdaten.laden(zustand.api)
-            if let l = stunden.last?.nr {
-                von = min(3, l)
-                bis = min(4, l)
+        .alert(erfolg ?? "", isPresented: Binding(get: { erfolg != nil }, set: { if !$0 { erfolg = nil } })) {
+            Button("OK") {
+                let text = erfolg ?? ""
+                erfolg = nil
+                if let fertig { fertig(text) } else { schliessen() }
             }
+        } message: {
+            Text("Den Stand sehen Sie unter „Prüfungen“ bzw. „Meine Meldungen“.")
         }
+        .onChange(of: von) { _, neu in if bis < neu { bis = neu } }
+        .task(id: wochenSchluessel) { await wocheZaehlen() }
+        .task {
+            guard !bereit else { return }
+            bereit = true
+            vorbelegen()
+            elemente = await Stammdaten.laden(zustand.api)
+            if case .neu(.none) = modus, let l = stunden.last?.nr {
+                von = min(von, l)
+                bis = min(bis, l)
+            }
+            if let a = try? await zustand.api.pruefungsarten(), !a.isEmpty { arten = a }
+        }
+    }
+
+    private var dauerText: String {
+        let n = max(von, bis) - von + 1
+        var t = n == 1 ? "1 Stunde" : "\(n) Stunden"
+        if let a = stunden.first(where: { $0.nr == von }), let e = stunden.first(where: { $0.nr == max(von, bis) }),
+           !a.beginn.isEmpty, !e.ende.isEmpty {
+            t += " · \(a.beginn)–\(e.ende)"
+        }
+        return t
     }
 
     private func stundenPicker(_ titel: String, _ wert: Binding<Int>) -> some View {
         Picker(titel, selection: wert) {
             if stunden.isEmpty {
-                ForEach(1...10, id: \.self) { n in Text("\(n). Stunde").tag(n) }
+                ForEach(1...12, id: \.self) { n in Text("\(n). Stunde").tag(n) }
             } else {
                 ForEach(stunden) { z in
                     Text("\(z.nr). Stunde" + (z.beginn.isEmpty ? "" : " (\(z.beginn))")).tag(z.nr)
                 }
             }
         }
-        .onChange(of: von) { _, neu in if bis < neu { bis = neu } }
     }
 
-    private func eintragen() async {
+    private func vorbelegen() {
+        let heute = Datumsformat.kalender.startOfDay(for: Date())
+        switch modus {
+        case .neu(let v):
+            guard let v else { return }
+            if let d = Datumsformat.datum(v.datum) { datum = max(d, heute) }
+            von = v.von
+            bis = v.bis
+            klassen = Set(v.klassen)
+            raeume = Set(v.raeume)
+            aufsicht = Set(v.aufsicht)
+            titel = v.titel
+            art = "Klausur"
+        case .bearbeiten(let p):
+            if let d = Datumsformat.datum(p.datum) { datum = max(d, heute) }
+            von = max(1, p.stundeVon)
+            bis = max(von, p.stundeBis)
+            klassen = Set(p.klassen)
+            raeume = Set(p.raeume)
+            aufsicht = Set(p.lehrer)
+            titel = p.titel
+            art = p.art
+            text = p.text
+        }
+    }
+
+    // MARK: Prüfungen der Woche (Vorabhinweis)
+
+    private var wochenSchluessel: String {
+        Datumsformat.iso(Datumsformat.montag(datum)) + "|" + klassen.sorted().joined(separator: ",")
+    }
+
+    private var wochenHinweis: String? {
+        let teile = klassen.sorted().compactMap { k -> String? in
+            guard let n = schonInWoche[k], n > 0 else { return nil }
+            return "\(k): \(n)"
+        }
+        guard !teile.isEmpty else { return nil }
+        return "In dieser Woche bereits eingetragen – " + teile.joined(separator: " · ")
+            + ". Die Schule kann die Zahl der Prüfungen je Tag bzw. Woche begrenzen."
+    }
+
+    private func wocheZaehlen() async {
+        guard !klassen.isEmpty else {
+            schonInWoche = [:]
+            return
+        }
+        let montag = Datumsformat.montag(datum)
+        let von = Datumsformat.iso(montag)
+        let bis = Datumsformat.iso(Datumsformat.tage(6, nach: montag))
+        guard let liste = try? await zustand.api.pruefungen(von: von, bis: bis) else { return }
+        var zahl: [String: Int] = [:]
+        for p in liste {
+            // die gerade bearbeitete Prüfung zählt nicht mit
+            if let b = bisher, b.id == p.id { continue }
+            for k in p.klassen where klassen.contains(where: { $0.caseInsensitiveCompare(k) == .orderedSame }) {
+                let schluessel = klassen.first { $0.caseInsensitiveCompare(k) == .orderedSame } ?? k
+                zahl[schluessel, default: 0] += 1
+            }
+        }
+        schonInWoche = zahl
+    }
+
+    // MARK: Speichern
+
+    /// Text wie im Web: „Art: Hinweis“ (bzw. nur die Art oder nur der Hinweis).
+    private var textFuerServer: String {
+        let h = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if art.isEmpty { return h }
+        if h.isEmpty || h.hasPrefix(art) { return h.isEmpty ? art : h }
+        return "\(art): \(h)"
+    }
+
+    private func speichern() async {
+        speichert = true
+        defer { speichert = false }
+        let neu = KlausurDaten(datum: Datumsformat.iso(datum), stundeVon: von, stundeBis: max(von, bis),
+                               klassen: klassen.sorted(), raeume: raeume.sorted(), aufsicht: aufsicht.sorted(),
+                               titel: titelFertig, text: textFuerServer)
+        do {
+            if let p = bisher {
+                let alt = KlausurLoeschenDaten(datum: p.datum, stundeVon: p.stundeVon, stundeBis: p.stundeBis, klassen: p.klassen,
+                                               titel: p.titel.isEmpty ? nil : p.titel)
+                try await zustand.api.klausurVerlegen(KlausurVerlegenDaten(alt: alt, neu: neu))
+            } else {
+                try await zustand.api.klausurEintragen(neu)
+            }
+            Haptik.erfolg()
+            zustand.planGeaendert += 1
+            konflikt = nil
+            erfolg = bisher == nil ? "Prüfung eingetragen" : "Prüfung geändert"
+        } catch {
+            Haptik.fehler()
+            konflikt = zustand.fehlertext(error)
+        }
+    }
+
+    private func loeschen() async {
+        guard let p = bisher else { return }
         speichert = true
         defer { speichert = false }
         do {
-            try await zustand.api.klausurEintragen(KlausurDaten(datum: Datumsformat.iso(datum), stundeVon: von, stundeBis: max(von, bis),
-                                                                klassen: klassen.sorted(), raeume: raeume.sorted(), aufsicht: aufsicht.sorted(),
-                                                                titel: titel.trimmingCharacters(in: .whitespaces), text: text))
+            try await zustand.api.klausurLoeschen(KlausurLoeschenDaten(datum: p.datum, stundeVon: p.stundeVon, stundeBis: p.stundeBis,
+                                                                       klassen: p.klassen, titel: p.titel.isEmpty ? nil : p.titel))
             Haptik.erfolg()
             zustand.planGeaendert += 1
-            fehler = nil
-            fertig = true
+            erfolg = "Prüfung gelöscht"
         } catch {
-            fehler = zustand.fehlertext(error)
+            Haptik.fehler()
+            konflikt = zustand.fehlertext(error)
         }
     }
 }

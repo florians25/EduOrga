@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// Reiter „Heute“: öffnet sofort beim „Jetzt“ – großer Titel mit Datum und Schule, die Jetzt-Karte (laufende Stunde
-/// mit Restzeit, Bedienknöpfe aus Glas, nächste Stunde), der Tag als Liste großer Kacheln (vergangene Stunden
-/// eingeklappt, Pausen und Freistunden kompakt), „Heute an der Schule“ (Nachrichten, Veranstaltungen, Hinweise) und die
-/// Übersicht (Termine, Abwesenheiten, Entschuldigungen, Hausaufgaben, Sprechtage, Änderungen). Der letzte Stand bleibt
-/// im Speicher (`Heutespeicher`), damit der Reiter ohne Warten erscheint; neu geladen wird im Hintergrund.
+/// Reiter „Heute“ – ruhig, dicht, sachlich: oben Datum, Schule und „Stand EduOrga Studio“ (getrennt von der Ladezeit der
+/// App); die Jetzt-Karte (laufende Stunde mit Restzeit, nächste Stunde); „Änderungen heute“ (Zahl und je Stunde, was sich
+/// geändert hat – Grün Änderung, Rot nur Entfall, Grau offene Vertretung); der Tag als kompakte Liste (vergangene Stunden
+/// eingeklappt, Termine einzeilig); für Lehrkräfte „Klassenbuch“ (offene Stunden, Stunde jetzt) und die Aufsichten, für
+/// Schüler*innen und Eltern „Für morgen“ (fällige Hausaufgaben, Prüfungen dieser Woche, neue Mitteilungen); „Heute an
+/// der Schule“ (Nachrichten, Veranstaltungen, Hinweise); „Nächster Schultag“ (erste Stunde und Änderungen) und die
+/// Übersicht. Der letzte Stand bleibt im Speicher (`Heutespeicher`); neu geladen wird im Hintergrund.
 struct HeuteView: View {
     @EnvironmentObject var zustand: AppZustand
     @Namespace private var zoom
@@ -21,6 +23,10 @@ struct HeuteView: View {
     @State private var bestaetigt = false
     /// „Stunde jetzt“ (Klassenbuch-Schnellerfassung) für diese Karte
     @State private var jetztKarte: Karte? = nil
+    /// Nächster Schultag (Datum und Stunden) für die Vorschau
+    @State private var morgen: (datum: String, kacheln: [Kachel])? = nil
+    /// Prüfungen dieser Woche (Schüler*innen, Eltern)
+    @State private var pruefungen: [Pruefung] = []
     @Environment(\.horizontalSizeClass) private var groessenklasse
 
     var body: some View {
@@ -38,7 +44,13 @@ struct HeuteView: View {
                     if let h = heute {
                         if h.paket {
                             tagesbereich(h)
+                            if zustand.istKollegium {
+                                kollegiumsbereich(h)
+                            } else {
+                                familienbereich(h)
+                            }
                             schulbereich(h)
+                            morgenbereich(h)
                             uebersicht(h)
                         } else {
                             Hinweisfeld(titel: "Noch keine Plandaten", text: "Die Schule hat noch keinen Plan veröffentlicht.",
@@ -120,8 +132,10 @@ struct HeuteView: View {
                 .font(.subheadline)
                 .foregroundStyle(Farben.text2)
                 .lineLimit(2)
+            // Datenstand: letzte Änderung aus EduOrga Studio, daneben wann die App zuletzt geladen hat
+            StudiostandZeile(stand: Studiostand.stand(zustand), abgerufen: bestaetigt ? stand : nil)
+                .padding(.top, 2)
         }
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Der Tag
@@ -178,6 +192,7 @@ struct HeuteView: View {
             if istHeute && zustand.istKollegium, let ziel = StundeJetztWahl.ziel(alle), let karte = ziel.karte {
                 StundeJetztStarter(kachel: ziel) { jetztKarte = karte }
             }
+            aenderungsbereich(alle, h: h, istHeute: istHeute)
             VStack(alignment: .leading, spacing: Stilmass.raster) {
                 HStack(alignment: .firstTextBaseline) {
                     Abschnittstitel(text: istHeute ? "Dein Tag" : "Stunden")
@@ -212,6 +227,125 @@ struct HeuteView: View {
         wahl = Stundenwahl(quelle: quelle, karten: karten, start: start, typ: typ, element: h.element ?? "")
     }
 
+    // MARK: - Änderungen heute
+
+    @ViewBuilder
+    private func aenderungsbereich(_ alle: [Kachel], h: Heute, istHeute: Bool) -> some View {
+        let familie = !zustand.istKollegium
+        let liste = alle.compactMap { k in k.aenderung(familie: familie).map { (k, $0) } }
+        if !liste.isEmpty {
+            HeuteGruppe(titel: istHeute ? "Änderungen heute" : "Änderungen",
+                        zusatz: liste.count == 1 ? "1 Stunde" : "\(liste.count) Stunden") {
+                ForEach(Array(liste.enumerated()), id: \.offset) { i, e in
+                    if i > 0 { HeuteTrenner() }
+                    AenderungZeile(kachel: e.0, aenderung: e.1) {
+                        oeffnen(e.0, alle: alle, h: h, quelle: "aenderung-\(e.0.id.uuidString)")
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Lehrkräfte: Klassenbuch und Aufsichten
+
+    @ViewBuilder
+    private func kollegiumsbereich(_ h: Heute) -> some View {
+        let offen = zustand.offeneStunden
+        let aufsichten = h.aufsichten.sorted { $0.beginn < $1.beginn }
+        if offen > 0 || !aufsichten.isEmpty {
+            HeuteGruppe(titel: "Klassenbuch und Aufsichten") {
+                if offen > 0 {
+                    HeuteZeile(titel: offen == 1 ? "1 offene Stunde" : "\(offen) offene Stunden",
+                               untertitel: "Thema bzw. Anwesenheit fehlen noch – im Reiter „Schule“ nachtragen",
+                               wert: nil) {
+                        zustand.reiter = .schule
+                    }
+                }
+                ForEach(Array(aufsichten.enumerated()), id: \.offset) { i, a in
+                    if i > 0 || offen > 0 { HeuteTrenner() }
+                    let ort = a.gangName.isEmpty ? (a.gang.isEmpty ? "Aufsicht" : a.gang) : a.gangName
+                    let astand = Kachelbau.aufsichtsstand(a.status)
+                    HeuteZeile(titel: "Aufsicht \(ort)",
+                               untertitel: a.nachStunde > 0 ? "nach der \(a.nachStunde). Stunde" : "vor der ersten Stunde",
+                               wert: astand == .entfall ? "entfällt" : "\(a.beginn)–\(a.ende)",
+                               wertFarbe: astand == .entfall ? Farben.entfall : (astand == .vertretung ? Farben.aenderungSchrift : Farben.text2)) {
+                        wahl = Stundenwahl(quelle: "aufsicht-\(a.id.uuidString)", karten: [], aufsicht: a,
+                                           typ: h.typ.isEmpty ? "lehrer" : h.typ, element: h.element ?? "")
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Schüler*innen und Eltern: für morgen
+
+    private var morgenIso: String {
+        Datumsformat.iso(Datumsformat.tage(1, nach: Date()))
+    }
+
+    @ViewBuilder
+    private func familienbereich(_ h: Heute) -> some View {
+        let faellig = h.hausaufgaben.filter { ($0.faellig ?? "").prefix(10) == morgenIso.prefix(10) }
+        let heuteIso = Datumsformat.iso(Date())
+        let woche = pruefungen.filter { $0.datum >= heuteIso }.sorted { ($0.datum, $0.stundeVon) < ($1.datum, $1.stundeVon) }
+        let ungelesen = zustand.ungelesen
+        if !faellig.isEmpty || !woche.isEmpty || ungelesen > 0 {
+            HeuteGruppe(titel: "Für morgen und diese Woche") {
+                ForEach(Array(faellig.enumerated()), id: \.offset) { i, ha in
+                    if i > 0 { HeuteTrenner() }
+                    HeuteZeile(titel: ha.hausaufgabe.isEmpty ? "Hausaufgabe" : ha.hausaufgabe,
+                               untertitel: "Hausaufgabe \(ha.fach) · fällig morgen") {
+                        zustand.reiter = .schule
+                    }
+                }
+                ForEach(Array(woche.prefix(5).enumerated()), id: \.offset) { i, p in
+                    if i > 0 || !faellig.isEmpty { HeuteTrenner() }
+                    HeuteZeile(titel: p.titel.isEmpty ? "Prüfung" : p.titel,
+                               untertitel: [p.art, p.stundenText].filter { !$0.isEmpty }.joined(separator: " · "),
+                               wert: Datumsformat.anzeige(p.datum, "EE d.M."), wertFarbe: Farben.pruefung)
+                }
+                if ungelesen > 0 {
+                    if !faellig.isEmpty || !woche.isEmpty { HeuteTrenner() }
+                    HeuteZeile(titel: ungelesen == 1 ? "1 neue Mitteilung" : "\(ungelesen) neue Mitteilungen",
+                               untertitel: "Im Postfach") {
+                        zustand.reiter = .postfach
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Nächster Schultag
+
+    @ViewBuilder
+    private func morgenbereich(_ h: Heute) -> some View {
+        if let m = morgen, !m.kacheln.isEmpty {
+            let stunden = m.kacheln.filter { $0.karte != nil && !$0.inPause }
+            let erste = stunden.first { Statuslehre.findetStatt($0) }
+            let familie = !zustand.istKollegium
+            let geaendert = stunden.compactMap { k in k.aenderung(familie: familie).map { (k, $0) } }
+            HeuteGruppe(titel: "Nächster Schultag", zusatz: Datumsformat.anzeige(m.datum, "EEEE, d.M.")) {
+                if let erste {
+                    HeuteZeile(titel: "Beginn \(Uhr.uhrzeit(erste.beginn)) · \(erste.anzeigeTitel)",
+                               untertitel: [erste.von > 0 ? erste.stundenText : "", erste.zeile("raum")?.text ?? ""]
+                                .filter { !$0.isEmpty }.joined(separator: " · ")) {
+                        zustand.tagAnfrage = m.datum
+                        zustand.reiter = .plan
+                    }
+                } else {
+                    HeuteZeile(titel: "Kein Unterricht")
+                }
+                ForEach(Array(geaendert.prefix(4).enumerated()), id: \.offset) { _, e in
+                    HeuteTrenner()
+                    AenderungZeile(kachel: e.0, aenderung: e.1) {
+                        zustand.tagAnfrage = m.datum
+                        zustand.reiter = .plan
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Heute an der Schule
 
     private func infos(_ h: Heute) -> [Tagesinfo] {
@@ -239,20 +373,13 @@ struct HeuteView: View {
     private func schulbereich(_ h: Heute) -> some View {
         let liste = infos(h)
         if !liste.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Abschnittstitel(text: "Heute an der Schule")
-                ForEach(liste) { info in
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: info.art == .nachricht ? "megaphone" : (info.art == .veranstaltung ? "calendar" : "info.circle"))
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(info.art == .veranstaltung ? Farben.termin : Farben.akzent)
-                            .frame(width: 24)
-                            .accessibilityHidden(true)
-                        Infozeile(info: info)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(14)
-                    .kartenflaeche()
+            HeuteGruppe(titel: "Heute an der Schule") {
+                ForEach(Array(liste.enumerated()), id: \.offset) { i, info in
+                    if i > 0 { HeuteTrenner() }
+                    Infozeile(info: info)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                 }
             }
         }
@@ -287,16 +414,16 @@ struct HeuteView: View {
         for t in sprechtage {
             liste.append(Listeneintrag(ziel: .sprechtag(t.id), titel: t.titel, zahl: t.termine, untertitel: t.untertitel))
         }
-        if h.aenderungen > 0 {
-            liste.append(Listeneintrag(ziel: .aenderungen, titel: "Änderungen heute", zahl: h.aenderungen))
-        }
         return liste
     }
 
     private func uebersicht(_ h: Heute) -> some View {
         let liste = eintraege(h)
-        return VStack(alignment: .leading, spacing: 10) {
-            Abschnittstitel(text: "Übersicht")
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Übersicht")
+                .font(.headline)
+                .foregroundStyle(Farben.text)
+                .accessibilityAddTraits(.isHeader)
             VStack(spacing: 0) {
                 ForEach(Array(liste.enumerated()), id: \.offset) { i, e in
                     if i > 0 { Divider().padding(.leading, 16) }
@@ -370,6 +497,36 @@ struct HeuteView: View {
         Heutespeicher.heute = heute
         Heutespeicher.ferien = ferien
         Heutespeicher.sprechtage = sprechtage
+        if let h = heute {
+            await morgenLaden(h)
+            if !zustand.istKollegium { await pruefungenLaden() }
+        }
+    }
+
+    /// Nächster Schultag (Montag bis Freitag) aus dem eigenen Wochenplan.
+    private func morgenLaden(_ h: Heute) async {
+        guard h.paket, !h.gesperrt, let element = h.element, !element.isEmpty, let tag = Datumsformat.datum(h.datum) else { return }
+        var ziel = Datumsformat.tage(1, nach: tag)
+        while [1, 7].contains(Datumsformat.kalender.component(.weekday, from: ziel)) {
+            ziel = Datumsformat.tage(1, nach: ziel)
+        }
+        let iso = Datumsformat.iso(ziel)
+        let typ = h.typ.isEmpty ? "klasse" : h.typ
+        guard let plan = try? await zustand.api.plan(typ: typ, element: element, datum: ziel) else { return }
+        let ich = element.uppercased()
+        let liste = plan.karten.filter { $0.datum.prefix(10) == iso.prefix(10) }
+            .compactMap { Kachelbau.ausKarte($0, typ: typ, ich: ich, raster: []) }
+            .sorted { ($0.beginn, $0.rang) < ($1.beginn, $1.rang) }
+        morgen = (iso, liste)
+    }
+
+    /// Prüfungen ab heute bis Sonntag (Klassenkonten: die eigene Klasse).
+    private func pruefungenLaden() async {
+        let heute = Date()
+        let sonntag = Datumsformat.tage(6, nach: Datumsformat.montag(heute))
+        if let liste = try? await zustand.api.pruefungen(von: Datumsformat.iso(heute), bis: Datumsformat.iso(sonntag)) {
+            pruefungen = liste
+        }
     }
 
     /// Ferien aus dem Wochenplan, wenn der Tag ohne Stunden ist (ältere Server liefern sie nicht in /heute).

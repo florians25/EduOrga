@@ -14,7 +14,7 @@ import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import type { Karte } from '../../api/types';
 import { artVon, gueltigeFarbe, infoText, istEntfall, istOnline, plaketten, sichererLink, statusText, titelText, KACHEL_PLAKETTEN, type Typ, type Plakette } from './logik';
 import { wertText } from './Werte';
-import { kartenbild, type Kartenbild, type Kartenzeile, type Statusfeld, type Teil, type Ton } from './aenderung';
+import { istTerminBlock, kartenbild, type Kartenbild, type Kartenzeile, type Statusfeld, type Teil, type Ton } from './aenderung';
 import { useKollegium } from '../../app/sitzung';
 import { DICHTE, mitToenung, nameVon, STANDARD, useDarstellung, type Kartendarstellung, type Namen } from './darstellung';
 
@@ -88,7 +88,7 @@ export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = 
   const s = pal.status;
   const statusLinie = (farbe: string, stil: 'solid' | 'dashed' = 'solid') => `${breite}px ${stil} ${farbe}`;
   if (bild.ton === 'entfall') return { backgroundColor: s.entfall.flaeche, border: statusLinie(mischen(s.entfall.main, 0.3)), ...schatten };
-  if (k.status === 'veranstaltung') return { backgroundColor: pal.kachel.ereignis, border: `1px solid ${pal.kachel.ereignisRand}`, color: pal.kachel.ereignisText };
+  if (istTerminBlock(k)) return { backgroundColor: pal.kachel.ereignis, border: `1px solid ${pal.kachel.ereignisRand}`, color: pal.kachel.ereignisText };
   if (art === 'pruefung') return { backgroundColor: d.statusflaeche ? s.pruefung.flaeche : grund, border: statusLinie(s.pruefung.main), ...schatten };
   if (art === 'buchung') return { backgroundColor: papier, border: statusLinie(s.frei.main, 'dashed') };
   if (bild.ton === 'aenderung') return { backgroundColor: d.statusflaeche ? s.aenderung.flaeche : grund, border: statusLinie(mischen(s.aenderung.main, 0.4)), ...schatten };
@@ -168,7 +168,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   const bild = kartenbild(k, typ, { kollegium });
   const entfall = bild.entfall;
   const art = artVon(k, typ);
-  const termin = k.status === 'veranstaltung';
+  const termin = istTerminBlock(k);
   const sehrKlein = hoehe < 30;
   // Zeile 2 (Lehrkraft bzw. Klasse) und Raum lassen sich ausblenden – geänderte Zeilen bleiben immer stehen
   const element = typ === 'klasse' ? 'lehrer' : 'klassen';

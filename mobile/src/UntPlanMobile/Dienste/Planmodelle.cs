@@ -57,7 +57,7 @@ public sealed record PlanZeit(int Nr, string Bezeichnung, string Beginn, string 
 /// </summary>
 public sealed record Wochenplan(string Typ, string Element, string Name, string Montag, string Woche, List<PlanZeit> Zeitraster,
     List<PlanTag> Tage, List<PlanKarte> Karten, List<PlanAufsicht> Aufsichten, bool Gesperrt = false, string? Sperrhinweis = null,
-    List<PlanAbwesenheit>? Abwesenheiten = null);
+    List<PlanAbwesenheit>? Abwesenheiten = null, string? Stand = null);
 
 /// <summary>
 /// Eigene Abwesenheit an einem Tag im eigenen Plan (/api/app/plan, Feld „abwesenheiten“; ältere Server: fehlt): Uhrzeiten HH:mm,

@@ -82,6 +82,8 @@ struct PlanSeite: View {
     @State private var wahl: Stundenwahl? = nil
     @State private var datumOffen = false
     @State private var bereit = false
+    /// „Stand EduOrga Studio“ kurz einblenden (nach dem Öffnen bzw. Wochenwechsel)
+    @State private var studioZeigen = true
     /// Blatt „Auswahl und Filter“ (Bereich beim Öffnen)
     @State private var blatt: Auswahlbereich? = nil
     /// Blatt „Stunden zur selben Zeit“ (hinter „+N“ im Raster)
@@ -149,6 +151,8 @@ struct PlanSeite: View {
 
     /// Übergang zwischen den Ansichten: die Woche „zoomt“ in den Tag hinein (und umgekehrt).
     private static let wechsel = Animation.snappy(duration: 0.34)
+    /// „Bewegung reduzieren“: Ansichtswechsel nur überblenden (kein Zoom)
+    @Environment(\.accessibilityReduceMotion) private var wenigerBewegung
 
     var body: some View {
         inhalt
@@ -159,16 +163,16 @@ struct PlanSeite: View {
             switch modus {
             case .tag:
                 tagesBlaetter
-                    .transition(.asymmetric(insertion: .scale(scale: 0.94).combined(with: .opacity),
-                                            removal: .scale(scale: 0.94).combined(with: .opacity)))
+                    .transition(wenigerBewegung ? AnyTransition.opacity : AnyTransition.asymmetric(insertion: .scale(scale: 0.94).combined(with: .opacity),
+                                                                        removal: .scale(scale: 0.94).combined(with: .opacity)))
             case .woche:
                 WochenSeiten(modell: modell, mehrfach: mehrfach, mehrfachAktiv: mehrfachAktiv, montage: montage,
                              montag: wocheBindung, raum: zoom,
                              antippen: { k, t, quelle, plan in oeffnen(k, in: t, quelle: quelle, plan: plan) },
                              tagOeffnen: { tagWaehlen($0) },
                              parallele: { parallelGruppe = $0 })
-                    .transition(.asymmetric(insertion: .scale(scale: 1.06).combined(with: .opacity),
-                                            removal: .scale(scale: 1.06).combined(with: .opacity)))
+                    .transition(wenigerBewegung ? AnyTransition.opacity : AnyTransition.asymmetric(insertion: .scale(scale: 1.06).combined(with: .opacity),
+                                                                        removal: .scale(scale: 1.06).combined(with: .opacity)))
             case .agenda:
                 AgendaSeiten(modell: modell, mehrfach: mehrfach, mehrfachAktiv: mehrfachAktiv, montage: montage,
                              montag: wocheBindung, raum: zoom,
@@ -223,9 +227,21 @@ struct PlanSeite: View {
                     Standhinweis(stand: stand, laedt: standLaedt)
                         .transition(.opacity)
                 }
+                // Stand aus EduOrga Studio: einige Sekunden nach dem Öffnen bzw. Wochenwechsel, dauerhaft wenn veraltet
+                if studioZeigen || studioVeraltet {
+                    StudiostandZeile(stand: Studiostand.stand(zustand),
+                                     abgerufen: mehrfachAktiv ? nil : modell.abgerufen(montag: aktuelleWoche), kapsel: true)
+                        .transition(.opacity)
+                }
             }
             .padding(.top, Stilmass.raster)
             .animation(.snappy(duration: 0.2), value: standAnzeige)
+            .animation(.easeInOut(duration: 0.25), value: studioZeigen)
+        }
+        .task(id: aktuelleWoche) {
+            studioZeigen = true
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            studioZeigen = false
         }
         .navigationTitle(modell.planname)
         .navigationBarTitleDisplayMode(.inline)
@@ -288,6 +304,11 @@ struct PlanSeite: View {
             guard let neu else { return }
             Task { await modell.laden(montag: Planmodell.montag(neu.datum), erzwingen: true) }
         }
+    }
+
+    /// Studio-Stand an einem Schultag älter als 24 Stunden: der Hinweis bleibt stehen.
+    private var studioVeraltet: Bool {
+        Studiostand.stand(zustand).map { Studiostand.veraltet($0) } ?? false
     }
 
     /// Stand der gezeigten Woche, solange er nicht als aktuell bestätigt ist (nil = frisch).
@@ -459,6 +480,26 @@ struct PlanSeite: View {
                 zustand.sucheOffen = true
             } label: {
                 Label("Suchen", systemImage: "magnifyingglass")
+            }
+        }
+        // Datenstand: letzte Änderung aus EduOrga Studio und – getrennt davon – wann die App zuletzt geladen hat
+        Section("Datenstand") {
+            if let stand = Studiostand.stand(zustand) {
+                Button {
+                    studioZeigen = true
+                    Task {
+                        try? await Task.sleep(nanoseconds: 6_000_000_000)
+                        studioZeigen = false
+                    }
+                } label: {
+                    Label("EduOrga Studio: \(Studiostand.voll(stand))",
+                          systemImage: Studiostand.veraltet(stand) ? "exclamationmark.triangle" : "arrow.triangle.2.circlepath")
+                }
+            } else {
+                Text("EduOrga Studio: Stand unbekannt")
+            }
+            if !mehrfachAktiv, let geladen = modell.abgerufen(montag: aktuelleWoche) {
+                Text("In der App aktualisiert \(Datumsformat.anzeige(geladen, "HH:mm"))")
             }
         }
     }

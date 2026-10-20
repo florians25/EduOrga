@@ -23,14 +23,15 @@ func kachelText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
             if zeile.teile.count == 1, ersetzt.count == 1, let alt = ersetzt[0].alt {
                 stueck = Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
                     + Text(" → ").foregroundColor(Farben.text3)
-                    + Text(teil.text).foregroundColor(Farben.aenderung).underline(true, color: Farben.aenderung).fontWeight(.semibold)
+                    + Text(teil.text).foregroundColor(Farben.aenderungSchrift).underline(true, color: Farben.aenderung).fontWeight(.semibold)
             } else {
-                stueck = Text(teil.text).foregroundColor(Farben.aenderung).underline(true, color: Farben.aenderung).fontWeight(.semibold)
+                stueck = Text(teil.text).foregroundColor(Farben.aenderungSchrift).underline(true, color: Farben.aenderung).fontWeight(.semibold)
             }
         case .weg:
             stueck = Text(teil.text).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
         case .offen:
-            stueck = Text(teil.text).strikethrough(true, color: Farben.aenderung).foregroundColor(Farben.aenderung)
+            // offen/fehlend ohne Entfall: neutral grau (nicht rot, nicht grün)
+            stueck = Text(teil.text).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text2)
         }
         ergebnis = ergebnis + stueck + Text(teil.trenner)
     }
@@ -51,11 +52,11 @@ func wechselText(_ werte: [Wert], trenner: String = ", ") -> Text {
             ergebnis = ergebnis
                 + Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
                 + Text(" → ").foregroundColor(Farben.text3)
-                + Text(w.k).foregroundColor(Farben.aenderung).underline(true, color: Farben.aenderung)
+                + Text(w.k).foregroundColor(Farben.aenderungSchrift).underline(true, color: Farben.aenderungSchrift)
         } else if w.k.isEmpty {
-            ergebnis = ergebnis + Text(alt).strikethrough(true, color: Farben.aenderung).foregroundColor(Farben.aenderung)
+            ergebnis = ergebnis + Text(alt).strikethrough(true, color: Farben.aenderungSchrift).foregroundColor(Farben.aenderungSchrift)
         } else if w.geaendert {
-            ergebnis = ergebnis + Text(w.plus ? "+" + w.k : w.k).foregroundColor(Farben.aenderung).underline(true, color: Farben.aenderung)
+            ergebnis = ergebnis + Text(w.plus ? "+" + w.k : w.k).foregroundColor(Farben.aenderungSchrift).underline(true, color: Farben.aenderungSchrift)
         } else {
             ergebnis = ergebnis + Text(w.k)
         }

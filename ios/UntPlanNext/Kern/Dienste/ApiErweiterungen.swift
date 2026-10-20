@@ -152,6 +152,17 @@ extension ApiClient {
         let _: BeliebigeAntwort = try await anfrage("POST", "/meldungen/klausur", koerper: try encoder.encode(daten))
     }
 
+    /// POST /meldungen/klausur/verlegen – Prüfung ändern bzw. verlegen (gleicher Endpunkt wie „Prüfung editieren“ im Web).
+    func klausurVerlegen(_ daten: KlausurVerlegenDaten) async throws {
+        let _: BeliebigeAntwort = try await anfrage("POST", "/meldungen/klausur/verlegen", koerper: try encoder.encode(daten))
+    }
+
+    /// GET /pruefungsarten – Prüfungsarten der Schule (Kollegium); leer = Vorgabe verwenden.
+    func pruefungsarten() async throws -> [Pruefungsart] {
+        let a: Pruefungsarten = try await anfrage("GET", "/pruefungsarten")
+        return a.arten.filter { !$0.anzeige.isEmpty }
+    }
+
     /// POST /meldungen/klausur/loeschen
     func klausurLoeschen(_ daten: KlausurLoeschenDaten) async throws {
         let _: BeliebigeAntwort = try await anfrage("POST", "/meldungen/klausur/loeschen", koerper: try encoder.encode(daten))

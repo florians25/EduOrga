@@ -253,8 +253,23 @@ struct Zeitachse: View {
 /// Druckzustand einer Kachel: leicht verkleinert.
 struct KachelDruckStil: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        KachelDruck(gedrueckt: configuration.isPressed) {
+            configuration.label
+        }
+    }
+}
+
+/// Druckzustand einer Kachel: leicht verkleinert – bei „Bewegung reduzieren“ nur etwas abgedunkelt.
+private struct KachelDruck<Inhalt: View>: View {
+    let gedrueckt: Bool
+    @ViewBuilder let inhalt: () -> Inhalt
+
+    @Environment(\.accessibilityReduceMotion) private var wenigerBewegung
+
+    var body: some View {
+        inhalt()
+            .scaleEffect(gedrueckt && !wenigerBewegung ? 0.97 : 1)
+            .opacity(gedrueckt && wenigerBewegung ? 0.75 : 1)
+            .animation(.easeOut(duration: 0.12), value: gedrueckt)
     }
 }

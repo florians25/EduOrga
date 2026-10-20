@@ -36,6 +36,9 @@ export interface Kartenbild {
   typen: Aenderungstyp[];
 }
 
+/** Block einer Veranstaltung bzw. eines Termins (warmes Neutral, ohne Kante): Status Veranstaltung oder Stunde ohne Fach und Unterricht mit Anlass. */
+export const istTerminBlock = (k: Karte) => k.status === 'veranstaltung' || (!k.fach && !k.unterricht && !!(k.text || '').trim() && k.status !== 'entfall');
+
 /** Verlegungsziel bzw. -ursprung wie im Enbrea-Muster: „Di 21.10. 6 | 12:20“. */
 export function verlegungKurz(v: Verlegungszeit | null | undefined): string {
   if (!v?.datum) return '';
@@ -73,7 +76,9 @@ export function kartenbild(k: Karte, typ: Typ, { kollegium = true }: { kollegium
   const typen: Aenderungstyp[] = [];
   const verlegt = istVerlegung(k) && k.status !== 'klausur' && k.status !== 'veranstaltung';
   const richtung = verlegt ? verlegungsRichtung(k, typ) : null;
-  const zusatz = !verlegt && istZusatz(k) && k.status !== 'veranstaltung';
+  // Veranstaltung ohne Fach (z. B. Projekttag als zusätzliche Stunde): Termin-Block, kein Zusatz
+  const terminArtig = istTerminBlock(k);
+  const zusatz = !verlegt && !terminArtig && istZusatz(k) && k.status !== 'veranstaltung';
   const optionen = { entfall, abwesend: abw, kollegium };
   const teile = (l: Wert[] | null | undefined, extra: Partial<typeof optionen> & { zusatzLehrer?: boolean } = {}) =>
     (l || []).filter(w => w.k || w.alt || w.neu).map(w => wertTeil(w, { ...optionen, ...extra }));
@@ -130,7 +135,7 @@ export function kartenbild(k: Karte, typ: Typ, { kollegium = true }: { kollegium
   const nurOffen = !entfall && !status && !k.fachAlt && zeilen.some(z => z.teile.some(t => t.feld === 'offen'))
     && !zeilen.some(z => z.teile.some(t => t.feld && t.feld !== 'offen'));
   const geaendert = zeilen.some(z => z.geaendert) || !!status || art === 'aenderung' || art === 'abwesend';
-  const ton: Ton | null = nurOffen ? 'offen' : entfall ? 'entfall' : k.status === 'klausur' || k.status === 'veranstaltung' || k.status === 'buchung' || k.status === 'vorgemerkt'
+  const ton: Ton | null = terminArtig && !entfall ? null : nurOffen ? 'offen' : entfall ? 'entfall' : k.status === 'klausur' || k.status === 'veranstaltung' || k.status === 'buchung' || k.status === 'vorgemerkt'
     ? (zeilen.some(z => z.geaendert) ? 'aenderung' : null) : geaendert ? 'aenderung' : null;
   return { ton, entfall, zeilen, status, typen };
 }

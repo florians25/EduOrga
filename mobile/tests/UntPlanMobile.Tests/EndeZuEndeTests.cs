@@ -73,6 +73,8 @@ public class EndeZuEndeTests
         var notizen = woche["notes"]!["2026-10-14"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
         Assert.Contains(notizen, x => x.StartsWith("Lehrerkonferenz um 14:15"));
         Assert.Contains(notizen, x => x.StartsWith("Heute 7. Stunde Lehrerkonferenz"));
+        // Datenstand: letzte Übertragung aus EduOrga Studio
+        Assert.Matches(@"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$", woche["studioStand"]!.GetValue<string>());
 
         // Klassenplan mit Entfall (Projekttag) und Herbstferien in der Woche danach
         var klasse = await Umgebung.HolenAsync(c, "/api/mobile?action=week&date=2026-10-14&type=class&id=5a");

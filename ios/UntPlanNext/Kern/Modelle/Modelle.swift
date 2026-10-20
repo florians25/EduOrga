@@ -52,15 +52,24 @@ struct Schule: Decodable, Sendable {
 struct Paketstand: Decodable, Sendable {
     var vorhanden: Bool
     var revision: String?
+    /// Zeitpunkt, zu dem EduOrga Studio das Plan-Paket zuletzt übertragen hat („yyyy-MM-dd HH:mm:ss“)
     var empfangen: String?
+    /// Letzte Übertragung der Vertretungen (neuere Server; fehlt sonst)
+    var letzteVertretungen: String?
 
-    enum CodingKeys: String, CodingKey { case vorhanden, revision, empfangen }
+    enum CodingKeys: String, CodingKey { case vorhanden, revision, empfangen, letzteVertretungen }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         vorhanden = c.wahr(.vorhanden)
         revision = c.textOderNil(.revision)
         empfangen = c.textOderNil(.empfangen)
+        letzteVertretungen = c.textOderNil(.letzteVertretungen)
+    }
+
+    /// Letzte Änderung aus EduOrga Studio: der neuere Zeitpunkt aus Paket und Vertretungen (nil = unbekannt).
+    var studioStand: Date? {
+        [empfangen, letzteVertretungen].compactMap { $0 }.filter { !$0.isEmpty }.compactMap { Datumsformat.datum($0) }.max()
     }
 }
 

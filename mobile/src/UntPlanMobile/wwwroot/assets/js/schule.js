@@ -303,6 +303,7 @@ SEITEN.eintraege = {
         </div>`).join(''))
       : leer('Keine Einträge', 'Im Zeitraum gibt es keine Klassenbucheinträge.')}`;
     $$('[data-klasse]', el).forEach(b => b.addEventListener('click', () => { daten.klasse = b.dataset.klasse; zeigen(true); }));
+    $$('.sf-aendern', el).forEach(b => b.addEventListener('click', () => oeffnen('pruefungNeu', { alt: JSON.parse(b.dataset.p) })));
     $$('.sf-loeschen', el).forEach(b => b.addEventListener('click', async () => {
       if (!await bestaetigen('Eintrag löschen?', 'Der Klassenbucheintrag wird entfernt.', 'Löschen', true)) return;
       try { await web('klassenbuch/vermerke/' + b.dataset.id, 'DELETE'); buzz(); toast('Eintrag gelöscht'); zeigen(true); }
@@ -405,9 +406,11 @@ SEITEN.pruefungen = {
             <i>${esc((p.klassen || []).join(', '))}${(p.raeume || []).length ? ' · Raum ' + esc(p.raeume.join(', ')) : ''}${(p.lehrer || []).length ? ' · ' + esc(p.lehrer.join(', ')) : ''}</i>
             ${p.text ? `<span class="sf-text">${esc(p.text)}</span>` : ''}</span>
           <span class="sf-marken">${p.status === 'vorgemerkt' || p.status === 'offen' ? plakette('Vorgemerkt') : plakette(p.art || 'Prüfung', 'pruefung')}
+            ${p.darfLoeschen ? `<button class="icon-btn sf-aendern" type="button" data-p='${esc(JSON.stringify({ datum:p.datum, stundeVon:p.stundeVon, stundeBis:p.stundeBis, klassen:p.klassen, titel:p.titel, text:p.text || '', raeume:p.raeume || [] }))}' aria-label="Prüfung ändern">${sym('square-pen')}</button>` : ''}
             ${p.darfLoeschen ? `<button class="icon-btn sf-loeschen" type="button" data-p='${esc(JSON.stringify({ datum:p.datum, stundeVon:p.stundeVon, stundeBis:p.stundeBis, klassen:p.klassen, titel:p.titel }))}' aria-label="Prüfung löschen">${sym('trash-2')}</button>` : ''}</span>
         </div>`).join(''))).join('')
       : leer('Keine Prüfungen', 'In den nächsten acht Wochen sind keine Prüfungen eingetragen.');
+    $$('.sf-aendern', el).forEach(b => b.addEventListener('click', () => oeffnen('pruefungNeu', { alt: JSON.parse(b.dataset.p) })));
     $$('.sf-loeschen', el).forEach(b => b.addEventListener('click', async () => {
       const p = JSON.parse(b.dataset.p);
       if (!await bestaetigen('Prüfung löschen?', `${p.titel || 'Prüfung'} am ${datumKurz(p.datum)}`, 'Löschen', true)) return;
@@ -417,31 +420,48 @@ SEITEN.pruefungen = {
   }
 };
 
+/* Prüfung eintragen bzw. ändern (Lehrkräfte; Rechte und Konflikte prüft EduOrga Web, dessen Meldung erscheint unverändert).
+   daten: { datum, stundeVon, stundeBis, klasse } zum Vorbelegen (aus der Stunde) bzw. { alt } zum Ändern einer Prüfung. */
 SEITEN.pruefungNeu = {
   titel:'Prüfung eintragen', kurz:'Prüfung',
-  async zeichnen(el){
+  async zeichnen(el, daten = {}){
     const klassen = await eigeneKlassen();
+    const alt = daten.alt || null;
+    const v = alt || daten;
+    untertitel(alt ? 'Prüfung ändern' : '');
     const morgen = iso(plus(new Date(), 1));
+    const gewaehlt = new Set((alt ? alt.klassen : daten.klasse ? [daten.klasse] : [klassen[0]]).filter(Boolean));
+    const alleKlassen = [...new Set([...klassen, ...gewaehlt])];
     el.innerHTML = `<form class="sf-form">
-      ${feld('Titel', '<input type="text" name="titel" value="Klassenarbeit" maxlength="120" required>')}
-      ${feld('Datum', `<input type="date" name="datum" value="${morgen}" required>`)}
-      <div class="sf-zwei">${feld('Von', `<select name="stundeVon">${stundenOptionen(1)}</select>`)}${feld('Bis', `<select name="stundeBis">${stundenOptionen(1)}</select>`)}</div>
-      <div class="sf-feld"><span>Klassen</span><div class="sf-chips sf-chips--wahl">${klassen.map((k, i) => `<label class="sf-chip"><input type="checkbox" name="klasse" value="${esc(k)}"${i === 0 ? ' checked' : ''}><span>${esc(k)}</span></label>`).join('')}</div></div>
-      ${feld('Hinweis', '<textarea name="text" rows="3" maxlength="1000" placeholder="Stoff, Hilfsmittel …"></textarea>')}
-      <button class="knopf knopf--primaer knopf--gross" type="submit">Eintragen</button>
-      <p class="sf-fuss">Die Prüfung erscheint sofort im Plan und wird an die Stundenplanung gemeldet.</p>
+      ${feld('Titel', `<input type="text" name="titel" value="${esc(v.titel || 'Klassenarbeit')}" maxlength="120" required>`)}
+      ${feld('Datum', `<input type="date" name="datum" value="${esc(v.datum || morgen)}" required>`)}
+      <div class="sf-zwei">${feld('Von', `<select name="stundeVon">${stundenOptionen(v.stundeVon || 1)}</select>`)}${feld('Bis', `<select name="stundeBis">${stundenOptionen(v.stundeBis || v.stundeVon || 1)}</select>`)}</div>
+      <div class="sf-feld"><span>Klassen</span><div class="sf-chips sf-chips--wahl">${alleKlassen.map(k => `<label class="sf-chip"><input type="checkbox" name="klasse" value="${esc(k)}"${gewaehlt.has(k) ? ' checked' : ''}><span>${esc(k)}</span></label>`).join('')}</div></div>
+      ${feld('Hinweis', `<textarea name="text" rows="3" maxlength="1000" placeholder="Stoff, Hilfsmittel …">${esc(v.text || '')}</textarea>`)}
+      <button class="knopf knopf--primaer knopf--gross" type="submit">${alt ? 'Änderung speichern' : 'Eintragen'}</button>
+      ${alt ? '<button class="knopf knopf--gefahr knopf--gross sf-weg" type="button">Prüfung löschen</button>' : ''}
+      <p class="sf-fuss">Die Prüfung erscheint sofort im Plan und wird an die Stundenplanung gemeldet. Überschneidungen meldet EduOrga Web.</p>
     </form>`;
     const f = $('form', el);
     f.stundeVon.addEventListener('change', () => { if (+f.stundeBis.value < +f.stundeVon.value) f.stundeBis.value = f.stundeVon.value; });
+    const wegKnopf = $('.sf-weg', el);
+    if (wegKnopf) wegKnopf.addEventListener('click', async () => {
+      if (!await bestaetigen('Prüfung löschen?', `${alt.titel || 'Prüfung'} am ${datumKurz(alt.datum)}`, 'Löschen', true)) return;
+      try { await web('meldungen/klausur/loeschen', 'POST', { datum:alt.datum, stundeVon:alt.stundeVon, stundeBis:alt.stundeBis, klassen:alt.klassen, titel:alt.titel }); buzz(); toast('Prüfung gelöscht'); zurueck(); }
+      catch (x){ toast('Nicht gelöscht: ' + x.message); }
+    });
     f.addEventListener('submit', async e => {
       e.preventDefault();
       const ks = $$('input[name=klasse]:checked', f).map(x => x.value);
       if (!ks.length){ toast('Bitte mindestens eine Klasse wählen.'); return; }
+      const neu = { datum:f.datum.value, stundeVon:+f.stundeVon.value, stundeBis:Math.max(+f.stundeVon.value, +f.stundeBis.value),
+        klassen:ks, raeume: alt ? (alt.raeume || []) : [], aufsicht:[], titel:f.titel.value.trim(), text:f.text.value.trim() };
       try {
-        await web('meldungen/klausur', 'POST', { datum:f.datum.value, stundeVon:+f.stundeVon.value, stundeBis:Math.max(+f.stundeVon.value, +f.stundeBis.value),
-          klassen:ks, raeume:[], aufsicht:[], titel:f.titel.value.trim(), text:f.text.value.trim() });
-        buzz(); toast('Prüfung eingetragen'); zurueck();
-      } catch (x){ toast('Nicht eingetragen: ' + x.message); }
+        if (alt) await web('meldungen/klausur/verlegen', 'POST', { alt:{ datum:alt.datum, stundeVon:alt.stundeVon, stundeBis:alt.stundeBis, klassen:alt.klassen, titel:alt.titel }, neu });
+        else await web('meldungen/klausur', 'POST', neu);
+        buzz(); toast(alt ? 'Prüfung geändert' : 'Prüfung eingetragen'); zurueck();
+        if (window.EDOPlanNeu) window.EDOPlanNeu();
+      } catch (x){ toast((alt ? 'Nicht geändert: ' : 'Nicht eingetragen: ') + x.message); }
     });
   }
 };
@@ -595,6 +615,7 @@ SEITEN.befreiungen = {
         ${d.verwalten ? `<button class="icon-btn sf-loeschen" type="button" data-id="${b.id}" aria-label="Befreiung löschen">${sym('trash-2')}</button>` : '<span></span>'}
       </div>`).join(''))
       : leer('Keine Befreiungen', 'Im laufenden Schuljahr ist niemand befreit.');
+    $$('.sf-aendern', el).forEach(b => b.addEventListener('click', () => oeffnen('pruefungNeu', { alt: JSON.parse(b.dataset.p) })));
     $$('.sf-loeschen', el).forEach(b => b.addEventListener('click', async () => {
       if (!await bestaetigen('Befreiung löschen?', '', 'Löschen', true)) return;
       try { await web('befreiungen/' + b.dataset.id, 'DELETE'); buzz(); toast('Befreiung gelöscht'); zeigen(true); }

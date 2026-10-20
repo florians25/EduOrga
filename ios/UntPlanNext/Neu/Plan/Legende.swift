@@ -3,8 +3,9 @@ import SwiftUI
 /// Legende der Stundenkarten (Menü „…“ des Plans) wie die Änderungslegende von Enbrea („Änderungstyp | Darstellung“):
 /// links der Änderungstyp mit einem sachlichen Satz, rechts eine kleine Musterkarte. Die Muster benutzen dieselben
 /// Bausteine wie das Raster (`Klassikstil`, `klassikKarte`, `Chipfeld`, `Statuschip`), stimmen also hell und dunkel.
-/// EduOrga-Anpassungen: jede Änderung einheitlich Grün, Entfall und Fehlendes Rot, bei Entfall alles durchgestrichen;
-/// ohne Fachfarbe bleibt die Karte neutral.
+/// EduOrga-Anpassungen: jede Änderung einheitlich Grün, Rot nur für den Entfall (alles durchgestrichen), offene
+/// Vertretung neutral grau und gestrichelt („Vertretung folgt“); ohne Fachfarbe bleibt die Karte neutral. Felder in derselben
+/// Größe wie die übrigen Zeilen, Titel und Mitteilungen einzeilig mit „…“.
 struct PlanLegende: View {
     @Environment(\.dismiss) private var schliessen
 
@@ -61,9 +62,7 @@ struct PlanLegende: View {
 
     private static var offen: Klassikstil {
         var s = neutral()
-        s.balken = Farben.entfall
-        s.gestreift = true
-        s.rand = Farben.entfall.opacity(0.7)
+        s.rand = Farben.text3
         s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
         return s
     }
@@ -96,8 +95,8 @@ struct PlanLegende: View {
         Eintrag(id: "klasse-fehlt", titel: "Klasse fehlt", text: "Die Klasse ist abwesend: alles durchgestrichen, „(5b)“ und „× entfällt“ rot.",
                 stil: entfall, fach: .text("NAWI"), zeilen: [.feld("(5b)", .entfall), .text("Maq"), .text("122")],
                 chip: Kartenchip(text: "× entfällt", ton: .entfall), entfall: true),
-        Eintrag(id: "lehrer-fehlt", titel: "Lehrer fehlt, keine Vertretung erstellt", text: "Rot schraffierter Rand, die fehlende Lehrkraft als rotes Feld „(Abr)“.",
-                stil: offen, fach: .text("E4"), zeilen: [.text("12"), .feld("(Abr)", .entfall), .text("21")]),
+        Eintrag(id: "lehrer-fehlt", titel: "Lehrer fehlt, Vertretung folgt", text: "Bewusst neutral (kein Entfall): gestrichelter grauer Rand, die fehlende Lehrkraft als graues Feld „(Abr)“ – für Schüler*innen und Eltern „Vertretung folgt“.",
+                stil: offen, fach: .text("E4"), zeilen: [.text("12"), .feld("(Abr)", .offen), .text("21")]),
         Eintrag(id: "entfall", titel: "Vertretungsentfall", text: "Die Stunde entfällt: alles grau durchgestrichen, darunter „× entfällt“.",
                 stil: entfall, fach: .text("E"), zeilen: [.text("7c"), .text("Had"), .text("403")],
                 chip: Kartenchip(text: "× entfällt", ton: .entfall), entfall: true),
@@ -116,7 +115,7 @@ struct PlanLegende: View {
         Eintrag(id: "zusatz", titel: "Zusatzunterricht", text: "Zusätzliche Stunde mit „⊕ Zusatz“.",
                 stil: aenderung, fach: .text("BI"), zeilen: [.text("5e, 11"), .text("Abr"), .text("03")],
                 chip: Kartenchip(text: "⊕ Zusatz", ton: .aenderung)),
-        Eintrag(id: "mitteilung", titel: "Mitteilung", text: "Hinweis bzw. Veranstaltung als hellgelber Block mit Text über die echte Uhrzeit.",
+        Eintrag(id: "mitteilung", titel: "Mitteilung", text: "Hinweis bzw. Veranstaltung als hellgelber Block über die echte Uhrzeit – zu lange Texte enden mit „…“ (ganz in den Details).",
                 stil: notiz, fach: .text(""), zeilen: [], notiz: "Aufbau der Bühne ab 16:00 Uhr"),
         Eintrag(id: "pruefung", titel: "Prüfung", text: "Bernsteinfarbener Rand und helle Fläche.",
                 stil: pruefung, fach: .text("D"), zeilen: [.text("9a"), .text("Mül"), .text("204")]),
@@ -157,7 +156,7 @@ struct PlanLegende: View {
                 } header: {
                     Text("Änderungen")
                 } footer: {
-                    Text("Jede Änderung ist grün, Entfall und Fehlendes rot. Ein Punkt im Tageskopf zeigt Änderungen (grün) bzw. Entfall (rot) an diesem Tag. Die Stundendetails nennen jede Änderung ausführlich.")
+                    Text("Jede Änderung ist grün, rot ist nur der Entfall, eine offene Vertretung grau. Zeichen („+“, „×“, „⊕“, Klammern) zeigen die Art auch ohne Farbe. Ein Punkt im Tageskopf zeigt Änderungen (grün) bzw. Entfall (rot) an diesem Tag. Die Stundendetails nennen jede Änderung ausführlich.")
                 }
             }
             .listStyle(.insetGrouped)
@@ -201,11 +200,11 @@ struct PlanLegende: View {
         .accessibilityLabel("\(e.titel). \(e.text)")
     }
 
-    static let musterBreite: CGFloat = 96
+    static let musterBreite: CGFloat = 112
 
     @ViewBuilder
     private func musterzeile(_ z: Musterzeile, entfall: Bool, titel: Bool) -> some View {
-        let schrift: Font = titel ? .system(size: 13, weight: .bold) : .system(size: 11)
+        let schrift: Font = titel ? .system(size: 13.5, weight: .bold) : .system(size: 12)
         switch z {
         case .text(let t):
             Text(t)
@@ -215,7 +214,7 @@ struct PlanLegende: View {
                 .lineLimit(1)
         case .feld(let t, let ton):
             Chipfeld(ton: ton) {
-                Text(t).font(titel ? .system(size: 13, weight: .bold) : .system(size: 11, weight: .semibold))
+                Text(t).font(titel ? .system(size: 13.5, weight: .bold) : .system(size: 12, weight: .semibold))
             }
         }
     }
@@ -224,20 +223,21 @@ struct PlanLegende: View {
         VStack(alignment: .leading, spacing: 0) {
             if let notiz = e.notiz {
                 Text(notiz)
-                    .font(.system(size: 11))
+                    .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(Farben.ereignisText)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             } else {
                 musterzeile(e.fach, entfall: e.entfall, titel: true)
-                    .frame(height: 15, alignment: .leading)
+                    .frame(height: 15.5, alignment: .leading)
                 ForEach(Array(e.zeilen.enumerated()), id: \.offset) { _, z in
                     musterzeile(z, entfall: e.entfall, titel: false)
-                        .frame(height: 12.5, alignment: .leading)
+                        .frame(height: 13.5, alignment: .leading)
                 }
                 Spacer(minLength: 0)
                 if let chip = e.chip {
-                    Statuschip(chip: chip, schrift: .system(size: 9.5, weight: .semibold))
-                        .frame(height: 12.5, alignment: .leading)
+                    Statuschip(chip: chip, schrift: .system(size: 12, weight: .semibold))
+                        .frame(height: 13.5, alignment: .leading)
                 }
             }
         }
@@ -245,7 +245,8 @@ struct PlanLegende: View {
         .padding(.trailing, 3)
         .padding(.top, 3)
         .padding(.bottom, 2)
-        .frame(width: PlanLegende.musterBreite, height: 72, alignment: .topLeading)
+        .frame(width: PlanLegende.musterBreite, height: 80, alignment: .topLeading)
+        .clipped()
         .klassikKarte(e.stil, radius: 6)
         .accessibilityHidden(true)
     }

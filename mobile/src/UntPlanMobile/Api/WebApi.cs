@@ -33,6 +33,7 @@ public static class WebApi
         new("meldungen/abwesenheit", "POST"),
         new("meldungen/klausur", "POST"),
         new("meldungen/klausur/loeschen", "POST"),
+        new("meldungen/klausur/verlegen", "POST"),
         new(@"meldungen/[A-Za-z0-9_-]{1,64}", "DELETE"),
         new("abwesenheitsgruende", "GET"),
         // Raum- und Gerätebuchung

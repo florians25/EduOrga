@@ -577,6 +577,49 @@ struct KlausurLoeschenDaten: Encodable, Sendable {
     var titel: String?
 }
 
+/// POST /api/app/meldungen/klausur/verlegen – Prüfung ändern bzw. verlegen (löschen und neu eintragen als Einheit; die
+/// bisherige Prüfung zählt für die Prüfungssperre nicht mit).
+struct KlausurVerlegenDaten: Encodable, Sendable {
+    var alt: KlausurLoeschenDaten
+    var neu: KlausurDaten
+}
+
+/// Prüfungsart der Schule (GET /api/app/pruefungsarten → `{arten: [{name, kurz, notenschema}], darf}`).
+struct Pruefungsart: Decodable, Hashable, Sendable {
+    var name: String
+    var kurz: String
+
+    enum CodingKeys: String, CodingKey { case name, kurz }
+
+    init(name: String, kurz: String = "") {
+        self.name = name
+        self.kurz = kurz
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = c.text(.name)
+        kurz = c.text(.kurz)
+    }
+
+    var anzeige: String { name.isEmpty ? kurz : name }
+
+    /// Vorgabe, wenn die Schule keine Arten gepflegt hat (wie im Web).
+    static let vorgabe: [Pruefungsart] = ["Klausur", "Klassenarbeit", "Test", "Prüfung", "Abschlussprüfung", "Präsentation",
+                                          "Referat", "Vergleichsarbeit"].map { Pruefungsart(name: $0) }
+}
+
+struct Pruefungsarten: Decodable, Sendable {
+    var arten: [Pruefungsart]
+
+    enum CodingKeys: String, CodingKey { case arten }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        arten = c.liste(.arten)
+    }
+}
+
 /// POST /api/app/meldungen/abwesenheit (eigene Abwesenheit einer Lehrkraft; Stunden nil = ganztägig)
 struct AbwesenheitMeldenDaten: Encodable, Sendable {
     var von: String

@@ -446,7 +446,9 @@ async function loadWeek(entity, weekStart, token){
     const w = { byDate, bands: bands || [], key: weekKey(entity, weekStart),
                 absences: (quelle && quelle.absences) || {},
                 /* Mitteilungen je Tag (gelbe Notiz über der ersten Stunde) */
-                notes: (quelle && quelle.notes) || {} };
+                notes: (quelle && quelle.notes) || {},
+                /* Datenstand: letzte Übertragung aus EduOrga Studio */
+                studioStand: (quelle && quelle.studioStand) || '' };
     /* Aus dem Speicher statt vom Server: Stand der Daten merken („Stand hh:mm“) */
     if (quelle && quelle._stand) w.stand = quelle._stand;
     /* Wochenbegrenzung der Rolle: Der Server liefert die Woche leer und
@@ -470,7 +472,7 @@ async function loadWeek(entity, weekStart, token){
     bootUsed = true;
     const byDate = {};
     dates.forEach(x => { byDate[x] = stampDates((BOOT.days && BOOT.days[x]) || [], x); });
-    store.set(cacheKey(entity, weekStart), { byDate, bands: BOOT.bands || [], kind: BOOT.kind, absences: BOOT.absences || {}, notes: BOOT.notes || {}, zeit: Date.now(),
+    store.set(cacheKey(entity, weekStart), { byDate, bands: BOOT.bands || [], kind: BOOT.kind, absences: BOOT.absences || {}, notes: BOOT.notes || {}, studioStand: BOOT.studioStand || '', zeit: Date.now(),
                                              gesperrt: !!BOOT.gesperrt, sperrhinweis: BOOT.sperrhinweis || '' });
     /* Ohne Netz kommt die Seite samt Woche aus dem Speicher des Service Workers – dann mit Stand */
     if (navigator.onLine === false){
@@ -492,7 +494,7 @@ async function loadWeek(entity, weekStart, token){
       const byDate = {};
       dates.forEach(x => { byDate[x] = stampDates((d.days && d.days[x]) || [], x); });
       if (d._stand) toast('Offline — Stand ' + d._stand);
-      if (!d._stand) store.set(cacheKey(entity, weekStart), { byDate, bands: d.bands || [], kind: d.kind, absences: d.absences || {}, notes: d.notes || {}, zeit: Date.now(),
+      if (!d._stand) store.set(cacheKey(entity, weekStart), { byDate, bands: d.bands || [], kind: d.kind, absences: d.absences || {}, notes: d.notes || {}, studioStand: d.studioStand || '', zeit: Date.now(),
                                                gesperrt: !!wochenSperre(d), sperrhinweis: (wochenSperre(d) || {}).hinweis || '' });
       store.set('lastSync', Date.now());
       return fertig(byDate, d.bands || [], d);
@@ -608,7 +610,19 @@ function zeilenKuerzen(lines, max){
   lines.forEach(l => { if (bleibt.size < max) bleibt.add(l); });
   return lines.filter(l => bleibt.has(l));
 }
-if (typeof window !== 'undefined') window.UntPlanAenderung = { verlegungKurz, statusFeld, feldText, zeilenKuerzen };
+/* Datenstand „Stand EduOrga Studio: Di 20.10.2026, 14:32 · vor 5 Min.“; älter als 24 h an einem Schultag: Hinweis. */
+function studioStandText(stand, jetzt = new Date()){
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(stand || ''));
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  const min = Math.max(0, Math.round((jetzt - d) / 60000));
+  const rel = min < 1 ? 'gerade eben' : min < 60 ? `vor ${min} Min.` : min < 1440 ? `vor ${Math.round(min / 60)} Std.`
+            : Math.round(min / 1440) === 1 ? 'vor 1 Tag' : `vor ${Math.round(min / 1440)} Tagen`;
+  const voll = `${WT_KURZ[d.getDay()]} ${m[3]}.${m[2]}.${m[1]}, ${m[4]}:${m[5]}`;
+  const alt = jetzt.getDay() >= 1 && jetzt.getDay() <= 5 && min > 1440;
+  return { voll, rel, alt, text:`Stand EduOrga Studio: ${voll} · ${rel}` };
+}
+if (typeof window !== 'undefined') window.UntPlanAenderung = { verlegungKurz, statusFeld, feldText, zeilenKuerzen, studioStandText };
 /* AENDERUNG-ENDE */
 const KACHEL_VIDEO = sym('video', 'ticon ticon--video');
 /* Schloss (Linien) für gesperrte Wochen. */
@@ -1429,6 +1443,19 @@ function zeitspalteBreite(){
   return zeitspalteMerk.px;
 }
 
+function standZeigen(){
+  const st = studioStandText((state.week || {}).studioStand);
+  const el = document.getElementById('planStand'), mehr = document.getElementById('studioStand');
+  [el, mehr].forEach(x => {
+    if (!x) return;
+    x.hidden = !st;
+    if (!st) return;
+    x.textContent = (x === el ? `Stand ${st.voll.replace(/^\S+ /, '')} · ${st.rel}` : st.text) + (st.alt ? ' · Daten evtl. nicht aktuell' : '');
+    x.title = 'Letzte Übertragung aus EduOrga Studio: ' + st.voll;
+    x.classList.toggle('is-alt', st.alt);
+  });
+}
+
 function renderGrid(){
   const nTage = tageAnsicht();
   /* „isDay“ ist die Tagesansicht im engeren Sinn (eine Spalte, Feld links
@@ -1443,6 +1470,7 @@ function renderGrid(){
     : [-7, 0, 7].flatMap(off => weekDates(iso(addDays(mo0, off))));
   const pane = $('#gridPane');
   darstellungSetzen(pane);
+  standZeigen();
 
   /* Karten aller drei Wochen an einem Ort. */
   const around = state.around || {};
@@ -5815,6 +5843,7 @@ function openDetail(date, lesson, uid, quelle){
   const card = all.find(c => c._uid === uid) || all.find(c => c.lesson === lesson);
   if (!card) return;
   state.detailFull = card;          /* der ganze Block */
+  state.detailReiter = 'details';   /* Reiter „Details“ | „Klassenbuch“ */
   state.detail = card;              /* voreingestellt gilt der ganze Block */
   $('#detailPart').hidden = true;
   $('#detailMenuPop').hidden = true;
@@ -6208,8 +6237,36 @@ function renderDetail(){
     rows.push({ ico:'notes_teachers', title:'Notizen für Lehrkräfte', key:'notes_teachers',
                 sub:cbText('notes_teachers') || cbErbe('notes_teachers') });
 
-  const zeilen = state.isStudent ? detailFuerSchueler(rows) : rows;
+  /* Reiter „Details“ | „Klassenbuch“ (wie iOS): das Klassenbuch nur für
+     die eigene Stunde der Lehrkraft. Dort zuerst das Thema als Eingabe,
+     direkt darunter groß „Anwesenheitskontrolle“ (mit Ergebnis), dann die
+     übrigen Klassenbuchfunktionen und „Prüfung eintragen“. */
+  const KB_SCHLUESSEL = ['lehrstoff', 'students', 'homework', 'classbook', 'notes_students', 'notes_teachers'];
+  const mitReiter = voll && !state.isStudent;
+  const reiter = mitReiter ? (state.detailReiter || 'details') : 'details';
+  if (mitReiter) rows.push({ ico:'exam', title:'Prüfung eintragen', key:'pruefungNeu', sub:'Klassenarbeit, Test, Klausur für diese Stunde' });
+  const alleZeilen = state.isStudent ? detailFuerSchueler(rows) : rows;
+  const zeilen = !mitReiter ? alleZeilen
+    : reiter === 'klassenbuch' ? alleZeilen.filter(r => (KB_SCHLUESSEL.includes(r.key) || r.key === 'pruefungNeu') && r.key !== 'lehrstoff' && r.key !== 'students')
+    : alleZeilen.filter(r => !KB_SCHLUESSEL.includes(r.key) && r.key !== 'pruefungNeu');
   const PFEIL = sym('chevron-right', 'drow2__chev');
+  const thema = cbText('lehrstoff');
+  const abw = attAbsentCount();
+  const kbStand = [thema ? 'Thema eingetragen' : 'Thema offen', attChecked ? (abw ? `${abw} abwesend` : 'Anwesenheit geprüft') : 'Anwesenheit offen'];
+  const reiterHtml = mitReiter ? `
+    <div class="dreiter seg" role="tablist" aria-label="Ansicht der Stunde">
+      <button type="button" role="tab" data-reiter="details" aria-selected="${reiter === 'details'}" class="${reiter === 'details' ? 'is-on' : ''}">Details</button>
+      <button type="button" role="tab" data-reiter="klassenbuch" aria-selected="${reiter === 'klassenbuch'}" class="${reiter === 'klassenbuch' ? 'is-on' : ''}">Klassenbuch</button>
+    </div>` : '';
+  const kbHtml = mitReiter && reiter === 'klassenbuch' ? `
+    <div class="kbtab">
+      <p class="kbtab__stand${thema && attChecked ? ' is-fertig' : ''}" role="status">${kbStand.map(esc).join(' · ')}</p>
+      <label class="kbtab__thema"><span>Thema (Lehrstoff)</span>
+        <textarea id="kbThema" rows="2" maxlength="2000" placeholder="${esc(cbErbe('lehrstoff') || 'Was wurde in der Stunde behandelt?')}">${esc(thema)}</textarea></label>
+      <button type="button" class="knopf knopf--primaer knopf--gross kbtab__anw${attChecked ? ' is-fertig' : ''}" id="kbAnw">
+        <b>Anwesenheitskontrolle</b><span>${attChecked ? esc(abw ? `${abw} abwesend – ändern` : 'Alle anwesend – geprüft') : 'Noch nicht geprüft'}</span></button>
+      ${attChecked ? '' : '<button type="button" class="knopf knopf--still kbtab__alle" id="kbAlle">Alle anwesend</button>'}
+    </div>` : '';
 
   $('#detailBody').innerHTML = `
     <div class="dhead ${(c.blockType === 'cancelled' || c.blockType === 'class-absent') ? 'is-off' : ''}${istVeranstaltung || terminOhneKlasse ? '' : ' dhead--fach'}"${fachFarbe ? ` style="--fach:${fachFarbe}"` : ''}>
@@ -6232,6 +6289,7 @@ function renderDetail(){
             ? `<p class="dline dline--grau${koppD ? ' dline--kopp' : ''}">${koppD ? koppHtml() : val('teacher')}</p>` : ''}
     </div>
     ${banner ? `<div class="dbanner">${banner}</div>` : '<div class="detail__sep"></div>'}
+    ${reiterHtml}${kbHtml}
     <div class="drows">
       ${zeilen.map(r => r.key === 'onlinelink' ? `
         <div class="drow2 drow2--link" data-key="onlinelink">
@@ -6264,6 +6322,18 @@ function renderDetail(){
         </div>`).join('')}
     </div>`;
   kurzListenBinden($('#detailBody'));
+  $$('#detailBody [data-reiter]').forEach(b => b.addEventListener('click', () => { state.detailReiter = b.dataset.reiter; renderDetail(); }));
+  const themaFeld = $('#kbThema');
+  if (themaFeld){
+    let warte = 0;
+    const speichern = () => { clearTimeout(warte); const v = themaFeld.value.trim(); if (v !== cbText('lehrstoff')) cbSaveText(c, 'lehrstoff', v); };
+    themaFeld.addEventListener('input', () => { clearTimeout(warte); warte = setTimeout(speichern, 1200); });
+    themaFeld.addEventListener('blur', speichern);
+  }
+  const anwKnopf = $('#kbAnw');
+  if (anwKnopf) anwKnopf.addEventListener('click', () => openClassbook('students'));
+  const alleKnopf = $('#kbAlle');
+  if (alleKnopf) alleKnopf.addEventListener('click', () => alleAnwesend(c));
 
   $$('#detailBody .drow2').forEach(el => {
     const key = el.dataset.key;
@@ -6273,6 +6343,15 @@ function renderDetail(){
       el.addEventListener('click', () => {
         const l = (zeilen.find(r => r.key === 'join') || {}).link;
         if (l) window.open(l, '_blank', 'noopener');
+      });
+      return;
+    }
+    if (key === 'pruefungNeu'){
+      el.addEventListener('click', () => {
+        const ende = Math.min(c.lesson + (c.span || 1) - 1, 12);
+        $('#detailClose').click();
+        if (window.EDOSchule) window.EDOSchule.oeffnen('pruefungNeu', { datum:c.date, stundeVon:c.lesson, stundeBis:ende,
+          klasse: werteListe(c.class)[0] || '', titel: [c.subject, 'Klassenarbeit'].filter(Boolean).join(' – ') });
       });
       return;
     }
@@ -8970,3 +9049,6 @@ function planwachtStart(){
 })();
 
 
+
+/* Nach einer Prüfung aus der Schulseite: Plan sofort neu laden. */
+window.EDOPlanNeu = () => { wochenVergessen(); planNachladen(); };

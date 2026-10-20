@@ -174,6 +174,11 @@ final class Planmodell: ObservableObject {
 
     /// Zeitpunkt der gezeigten Daten, solange sie nicht als aktuell bestätigt sind (Platzhalter aus dem Speicher, Laden
     /// läuft bzw. gescheitert) – nil, wenn die Woche frisch ist bzw. noch gar nicht vorliegt.
+    /// Wann die App die Woche zuletzt vom Server geladen hat (nil = noch nie).
+    func abgerufen(montag: String) -> Date? {
+        Kachelspeicher.geladen[schluessel(montag)]
+    }
+
     func standHinweis(montag: String) -> Date? {
         let s = schluessel(montag)
         guard Kachelspeicher.wochen[s] != nil else { return nil }

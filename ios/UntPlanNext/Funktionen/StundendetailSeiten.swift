@@ -419,6 +419,24 @@ final class Stundendaten: ObservableObject {
         await anwesenheitLaden()
     }
 
+    /// „Alle anwesend“ (wie im Web): alle Fehlzeiten dieser Stunde entfernen und die Kontrolle bestätigen – ein PUT mit leerer
+    /// Liste. Ohne Verbindung in den Schreibpuffer; bis dahin gelten alle lokal als anwesend. Liefert, ob gesendet wurde.
+    @discardableResult
+    func alleAnwesendSetzen() async throws -> Bool {
+        guard let u = karte.unterricht else { return false }
+        let d = AnwesenheitDaten(datum: karte.datum, stunde: karte.von, unterricht: u, eintraege: [], einzelstunde: einzelstunde)
+        let gesendet = try await api.schreibenOderPuffern("PUT", "/klassenbuch/anwesenheit", daten: d,
+                                                          titel: "Alle anwesend \(karte.fach) \(kurzdatum(karte.datum))")
+        if gesendet {
+            lokalerStand = [:]
+            await anwesenheitLaden()
+        } else {
+            for s in anwesenheit?.schueler ?? [] { lokalerStand[s.id] = .anwesend }
+            hinweis = "Ohne Verbindung gespeichert – wird gesendet, sobald das Gerät online ist."
+        }
+        return gesendet
+    }
+
     /// Neuer Klassenbucheintrag zu den gewählten Schüler*innen (je Person ein Eintrag) bzw. zur Klasse.
     func vermerkAnlegen(schueler: [Schueler], art: String, text: String) async throws {
         let zeit = karte.beginn.isEmpty ? nil : karte.beginn

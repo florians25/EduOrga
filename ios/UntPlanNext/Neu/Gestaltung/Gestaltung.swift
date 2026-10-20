@@ -328,9 +328,12 @@ struct ZoomZiel: ViewModifier {
     let id: String
     let raum: Namespace.ID?
 
+    /// „Bewegung reduzieren“: kein Zoom aus der Kachel, sondern der normale Übergang des Systems
+    @Environment(\.accessibilityReduceMotion) private var wenigerBewegung
+
     @ViewBuilder
     func body(content: Content) -> some View {
-        if let raum {
+        if let raum, !wenigerBewegung {
             content.navigationTransition(.zoom(sourceID: id, in: raum))
         } else {
             content
