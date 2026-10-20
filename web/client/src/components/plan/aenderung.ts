@@ -1,12 +1,11 @@
 // Änderungstypen der Stundenkarte – gleiche Regeln auf allen Plattformen (design/DESIGN.md, Abschnitt 10 „Stundenkarte (alle Plattformen)“).
 // Eine Karte zeigt untereinander Fach (600), Klasse, Lehrkraft und Raum; die Zeile des gezeigten Elements entfällt, solange sie sich nicht
-// geändert hat. Jede Änderung ist grün (Feld „+neu (bisher)“ auf der betroffenen Zeile, schraffierte Kante, grüne Fläche), ein Entfall rot
-// (alles durchgestrichen, rote Fläche, Feld „× entfällt“). Verlegungen und Zusatzstunden tragen unten ein eigenes Feld:
-//   Klasse fehlt               (5b) · × entfällt          Lehrer fehlt ohne Vertretung  (Abr)
-//   Vertretungsentfall         × entfällt                 Lehrervertretung              +Gal (Gor)
-//   Raumänderung               +105 (303)                 Fachänderung                  +BI (MU)
-//   verschoben auf             × auf Di 21.10. 6 | 12:20  verschoben von                ⊕ von Mo 20.10. 3 | 09:45
-//   Zusatz                     ⊕ Zusatz                   hinzugekommener Wert          +B070
+// geändert hat. EduOrga-Kennzeichnung: jede Änderung grün (3-px-Leiste links, Kennzeichen am Rand, Tag auf der betroffenen Zeile), Entfall
+// rot (alles durchgestrichen, Tag „entfällt“), offene Vertretung neutral. Tags (eigene Wortwahl):
+//   Lehrervertretung  „Gal statt Gor“     Raumänderung  „Raum 105 statt 303“   Fachänderung  „BI statt MU“
+//   Lehrkraft fehlt   „Gor fehlt“ (Kollegium) bzw. „Vertretung folgt“            Klasse fehlt  „5b fehlt“
+//   hinzugekommen     „B070 zusätzlich“   Entfall „entfällt“   Zusatzstunde „zusätzlich“
+//   verlegt           „verlegt → Di 21.10., 6. Std“ (hier entfallen) bzw. „verlegt ← Mo 20.10., 3. Std“ (hierher)
 import type { Karte, Verlegungszeit, Wert } from '../../api/types';
 import { datumKurz, wochentagKurz } from '../../lib/datum';
 import { abwesendSet, artVon, istEntfall, istOnline, istVerlegung, istZusatz, KEIN_ELEMENT, lehrerAbwesend, verlegungsRichtung, type Typ } from './logik';
@@ -23,7 +22,7 @@ export type Aenderungstyp =
   | 'klasse-fehlt' | 'lehrer-fehlt' | 'vertretungsentfall' | 'entfall' | 'lehrervertretung' | 'raumaenderung' | 'fachaenderung'
   | 'verschoben-auf' | 'verschoben-von' | 'zusatz' | 'hinzugefuegt' | 'klassenaenderung';
 
-export interface Statusfeld { text: string; ton: Ton; zeichen: '×' | '⊕'; titel: string }
+export interface Statusfeld { text: string; ton: Ton; titel: string }
 
 export interface Kartenbild {
   /** Tönung der Karte: grün (Änderung), rot (Entfall) bzw. keine. */
@@ -39,28 +38,27 @@ export interface Kartenbild {
 /** Block einer Veranstaltung bzw. eines Termins (warmes Neutral, ohne Kante): Status Veranstaltung oder Stunde ohne Fach und Unterricht mit Anlass. */
 export const istTerminBlock = (k: Karte) => k.status === 'veranstaltung' || (!k.fach && !k.unterricht && !!(k.text || '').trim() && k.status !== 'entfall');
 
-/** Verlegungsziel bzw. -ursprung wie im Enbrea-Muster: „Di 21.10. 6 | 12:20“. */
+/** Verlegungsziel bzw. -ursprung: „Di 21.10., 6. Std“ (ohne Stunde mit Uhrzeit „Di 21.10., 12:20“). */
 export function verlegungKurz(v: Verlegungszeit | null | undefined): string {
   if (!v?.datum) return '';
   const tag = `${wochentagKurz(v.datum)} ${datumKurz(v.datum)}`;
-  const std = v.stunde > 0 ? ` ${v.stunde}` : '';
-  return `${tag}${std}${v.beginn ? ` | ${v.beginn}` : ''}`;
+  return v.stunde > 0 ? `${tag}, ${v.stunde}. Std` : v.beginn ? `${tag}, ${v.beginn}` : tag;
 }
 
 const gleich = (a: string | null | undefined, b: string | null | undefined) => (a || '').toLowerCase() === (b || '').toLowerCase();
 
-/** Ein Wert als Teil: unverändert Text, ersetzt „+neu (bisher)“, hinzugekommen „+neu“, fehlend „(bisher)“, offen „?“. */
-export function wertTeil(w: Wert, { entfall, abwesend, zusatzLehrer = false, kollegium = true }: { entfall: boolean; abwesend?: Set<string>; zusatzLehrer?: boolean; kollegium?: boolean }): Teil {
+/** Ein Wert als Teil: unverändert Text, ersetzt „neu statt bisher“, hinzugekommen „neu zusätzlich“, fehlend „bisher fehlt“. */
+export function wertTeil(w: Wert, { entfall, abwesend, zusatzLehrer = false, kollegium = true, praefix = '' }: { entfall: boolean; abwesend?: Set<string>; zusatzLehrer?: boolean; kollegium?: boolean; praefix?: string }): Teil {
   const k = KEIN_ELEMENT.test(w.k || '') ? '' : w.k || '';
   const alt = KEIN_ELEMENT.test(w.alt || '') ? '' : w.alt || '';
-  if (abwesend?.has(k.toLowerCase())) return { text: `(${k})`, feld: entfall ? 'entfall' : 'aenderung', titel: `${k} fehlt` };
+  if (abwesend?.has(k.toLowerCase())) return { text: `${k} fehlt`, feld: entfall ? 'entfall' : 'aenderung', titel: `Klasse ${k} fehlt` };
   if (entfall) return { text: k || alt };
   if (zusatzLehrer) return { text: k || alt };
-  if (alt && k && !gleich(alt, k)) return { text: `+${k} (${alt})`, feld: 'aenderung', titel: `${k} statt ${alt}` };
+  if (alt && k && !gleich(alt, k)) return { text: `${praefix}${k} statt ${alt}`, feld: 'aenderung', titel: `${k} statt ${alt}` };
   // Offene Vertretung: neutral (nie rot) – Kollegium sieht die fehlende Lehrkraft „(Abr)“, Schüler*innen und Eltern „Vertretung folgt“
-  if (alt && !k) return kollegium ? { text: `(${alt})`, feld: 'offen', titel: `${alt} fehlt – Vertretung folgt` } : { text: 'Vertretung folgt', feld: 'offen', titel: 'Vertretung folgt' };
+  if (alt && !k) return kollegium ? { text: `${alt} fehlt`, feld: 'offen', titel: `${alt} fehlt – Vertretung folgt` } : { text: 'Vertretung folgt', feld: 'offen', titel: 'Vertretung folgt' };
   if (!k && w.neu) return { text: kollegium ? '?' : 'Vertretung folgt', feld: 'offen', titel: 'Vertretung folgt' };
-  if (k && w.neu && !alt) return { text: `+${k}`, feld: 'aenderung', titel: `${k} hinzugekommen` };
+  if (k && w.neu && !alt) return { text: `${praefix}${k} zusätzlich`, feld: 'aenderung', titel: `${k} zusätzlich` };
   return { text: k || alt };
 }
 
@@ -80,13 +78,13 @@ export function kartenbild(k: Karte, typ: Typ, { kollegium = true }: { kollegium
   const terminArtig = istTerminBlock(k);
   const zusatz = !verlegt && !terminArtig && istZusatz(k) && k.status !== 'veranstaltung';
   const optionen = { entfall, abwesend: abw, kollegium };
-  const teile = (l: Wert[] | null | undefined, extra: Partial<typeof optionen> & { zusatzLehrer?: boolean } = {}) =>
+  const teile = (l: Wert[] | null | undefined, extra: Partial<typeof optionen> & { zusatzLehrer?: boolean; praefix?: string } = {}) =>
     (l || []).filter(w => w.k || w.alt || w.neu).map(w => wertTeil(w, { ...optionen, ...extra }));
 
   const zeilen: Kartenzeile[] = [];
   // Fach (bzw. Anlass einer Veranstaltung)
   if (k.fach) zeilen.push(zeile('fach', k.fachAlt && !entfall && !gleich(k.fachAlt, k.fach)
-    ? [{ text: `+${k.fach} (${k.fachAlt})`, feld: 'aenderung', titel: `${k.fach} statt ${k.fachAlt}` }] : [{ text: k.fach }]));
+    ? [{ text: `${k.fach} statt ${k.fachAlt}`, feld: 'aenderung', titel: `Fach ${k.fach} statt ${k.fachAlt}` }] : [{ text: k.fach }]));
   else zeilen.push(zeile('fach', [{ text: k.text || k.art || '—' }]));
 
   // Klasse: im Klassenplan nur, wenn sie fehlt bzw. gekoppelte Klassen dabei sind
@@ -100,7 +98,7 @@ export function kartenbild(k: Karte, typ: Typ, { kollegium = true }: { kollegium
   if (lehrer.length && (typ !== 'lehrer' || lehrer.some(t => t.feld) || lehrer.length > 1)) zeilen.push(zeile('lehrer', lehrer));
 
   // Raum: online kein Raum; im Raumplan nur, wenn er sich geändert hat
-  const raeume = istOnline(k, typ) ? [] : teile(k.raeume);
+  const raeume = istOnline(k, typ) ? [] : teile(k.raeume, { praefix: 'Raum ' });
   if (raeume.length && (typ !== 'raum' || raeume.some(t => t.feld))) zeilen.push(zeile('raeume', raeume));
 
   // Änderungstypen (Legende, Bildschirmleser)
@@ -108,25 +106,25 @@ export function kartenbild(k: Karte, typ: Typ, { kollegium = true }: { kollegium
   if (k.fachAlt && !entfall) typen.push('fachaenderung');
   if (!entfall) {
     if (lehrer.some(t => t.feld === 'offen')) typen.push('lehrer-fehlt');
-    if (lehrer.some(t => t.feld && t.text.startsWith('+') && t.text.includes('('))) typen.push('lehrervertretung');
-    if (raeume.some(t => t.feld && t.text.startsWith('+') && t.text.includes('('))) typen.push('raumaenderung');
-    if ([...lehrer, ...raeume, ...klassen, ...mit].some(t => t.feld && t.text.startsWith('+') && !t.text.includes('('))) typen.push('hinzugefuegt');
+    if (lehrer.some(t => t.feld && t.text.includes(' statt '))) typen.push('lehrervertretung');
+    if (raeume.some(t => t.feld && t.text.includes(' statt '))) typen.push('raumaenderung');
+    if ([...lehrer, ...raeume, ...klassen, ...mit].some(t => t.feld && t.text.endsWith(' zusätzlich'))) typen.push('hinzugefuegt');
   }
 
   let status: Statusfeld | null = null;
   if (richtung === 'von' || (verlegt && entfall)) {
     const ziel = verlegungKurz(k.verlegungNach);
-    status = { text: ziel ? `auf ${ziel}` : 'verschoben', ton: 'entfall', zeichen: '×', titel: ziel ? `Verschoben auf ${ziel}` : 'Verschoben' };
+    status = { text: ziel ? `verlegt → ${ziel}` : 'verlegt', ton: 'entfall', titel: ziel ? `Verlegt auf ${ziel}` : 'Verlegt' };
     typen.push('verschoben-auf');
   } else if (entfall) {
-    status = { text: 'entfällt', ton: 'entfall', zeichen: '×', titel: 'Die Stunde entfällt' };
+    status = { text: 'entfällt', ton: 'entfall', titel: 'Die Stunde entfällt' };
     if (!abw.size) typen.push(k.status === 'abwesend' || /vertret/i.test(k.art || '') ? 'vertretungsentfall' : 'entfall');
   } else if (richtung === 'nach') {
     const von = verlegungKurz(k.verlegungVon);
-    status = { text: von ? `von ${von}` : 'verschoben', ton: 'aenderung', zeichen: '⊕', titel: von ? `Verschoben von ${von}` : 'Hierher verschoben' };
+    status = { text: von ? `verlegt ← ${von}` : 'hierher verlegt', ton: 'aenderung', titel: von ? `Verlegt von ${von}` : 'Hierher verlegt' };
     typen.push('verschoben-von');
   } else if (zusatz) {
-    status = { text: 'Zusatz', ton: 'aenderung', zeichen: '⊕', titel: 'Zusätzliche Unterrichtsstunde' };
+    status = { text: 'zusätzlich', ton: 'aenderung', titel: 'Zusätzliche Unterrichtsstunde' };
     typen.push('zusatz');
   }
 
@@ -143,29 +141,40 @@ export function kartenbild(k: Karte, typ: Typ, { kollegium = true }: { kollegium
 /** Text einer Zeile (Tooltips, Bildschirmleser). */
 export const zeilenText = (z: Kartenzeile) => z.teile.map(t => t.text).join(', ');
 
-/** Muster der Legende „Änderungstyp | Darstellung“ – dieselben Zeilen wie im Enbrea-Leitfaden, in EduOrga-Farben. */
-export interface Legendeneintrag { id: Aenderungstyp | 'mitteilung' | 'regulaer'; titel: string; text: string; ton: Ton | null; zeilen: Teil[][]; status?: Statusfeld; notiz?: string }
+/** Kennzeichnungen (Legende) – eigene Gliederung: Gruppe, Beispiel-Tag und Satz; dazu je Gruppe eine Musterkarte. */
+export interface Kennzeichen { tag: Teil; satz: string }
+export interface Kennzeichengruppe { id: 'aenderung' | 'entfall' | 'offen' | 'hinweis'; titel: string; satz: string; ton: Ton | null; muster: Teil[][]; status?: Statusfeld; eintraege: Kennzeichen[] }
 
-export const LEGENDE_EINTRAEGE: Legendeneintrag[] = [
-  { id: 'regulaer', titel: 'Unterricht', text: 'Helle Karte mit grauer Kante; hat das Fach eine Farbe, sind Kante und Fläche leicht in der Fachfarbe.', ton: null,
-    zeilen: [[{ text: 'D' }], [{ text: '6b' }], [{ text: 'Kre' }], [{ text: '023' }]] },
-  { id: 'klasse-fehlt', titel: 'Klasse fehlt', text: 'Die Klasse ist abwesend, die Stunde entfällt.', ton: 'entfall',
-    zeilen: [[{ text: 'NAWI' }], [{ text: '(5b)', feld: 'entfall' }], [{ text: 'Maq' }], [{ text: '122' }]], status: { text: 'entfällt', ton: 'entfall', zeichen: '×', titel: '' } },
-  { id: 'lehrer-fehlt', titel: 'Lehrkraft fehlt, keine Vertretung erstellt', text: 'Neutral, grau gestrichelte Kante: die Vertretung folgt. Lehrkräfte sehen die fehlende Lehrkraft in Klammern, Schüler*innen und Eltern „Vertretung folgt“.', ton: 'offen',
-    zeilen: [[{ text: 'E4' }], [{ text: '12' }], [{ text: '(Abr)', feld: 'offen' }], [{ text: '21' }]] },
-  { id: 'vertretungsentfall', titel: 'Vertretungsentfall', text: 'Die Stunde entfällt (z. B. weil die Lehrkraft fehlt) – alles durchgestrichen, rot.', ton: 'entfall',
-    zeilen: [[{ text: 'E' }], [{ text: '7c' }], [{ text: 'Had' }], [{ text: '403' }]], status: { text: 'entfällt', ton: 'entfall', zeichen: '×', titel: '' } },
-  { id: 'lehrervertretung', titel: 'Lehrervertretung', text: 'Neue Lehrkraft, dahinter in Klammern die bisherige.', ton: 'aenderung',
-    zeilen: [[{ text: 'SP1' }], [{ text: '6b' }], [{ text: '+Gal (Gor)', feld: 'aenderung' }], [{ text: 'UH' }]] },
-  { id: 'raumaenderung', titel: 'Raumänderung', text: 'Neuer Raum, dahinter in Klammern der bisherige.', ton: 'aenderung',
-    zeilen: [[{ text: 'BILI' }], [{ text: '6b' }], [{ text: 'Abr' }], [{ text: '+105 (303)', feld: 'aenderung' }]] },
-  { id: 'fachaenderung', titel: 'Fachänderung', text: 'Neues Fach, dahinter in Klammern das bisherige.', ton: 'aenderung',
-    zeilen: [[{ text: '+BI (MU)', feld: 'aenderung' }], [{ text: '6b' }], [{ text: 'Kre' }], [{ text: '023' }]] },
-  { id: 'verschoben-auf', titel: 'Verschoben auf einen anderen Termin', text: 'Die Stunde findet hier nicht statt, sondern am genannten Tag (Stunde | Beginn).', ton: 'entfall',
-    zeilen: [[{ text: 'M' }], [{ text: '10e' }], [{ text: 'Rth' }], [{ text: '126' }]], status: { text: 'auf Di 21.10. 6 | 12:20', ton: 'entfall', zeichen: '×', titel: '' } },
-  { id: 'verschoben-von', titel: 'Verschoben von einem anderen Termin', text: 'Die Stunde ist hierher verlegt worden.', ton: 'aenderung',
-    zeilen: [[{ text: 'M' }], [{ text: '10e' }], [{ text: 'Rth' }], [{ text: '126' }]], status: { text: 'von Mo 20.10. 3 | 09:45', ton: 'aenderung', zeichen: '⊕', titel: '' } },
-  { id: 'zusatz', titel: 'Zusatzunterricht', text: 'Zusätzliche Stunde, die nicht im Regelplan steht.', ton: 'aenderung',
-    zeilen: [[{ text: 'BI' }], [{ text: '5e, 11' }], [{ text: 'Abr' }], [{ text: '03' }]], status: { text: 'Zusatz', ton: 'aenderung', zeichen: '⊕', titel: '' } },
-  { id: 'mitteilung', titel: 'Mitteilung', text: 'Hinweis der Schule zum Tag als helle gelbe Notiz.', ton: null, zeilen: [], notiz: 'Aufbau der Bühne ab 16:00 Uhr' },
+export const KENNZEICHNUNGEN: Kennzeichengruppe[] = [
+  { id: 'aenderung', titel: 'Geändert', satz: 'Grüne Leiste links, helle grüne Fläche; das Geänderte steht als Tag auf seiner Zeile.', ton: 'aenderung',
+    muster: [[{ text: 'SP' }], [{ text: '6b' }], [{ text: 'Gal statt Gor', feld: 'aenderung' }], [{ text: 'TH1' }]],
+    eintraege: [
+      { tag: { text: 'Gal statt Gor', feld: 'aenderung' }, satz: 'Vertretung: Gal übernimmt die Stunde von Gor.' },
+      { tag: { text: 'Raum 105 statt 303', feld: 'aenderung' }, satz: 'Raumänderung.' },
+      { tag: { text: 'BI statt MU', feld: 'aenderung' }, satz: 'Fachänderung.' },
+      { tag: { text: 'B070 zusätzlich', feld: 'aenderung' }, satz: 'Ein Raum, eine Klasse oder Lehrkraft kommt hinzu.' },
+      { tag: { text: 'verlegt ← Mo 20.10., 3. Std', feld: 'aenderung' }, satz: 'Die Stunde wurde hierher verlegt.' },
+      { tag: { text: 'zusätzlich', feld: 'aenderung' }, satz: 'Zusätzliche Stunde außerhalb des Regelplans.' },
+    ] },
+  { id: 'entfall', titel: 'Entfällt', satz: 'Rote Leiste, helle rote Fläche, der ganze Inhalt durchgestrichen.', ton: 'entfall',
+    muster: [[{ text: 'M' }], [{ text: '10e' }], [{ text: 'Rth' }], [{ text: '126' }]], status: { text: 'entfällt', ton: 'entfall', titel: '' },
+    eintraege: [
+      { tag: { text: 'entfällt', feld: 'entfall' }, satz: 'Die Stunde findet nicht statt (z. B. Lehrkraft fehlt ohne Vertretung).' },
+      { tag: { text: '5b fehlt', feld: 'entfall' }, satz: 'Die Klasse ist abwesend, deshalb entfällt die Stunde.' },
+      { tag: { text: 'verlegt → Di 21.10., 6. Std', feld: 'entfall' }, satz: 'Die Stunde findet stattdessen am genannten Termin statt.' },
+    ] },
+  { id: 'offen', titel: 'Vertretung folgt', satz: 'Neutral mit grau gestrichelter Leiste: die Stunde ist noch nicht vergeben – kein Entfall.', ton: 'offen',
+    muster: [[{ text: 'E' }], [{ text: '7c' }], [{ text: 'Had fehlt', feld: 'offen' }], [{ text: '403' }]],
+    eintraege: [
+      { tag: { text: 'Had fehlt', feld: 'offen' }, satz: 'Lehrkräfte sehen, wer fehlt.' },
+      { tag: { text: 'Vertretung folgt', feld: 'offen' }, satz: 'So steht es für Schüler*innen und Eltern.' },
+    ] },
+  { id: 'hinweis', titel: 'Termine und Hinweise', satz: 'Ohne Leiste, über die betroffenen Stunden.', ton: null,
+    muster: [],
+    eintraege: [
+      { tag: { text: 'Termin' }, satz: 'Veranstaltung oder Termin als ruhiger beiger Block (Titel, Beteiligte, Uhrzeit).' },
+      { tag: { text: 'Mitteilung' }, satz: 'Hinweis der Schule zum Tag als helle gelbe Notiz.' },
+      { tag: { text: 'Prüfung' }, satz: 'Bernsteinfarbene Linie und Wort „Prüfung“.' },
+      { tag: { text: '+2' }, satz: 'Weitere Stunden zur selben Zeit – anklicken zeigt alle.' },
+    ] },
 ];

@@ -37,22 +37,22 @@ export function FachQuadrat({ farbe, groesse = 8, sx }: { farbe: string | null |
 /** Farbe mit Deckkraft – auch für CSS-Variablen (var(--…)), die alpha() nicht zerlegen kann. */
 export const mischen = (farbe: string, wert: number) => (farbe.startsWith('var(') ? `color-mix(in srgb, ${farbe} ${Math.round(wert * 1000) / 10}%, transparent)` : alpha(farbe, wert));
 
-/** Schräg schraffierte Kante (Änderung grün, Entfall rot): 45°-Streifen auf heller Grundfarbe. */
-export const schraffur = (farbe: string) => `repeating-linear-gradient(135deg, ${farbe} 0 2px, ${mischen(farbe, 0.28)} 2px 4.5px)`;
+/** Leiste links in der Statusfarbe (Änderung grün, Entfall rot) – durchgehend, 3 px; offene Vertretung grau gestrichelt. */
+export const leiste = (farbe: string, offen = false) => (offen ? `repeating-linear-gradient(180deg, ${farbe} 0 4px, transparent 4px 7px)` : farbe);
 
-/** Feld (Chip) auf der Karte: „+Gal (Gor)“, „(Abr)“, „× entfällt“ – Fläche und Schrift in der Status-Tönung, nie durchgestrichen. */
+/** Tag auf der Karte: „Gal statt Gor“, „Raum 105 statt 303“, „entfällt“ – umrandet, helle Fläche, Schrift in der Statusfarbe (WCAG AA), nie durchgestrichen. */
 export function Feld({ ton, children, titel, klein = false }: { ton: Ton; children: ReactNode; titel?: string; klein?: boolean }) {
   return (
     <Box component="span" title={titel} data-feld={ton}
       sx={{ display: 'inline-flex', alignItems: 'center', gap: '3px', maxWidth: '100%', height: klein ? 15 : 16, px: '3px', borderRadius: '3px', fontSize: klein ? 11 : 12, lineHeight: 1,
         fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', boxSizing: 'border-box',
-        bgcolor: `status.${ton}.feld`, color: `status.${ton}.text`, textDecoration: 'none', fontVariantNumeric: 'tabular-nums' }}>{children}</Box>
+        bgcolor: 'background.paper', color: `status.${ton}.text`, border: '1px solid', borderColor: `status.${ton}.main`, textDecoration: 'none', fontVariantNumeric: 'tabular-nums' }}>{children}</Box>
   );
 }
 
-/** Statusfeld unten auf der Karte („× entfällt“, „× auf Di 21.10. 6 | 12:20“, „⊕ von …“, „⊕ Zusatz“). */
+/** Status-Tag unten auf der Karte („entfällt“, „verlegt → Di 21.10., 6. Std“, „verlegt ← …“, „zusätzlich“). */
 export function StatusFeld({ s, klein }: { s: Statusfeld; klein?: boolean }) {
-  return <Feld ton={s.ton} titel={s.titel} klein={klein}><Box component="span" aria-hidden sx={{ fontWeight: 600, fontSize: '1.05em', lineHeight: 1 }}>{s.zeichen}</Box>{s.text}</Feld>;
+  return <Feld ton={s.ton} titel={s.titel} klein={klein}>{s.text}</Feld>;
 }
 
 /** Teile einer Zeile: Text bzw. Felder, durch Komma getrennt. */
@@ -119,7 +119,7 @@ export function KachelInfo({ k, typ }: { k: Karte; typ: Typ }) {
         {k.lehrer?.length > 0 && zeile('Lehrkraft', k.lehrer.map(wertText).join(', '))}
         {istOnline(k, typ) ? zeile('Raum', 'Online-Unterricht') : k.raeume?.length > 0 && zeile('Raum', k.raeume.map(wertText).join(', '))}
         {k.fachAlt && zeile('Fach', `${k.fachAlt} → ${k.fach}`)}
-        {bild.status && zeile('Status', `${bild.status.zeichen} ${bild.status.titel}`)}
+        {bild.status && zeile('Status', bild.status.titel)}
         {infoText(k).map((t, i) => <Typography key={i} variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>{t}</Typography>)}
         {k.hausaufgabeFaellig && <Typography variant="body2" sx={{ mt: 0.5 }}>Hausaufgabe fällig</Typography>}
       </Stack>
@@ -184,7 +184,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   // Kante links: Unterricht immer (grau ohne Fachfarbe), Änderung grün und Entfall rot schraffiert – auch bei Vorlagen ohne Balken
   const balkenVorlage = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-flaeche' || d.fachfarbe === 'balken-innen') && stunde;
   const kante = !termin && (bild.ton !== null || balkenVorlage);
-  const kantenBreite = Math.max(3, d.balkenbreite);
+  const kantenBreite = bild.ton ? 3 : Math.max(3, d.balkenbreite);
   const innen = d.fachfarbe === 'balken-innen';
   const balkenOben = d.fachfarbe === 'balken-oben' && stunde && !termin && !bild.ton ? d.balkenbreite : 0;
   const quadrat = d.fachfarbe === 'quadrat' && !!k.fach && !termin;
@@ -261,9 +261,10 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
           '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
           ...style,
         }}>
-        {kante && <Box aria-hidden data-fachbalken={innen && !bild.ton ? 'innen' : bild.ton === 'offen' ? 'gestrichelt' : bild.ton ? 'schraffiert' : 'links'} data-ohne-fachfarbe={farbe ? undefined : ''}
+        {kante && <Box aria-hidden data-fachbalken={innen && !bild.ton ? 'innen' : bild.ton === 'offen' ? 'gestrichelt' : bild.ton ? 'status' : 'links'} data-ohne-fachfarbe={farbe ? undefined : ''}
           sx={{ position: 'absolute', ...(innen && !bild.ton ? { left: 4, top: 4, bottom: 4, borderRadius: '2px' } : { left: 0, top: 0, bottom: 0 }), width: kantenBreite,
-            background: bild.ton === 'offen' ? `repeating-linear-gradient(180deg, ${kantenFarbe} 0 4px, transparent 4px 7px)` : bild.ton ? schraffur(kantenFarbe) : kantenFarbe }} />}
+            background: leiste(kantenFarbe, bild.ton === 'offen') }} />}
+        {bild.ton && <Box aria-hidden data-kennzeichen={bild.ton} sx={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: '50%', bgcolor: kantenFarbe, '@container (max-width: 44px)': { display: 'none' } }} />}
         {balkenOben > 0 && <Box aria-hidden data-fachbalken="oben" sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: balkenOben, bgcolor: farbe ?? pal.kachel.balken }} />}
         {zeilenInhalt}
         {termin && hoehe >= 44 && <Typography component="div" noWrap sx={{ mt: 'auto', fontSize: 10.5, lineHeight: '14px', color: 'kachel.ereignisText', opacity: 0.85 }}>{k.beginn && k.ende ? `${k.beginn}–${k.ende}` : 'ganztägig'}</Typography>}

@@ -34,9 +34,9 @@ wird mit dem Konto von EduOrga Web. Marke, Farben und Logo: [`design/MARKE.md`](
 |---|---|---|---|
 | ![Profil](docs/bilder/profil.png) | ![Über](docs/bilder/ueber.png) | ![Anmeldung](docs/bilder/anmeldung.png) | ![Postfach](docs/bilder/postfach.png) |
 
-| Plan auswählen | Menü des Plans | Zeichenerklärung | Termine |
+| Plan auswählen | Menü des Plans | Kennzeichnungen | Termine |
 |---|---|---|---|
-| ![Planauswahl](docs/bilder/planauswahl.png) | ![Menü](docs/bilder/menue.png) | ![Zeichenerklärung](docs/bilder/zeichenerklaerung.png) | ![Termine](docs/bilder/termine.png) |
+| ![Planauswahl](docs/bilder/planauswahl.png) | ![Menü](docs/bilder/menue.png) | ![Kennzeichnungen](docs/bilder/zeichenerklaerung.png) | ![Termine](docs/bilder/termine.png) |
 
 | Dunkel: Woche | Dunkel: Details | Dunkel: Heute | Dunkel: Schule | Woche 430 × 932 |
 |---|---|---|---|---|
@@ -51,7 +51,7 @@ Kopfzeile übergeht. Hell und dunkel (Automatisch/Hell/Dunkel unter „Mehr“ b
 | Bereich | Inhalt |
 |---|---|
 | **Heute** | Datum, Hinweise des Tages, die nächsten Stunden, Termine und Prüfungen, eigene Abwesenheiten, Klassenleitung, Sprechtag |
-| **Plan** | Woche (Standard) über die ganze Breite oder Tag, Umschalter **Tag · Woche** oben rechts, Wischen = andere Woche bzw. anderer Tag, Aufziehen mit zwei Fingern = Tag, Zusammenziehen = Woche; Menü „⋮“: Gehe zu Datum, 2 bzw. 3 Tage, Abwesenheiten, Zeichenerklärung; Planauswahl (Klasse, Lehrkraft, Raum) über den Titel |
+| **Plan** | Woche (Standard) über die ganze Breite oder Tag, Umschalter **Tag · Woche** oben rechts, Wischen = andere Woche bzw. anderer Tag, Aufziehen mit zwei Fingern = Tag, Zusammenziehen = Woche; Menü „⋮“: Gehe zu Datum, 2 bzw. 3 Tage, Abwesenheiten, Kennzeichnungen; Planauswahl (Klasse, Lehrkraft, Raum) über den Titel |
 | **Postfach** | Posteingang, Gesendet, Entwürfe; Lesen, Antworten, Schreiben, Löschen, Suche |
 | **Schule / Mehr** | Schulfunktionen nach Rolle (Tabelle unten), danach Konto und Profilwechsel, Darstellung, Benachrichtigungen, App installieren, Daten aktualisieren, Über EduOrga Mobile, Abmelden |
 
@@ -97,36 +97,49 @@ Das Planraster der PWA ist die Referenz für alle Oberflächen (iOS spiegelt die
 | Jetzt-Linie | 2 px `--up-primaer` am heutigen Tag, 1 px (35 %) über die Woche, Punkt 9 px am Rand der Zeitspalte |
 | Uhrzeit → Lage | stückweise linear: innerhalb einer Stunde anteilig, in der Pause anteilig im Spalt |
 
-**Stundenkarte (Standard „Klassisch“)**
+**Stundenkarte (Standard „EduOrga Standard“, gleich in Web und iOS – design/DESIGN.md, Abschnitt 10)**
 
 | Element | Wert |
 |---|---|
 | Lage | Oberkante = Zeilenoberkante + 1 px, Höhe = Höhe der Stunden − 2 px; Doppel- und Blockstunden laufen genau über ihre Zeilen samt Spalt dazwischen |
-| Fläche | weiß (`--karte`, dunkel `#1a2128`), Rahmen als flacher Schatten `0 1px 1.5px rgba(12,44,49,.16), 0 0 0 .5px rgba(12,44,49,.06)` (dunkel 1-px-Linie `#262f38`) |
-| Ecken | **4–6 px** (Schulwert `eckenradius` auf 4–6 begrenzt, Standard 5) |
-| Fachstreifen | innen links: Abstand 4 px zu Rand, oben und unten, Breite 4 px (Schulwert `balkenbreite` 2–6), Radius 2 px, Fachfarbe; **ohne Fachfarbe grau** (hell `#b4bec4`, dunkel `#56626c`); entfallen 35 % Deckkraft |
-| Innenabstand | oben/unten 3 px, rechts 3 px, links Streifen + 9 px |
-| Zeilen | 1. Lehrkraft (Klassenplan) bzw. Klasse (Lehrer-/Raumplan) 12,5 px/600 `--up-text`; 2. Fach 12 px `--up-text`; 3. Raum 12 px `--up-text-2`; Zeilenhöhe 14 px; was nicht passt, wird gekürzt („…“ unten rechts). Die Schule wählt in EduOrga Web Reihenfolge „Fach oben“, Fach als Name, Zeile 2 und Raum aus (`darstellung` aus `/api/app/sitzung`, über die Startdaten) |
+| Fläche | weiß (`--karte`, dunkel `#1a2128`), flacher Schatten; Radius 4 px (Schulwert `eckenradius`) |
+| Leiste | links bündig 4 px grau (`--balken-grau` hell `#b4bec4`, dunkel `#56626c`); hat das Fach eine Farbe: Leiste in der Fachfarbe und Fläche leicht getönt |
+| Zeilen | **Fach 13/600**, darunter je eine Zeile 12 px `--up-text-2`: Klasse, Lehrkraft, Raum; die Zeile des gezeigten Elements entfällt, solange sie unverändert ist; einzeilig mit „…“; passt nicht alles, entfallen unveränderte Zeilen von unten (Fach, geänderte Zeilen und Status-Tag bleiben) |
+| Zeitspalte | Beginn oben, Stundennummer mittig (14/600), Ende unten |
+| Tageskopf | „17.11“ (600) über „Mo“ |
 | Zeichen | unten rechts 13 px: Info, Online, Hausaufgabe |
-| Statuswort | unten links 9,5 px/600 Großbuchstaben, Statusfarbe, ohne Fläche – nur „Prüfung“ und „Termin“ (alle Wörter, wenn die Schule „Statuswörter“ wählt) und nur, wenn unter den Zeilen Platz ist |
 
-**Status**
+**Kennzeichnung**
 
-| Status | Darstellung |
+| Fall | Darstellung |
 |---|---|
-| Änderung/Vertretung | 1-px-Linie innen `--up-aenderung` (Violett `#6d4fc2`, dunkel `#ab95f3`), Fläche `--up-aenderung-flaeche` (`#f1edfb` / `#221a3a`), geänderter Wert violett unterstrichen |
-| Offene Vertretung | bisheriges Kürzel durchgestrichen in violetter Fläche, dahinter **„?“** (11 px/600, 1 px gestrichelt violett, Radius 2 px) |
-| Entfall | weiße Karte, Schraffur −45° (1 px auf 6 px, Entfallrot 13 %), Linie Entfallrot 45 %, Text durchgestrichen, erste Zeile rot |
-| Prüfung | 1-px-Linie `--up-pruefung` (`#a15c07`), Fläche `--up-pruefung-flaeche`, Wort „Prüfung“ |
-| Termin/Veranstaltung | weiße Karte, 1 px gestrichelt `--up-text-2` (60 %), erste Zeile `--up-termin` (`#a3347c`), Wort „Termin“ |
-| läuft ohne mich | ohne Fläche, 1,5 px gepunktet |
+| Geändert (Vertretung, Raum, Fach, Verlegung, Zusatz) | grüne 3-px-Leiste, helle grüne Fläche (`--up-aenderung-flaeche`), Kennzeichen oben rechts; Tag auf der Zeile: „Gal statt Gor“, „Raum 105 statt 303“, „BI statt MU“, „B070 zusätzlich“; unten „verlegt ← Mo 20.10., 3. Std“ bzw. „zusätzlich“ |
+| Entfällt | rote 3-px-Leiste, helle rote Fläche, **alles durchgestrichen**; unten „entfällt“ bzw. „verlegt → Di 21.10., 6. Std“; „5b fehlt“ bei abwesender Klasse |
+| Vertretung folgt (offen) | neutral: weiße Karte, grau gestrichelte Leiste, Tag „Abr fehlt“ (Kollegium) bzw. „Vertretung folgt“ (Schüler*innen, Eltern) – nie rot |
+| Tag | umrandet auf heller Fläche, Radius 3 px, 12 px/600, Schrift in der dunklen Statusfarbe (WCAG AA), nie durchgestrichen |
+| Prüfung | 1-px-Linie `--up-pruefung`, Fläche `--up-pruefung-flaeche`, Wort „Prüfung“ |
+| Termin/Veranstaltung | ruhiger beiger Block (`--up-ereignis-*`) ohne Leiste |
+| Mitteilung | helle gelbe Notiz über der ersten Stunde (`--up-mitteilung-*`), Tippen zeigt den Text |
 | Ferien | ganzer Tag `--up-frei-flaeche` mit Name und Zeitraum |
+
+Legende: Blatt **„Kennzeichnungen“** (Menü „⋮“) mit den Gruppen Geändert · Entfällt · Vertretung folgt · Termine und Hinweise.
+Jede Karte trägt einen ausgeschriebenen zugänglichen Namen; `prefers-reduced-motion` schaltet Übergänge ab.
+
+**Aktualität:** Plandaten immer zuerst vom Netz (`cache: no-store`, Service Worker „Netz zuerst“), Kopie nur als Rückfall ohne Netz
+mit Hinweis „Offline — Stand hh:mm“; neu geladen bei Rückkehr in die App, Fokus, wiederkehrendem Netz und alle zwei Minuten. Unter
+dem Plannamen und in „Mehr › Daten aktualisieren“ steht **„Stand EduOrga Studio: …“** (letzte Übertragung, Feld `studioStand`),
+nach mehr als 24 Stunden an Schultagen mit „Daten evtl. nicht aktuell“.
+
+**Stundendetails:** für die eigene Stunde der Lehrkraft Reiter **Details | Klassenbuch** – im Klassenbuch zuerst das Thema
+(Eingabefeld), darunter „Anwesenheitskontrolle“ (mit Ergebnis) und „Alle anwesend“, dann Hausaufgaben, Einträge, Notizen und
+„Prüfung eintragen“ (vorbelegt aus der Stunde). In „Schule › Prüfungen“ lassen sich Prüfungen eintragen, ändern und löschen
+(über EduOrga Web, mit Rechteprüfung und Konfliktmeldung).
 
 **Parallele Stunden („+X“)** – keine Zählkarte: Liegen in einer Rasterzelle mehr Stunden, als nebeneinander passen (jede
 mindestens 40 px breit), steht die erste Stunde in voller Breite, und **oben rechts in der Zelle** (3 px vom oberen und
-rechten Rand) sitzt ein Badge **„+X“**: 16 px hoch, mindestens 20 px breit, Radius 8 px, 10,5 px/600 tabellarisch,
-Fläche `--up-text-2` mit Schrift in Kartenfarbe, violett bei einer Vertretung dahinter, rot bei einem Entfall, 1,5-px-Ring
-in Kartenfarbe; die erste Zeile der Karte macht 22 px Platz. Tippen öffnet das Blatt **„X Stunden zur selben Zeit“**
+rechten Rand) sitzt der Reiter **„+X“** innen am rechten Rand, senkrecht mittig: 20 px hoch, mindestens 22 px breit, links Radius
+4 px, rechts bündig, 11,5 px/600 tabellarisch, Fläche `--up-primaer-flaeche` (grün getönt bei einer Änderung dahinter, rot bei einem
+Entfall); die erste Zeile der Karte macht 22 px Platz. Tippen öffnet das Blatt **„X Stunden zur selben Zeit“**
 (Wochentag, Datum, Stunden) mit allen Stunden: Stunde und Uhrzeit, Fachstreifen, Zeilen der Karte, Statusplakette; Tippen
 auf eine Zeile öffnet ihre Stundendetails. In der Tagesansicht stehen parallele Stunden nebeneinander.
 

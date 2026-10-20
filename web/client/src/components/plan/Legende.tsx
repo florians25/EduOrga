@@ -1,11 +1,12 @@
 // Legende und Filter: Arten der Stunden mit Anzahl in dieser Woche; Klick hebt eine Art hervor (die übrigen treten zurück).
-// Dazu die Tabelle „Änderungstyp | Darstellung“ mit je einer Musterkarte (gleiche Regeln wie die Stundenkarte, aenderung.ts).
-import { Box, ButtonBase, Stack, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography, useTheme } from '@mui/material';
+// Dazu die „Kennzeichnungen“: je Gruppe (geändert, entfällt, Vertretung folgt, Termine und Hinweise) eine Musterkarte und die Tags mit
+// einem Satz – gleiche Regeln wie die Stundenkarte (aenderung.ts).
+import { Box, ButtonBase, Stack, Tooltip, Typography, useTheme } from '@mui/material';
 import type { Karte } from '../../api/types';
 import { artVon, type Art, type Typ } from './logik';
 import { useDarstellung, type Kartendarstellung } from './darstellung';
-import { Feld, mischen, schraffur, StatusFeld } from './Kachel';
-import { LEGENDE_EINTRAEGE, type Legendeneintrag } from './aenderung';
+import { Feld, leiste, mischen, StatusFeld } from './Kachel';
+import { KENNZEICHNUNGEN, type Kennzeichengruppe } from './aenderung';
 
 export const ARTEN: { art: Art; text: string; hinweis: string }[] = [
   { art: 'aenderung', text: 'Änderung', hinweis: 'Vertretung, Raum- oder Fachwechsel, Verlegung, Zusatzstunde – grüne Fläche, schraffierte Kante, der neue Wert im grünen Feld „+neu (bisher)“' },
@@ -41,11 +42,11 @@ export function Muster({ art, gross = false }: { art: Art | 'regulaer'; gross?: 
       ...(d.fachfarbe === 'balken-innen' ? { boxShadow: `inset 3px 0 0 ${papier}, inset 5px 0 0 ${pal.primary.main}` }
         : d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-flaeche' ? { boxShadow: `inset ${Math.min(3, d.balkenbreite)}px 0 0 ${pal.primary.main}` }
         : d.fachfarbe === 'balken-oben' ? { boxShadow: `inset 0 ${Math.min(3, d.balkenbreite)}px 0 ${pal.primary.main}` } : {}) },
-    aenderung: { background: `${schraffur(s.aenderung.main)} left / 3px 100% no-repeat, ${s.aenderung.flaeche}`, border: `1px solid ${alpha(s.aenderung.main, 0.5)}` },
-    entfall: { background: `${schraffur(s.entfall.main)} left / 3px 100% no-repeat, ${s.entfall.flaeche}`, border: `1px solid ${alpha(s.entfall.main, 0.5)}` },
+    aenderung: { background: s.aenderung.flaeche, boxShadow: `inset 3px 0 0 ${s.aenderung.main}`, border: `1px solid ${alpha(s.aenderung.main, 0.5)}` },
+    entfall: { background: s.entfall.flaeche, boxShadow: `inset 3px 0 0 ${s.entfall.main}`, border: `1px solid ${alpha(s.entfall.main, 0.5)}` },
     pruefung: { background: d.statusflaeche ? s.pruefung.flaeche : papier, border: `1px solid ${s.pruefung.main}` },
     termin: { background: pal.kachel.ereignis, border: `1px solid ${pal.kachel.ereignisRand}` },
-    abwesend: { background: `${schraffur(s.aenderung.main)} left / 3px 100% no-repeat, ${s.aenderung.flaeche}`, border: `1px dashed ${alpha(s.aenderung.main, 0.6)}` },
+    abwesend: { background: s.aenderung.flaeche, boxShadow: `inset 3px 0 0 ${s.aenderung.main}`, border: `1px dashed ${alpha(s.aenderung.main, 0.6)}` },
     buchung: { background: papier, border: `1px dashed ${s.frei.main}` },
   };
   return <Box component="span" aria-hidden sx={{ display: 'inline-block', width: gross ? 20 : 10, height: gross ? 14 : 10, borderRadius: '1px', flex: 'none', ...stil[art] }} />;
@@ -84,47 +85,51 @@ export function Legende({ karten, typ, fokus, setFokus }: { karten: Karte[]; typ
   );
 }
 
-/** Musterkarte der Legende: dieselbe Fläche, Kante, Zeilen, Felder und Durchstreichung wie die Stundenkarte. */
-export function Musterkarte({ e }: { e: Legendeneintrag }) {
+/** Musterkarte einer Gruppe: dieselbe Fläche, Leiste, Kennzeichen, Zeilen, Tags und Durchstreichung wie die Stundenkarte. */
+export function Musterkarte({ g }: { g: Kennzeichengruppe }) {
   const t = useTheme();
   const pal = (t.vars ?? t).palette;
-  if (e.notiz) return (
-    <Box aria-hidden sx={{ width: 104, minHeight: 64, p: '5px 6px', borderRadius: '4px', bgcolor: 'kachel.notiz', color: 'kachel.notizText', border: 1, borderColor: 'kachel.notizRand', fontSize: 11.5, lineHeight: '14px' }}>{e.notiz}</Box>
-  );
-  const entfall = e.ton === 'entfall';
-  const flaeche = e.ton && e.ton !== 'offen' ? pal.status[e.ton].flaeche : pal.background.paper;
-  const kante = e.ton ? pal.status[e.ton].main : pal.kachel.balken;
+  const entfall = g.ton === 'entfall';
+  const flaeche = g.ton && g.ton !== 'offen' ? pal.status[g.ton].flaeche : pal.background.paper;
+  const kante = g.ton ? pal.status[g.ton].main : pal.kachel.balken;
   return (
-    <Box aria-hidden data-muster={e.id} sx={{ position: 'relative', width: 104, minHeight: 64, pl: '10px', pr: '4px', py: '3px', borderRadius: '4px', bgcolor: flaeche, overflow: 'hidden',
-      boxShadow: e.ton && e.ton !== 'offen' ? `inset 0 0 0 1px ${mischen(kante, 0.35)}` : '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)', fontVariantNumeric: 'tabular-nums' }}>
-      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: e.ton === 'offen' ? `repeating-linear-gradient(180deg, ${kante} 0 4px, transparent 4px 7px)` : e.ton ? schraffur(kante) : kante }} />
-      {e.zeilen.map((z, i) => (
-        <Typography key={i} component="div" noWrap sx={{ fontSize: i ? 11.5 : 12.5, lineHeight: i ? '14px' : '16px', fontWeight: i ? 400 : 600, textDecoration: entfall ? 'line-through' : 'none',
+    <Box aria-hidden data-muster={g.id} sx={{ position: 'relative', width: 132, flex: 'none', pl: '9px', pr: '12px', py: '4px', borderRadius: '4px', bgcolor: flaeche, overflow: 'hidden',
+      boxShadow: g.ton && g.ton !== 'offen' ? `inset 0 0 0 1px ${mischen(kante, 0.35)}` : '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)', fontVariantNumeric: 'tabular-nums' }}>
+      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: leiste(kante, g.ton === 'offen') }} />
+      {g.ton && <Box sx={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: '50%', bgcolor: kante }} />}
+      {g.muster.map((z, i) => (
+        <Typography key={i} component="div" noWrap sx={{ fontSize: i ? 12 : 13, lineHeight: i ? '17px' : '18px', fontWeight: i ? 400 : 600, textDecoration: entfall ? 'line-through' : 'none',
           color: entfall ? (i ? 'status.entfall.text' : 'status.entfall.main') : i ? 'text.secondary' : 'text.primary' }}>
           {z.map((x, j) => x.feld ? <Feld key={j} ton={x.feld} klein>{x.text}</Feld> : <span key={j}>{x.text}</span>)}
         </Typography>
       ))}
-      {e.status && <Box sx={{ mt: '2px' }}><StatusFeld s={e.status} klein /></Box>}
+      {g.status && <Box sx={{ mt: '3px' }}><StatusFeld s={g.status} klein /></Box>}
     </Box>
   );
 }
 
-/** Tabelle „Änderungstyp | Darstellung“ (Hilfe zum Stundenplan, Legende) – wie die Liste im Enbrea-Leitfaden, in EduOrga-Farben. */
-export function LegendeTabelle() {
+/** „Kennzeichnungen“ (Legende im Plan, Hilfe): Gruppen mit Musterkarte, darunter die Tags mit einem Satz. */
+export function Kennzeichnungen() {
   return (
-    <Table size="small" aria-label="Änderungstypen und ihre Darstellung" sx={{ '& td, & th': { verticalAlign: 'top' } }}>
-      <TableHead><TableRow><TableCell>Änderungstyp</TableCell><TableCell sx={{ width: 128 }}>Darstellung</TableCell></TableRow></TableHead>
-      <TableBody>
-        {LEGENDE_EINTRAEGE.map(e => (
-          <TableRow key={e.id} data-legende={e.id}>
-            <TableCell>
-              <Typography sx={{ fontWeight: 600, fontSize: 13.5 }}>{e.titel}</Typography>
-              <Typography variant="body2" color="text.secondary">{e.text}</Typography>
-            </TableCell>
-            <TableCell><Musterkarte e={e} /></TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <Stack gap={2.5} aria-label="Kennzeichnungen im Stundenplan" role="list">
+      {KENNZEICHNUNGEN.map(g => (
+        <Box key={g.id} role="listitem" data-kennzeichnung={g.id} sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+          {g.muster.length > 0 ? <Musterkarte g={g} /> : <Box sx={{ width: 132, flex: 'none', display: { xs: 'none', sm: 'block' } }} />}
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{g.titel}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>{g.satz}</Typography>
+            <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'max-content minmax(0, 1fr)', columnGap: 1.25, rowGap: 0.5, alignItems: 'baseline' }}>
+              {g.eintraege.map((e, i) => (
+                <Box key={i} sx={{ display: 'contents' }}>
+                  <Box component="dt" sx={{ m: 0 }}>{e.tag.feld ? <Feld ton={e.tag.feld}>{e.tag.text}</Feld>
+                    : <Box component="span" sx={{ fontSize: 12, fontWeight: 600, color: 'text.primary' }}>{e.tag.text}</Box>}</Box>
+                  <Box component="dd" sx={{ m: 0, fontSize: 13, color: 'text.secondary' }}>{e.satz}</Box>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        </Box>
+      ))}
+    </Stack>
   );
 }

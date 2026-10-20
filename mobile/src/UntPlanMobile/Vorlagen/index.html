@@ -587,7 +587,7 @@
     <div class="menu-sep" role="separator"></div>
 
     <button class="menu-item" data-act="legend" role="menuitem">
-      <span class="menu-item__label">Zeichenerklärung</span>
+      <span class="menu-item__label">Kennzeichnungen</span>
     </button>
   </div>
 </section>
@@ -613,30 +613,40 @@
 
 <!-- ==================== BLATT: ZEICHENERKLÄRUNG ==================== -->
 <div class="scrim" id="scrimLegend" hidden></div>
-<section class="sheet sheet--legend" id="sheetLegend" role="dialog" aria-modal="true" aria-label="Zeichenerklärung" hidden>
+<section class="sheet sheet--legend" id="sheetLegend" role="dialog" aria-modal="true" aria-label="Kennzeichnungen" hidden>
   <div class="sheet__grab"></div>
-  <h2 class="sheet__title">Zeichenerklärung</h2>
-  <p class="legend__satz">Jede Änderung ist grün, ein Entfall rot und vollständig durchgestrichen.</p>
-  <table class="legende-tab" aria-label="Änderungstypen und ihre Darstellung">
-    <thead><tr><th>Änderungstyp</th><th>Darstellung</th></tr></thead>
-    <tbody>
-      <tr><td><b>Unterricht</b><span>Helle Karte, graue Kante; hat das Fach eine Farbe, sind Kante und Fläche leicht in der Fachfarbe.</span></td><td><div class="muster " aria-hidden="true"><span class="card__line card__line--primary">D</span><span class="card__line">6b</span><span class="card__line">Kre</span><span class="card__line">023</span></div></td></tr>
-      <tr><td><b>Klasse fehlt</b><span>Die Klasse ist abwesend, die Stunde entfällt.</span></td><td><div class="muster card--cancelled" aria-hidden="true"><span class="card__line card__line--primary">NAWI</span><span class="card__line"><span class="feld feld--entfall">(5b)</span></span><span class="card__line">Maq</span><span class="card__line">122</span><span class="card__line card__line--feld"><span class="feld feld--entfall"><b aria-hidden="true">×</b> entfällt</span></span></div></td></tr>
-      <tr><td><b>Lehrkraft fehlt, keine Vertretung erstellt</b><span>Die fehlende Lehrkraft steht in Klammern.</span></td><td><div class="muster card--change" aria-hidden="true"><span class="card__line card__line--primary">E4</span><span class="card__line">12</span><span class="card__line"><span class="badge">(Abr)</span></span><span class="card__line">21</span></div></td></tr>
-      <tr><td><b>Vertretungsentfall</b><span>Die Stunde entfällt – alles durchgestrichen, rot.</span></td><td><div class="muster card--cancelled" aria-hidden="true"><span class="card__line card__line--primary">E</span><span class="card__line">7c</span><span class="card__line">Had</span><span class="card__line">403</span><span class="card__line card__line--feld"><span class="feld feld--entfall"><b aria-hidden="true">×</b> entfällt</span></span></div></td></tr>
-      <tr><td><b>Lehrervertretung</b><span>Neue Lehrkraft, in Klammern die bisherige.</span></td><td><div class="muster card--change" aria-hidden="true"><span class="card__line card__line--primary">SP1</span><span class="card__line">6b</span><span class="card__line"><span class="badge">+Gal (Gor)</span></span><span class="card__line">UH</span></div></td></tr>
-      <tr><td><b>Raumänderung</b><span>Neuer Raum, in Klammern der bisherige.</span></td><td><div class="muster card--change" aria-hidden="true"><span class="card__line card__line--primary">BILI</span><span class="card__line">6b</span><span class="card__line">Abr</span><span class="card__line"><span class="badge">+105 (303)</span></span></div></td></tr>
-      <tr><td><b>Fachänderung</b><span>Neues Fach, in Klammern das bisherige.</span></td><td><div class="muster card--change" aria-hidden="true"><span class="card__line card__line--primary"><span class="badge">+BI (MU)</span></span><span class="card__line">6b</span><span class="card__line">Kre</span><span class="card__line">023</span></div></td></tr>
-      <tr><td><b>Verschoben auf einen anderen Termin</b><span>Findet am genannten Tag statt (Stunde | Beginn).</span></td><td><div class="muster card--cancelled" aria-hidden="true"><span class="card__line card__line--primary">M</span><span class="card__line">10e</span><span class="card__line">Rth</span><span class="card__line">126</span><span class="card__line card__line--feld"><span class="feld feld--entfall"><b aria-hidden="true">×</b> auf Di 21.10. 6 | 12:20</span></span></div></td></tr>
-      <tr><td><b>Verschoben von einem anderen Termin</b><span>Die Stunde ist hierher verlegt worden.</span></td><td><div class="muster card--change" aria-hidden="true"><span class="card__line card__line--primary">M</span><span class="card__line">10e</span><span class="card__line">Rth</span><span class="card__line">126</span><span class="card__line card__line--feld"><span class="feld feld--aenderung"><b aria-hidden="true">⊕</b> von Mo 20.10. 3 | 09:45</span></span></div></td></tr>
-      <tr><td><b>Zusatzunterricht</b><span>Zusätzliche Stunde, nicht im Regelplan.</span></td><td><div class="muster card--change" aria-hidden="true"><span class="card__line card__line--primary">BI</span><span class="card__line">5e, 11</span><span class="card__line">Abr</span><span class="card__line">03</span><span class="card__line card__line--feld"><span class="feld feld--aenderung"><b aria-hidden="true">⊕</b> Zusatz</span></span></div></td></tr>
-      <tr><td><b>Mitteilung</b><span>Hinweis der Schule zum Tag (Tippen zeigt den ganzen Text).</span></td><td><div class="muster muster--notiz" aria-hidden="true">Aufbau der Bühne ab 16:00 Uhr</div></td></tr>
-    </tbody>
-  </table>
+  <h2 class="sheet__title">Kennzeichnungen</h2>
+  <p class="legend__satz">Geändertes ist grün markiert, Entfall rot und durchgestrichen, eine noch offene Vertretung neutral.</p>
+  <div class="kennz" role="list" aria-label="Kennzeichnungen im Stundenplan">
+    <section class="kennz__gruppe" role="listitem">
+      <div class="muster card--change" aria-hidden="true"><span class="card__line card__line--primary">SP</span><span class="card__line">6b</span><span class="card__line"><span class="badge">Gal statt Gor</span></span><span class="card__line">TH1</span></div>
+      <div class="kennz__text"><b>Geändert</b><span>Grüne Leiste links, helle grüne Fläche; das Geänderte steht als Tag auf seiner Zeile.</span>
+        <dl><dt><span class="badge">Gal statt Gor</span></dt><dd>Vertretung: Gal übernimmt die Stunde von Gor.</dd><dt><span class="badge">Raum 105 statt 303</span></dt><dd>Raumänderung.</dd><dt><span class="badge">BI statt MU</span></dt><dd>Fachänderung.</dd><dt><span class="badge">B070 zusätzlich</span></dt><dd>Ein Raum, eine Klasse oder Lehrkraft kommt hinzu.</dd><dt><span class="feld feld--aenderung">verlegt ← Mo 20.10., 3. Std</span></dt><dd>Die Stunde wurde hierher verlegt.</dd><dt><span class="feld feld--aenderung">zusätzlich</span></dt><dd>Zusätzliche Stunde außerhalb des Regelplans.</dd></dl>
+      </div>
+    </section>
+    <section class="kennz__gruppe" role="listitem">
+      <div class="muster card--cancelled" aria-hidden="true"><span class="card__line card__line--primary">M</span><span class="card__line">10e</span><span class="card__line">Rth</span><span class="card__line">126</span><span class="card__line card__line--feld"><span class="feld feld--entfall">entfällt</span></span></div>
+      <div class="kennz__text"><b>Entfällt</b><span>Rote Leiste, helle rote Fläche, der ganze Inhalt durchgestrichen.</span>
+        <dl><dt><span class="feld feld--entfall">entfällt</span></dt><dd>Die Stunde findet nicht statt.</dd><dt><span class="feld feld--entfall">5b fehlt</span></dt><dd>Die Klasse ist abwesend, deshalb entfällt die Stunde.</dd><dt><span class="feld feld--entfall">verlegt → Di 21.10., 6. Std</span></dt><dd>Die Stunde findet stattdessen am genannten Termin statt.</dd></dl>
+      </div>
+    </section>
+    <section class="kennz__gruppe" role="listitem">
+      <div class="muster card--change is-offen" aria-hidden="true"><span class="card__line card__line--primary">E</span><span class="card__line">7c</span><span class="card__line"><span class="feld feld--offen">Had fehlt</span></span><span class="card__line">403</span></div>
+      <div class="kennz__text"><b>Vertretung folgt</b><span>Neutral mit grau gestrichelter Leiste: noch nicht vergeben – kein Entfall.</span>
+        <dl><dt><span class="feld feld--offen">Had fehlt</span></dt><dd>Lehrkräfte sehen, wer fehlt.</dd><dt><span class="feld feld--offen">Vertretung folgt</span></dt><dd>So steht es für Schüler*innen und Eltern.</dd></dl>
+      </div>
+    </section>
+    <section class="kennz__gruppe" role="listitem">
+      
+      <div class="kennz__text"><b>Termine und Hinweise</b><span>Ohne Leiste, über die betroffenen Stunden.</span>
+        <dl><dt><b>Termin</b></dt><dd>Veranstaltung oder Termin als ruhiger beiger Block.</dd><dt><span class="notiz-muster">Mitteilung</span></dt><dd>Hinweis der Schule zum Tag als helle gelbe Notiz (Tippen zeigt den Text).</dd><dt><b>Prüfung</b></dt><dd>Bernsteinfarbene Linie und Wort „Prüfung“.</dd><dt><b>+2</b></dt><dd>Weitere Stunden zur selben Zeit – Tippen zeigt alle.</dd></dl>
+      </div>
+    </section>
+  </div>
   <ul class="legend">
     <li><i class="sw sw--normal"></i><div><b>Unterricht</b><span>Fläche in der Farbe des Fachs</span></div></li>
-    <li><i class="sw sw--change"><u>R12</u></i><div><b>Vertretung, Änderung</b><span>Grüne Fläche mit schraffierter Kante, der geänderte Wert im grünen Feld „+neu (bisher)“</span></div></li>
-    <li><i class="sw sw--cancel"><s>M</s></i><div><b>Entfall</b><span>Rot, alles durchgestrichen, Feld „× entfällt“ – findet nicht statt</span></div></li>
+    <li><i class="sw sw--change"><u>R12</u></i><div><b>Vertretung, Änderung</b><span>Grüne Leiste und Fläche, das Geänderte als Tag „neu statt bisher“</span></div></li>
+    <li><i class="sw sw--cancel"><s>M</s></i><div><b>Entfall</b><span>Rot, alles durchgestrichen, Tag „entfällt“ – findet nicht statt</span></div></li>
     <li><i class="sw sw--exam"></i><div><b>Prüfung</b><span>Klausur oder Leistungsnachweis in dieser Stunde</span></div></li>
     <li><i class="sw sw--event"></i><div><b>Veranstaltung, Termin</b><span>Warmer Block über die Stunden; betrifft eine oder mehrere Klassen</span></div></li>
     <li><i class="sw sw--holiday"></i><div><b>Ferien, unterrichtsfrei</b><span>Ganzer Tag mit Name und Zeitraum</span></div></li>

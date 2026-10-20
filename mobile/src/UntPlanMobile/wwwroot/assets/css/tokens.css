@@ -1,10 +1,9 @@
 /* EduOrga Designsystem – Grundwerte (Design Tokens). Marke: siehe design/MARKE.md.
    (Die Variablennamen --up-marine-* sind historisch; sie tragen jetzt die EduOrga-Petrolreihe.)
    Diese Datei ist die einzige Quelle für Farben, Schrift, Abstände und Radien. UntPlan Studio bindet sie direkt ein
-   (studio/client/src/main.tsx, Schriften unter studio/client/public/fonts); die übrigen Oberflächen binden eine Kopie ein,
-   Änderungen hier und in den Kopien gleich halten:
-     web/src/UntPlanWeb/wwwroot/css/tokens.css
-     mobile/src/UntPlanMobile/wwwroot/assets/css/tokens.css
+   (studio/client/src/main.tsx, Schriften unter studio/client/public/fonts); EduOrga Mobile bindet eine Kopie ein
+   (mobile/src/UntPlanMobile/wwwroot/assets/css/tokens.css – gleich halten); EduOrga Web übernimmt die Werte in
+   web/client/src/theme.ts (MUI-Thema).
    Die Schriftdateien liegen relativ zur Kopie unter ../fonts/ (Mobile: ../fonts/). */
 
 @font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/plex-sans-400.woff2") format("woff2"); }
@@ -51,6 +50,8 @@
   --up-aenderung-flaeche: #e6f4ea;
   --up-aenderung-text: #1d5c3a;   /* Schrift im grünen Feld „+Gal (Gor)“ */
   --up-aenderung-feld: #c9e8d4;   /* Feld (Chip) auf der Stundenkarte */
+  --up-offen: #7d8b90;            /* offene Vertretung: neutral, gestrichelte Leiste (nie rot) */
+  --up-offen-text: #3d4d52;
   --up-mitteilung: #8a6d0b;       /* Mitteilung im Plan (helle gelbe Notiz) */
   --up-mitteilung-flaeche: #fdf5c9;
   --up-mitteilung-rand: #eddc8c;
@@ -144,7 +145,11 @@
     --up-aenderung-flaeche: #15281d;
     --up-aenderung-text: #b5e6c8;
     --up-aenderung-feld: #1f4630;
-    --up-mitteilung: #e8cf6a;
+    --up-offen: #8a9aa0;
+    --up-offen-text: #d3dde0;
+    --up-offen: #8a9aa0;
+  --up-offen-text: #d3dde0;
+  --up-mitteilung: #e8cf6a;
     --up-mitteilung-flaeche: #2e2a14;
     --up-mitteilung-rand: #5a5020;
     --up-mitteilung-text: #efe2a8;

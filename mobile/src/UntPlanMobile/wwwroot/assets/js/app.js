@@ -567,39 +567,39 @@ if (typeof window !== 'undefined') window.UntPlanPlus = { plusWert };
 /* PLUS-ENDE */
 
 /* AENDERUNG-BEGINN (wird von den Tests ausgeführt) */
-/* Änderungstypen der Stundenkarte – dieselben Regeln wie in EduOrga Web und
-   iOS (design/DESIGN.md, Abschnitt 10): jede Änderung grün mit dem Feld
-   „+neu (bisher)“ auf der betroffenen Zeile, fehlender Wert „(bisher)“,
-   Entfall rot mit allem durchgestrichen. Unten auf der Karte ein eigenes
-   Feld: „× entfällt“, „× auf Di 21.10. 6 | 12:20“ (verschoben auf),
-   „⊕ von Mo 20.10. 3 | 09:45“ (verschoben von), „⊕ Zusatz“. */
+/* Kennzeichnung der Stundenkarte – dieselben Regeln wie in EduOrga Web und
+   iOS (design/DESIGN.md, Abschnitt 10): jede Änderung grün (3-px-Leiste,
+   Kennzeichen am Rand, Tag auf der betroffenen Zeile), Entfall rot mit allem
+   durchgestrichen, offene Vertretung neutral. Tags in eigener Wortwahl:
+   „Gal statt Gor“, „Raum 105 statt 303“, „B070 zusätzlich“, „Gor fehlt“,
+   unten „entfällt“, „verlegt → Di 21.10., 6. Std“, „verlegt ← Mo 20.10.,
+   3. Std“, „zusätzlich“. */
 const WT_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 function verlegungKurz(v){
   if (!v || !/^\d{4}-\d{2}-\d{2}/.test(v.date || '')) return '';
   const [y, m, d] = v.date.slice(0, 10).split('-');
-  const wd = WT_KURZ[new Date(+y, +m - 1, +d).getDay()];
-  return `${wd} ${d}.${m}.${v.lesson ? ' ' + v.lesson : ''}${v.from ? ' | ' + v.from : ''}`;
+  const tag = `${WT_KURZ[new Date(+y, +m - 1, +d).getDay()]} ${d}.${m}.`;
+  return v.lesson ? `${tag}, ${v.lesson}. Std` : v.from ? `${tag}, ${v.from}` : tag;
 }
 function statusFeld(card){
   if (!card) return null;
   if (card.blockType === 'cancelled' && card.moved === 'von'){
     const z = verlegungKurz(card.movedTo);
-    return { ton:'entfall', zeichen:'×', text: z ? 'auf ' + z : 'verschoben' };
+    return { ton:'entfall', text: z ? 'verlegt → ' + z : 'verlegt' };
   }
-  if (card.blockType === 'cancelled') return { ton:'entfall', zeichen:'×', text:'entfällt' };
+  if (card.blockType === 'cancelled') return { ton:'entfall', text:'entfällt' };
   if (card.blockType === 'change' && card.moved === 'nach'){
     const z = verlegungKurz(card.movedFrom);
-    return { ton:'aenderung', zeichen:'⊕', text: z ? 'von ' + z : 'verschoben' };
+    return { ton:'aenderung', text: z ? 'verlegt ← ' + z : 'hierher verlegt' };
   }
-  if (card.blockType === 'change' && card.extra) return { ton:'aenderung', zeichen:'⊕', text:'Zusatz' };
+  if (card.blockType === 'change' && card.extra) return { ton:'aenderung', text:'zusätzlich' };
   return null;
 }
-/* Text im Feld eines geänderten Werts: „+neu (bisher)“, „+neu“ bzw. „(bisher)“. */
-function feldText(jetzt, vorher, weg){
-  const j = String(jetzt || '').trim(), v = String(vorher || '').trim();
-  if (weg) return `(${v || j})`;
-  const neu = j.startsWith('+') ? j : '+' + j;
-  return v && v.toUpperCase() !== j.replace(/^\+/, '').toUpperCase() ? `${neu} (${v})` : neu;
+/* Text im Tag eines geänderten Werts: „neu statt bisher“, „neu zusätzlich“ bzw. „bisher fehlt“ (Raum mit „Raum “ davor). */
+function feldText(jetzt, vorher, weg, praefix = ''){
+  const j = String(jetzt || '').trim().replace(/^\+/, ''), v = String(vorher || '').trim();
+  if (weg) return `${v || j} fehlt`;
+  return v && v.toUpperCase() !== j.toUpperCase() ? `${praefix}${j} statt ${v}` : `${praefix}${j} zusätzlich`;
 }
 /* Zeilen kürzen: die erste bleibt, geänderte gehen vor, unveränderte fallen von unten weg. */
 function zeilenKuerzen(lines, max){
@@ -1955,7 +1955,7 @@ function renderGrid(){
           /* Offene Vertretung: neutral (nie rot) – Kollegium „(Abr)“, Schüler*innen und Eltern „Vertretung folgt“ */
           : offenGruen ? `<span class="feld feld--offen">${esc(state.isStudent ? 'Vertretung folgt' : feldText('', l.text, true))}</span>`
           : l.changed ? `<span class="${cls2}">${esc(l.removed ? feldText('', l.text, true)
-                : feldText(werteListe(l.text).map(x => plusWert(card, l.key, x).replace(/^\+/, '')).join(KACHEL_TRENNER), kachelWert(card[l.key + 'Orig'])))}</span>` : esc(l.text);
+                : feldText(werteListe(l.text).map(x => plusWert(card, l.key, x).replace(/^\+/, '')).join(KACHEL_TRENNER), kachelWert(card[l.key + 'Orig']), false, l.key === 'room' ? 'Raum ' : ''))}</span>` : esc(l.text);
       };
 
       const body = isHoliday
@@ -2108,14 +2108,14 @@ function renderGrid(){
         (card.changed || []).includes('room') && card.roomOrig && card.room ? `Raumänderung: ${card.room} statt ${card.roomOrig}` : '',
         (card.openSub || card.teacherOpen) && card.blockType === 'change' ? 'Vertretung folgt' : '',
         card.classAbsent ? 'Klasse fehlt' : '',
-        feld ? (feld.zeichen === '×' ? 'Entfällt' : '') + (feld.text === 'entfällt' ? '' : (feld.zeichen === '×' ? ', verschoben ' : '') + feld.text) : (plakette || '')
+        feld ? (feld.ton === 'entfall' && feld.text !== 'entfällt' ? 'Entfällt, ' : '') + feld.text : (plakette || '')
       ].filter(Boolean).join('. ');
       const tag = isHoliday ? 'div' : 'button';
       html += `<${tag} class="${cls.join(' ')}" style="${style}"
                  data-date="${date}" data-lesson="${card.lesson}" data-idx="${card._uid}"
                  ${isHoliday ? '' : `type="button" aria-label="${esc(sprech)}"`}>
         ${body}
-        ${feld ? `<span class="card__line card__line--feld"><span class="feld feld--${feld.ton}"><b aria-hidden="true">${feld.zeichen}</b> ${esc(feld.text)}</span></span>` : ''}
+        ${feld ? `<span class="card__line card__line--feld"><span class="feld feld--${feld.ton}">${esc(feld.text)}</span></span>` : ''}
         ${eckzeichen}
         ${plakette ? `<span class="card__status">${esc(plakette)}</span>` : ''}
         ${(isHoliday || isSup) ? '' : `<span class="card__times"><span>${timeA}</span><span>${timeB}</span></span>`}

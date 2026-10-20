@@ -82,19 +82,23 @@ public class PlanrasterTests
         File.WriteAllText(skript, "const window = {};\nconst pruefe = (ist, soll) => { const a = JSON.stringify(ist), b = JSON.stringify(soll); if (a !== b) { console.error(a + ' statt ' + b); process.exit(1); } };\n"
             + Abschnitt(AppJs, "AENDERUNG") + """
             const A = window.UntPlanAenderung;
-            const f = c => { const x = A.statusFeld(c); return x ? x.zeichen + ' ' + x.text + ' ' + x.ton : null; };
-            // Entfall, verschoben auf/von (Wochentag Datum Stunde | Beginn), Zusatz
-            pruefe(f({ blockType:'cancelled' }), '× entfällt entfall');
-            pruefe(f({ blockType:'cancelled', moved:'von', movedTo:{ date:'2026-10-21', from:'12:20', lesson:6 } }), '× auf Mi 21.10. 6 | 12:20 entfall');
-            pruefe(f({ blockType:'change', moved:'nach', movedFrom:{ date:'2026-10-19', from:'09:45', lesson:3 } }), '⊕ von Mo 19.10. 3 | 09:45 aenderung');
-            pruefe(f({ blockType:'change', extra:true }), '⊕ Zusatz aenderung');
+            const f = c => { const x = A.statusFeld(c); return x ? x.text + ' ' + x.ton : null; };
+            // Entfall, verlegt (Wochentag Datum, Stunde), zusätzlich – eigene Wortwahl
+            pruefe(f({ blockType:'cancelled' }), 'entfällt entfall');
+            pruefe(f({ blockType:'cancelled', moved:'von', movedTo:{ date:'2026-10-21', from:'12:20', lesson:6 } }), 'verlegt → Mi 21.10., 6. Std entfall');
+            pruefe(f({ blockType:'change', moved:'nach', movedFrom:{ date:'2026-10-19', from:'09:45', lesson:3 } }), 'verlegt ← Mo 19.10., 3. Std aenderung');
+            pruefe(f({ blockType:'change', extra:true }), 'zusätzlich aenderung');
             pruefe(f({ blockType:'change' }), null);
             pruefe(f({ blockType:'normal' }), null);
-            // Feld: „+neu (bisher)“, „+neu“, „(bisher)“
-            pruefe(A.feldText('Gal', 'Gor'), '+Gal (Gor)');
-            pruefe(A.feldText('105', '303'), '+105 (303)');
-            pruefe(A.feldText('B070', ''), '+B070');
-            pruefe(A.feldText('', 'Abr', true), '(Abr)');
+            // Tags: „neu statt bisher“, „Raum neu statt bisher“, „neu zusätzlich“, „bisher fehlt“
+            pruefe(A.feldText('Gal', 'Gor'), 'Gal statt Gor');
+            pruefe(A.feldText('105', '303', false, 'Raum '), 'Raum 105 statt 303');
+            pruefe(A.feldText('B070', ''), 'B070 zusätzlich');
+            pruefe(A.feldText('', 'Abr', true), 'Abr fehlt');
+            // Datenstand
+            const st = A.studioStandText('2026-10-20 14:32:00', new Date(2026, 9, 20, 14, 37));
+            pruefe([st.voll, st.rel, st.alt], ['Di 20.10.2026, 14:32', 'vor 5 Min.', false]);
+            pruefe(A.studioStandText('2026-10-16 14:32:00', new Date(2026, 9, 20, 14, 37)).alt, true);
             // Kürzen: Fach bleibt, geänderte Zeile geht vor
             const z = [{ key:'subject' }, { key:'class' }, { key:'teacher' }, { key:'room', changed:true }];
             pruefe(A.zeilenKuerzen(z, 2).map(l => l.key), ['subject', 'room']);
@@ -107,11 +111,11 @@ public class PlanrasterTests
             Assert.True(p.ExitCode == 0, fehler);
         }
         finally { File.Delete(skript); }
-        // Stundenkarte: Felder, schraffierte Kante, rote Fläche beim Entfall, Legende „Änderungstyp | Darstellung“, Mitteilung
+        // Stundenkarte: Tags, Statusleiste, rote Fläche beim Entfall, Legende „Kennzeichnungen“, Mitteilung
         Assert.Contains(".feld--entfall{ background:var(--up-entfall-feld);", AppCss);
         Assert.Contains("background-color:var(--up-entfall-flaeche);", AppCss);
-        Assert.Contains("repeating-linear-gradient(135deg, var(--st-aenderung) 0 2px", AppCss);
-        Assert.Contains("<table class=\"legende-tab\"", Datei("Vorlagen", "index.html"));
+        Assert.Contains(".card--change::before, .card--released::before{ background:var(--st-aenderung); width:3px; }", AppCss);
+        Assert.Contains("<div class=\"kennz\" role=\"list\"", Datei("Vorlagen", "index.html"));
         Assert.Contains("class=\"notiz\"", AppJs);
     }
 

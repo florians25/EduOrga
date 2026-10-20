@@ -17,7 +17,7 @@ import { useSitzung } from '../../app/sitzung';
 import { ElementWahl, ZeitNavi } from '../../components/Auswahl';
 import { Fehler, Laden, Seite } from '../../components/Seite';
 import { Wochenraster, type Aufsichtsmodus } from '../../components/plan/Wochenraster';
-import { Legende, LegendeTabelle } from '../../components/plan/Legende';
+import { Legende, Kennzeichnungen } from '../../components/plan/Legende';
 import { Stundendetails } from '../../components/plan/Stundendetails';
 import type { Art } from '../../components/plan/logik';
 import { heuteIso, istIsoDatum, kalenderwoche, montag, wochenText, wochentagKurz, datumKurz } from '../../lib/datum';
@@ -49,14 +49,14 @@ function langname(plan: Wochenplan) {
   return n && n !== plan.element ? n : '';
 }
 
-/** Legende „Änderungstyp | Darstellung“ als eigenes Fenster (Knopf „Legende“ in der Werkzeugleiste). */
+/** „Kennzeichnungen“ als eigenes Fenster (Knopf „Legende“ in der Werkzeugleiste). */
 export function LegendeDialog({ offen, zu }: { offen: boolean; zu: () => void }) {
   return (
     <Dialog open={offen} onClose={zu} maxWidth="sm" fullWidth>
-      <DialogTitle>Legende</DialogTitle>
+      <DialogTitle>Kennzeichnungen</DialogTitle>
       <DialogContent sx={{ px: { xs: 1, sm: 3 } }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Jede Änderung ist grün, ein Entfall rot und vollständig durchgestrichen. Die betroffene Angabe steht im Feld, z. B. „+Gal (Gor)“: neue Lehrkraft, in Klammern die bisherige.</Typography>
-        <LegendeTabelle />
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Geändertes ist grün markiert, Entfall rot und durchgestrichen, eine noch offene Vertretung neutral. Was sich geändert hat, steht als kurzer Tag auf der betroffenen Zeile.</Typography>
+        <Kennzeichnungen />
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}><Button variant="contained" onClick={zu}>Schließen</Button></DialogActions>
     </Dialog>
@@ -71,7 +71,7 @@ export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
         <Grid container spacing={4}>
           <Grid size={{ xs: 12, md: 7 }}>
             <Typography variant="h4" sx={{ mb: 1.5 }}>Darstellung</Typography>
-            <LegendeTabelle />
+            <Kennzeichnungen />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>Die Kurzinfo beim Überfahren nennt die Art der Änderung. „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext; „+2“ am rechten Rand öffnet weitere Stunden zur selben Zeit.</Typography>
           </Grid>
           <Grid size={{ xs: 12, md: 5 }}>

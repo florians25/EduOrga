@@ -2719,10 +2719,10 @@ body.show-card-times .card__times{ display:flex; }
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 /* Offene Vertretung: neutral, grau gestrichelte Kante, Feld „(Abr)“ bzw. „Vertretung folgt“ – nie rot */
-.feld--offen{ background:var(--offen-feld, #e6eaec); color:var(--offen-text, #3d4d52); }
+.feld--offen{ background:var(--offen-feld, #e6eaec); color:var(--up-offen-text); }
 :root[data-thema="dunkel"]{ --offen-feld:#26363b; --offen-text:#d3dde0; }
 .card--change.is-offen{ background-color:var(--karte); box-shadow:var(--karte-rahmen); }
-.card--change.is-offen::before{ background:repeating-linear-gradient(180deg, var(--up-text-3) 0 4px, transparent 4px 7px); }
+.card--change.is-offen::before{ background:repeating-linear-gradient(180deg, var(--up-offen) 0 4px, transparent 4px 7px); }
 /* Felder so groß wie die Zeilen (12 px, 600), gut lesbar */
 .badge, .feld{ font-size:12px; font-weight:600; }
 /* Bewegung reduzieren */
@@ -2752,3 +2752,44 @@ body.show-card-times .card__times{ display:flex; }
 .kbtab__anw span{ font-size:13px; font-weight:400; opacity:.9; }
 .kbtab__anw.is-fertig{ background:var(--up-aenderung-flaeche); color:var(--up-aenderung-text); border-color:color-mix(in srgb, var(--st-aenderung) 40%, transparent); }
 .kbtab__alle{ align-self:flex-start; }
+
+/* ---------------------------------------------------------------------
+   EduOrga-Kennzeichnung (ersetzt die Schraffur): durchgehende 3-px-Leiste
+   in der Statusfarbe, kleines Kennzeichen oben rechts, Tags umrandet auf
+   heller Fläche (Radius 3 px, 12 px/600, Schrift in der dunklen
+   Statusfarbe – WCAG AA). Offene Vertretung: graue gestrichelte Leiste.
+   --------------------------------------------------------------------- */
+.card--change::before, .card--released::before{ background:var(--st-aenderung); width:3px; }
+.card--cancelled::before{ background:var(--st-entfall); width:3px; }
+.card--change::after, .card--released::after, .card--cancelled::after{
+  content:""; position:absolute; top:4px; right:4px; width:6px; height:6px; border-radius:50%; z-index:1; pointer-events:none;
+  background:var(--st-aenderung);
+}
+.card--cancelled::after{ background:var(--st-entfall); }
+.card--change.is-offen::after{ background:var(--up-text-3); }
+.card.has-plus::after{ display:none; }
+.card--change, .card--released, .card--cancelled, .card--class-absent{ padding-left:calc(3px + 6px); }
+.badge, .badge.badge--removed.badge--open, .feld{
+  background:var(--up-flaeche); color:var(--up-aenderung-text);
+  box-shadow:inset 0 0 0 1px var(--st-aenderung);
+  padding:0 4px; line-height:15px; border-radius:3px;
+}
+.feld--entfall, .card--cancelled .feld, .card--cancelled .feld--entfall{ background:var(--up-flaeche); color:var(--up-entfall-text); box-shadow:inset 0 0 0 1px var(--st-entfall); }
+.feld--offen{ background:var(--up-flaeche); color:var(--up-offen-text); box-shadow:inset 0 0 0 1px var(--up-text-3); }
+.legende-tab .muster::before{ width:3px; }
+/* Kennzeichnungen (Legende): Gruppen mit Musterkarte und Tags */
+.kennz{ display:flex; flex-direction:column; padding:0 16px 8px; }
+.kennz__gruppe{ display:grid; grid-template-columns:104px minmax(0,1fr); gap:12px; padding:12px 0; border-top:1px solid var(--up-linie); align-items:start; }
+.kennz__gruppe:first-child{ border-top:0; }
+.kennz .muster{ position:relative; width:104px; min-height:66px; overflow:hidden; display:flex; flex-direction:column;
+  padding:4px 12px 4px 9px; border-radius:4px; background:var(--karte); box-shadow:var(--karte-rahmen); }
+.kennz .muster::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--balken-grau); }
+.kennz .muster .card__line{ position:relative; }
+.kennz__text b{ display:block; font-size:14px; font-weight:600; color:var(--up-text); }
+.kennz__text > span{ display:block; font-size:13px; color:var(--up-text-2); margin:2px 0 6px; }
+.kennz__text dl{ margin:0; display:grid; grid-template-columns:max-content minmax(0,1fr); gap:5px 10px; align-items:baseline; }
+.kennz__text dt{ margin:0; font-size:12px; }
+.kennz__text dt b{ display:inline; font-size:12px; }
+.kennz__text dd{ margin:0; font-size:12.5px; color:var(--up-text-2); }
+.notiz-muster{ display:inline-block; padding:0 5px; border-radius:3px; background:var(--up-mitteilung-flaeche); color:var(--up-mitteilung-text); box-shadow:inset 0 0 0 1px var(--up-mitteilung-rand); }
+@media (max-width:360px){ .kennz__gruppe{ grid-template-columns:1fr; } }

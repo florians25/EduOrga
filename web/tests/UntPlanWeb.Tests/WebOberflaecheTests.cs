@@ -95,11 +95,12 @@ public class WebOberflaecheTests
         Assert.Contains("data-fachbalken", kachel);
         Assert.Contains("s.aenderung.flaeche", kachel);
         Assert.Contains("s.entfall.flaeche", kachel);
-        Assert.Contains("repeating-linear-gradient(135deg", kachel);
+        Assert.Contains("export const leiste", kachel);                 // durchgehende 3-px-Leiste in der Statusfarbe, offen grau gestrichelt
+        Assert.Contains("data-kennzeichen", kachel);
         Assert.Contains("line-through", kachel);
         Assert.Contains("kartenbild(k, typ)", kachel);
         var aenderung = Lesen("src", "components", "plan", "aenderung.ts");
-        foreach (var muster in new[] { "`+${k} (${alt})`", "`(${alt})`", "'entfällt'", "`auf ${ziel}`", "`von ${von}`", "'Zusatz'", "`+${k.fach} (${k.fachAlt})`" })
+        foreach (var muster in new[] { "`${praefix}${k} statt ${alt}`", "`${alt} fehlt`", "'Vertretung folgt'", "'entfällt'", "`verlegt → ${ziel}`", "`verlegt ← ${von}`", "'zusätzlich'", "`${k.fach} statt ${k.fachAlt}`", "praefix: 'Raum '" })
             Assert.Contains(muster, aenderung);
         var darstellung = Lesen("src", "components", "plan", "darstellung.tsx");
         // Standard „EduOrga Standard“: helle Karte auf hellgrauem Raster, Kante links (Fachfarbe mit Tönung), Fach · Klasse · Lehrkraft · Raum
@@ -110,8 +111,8 @@ public class WebOberflaecheTests
         Assert.Contains("'Fach · Klasse · Lehrkraft · Raum'", Lesen("src", "pages", "admin", "Stundenkarten.tsx"));
         Assert.Contains("{ id: 'standard', name: 'EduOrga Standard'", darstellung);
         foreach (var v in new[] { "'klassisch'", "'kompakt'", "'sachlich'", "'akzent'", "'flaeche'", "'minimal'" }) Assert.Contains($"id: {v}", darstellung);
-        // Legende „Änderungstyp | Darstellung“
-        Assert.Contains("LegendeTabelle", Lesen("src", "components", "plan", "Legende.tsx"));
+        // Legende „Kennzeichnungen“ (eigene Gliederung)
+        Assert.Contains("export function Kennzeichnungen", Lesen("src", "components", "plan", "Legende.tsx"));
         // kompakte Karten füllen die Rasterzelle (Abstand je Dichte)
         Assert.Contains("luecke: 1", darstellung);
         Assert.Contains("DICHTE[d.dichte].luecke", Lesen("src", "components", "plan", "Wochenraster.tsx"));
