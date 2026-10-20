@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Werte als Text
 
-/// Werte (Lehrkräfte, Klassen, Räume) als Text: alter Wert durchgestrichen, geänderter Wert violett unterstrichen.
+/// Werte (Lehrkräfte, Klassen, Räume) als Text: alter Wert durchgestrichen, geänderter Wert grün unterstrichen.
 /// `offen`: Lehrkräfte einer offenen Vertretung – die abwesende Lehrkraft ohne neuen Wert steht durchgestrichen in Petrol.
 func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> Text {
     var ergebnis = Text("")
@@ -26,7 +26,7 @@ func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> 
     return ergebnis
 }
 
-/// Geänderter Wert: violett und unterstrichen.
+/// Geänderter Wert: grün und unterstrichen.
 func geaendertText(_ text: String) -> Text {
     Text(text)
         .foregroundColor(Farben.aenderung)

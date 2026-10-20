@@ -211,13 +211,21 @@ struct PlanSeite: View {
             }
         }
         .overlay(alignment: .top) {
-            if let fehler = modell.fehler {
-                Fehlerhinweis(text: fehler)
-                    .padding(.horizontal, Stilmass.rand)
-                    .padding(.top, Stilmass.raster)
-                    .onTapGesture { modell.fehler = nil }
-                    .transition(.move(edge: .top).combined(with: .opacity))
+            VStack(spacing: 6) {
+                if let fehler = modell.fehler {
+                    Fehlerhinweis(text: fehler)
+                        .padding(.horizontal, Stilmass.rand)
+                        .onTapGesture { modell.fehler = nil }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                // Daten aus dem Zwischenspeicher (Laden läuft bzw. gescheitert): „Stand hh:mm“, bis die frische Antwort da ist
+                if let stand = standAnzeige {
+                    Standhinweis(stand: stand, laedt: standLaedt)
+                        .transition(.opacity)
+                }
             }
+            .padding(.top, Stilmass.raster)
+            .animation(.snappy(duration: 0.2), value: standAnzeige)
         }
         .navigationTitle(modell.planname)
         .navigationBarTitleDisplayMode(.inline)
@@ -269,10 +277,29 @@ struct PlanSeite: View {
                 if mehrfach.aktiv { await mehrfach.laden(montag: aktuelleWoche, erzwingen: true) }
             }
         }
+        // App im Vordergrund, Push, angetippte Mitteilung: gezeigte Woche sofort frisch laden (Speicher nur Platzhalter)
+        .onChange(of: zustand.frischeAnfrage) { _, _ in
+            Task {
+                await modell.laden(montag: aktuelleWoche, erzwingen: true)
+                if mehrfach.aktiv { await mehrfach.laden(montag: aktuelleWoche, erzwingen: true) }
+            }
+        }
         .onChange(of: zustand.notizAenderung) { _, neu in
             guard let neu else { return }
             Task { await modell.laden(montag: Planmodell.montag(neu.datum), erzwingen: true) }
         }
+    }
+
+    /// Stand der gezeigten Woche, solange er nicht als aktuell bestätigt ist (nil = frisch).
+    private var standAnzeige: Date? {
+        mehrfachAktiv ? mehrfach.standHinweis(montag: aktuelleWoche) : modell.standHinweis(montag: aktuelleWoche)
+    }
+
+    private var standLaedt: Bool {
+        if mehrfachAktiv {
+            return mehrfach.auswahl.contains { mehrfach.modell($0)?.laedt(montag: aktuelleWoche) == true }
+        }
+        return modell.laedt(montag: aktuelleWoche)
     }
 
     // MARK: Werkzeuge
@@ -686,9 +713,9 @@ struct TagRasterSeite: View {
             .scrollIndicators(.hidden)
             .refreshable {
                 if mehrfachAktiv {
-                    await mehrfach.laden(montag: montag, erzwingen: true)
+                    await mehrfach.aktualisieren(montag: montag)
                 } else {
-                    await modell.laden(montag: montag, erzwingen: true)
+                    await modell.aktualisieren(montag: montag)
                 }
                 Haptik.erfolg()
             }
@@ -740,7 +767,7 @@ struct TagSeite: View {
             }
             .scrollIndicators(.hidden)
             .refreshable {
-                await modell.laden(montag: Planmodell.montag(datum), erzwingen: true)
+                await modell.aktualisieren(montag: Planmodell.montag(datum))
                 Haptik.erfolg()
             }
             .onAppear { rollen(leser) }

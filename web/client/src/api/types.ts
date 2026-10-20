@@ -138,6 +138,8 @@ export interface Tageskopf {
   freiArt: 'ferien' | 'feiertag' | 'frei' | null | string;
   freiVon: string | null;
   freiBis: string | null;
+  /** Mitteilungen zum Tag (Tagestexte aus EduOrga Studio) – helle gelbe Notiz im Tageskopf; ältere Server: fehlt. */
+  mitteilungen?: string[];
 }
 
 export interface PlanAbwesenheit { datum: string; von: string; bis: string; grund: string; art: string }

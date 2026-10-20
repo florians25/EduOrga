@@ -72,6 +72,17 @@ final class Mehrfachplaene: ObservableObject {
         }
     }
 
+    /// Ziehen zum Aktualisieren: Zwischenspeicher veralten, alle gewählten Pläne dieser Woche sofort neu laden.
+    func aktualisieren(montag: String) async {
+        Kachelspeicher.veralten()
+        await laden(montag: montag, erzwingen: true)
+    }
+
+    /// Ältester Stand der gezeigten (noch nicht bestätigten) Pläne dieser Woche; nil = alle frisch.
+    func standHinweis(montag: String) -> Date? {
+        auswahl.compactMap { modelle[$0.id]?.standHinweis(montag: montag) }.min()
+    }
+
     private func setzen(_ liste: [PlanAuswahl]) {
         var neu: [String: Planmodell] = [:]
         for p in liste {

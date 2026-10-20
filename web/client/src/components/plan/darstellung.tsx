@@ -1,8 +1,8 @@
 // Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten): schulweite Einstellung aus der Sitzung, als Kontext für
-// Kachel, Legende, Startseite, Übersicht und Stundendetails. Standard ist „Klassisch“: weiße, kompakte Karten mit leichtem Schatten auf
-// hellgrauem Raster, Fachfarbe als schmaler Streifen innen links (grau ohne Fachfarbe), drei kurze Zeilen Lehrkraft bzw. Klasse (fett) ·
-// Fach · Raum; Änderungen und Prüfungen zusätzlich in der hellen Statusfläche (Vertretung violett). Die Statusdarstellung (Linie, Schraffur, Durchstreichung, Kürzel-Plaketten)
-// bleibt in jeder Variante erhalten.
+// Kachel, Legende, Startseite, Übersicht und Stundendetails. Standard ist „EduOrga Standard“ (design/DESIGN.md, Abschnitt 10): kompakte
+// helle Karten auf hellgrauem Raster, 4-px-Kante links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), je eine Zeile Fach (600)
+// · Klasse · Lehrkraft · Raum; Änderungen grün, Entfall rot (aenderung.ts). Die Statusdarstellung (schraffierte Kante, Felder „+neu
+// (bisher)“, Durchstreichung, Statusfeld) bleibt in jeder Variante erhalten.
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Box } from '@mui/material';
 import type { Elemente } from '../../api/types';
@@ -11,8 +11,8 @@ import { gueltigeFarbe } from './logik';
 export type Fachfarbe = 'balken-innen' | 'quadrat' | 'balken-links' | 'balken-flaeche' | 'balken-oben' | 'flaeche' | 'keine';
 export type KartenFlaeche = 'neutral' | 'weiss' | 'getoent';
 export type Rahmen = 'fein' | 'kraeftig' | 'schatten' | 'keiner';
-/** Zeilenfolge: Fach oben (Raum rechts, darunter Lehrkraft/Klasse) oder Lehrkraft/Klasse · Fach · Raum untereinander. */
-export type Reihenfolge = 'fach' | 'element';
+/** Zeilenfolge: Fach · Klasse · Lehrkraft · Raum je eine Zeile (Standard), Fach oben (Raum rechts) oder Lehrkraft/Klasse zuerst. */
+export type Reihenfolge = 'zeilen' | 'fach' | 'element';
 export type Raster = 'weiss' | 'grau';
 export type Dichte = 'kompakt' | 'normal' | 'grosszuegig';
 export type TextArt = 'kuerzel' | 'name';
@@ -40,7 +40,7 @@ export interface Kartendarstellung {
   kuerzel: KuerzelStil;
   /** Statuswörter (Entfall, Offen, Vertreten …) zusätzlich auf den Kacheln. */
   statuswoerter: boolean;
-  /** Geänderte Stunden und Prüfungen zusätzlich in der hellen Statusfläche (Änderung violett, Prüfung bernstein). */
+  /** Geänderte Stunden und Prüfungen zusätzlich in der hellen Statusfläche (Änderung grün, Prüfung bernstein). */
   statusflaeche: boolean;
   /** Zeilenfolge der Karte. */
   reihenfolge: Reihenfolge;
@@ -48,11 +48,15 @@ export interface Kartendarstellung {
   raster: Raster;
 }
 
+/** „EduOrga Standard“ (alle Plattformen gleich): helle Karte, Kante links grau bzw. in der Fachfarbe mit leichter Tönung, Fach · Klasse · Lehrkraft · Raum. */
 export const STANDARD: Kartendarstellung = {
-  fachfarbe: 'balken-innen', balkenbreite: 4, deckkraft: 12, flaeche: 'weiss', rahmen: 'schatten', eckenradius: 2, dichte: 'kompakt',
+  fachfarbe: 'balken-flaeche', balkenbreite: 4, deckkraft: 12, flaeche: 'weiss', rahmen: 'schatten', eckenradius: 4, dichte: 'kompakt',
   fach: 'kuerzel', raum: true, zeile2: true, zeile2Text: 'kuerzel', kuerzel: 'text', statuswoerter: false, statusflaeche: true,
-  reihenfolge: 'element', raster: 'grau',
+  reihenfolge: 'zeilen', raster: 'grau',
 };
+
+/** Bisheriger Standard „Klassisch“ (Streifen innen links, Lehrkraft bzw. Klasse oben) – als Vorlage weiter wählbar. */
+const KLASSISCH: Kartendarstellung = { ...STANDARD, fachfarbe: 'balken-innen', eckenradius: 2, reihenfolge: 'element' };
 
 /** Bisherige Grunddarstellung „Sachlich“ (Fachfarbe als Quadrat, neutrale Fläche) – als Vorlage weiter wählbar. */
 const SACHLICH: Kartendarstellung = {
@@ -62,8 +66,9 @@ const SACHLICH: Kartendarstellung = {
 };
 
 export const VORLAGEN: { id: string; name: string; hinweis: string; werte: Kartendarstellung }[] = [
-  { id: 'klassisch', name: 'Klassisch (Standard)', hinweis: 'Weiße Karten auf hellgrauem Raster, Fachfarbe als schmaler Streifen innen links, drei kurze Zeilen: Lehrkraft bzw. Klasse · Fach · Raum', werte: STANDARD },
-  { id: 'kompakt', name: 'Kompakt', hinweis: 'Kompakte Karten mit Fachfarbe als Balken links und leichter Tönung, Fach fett, Raum rechts', werte: { ...STANDARD, fachfarbe: 'balken-flaeche', rahmen: 'fein', reihenfolge: 'fach', raster: 'weiss' } },
+  { id: 'standard', name: 'EduOrga Standard', hinweis: 'Helle Karten auf hellgrauem Raster, Kante links grau bzw. in der Fachfarbe mit leichter Tönung, je eine Zeile: Fach · Klasse · Lehrkraft · Raum', werte: STANDARD },
+  { id: 'klassisch', name: 'Klassisch', hinweis: 'Weiße Karten auf hellgrauem Raster, Fachfarbe als schmaler Streifen innen links, drei kurze Zeilen: Lehrkraft bzw. Klasse · Fach · Raum', werte: KLASSISCH },
+  { id: 'kompakt', name: 'Kompakt', hinweis: 'Kompakte Karten mit Fachfarbe als Balken links und leichter Tönung, Fach fett, Raum rechts', werte: { ...KLASSISCH, fachfarbe: 'balken-flaeche', rahmen: 'fein', reihenfolge: 'fach', raster: 'weiss' } },
   { id: 'sachlich', name: 'Sachlich', hinweis: 'Neutrale Fläche, Fachfarbe als kleines Quadrat', werte: SACHLICH },
   { id: 'akzent', name: 'Akzentbalken', hinweis: 'Weiße Karte mit Fachfarbe als Balken am linken Rand', werte: { ...SACHLICH, fachfarbe: 'balken-links', balkenbreite: 4, flaeche: 'weiss', eckenradius: 4, kuerzel: 'text' } },
   { id: 'flaeche', name: 'Farbfläche', hinweis: 'Leicht getönte Fläche in der Fachfarbe', werte: { ...SACHLICH, fachfarbe: 'flaeche', deckkraft: 14, flaeche: 'weiss', eckenradius: 4, kuerzel: 'gefuellt' } },

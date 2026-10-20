@@ -12,11 +12,17 @@ enum Heutespeicher {
     static var heute: Heute? = nil
     static var ferien: Ferienzeit? = nil
     static var sprechtage: [SprechtagKarte] = []
+    /// Zeitpunkt der letzten erfolgreichen Antwort (für „Stand hh:mm“, solange der Stand nur Platzhalter ist)
+    static var stand: Date? = nil
+    /// Stand gilt als veraltet (App im Vordergrund, Push) – der Reiter lädt sofort neu
+    static var veraltet = false
 
     static func leeren() {
         heute = nil
         ferien = nil
         sprechtage = []
+        stand = nil
+        veraltet = false
     }
 }
 

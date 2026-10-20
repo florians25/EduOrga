@@ -136,9 +136,9 @@ struct WochenSeite: View {
             .scrollIndicators(.hidden)
             .refreshable {
                 if mehrfachAktiv {
-                    await mehrfach.laden(montag: montag, erzwingen: true)
+                    await mehrfach.aktualisieren(montag: montag)
                 } else {
-                    await modell.laden(montag: montag, erzwingen: true)
+                    await modell.aktualisieren(montag: montag)
                 }
                 Haptik.erfolg()
             }
@@ -168,8 +168,11 @@ enum Rastermass {
     /// Band für kurze Pausen bzw. große Pausen (ab 15 Minuten)
     static let bandKlein: CGFloat = 3
     static let bandGross: CGFloat = 12
+    /// Zeilenhöhe je Stunde: kompakt (iPhone hochkant 52–62 pt für Fach und drei kurze Zeilen), auf breiten Flächen
+    /// (iPad, Querformat) höchstens 88 pt – der Rest des Bildschirms bleibt frei bzw. das Raster rollt.
     static let zeileMin: CGFloat = 52
-    static let zeileMax: CGFloat = 112
+    static let zeileMaxSchmal: CGFloat = 62
+    static let zeileMax: CGFloat = 88
     /// Abstand der Karte zum Zeilenrand (oben und unten) – zusammen mit der Spaltenlücke gleichmäßige Abstände
     static let einzug: CGFloat = 1.5
 
@@ -325,15 +328,18 @@ struct Rastergeometrie {
         return min(letzte, raster.count - 1)
     }
 
-    /// Zeilenhöhe: alle Stunden bis zur letzten belegten passen in die Höhe (52–112 pt, im Querformat mindestens 56).
+    /// Zeilenhöhe: kompakt – möglichst alle Stunden bis zur letzten belegten in der Höhe, aber nie höher als nötig
+    /// (iPhone hochkant 52–62 pt, sonst bis 88 pt; im Querformat mindestens 52). Die Dichte (Kompakt/Normal/Komfortabel)
+    /// skaliert das Ergebnis; mindestens 40 pt.
     static func zeilenHoehe(raster: [Rasterzeit], bis: Int, verfuegbar: CGSize, kopf: CGFloat, dichte: Double) -> CGFloat {
-        guard !raster.isEmpty else { return 64 }
+        guard !raster.isEmpty else { return 60 }
         var baender: CGFloat = 0
         for i in 0..<max(0, bis) { baender += band(raster, nach: i) }
         let anzahl = CGFloat(bis + 1)
-        let quer = verfuegbar.width > verfuegbar.height && verfuegbar.height > 0
-        let passend = verfuegbar.height > 0 ? ((verfuegbar.height - kopf - 10 - baender) / anzahl).rounded(.down) : 64
-        let basis = min(Rastermass.zeileMax, max(quer ? 56 : Rastermass.zeileMin, passend))
+        let schmal = verfuegbar.width > 0 && verfuegbar.width < 600
+        let obergrenze = schmal ? Rastermass.zeileMaxSchmal : Rastermass.zeileMax
+        let passend = verfuegbar.height > 0 ? ((verfuegbar.height - kopf - 10 - baender) / anzahl).rounded(.down) : 60
+        let basis = min(obergrenze, max(Rastermass.zeileMin, passend))
         let faktor = CGFloat(min(Wochendichte.bereich.upperBound, max(Wochendichte.bereich.lowerBound, dichte)))
         return max(40, (basis * faktor).rounded())
     }
@@ -970,7 +976,7 @@ struct JetztLinie: View {
 /// Stundenkarte des Wochenrasters (v3): füllt die Zelle genau (feste Breite und Höhe, Inhalt beschnitten – nie breiter
 /// als die Spalte), leichte Tönung der Fachfarbe, 4-pt-Balken bündig links. Oben links das Fach fett und groß, darunter je
 /// eine Zeile Klasse, Lehrkraft und Raum (nach der Kartendarstellung; Änderungen stehen immer da). Geänderte Werte als
-/// violettes Feld „neu (alt)“, Balken schraffiert; Entfall grau und durchgestrichen mit „Entfall“ in Rot.
+/// grünes Feld „+neu (alt)“, Balken schraffiert; Entfall grau und durchgestrichen mit „Entfall“ in Rot.
 struct RasterKarte: View {
     let kachel: Kachel
     /// Dahinterliegende gleichzeitige Stunden (rechts innen steht dann „+N“)
@@ -1005,58 +1011,62 @@ struct RasterKarte: View {
         return liste
     }
 
+    /// Sichtbare Zeilen bei knappem Platz: geänderte Zeilen zuerst (Reihenfolge bleibt), dann die übrigen.
+    private func auswahl(_ liste: [Kachelzeile], _ n: Int) -> [Kachelzeile] {
+        guard liste.count > n else { return liste }
+        guard n > 0 else { return [] }
+        var behalten = Set<Int>()
+        for (i, z) in liste.enumerated() where !z.nurText && behalten.count < n { behalten.insert(i) }
+        for i in liste.indices where behalten.count < n { behalten.insert(i) }
+        return liste.enumerated().filter { behalten.contains($0.offset) }.map(\.element)
+    }
+
     var body: some View {
         let stil = Klassikstil.fuer(kachel, darstellung)
         let schmal = breite < 56
-        let titelHoehe: CGFloat = schmal ? 15 : 18
-        let zeileHoehe: CGFloat = schmal ? 13 : 15
-        let platz = max(0, Int((hoehe - 7 - titelHoehe) / zeileHoehe))
-        let mitEntfallWort = entfall && platz >= 1
-        let mitZeit = zeit != nil && platz - (mitEntfallWort ? 1 : 0) >= 2
-        let rest = max(0, platz - (mitEntfallWort ? 1 : 0) - (mitZeit ? 1 : 0))
+        // Kompakt: Fach 13 pt fett, Zeilen 11 pt mit enger Zeilenhöhe (vier kurze Zeilen in rund 60 pt)
+        let titelHoehe: CGFloat = schmal ? 13.5 : 15
+        let zeileHoehe: CGFloat = schmal ? 11.5 : 12.5
+        let platz = max(0, Int((hoehe - 5 - titelHoehe) / zeileHoehe))
+        let chip = kachel.statusChip
+        let mitChip = chip != nil && platz >= 1
+        let mitZeit = zeit != nil && platz - (mitChip ? 1 : 0) >= 2
+        let rest = max(0, platz - (mitChip ? 1 : 0) - (mitZeit ? 1 : 0))
         let liste = nebenzeilen
-        let sichtbar = Array(liste.prefix(rest))
-        let wort = entfall ? nil : Statuslehre.kartenwort(kachel, darstellung)
+        let sichtbar = auswahl(liste, rest)
+        let wort = (entfall || chip != nil) ? nil : Statuslehre.kartenwort(kachel, darstellung)
         let wortPlatz = rest > sichtbar.count
         VStack(alignment: .leading, spacing: 0) {
-            Text(kachel.fachText(darstellung))
-                .font(.system(size: schmal ? 12.5 : 14.5, weight: .bold))
-                .foregroundStyle(entfall ? Farben.text3 : stil.titel)
-                .strikethrough(entfall, color: Farben.entfall)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            Kartenfach(kachel: kachel, text: kachel.fachText(darstellung),
+                       schrift: .system(size: schmal ? 11.5 : 13, weight: .bold), farbe: stil.titel)
                 .frame(height: titelHoehe, alignment: .leading)
-            if mitEntfallWort {
-                Text("Entfall")
-                    .font(.system(size: schmal ? 10.5 : 11.5, weight: .semibold))
-                    .foregroundStyle(Farben.entfall)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .frame(height: zeileHoehe, alignment: .leading)
-            }
             ForEach(Array(sichtbar.enumerated()), id: \.offset) { _, z in
-                Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall, schrift: .system(size: schmal ? 11 : 12.5),
+                Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall, schrift: .system(size: schmal ? 10 : 11),
                            farbe: Farben.text2)
                     .frame(height: zeileHoehe, alignment: .leading)
             }
             if mitZeit, let zeit {
                 Text(zeit)
-                    .font(.system(size: schmal ? 10 : 11.5))
-                    .foregroundStyle(Farben.text2)
+                    .font(.system(size: schmal ? 9.5 : 10.5))
+                    .foregroundStyle(entfall ? Farben.text3 : Farben.text2)
+                    .strikethrough(entfall, color: Farben.entfall.opacity(0.8))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .frame(height: zeileHoehe, alignment: .leading)
             }
             Spacer(minLength: 0)
-            if wortPlatz, let wort {
+            if mitChip, let chip {
+                Statuschip(chip: chip, schrift: .system(size: schmal ? 9 : 10, weight: .semibold))
+                    .frame(height: zeileHoehe, alignment: .leading)
+            } else if wortPlatz, let wort {
                 Statuswort(merkmal: wort)
             }
         }
         .monospacedDigit()
-        .padding(.leading, (stil.mitBalken ? balken : 0) + (schmal ? 4 : 6))
-        .padding(.trailing, 3)
-        .padding(.top, 4)
-        .padding(.bottom, 3)
+        .padding(.leading, (stil.mitBalken ? balken : 0) + (schmal ? 3 : 5))
+        .padding(.trailing, 2)
+        .padding(.top, 3)
+        .padding(.bottom, 2)
         .frame(width: max(0, breite), height: max(0, hoehe), alignment: .topLeading)
         .clipped()
         .klassikKarte(stil, radius: radius, balkenBreite: balken)

@@ -18,7 +18,8 @@ export const ABGEMELDET = 'untplan:abgemeldet';
 
 export async function api<T = unknown>(pfad: string, { methode = 'GET', daten, formular, signal }: ApiOptionen = {}): Promise<T> {
   const headers: Record<string, string> = { 'X-UntPlanWeb': '1' };
-  const init: RequestInit = { method: methode, headers, credentials: 'same-origin', signal };
+  // Plandaten und alle übrigen Antworten immer frisch vom Server (kein HTTP-Cache) – Änderungen erscheinen sofort
+  const init: RequestInit = { method: methode, headers, credentials: 'same-origin', signal, cache: 'no-store' };
   if (formular) init.body = formular;
   else if (daten !== undefined) {
     headers['Content-Type'] = 'application/json';

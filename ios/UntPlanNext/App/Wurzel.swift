@@ -26,6 +26,8 @@ struct HauptView: View {
         }
         .onChange(of: szene) { _, neu in
             if neu == .active && zustand.phase == .angemeldet {
+                // Plan- und Vertretungsdaten sofort frisch laden (Zwischenspeicher nur als Platzhalter mit „Stand“)
+                zustand.frischLaden()
                 Task {
                     await zustand.aktualisieren()
                     // Offline gespeicherte Klassenbuch-Änderungen nachsenden
@@ -50,7 +52,12 @@ struct HauptView: View {
         }
         // Angetippte Mitteilung über eine Planänderung: Tag im eigenen Plan öffnen
         .onReceive(NotificationCenter.default.publisher(for: Planmitteilungen.tippBenachrichtigung)) { _ in
+            if zustand.phase == .angemeldet { zustand.frischLaden() }
             tagOeffnen()
+        }
+        // Push bzw. Mitteilung eingegangen: Plan und Heute sofort frisch laden
+        .onReceive(NotificationCenter.default.publisher(for: Planmitteilungen.frischBenachrichtigung)) { _ in
+            if zustand.phase == .angemeldet { zustand.frischLaden() }
         }
         // Kurzbefehle am App-Symbol: sofort bzw. nach der Anmeldung ausführen
         .onReceive(NotificationCenter.default.publisher(for: Schnellaktion.benachrichtigung)) { _ in

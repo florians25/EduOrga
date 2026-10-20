@@ -3,7 +3,7 @@ import SwiftUI
 // Agenda des Plans (Ansicht „Agenda“ neben Woche und Tag, design/DESIGN.md Abschnitt 10): die Woche als Liste, nach
 // Tagen gegliedert. Links groß der Tag („17“) mit Wochentag, rechts je Stunde, Termin bzw. Aufsicht eine flache Zeile in
 // der Tönung der Fachfarbe mit Balken links: Stundennummer groß, Beginn und Ende untereinander, Fach fett, Klasse,
-// Lehrkraft, Raum (geänderte Werte als violettes Feld „neu (alt)“, Entfall durchgestrichen), rechts das Statuswort.
+// Lehrkraft, Raum (geänderte Werte als grünes Feld „+neu (alt)“, Entfall durchgestrichen), rechts das Statuswort.
 // Termine stehen warm getönt an ihrer Uhrzeit, ganztägige zuerst. Waagrecht wischen = andere Woche, Antippen öffnet die
 // Stunde, langes Drücken zeigt die Aktionen, Antippen des Tages öffnet den Tag. Mehrfachauswahl: alle gewählten Pläne
 // gemeinsam (jede Stunde einmal).
@@ -121,7 +121,13 @@ struct AgendaWoche: View {
             }
             .scrollIndicators(.hidden)
             .refreshable {
-                for m in modelle { await m.modell.laden(montag: montag, erzwingen: true) }
+                for (i, m) in modelle.enumerated() {
+                    if i == 0 {
+                        await m.modell.aktualisieren(montag: montag)
+                    } else {
+                        await m.modell.laden(montag: montag, erzwingen: true)
+                    }
+                }
                 Haptik.erfolg()
             }
             .onAppear { rollen(leser) }
@@ -317,12 +323,7 @@ struct Agendazeile: View {
                     }
                 }
             } else {
-                Text(kachel.fachText(darstellung))
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(entfall ? Farben.text3 : stil.titel)
-                    .strikethrough(entfall, color: Farben.entfall)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                Kartenfach(kachel: kachel, text: kachel.fachText(darstellung), schrift: .subheadline.weight(.bold), farbe: stil.titel)
                     .frame(minWidth: fachBreite, alignment: .leading)
                 ForEach(["klasse", "lehrer", "anlass", "raum"], id: \.self) { s in
                     if let z = wert(s) {
@@ -331,18 +332,17 @@ struct Agendazeile: View {
                 }
             }
             Spacer(minLength: 4)
-            if let m = Statuslehre.kartenwort(kachel, darstellung) {
+            if let chip = kachel.statusChip {
+                Statuschip(chip: chip, schrift: .caption2.weight(.semibold))
+                    .layoutPriority(1)
+            } else if let m = Statuslehre.kartenwort(kachel, darstellung) {
                 Statuswort(merkmal: m)
-            } else if entfall {
-                Text("Entfall")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Farben.entfall)
             }
         }
         .padding(.leading, stil.mitBalken ? 8 : 6)
         .padding(.trailing, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
         .klassikKarte(stil, radius: 6, balkenBreite: 4)
         .opacity(vergangen ? 0.62 : (stil.gedaempft && !entfall ? 0.8 : 1))
         .contentShape(Rectangle())

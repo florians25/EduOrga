@@ -32,7 +32,7 @@
   --edo-modus: var(--edo-stundenplan);
   --edo-modus-flaeche: var(--edo-stundenplan-flaeche);
   --edo-modus-navi: var(--edo-stundenplan-navi);
-  --up-aenderung-flaeche: #f1edfb;
+  --up-aenderung-flaeche: #e6f4ea;
 }
 :root[data-modus="vertretung"] {
   --edo-modus: var(--edo-vertretung);
@@ -61,8 +61,8 @@
   --up-fokus: #7fb3b8;
   --up-entfall: #f07468;
   --up-entfall-flaeche: #3a1c19;
-  --up-aenderung: #a993f0;
-  --up-aenderung-flaeche: #2a2347;
+  --up-aenderung: #5cbf86;
+  --up-aenderung-flaeche: #15281d;
   --up-pruefung: #e0a03c;
   --up-pruefung-flaeche: #33260f;
   --up-termin: #e07ab8;
@@ -115,8 +115,8 @@
     --up-fokus: #7fb3b8;
     --up-entfall: #f07468;
     --up-entfall-flaeche: #3a1c19;
-    --up-aenderung: #a993f0;
-    --up-aenderung-flaeche: #2a2347;
+    --up-aenderung: #5cbf86;
+    --up-aenderung-flaeche: #15281d;
     --up-pruefung: #e0a03c;
     --up-pruefung-flaeche: #33260f;
     --up-termin: #e07ab8;

@@ -146,6 +146,12 @@ public sealed record Aufsicht(string Datum, int NachStunde, string Beginn, strin
 
 public sealed record Tageskopf(string Datum, string Wochentag, string Woche, bool Frei, string? FreiGrund, bool Tagesaktuell, List<string> Hinweise, List<Ereignis> Ereignisse, string? FreiArt = null, string? FreiVon = null, string? FreiBis = null)
 {
+    /// <summary>
+    /// Mitteilungen zum Tag (Tagestexte aus UntPlan, Klartext): schulweite Texte und die, die dieses Element nennen; Texte nur fürs
+    /// Kollegium nur in der Lehrerversion. Der Plan zeigt sie als helle gelbe Notiz im Tageskopf. Ältere Server: fehlt (leer).
+    /// </summary>
+    public List<string> Mitteilungen { get; init; } = new();
+
     /// <summary>Nur Datum und Wochentag (gesperrte Woche).</summary>
     public static Tageskopf Leer(Tageskopf k) => new(k.Datum, k.Wochentag, k.Woche, false, null, false, new(), new());
 }
@@ -1200,13 +1206,43 @@ public sealed class Plandienst
         return res;
     }
 
+    /// <summary>
+    /// Mitteilungen eines Tages für ein Element (siehe <see cref="Tageskopf.Mitteilungen"/>): Tagestexte, die an diesem Tag gelten, ohne
+    /// Elemente (schulweit) oder mit diesem Element (Klassentexte im Klassenplan, Lehrertexte im Lehrerplan); „lehrer“ bzw. „kollegium“
+    /// nur in der Lehrerversion. Ohne Element (Tagesübersicht) nur die schulweiten.
+    /// </summary>
+    public static List<string> Mitteilungen(Stand s, DateOnly d, string typ, string kurz, bool kollegium)
+    {
+        var res = new List<string>();
+        foreach (var t in s.Paket.Tagestexte)
+        {
+            if (!DateOnly.TryParse(t.Datum, out var ab) || d < ab || d >= ab.AddDays(Math.Max(1, t.GueltigTage))) continue;
+            if (!kollegium && t.Fuer is "lehrer" or "kollegium") continue;
+            var elemente = t.Elemente ?? new List<string>();
+            if (elemente.Count > 0)
+            {
+                var passt = kurz.Length > 0 && Enthaelt(elemente, kurz) && (t.Fuer switch
+                {
+                    "klassen" => typ == Elementtyp.Klasse,
+                    "lehrer" or "kollegium" => typ == Elementtyp.Lehrer,
+                    _ => true,
+                });
+                if (!passt) continue;
+            }
+            var text = !string.IsNullOrWhiteSpace(t.Text) ? t.Text.Trim() : HtmlBereinigung.AlsText(t.TextHtml).Trim();
+            if (text.Length > 0 && !res.Contains(text)) res.Add(text);
+        }
+        return res;
+    }
+
     public Tageskopf Kopf(Stand s, DateOnly d, string typ, string kurz, bool kollegium)
     {
         var (frei, grund) = Frei(s, d);
         return new Tageskopf(Iso(d), Wochentage[TagIndex(d)], Woche(s, d), frei, grund, s.Tage.ContainsKey(Iso(d)),
             frei ? new List<string>() : Hinweise(s, d, typ, kurz, kollegium), frei ? new List<Ereignis>() : Ereignisse(s, d, typ, kurz),
             !frei ? null : Ferien(s, d) is { } f ? (f.Feiertag ? "feiertag" : "ferien") : TagIndex(d) >= s.Paket.Zeitraster.TageProWoche ? "wochenende" : "frei",
-            frei ? Ferien(s, d)?.Von : null, frei ? Ferien(s, d)?.Bis : null);
+            frei ? Ferien(s, d)?.Von : null, frei ? Ferien(s, d)?.Bis : null)
+        { Mitteilungen = frei ? new List<string>() : Mitteilungen(s, d, typ, kurz, kollegium) };
     }
 
     /// <summary>

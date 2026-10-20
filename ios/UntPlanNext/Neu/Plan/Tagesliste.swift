@@ -2,7 +2,7 @@ import SwiftUI
 
 // Der Tag als Liste klassischer Stundenkarten (in „Heute“ und in der Tagesansicht des Plans): links Beginn, Ende und
 // Stunde, rechts die Karte nach der schulweiten Kartendarstellung – Fach fett oben links, Raum oben rechts, darunter
-// Lehrkraft bzw. Klasse. Änderungen fallen sofort auf (violette Linie und Fläche, „alt → neu“), Entfall durchgestrichen
+// Lehrkraft bzw. Klasse. Änderungen fallen sofort auf (grüne Linie und Fläche, „alt → neu“), Entfall durchgestrichen
 // und schraffiert. Pausen und Freistunden nur als kompakte Zeile. Heute: laufende Stunde mit Fortschritt und Restzeit,
 // vergangene Stunden blass.
 
@@ -318,7 +318,7 @@ struct Tagesliste: View {
 /// Stundenkarte der Tagesliste im klassischen Grundstil wie das Wochenraster (eigenständig, nicht nachgebaut): weiße
 /// Karte ohne Rahmen, schmaler 3-pt-Balken innen links (grau bzw. Fachfarbe), Fach halbfett oben links, Raum oben
 /// rechts, darunter Lehrkraft bzw. Klasse; Inhalte nach der schulweiten Kartendarstellung. Status sachlich, aber nicht zu übersehen: Entfall rot
-/// durchgestrichen und schraffiert, Vertretung/Raumänderung violett (Linie, helle Fläche, „alt → neu“), Prüfung
+/// durchgestrichen und schraffiert, Vertretung/Raumänderung grün (Linie, helle Fläche, „alt → neu“), Prüfung
 /// Bernstein, Termin und Buchung gestrichelt; dazu das Statuswort oben rechts. Läuft die Stunde, steht „Jetzt · noch …“
 /// und unten der Fortschritt.
 struct ListenKachel: View {
@@ -351,30 +351,26 @@ struct ListenKachel: View {
         kachel.personenzeilen.filter { darstellung.zeile2 || !$0.nurText }
     }
 
-    private var abstand: CGFloat { darstellung.grosszuegig ? 12 : (darstellung.kompakt ? 8 : 10) }
+    private var abstand: CGFloat { darstellung.grosszuegig ? 10 : (darstellung.kompakt ? 5 : 7) }
 
     var body: some View {
         let w = Klassikstil.fuer(kachel, darstellung)
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             if laeuft || bald != nil {
                 jetztZeile
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(kachel.fachText(darstellung))
-                    .font(.headline)
-                    .foregroundStyle(entfall ? Farben.text3 : w.titel)
-                    .strikethrough(entfall, color: Farben.entfall)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                Kartenfach(kachel: kachel, text: kachel.fachText(darstellung), schrift: .subheadline.weight(.bold), farbe: w.titel)
                 if !kachel.fachname.isEmpty && darstellung.fach != "name" {
                     Text(kachel.fachname)
-                        .font(.subheadline)
+                        .font(.footnote)
                         .foregroundStyle(Farben.text3)
+                        .strikethrough(entfall, color: Farben.entfall.opacity(0.8))
                         .lineLimit(1)
                 }
                 Spacer(minLength: 6)
                 if let r = raumZeile {
-                    Kartenwert(zeile: r, karte: kachel.karte, entfall: entfall, schrift: .subheadline.weight(.semibold),
+                    Kartenwert(zeile: r, karte: kachel.karte, entfall: entfall, schrift: .footnote.weight(.semibold),
                                farbe: w.gedaempft ? Farben.text2 : Farben.text)
                         .monospacedDigit()
                         .layoutPriority(1)
@@ -385,7 +381,7 @@ struct ListenKachel: View {
                         .accessibilityHidden(true)
                 }
             }
-            if !personen.isEmpty || merkmal != nil || kachel.online || kachel.hausaufgabe || kachel.info {
+            if !personen.isEmpty || merkmal != nil || kachel.statusChip != nil || kachel.online || kachel.hausaufgabe || kachel.info {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     if !personen.isEmpty {
                         personenText
@@ -406,7 +402,7 @@ struct ListenKachel: View {
         .padding(.top, abstand)
         .padding(.bottom, abstand)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: 60, alignment: .topLeading)
+        .frame(minHeight: 46, alignment: .topLeading)
         .clipped()
         .klassikKarte(w, radius: 6)
         .overlay {
@@ -443,11 +439,11 @@ struct ListenKachel: View {
         }
     }
 
-    /// Lehrkraft bzw. Klasse: geänderte Werte als violettes Feld „neu (alt)“ wie im Wochenraster.
+    /// Lehrkraft bzw. Klasse: geänderte Werte als grünes Feld „+neu (alt)“ wie im Wochenraster.
     private var personenText: some View {
         HStack(spacing: 10) {
             ForEach(Array(personen.enumerated()), id: \.offset) { _, z in
-                Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall, schrift: .subheadline, farbe: Farben.text2)
+                Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall, schrift: .footnote, farbe: Farben.text2)
             }
         }
     }
@@ -455,7 +451,10 @@ struct ListenKachel: View {
     /// Statuswort und kleine Zeichen rechts unten (Online, Hausaufgabe, Info).
     private var zeichen: some View {
         HStack(spacing: 6) {
-            if let merkmal {
+            // Feld wie in der Enbrea-Legende („× entfällt“, „⊕ von …“, „⊕ Zusatz“), sonst das Statuswort
+            if let chip = kachel.statusChip {
+                Statuschip(chip: chip, schrift: .caption2.weight(.semibold))
+            } else if let merkmal {
                 Statuswort(merkmal: merkmal, klein: false)
             }
             if kachel.online {

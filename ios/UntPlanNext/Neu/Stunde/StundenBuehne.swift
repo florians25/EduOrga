@@ -328,7 +328,7 @@ struct StundenBuehneInhalt: View {
     }
 
     /// Abschnitt „Änderung“ bzw. „Entfall“ ganz oben: jede geänderte Angabe als „bisher → neu“ (bisher grau
-    /// durchgestrichen, neu violett), Verlegung, dazu der Vertretungstext bzw. der Grund des Entfalls.
+    /// durchgestrichen, neu grün), Verlegung, dazu der Vertretungstext bzw. der Grund des Entfalls.
     @ViewBuilder
     private var aenderungAbschnitt: some View {
         if hatAenderung {
@@ -370,7 +370,7 @@ struct StundenBuehneInhalt: View {
                 Text(karte.istEntfall ? "Entfall" : "Änderung")
             } footer: {
                 if !karte.istEntfall && (!geaenderteLehrer.isEmpty || !geaenderteRaeume.isEmpty || !geaenderteKlassen.isEmpty) {
-                    Text("Grau durchgestrichen: bisher. Violett: neu.")
+                    Text("Grau durchgestrichen: bisher. Grün: neu.")
                 }
             }
         }

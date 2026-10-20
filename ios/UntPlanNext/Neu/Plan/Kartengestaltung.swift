@@ -1,11 +1,27 @@
 import SwiftUI
 
-// Gestaltung der Stundenkarten (Woche, Tag, Zeitachse) – „Stundenkarte mobil (v3)“, siehe design/DESIGN.md: die Karte
-// füllt ihre Zelle (nie breiter als die Spalte), leichte Tönung der Fachfarbe, 4-pt-Balken bündig links, Fach fett oben
-// links, darunter Klasse, Lehrkraft und Raum je eine Zeile. Änderungen fallen sofort auf: schraffierter violetter Balken
-// und der geänderte Wert als violettes Feld „neu (alt)“; Entfall grau, durchgestrichen mit „Entfall“ in Rot; offen
-// gestrichelt. Die schulweite Kartendarstellung (Feld `darstellung` der Sitzung) steuert Fach als Kürzel/Name, Raum,
-// Zeile 2, Statuswörter, Fachfarbe an/aus, Tönung und Statusfläche.
+// Gestaltung der Stundenkarten (Woche, Tag, Zeitachse) – „Stundenkarte mobil (v4)“: kompakte Karte, die ihre Zelle füllt
+// (nie breiter als die Spalte), standardmäßig neutral (weiß bzw. hellgrau mit grauem Balken links; Fachfarbe nur, wenn die
+// Schule eine gesetzt hat), Fach fett oben links, darunter Klasse, Lehrkraft und Raum je eine kurze Zeile.
+//
+// Änderungen wie in der Änderungslegende von Enbrea („Änderungstyp | Darstellung“): schraffierter linker Rand in der
+// Statusfarbe und ein kleines Feld auf der betroffenen Zeile – mit den EduOrga-Anpassungen: jede Änderung einheitlich Grün
+// (#2f855a, Feld #e6f4ea mit Schrift #1d5c3a), Entfall und Fehlendes Rot (#b42318, Feld #fdecea); bei Entfall ist zusätzlich
+// alles auf der Karte durchgestrichen.
+//
+//   Klasse fehlt                 „(5b)“ auf der Klassenzeile und „× entfällt“
+//   Lehrer fehlt, keine Vertr.   „(Abr)“ auf der Lehrerzeile (rot)
+//   Vertretungsentfall           „× entfällt“
+//   Lehrervertretung             „+Gal (Gor)“ auf der Lehrerzeile
+//   Raumänderung                 „+105 (303)“ auf der Raumzeile
+//   Fachänderung                 „+BI (MU)“ auf der Fachzeile
+//   Verschoben (weg)             „× auf Di 21.10. 6 | 12:20“
+//   Verschoben (hierher)         „⊕ von Mo 20.10. 3 | 09:45“
+//   Zusatzunterricht             „⊕ Zusatz“
+//   Mitteilung                   eigener hellgelber Block mit Text
+//
+// Die schulweite Kartendarstellung (Feld `darstellung` der Sitzung) steuert Fach als Kürzel/Name, Raum, Zeile 2,
+// Statuswörter, Fachfarbe an/aus, Tönung und Statusfläche.
 
 // MARK: - Umgebung
 
@@ -37,6 +53,8 @@ enum Kartenart: Equatable {
 
 extension Kachel {
     var kartenart: Kartenart {
+        // Klasse fehlt (alle Klassen der Stunde abwesend): wie ein Entfall mit „(5b)“ und „× entfällt“
+        if klasseFehlt && [.normal, .aenderung, .abgegeben, .entfall].contains(art) { return .entfall }
         switch art {
         case .entfall: return .entfall
         case .aenderung: return .aenderung
@@ -54,6 +72,50 @@ extension Kachel {
             case .regulaer: return .neutral
             }
         }
+    }
+
+    /// Alle Klassen der Stunde fehlen (Klassenabwesenheit, Exkursion …) – die Stunde findet für sie nicht statt.
+    var klasseFehlt: Bool {
+        guard let k = karte, !k.abwesendeKlassen.isEmpty else { return false }
+        let namen = k.klassen.map(\.k).filter { !$0.isEmpty }
+        guard !namen.isEmpty else { return false }
+        return namen.allSatisfy { n in k.abwesendeKlassen.contains { $0.caseInsensitiveCompare(n) == .orderedSame } }
+    }
+
+    /// Bisheriges Fach einer Fachänderung (nil = keine) – auf der Karte als „+BI (MU)“.
+    var fachVorher: String? {
+        guard let k = karte, kartenart != .entfall, art == .aenderung || art == .normal,
+              let alt = k.fachAlt?.trimmingCharacters(in: .whitespaces), !alt.isEmpty,
+              alt.caseInsensitiveCompare(k.fach) != .orderedSame else { return nil }
+        return alt
+    }
+
+    /// Feld unten auf der Karte (Enbrea-Legende): „× entfällt“, „× auf Di 21.10. 6 | 12:20“, „⊕ von Mo 20.10. 3 | 09:45“,
+    /// „⊕ Zusatz“ – nil bei Unterricht ohne solche Änderung, Terminen, Aufsichten und Bereitschaften.
+    var statusChip: Kartenchip? {
+        guard let k = karte, !inPause else { return nil }
+        switch art {
+        case .normal, .aenderung, .entfall, .abgegeben: break
+        default: return nil
+        }
+        let weg = kartenart == .entfall
+        if k.verlegung == "von", art == .entfall || art == .abgegeben || weg {
+            if let ziel = k.verlegungNach, let t = Kartenchip.termin(ziel) {
+                return Kartenchip(text: "× auf \(t)", ton: .entfall)
+            }
+            return Kartenchip(text: "× verlegt", ton: .entfall)
+        }
+        if weg { return Kartenchip(text: "× entfällt", ton: .entfall) }
+        if k.verlegung == "nach", art == .aenderung || art == .normal {
+            if let quelle = k.verlegungVon, let t = Kartenchip.termin(quelle) {
+                return Kartenchip(text: "⊕ von \(t)", ton: .aenderung)
+            }
+            return Kartenchip(text: "⊕ verlegt", ton: .aenderung)
+        }
+        if zusatz || (art == .aenderung && k.istZusatzstunde) {
+            return Kartenchip(text: "⊕ Zusatz", ton: .aenderung)
+        }
+        return nil
     }
 
     /// Fachtext der Karte: Kürzel bzw. ausgeschriebener Fachname (Kartendarstellung „Fach als Name“).
@@ -101,7 +163,8 @@ extension Statuslehre {
         guard let m = merkmal(k) else { return nil }
         if d.statuswoerter { return m }
         switch m.text {
-        case "Prüfung", "Termin", "Raumbuchung", "Veranstaltung", "Offen", "Zusatzstunde": return m
+        // „Offen“ und „Zusatzstunde“ zeigt die Karte schon als Feld („(Abr)“ bzw. „⊕ Zusatz“)
+        case "Prüfung", "Termin", "Raumbuchung", "Veranstaltung": return m
         default: return nil
         }
     }
@@ -109,12 +172,12 @@ extension Statuslehre {
 
 // MARK: - Grundstil v3 (Wochenraster, Tagesliste, Zeitachse)
 
-/// Stundenkarte mobil (v3, design/DESIGN.md „Stundenkarte mobil (v3)“): die Karte füllt ihre Zelle, Radius 6, leichte
-/// Tönung der Fachfarbe als Fläche (Kartendarstellung „Balken und Tönung“, Deckkraft nach Schulwert), 4-pt-Balken in der
-/// Fachfarbe bündig am linken Rand. Status: Änderung mit schraffiertem violettem Balken, feiner violetter Linie und dem
-/// geänderten Wert als violettes Feld „neu (alt)“; Entfall grau, schraffiert, durchgestrichen mit dem Wort „Entfall“ in
-/// Rot; offene Vertretung gestrichelt violett mit „?“; Prüfung Bernstein; Termin/Buchung gestrichelt; Veranstaltung als
-/// warmes, ruhiges Feld. Kein Schatten – eine feine Kontur trennt die Karte vom Raster.
+/// Stundenkarte mobil (v4): die Karte füllt ihre Zelle, Radius 6, neutral (weiß, grauer Balken), Fachfarbe nur, wenn die
+/// Schule eine gesetzt hat (Balken und leichte Tönung). Status wie in der Enbrea-Legende mit EduOrga-Farben: Änderung mit
+/// grün schraffiertem Balken, feiner grüner Linie und dem geänderten Wert als grünes Feld „+neu (alt)“; Entfall rot
+/// schraffiert, alles grau durchgestrichen, „× entfällt“ als rotes Feld; fehlende Lehrkraft ohne Vertretung rot
+/// schraffiert und gestrichelt mit „(Abr)“; Prüfung Bernstein; Termin/Buchung gestrichelt; Mitteilung bzw. Veranstaltung
+/// als hellgelber Block. Kein Schatten – eine feine Kontur trennt die Karte vom Raster.
 struct Klassikstil {
     var balken: Color
     var flaeche: Color
@@ -156,9 +219,11 @@ struct Klassikstil {
         case .normal:
             break
         case .entfall:
+            // Entfall (auch „Klasse fehlt“, „verschoben auf …“): roter schraffierter Rand, alles durchgestrichen
             s.ton = nil
             s.flaeche = Farben.flaeche2
-            s.balken = Farben.balkenGrau.opacity(0.6)
+            s.balken = Farben.entfall
+            s.gestreift = true
             s.schraffur = true
             s.gedaempft = true
             s.rand = Farben.entfall.opacity(0.35)
@@ -210,12 +275,16 @@ struct Klassikstil {
                 s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
             }
         }
-        if offen {
-            s.offen = true
-            s.balken = Farben.aenderung
+        if offen && art != .entfall {
+            // Lehrkraft fehlt, keine Vertretung erstellt: roter schraffierter Rand, gestrichelte Linie, „(Abr)“ als rotes Feld
+            s.balken = Farben.entfall
             s.gestreift = true
-            s.rand = Farben.aenderung
-            s.strich = StrokeStyle(lineWidth: 1.2, dash: [3, 2])
+            s.rand = Farben.entfall.opacity(0.7)
+            s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+            if d.statusflaeche {
+                s.ton = nil
+                s.flaeche = Farben.karte
+            }
         }
         return s
     }
@@ -287,39 +356,141 @@ extension View {
     }
 }
 
+// MARK: - Felder (Chips)
+
+/// Farbe eines Feldes auf der Karte: Änderung (grün) bzw. Entfall und Fehlendes (rot).
+enum Chipton: Hashable {
+    case aenderung
+    case entfall
+
+    var flaeche: Color { self == .entfall ? Farben.entfallChip : Farben.aenderungChip }
+    var schrift: Color { self == .entfall ? Farben.entfallChipText : Farben.aenderungText }
+    var rand: Color { self == .entfall ? Farben.entfall.opacity(0.35) : Farben.aenderung.opacity(0.4) }
+}
+
+/// Feld unten auf der Karte („× entfällt“, „⊕ Zusatz“ …).
+struct Kartenchip: Hashable {
+    let text: String
+    let ton: Chipton
+
+    /// Kurzform einer Verlegungsseite wie in der Enbrea-Legende: „Di 21.10. 6 | 12:20“ (ohne Stunde bzw. Uhrzeit kürzer).
+    static func termin(_ s: Verlegungsseite) -> String? {
+        guard !s.datum.isEmpty else { return nil }
+        var tag = Datumsformat.anzeige(s.datum, "EEE")
+        while tag.hasSuffix(".") { tag.removeLast() }
+        var teile = ["\(tag) \(Datumsformat.anzeige(s.datum, "dd.MM."))"]
+        if let st = s.stunde { teile.append("\(st)") }
+        var text = teile.joined(separator: " ")
+        if !s.beginn.isEmpty { text += " | " + s.beginn }
+        return text
+    }
+}
+
+/// Kleines Feld auf der Karte: helle Fläche, feine Linie, Schrift in der Statusfarbe – eine Zeile, verkleinert bzw.
+/// gekürzt, nie breiter als die Karte.
+struct Chipfeld<Inhalt: View>: View {
+    let ton: Chipton
+    @ViewBuilder let inhalt: () -> Inhalt
+
+    var body: some View {
+        inhalt()
+            .foregroundStyle(ton.schrift)
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
+            .padding(.horizontal, 3)
+            .background(ton.flaeche, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .strokeBorder(ton.rand, lineWidth: 0.5)
+            }
+    }
+}
+
+/// Feld unten auf der Karte (Entfall, Verlegung, Zusatz).
+struct Statuschip: View {
+    let chip: Kartenchip
+    var schrift: Font = .system(size: 10, weight: .semibold)
+
+    var body: some View {
+        Chipfeld(ton: chip.ton) {
+            Text(chip.text)
+                .font(schrift)
+                .monospacedDigit()
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Fach der Karte: unverändert als Text, bei einer Fachänderung als grünes Feld „+BI (MU)“, bei Entfall grau und
+/// durchgestrichen.
+struct Kartenfach: View {
+    let kachel: Kachel
+    let text: String
+    var schrift: Font = .system(size: 13, weight: .bold)
+    var farbe: Color = Farben.text
+
+    private var entfall: Bool { kachel.kartenart == .entfall }
+
+    var body: some View {
+        if let alt = kachel.fachVorher {
+            Chipfeld(ton: .aenderung) {
+                (Text("+" + text).font(schrift) + Text(" (\(alt))").font(schrift.weight(.regular)))
+            }
+        } else {
+            Text(text)
+                .font(schrift)
+                .foregroundStyle(entfall ? Farben.text3 : farbe)
+                .strikethrough(entfall, color: Farben.entfall)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+}
+
 // MARK: - Geänderter Wert als Feld
 
-/// Eine Zeile der Stundenkarte (Lehrkraft, Klasse, Raum): unveränderte Werte als Text, geänderte als kleines violettes
-/// Feld „neu (alt)“ – z. B. „Ara (Abr)“ für eine Vertretung, „+B070“ für einen hinzugekommenen Raum, durchgestrichen
-/// für einen weggefallenen Wert, „?“ für eine offene Vertretung. Auf einer entfallenen Stunde grau durchgestrichen. Das
-/// Feld wird nie breiter als die Karte (eine Zeile, verkleinert bzw. gekürzt).
+/// Eine Zeile der Stundenkarte (Lehrkraft, Klasse, Raum): unveränderte Werte als Text, geänderte als kleines Feld wie in
+/// der Enbrea-Legende – „+Gal (Gor)“ für eine Vertretung, „+105 (303)“ für eine Raumänderung, „+B070“ für einen
+/// hinzugekommenen Raum (grün); „(Abr)“ für eine fehlende Lehrkraft ohne Vertretung bzw. „(5b)“ für eine fehlende Klasse
+/// (rot). Auf einer entfallenen Stunde ist alles grau durchgestrichen – nur die fehlende Klasse bleibt als rotes Feld.
+/// Das Feld wird nie breiter als die Karte (eine Zeile, verkleinert bzw. gekürzt).
 struct Kartenwert: View {
     let zeile: Kachelzeile
     let karte: Karte?
     var entfall: Bool = false
-    var schrift: Font = .system(size: 12)
+    var schrift: Font = .system(size: 11)
     var farbe: Color = Farben.text2
 
+    /// Rot, wenn nur Fehlendes (durchgestrichen bzw. offen) und nichts Neues in der Zeile steht.
+    private var ton: Chipton {
+        zeile.teile.contains { $0.stil == .plakette } ? .aenderung : .entfall
+    }
+
+    /// Entfallene Stunde mit fehlender Klasse: die Klassenzeile bleibt als rotes Feld „(5b)“.
+    private var fehlendeKlasse: Bool {
+        entfall && zeile.schluessel == "klasse" && zeile.teile.contains { $0.stil == .weg || $0.stil == .offen }
+    }
+
     var body: some View {
-        if !entfall && !zeile.nurText {
-            Kartenwert.aenderungsText(zeile, karte: karte)
-                .font(schrift)
-                .foregroundStyle(Farben.aenderungText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .padding(.horizontal, 3)
-                .background(Farben.aenderungChip, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+        if fehlendeKlasse {
+            Chipfeld(ton: .entfall) {
+                Kartenwert.aenderungsText(zeile, karte: karte).font(schrift)
+            }
+        } else if !entfall && !zeile.nurText {
+            Chipfeld(ton: ton) {
+                Kartenwert.aenderungsText(zeile, karte: karte).font(schrift)
+            }
         } else {
             Text(zeile.text)
                 .font(schrift)
                 .foregroundStyle(entfall ? Farben.text3 : farbe)
-                .strikethrough(entfall, color: Farben.entfall.opacity(0.7))
+                .strikethrough(entfall, color: Farben.entfall.opacity(0.8))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
     }
 
-    /// Text im Feld: „neu (alt)“ für ersetzte Werte, „+neu“ für hinzugekommene, durchgestrichen für weggefallene.
+    /// Text im Feld: „+neu (alt)“ für ersetzte Werte, „+neu“ für hinzugekommene, „(alt)“ für fehlende bzw. weggefallene.
     static func aenderungsText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
         let werte: [Wert]
         switch zeile.schluessel {
@@ -329,6 +500,7 @@ struct Kartenwert: View {
         default: werte = []
         }
         func gleich(_ a: String, _ b: String) -> Bool { a.caseInsensitiveCompare(b) == .orderedSame }
+        func plus(_ t: String) -> String { t.hasPrefix("+") ? t : "+" + t }
         let teile = zeile.teile
         var ergebnis = Text("")
         var i = 0
@@ -338,22 +510,22 @@ struct Kartenwert: View {
             case .text:
                 ergebnis = ergebnis + Text(teil.text)
             case .plakette:
-                let plus = werte.contains { $0.plus && gleich($0.k, teil.text) }
-                ergebnis = ergebnis + Text((plus ? "+" : "") + teil.text).fontWeight(.semibold)
-                if let alt = werte.first(where: { $0.ersetzt && gleich($0.k, teil.text) })?.alt, !alt.isEmpty {
+                ergebnis = ergebnis + Text(plus(teil.text)).fontWeight(.semibold)
+                let kern = teil.text.hasPrefix("+") ? String(teil.text.dropFirst()) : teil.text
+                if let alt = werte.first(where: { $0.ersetzt && gleich($0.k, kern) })?.alt, !alt.isEmpty {
                     ergebnis = ergebnis + Text(" (\(alt))")
                 }
             case .weg:
-                // „alt | neu“ (Kopplung) wird zu „neu (alt)“
+                // „alt | neu“ (Kopplung) wird zu „+neu (alt)“
                 if i + 1 < teile.count && teile[i + 1].stil == .plakette {
                     let neu = teile[i + 1]
-                    ergebnis = ergebnis + Text(neu.text).fontWeight(.semibold) + Text(" (\(teil.text))") + Text(neu.trenner)
+                    ergebnis = ergebnis + Text(plus(neu.text)).fontWeight(.semibold) + Text(" (\(teil.text))") + Text(neu.trenner)
                     i += 2
                     continue
                 }
-                ergebnis = ergebnis + Text(teil.text).strikethrough(true)
+                ergebnis = ergebnis + Text("(\(teil.text))")
             case .offen:
-                ergebnis = ergebnis + Text(teil.text).strikethrough(true) + Text(" ?").fontWeight(.semibold)
+                ergebnis = ergebnis + Text("(\(teil.text))").fontWeight(.semibold)
             }
             ergebnis = ergebnis + Text(teil.trenner)
             i += 1

@@ -2,6 +2,15 @@ UntPlan – Stunden- und Vertretungsplanung für Schulen in NRW.
 
 ## UntPlan Next
 
+### Tagesplanung: Tagesübersicht nach Klassen, Miniplan
+- Standard der Tagesplanung ist die Tagesübersicht Klassen × Stunden (nach Jahrgang, virtualisiert): Status jeder Stunde auf
+  einen Blick, Doppelstunden zusammengefasst, abwesende Klassen als Band, je Stunde offene und verfügbare Lehrkräfte,
+  Bereitschaften; die Entscheidung (Empfehlung mit Enter …) steht daneben, Pfeiltasten, J/K, Mehrfachauswahl.
+- Abwesenheiten direkt aus der Übersicht (Klasse auf Ausflug ab einer Stunde, Lehrkraft ab einer Stunde, entfernen).
+- Variante nach Lehrkräften; die bisherige Liste heißt *Offene Stunden*, dazu weiter die Tabelle.
+- Minipläne: frei verschiebbare, einklappbare Fenster mit dem Plan von Klasse, Lehrkraft oder Raum (Tag/Woche), folgen auf
+  Wunsch der Auswahl, gemerkt je Benutzer. Hintergrund: `studio/docs/RECHERCHE-VERTRETUNG.md`.
+
 ### Datenschutz (DSGVO, Schulen in NRW)
 - Leitfaden und Vorlagen unter `docs/datenschutz/`: Verzeichnis von Verarbeitungstätigkeiten, TOM, unverbindliche
   AV-Vertrags-Gliederung, DSFA-Checkliste, Schritte bis zum Start.

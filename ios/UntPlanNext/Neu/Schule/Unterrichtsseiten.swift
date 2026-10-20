@@ -450,7 +450,7 @@ struct VertretungsplanView: View {
         }
     }
 
-    /// „M · MEI → SCH · R204“ (alt durchgestrichen → neu violett).
+    /// „M · MEI → SCH · R204“ (alt durchgestrichen → neu grün).
     private func wechsel(_ z: Vertretungszeile) -> Text {
         func teil(_ neu: String, _ alt: String) -> Text {
             if !alt.isEmpty && alt != neu {

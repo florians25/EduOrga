@@ -419,13 +419,13 @@ enum Wertbaustein: Hashable {
     case pfeil
     case trenner
     case offen(String)
-    /// Neuer bzw. geänderter Wert (z. B. Vertretung): violett unterstrichen
+    /// Neuer bzw. geänderter Wert (z. B. Vertretung): grün unterstrichen
     case neu(String)
     /// Status-Plakette rechts neben dem Fach („Prüfung“, „Veranstaltung“)
     case pille(String)
 }
 
-/// Wertzeile im Kopf der Details: Änderungen als „alt → neu“ (alt durchgestrichen, neu violett unterstrichen),
+/// Wertzeile im Kopf der Details: Änderungen als „alt → neu“ (alt durchgestrichen, neu grün unterstrichen),
 /// fehlende Werte (abwesende Lehrkraft bzw. Klasse) durchgestrichen. Genau eine Zeile; bei vielen Werten lässt sie sich
 /// waagrecht scrollen. Mit `kuerzenAb`: Sind es mehr Werte (z. B. alle Lehrkräfte oder alle Klassen einer
 /// Veranstaltung), stehen nur die ersten und dahinter „… +N“; Antippen klappt die ganze Liste umbrechend auf (und

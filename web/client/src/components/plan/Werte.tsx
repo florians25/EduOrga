@@ -1,7 +1,7 @@
-// Darstellung der Werte einer Stunde (Klassen, Lehrkräfte, Räume) mit Kürzel-Plaketten (Radius 3 px): unveränderte Werte als Text,
-// geänderter Wert als gefüllte Plakette in der Änderungsfarbe, ersetzter Wert davor als graue, durchgestrichene Plakette, hinzugefügter
-// Wert umrandet in der Änderungsfarbe, offene Vertretung als gestrichelte „?“-Plakette, abwesende Klasse grau durchgestrichen.
-// Die Bedeutung steht im Tooltip (title) und in der Legende – auf der Kachel stehen keine Statuswörter.
+// Darstellung der Werte einer Stunde (Klassen, Lehrkräfte, Räume) in Listen und Kopfzeilen – gleiche Sprache wie die Stundenkarte
+// (aenderung.ts): unveränderte Werte als Text, geänderter Wert als grünes Feld „+neu (bisher)“, hinzugefügter Wert „+neu“, fehlender
+// Wert „(bisher)“, offene Vertretung als gestricheltes „?“-Feld, abwesende Klasse grau durchgestrichen.
+// Die Bedeutung steht im Tooltip (title) und in der Legende.
 import { Box } from '@mui/material';
 import type { ReactNode } from 'react';
 import type { Wert } from '../../api/types';
@@ -17,8 +17,8 @@ export function Kuerzel({ art = 'normal', children, title, stil: variante = 'umr
     : { border: '1px solid', borderColor: 'kachel.rand', color: 'text.secondary', bgcolor: 'background.paper' };
   const stil = {
     normal,
-    neu: { border: '1px solid', borderColor: 'status.aenderung.main', bgcolor: 'status.aenderung.main', color: '#fff' },
-    plus: { border: '1px solid', borderColor: 'status.aenderung.main', color: 'status.aenderung.main', bgcolor: 'background.paper' },
+    neu: { border: '1px solid', borderColor: 'transparent', bgcolor: 'status.aenderung.feld', color: 'status.aenderung.text' },
+    plus: { border: '1px solid', borderColor: 'transparent', bgcolor: 'status.aenderung.feld', color: 'status.aenderung.text' },
     alt: { border: '1px solid', borderColor: 'kachel.rand', bgcolor: 'action.hover', color: 'text.disabled', textDecoration: 'line-through' },
     offen: { border: '1px dashed', borderColor: 'status.aenderung.main', color: 'status.aenderung.main', bgcolor: 'background.paper', minWidth: 18, justifyContent: 'center' },
   }[art];
@@ -43,18 +43,13 @@ export function WertAnzeige({ w, entfall = false, mitAlt = true, weg = false, li
   if (weg) return <Box component="s" sx={{ color: 'text.disabled' }} title={`${w.k} abwesend`}>{n(w.k)}</Box>;
   if (w.alt && !w.k) return (
     <Box component="span" sx={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}>
-      <Kuerzel art="alt" title={offen ? `${w.alt} – Vertretung offen` : `${w.alt} entfällt`}>{a(w.alt, n(w.alt))}</Kuerzel>
+      <Kuerzel art="neu" title={offen ? `${w.alt} – Vertretung offen` : `${w.alt} fehlt`}>({a(w.alt, n(w.alt))})</Kuerzel>
       {offen && fragezeichen(`Vertretung für ${w.alt} offen`)}
     </Box>
   );
   if (!w.k && w.neu) return fragezeichen('Vertretung offen');
-  if (w.alt) return (
-    <Box component="span" sx={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}>
-      {mitAlt && <Kuerzel art="alt" title={`bisher ${w.alt}`}>{a(w.alt, n(w.alt))}</Kuerzel>}
-      <Kuerzel art="neu" title={`${w.k} statt ${w.alt}`}>{a(w.k, n(w.k))}</Kuerzel>
-    </Box>
-  );
-  if (w.neu) return <Kuerzel art="plus" title={`${w.k} zusätzlich`}>{a(w.k, n(w.k))}</Kuerzel>;
+  if (w.alt) return <Kuerzel art="neu" title={`${w.k} statt ${w.alt}`}>+{a(w.k, n(w.k))}{mitAlt && <> ({a(w.alt, n(w.alt))})</>}</Kuerzel>;
+  if (w.neu) return <Kuerzel art="plus" title={`${w.k} zusätzlich`}>+{a(w.k, n(w.k))}</Kuerzel>;
   return <span>{a(w.k, n(w.k))}</span>;
 }
 

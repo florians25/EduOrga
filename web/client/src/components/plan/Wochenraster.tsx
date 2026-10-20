@@ -1,7 +1,9 @@
-// Wochenraster mit echtem Zeitmaßstab: Höhe proportional zur Uhrzeit, gerade 1-px-Linien, Pausen als schmale graue Bänder (mit
-// Pausenaufsichten), Spaltenköpfe linksbündig „Mo 02.11.“, heutiger Tag mit Petrol-Linie oben und sehr leichter Tönung, Jetzt-Linie 1 px
-// mit Uhrzeit an der Zeitachse. Ferien und freie Tage als Fläche, ganztägige Termine und
-// Hinweise im Tageskopf, eigene Abwesenheiten als graue Fläche hinter den Stunden.
+// Wochenraster mit echtem Zeitmaßstab (design/DESIGN.md, Abschnitt 10): Höhe proportional zur Uhrzeit, gerade 1-px-Linien, Pausen als
+// schmale graue Bänder (mit Pausenaufsichten). Zeitspalte je Stunde Beginn oben, Stundennummer mittig, Ende unten; Tageskopf zentriert
+// „17.11“ (600) über „Mo“, heute in Petrol mit Linie unten und sehr leichter Tönung der Spalte; Jetzt-Linie 1 px mit Uhrzeit an der
+// Zeitachse. Termine als warme Blöcke über ihre Stunden, ganztägige Termine und Mitteilungen (helle gelbe Notiz) im Tageskopf; Ferien und
+// freie Tage als Fläche, eigene Abwesenheiten als graue Fläche hinter den Stunden. Gleichzeitige Stunden: in der Woche die erste Karte, die
+// übrigen hinter dem Reiter „+N“ innen am rechten Rand der Zelle.
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { alpha, Box, ButtonBase, Popover, Stack, Tooltip, Typography, useTheme } from '@mui/material';
 import type { Aufsicht, Karte, Tageskopf, Wochenplan, Zeit } from '../../api/types';
@@ -107,7 +109,7 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
 
   const heuteDrin = plan.tage.some(x => x.datum === jetzt.tag);
   const jetztY = heuteDrin && jetzt.min >= mass.beginn && jetzt.min <= mass.ende ? mass.yVon(jetzt.min) : null;
-  const achse = 64;
+  const achse = 52;
   const spalten = `${achse}px repeat(${tage.length}, minmax(0, 1fr))`;
   const linie = t.palette.divider;
   const feineLinie = alpha(t.palette.text.primary, 0.075);
@@ -123,22 +125,30 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
           const ganz = tag.ereignisse.filter(x => x.ganztaegig && !plan.karten.some(k => k.datum === tag.datum && k.text === x.titel));
           const hinweise = tagHinweise(tag.hinweise);
           return (
-            <Box key={tag.datum} aria-current={heute ? 'date' : undefined} sx={{ px: 1, pt: 1, pb: 0.875, borderLeft: i === tage[0]?.i ? 0 : `1px solid ${linie}`, minWidth: 0,
-              bgcolor: heute ? alpha(t.palette.primary.main, 0.06) : undefined, boxShadow: heute ? `inset 0 2px 0 ${t.palette.primary.main}` : undefined }}>
-              <Stack direction="row" alignItems="baseline" gap={0.5} sx={{ minWidth: 0, fontSize: 13, lineHeight: '20px', color: heute ? 'primary.main' : 'text.primary' }}>
-                <Box component="span" sx={{ fontWeight: 600 }}>{wochentagKurz(tag.datum)}</Box>
-                <Box component="span" sx={{ fontWeight: 400, color: heute ? 'primary.main' : 'text.secondary' }}>{datumKurz(tag.datum)}</Box>
-                {kopfZusatz?.(tag, i)}
+            <Box key={tag.datum} aria-current={heute ? 'date' : undefined} sx={{ px: 0.75, pt: 0.75, pb: 0.75, borderLeft: i === tage[0]?.i ? 0 : `1px solid ${linie}`, minWidth: 0,
+              bgcolor: heute ? alpha(t.palette.primary.main, 0.06) : undefined, boxShadow: heute ? `inset 0 -2px 0 ${t.palette.primary.main}` : undefined }}>
+              <Stack alignItems="center" sx={{ minWidth: 0, color: heute ? 'primary.main' : 'text.primary', fontVariantNumeric: 'tabular-nums' }} aria-label={`${wochentagKurz(tag.datum)} ${datumKurz(tag.datum)}`}>
+                <Box component="span" sx={{ fontWeight: 600, fontSize: 15, lineHeight: '19px' }}>{datumKurz(tag.datum).replace(/\.$/, '')}</Box>
+                <Stack direction="row" alignItems="center" gap={0.5} sx={{ fontSize: 12, lineHeight: '16px', color: heute ? 'primary.main' : 'text.secondary' }}>
+                  <Box component="span">{wochentagKurz(tag.datum)}</Box>
+                  {kopfZusatz?.(tag, i)}
+                </Stack>
               </Stack>
-              {(ganz.length > 0 || hinweise.length > 0) && (
-                <Stack direction="row" gap={0.5} flexWrap="wrap" sx={{ mt: 0.75 }}>
+              {(ganz.length > 0 || hinweise.length > 0 || (tag.mitteilungen ?? []).length > 0) && (
+                <Stack gap={0.5} sx={{ mt: 0.75 }}>
                   {ganz.map((x, j) => (
                     <Tooltip key={j} title={[x.titel, x.klassen.length ? `Klassen: ${x.klassen.join(', ')}` : '', x.lehrer.length ? `Lehrkräfte: ${x.lehrer.join(', ')}` : '', x.raeume.length ? `Räume: ${x.raeume.join(', ')}` : ''].filter(Boolean).join('\n')}
                       slotProps={{ tooltip: { sx: { whiteSpace: 'pre-line' } } }}>
-                      <Box sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.75, maxWidth: '100%', px: 0.75, py: '1px', borderRadius: '2px', color: 'text.primary', fontSize: 12, border: `1px dashed ${alpha(t.palette.text.secondary, 0.6)}` }}>
-                        <Box component="span" sx={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'status.termin.main', flex: 'none' }}>Termin</Box>
-                        <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.titel}</Box>
+                      <Box data-termin="ganztaegig" sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, px: 0.75, py: '3px', borderRadius: '4px', bgcolor: 'kachel.ereignis', color: 'kachel.ereignisText', border: 1, borderColor: 'kachel.ereignisRand' }}>
+                        <Box component="span" sx={{ fontSize: 12, fontWeight: 600, lineHeight: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.titel}</Box>
+                        <Box component="span" sx={{ fontSize: 10.5, lineHeight: '13px', opacity: 0.85 }}>ganztägig{x.klassen.length ? ` · ${x.klassen.length > 3 ? `${x.klassen.length} Klassen` : x.klassen.join(', ')}` : ''}</Box>
                       </Box>
+                    </Tooltip>
+                  ))}
+                  {(tag.mitteilungen ?? []).map((m, j) => (
+                    <Tooltip key={`m${j}`} title={m} slotProps={{ tooltip: { sx: { whiteSpace: 'pre-line' } } }}>
+                      <Box role="note" aria-label={`Mitteilung: ${m}`} data-mitteilung="" sx={{ px: 0.75, py: '3px', borderRadius: '3px', bgcolor: 'kachel.notiz', color: 'kachel.notizText', border: 1, borderColor: 'kachel.notizRand',
+                        fontSize: 11.5, lineHeight: '14px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>{m}</Box>
                     </Tooltip>
                   ))}
                   {hinweise.map((h, j) => (
@@ -160,9 +170,11 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
           {mass.abschnitte.map((a, j) => a.art === 'pause'
             ? <Box key={`p${j}`} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, bgcolor: 'kachel.pause' }} />
             : (
-              <Box key={a.nr} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, px: 1, pt: 0.75, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', borderBottom: `1px solid ${feineLinie}`, fontVariantNumeric: 'tabular-nums' }}>
-                <Typography sx={{ fontWeight: 600, fontSize: 13, lineHeight: '16px' }}>{a.z!.bezeichnung || a.nr}</Typography>
-                {!kartenZeiten && a.h >= 40 && <Typography sx={{ fontSize: 11, color: 'text.secondary', lineHeight: '14px', mt: '1px' }}>{a.z!.beginn}<br />{a.z!.ende}</Typography>}
+              <Box key={a.nr} data-stunde={a.nr} sx={{ position: 'absolute', top: a.y, height: a.h, left: 0, right: 0, px: 0.5, py: '3px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: a.h >= 40 ? 'space-between' : 'center', borderBottom: `1px solid ${feineLinie}`, fontVariantNumeric: 'tabular-nums' }}>
+                {a.h >= 40 && <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: '13px' }}>{a.z!.beginn}</Typography>}
+                <Typography sx={{ fontWeight: 600, fontSize: 15, lineHeight: '18px' }}>{a.z!.bezeichnung || a.nr}</Typography>
+                {a.h >= 40 && <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: '13px' }}>{a.z!.ende}</Typography>}
               </Box>
             ))}
           {jetztY !== null && (
@@ -234,13 +246,13 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
                     <Kachel k={k} typ={plan.typ} hoehe={h} zeit={zeit} gedimmt={gedimmt} vorbei={k.status === 'regulaer' && vergangen(k, jetzt.tag, jetzt.min)}
                       gross={nurTag !== null}
                       onOpen={k.ereignis ? undefined : x => onOpen(x, alleKarten)}
-                      style={{ position: 'absolute', top: y0, height: h, left: `calc(${spur * breite}% + ${luecke}px)`, width: `calc(${breite}% - ${2 * luecke}px)`, zIndex: 2, ...(mitZahl ? { paddingRight: '30px' } : {}) }} />
+                      style={{ position: 'absolute', top: y0, height: h, left: `calc(${spur * breite}% + ${luecke}px)`, width: `calc(${breite}% - ${2 * luecke}px)`, zIndex: 2, ...(mitZahl ? { paddingRight: '27px' } : {}) }} />
                     {mitZahl && (
                       <Tooltip title={`${versteckt.length} weitere ${versteckt.length === 1 ? 'Stunde' : 'Stunden'} gleichzeitig: ${versteckt.map(x => [x.fach || x.text, kuerzel(plan.typ === 'lehrer' ? x.klassen : x.lehrer).join(', ')].filter(Boolean).join(' ')).join(' · ')}`}>
                         <ButtonBase data-parallel="" aria-label={`${versteckt.length} weitere ${versteckt.length === 1 ? 'Stunde' : 'Stunden'} gleichzeitig – alle anzeigen`} aria-haspopup="dialog"
                           onClick={e => { e.stopPropagation(); setParallel({ el: e.currentTarget, karten: gruppe }); }}
-                          sx={{ position: 'absolute', top: y0 + 3, left: `calc(100% - ${luecke + 3 + 25}px)`, zIndex: 4, minWidth: 25, height: 18, px: 0.5, borderRadius: '3px', fontSize: 11, fontWeight: 600,
-                            fontVariantNumeric: 'tabular-nums', color: 'text.primary', bgcolor: 'background.paper', border: 1, borderColor: 'kachel.rand', '&:hover': { borderColor: 'primary.light', bgcolor: 'action.hover' },
+                          sx={{ position: 'absolute', top: y0 + Math.max(0, h / 2 - 10), left: `calc(100% - ${luecke + 23}px)`, zIndex: 4, minWidth: 23, height: 20, px: 0.5, borderRadius: '4px 0 0 4px', fontSize: 11.5, fontWeight: 600,
+                            fontVariantNumeric: 'tabular-nums', color: 'secondary.main', bgcolor: 'action.selected', border: '0.75px solid', borderRight: 0, borderColor: 'marine.200', '&:hover': { filter: 'brightness(0.97)' },
                             '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 } }}>+{versteckt.length}</ButtonBase>
                       </Tooltip>
                     )}

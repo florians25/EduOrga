@@ -255,7 +255,7 @@ const h = require('./hilfe.cjs');
       await page.click(`${tp} [data-testid=tp-modus] [data-wert=lehrer]`);
       await page.waitForSelector(`${tp} [data-ansicht="vertretung.matrix"][data-art=lehrer] .mx-reihe[data-zeile="${kurz2}"]`, { timeout: 15000 });
       const ersteZeile = await page.getAttribute(`${tp} [data-ansicht="vertretung.matrix"][data-art=lehrer] .mx-reihe[data-zeile]`, 'data-zeile');
-      if (!(await page.locator(`${tp} [data-ansicht="vertretung.matrix"][data-art=lehrer] .mx-gruppe`, { hasText: 'Abwesend' }).count())) throw new Error('Gruppe „Abwesend“ fehlt');
+      if (!(await page.locator(`${tp} [data-ansicht="vertretung.matrix"][data-art=lehrer] .mx-reihe[data-zeile="${kurz2}"] :is(.mx-abw, .mx-name-abw)`).count())) throw new Error(`${kurz2} nicht als abwesend gekennzeichnet`);
       await foto('09f-tagesuebersicht-lehrkraefte');
       schritt(`Tagesübersicht Lehrkräfte: erste Zeile ${ersteZeile}`);
       await page.click(`${tp} [data-testid=tp-modus] [data-wert=liste]`);

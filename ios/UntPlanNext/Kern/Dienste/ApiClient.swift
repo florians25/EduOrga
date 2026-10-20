@@ -122,7 +122,9 @@ final class ApiClient: @unchecked Sendable {
         konfig.httpCookieStorage = HTTPCookieStorage.shared
         konfig.httpCookieAcceptPolicy = .always
         konfig.httpShouldSetCookies = true
+        // Plan- und Vertretungsdaten nie aus einem HTTP-Zwischenspeicher: kein URLCache, jede Anfrage geht an den Server
         konfig.requestCachePolicy = .reloadIgnoringLocalCacheData
+        konfig.urlCache = nil
         konfig.timeoutIntervalForRequest = 20
         session = URLSession(configuration: konfig)
     }
@@ -663,6 +665,10 @@ final class ApiClient: @unchecked Sendable {
                                        koerper: Data?) async throws -> T {
         var req = URLRequest(url: try url(pfad, parameter))
         req.httpMethod = methode
+        // Immer frisch (auch durch Proxys bzw. CDN der Schule hindurch): Plan, Heute, Vertretungen ändern sich laufend
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        req.setValue("no-cache", forHTTPHeaderField: "Pragma")
         // Schutzkopf von UntPlanWeb (ohne ihn lehnt der Server ändernde Aufrufe ab)
         req.setValue("1", forHTTPHeaderField: "X-UntPlanWeb")
         req.setValue("application/json", forHTTPHeaderField: "Accept")

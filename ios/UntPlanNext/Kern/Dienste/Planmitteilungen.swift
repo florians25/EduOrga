@@ -25,6 +25,15 @@ enum Planmitteilungen {
     static let datumSchluessel = "datum"
     /// Meldung an die Oberfläche: eine Mitteilung wurde angetippt (Tag im Plan öffnen).
     static let tippBenachrichtigung = Notification.Name("UntPlanNextPlanmitteilung")
+    /// Push bzw. Mitteilung eingegangen: Plan- und Vertretungsdaten sofort frisch laden (die Oberfläche hört darauf)
+    static let frischBenachrichtigung = Notification.Name("EduOrgaPlanFrisch")
+
+    /// Oberfläche benachrichtigen, dass sich Plandaten geändert haben können (auf dem Hauptthread).
+    static func frischMelden() {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: frischBenachrichtigung, object: nil)
+        }
+    }
     /// Noch nicht geöffneter Tag aus einer angetippten Mitteilung (z. B. beim Kaltstart).
     static var ausstehenderTag: String? = nil
     /// Frühester Abstand bis zur nächsten Hintergrund-Prüfung (das System kann später ausführen).
@@ -478,6 +487,8 @@ extension AppDelegate {
     /// Stille Push-Mitteilung (z. B. nach einem Import aus UntPlan): eigenen Plan sofort prüfen.
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any],
                      fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        // Geöffnete Ansichten (Plan, Heute) sofort frisch laden
+        Planmitteilungen.frischMelden()
         Task {
             let ergebnis = await Planpruefer.shared.pruefen(erzwingen: true)
             switch ergebnis {
@@ -495,6 +506,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     /// Auch bei geöffneter App als Banner zeigen.
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // Mitteilung bei geöffneter App: Plan und Heute sofort frisch laden
+        Planmitteilungen.frischMelden()
         completionHandler([.banner, .list, .sound])
     }
 

@@ -43,10 +43,22 @@
   --up-schiefer-900: #151a21;
 
   /* Fachliche Statusfarben (in allen Oberflächen gleich) */
-  --up-entfall: #b42318;          /* Entfall, Fehler */
-  --up-entfall-flaeche: #fdf0ef;
-  --up-aenderung: #6d4fc2;        /* Vertretung, Raum-/Lehrerwechsel, Verlegung (Violett – deutlich anders als das Marken-Petrol) */
-  --up-aenderung-flaeche: #f1edfb;
+  --up-entfall: #b42318;          /* Entfall, Fehler – Stundenkarte: alles durchgestrichen, rote Fläche, schraffierte Kante */
+  --up-entfall-flaeche: #fdecea;
+  --up-entfall-text: #8f1d14;     /* Schrift im roten Feld „× entfällt“ */
+  --up-entfall-feld: #f7d3cf;     /* Feld (Chip) auf der Stundenkarte */
+  --up-aenderung: #2f855a;        /* jede Änderung: Vertretung, Raum-/Fach-/Lehrerwechsel, Verlegung, Zusatz (Grün) */
+  --up-aenderung-flaeche: #e6f4ea;
+  --up-aenderung-text: #1d5c3a;   /* Schrift im grünen Feld „+Gal (Gor)“ */
+  --up-aenderung-feld: #c9e8d4;   /* Feld (Chip) auf der Stundenkarte */
+  --up-mitteilung: #8a6d0b;       /* Mitteilung im Plan (helle gelbe Notiz) */
+  --up-mitteilung-flaeche: #fdf5c9;
+  --up-mitteilung-rand: #eddc8c;
+  --up-mitteilung-text: #5c4a0f;
+  --up-ereignis-flaeche: #f7f1e3;  /* Veranstaltung/Termin als Block im Raster (warmes Neutral) */
+  --up-ereignis-rand: #e2d6bb;
+  --up-ereignis-text: #5c4a22;
+  --up-karte-balken: #b4bec4;      /* Kartenbalken ohne Fachfarbe */
   --up-pruefung: #a15c07;         /* Klausur, Prüfung */
   --up-pruefung-flaeche: #fdf4e3;
   --up-termin: #a3347c;           /* Veranstaltung, Termin */
@@ -124,8 +136,22 @@
     --up-primaer-hover: #7fc9c9;
     --up-primaer-flaeche: #12292c;
     --up-primaer-rand: #24494d;
-    --up-entfall-flaeche: #2c1715;
-    --up-aenderung-flaeche: #221a3a;
+    --up-entfall: #f07167;
+    --up-entfall-flaeche: #2e1916;
+    --up-entfall-text: #ffc9c3;
+    --up-entfall-feld: #4a2420;
+    --up-aenderung: #5cbf86;
+    --up-aenderung-flaeche: #15281d;
+    --up-aenderung-text: #b5e6c8;
+    --up-aenderung-feld: #1f4630;
+    --up-mitteilung: #e8cf6a;
+    --up-mitteilung-flaeche: #2e2a14;
+    --up-mitteilung-rand: #5a5020;
+    --up-mitteilung-text: #efe2a8;
+    --up-ereignis-flaeche: #2a2519;
+    --up-ereignis-rand: #4a4130;
+    --up-ereignis-text: #e6d7b0;
+    --up-karte-balken: #56626c;
     --up-pruefung-flaeche: #2a2010;
     --up-termin-flaeche: #2e1626;
     --up-frei-flaeche: #132231;
@@ -148,8 +174,22 @@
   --up-primaer-hover: #7fc9c9;
   --up-primaer-flaeche: #12292c;
   --up-primaer-rand: #24494d;
-  --up-entfall-flaeche: #2c1715;
-  --up-aenderung-flaeche: #221a3a;
+  --up-entfall: #f07167;
+  --up-entfall-flaeche: #2e1916;
+  --up-entfall-text: #ffc9c3;
+  --up-entfall-feld: #4a2420;
+  --up-aenderung: #5cbf86;
+  --up-aenderung-flaeche: #15281d;
+  --up-aenderung-text: #b5e6c8;
+  --up-aenderung-feld: #1f4630;
+  --up-mitteilung: #e8cf6a;
+  --up-mitteilung-flaeche: #2e2a14;
+  --up-mitteilung-rand: #5a5020;
+  --up-mitteilung-text: #efe2a8;
+  --up-ereignis-flaeche: #2a2519;
+  --up-ereignis-rand: #4a4130;
+  --up-ereignis-text: #e6d7b0;
+  --up-karte-balken: #56626c;
   --up-pruefung-flaeche: #2a2010;
   --up-termin-flaeche: #2e1626;
   --up-frei-flaeche: #132231;

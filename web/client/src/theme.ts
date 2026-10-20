@@ -1,5 +1,5 @@
 // MUI-Thema nach dem EduOrga-Designsystem (design/MARKE.md, design/tokens.css): Petrol #164c55 als Primärfarbe (Logo, Navigation, Knöpfe),
-// Akzent #28747a (aktive Bereiche, Links, Fokus), Hintergrund #f5f7f8, Text #24363b; fachliche Statusfarben (Entfall rot, Änderung violett,
+// Akzent #28747a (aktive Bereiche, Links, Fokus), Hintergrund #f5f7f8, Text #24363b; fachliche Statusfarben (Entfall rot, jede Änderung grün,
 // Prüfung bernstein, Termin magenta, frei blau). Sachlich wie ein Schulsystem: Radius höchstens 6 px (Knöpfe, Felder, Karten, Dialoge),
 // Segmentschalter mit 1-px-Rahmen, Linien statt Schatten (Schatten nur für schwebende Ebenen), neutrale Grautöne für Köpfe und Flächen,
 // Petrol nur für Bedienung und Auswahl; sx-Radien rechnen mit 4 px je Einheit. Hell und dunkel. Prüfliste: design/DESIGN.md, „Keine KI-Anmutung“.
@@ -11,17 +11,21 @@ export const farben = {
   marine: { 50: '#eef5f6', 100: '#d6e8ea', 200: '#aed1d4', 300: '#7fb3b8', 400: '#4f9298', 500: '#28747a', 600: '#1d5f66', 700: '#164c55', 800: '#113c43', 900: '#0c2c31' },
   schiefer: { 0: '#ffffff', 25: '#fafbfc', 50: '#f5f7f8', 100: '#ebeff1', 200: '#d9e1e4', 300: '#c1cdd1', 400: '#93a3a8', 500: '#66787d', 600: '#4b5d62', 700: '#36474c', 800: '#24363b', 900: '#152226' },
   primaer: '#164c55', akzent: '#28747a', hintergrund: '#f5f7f8', text: '#24363b', logoAkzent: '#7fc9c9',
-  entfall: '#b42318', entfallFlaeche: '#fdf0ef',
-  aenderung: '#6d4fc2', aenderungFlaeche: '#f1edfb',
+  // Stundenkarte (design/DESIGN.md, Abschnitt 10): Entfall rot mit allem durchgestrichen, jede Änderung grün (Feld „+neu (bisher)“)
+  entfall: '#b42318', entfallFlaeche: '#fdecea', entfallText: '#8f1d14', entfallFeld: '#f7d3cf',
+  aenderung: '#2f855a', aenderungFlaeche: '#e6f4ea', aenderungText: '#1d5c3a', aenderungFeld: '#c9e8d4',
   pruefung: '#a15c07', pruefungFlaeche: '#fdf4e3',
   termin: '#a3347c', terminFlaeche: '#faeef5',
   frei: '#2f6f9f', freiFlaeche: '#edf4fa',
   ok: '#1d7a46', okFlaeche: '#e9f6ee',
 } as const;
 
-export interface StatusFarbe { main: string; flaeche: string }
+/** Statusfarbe: Linie/Schrift, helle Fläche; Entfall und Änderung zusätzlich Schrift und Fläche des Felds (Chip) auf der Stundenkarte. */
+export interface StatusFarbe { main: string; flaeche: string; text?: string; feld?: string }
 /** Flächen des Stundenplans: Kachel, kräftigere Kachellinie, Kopf/Zeitspalte, Überfahren, Pausenband. */
-export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string; raster: string; /** Balken links ohne Fachfarbe (grau, hell und dunkel deutlich sichtbar). */ balken: string }
+export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string; raster: string; /** Balken links ohne Fachfarbe (grau, hell und dunkel deutlich sichtbar). */ balken: string;
+  /** Mitteilung im Plan: helle gelbe Notiz (Fläche, Linie, Schrift). */ notiz: string; notizRand: string; notizText: string;
+  /** Veranstaltung/Termin als Block im Raster: warmes Neutral (Fläche, Linie, Titel). */ ereignis: string; ereignisRand: string; ereignisText: string }
 /** Seitenleiste in der Primärfarbe: Fläche, Text, Zweittext, Überfahren, aktive Zeile (leichte Tönung), 3-px-Kante der aktiven Zeile, Linie. */
 export interface NavFarben { flaeche: string; text: string; text2: string; hover: string; aktiv: string; marke: string; linie: string }
 /** Tabellenköpfe und leicht abgesetzte Flächen (neutrales Grau, keine Pastelltönung). */
@@ -46,8 +50,8 @@ declare module '@mui/material/styles' {
 export const SCHRIFT = '"IBM Plex Sans", -apple-system, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif';
 
 const status = (dunkel: boolean) => ({
-  entfall: { main: dunkel ? '#f07167' : farben.entfall, flaeche: dunkel ? '#2e1916' : farben.entfallFlaeche },
-  aenderung: { main: dunkel ? '#a993f0' : farben.aenderung, flaeche: dunkel ? '#231d3a' : farben.aenderungFlaeche },
+  entfall: { main: dunkel ? '#f07167' : farben.entfall, flaeche: dunkel ? '#2e1916' : farben.entfallFlaeche, text: dunkel ? '#ffc9c3' : farben.entfallText, feld: dunkel ? '#4a2420' : farben.entfallFeld },
+  aenderung: { main: dunkel ? '#5cbf86' : farben.aenderung, flaeche: dunkel ? '#15281d' : farben.aenderungFlaeche, text: dunkel ? '#b5e6c8' : farben.aenderungText, feld: dunkel ? '#1f4630' : farben.aenderungFeld },
   pruefung: { main: dunkel ? '#e9a640' : farben.pruefung, flaeche: dunkel ? '#2b2111' : farben.pruefungFlaeche },
   termin: { main: dunkel ? '#e27bbd' : farben.termin, flaeche: dunkel ? '#331a2b' : farben.terminFlaeche },
   frei: { main: dunkel ? '#78b3e0' : farben.frei, flaeche: dunkel ? '#132331' : farben.freiFlaeche },
@@ -73,7 +77,8 @@ export const theme = createTheme({
         divider: S[200],
         action: { hover: alpha(M[700], 0.06), selected: M[50] },
         status: status(false),
-        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2', balken: '#a9b6bb' },
+        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2', balken: '#b4bec4',
+          notiz: '#fdf5c9', notizRand: '#eddc8c', notizText: '#5c4a0f', ereignis: '#f7f1e3', ereignisRand: '#e2d6bb', ereignisText: '#5c4a22' },
         nav: { flaeche: M[700], text: '#ffffff', text2: 'rgba(255,255,255,.72)', hover: 'rgba(255,255,255,.05)', aktiv: 'rgba(255,255,255,.12)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.14)' },
         flaechen: { kopf: '#f1f3f4', band: '#f7f8f9', rand: '#d3dbde' },
         marine: farben.marine,
@@ -92,7 +97,8 @@ export const theme = createTheme({
         divider: '#26393e',
         action: { hover: 'rgba(255,255,255,.06)', selected: '#173a3f' },
         status: status(true),
-        kachel: { flaeche: '#172a2e', rand: '#33494e', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20', balken: '#6b8287' },
+        kachel: { flaeche: '#172a2e', rand: '#33494e', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20', balken: '#56626c',
+          notiz: '#2e2a14', notizRand: '#5a5020', notizText: '#efe2a8', ereignis: '#2a2519', ereignisRand: '#4a4130', ereignisText: '#e6d7b0' },
         nav: { flaeche: '#0c2a2f', text: '#e8f1f2', text2: 'rgba(232,241,242,.66)', hover: 'rgba(255,255,255,.04)', aktiv: 'rgba(255,255,255,.09)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.10)' },
         flaechen: { kopf: '#17262a', band: '#152327', rand: '#2c3f44' },
         marine: farben.marine,

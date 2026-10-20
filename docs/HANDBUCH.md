@@ -432,15 +432,18 @@ Mit dem Datum wechselt automatisch die gültige Periode.
 
 ### Tagesplanung
 
-*Vertretungsplanung → Tagesplanung* ist der Arbeitsplatz für den Planungstag: eine ruhige Seite, eine Aufgabe nach der
-anderen. Das Datum blättern Sie wie überall in der Kopfleiste (**Strg+Bild↑ / Strg+Bild↓**, eine Woche mit
+*Vertretungsplanung → Tagesplanung* ist der Arbeitsplatz für den Planungstag. Standard ist die **Tagesübersicht nach
+Klassen**: auf einen Blick, was heute in jeder Klasse passiert, und offene Stunden direkt dort lösen. Das Datum blättern Sie wie überall in der Kopfleiste (**Strg+Bild↑ / Strg+Bild↓**, eine Woche mit
 **Strg+Umschalt+Bild↑ / Strg+Umschalt+Bild↓**). Auf Bildschirmen unter 1440 px Breite (z. B. MacBook 13") klappt die
 Seitenleiste auf dieser Seite von selbst ein; der Menüknopf oben links bzw. **Strg+B** zeigt sie wieder.
 
 **Kopf (eine Zeile):** Tag und Wochentyp, die Zahl der offenen Stunden (rot), Entfälle und Kollisionen; rechts
 
-- **Liste | Tabelle** – die ruhige Liste mit Entscheidung (Standard) oder die dichte Tabelle (siehe unten),
-- **Pläne** – blendet rechts die Tagespläne von Klasse und Lehrkraft, *Wer ist frei?* und *Alle Kandidaten* ein (P),
+- **Klassen | Lehrkräfte | Offene Stunden | Tabelle** – die Tagesübersicht nach Klassen (Standard) bzw. Lehrkräften, die
+  Liste der offenen Stunden mit Entscheidung oder die dichte Tabelle (siehe unten; die Wahl wird je Benutzer gemerkt),
+- **Miniplan** (in der Tagesübersicht, P) – ein kleiner, frei verschiebbarer Plan der Lehrkraft (bzw. in der
+  Lehrkräfteübersicht der Klasse) der gewählten Stunde, der der Auswahl folgt; **Pläne** (in *Offene Stunden* und
+  *Tabelle*, P) blendet rechts die Tagespläne von Klasse und Lehrkraft, *Wer ist frei?* und *Alle Kandidaten* ein,
 - **Abwesenheiten** (mit Anzahl) – öffnet das Blatt zum Erfassen (auch Taste **N**),
 - **Veröffentlichen** – öffnet das Blatt *Prüfen und veröffentlichen*; daneben der Stand der letzten Übertragung an
   EduOrga Web („Gesendet · 10:42“, auf schmalen Bildschirmen in der Kurzinfo),
@@ -453,7 +456,73 @@ bearbeitete Rückmeldungen oder Stundenplanänderungen vorliegen: „Wollen Sie 
 übernehmen?“ mit der Liste. **Ja** übernimmt sie, **Nein** markiert sie nach einer Warnung als ignoriert (sie werden
 nicht erneut angeboten), **Später** fragt beim nächsten Öffnen wieder. Liegt nichts vor, erscheint keine Frage.
 
-**Liste (Standard).** Links stehen die offenen Stunden des Tages, nach Stunden gegliedert („2. Stunde 08:45–09:30 · 4“),
+**Tagesübersicht nach Klassen (Standard).** Zeilen sind die Klassen, nach Jahrgang gegliedert (Klick auf die Kopfzeile
+klappt einen Jahrgang ein, gemerkt), Spalten die Stunden des Tages. Kopf und Klassenspalte bleiben beim Blättern stehen;
+auch große Schulen mit 70 und mehr Klassen bleiben flüssig. Jede Zelle zeigt die Stunde kompakt – Fach und Raum oben,
+Lehrkraft darunter – und ihren Stand:
+
+| Darstellung | Bedeutung |
+|---|---|
+| ruhige graue Kachel | regulärer Unterricht |
+| rote Linie, bisherige Lehrkraft durchgestrichen, rotes „?“ | offen – Vertretung fehlt (gestrichelt: nur der Raum fehlt) |
+| violette Linie, neue Lehrkraft violett, bisherige durchgestrichen | vertreten bzw. zusammengelegt |
+| violetter Raum | Raumänderung |
+| violett gestrichelt, „ohne“ | ohne Lehrkraft (Aufgaben, EVA) |
+| schraffiert, Fach rot durchgestrichen | Entfall |
+| violette Linie | zusätzlich bzw. verlegt |
+| gestrichelte Linie in der Terminfarbe | Termin; ein Band über mehrere Stunden: Klasse abwesend (Ausflug, Praktikum …) mit Text |
+| bernsteinfarbene Linie | Klausur |
+
+Doppel- und Blockstunden stehen als eine Zelle; mehrere gleichzeitige Stunden (Kurse) zeigen „+2“, die Kurzinfo bzw. die
+Entscheidung listet alle. Im **Spaltenkopf** jeder Stunde stehen die offenen Stunden und die verfügbaren Lehrkräfte
+(„4 offen · 2 frei“ – Bereitschaft, freigesetzt, Hohlstunde; ist mehr offen als frei, ist die Zahl bernsteinfarben; die
+Kurzinfo nennt die Kürzel, ein Klick öffnet *Wer ist frei?*), darunter die Zeile **Bereitschaft** mit den
+Bereitschaften bzw. Präsenzlehrkräften des Tages (eingesetzt durchgestrichen, abwesend rot). Über der Matrix: Suche
+(Klasse, Lehrkraft, Fach), *Alle Jahrgänge*, **Nur Änderungen** (nur Klassen mit offenen, vertretenen oder entfallenen
+Stunden bzw. Abwesenheit), die Zahlen des Tages („19 offen · in 17 Klassen · 8 Entfälle · 2 abwesend“; offene Aufsichten
+ohne Klasse als Verweis auf *Offene Stunden*), *Legende*, *Alle prüfen …* (Empfehlungen für alle prüfen, A) und die Tasten.
+
+Ein Klick auf eine Zelle wählt sie, rechts erscheint die **Entscheidung** (wie unten bei *Offene Stunden*: Empfehlung mit
+Enter, Alternativen 2 und 3, Entfall, Zusammenlegen, weitere Möglichkeiten), darüber Verweise auf die Pläne von Klasse,
+Lehrkraft und Raum als Miniplan. Nach jeder Entscheidung ist die nächste offene Stunde gewählt – Stunde für Stunde, also in
+der Reihenfolge der Dringlichkeit. Für eine reguläre Stunde zeigt die Seite *Entfall* und *… ab hier abwesend*, für ein
+Abwesenheitsband *Abwesenheit entfernen*. **Mehrere Stunden:** Strg+Klick, Umschalt+Klick (Rechteck), Umschalt+Pfeil oder
+mit gedrückter Maustaste über offene Zellen ziehen – rechts stehen dann die gemeinsamen Kandidaten.
+
+**Rechtsklick auf eine Zelle:** Plan von Klasse, Lehrkraft(en) und Raum als Miniplan, Entfall (bzw. *Stunde entfallen
+lassen*), *Änderung zurücknehmen*, **Klasse … ab der 3. Stunde abwesend (Ausflug …)** (ab/bis Stunde, Grund, Text – die
+Stunden der Klasse werden freigesetzt, die Lehrkräfte stehen für Vertretungen bereit), **… ab der 3. Stunde abwesend
+melden** bzw. *ganztägig abwesend melden* für die Lehrkraft der Stunde, *Abwesenheit entfernen*. **Rechtsklick auf eine
+Klasse:** Plan, *ganztägig abwesend (Ausflug …)*, Abwesenheit entfernen; Doppelklick öffnet den Miniplan.
+
+| Taste (Tagesübersicht) | Wirkung |
+|---|---|
+| ← → ↑ ↓ | Zelle wählen (Umschalt: Mehrfachauswahl erweitern) |
+| J / K | nächste / vorherige offene Stunde |
+| Enter bzw. 1, 2 3 | Empfehlung bzw. Alternative übernehmen |
+| E, B, O, R, M | Entfall (auch für eine reguläre Stunde), Zusammenlegen, ohne Lehrkraft, Raum, weitere Möglichkeiten |
+| Entf | Änderung zurücknehmen |
+| P | Miniplan, der der Auswahl folgt, ein-/ausblenden |
+| V, F | Alle Kandidaten, Wer ist frei? |
+| A, N | Empfehlungen für alle prüfen, Abwesenheit erfassen |
+| Esc | Mehrfachauswahl aufheben |
+
+**Tagesübersicht nach Lehrkräften.** Dieselbe Matrix mit den Lehrkräften als Zeilen: zuerst die abwesenden (Gruppe
+*Abwesend*, Zeitraum schraffiert), dann alle anderen. Die Zellen zeigen Fach, Raum und Klasse; eine vertretene Stunde der
+abwesenden Lehrkraft „6ab → MEY“, offene Stunden mit „?“, Bereitschaften als ruhige Kachel. Rechtsklick auf eine Lehrkraft:
+ganztägig bzw. stundenweise abwesend melden.
+
+**Miniplan.** Kleine Fenster mit dem tagesaktuellen Plan einer Klasse, Lehrkraft oder eines Raums über der Tagesplanung –
+zu öffnen mit *Miniplan* bzw. P (folgt der Auswahl), über das Kontextmenü einer Zelle („Plan von 5a anzeigen“), mit
+Rechtsklick auf einen Kandidaten der Entscheidung („Plan von SRO anzeigen“) oder mit Doppelklick. Mehrere Fenster
+gleichzeitig; am Titel verschieben (an den Bildschirmrändern schnappen sie ein), an der Ecke unten rechts die Größe ändern,
+*Tag | Woche* umschalten, mit der Nadel *folgt der Auswahl* an- bzw. abschalten, mit dem Pfeil (oder Doppelklick auf den
+Titel) auf die Titelzeile einklappen, mit × schließen. Lage, Größe und Zustand werden je Benutzer im Browser gemerkt;
+ein Klick auf eine geänderte Stunde im Miniplan wählt sie in der Tagesübersicht. Neue Fenster öffnen unten rechts über
+der Matrix, damit die Entscheidung frei bleibt; auch auf einem 13-Zoll-Bildschirm (1280×720) bleibt die Seite ohne
+waagrechtes Blättern.
+
+**Offene Stunden.** Links stehen die offenen Stunden des Tages, nach Stunden gegliedert („2. Stunde 08:45–09:30 · 4“),
 eine Zeile je Stunde: Klasse · Fach · fehlende Lehrkraft (durchgestrichen), rechts ggf. *Klausur* (Aufsicht), *Raum*
 (nur der Raum fehlt) oder der Block („2.–3.“). Reiter **Offen** und **Gelöst** mit Anzahl. Rechts steht die
 **Entscheidung** zur gewählten Stunde:
@@ -486,7 +555,7 @@ eingetragen“ mit **Rückgängig** (wie Strg+Z). Für eine gelöste Stunde zeig
 | Entf | (Gelöst) Stunde zurücksetzen |
 | Esc | Mehrfachauswahl aufheben bzw. Blatt schließen |
 
-- **Große Schulen:** Die Liste ist virtualisiert und lädt Kandidaten nur für die gewählte und die nächsten Stunden – auch
+- **Große Schulen:** Die Liste (wie die Tagesübersicht) ist virtualisiert und lädt Kandidaten nur für die gewählte und die nächsten Stunden – auch
   mit 200 Lehrkräften und 150 offenen Stunden am Tag bleibt sie flüssig. Bei mehr als acht Stunden erscheint über der Liste
   eine Suche (Klasse, Fach, Lehrkraft) und **Filter** (Stunde, Jahrgang, Abteilung).
 - **Empfehlungen für alle prüfen** (unter der Liste, Taste A) rechnet die automatische Vertretung (bester Vorschlag,

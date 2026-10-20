@@ -94,6 +94,45 @@ public sealed class VertretungTests : IClassFixture<StudioFabrik>
     }
 
     [Fact]
+    public async Task TagesuebersichtNachKlassenUndLehrkraeften()
+    {
+        var (c, basis, datum, _, lehrer) = await VorbereitenAsync();
+        var vorher = await c.GetJsonAsync($"{basis}/tagesablauf/matrix?datum={datum}");
+        var klassen = vorher["zeilen"]!.AsArray();
+        Assert.NotEmpty(klassen);
+        Assert.NotEmpty(vorher["stunden"]!.AsArray());
+        var klasse = S(klassen[0]!["k"]);
+
+        // Lehrkraft und Klasse abwesend (Klasse ab der 2. Stunde, „Ausflug“)
+        await c.PostJsonAsync($"{basis}/absenzen/speichern", new { art = "lehrer", neu = new[] { new { id = 0, element = lehrer, von = datum } } });
+        await c.PostJsonAsync($"{basis}/absenzen/speichern", new { art = "klasse", neu = new[] { new { id = 0, element = klasse, von = datum, sv = 2, sb = 99, text = "Ausflug" } } });
+        var m = await c.GetJsonAsync($"{basis}/tagesablauf/matrix?datum={datum}");
+        var zeilen = m["zeilen"]!.AsArray().Select(z => z!).ToList();
+        Assert.Equal(klassen.Count, zeilen.Count);
+        // offene Stunden der abwesenden Lehrkraft stehen in den Zeilen ihrer Klassen (Status „o“, bisherige Lehrkraft)
+        var offen = zeilen.SelectMany(z => z["zellen"]!.AsArray()).SelectMany(x => x!["e"]!.AsArray()).Where(e => S(e!["s"]) == "o").ToList();
+        Assert.Contains(offen, e => S(e!["la"]) == lehrer && e["v"]!.GetValue<int>() > 0);
+        // abwesende Klasse: Abwesenheit je Stunde ab der 2. Stunde mit Text
+        var kz = zeilen.Single(z => S(z["k"]) == klasse);
+        var abw = kz["abw"]!.AsArray();
+        Assert.NotEmpty(abw);
+        Assert.Equal(2, abw[0]!["s"]!.GetValue<int>());
+        Assert.Equal("Ausflug", S(abw[0]!["t"]));
+        Assert.DoesNotContain(kz["zellen"]!.AsArray().Where(x => x!["s"]!.GetValue<int>() >= 2).SelectMany(x => x!["e"]!.AsArray()), e => S(e!["s"]) is "n" or "o");
+
+        // Lehrkräfte: abwesende zuerst, ihre offenen Stunden in ihrer Zeile
+        var ml = await c.GetJsonAsync($"{basis}/tagesablauf/matrix?datum={datum}&art=lehrer");
+        Assert.Equal("lehrer", S(ml["art"]));
+        var lz = ml["zeilen"]!.AsArray().Select(z => z!).ToList();
+        Assert.Equal("Abwesend", S(lz[0]["gruppe"]));
+        var eigene = lz.Single(z => S(z["k"]) == lehrer);
+        Assert.Equal("Abwesend", S(eigene["gruppe"]));
+        Assert.Contains(eigene["zellen"]!.AsArray().SelectMany(x => x!["e"]!.AsArray()), e => S(e!["s"]) == "o");
+        // verfügbare Lehrkräfte je Stunde (Listen vorhanden)
+        Assert.All(ml["stunden"]!.AsArray(), s => Assert.NotNull(s!["hohl"]));
+    }
+
+    [Fact]
     public async Task EntfallUndRueckgaengigSowieRueckfragen()
     {
         var (c, basis, datum, lid, lehrer) = await VorbereitenAsync();

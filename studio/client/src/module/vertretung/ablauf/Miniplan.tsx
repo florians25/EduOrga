@@ -101,13 +101,13 @@ interface MPlan { element: { kurz: string; lang: string }; zeitraster: { stunden
 function Eintrag({ e, typ, datum, stunde }: { e: MEintrag; typ: MiniTyp; datum: string; stunde: number }) {
   const zweit = typ === 'lehrer' ? e.klassen : e.lehrer;
   const alt = typ === 'lehrer' ? '' : e.lehrerAlt;
-  const st = e.durch || e.status === 'Entfall' ? 'e' : e.status === 'Offen' || e.offen ? 'o' : e.status === 'Regulaer' ? 'n' : 'v';
+  const st = e.status === 'Offen' || (e.offen && e.status !== 'Entfall') ? 'o' : e.durch || e.status === 'Entfall' ? 'e' : e.status === 'Regulaer' ? 'n' : 'v';
   const titel = [`${e.fach} – ${e.klassen} – ${e.lehrer || '???'}${e.raum ? ` – ${e.raum}` : ''}`, e.lehrerAlt ? `statt ${e.lehrerAlt}` : '', e.raumAlt ? `statt Raum ${e.raumAlt}` : ''].filter(Boolean).join('\n');
   return (
     <button type="button" className={`mp-e mx-st-${st}`} title={titel} disabled={!e.vtr} data-vtr={e.vtr}
       onClick={() => { if (e.vtr) auswahlMelden({ id: e.vtr, ids: [e.vtr], quelle: 'miniplan', zeile: { v: e.vtr, datum, stunde } }); }}>
       <span className="mp-fach">{e.fach || '—'}</span>
-      <span className="mp-zweit">{alt ? <><s>{alt}</s> </> : null}{zweit || (st === 'o' ? '?' : '')}</span>
+      <span className="mp-zweit">{alt ? <><s>{alt}</s> </> : null}{st === 'o' && typ !== 'lehrer' ? null : zweit}{st === 'o' ? <b className="mp-frage">{typ === 'lehrer' ? ' ?' : '?'}</b> : null}</span>
       {typ !== 'raum' ? <span className="mp-raum">{e.raum}</span> : null}
     </button>
   );

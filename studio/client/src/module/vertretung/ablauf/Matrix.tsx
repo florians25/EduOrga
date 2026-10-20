@@ -228,7 +228,7 @@ export default function Matrix({ p }: AnsichtProps) {
     if (w) {
       weiter.current = null;
       const n = offeneZellen.find((x) => x.col > w.col || (x.col === w.col && x.pos >= w.pos)) ?? offeneZellen[0];
-      if (n) { setWahl({ zeile: n.zeile, col: n.col, idx: 0 }); return; }
+      if (n) { setWahl({ zeile: n.zeile, col: n.col, idx: 0 }); fokus(); return; }
     }
     if (wahl && !segAn(wahl.zeile, wahl.col)) setWahl(null);
   }, [daten, reihen]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -272,13 +272,16 @@ export default function Matrix({ p }: AnsichtProps) {
     kandidatenAnfordern([o.id, ...offeneZellen.slice(i + 1, i + 3).map((x) => x.v)]);
   }, [o?.id, offeneZellen, kStand]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // die Zeilen beginnen unter dem stehenden Kopf (Stunden, ggf. Bereitschaften): als Rand des Blätterbereichs berücksichtigen
+  const kopfHoehe = 40 + ((daten?.stunden || []).some((s) => s.bereitschaften.length) ? 24 : 0);
   const virt = useVirtualizer({
     count: reihen.length, getScrollElement: () => scrollRef.current, overscan: 8, getItemKey: (i) => reihen[i]?.key ?? i,
-    estimateSize: (i) => (reihen[i]?.art === 'gruppe' ? HOEHE_GRUPPE : HOEHE),
+    estimateSize: (i) => (reihen[i]?.art === 'gruppe' ? HOEHE_GRUPPE : HOEHE), scrollMargin: kopfHoehe, scrollPaddingStart: kopfHoehe,
   });
+  const fokus = () => { if (!scrollRef.current?.contains(document.activeElement)) scrollRef.current?.focus({ preventScroll: true }); };
   useEffect(() => { const ri = wahl ? reiheVon.get(wahl.zeile) : undefined; if (ri != null) virt.scrollToIndex(ri, { align: 'auto' }); }, [wahl?.zeile]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const waehlen = (zeile: number, col: number, idx = 0) => { setWahl({ zeile, col, idx }); };
+  const waehlen = (zeile: number, col: number, idx = 0) => { setWahl({ zeile, col, idx }); fokus(); };
   /** offene Vertretungen im Rechteck zwischen zwei Zellen */
   const rechteck = (a: { zeile: number; col: number }, c: { zeile: number; col: number }) => {
     const p1 = datenReihen.indexOf(reiheVon.get(a.zeile) ?? -1), p2 = datenReihen.indexOf(reiheVon.get(c.zeile) ?? -1);
@@ -340,6 +343,7 @@ export default function Matrix({ p }: AnsichtProps) {
       setMarkiert((m) => [...new Set([...(m.length ? m : eintrag?.s === 'o' && eintrag.v ? [eintrag.v] : []), ...neu])]);
     } else setMarkiert([]);
     setWahl({ ...ziel, idx: 0 });
+    fokus();
   };
   const offeneBlaettern = (r: number) => {
     if (!offeneZellen.length) return;
@@ -351,7 +355,7 @@ export default function Matrix({ p }: AnsichtProps) {
     else if (r > 0) n = offeneZellen.find((x) => x.col > col || (x.col === col && x.pos > pos)) ?? offeneZellen[0];
     else n = [...offeneZellen].reverse().find((x) => x.col < col || (x.col === col && x.pos < pos)) ?? offeneZellen[offeneZellen.length - 1];
     setMarkiert([]);
-    if (n) setWahl({ zeile: n.zeile, col: n.col, idx: 0 });
+    if (n) { setWahl({ zeile: n.zeile, col: n.col, idx: 0 }); fokus(); }
   };
 
   const aktion = (_id: number, f: () => Promise<unknown>, text?: string) => {
@@ -360,7 +364,8 @@ export default function Matrix({ p }: AnsichtProps) {
     f().then((r) => {
       if (r === null) return;
       if (text) setZuletzt(text);
-      weiter.current = { col: wahl?.col ?? 0, pos };
+      // nach einer gelösten offenen Stunde folgt die nächste offene; sonst bleibt die Auswahl stehen
+      if (eintrag && OFFEN(eintrag)) weiter.current = { col: wahl?.col ?? 0, pos };
       scrollRef.current?.focus({ preventScroll: true });
     }).catch(fehlerMelden);
   };
@@ -526,9 +531,17 @@ export default function Matrix({ p }: AnsichtProps) {
   const spalteBreite = Math.max(76, Math.floor((Math.max(0, breite - kopfBreite)) / Math.max(1, nrs.length)));
   const gesamtBreite = kopfBreite + spalteBreite * nrs.length;
   const spalten = `${kopfBreite}px repeat(${nrs.length}, ${spalteBreite}px)`;
-  const offenJeSpalte = useMemo(() => { const n = new Array(nrs.length).fill(0); for (const x of offeneZellen) n[x.col]++; return n; }, [offeneZellen, nrs.length]);
-  const nOffen = offeneZellen.length;
-  const nKlassen = new Set(offeneZellen.map((x) => x.zeile)).size;
+  const offenJeSpalte = useMemo(() => {
+    const n = nrs.map(() => new Set<number>());
+    for (const z of daten?.zeilen || []) for (const c of z.zellen) { const i = nrs.indexOf(c.s); if (i >= 0) for (const e of c.e) if (OFFEN(e) && e.v) n[i]!.add(e.v); }
+    return n.map((x) => x.size);
+  }, [daten, nrs]);
+  // offene Stunden (je Vertretung einmal, auch wenn sie in mehreren Zeilen steht) und betroffene Zeilen
+  const { nOffen, nKlassen } = useMemo(() => {
+    const ids = new Set<number>(), zeilen = new Set<number>();
+    for (const z of daten?.zeilen || []) for (const c of z.zellen) for (const e of c.e) if (OFFEN(e) && e.v) { ids.add(e.v); zeilen.add(z.id); }
+    return { nOffen: ids.size, nKlassen: zeilen.size };
+  }, [daten]);
   const nEntfall = useMemo(() => (daten?.zeilen || []).reduce((n, z) => n + z.zellen.reduce((m, c) => m + c.e.filter((e) => e.s === 'e' && !e.kl).length, 0), 0), [daten]);
   const nAbw = useMemo(() => (daten?.zeilen || []).filter((z) => z.abw.length).length, [daten]);
   const hatBereitschaft = stunden.some((s) => s.bereitschaften.length);
@@ -563,7 +576,7 @@ export default function Matrix({ p }: AnsichtProps) {
               <option value="">Alle Jahrgänge</option>{jahrgaenge.map((j) => <option key={j} value={j}>{`Jahrgang ${j}`}</option>)}
             </Select>
           ) : null}
-          <Checkbox size="medium" checked={merk.nurAenderungen} onChange={(_, d) => merken({ nurAenderungen: !!d.checked })} label="Nur mit Änderungen" data-testid="mx-nur-aenderungen" />
+          <Checkbox size="medium" checked={merk.nurAenderungen} onChange={(_, d) => merken({ nurAenderungen: !!d.checked })} label="Nur Änderungen" title="Nur Zeilen mit offenen, vertretenen oder entfallenen Stunden bzw. Abwesenheiten" data-testid="mx-nur-aenderungen" />
           <span className="mx-summe" data-testid="mx-summe">
             <span className={nOffen ? 'tp-offen' : undefined}>{`${nOffen} offen`}</span>
             {nOffen ? <span className="mx-breit">{`in ${mehrzahl(nKlassen, lehrer ? 'Zeile' : 'Klasse', lehrer ? 'Zeilen' : 'Klassen')}`}</span> : null}
@@ -582,7 +595,7 @@ export default function Matrix({ p }: AnsichtProps) {
                 <span className="mx-lg mx-lg-text">Im Spaltenkopf: offene Stunden und verfügbare Lehrkräfte (Bereitschaft, freigesetzt, Hohlstunde).</span>
               </PopoverSurface>
             </Popover>
-            {schreiben && nOffen > 1 ? <Button size="small" appearance="subtle" onClick={() => void automatik()} disabled={probeLaeuft || !!probe} data-testid="alle-empfehlungen" title="Die Automatik schlägt für alle offenen Stunden eine Lösung vor – zur Prüfung, noch ohne Änderung (A)">{probeLaeuft ? 'Wird berechnet …' : 'Empfehlungen prüfen …'}</Button> : null}
+            {schreiben && nOffen > 1 ? <Button size="small" appearance="subtle" onClick={() => void automatik()} disabled={probeLaeuft || !!probe} data-testid="alle-empfehlungen" title="Empfehlungen für alle offenen Stunden prüfen: die Automatik schlägt je Stunde eine Lösung vor – zur Prüfung, noch ohne Änderung (A)">{probeLaeuft ? 'Wird berechnet …' : 'Alle prüfen …'}</Button> : null}
             <MenueKnopf art="knopf" size="small" appearance="subtle" text="" titel="Tasten der Tagesübersicht" eintraege={tasten} testid="tasten" icon={<Keyboard20Regular />} />
           </span>
         </div>
@@ -609,7 +622,7 @@ export default function Matrix({ p }: AnsichtProps) {
             <div style={{ height: virt.getTotalSize(), position: 'relative', width: gesamtBreite }} role="rowgroup">
               {virt.getVirtualItems().map((vi) => {
                 const x = reihen[vi.index]!;
-                const stil = { position: 'absolute' as const, top: 0, left: 0, width: gesamtBreite, height: vi.size, transform: `translateY(${vi.start}px)` };
+                const stil = { position: 'absolute' as const, top: 0, left: 0, width: gesamtBreite, height: vi.size, transform: `translateY(${vi.start - kopfHoehe}px)` };
                 if (x.art === 'gruppe') {
                   return (
                     <div key={vi.key} className="mx-gruppe" style={stil} role="row">
@@ -624,13 +637,11 @@ export default function Matrix({ p }: AnsichtProps) {
                   );
                 }
                 const z = x.z;
-                const abwesendGanz = lehrer && z.abw.length >= nrs.length;
                 return (
                   <div key={vi.key} className={mergeClasses('mx-reihe', wahl?.zeile === z.id && 'gewaehlt', x.offen > 0 && 'mit-offen')} style={stil} role="row" data-zeile={z.k}>
-                    <span className="mx-name" role="rowheader" title={`${z.name}${x.offen ? `\n${x.offen} offen` : ''}`} onContextMenu={(e) => zeilenMenue(z, e)}
+                    <span className="mx-name" role="rowheader" title={`${z.name}${x.offen ? `\n${x.offen} offen` : ''}${z.abw.length ? `\nabwesend ${z.abw.length >= nrs.length ? 'ganztägig' : `${z.abw[0]!.s}.–${z.abw[z.abw.length - 1]!.s}. Stunde`}${z.abw[0]!.t ? ` (${z.abw[0]!.t})` : ''}` : ''}\nDoppelklick: Miniplan · Rechtsklick: Abwesenheit, Plan`} onContextMenu={(e) => zeilenMenue(z, e)}
                       onDoubleClick={() => miniplanOeffnen(lehrer ? 'lehrer' : 'klasse', z.id, z.k)}>
                       <b>{z.k}</b>{x.offen ? <span className="mx-name-offen">{x.offen}</span> : null}
-                      {abwesendGanz ? <span className="mx-name-abw">abw.</span> : null}
                     </span>
                     {x.segs.map((sg) => {
                       const sel = wahl?.zeile === z.id && wahl.col === sg.von;
@@ -673,14 +684,14 @@ export default function Matrix({ p }: AnsichtProps) {
             <div className="mx-ort" data-testid="mx-ort">
               {o || b ? null : <span className="mx-ort-text">{titelLeiste}</span>}
               <span className="mx-ort-plaene">
-                <span>Miniplan</span>
+                <span>Miniplan:</span>
                 {planMenue(gewaehltZeile.z, eintrag).filter((x): x is { text: string; aktion: () => void } => !!x && 'aktion' in x).slice(0, 4).map((x) => (
                   <button key={x.text} type="button" className="tp-link mx-ort-link" onClick={x.aktion} title={x.text.replace(' anzeigen', ' als Miniplan zeigen')}>{x.text.replace(/^Plan von (Raum )?(.*) anzeigen$/, '$2')}</button>
                 ))}
               </span>
             </div>
           ) : null}
-          {gewaehltSeg && new Set(gewaehltSeg.e.map(sig)).size > 1 ? (
+          {gewaehltSeg?.art === 'z' && new Set(gewaehltSeg.e.map(sig)).size > 1 ? (
             <div className="mx-auswahl" role="list" aria-label="Stunden in dieser Zelle">
               {gewaehltSeg.e.map((x, i) => (gewaehltSeg.e.findIndex((y) => sig(y) === sig(x)) !== i ? null : (
                 <button key={i} type="button" role="listitem" className={mergeClasses('mx-auswahl-e', `mx-st-${x.s}`, i === wahl!.idx && 'gewaehlt')} onClick={() => setWahl({ ...wahl!, idx: i })}>

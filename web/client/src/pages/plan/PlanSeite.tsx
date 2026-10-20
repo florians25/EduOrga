@@ -16,7 +16,7 @@ import { useSitzung } from '../../app/sitzung';
 import { ElementWahl, ZeitNavi } from '../../components/Auswahl';
 import { Fehler, Laden, Seite } from '../../components/Seite';
 import { Wochenraster, type Aufsichtsmodus } from '../../components/plan/Wochenraster';
-import { Legende, Muster, ARTEN, unterrichtHinweis } from '../../components/plan/Legende';
+import { Legende, LegendeTabelle } from '../../components/plan/Legende';
 import { useDarstellung } from '../../components/plan/darstellung';
 import { Stundendetails } from '../../components/plan/Stundendetails';
 import type { Art } from '../../components/plan/logik';
@@ -49,22 +49,32 @@ function langname(plan: Wochenplan) {
   return n && n !== plan.element ? n : '';
 }
 
+/** Legende „Änderungstyp | Darstellung“ als eigenes Fenster (Knopf „Legende“ in der Werkzeugleiste). */
+export function LegendeDialog({ offen, zu }: { offen: boolean; zu: () => void }) {
+  return (
+    <Dialog open={offen} onClose={zu} maxWidth="sm" fullWidth>
+      <DialogTitle>Legende</DialogTitle>
+      <DialogContent sx={{ px: { xs: 1, sm: 3 } }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>Jede Änderung ist grün, ein Entfall rot und vollständig durchgestrichen. Die betroffene Angabe steht im Feld, z. B. „+Gal (Gor)“: neue Lehrkraft, in Klammern die bisherige.</Typography>
+        <LegendeTabelle />
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}><Button variant="contained" onClick={zu}>Schließen</Button></DialogActions>
+    </Dialog>
+  );
+}
+
 export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
-  const { d } = useDarstellung();
   return (
     <Dialog open={offen} onClose={zu} maxWidth="md" fullWidth>
       <DialogTitle>Hilfe zum Stundenplan</DialogTitle>
       <DialogContent>
         <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Typography variant="h4" sx={{ mb: 1.5 }}>Darstellung</Typography>
-            <Stack gap={1}>
-              <Stack direction="row" gap={1.5} alignItems="center"><Muster art="regulaer" gross /><Typography variant="body2"><b>Unterricht</b> – {unterrichtHinweis(d)}</Typography></Stack>
-              {ARTEN.map(a => <Stack key={a.art} direction="row" gap={1.5} alignItems="center"><Muster art={a.art} gross /><Typography variant="body2"><b>{a.text}</b> – {a.hinweis}</Typography></Stack>)}
-              <Typography variant="body2" color="text.secondary">Geänderte Kürzel stehen als petrolfarbene Plakette, das bisherige grau durchgestrichen davor (z. B. <s>HOF</s> <b>BEC</b>); eine offene Vertretung zeigt „?“. Die Kurzinfo beim Überfahren nennt die Art der Änderung. „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext.</Typography>
-            </Stack>
+            <LegendeTabelle />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>Die Kurzinfo beim Überfahren nennt die Art der Änderung. „Online“ führt zur Videokonferenz, das Stiftsymbol zeigt eine fällige Hausaufgabe, das Info-Symbol Notizen oder einen Vertretungstext; „+2“ am rechten Rand öffnet weitere Stunden zur selben Zeit.</Typography>
           </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Typography variant="h4" sx={{ mb: 1.5 }}>Bedienung</Typography>
             <Box component="ul" sx={{ pl: 2, m: 0, '& li': { mb: 0.75, fontSize: 14 } }}>
               <li>Der Zeitraum öffnet den Kalender, „Heute“ springt zur aktuellen Woche.</li>
@@ -72,7 +82,8 @@ export function PlanHilfe({ offen, zu }: { offen: boolean; zu: () => void }) {
               <li>„Woche“ und „Tag“ schalten zwischen Wochen- und Tagesansicht.</li>
               <li>Die Höhe der Stunden entspricht der Uhrzeit; die Linie zeigt die aktuelle Zeit.</li>
               <li>Überfahren zeigt eine Kurzinfo, ein Klick öffnet die Stundendetails mit Klassenbuch.</li>
-              <li>Die Legende hebt einzelne Arten hervor (z. B. nur Änderungen); „Ansicht“ enthält weitere Einstellungen.</li>
+              <li>Die Leiste über dem Plan hebt einzelne Arten hervor (z. B. nur Änderungen); „Legende“ erklärt jede Darstellung, „Ansicht“ enthält weitere Einstellungen.</li>
+              <li>Der Plan lädt Änderungen sofort, wenn Sie zum Fenster zurückkehren, und sonst alle zwei Minuten.</li>
             </Box>
           </Grid>
         </Grid>
@@ -119,6 +130,7 @@ export default function PlanSeite({ teile }: SeitenProps) {
   const setEinst = (e: PlanEinstellungen) => { setEinstRoh(e); schreiben('untplan:planeinstellungen', mobil ? { ...e, ansicht: lesen<{ ansicht?: string }>('untplan:planeinstellungen', {}).ansicht ?? 'woche' } : e); };
   const [fokus, setFokus] = useState<Set<Art>>(() => new Set(lesen<Art[]>('untplan:fokus', [], true)));
   const [hilfe, setHilfe] = useState(false);
+  const [legende, setLegende] = useState(false);
   const [details, setDetails] = useState<{ k: Karte; liste: Karte[] } | null>(null);
   const leiste = useRef<HTMLDivElement>(null);
   const [leistenHoehe, setLeistenHoehe] = useState(0);
@@ -145,6 +157,17 @@ export default function PlanSeite({ teile }: SeitenProps) {
     if (!element || (s.familie && kinder.daten === undefined)) return undefined;
     return holen<Wochenplan>(`/api/app/plan${qs({ typ, element, datum, schueler: istMein && meinKind ? meinKind : undefined })}`, signal);
   }, [typ, element, datum, meinKind, kinder.daten]);
+
+  // Änderungen sofort zeigen: beim Zurückkehren zum Fenster bzw. Tab und alle zwei Minuten neu laden (ohne Ladeanzeige, ohne Cache)
+  const planNeu = plan.neu;
+  useEffect(() => {
+    let zuletzt = Date.now();
+    const auffrischen = () => { if (document.visibilityState === 'visible' && Date.now() - zuletzt > 5000) { zuletzt = Date.now(); void planNeu(); } };
+    const takt = window.setInterval(() => { if (document.visibilityState === 'visible') { zuletzt = Date.now(); void planNeu(); } }, 120000);
+    window.addEventListener('focus', auffrischen);
+    document.addEventListener('visibilitychange', auffrischen);
+    return () => { window.clearInterval(takt); window.removeEventListener('focus', auffrischen); document.removeEventListener('visibilitychange', auffrischen); };
+  }, [planNeu]);
 
   // Tag der Tagesansicht
   const [tagWahl, setTagWahl] = useState<number | null>(null);
@@ -216,6 +239,7 @@ export default function PlanSeite({ teile }: SeitenProps) {
             </ToggleButtonGroup>
           )}
           <Box sx={{ flex: 1 }} />
+          <Button variant="outlined" onClick={() => setLegende(true)}>Legende</Button>
           <AnsichtMenue einst={einst} setEinst={setEinst} mitAbwesenheiten={istMein} />
           <Tooltip title="Hilfe zum Stundenplan"><IconButton size="small" onClick={() => setHilfe(true)} aria-label="Hilfe zum Stundenplan"><HelpOutlineRounded fontSize="small" /></IconButton></Tooltip>
         </Box>
@@ -247,12 +271,13 @@ export default function PlanSeite({ teile }: SeitenProps) {
       </Box>
       <Fehler fehler={plan.fehler} neu={plan.neu} />
       {!p ? <Laden hoehe={400} /> : (
-        <Paper variant="outlined" sx={{ borderRadius: '4px', overflow: 'visible', opacity: plan.laedt ? 0.7 : 1, transition: 'opacity .12s' }}>
+        <Paper variant="outlined" sx={{ borderRadius: '4px', overflow: 'visible', opacity: plan.laedt && (p.montag !== mo || p.element.toLowerCase() !== element.toLowerCase()) ? 0.7 : 1, transition: 'opacity .12s' }}>
           <Wochenraster plan={p} onOpen={(k, l) => setDetails({ k, liste: l })}
             optionen={{ nurTag: einst.ansicht === 'tag' ? tagIndex : null, kartenZeiten: einst.zeiten, aufsichten: einst.aufsichten, abwesenheiten: einst.abwesenheiten, fokus, oben: oben + leistenHoehe }} />
         </Paper>
       )}
       <PlanHilfe offen={hilfe} zu={() => setHilfe(false)} />
+      <LegendeDialog offen={legende} zu={() => setLegende(false)} />
       {details && <Stundendetails karte={details.k} liste={details.liste} typ={typ} onClose={() => setDetails(null)} onGeaendert={() => void plan.neu()} />}
     </Seite>
   );

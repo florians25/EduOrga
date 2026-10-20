@@ -11,9 +11,9 @@
 .mx-jg { width: 148px; min-width: 120px; }
 .mx-werkzeuge .fui-Checkbox { white-space: nowrap; }
 .mx-werkzeuge .fui-Checkbox__label { padding-left: 4px; }
-.mx-summe { display: inline-flex; align-items: baseline; color: var(--colorNeutralForeground2); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; }
+.mx-summe { display: inline-flex; align-items: baseline; color: var(--colorNeutralForeground2); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; flex: 0 1 auto; }
 .mx-summe > * + *::before { content: '·'; margin: 0 8px; color: var(--colorNeutralForeground4); font-weight: 400; text-decoration: none; display: inline-block; }
-.mx-ohne { padding: 0; font-size: 13px; }
+.mx-summe .mx-ohne { padding: 0; font-size: 13px; align-self: baseline; }
 .mx-rechts { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
 @container (max-width: 1000px) { .mx-breit { display: none; } }
 @container (max-width: 860px) { .mx-suche { width: 132px; } }
@@ -150,8 +150,8 @@
 .mx-seite .ta-sammel { padding: 12px 16px; }
 .mx-ort { display: flex; align-items: baseline; gap: 8px; padding: 10px 16px 0 16px; font-size: 12px; color: var(--colorNeutralForeground3); flex-wrap: wrap; }
 .mx-ort-text { font-weight: 600; color: var(--colorNeutralForeground2); }
-.mx-ort-plaene { display: inline-flex; align-items: baseline; gap: 12px; margin-left: auto; flex-wrap: wrap; }
-.mx-ort-link { padding: 0; font-size: 12px; }
+.mx-ort-plaene { display: inline-flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mx-ort .mx-ort-link { padding: 0; font-size: 12px; }
 .mx-auswahl { display: flex; flex-direction: column; gap: 4px; padding: 8px 16px 0 16px; }
 .mx-auswahl-e { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 1px; padding: 3px 6px; border: 1px solid var(--colorNeutralStroke3); border-radius: 3px; cursor: pointer; font-size: 12px; }
 .mx-auswahl-e.gewaehlt { outline: 2px solid var(--edo-modus); }
@@ -203,7 +203,9 @@
 .mp-raum { color: var(--colorNeutralForeground3); font-size: 11px; }
 .mp-e.mx-st-n { background: var(--colorNeutralBackground2); }
 .mp-e.mx-st-e .mp-fach { color: var(--up-entfall); text-decoration: line-through; }
-.mp-e.mx-st-o .mp-zweit { color: var(--up-entfall); font-weight: 700; }
+.mp-e.mx-st-o { border-color: var(--up-entfall); }
+.mp-e.mx-st-o .mp-zweit { color: var(--colorNeutralForeground2); }
+.mp-frage { color: var(--up-entfall); font-weight: 700; }
 .mp-e.mx-st-v .mp-zweit { color: var(--up-aenderung); font-weight: 600; }
 .mp-mehr { color: var(--colorNeutralForeground3); font-size: 11px; padding-left: 4px; }
 .mp-griff { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none; }

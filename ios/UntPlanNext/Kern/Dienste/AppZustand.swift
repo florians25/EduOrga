@@ -24,6 +24,9 @@ final class AppZustand: ObservableObject {
     @Published var stundenplanHeute = 0
     /// Zählt hoch, wenn sich der Plan geändert hat (z. B. Raumbuchung in den Stundendetails) – der Stundenplan lädt neu.
     @Published var planGeaendert = 0
+    /// Zählt hoch, wenn Plan- und Vertretungsdaten sofort frisch geladen werden sollen (App im Vordergrund, Push bzw.
+    /// angetippte Mitteilung, Ziehen zum Aktualisieren auf „Heute“): Plan und Heute laden neu, Zwischenspeicher veralten.
+    @Published var frischeAnfrage = 0
     /// Zuletzt gespeicherte Notiz einer Stunde – der Stundenplan passt die Karte sofort an (Info-Zeichen) und lädt neu.
     @Published var notizAenderung: NotizAenderung? = nil
     /// Plan, den der Stundenplan öffnen soll („Im Stundenplan anzeigen“ aus den Stundendetails).
@@ -375,6 +378,14 @@ final class AppZustand: ObservableObject {
         } catch {
             _ = fehlertext(error)
         }
+    }
+
+    /// Plan- und Vertretungsdaten sofort frisch laden: alle Zwischenspeicher (Wochen, Heute) gelten als veraltet und
+    /// bleiben nur als Platzhalter mit „Stand hh:mm“ stehen, bis die neue Antwort da ist.
+    func frischLaden() {
+        Kachelspeicher.veralten()
+        Heutespeicher.veraltet = true
+        frischeAnfrage += 1
     }
 
     /// Fehlertext für die Anzeige; bei abgelaufener Sitzung zurück zur Anmeldung (dann nil).

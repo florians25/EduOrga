@@ -2,13 +2,50 @@ import SwiftUI
 
 // MARK: - Zwischenspeicher
 
-/// Geladene Wochenpläne je Plan und Woche. `AppZustand` leert ihn beim Kontowechsel bzw. Abmelden.
+/// Geladene Wochenpläne je Plan und Woche. `AppZustand` leert ihn beim Kontowechsel bzw. Abmelden. Der Speicher ist nur
+/// ein Platzhalter für den sofortigen Aufbau: jede Woche trägt ihren Ladezeitpunkt und die „Epoche“, in der sie geladen
+/// wurde. `veralten()` (Ziehen zum Aktualisieren, App im Vordergrund, Push, angetippte Mitteilung) zählt die Epoche hoch –
+/// danach gilt jede gespeicherte Woche als veraltet, wird beim nächsten Anzeigen sofort neu geladen und trägt bis dahin
+/// den Hinweis „Stand hh:mm“.
 @MainActor
 enum Kachelspeicher {
     static var wochen: [String: Wochenplan] = [:]
+    /// Zeitpunkt der letzten erfolgreichen Antwort je Woche
+    static var geladen: [String: Date] = [:]
+    /// Epoche, in der die Woche geladen wurde
+    static var epocheJe: [String: Int] = [:]
+    /// Zählt bei jeder Invalidierung hoch
+    static var epoche = 0
+    /// So lange gilt eine in der aktuellen Epoche geladene Woche ohne erneute Anfrage als frisch (Sekunden)
+    static let frischDauer: TimeInterval = 30
 
     static func leeren() {
         wochen.removeAll()
+        geladen.removeAll()
+        epocheJe.removeAll()
+        epoche += 1
+    }
+
+    /// Alle gespeicherten Wochen als veraltet markieren (die Daten bleiben als Platzhalter stehen).
+    static func veralten() {
+        epoche += 1
+    }
+
+    static func ablegen(_ plan: Wochenplan, unter schluessel: String) {
+        wochen[schluessel] = plan
+        geladen[schluessel] = Date()
+        epocheJe[schluessel] = epoche
+    }
+
+    /// In der aktuellen Epoche und vor weniger als `frischDauer` Sekunden geladen?
+    static func frisch(_ schluessel: String, jetzt: Date = Date()) -> Bool {
+        guard wochen[schluessel] != nil, epocheJe[schluessel] == epoche, let t = geladen[schluessel] else { return false }
+        return jetzt.timeIntervalSince(t) < frischDauer
+    }
+
+    /// Bestätigt aktuell (in dieser Epoche geladen) – sonst zeigt der Plan „Stand hh:mm“.
+    static func bestaetigt(_ schluessel: String) -> Bool {
+        wochen[schluessel] != nil && epocheJe[schluessel] == epoche
     }
 }
 
@@ -98,10 +135,11 @@ final class Planmodell: ObservableObject {
         laufend.contains(schluessel(montag))
     }
 
-    /// Woche laden (aus dem Zwischenspeicher, außer `erzwingen`).
+    /// Woche laden. Der Zwischenspeicher ist nur Platzhalter: er wird sofort gezeigt, die Woche aber neu geladen, sobald
+    /// sie veraltet ist (andere Epoche bzw. älter als `Kachelspeicher.frischDauer`) – mit `erzwingen` immer.
     func laden(montag: String, erzwingen: Bool = false) async {
         let s = schluessel(montag)
-        if !erzwingen && Kachelspeicher.wochen[s] != nil { return }
+        if !erzwingen && Kachelspeicher.frisch(s) { return }
         guard !laufend.contains(s), let datum = Datumsformat.datum(montag) else { return }
         laufend.insert(s)
         defer { laufend.remove(s) }
@@ -109,7 +147,7 @@ final class Planmodell: ObservableObject {
             let p = try await api.plan(typ: typ, element: element, datum: datum)
             // Plan inzwischen gewechselt: Antwort verwerfen
             guard s == schluessel(montag) else { return }
-            Kachelspeicher.wochen[s] = p
+            Kachelspeicher.ablegen(p, unter: s)
             tagesSpeicher.removeAll()
             fehler = nil
             stand += 1
@@ -125,6 +163,22 @@ final class Planmodell: ObservableObject {
     /// Alle geladenen Wochen dieses Plans neu laden (Ziehen zum Aktualisieren, Planänderung).
     func neuLaden(montage: [String]) async {
         for m in montage { await laden(montag: m, erzwingen: true) }
+    }
+
+    /// Ziehen zum Aktualisieren: alle zwischengespeicherten Wochen veralten (auch die anderer Pläne) und diese Woche
+    /// sofort neu laden.
+    func aktualisieren(montag: String) async {
+        Kachelspeicher.veralten()
+        await laden(montag: montag, erzwingen: true)
+    }
+
+    /// Zeitpunkt der gezeigten Daten, solange sie nicht als aktuell bestätigt sind (Platzhalter aus dem Speicher, Laden
+    /// läuft bzw. gescheitert) – nil, wenn die Woche frisch ist bzw. noch gar nicht vorliegt.
+    func standHinweis(montag: String) -> Date? {
+        let s = schluessel(montag)
+        guard Kachelspeicher.wochen[s] != nil else { return nil }
+        if Kachelspeicher.bestaetigt(s) && !laufend.contains(s) { return nil }
+        return Kachelspeicher.geladen[s]
     }
 
     /// Aufbereiteter Tag (nil = Woche noch nicht geladen).
@@ -434,7 +488,49 @@ extension Kachel {
         if let r = zeile("raum"), !r.text.isEmpty { teile.append("Raum \(r.text)") }
         for z in personenzeilen where !z.text.isEmpty { teile.append(z.text) }
         if let m = Statuslehre.merkmal(self) { teile.append(m.text) }
+        if let alt = fachVorher { teile.append("statt \(alt)") }
+        if let c = statusChip {
+            teile.append(c.text.replacingOccurrences(of: "× ", with: "").replacingOccurrences(of: "⊕ ", with: "")
+                .replacingOccurrences(of: " | ", with: ", "))
+        }
         if online { teile.append("online") }
         return teile.joined(separator: ", ")
+    }
+}
+
+// MARK: - Stand der Daten
+
+/// Kleiner Hinweis „Stand 10:42“, solange Plan- bzw. Vertretungsdaten nur aus dem Zwischenspeicher stammen (Laden läuft
+/// bzw. ist gescheitert). Verschwindet, sobald die frische Antwort da ist.
+struct Standhinweis: View {
+    let stand: Date
+    var laedt: Bool = false
+
+    private var text: String {
+        let uhr = Datumsformat.anzeige(stand, "HH:mm")
+        let tag = Datumsformat.kalender.isDateInToday(stand) ? "" : Datumsformat.anzeige(stand, "d.M. ")
+        return "Stand \(tag)\(uhr)"
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            if laedt {
+                ProgressView()
+                    .controlSize(.mini)
+            } else {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.caption2.weight(.semibold))
+            }
+            Text(laedt ? "\(text) · aktualisiert …" : text)
+                .font(.caption.weight(.medium))
+                .monospacedDigit()
+        }
+        .foregroundStyle(Farben.text2)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(.regularMaterial, in: Capsule())
+        .overlay { Capsule().strokeBorder(Farben.rand, lineWidth: 0.5) }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(laedt ? "\(text), wird aktualisiert" : "\(text), nicht aktuell")
     }
 }

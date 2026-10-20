@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-// Gestaltung von EduOrga: Petrol als Primär- und Akzentfarbe, Statusfarben über `Farben` (Änderung Violett, Termin Magenta,
+// Gestaltung von EduOrga: Petrol als Primär- und Akzentfarbe, Statusfarben über `Farben` (Änderung Grün, Termin Magenta,
 // Prüfung Bernstein, Entfall Rot), Systemschrift SF Pro mit Dynamic Type, Abstände im 8-pt-Raster. Liquid Glass nur
 // über die Helfer in `Glas.swift` und nur auf der Bedienebene; Inhalte sind deckend.
 
@@ -222,6 +222,20 @@ enum Haptik {
 
     @MainActor static func erfolg() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
+
+    /// Deutliche Rückmeldung (z. B. Schüler*in als abwesend gesetzt).
+    @MainActor static func warnung() {
+        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+    }
+
+    @MainActor static func fehler() {
+        UINotificationFeedbackGenerator().notificationOccurred(.error)
+    }
+
+    /// Kräftiger Stoß (langes Drücken erkannt).
+    @MainActor static func fest() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 }
 

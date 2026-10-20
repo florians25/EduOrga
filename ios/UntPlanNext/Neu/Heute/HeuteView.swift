@@ -16,6 +16,9 @@ struct HeuteView: View {
     @State private var sprechtagWahl: SprechtagWahl? = nil
     @State private var wahl: Stundenwahl? = nil
     @State private var vergangeneZeigen = false
+    /// Zeitpunkt des gezeigten Stands und ob er seit dem letzten Anstoß (Vordergrund, Push) bestätigt ist
+    @State private var stand: Date? = nil
+    @State private var bestaetigt = false
     @Environment(\.horizontalSizeClass) private var groessenklasse
 
     var body: some View {
@@ -23,6 +26,10 @@ struct HeuteView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 3 * Stilmass.raster) {
                     kopf
+                    // Gezeigt wird der letzte Stand aus dem Speicher, bis die frische Antwort da ist
+                    if heute != nil, !bestaetigt, let stand {
+                        Standhinweis(stand: stand, laedt: laedt)
+                    }
                     if let fehler {
                         Fehlerhinweis(text: fehler)
                     }
@@ -47,11 +54,19 @@ struct HeuteView: View {
             }
             .background(Farben.grund.ignoresSafeArea())
             .refreshable {
+                // Ziehen zum Aktualisieren: auch die zwischengespeicherten Wochen des Plans veralten
+                Kachelspeicher.veralten()
+                bestaetigt = false
                 await laden()
                 Haptik.erfolg()
             }
             .onAppear(perform: ausSpeicher)
             .task { await laden() }
+            // App im Vordergrund, Push bzw. angetippte Mitteilung: sofort frisch laden
+            .onChange(of: zustand.frischeAnfrage) { _, _ in
+                bestaetigt = false
+                Task { await laden() }
+            }
             .navigationTitle("Heute")
             .navigationBarTitleDisplayMode(.large)
             .suchWerkzeug()
@@ -302,6 +317,8 @@ struct HeuteView: View {
     private func ausSpeicher() {
         guard heute == nil, let h = Heutespeicher.heute else { return }
         heute = h
+        stand = Heutespeicher.stand
+        bestaetigt = false
         ferien = Heutespeicher.ferien
         sprechtage = Heutespeicher.sprechtage
     }
@@ -315,6 +332,10 @@ struct HeuteView: View {
         do {
             let neu = try await api.heute()
             heute = neu
+            stand = Date()
+            bestaetigt = true
+            Heutespeicher.stand = stand
+            Heutespeicher.veraltet = false
             if zustand.ungelesen != neu.ungelesen { zustand.ungelesen = neu.ungelesen }
             fehler = nil
             if neu.ferien == nil {

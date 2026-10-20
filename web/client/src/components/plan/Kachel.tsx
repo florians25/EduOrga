@@ -1,20 +1,21 @@
-// Stundenkachel nach der schulweiten Kartendarstellung (Administration | Darstellung der Stundenkarten, siehe darstellung.tsx).
-// Standard „Klassisch“: kompakte weiße Karte, die die Rasterzelle füllt, Fachfarbe als 4-px-Balken links mit leichter Tönung, Fach fett
-// oben links, Raum oben rechts; wahlweise Quadrat, Balken oben, nur Tönung oder keine Fachfarbe, andere Fläche, Rahmen, Radius, Dichte, Inhalte.
-// Kopfzeile Fach und Raum (Kürzel-Plakette), darunter Lehrkraft bzw. Klasse. Status ohne Wörter: Entfall rot durchgestrichen mit feiner
-// Schraffur, Änderung mit violetter Linie (Standard „Klassisch“: dazu helle violette Fläche) und violetten Kürzel-Plaketten (bisheriger Wert grau durchgestrichen, offene Vertretung „?“),
-// Prüfung Bernstein-Linie, Termin und vertretene Stunde gestrichelt. Als Wort nur, was sich sonst nicht ablesen lässt (Prüfung, Termin,
-// Buchung, Verlegung) – auf Wunsch der Administration zusätzlich alle Statuswörter. Die Bedeutung steht im aria-label und in der
-// Kurzinfo beim Überfahren; Klick öffnet die Stundendetails.
-import { memo, type CSSProperties, type KeyboardEvent } from 'react';
+// Stundenkarte (design/DESIGN.md, Abschnitt 10 „Stundenkarte (alle Plattformen)“) nach der schulweiten Kartendarstellung
+// (Administration | Darstellung der Stundenkarten, siehe darstellung.tsx). Standard „EduOrga Standard“: kompakte helle Karte, die ihre
+// Rasterzelle füllt, 4-px-Kante links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), darunter je eine Zeile Fach (600),
+// Klasse, Lehrkraft, Raum. Änderungen nach den gemeinsamen Regeln (aenderung.ts): jede Änderung grün mit schräg schraffierter Kante und dem
+// Feld „+neu (bisher)“ auf der betroffenen Zeile, Entfall rot mit allem durchgestrichen und dem Feld „× entfällt“, Verlegung „× auf …“ bzw.
+// „⊕ von …“, Zusatz „⊕ Zusatz“. Prüfung Bernstein, Veranstaltung als warmer Block ohne Kante, Buchung gestrichelt. Die übrigen Vorlagen
+// (Klassisch, Kompakt, Sachlich …) ändern Fachfarbe, Fläche, Rahmen, Radius, Dichte und Zeilenfolge – die Statusdarstellung bleibt gleich.
+// Die Bedeutung steht im aria-label und in der Kurzinfo beim Überfahren; Klick öffnet die Stundendetails.
+import { memo, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { alpha, Box, Stack, Tooltip, Typography, useTheme, type Theme } from '@mui/material';
 import LinkRounded from '@mui/icons-material/LinkRounded';
 import EditNoteRounded from '@mui/icons-material/EditNoteRounded';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
-import type { Karte, Wert } from '../../api/types';
-import { artVon, gueltigeFarbe, infoText, istEntfall, istOnline, kachelZeilen, kopfRaeume, plaketten, sichererLink, abwesendSet, statusText, titelText, KACHEL_PLAKETTEN, type Typ, type Plakette } from './logik';
-import { Kuerzel, WerteListe, wertText } from './Werte';
-import { DICHTE, mitToenung, nameVon, STANDARD, useDarstellung, type Kartendarstellung } from './darstellung';
+import type { Karte } from '../../api/types';
+import { artVon, gueltigeFarbe, infoText, istEntfall, istOnline, plaketten, sichererLink, statusText, titelText, KACHEL_PLAKETTEN, type Typ, type Plakette } from './logik';
+import { wertText } from './Werte';
+import { kartenbild, type Kartenbild, type Kartenzeile, type Statusfeld, type Teil, type Ton } from './aenderung';
+import { DICHTE, mitToenung, nameVon, STANDARD, useDarstellung, type Kartendarstellung, type Namen } from './darstellung';
 
 /** Statusbezeichnung: 10–11 px Großbuchstaben in der Statusfarbe, ohne Fläche (keine Pillen). */
 export function PlaketteChip({ p, klein = false }: { p: Plakette; klein?: boolean }) {
@@ -35,55 +36,74 @@ export function FachQuadrat({ farbe, groesse = 8, sx }: { farbe: string | null |
 /** Farbe mit Deckkraft – auch für CSS-Variablen (var(--…)), die alpha() nicht zerlegen kann. */
 export const mischen = (farbe: string, wert: number) => (farbe.startsWith('var(') ? `color-mix(in srgb, ${farbe} ${Math.round(wert * 1000) / 10}%, transparent)` : alpha(farbe, wert));
 
+/** Schräg schraffierte Kante (Änderung grün, Entfall rot): 45°-Streifen auf heller Grundfarbe. */
+export const schraffur = (farbe: string) => `repeating-linear-gradient(135deg, ${farbe} 0 2px, ${mischen(farbe, 0.28)} 2px 4.5px)`;
+
+/** Feld (Chip) auf der Karte: „+Gal (Gor)“, „(Abr)“, „× entfällt“ – Fläche und Schrift in der Status-Tönung, nie durchgestrichen. */
+export function Feld({ ton, children, titel, klein = false }: { ton: Ton; children: ReactNode; titel?: string; klein?: boolean }) {
+  return (
+    <Box component="span" title={titel} data-feld={ton}
+      sx={{ display: 'inline-flex', alignItems: 'center', gap: '3px', maxWidth: '100%', height: klein ? 14 : 15, px: '3px', borderRadius: '3px', fontSize: klein ? 10.5 : 11.5, lineHeight: 1,
+        fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', boxSizing: 'border-box',
+        bgcolor: `status.${ton}.feld`, color: `status.${ton}.text`, textDecoration: 'none', fontVariantNumeric: 'tabular-nums' }}>{children}</Box>
+  );
+}
+
+/** Statusfeld unten auf der Karte („× entfällt“, „× auf Di 21.10. 6 | 12:20“, „⊕ von …“, „⊕ Zusatz“). */
+export function StatusFeld({ s, klein }: { s: Statusfeld; klein?: boolean }) {
+  return <Feld ton={s.ton} titel={s.titel} klein={klein}><Box component="span" aria-hidden sx={{ fontWeight: 600, fontSize: '1.05em', lineHeight: 1 }}>{s.zeichen}</Box>{s.text}</Feld>;
+}
+
+/** Teile einer Zeile: Text bzw. Felder, durch Komma getrennt. */
+function Teile({ teile, anzeige }: { teile: Teil[]; anzeige?: (t: string) => string }) {
+  return (
+    <>
+      {teile.map((t, i) => (
+        <Box component="span" key={i}>
+          {i > 0 && ', '}
+          {t.feld ? <Feld ton={t.feld} titel={t.titel}>{t.text}</Feld> : (anzeige ? anzeige(t.text) : t.text)}
+        </Box>
+      ))}
+    </>
+  );
+}
+
 /**
- * Fläche, Rahmen und Textfarbe je Art nach der Kartendarstellung: Grundfläche (neutral, weiß, getönt), Rahmen (fein, kräftig, keiner),
- * optional leichte Tönung in der Fachfarbe. Der Status bleibt immer an Linienfarbe, Schraffur und Plakette ablesbar – auch ohne Rahmen
- * und mit Farbfläche (Entfall nie getönt, sondern schraffiert auf weißer Fläche).
+ * Fläche und Rahmen je Art nach der Kartendarstellung: Grundfläche (neutral, weiß, getönt), Rahmen (fein, kräftig, Schatten, keiner),
+ * optional leichte Tönung in der Fachfarbe. Änderung: grüne Statusfläche, Entfall: rote Fläche – nie in der Fachfarbe getönt.
  */
-export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = STANDARD): CSSProperties & Record<string, unknown> {
+export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = STANDARD, bild: Kartenbild = kartenbild(k, typ)): CSSProperties & Record<string, unknown> {
   const art = artVon(k, typ);
-  // CSS-Variablen des Themas (hell/dunkel wechseln ohne neues Rendern); Deckkraft über color-mix
   const pal = (t.vars ?? t).palette;
-  const alpha = mischen;
   const papier = pal.background.paper;
   const kraeftig = d.rahmen === 'kraeftig';
   const breite = kraeftig ? 2 : 1;
-  const linie = d.rahmen === 'keiner' || d.rahmen === 'schatten' ? 'transparent' : kraeftig ? alpha(pal.text.primary, 0.42) : pal.kachel.rand;
-  // „Schatten“: weiße Karte ohne Linie, leicht abgehoben (eigene, sehr flache Schattenkante)
-  const schatten = d.rahmen === 'schatten' ? { boxShadow: '0 1px 1.5px rgba(12,44,49,.16), 0 0 0 0.5px rgba(12,44,49,.06)' } : {};
-  const grund = d.flaeche === 'weiss' ? papier : d.flaeche === 'getoent' ? papier : pal.kachel.flaeche;
+  const linie = d.rahmen === 'keiner' || d.rahmen === 'schatten' ? 'transparent' : kraeftig ? mischen(pal.text.primary, 0.42) : pal.kachel.rand;
+  // „Schatten“: helle Karte ohne Linie, leicht abgehoben (eigene, sehr flache Schattenkante)
+  const schatten = d.rahmen === 'schatten' ? { boxShadow: '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)' } : {};
+  const grund = d.flaeche === 'neutral' ? pal.kachel.flaeche : papier;
   const bilder: string[] = [];
   const fach = gueltigeFarbe(k.farbe);
-  const statusFlaeche = d.statusflaeche && (art === 'aenderung' || art === 'pruefung');
-  if (mitToenung(d.fachfarbe) && fach && !statusFlaeche && art !== 'entfall' && art !== 'abwesend' && art !== 'termin') { const ton = alpha(fach, d.deckkraft / 100); bilder.push(`linear-gradient(${ton}, ${ton})`); }
-  if (d.flaeche === 'getoent') { const ton = alpha(pal.primary.main, 0.05); bilder.push(`linear-gradient(${ton}, ${ton})`); }
-  const bild = bilder.length ? { backgroundImage: bilder.join(', ') } : {};
-  const basis = { backgroundColor: grund, border: `1px solid ${linie}`, ...schatten, ...bild };
   const s = pal.status;
-  const statusLinie = (farbe: string, art: 'solid' | 'dashed' = 'solid') => `${breite}px ${art} ${farbe}`;
-  // Status-Kacheln: weiße bzw. getönte Fläche, Linie in der Statusfarbe (auch bei „ohne Rahmen“)
-  const statusGrund = d.flaeche === 'neutral' ? papier : grund;
-  switch (art) {
-    case 'entfall': return {
-      backgroundColor: papier, backgroundImage: `repeating-linear-gradient(135deg, ${alpha(s.entfall.main, 0.09)} 0 1px, transparent 1px 6px)`,
-      border: statusLinie(alpha(s.entfall.main, 0.45)), color: pal.text.secondary,
-    };
-    case 'aenderung': return { ...basis, backgroundColor: statusFlaeche ? s.aenderung.flaeche : statusGrund, border: statusLinie(s.aenderung.main) };
-    case 'pruefung': return { ...basis, backgroundColor: statusFlaeche ? s.pruefung.flaeche : statusGrund, border: statusLinie(s.pruefung.main) };
-    case 'termin': return { ...basis, backgroundColor: papier, border: statusLinie(alpha(pal.text.secondary, 0.7), 'dashed') };
-    case 'abwesend': return { ...basis, backgroundColor: papier, border: statusLinie(alpha(pal.text.secondary, 0.7), 'dashed'), color: pal.text.secondary };
-    case 'buchung': return { ...basis, backgroundColor: papier, border: statusLinie(s.frei.main, 'dashed') };
-    default: return basis;
-  }
+  const statusLinie = (farbe: string, stil: 'solid' | 'dashed' = 'solid') => `${breite}px ${stil} ${farbe}`;
+  if (bild.ton === 'entfall') return { backgroundColor: s.entfall.flaeche, border: statusLinie(mischen(s.entfall.main, 0.3)), ...schatten };
+  if (k.status === 'veranstaltung') return { backgroundColor: pal.kachel.ereignis, border: `1px solid ${pal.kachel.ereignisRand}`, color: pal.kachel.ereignisText };
+  if (art === 'pruefung') return { backgroundColor: d.statusflaeche ? s.pruefung.flaeche : grund, border: statusLinie(s.pruefung.main), ...schatten };
+  if (art === 'buchung') return { backgroundColor: papier, border: statusLinie(s.frei.main, 'dashed') };
+  if (bild.ton === 'aenderung') return { backgroundColor: d.statusflaeche ? s.aenderung.flaeche : grund, border: statusLinie(mischen(s.aenderung.main, 0.4)), ...schatten };
+  if (mitToenung(d.fachfarbe) && fach) { const ton = mischen(fach, d.deckkraft / 100); bilder.push(`linear-gradient(${ton}, ${ton})`); }
+  if (d.flaeche === 'getoent') { const ton = mischen(pal.primary.main, 0.05); bilder.push(`linear-gradient(${ton}, ${ton})`); }
+  return { backgroundColor: grund, border: `1px solid ${linie}`, ...schatten, ...(bilder.length ? { backgroundImage: bilder.join(', ') } : {}) };
 }
 
 /** Kurzinfo beim Überfahren: alle Angaben der Stunde. */
 export function KachelInfo({ k, typ }: { k: Karte; typ: Typ }) {
   const entfall = istEntfall(k, typ);
-  const zeile = (titel: string, inhalt: React.ReactNode) => (
+  const bild = kartenbild(k, typ);
+  const zeile = (titel: string, inhalt: ReactNode) => (
     <Stack direction="row" gap={1.5}><Typography variant="caption" sx={{ color: 'text.secondary', width: 66, flex: 'none' }}>{titel}</Typography><Typography variant="body2" component="div">{inhalt}</Typography></Stack>
   );
-  const st = istEntfall(k, typ) ? 'Entfall' : statusText(k);
+  const st = entfall ? 'Entfall' : statusText(k);
   return (
     <Box sx={{ minWidth: 220, maxWidth: 320 }}>
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.75 }}>
@@ -97,6 +117,7 @@ export function KachelInfo({ k, typ }: { k: Karte; typ: Typ }) {
         {k.lehrer?.length > 0 && zeile('Lehrkraft', k.lehrer.map(wertText).join(', '))}
         {istOnline(k, typ) ? zeile('Raum', 'Online-Unterricht') : k.raeume?.length > 0 && zeile('Raum', k.raeume.map(wertText).join(', '))}
         {k.fachAlt && zeile('Fach', `${k.fachAlt} → ${k.fach}`)}
+        {bild.status && zeile('Status', `${bild.status.zeichen} ${bild.status.titel}`)}
         {infoText(k).map((t, i) => <Typography key={i} variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>{t}</Typography>)}
         {k.hausaufgabeFaellig && <Typography variant="body2" sx={{ mt: 0.5 }}>Hausaufgabe fällig</Typography>}
       </Stack>
@@ -108,44 +129,67 @@ export interface KachelProps {
   k: Karte; typ: Typ; hoehe?: number; onOpen?: (k: Karte) => void; gedimmt?: boolean; vorbei?: boolean; zeit?: string | null; style?: CSSProperties; gross?: boolean;
 }
 
+/** Zeilenfolge nach der Darstellung: „zeilen“ Fach · Klasse · Lehrkraft · Raum; „element“ Lehrkraft bzw. Klasse oben; „fach“ Fach und Raum oben. */
+function geordnet(zeilen: Kartenzeile[], d: Kartendarstellung, typ: Typ): Kartenzeile[] {
+  if (d.reihenfolge !== 'element') return zeilen;
+  const oben = typ === 'klasse' ? 'lehrer' : 'klassen';
+  const i = zeilen.findIndex(z => z.art === oben);
+  return i > 0 ? [zeilen[i], ...zeilen.filter((_, j) => j !== i)] : zeilen;
+}
+
+/** Zeilen, die in die Höhe passen: das Fach bleibt, Änderungen gehen vor, unveränderte Zeilen entfallen von unten. */
+function passend(zeilen: Kartenzeile[], platz: number): Kartenzeile[] {
+  if (zeilen.length <= platz) return zeilen;
+  const behalten = new Set<Kartenzeile>([zeilen[0]]);
+  for (const z of zeilen) if (behalten.size < platz && z.geaendert) behalten.add(z);
+  for (const z of zeilen) if (behalten.size < platz) behalten.add(z);
+  return zeilen.filter(z => behalten.has(z));
+}
+
 export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt, vorbei, zeit, style, gross }: KachelProps) {
   const t = useTheme();
   const { d, namen } = useDarstellung();
+  const pal = (t.vars ?? t).palette;
   const dichte = DICHTE[d.dichte];
-  const entfall = istEntfall(k, typ);
+  const bild = kartenbild(k, typ);
+  const entfall = bild.entfall;
   const art = artVon(k, typ);
-  const kompakt = hoehe < 44;
+  const termin = k.status === 'veranstaltung';
   const sehrKlein = hoehe < 30;
-  const mittel = !kompakt && hoehe < 74;
-  // Zeile 2 und Raum lassen sich ausblenden – Änderungen (neues/bisheriges Kürzel, offene Vertretung) bleiben immer sichtbar
-  const geaendert = (w: Wert) => !!(w.alt || w.neu) || (!w.k && !!w.neu);
-  const zeilen = kachelZeilen(k, typ).filter(z => d.zeile2 || z.werte.some(geaendert) || (k.status === 'offen' && z.art === 'lehrer'));
-  const raeume = kopfRaeume(k, typ).filter(w => d.raum || geaendert(w));
+  // Zeile 2 (Lehrkraft bzw. Klasse) und Raum lassen sich ausblenden – geänderte Zeilen bleiben immer stehen
+  const element = typ === 'klasse' ? 'lehrer' : 'klassen';
+  let zeilen = geordnet(bild.zeilen, d, typ).filter(z => z.geaendert || ((z.art !== element || d.zeile2) && (z.art !== 'raeume' || d.raum)));
+  const fachName = d.fach === 'name' && k.fachName && !k.fachAlt ? k.fachName : null;
   const alle = plaketten(k, typ);
-  const pl = d.statuswoerter ? alle : alle.filter(p => KACHEL_PLAKETTEN.has(p.text));
+  // Statuswörter: Verlegung und Zusatz stehen schon im Feld; Prüfung, Termin, Buchung und Vorgemerkt bleiben Wörter
+  const pl = (d.statuswoerter ? alle : alle.filter(p => KACHEL_PLAKETTEN.has(p.text))).filter(p => !['Verlegt', 'Verlegung', 'Zusatz', 'Entfall'].includes(p.text) && !(termin && p.text === 'Termin'));
   const info = infoText(k);
   const online = istOnline(k, typ);
-  const durch = entfall ? 'line-through' : 'none';
-  const fachText = d.fach === 'name' && k.fachName ? k.fachName : k.fach;
-  const titel = k.fach ? (k.fachAlt && !entfall ? <Box component="span" sx={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}><Kuerzel art="alt" title={`bisher ${k.fachAlt}`}>{k.fachAlt}</Kuerzel><Kuerzel art="neu" title={`${k.fach} statt ${k.fachAlt}`}>{fachText}</Kuerzel></Box> : fachText) : (k.text || k.art || '—');
-  const abw = abwesendSet(k);
-  const anzeige = (zeilenArt: string) => (d.zeile2Text === 'name' && namen ? (x: string) => nameVon(namen, zeilenArt === 'lehrer' ? 'lehrer' : 'klassen', x) : undefined);
-  // Fachfarbe: Quadrat vor dem Fach, Balken links bzw. oben am Rand, Tönung der Fläche (kachelStil) oder keine
   const farbe = gueltigeFarbe(k.farbe);
-  // Jede Unterrichtsstunde zeigt den Balken – ohne Fachfarbe grau (eigene Themenfarbe kachel.balken, hell und dunkel deutlich sichtbar)
   const stunde = !!k.fach || !!k.unterricht;
-  const grau = (t.vars ?? t).palette.kachel.balken;
-  const balken = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-oben' || d.fachfarbe === 'balken-flaeche') && stunde;
-  // Streifen innen links mit Abstand zum Rand und runden Enden – in der Fachfarbe, ohne Fachfarbe grau
-  const innen = d.fachfarbe === 'balken-innen' && stunde;
-  const innenEinzug = innen ? 4 + d.balkenbreite + 2 : 0;
-  // Zeilenfolge Lehrkraft bzw. Klasse · Fach · Raum (untereinander) – nur, wenn die Karte hoch genug ist
-  const stapel = d.reihenfolge === 'element' && !kompakt && !!k.fach;
-  const ersteZeile = stapel ? zeilen.find(z => z.art !== 'mitklassen') ?? null : null;
-  const balkenLinks = balken && d.fachfarbe !== 'balken-oben' ? d.balkenbreite : 0;
-  const balkenOben = balken && d.fachfarbe === 'balken-oben' ? d.balkenbreite : 0;
-  const quadrat = d.fachfarbe === 'quadrat' && !!k.fach;
-  const einzug = quadrat ? '14px' : 0;
+  // Kante links: Unterricht immer (grau ohne Fachfarbe), Änderung grün und Entfall rot schraffiert – auch bei Vorlagen ohne Balken
+  const balkenVorlage = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-flaeche' || d.fachfarbe === 'balken-innen') && stunde;
+  const kante = !termin && (bild.ton !== null || balkenVorlage);
+  const kantenBreite = Math.max(3, d.balkenbreite);
+  const innen = d.fachfarbe === 'balken-innen';
+  const balkenOben = d.fachfarbe === 'balken-oben' && stunde && !termin && !bild.ton ? d.balkenbreite : 0;
+  const quadrat = d.fachfarbe === 'quadrat' && !!k.fach && !termin;
+  const kantenFarbe = bild.ton ? pal.status[bild.ton].main : farbe ?? pal.kachel.balken;
+  const einzugLinks = kante ? (innen ? 4 + kantenBreite + 4 : kantenBreite + 5) : dichte.px;
+  const fachGroesse = dichte.fach + (gross ? 1 : 0) + 0.5;
+  const zh = dichte.zeilenhoehe - 1;
+  const py = sehrKlein ? 1 : Math.min(3, dichte.py);
+  const statusH = bild.status ? 17 : 0;
+  const unten = !sehrKlein && (pl.length > 0 || zeit || online || k.hausaufgabeFaellig || info.length > 0) ? 15 : 0;
+  const platz = sehrKlein ? 1 : Math.max(1, Math.floor((hoehe - 2 * py - 2 - balkenOben - statusH - (termin ? 14 : 0) - (unten && !bild.status ? unten : 0) - dichte.kopf) / zh) + 1);
+  zeilen = passend(zeilen, termin ? Math.min(platz, 3) : platz);
+  const statusZeigen = !!bild.status && hoehe - 2 * py - dichte.kopf >= 15;
+  const anzeige = (z: Kartenzeile) => (d.zeile2Text === 'name' && namen && z.art === element ? (x: string) => nameVon(namen as Namen, z.art === 'lehrer' ? 'lehrer' : 'klassen', x) : undefined);
+  const tasten = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(k); } };
+  const hover = entfall || termin ? {} : { filter: 'brightness(0.985)' };
+  const durch = entfall ? 'line-through' : 'none';
+  const textFarbe = entfall ? 'status.entfall.text' : termin ? 'kachel.ereignisText' : 'text.secondary';
+
   const symbole = (
     <>
       {online && (k.onlineLink && sichererLink(k.onlineLink) ? (
@@ -168,78 +212,54 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
     </>
   );
   const hatSymbole = online || k.hausaufgabeFaellig || info.length > 0;
-  const tasten = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(k); } };
-  const hover = art === 'entfall' ? {} : { backgroundColor: (t.vars ?? t).palette.kachel.hover };
-  const py = sehrKlein ? 0 : kompakt ? Math.min(3, dichte.py) : dichte.py;
-  const fachGroesse = dichte.fach + (gross ? 1 : 0);
+
+  const zeilenInhalt = zeilen.map((z, i) => {
+    const erste = i === 0;
+    const raumRechts = d.reihenfolge === 'fach' && erste && z.art === 'fach' ? zeilen.find(x => x.art === 'raeume') : undefined;
+    if (d.reihenfolge === 'fach' && !erste && z.art === 'raeume') return null;
+    return (
+      <Stack key={z.art} direction="row" alignItems="center" gap={0.75} sx={{ minWidth: 0, flex: 'none', height: erste ? dichte.kopf : zh }}>
+        {erste && quadrat && <FachQuadrat farbe={k.farbe} />}
+        <Typography component="div" noWrap data-zeile={z.art}
+          sx={{ minWidth: 0, flex: '0 1 auto', fontSize: erste ? fachGroesse : dichte.zeile, lineHeight: `${erste ? dichte.kopf : zh}px`, fontWeight: erste ? 600 : 400,
+            color: erste ? (entfall ? 'status.entfall.main' : termin ? 'kachel.ereignisText' : 'text.primary') : textFarbe, textDecoration: durch, whiteSpace: termin && erste ? 'normal' : 'nowrap' }}>
+          {erste && fachName && z.art === 'fach' ? fachName : <Teile teile={z.teile} anzeige={anzeige(z)} />}
+        </Typography>
+        {raumRechts && (
+          <Typography component="span" noWrap sx={{ ml: 'auto', fontSize: dichte.zeile, fontWeight: 500, color: textFarbe, textDecoration: durch, flex: 'none', maxWidth: '55%', textAlign: 'right', '@container (max-width: 76px)': { display: 'none' } }}>
+            <Teile teile={raumRechts.teile} />
+          </Typography>
+        )}
+      </Stack>
+    );
+  });
+
   return (
     <Tooltip title={<KachelInfo k={k} typ={typ} />} placement="right-start" enterDelay={450} enterNextDelay={300} disableInteractive
       slotProps={{ tooltip: { sx: { bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', boxShadow: '0 8px 24px rgba(21,26,33,.14)', p: 1.5, maxWidth: 360 } }, arrow: { sx: { color: 'background.paper', '&:before': { border: 1, borderColor: 'divider' } } } }}>
-      <Box role="button" tabIndex={0} aria-label={titelText(k)} onClick={() => onOpen?.(k)} onKeyDown={tasten} data-karte="" data-art={art} data-fachfarbe={d.fachfarbe}
+      <Box role="button" tabIndex={0} aria-label={[titelText(k), bild.status?.titel].filter(Boolean).join(' · ')} onClick={() => onOpen?.(k)} onKeyDown={tasten}
+        data-karte="" data-art={art} data-ton={bild.ton ?? 'keiner'} data-fachfarbe={d.fachfarbe} data-typen={bild.typen.join(' ') || undefined}
         sx={{
-          position: 'relative', ...kachelStil(k, typ, t, d), borderRadius: `${d.eckenradius}px`, pl: `${dichte.px + balkenLinks + innenEinzug}px`, pr: `${dichte.px}px`, pt: `${py + balkenOben}px`, pb: `${py}px`,
-          overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default',
-          display: 'flex', flexDirection: 'column', gap: '1px', fontSize: dichte.zeile, lineHeight: 1.25, color: entfall ? undefined : 'text.primary', fontVariantNumeric: 'tabular-nums',
-          opacity: gedimmt ? 0.3 : vorbei ? 0.72 : 1, containerType: 'inline-size', transition: 'opacity .12s, background-color .12s, border-color .12s',
+          position: 'relative', ...kachelStil(k, typ, t, d, bild), borderRadius: `${d.eckenradius}px`, pl: `${termin ? dichte.px : einzugLinks}px`, pr: `${Math.min(dichte.px, 5)}px`, pt: `${py + balkenOben}px`, pb: `${py}px`,
+          overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', gap: 0, fontVariantNumeric: 'tabular-nums',
+          opacity: gedimmt ? 0.3 : vorbei ? 0.72 : 1, containerType: 'inline-size', transition: 'opacity .12s, filter .12s',
           '&:hover': { ...hover, zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
           ...style,
         }}>
-        {balken && <Box aria-hidden data-fachbalken="" data-ohne-fachfarbe={farbe ? undefined : ''} sx={{ position: 'absolute', bgcolor: farbe ?? grau, opacity: entfall ? 0.35 : 1,
-          ...(balkenLinks ? { left: 0, top: 0, bottom: 0, width: balkenLinks } : { left: 0, right: 0, top: 0, height: balkenOben }) }} />}
-        {innen && <Box aria-hidden data-fachbalken="innen" data-ohne-fachfarbe={farbe ? undefined : ''} sx={{ position: 'absolute', left: 4, top: 4, bottom: 4, width: d.balkenbreite, borderRadius: '2px',
-          bgcolor: farbe ?? grau, opacity: entfall ? 0.35 : 1 }} />}
-        {stapel ? (
-          <>
-            <Typography component="div" noWrap sx={{ fontWeight: 600, fontSize: fachGroesse, lineHeight: `${dichte.kopf}px`, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, flex: 'none' }}>
-              {ersteZeile ? <WerteListe werte={ersteZeile.werte} entfall={entfall} abwesend={ersteZeile.art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && ersteZeile.art === 'lehrer'} anzeige={anzeige(ersteZeile.art)} /> : titel}
-            </Typography>
-            {ersteZeile && <Typography component="div" noWrap sx={{ fontSize: dichte.zeile, lineHeight: `${dichte.zeilenhoehe}px`, color: entfall ? 'text.secondary' : 'text.primary', textDecoration: durch, flex: 'none' }}>{titel}</Typography>}
-            {raeume.length > 0 && (
-              <Typography component="div" noWrap sx={{ fontSize: dichte.zeile, lineHeight: `${dichte.zeilenhoehe}px`, color: 'text.secondary', textDecoration: durch, flex: 'none' }}>
-                {!entfall && raeume.every(w => !w.alt && !w.neu) ? raeume.map(w => w.k).join(', ') : <WerteListe werte={raeume} entfall={entfall} mitAlt trenner=" " />}
-              </Typography>
-            )}
-            {!mittel && zeilen.filter(z => z !== ersteZeile).map((z, i) => (
-              <Typography key={i} component="div" noWrap sx={{ fontSize: dichte.zeile, lineHeight: `${dichte.zeilenhoehe}px`, color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: durch }}>
-                <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && z.art === 'lehrer'} anzeige={anzeige(z.art)} />
-              </Typography>
-            ))}
-          </>
-        ) : <>
-        <Stack direction="row" alignItems="center" gap={0.75} sx={{ minWidth: 0, flex: 'none', height: dichte.kopf }}>
-          {quadrat && <FachQuadrat farbe={k.farbe} />}
-          <Typography component="span" noWrap sx={{ fontWeight: 600, fontSize: fachGroesse, lineHeight: `${dichte.kopf}px`, color: entfall ? 'status.entfall.main' : 'text.primary', textDecoration: durch, minWidth: 0, flex: '0 1 auto' }}>{titel}</Typography>
-          {kompakt && zeilen[0] && (
-            <Typography component="span" noWrap sx={{ fontSize: dichte.zeile, color: 'text.secondary', textDecoration: durch, minWidth: 0 }}>
-              <WerteListe werte={zeilen[0].werte} entfall={entfall} mitAlt={false} abwesend={zeilen[0].art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && zeilen[0].art === 'lehrer'} anzeige={anzeige(zeilen[0].art)} />
-            </Typography>
-          )}
-          {raeume.length > 0 && (
-            <Typography component="span" noWrap sx={{ ml: 'auto', fontSize: dichte.zeile, fontWeight: 500, color: 'text.secondary', textDecoration: durch, flex: 'none', maxWidth: '55%', textAlign: 'right', '@container (max-width: 76px)': { display: 'none' } }}>
-              {!entfall && raeume.every(w => !w.alt && !w.neu) ? <Box component="span" sx={{ display: 'inline-flex', gap: '3px' }}>{raeume.map((w, i) => <Kuerzel key={i} stil={d.kuerzel}>{w.k}</Kuerzel>)}</Box>
-                : <WerteListe werte={raeume} entfall={entfall} mitAlt={!kompakt} trenner=" " />}
-            </Typography>
-          )}
-        </Stack>
-        {!kompakt && zeilen.length > 0 && (
-          <Box sx={{ flex: '0 1 auto', minHeight: 0, overflow: 'hidden', pl: k.fach ? einzug : 0 }}>
-            {(mittel ? zeilen.slice(0, 1) : zeilen).map((z, i) => (
-              <Typography key={i} component="div" noWrap sx={{ fontSize: dichte.zeile, lineHeight: `${dichte.zeilenhoehe}px`, color: z.art === 'mitklassen' ? 'text.disabled' : 'text.secondary', textDecoration: durch }}>
-                <WerteListe werte={z.werte} entfall={entfall} abwesend={z.art === 'klassen' ? abw : undefined} offen={k.status === 'offen' && z.art === 'lehrer'} anzeige={anzeige(z.art)} />
-              </Typography>
-            ))}
-          </Box>
-        )}
-        </>}
-        {stapel && mittel && (pl[0] || hatSymbole) && <Stack direction="row" gap={0.5} alignItems="center" sx={{ position: 'absolute', right: 5, bottom: 3 }}>{pl[0] && <PlaketteChip p={pl[0]} klein />}{symbole}</Stack>}
-        {!kompakt && !(stapel && mittel) && (pl.length > 0 || hatSymbole || zeit) && (
-          <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: 'auto', pl: k.fach ? einzug : 0, minWidth: 0, flex: 'none', flexWrap: 'nowrap', overflow: 'hidden', height: 15, '@container (max-width: 64px)': { display: 'none' } }}>
-            {pl.slice(0, mittel ? 2 : 3).map((p, i) => <PlaketteChip key={i} p={p} klein={!gross} />)}
+        {kante && <Box aria-hidden data-fachbalken={innen && !bild.ton ? 'innen' : bild.ton ? 'schraffiert' : 'links'} data-ohne-fachfarbe={farbe ? undefined : ''}
+          sx={{ position: 'absolute', ...(innen && !bild.ton ? { left: 4, top: 4, bottom: 4, borderRadius: '2px' } : { left: 0, top: 0, bottom: 0 }), width: kantenBreite,
+            background: bild.ton ? schraffur(kantenFarbe) : kantenFarbe }} />}
+        {balkenOben > 0 && <Box aria-hidden data-fachbalken="oben" sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: balkenOben, bgcolor: farbe ?? pal.kachel.balken }} />}
+        {zeilenInhalt}
+        {termin && hoehe >= 44 && <Typography component="div" noWrap sx={{ mt: 'auto', fontSize: 10.5, lineHeight: '14px', color: 'kachel.ereignisText', opacity: 0.85 }}>{k.beginn && k.ende ? `${k.beginn}–${k.ende}` : 'ganztägig'}</Typography>}
+        {statusZeigen && bild.status && <Box sx={{ mt: 'auto', pt: '2px', minWidth: 0, display: 'flex', flex: 'none', '@container (max-width: 40px)': { display: 'none' } }}><StatusFeld s={bild.status} klein={!gross} /></Box>}
+        {unten > 0 && (pl.length > 0 || hatSymbole || zeit) && (
+          <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: statusZeigen ? '2px' : 'auto', minWidth: 0, flex: 'none', flexWrap: 'nowrap', overflow: 'hidden', height: 15, '@container (max-width: 64px)': { display: 'none' } }}>
+            {pl.slice(0, 2).map((p, i) => <PlaketteChip key={i} p={p} klein={!gross} />)}
             {zeit && <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary' }}>{zeit}</Typography>}
             <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>{symbole}</Box>
           </Stack>
         )}
-        {kompakt && !sehrKlein && pl[0] && <Box sx={{ position: 'absolute', right: 6, bottom: 2 }}><PlaketteChip p={pl[0]} klein /></Box>}
       </Box>
     </Tooltip>
   );

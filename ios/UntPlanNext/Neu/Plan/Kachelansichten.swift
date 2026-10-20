@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Text einer Kachelzeile
 
-/// Zeile einer Kachel als Text: geänderte Werte violett unterstrichen, wegfallende durchgestrichen. Wurde genau ein
+/// Zeile einer Kachel als Text: geänderte Werte grün unterstrichen, wegfallende durchgestrichen. Wurde genau ein
 /// Wert ersetzt (Vertretung, Raumänderung), steht „alt → neu“.
 func kachelText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
     var ergebnis = Text("")
@@ -37,8 +37,8 @@ func kachelText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
     return ergebnis
 }
 
-/// Werte als „alt → neu“ für die große Stundenansicht (alt durchgestrichen, neu violett unterstrichen; ohne
-/// neuen Wert der alte Wert violett durchgestrichen).
+/// Werte als „alt → neu“ für die große Stundenansicht (alt durchgestrichen, neu grün unterstrichen; ohne
+/// neuen Wert der alte Wert grün durchgestrichen).
 func wechselText(_ werte: [Wert], trenner: String = ", ") -> Text {
     var ergebnis = Text("")
     var erster = true
@@ -67,7 +67,7 @@ func wechselText(_ werte: [Wert], trenner: String = ", ") -> Text {
 
 /// Stundenkachel der Zeitachse: Fachfarbe als Tönung, Fach groß, Raum als Feld rechts, darunter Lehrkraft bzw. Klasse;
 /// Status als Plakette mit Symbol. Entfall schraffiert und durchgestrichen, Termine gestrichelt, Prüfung bernsteinfarben,
-/// Änderungen mit violettem Rahmen. Je nach Höhe drei Fassungen (groß, mittel, eine Zeile).
+/// Änderungen mit grünem Rahmen. Je nach Höhe drei Fassungen (groß, mittel, eine Zeile).
 struct ZeitKachel: View {
     let kachel: Kachel
     let hoehe: CGFloat
@@ -80,7 +80,7 @@ struct ZeitKachel: View {
     @Environment(\.kartendarstellung) private var darstellung
 
     private var merkmal: Statusmerkmal? { Statuslehre.merkmal(kachel) }
-    private var entfall: Bool { kachel.art == .entfall || (kachel.art == .aufsicht && kachel.aufsichtsstand == .entfall) }
+    private var entfall: Bool { kachel.kartenart == .entfall && kachel.art != .aufsicht || (kachel.art == .aufsicht && kachel.aufsichtsstand == .entfall) }
     var body: some View {
         let w = Klassikstil.fuer(kachel, darstellung)
         let form = RoundedRectangle(cornerRadius: 4, style: .continuous)
@@ -128,17 +128,17 @@ struct ZeitKachel: View {
 
     private var titelText: some View {
         HStack(spacing: 5) {
-            Text(kachel.fachText(darstellung))
-                .font(.headline)
-                .foregroundStyle(entfall ? Farben.text2 : Farben.text)
-                .strikethrough(entfall, color: Farben.entfall)
-                .lineLimit(1)
+            Kartenfach(kachel: kachel, text: kachel.fachText(darstellung), schrift: .headline, farbe: Farben.text)
         }
     }
 
     @ViewBuilder
     private var raumFeld: some View {
-        if let raum = kachel.zeile("raum"), !raum.text.isEmpty {
+        if let raum = kachel.zeile("raum"), !raum.text.isEmpty, !raum.nurText || entfall {
+            // Geänderter Raum als Feld wie im Raster („+105 (303)“), bei Entfall durchgestrichen
+            Kartenwert(zeile: raum, karte: kachel.karte, entfall: entfall, schrift: .subheadline.weight(.medium), farbe: Farben.text)
+                .monospacedDigit()
+        } else if let raum = kachel.zeile("raum"), !raum.text.isEmpty {
             kachelText(raum, karte: kachel.karte)
                 .font(.subheadline.weight(.medium))
                 .monospacedDigit()
@@ -156,23 +156,23 @@ struct ZeitKachel: View {
         }
     }
 
+    /// Lehrkraft bzw. Klasse: geänderte Werte als Feld wie im Raster („+Gal (Gor)“, „(Abr)“).
     private var personenText: some View {
-        let zeilen = kachel.personenzeilen
-        var t = Text("")
-        for (i, z) in zeilen.enumerated() {
-            if i > 0 { t = t + Text("  ·  ") }
-            t = t + kachelText(z, karte: kachel.karte)
+        HStack(spacing: 8) {
+            ForEach(Array(kachel.personenzeilen.enumerated()), id: \.offset) { _, z in
+                Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall, schrift: .subheadline, farbe: Farben.text2)
+            }
         }
-        return t
-            .font(.subheadline)
-            .foregroundStyle(Farben.text2)
-            .strikethrough(entfall, color: Farben.entfall)
-            .lineLimit(1)
+        .lineLimit(1)
     }
 
     private var marken: some View {
         HStack(spacing: 4) {
-            if let merkmal { Statusabzeichen(merkmal: merkmal, klein: true, gefuellt: merkmal.betont) }
+            if let chip = kachel.statusChip {
+                Statuschip(chip: chip, schrift: .caption2.weight(.semibold))
+            } else if let merkmal {
+                Statusabzeichen(merkmal: merkmal, klein: true, gefuellt: merkmal.betont)
+            }
             if kachel.online { Statusabzeichen(merkmal: Statuslehre.online, klein: true) }
             if kachel.hausaufgabe {
                 Image(systemName: "checklist")
@@ -189,7 +189,7 @@ struct ZeitKachel: View {
         }
     }
 
-    private var hatMarken: Bool { merkmal != nil || kachel.online || kachel.hausaufgabe || kachel.info }
+    private var hatMarken: Bool { merkmal != nil || kachel.statusChip != nil || kachel.online || kachel.hausaufgabe || kachel.info }
 
     private var gross: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -219,7 +219,11 @@ struct ZeitKachel: View {
             HStack(spacing: 6) {
                 if !kachel.personenzeilen.isEmpty { personenText }
                 Spacer(minLength: 0)
-                if let merkmal { Statusabzeichen(merkmal: merkmal, klein: true, gefuellt: merkmal.betont) }
+                if let chip = kachel.statusChip {
+                    Statuschip(chip: chip, schrift: .caption2.weight(.semibold))
+                } else if let merkmal {
+                    Statusabzeichen(merkmal: merkmal, klein: true, gefuellt: merkmal.betont)
+                }
             }
         }
     }

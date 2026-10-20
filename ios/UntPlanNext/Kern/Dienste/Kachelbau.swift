@@ -83,7 +83,7 @@ enum Aufsichtsstand {
 struct Kachelteil: Hashable {
     enum Stil: Hashable {
         case text
-        /// Geänderter bzw. hinzugekommener Wert (violett unterstrichen)
+        /// Geänderter bzw. hinzugekommener Wert (grün unterstrichen)
         case plakette
         case weg
         /// Offene Vertretung: abwesende Lehrkraft durchgestrichen und hervorgehoben

@@ -34,7 +34,8 @@ extension Color {
 /// **Petrol** #164C55 (Logo, hervorgehobene Flächen), Akzentfarbe #28747A (Knöpfe, Auswahl, Links, Fokus, Jetzt-Linie –
 /// 5,4 : 1 auf Weiß; im Dunkelmodus #5FB0B5, 6,8 : 1 auf dunklem Grund), Seitenhintergrund #F5F7F8, Text #24363B.
 /// Fachliche Statusfarben wie in design/tokens.css mit heller Fläche und bewusst weit weg vom Petrol der Marke:
-/// Änderung/Vertretung Violett #6d4fc2, Termin Magenta #a3347c, Prüfung Bernstein, Entfall Rot, Ferien Blau. Im
+/// Änderung/Vertretung einheitlich Grün #2f855a (Enbrea-Legende mit EduOrga-Anpassung), Termin Magenta #a3347c, Prüfung
+/// Bernstein, Entfall Rot #b42318, Mitteilung Hellgelb, Ferien Blau. Im
 /// Dunkelmodus haben sie eine aufgehellte Variante, damit Text und Linien auf dunklen Flächen lesbar bleiben.
 enum Farben {
     // MARK: Marke
@@ -115,25 +116,31 @@ enum Farben {
 
     // MARK: Fachliche Statusfarben
 
-    /// Entfall, Fehler
+    /// Entfall, fehlende Klasse bzw. Lehrkraft, Fehler (Rot #b42318)
     static let entfall = Color(hell: 0xB42318, dunkel: 0xEE7B70)
     static let entfallFlaeche = Color(hell: 0xFDF0EF, dunkel: 0x2C1715)
-    /// Vertretung, Raum- und Lehrerwechsel, Verlegung (Violett – deutlich anders als das Petrol der Marke)
-    static let aenderung = Color(hell: 0x6D4FC2, dunkel: 0xB3A1F5)
-    static let aenderungFlaeche = Color(hell: 0xF1EDFB, dunkel: 0x241D3D)
-    /// Geänderter Wert auf der Stundenkarte („+Ara (Abr)“): kräftigere violette Fläche mit dunkelvioletter Schrift
-    static let aenderungChip = Color(hell: 0xE3DBFA, dunkel: 0x3A2E66)
-    static let aenderungText = Color(hell: 0x46309A, dunkel: 0xD9CFFF)
+    /// Feld auf der Stundenkarte für Entfall bzw. Fehlendes („× entfällt“, „(Abr)“, „(5b)“): helle rote Fläche #fdecea
+    static let entfallChip = Color(hell: 0xFDECEA, dunkel: 0x3D1A17)
+    static let entfallChipText = Color(hell: 0xB42318, dunkel: 0xF4A69E)
+    /// Jede Änderung (Vertretung, Raum-, Fach- und Lehrerwechsel, Verlegung, Zusatzunterricht): einheitlich Grün #2f855a
+    /// (EduOrga-Anpassung der Enbrea-Legende – statt einer Farbe je Änderungstyp)
+    static let aenderung = Color(hell: 0x2F855A, dunkel: 0x5FC48C)
+    /// Helle Statusfläche einer geänderten Karte (heller als das Feld, damit es sich abhebt)
+    static let aenderungFlaeche = Color(hell: 0xF4FBF6, dunkel: 0x14241B)
+    /// Geänderter Wert auf der Stundenkarte („+Gal (Gor)“, „+105 (303)“): helle grüne Fläche #e6f4ea, dunkelgrüne Schrift
+    static let aenderungChip = Color(hell: 0xE6F4EA, dunkel: 0x1E3A29)
+    static let aenderungText = Color(hell: 0x1D5C3A, dunkel: 0xA8E6C1)
     /// Klausur, Prüfung
     static let pruefung = Color(hell: 0xA15C07, dunkel: 0xE3A54B)
     static let pruefungFlaeche = Color(hell: 0xFDF4E3, dunkel: 0x2A2010)
     /// Veranstaltung, Termin, Raumbuchung (Magenta – unterscheidbar von Änderung und Entfall)
     static let termin = Color(hell: 0xA3347C, dunkel: 0xEE8CC9)
     static let terminFlaeche = Color(hell: 0xFAEEF5, dunkel: 0x341A2C)
-    /// Veranstaltungen im Wochenraster (AG, Schulfest …): warmes, ruhiges Neutral als eigener Block über die Spalte
-    static let ereignisFlaeche = Color(hell: 0xF7F1E3, dunkel: 0x2A2519)
-    static let ereignisRand = Color(hell: 0xE2D6BB, dunkel: 0x4A4130)
-    static let ereignisText = Color(hell: 0x5C4A22, dunkel: 0xE6D7B0)
+    /// Mitteilung bzw. Veranstaltung im Wochenraster (AG, Schulfest, Hinweis): hellgelber Notizblock wie in der
+    /// Enbrea-Legende, als eigener Block über die Spalte
+    static let ereignisFlaeche = Color(hell: 0xFFF6CF, dunkel: 0x2E2910)
+    static let ereignisRand = Color(hell: 0xEADB98, dunkel: 0x54491E)
+    static let ereignisText = Color(hell: 0x5A4708, dunkel: 0xF0DF9C)
     /// Ferien, unterrichtsfrei
     static let frei = Color(hell: 0x2F6F9F, dunkel: 0x79B0DC)
     static let freiFlaeche = Color(hell: 0xEDF4FA, dunkel: 0x132231)
