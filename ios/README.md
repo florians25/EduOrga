@@ -2,7 +2,11 @@
 
 iPhone- und iPad-App **EduOrga** (SwiftUI) – *Einfach mehr Schulalltag.* Marke siehe `design/MARKE.md`.
 
-**Eine App für alle Schulen:** EduOrga gibt es zentral im App Store; jede Schule betreibt ihr EduOrga (Web) selbst.
+> **Stand:** Die App ist **noch nicht im App Store veröffentlicht**. Bis dahin wird sie mit Xcode aus diesem Ordner gebaut
+> (siehe „Bauen“); für den Schulalltag steht [EduOrga Mobile](../mobile/README.md) (PWA) bereit. Eine Android-App ist in
+> Arbeit. Bildschirmfotos für die Website: [`docs/bilder/`](docs/bilder/README.md).
+
+**Eine App für alle Schulen:** EduOrga soll es zentral im App Store geben; jede Schule betreibt ihr EduOrga (Web) selbst.
 Nach dem Start gibt man die **EduOrga-Adresse der eigenen Schule** ein (oder scannt den QR-Code der Schule) und meldet
 sich mit dem Konto der Schule an. Mehrere Konten an verschiedenen Schulen sind möglich.
 
