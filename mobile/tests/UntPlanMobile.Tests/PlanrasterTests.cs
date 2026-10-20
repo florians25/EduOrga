@@ -85,14 +85,15 @@ public class PlanrasterTests
             const f = c => { const x = A.statusFeld(c); return x ? x.text + ' ' + x.ton : null; };
             // Entfall, verlegt (Wochentag Datum, Stunde), zusätzlich – eigene Wortwahl
             pruefe(f({ blockType:'cancelled' }), 'entfällt entfall');
-            pruefe(f({ blockType:'cancelled', moved:'von', movedTo:{ date:'2026-10-21', from:'12:20', lesson:6 } }), 'verlegt → Mi 21.10., 6. Std entfall');
-            pruefe(f({ blockType:'change', moved:'nach', movedFrom:{ date:'2026-10-19', from:'09:45', lesson:3 } }), 'verlegt ← Mo 19.10., 3. Std aenderung');
+            pruefe(f({ blockType:'cancelled', moved:'von', movedTo:{ date:'2026-10-21', from:'12:20', lesson:6 } }), 'verlegt auf Mi 21.10., 6. Std entfall');
+            pruefe(f({ blockType:'change', moved:'nach', movedFrom:{ date:'2026-10-19', from:'09:45', lesson:3 } }), 'verlegt von Mo 19.10., 3. Std aenderung');
             pruefe(f({ blockType:'change', extra:true }), 'zusätzlich aenderung');
             pruefe(f({ blockType:'change' }), null);
             pruefe(f({ blockType:'normal' }), null);
-            // Tags: „neu ← bisher“, „neu B070“, „bisher fehlt“
-            pruefe(A.feldText('Gal', 'Gor'), 'Gal ← Gor');
-            pruefe(A.feldText('105', '303'), '105 ← 303');
+            // Tags: „neu (bisher)“ mit durchgestrichenem bisherigem Wert, „neu B070“, „bisher fehlt“
+            pruefe(A.feldText('Gal', 'Gor'), 'Gal (Gor)');
+            pruefe(A.feldHtml('105', '303'), '105 (<s>303</s>)');
+            pruefe(A.feldHtml('Gal', ''), 'neu Gal');
             pruefe(A.feldText('B070', ''), 'neu B070');
             pruefe(A.feldText('', 'Abr', true), 'Abr fehlt');
             // Datenstand

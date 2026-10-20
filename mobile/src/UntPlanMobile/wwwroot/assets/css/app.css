@@ -2826,3 +2826,12 @@ body.show-card-times .card__times{ display:flex; }
 .kennz__text dl{ display:block; }
 .kennz__text dt{ margin:8px 0 2px; }
 .kennz__text dd{ margin:0; }
+.topbar__mein{ height:32px; padding:0 10px; font-size:14px; white-space:nowrap; }
+.topbar__mein{ height:30px; padding:0 6px; font-size:13px; }
+.topbar__title{ flex:1 1 auto; }
+@media (max-width:430px){
+  .topbar:has(#btnMeinPlan:not([hidden])) .topbar__title{ font-size:16px; padding:0 4px; gap:2px; }
+  .topbar:has(#btnMeinPlan:not([hidden])) .plan-seg button{ padding:0 9px; }
+}
+/* Schmale Telefone: „Klasse“ entfällt im Titel, wenn „Mein Plan“ daneben steht (ganzer Name im title/aria) */
+@media (max-width:430px){ .topbar:has(#btnMeinPlan:not([hidden])) .topbar__art{ display:none; } }

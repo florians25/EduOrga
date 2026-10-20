@@ -571,9 +571,9 @@ if (typeof window !== 'undefined') window.UntPlanPlus = { plusWert };
    iOS (design/DESIGN.md, Abschnitt 10): jede Änderung grün (3-px-Leiste,
    Kennzeichen am Rand, Tag auf der betroffenen Zeile), Entfall rot mit allem
    durchgestrichen, offene Vertretung neutral. Tags in eigener Wortwahl:
-   „Gal ← Gor“, „105 ← 303“, „neu B070“, „Abr fehlt“ (Schüler*innen: „Vertretung folgt“),
-   unten „entfällt“, „verlegt → Di 21.10., 6. Std“, „verlegt ← Mo 20.10.,
-   3. Std“, „zusätzlich“. */
+   „Gal (G̶o̶r̶)“, „105 (3̶0̶3̶)“ (bisher durchgestrichen), „neu B070“, „Abr fehlt“
+   (Schüler*innen: „Vertretung folgt“), unten „entfällt“, „verlegt auf Di
+   21.10., 6. Std“, „verlegt von Mo 20.10., 3. Std“, „zusätzlich“. */
 const WT_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 function verlegungKurz(v){
   if (!v || !/^\d{4}-\d{2}-\d{2}/.test(v.date || '')) return '';
@@ -585,21 +585,28 @@ function statusFeld(card){
   if (!card) return null;
   if (card.blockType === 'cancelled' && card.moved === 'von'){
     const z = verlegungKurz(card.movedTo);
-    return { ton:'entfall', text: z ? 'verlegt → ' + z : 'verlegt' };
+    return { ton:'entfall', text: z ? 'verlegt auf ' + z : 'verlegt' };
   }
   if (card.blockType === 'cancelled') return { ton:'entfall', text:'entfällt' };
   if (card.blockType === 'change' && card.moved === 'nach'){
     const z = verlegungKurz(card.movedFrom);
-    return { ton:'aenderung', text: z ? 'verlegt ← ' + z : 'hierher verlegt' };
+    return { ton:'aenderung', text: z ? 'verlegt von ' + z : 'hierher verlegt' };
   }
   if (card.blockType === 'change' && card.extra) return { ton:'aenderung', text:'zusätzlich' };
   return null;
 }
-/* Text im Tag eines geänderten Werts: „neu ← bisher“ („Gal ← Gor“, „105 ← 303“), „neu B070“ bzw. „bisher fehlt“. */
+/* Text im Tag eines geänderten Werts: „neu (bisher)“ („Gal (Gor)“, „105 (303)“ – bisher durchgestrichen,
+   siehe feldHtml), „neu B070“ bzw. „bisher fehlt“. */
 function feldText(jetzt, vorher, weg){
   const j = String(jetzt || '').trim().replace(/^\+/, ''), v = String(vorher || '').trim();
   if (weg) return `${v || j} fehlt`;
-  return v && v.toUpperCase() !== j.toUpperCase() ? `${j} ← ${v}` : `neu ${j}`;
+  return v && v.toUpperCase() !== j.toUpperCase() ? `${j} (${v})` : `neu ${j}`;
+}
+/* Dasselbe als HTML: der bisherige Wert durchgestrichen in Klammern – „Gal (<s>Gor</s>)“. */
+function feldHtml(jetzt, vorher){
+  const j = String(jetzt || '').trim().replace(/^\+/, ''), v = String(vorher || '').trim();
+  const e = x => String(x).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  return v && v.toUpperCase() !== j.toUpperCase() ? `${e(j)} (<s>${e(v)}</s>)` : `neu ${e(j)}`;
 }
 /* Zeilen kürzen: die erste bleibt, geänderte gehen vor, unveränderte fallen von unten weg. */
 function zeilenKuerzen(lines, max){
@@ -622,7 +629,7 @@ function studioStandText(stand, jetzt = new Date()){
   const alt = jetzt.getDay() >= 1 && jetzt.getDay() <= 5 && min > 1440;
   return { voll, rel, alt, text:`Stand EduOrga Studio: ${voll} · ${rel}` };
 }
-if (typeof window !== 'undefined') window.UntPlanAenderung = { verlegungKurz, statusFeld, feldText, zeilenKuerzen, studioStandText };
+if (typeof window !== 'undefined') window.UntPlanAenderung = { verlegungKurz, statusFeld, feldText, feldHtml, zeilenKuerzen, studioStandText };
 /* AENDERUNG-ENDE */
 const KACHEL_VIDEO = sym('video', 'ticon ticon--video');
 /* Schloss (Linien) für gesperrte Wochen. */
@@ -1928,7 +1935,7 @@ function renderGrid(){
         /* Fachänderung: „+BI (MU)“ */
         if (l.key === 'subject' && !entfallen && card.subjectOrig && !l.tokens
             && String(card.subjectOrig).toUpperCase() !== String(card.subject || '').toUpperCase() && l.text === card.subject)
-          return `<span class="badge">${esc(feldText(card.subject, card.subjectOrig))}</span>`;
+          return `<span class="badge">${feldHtml(card.subject, card.subjectOrig)}</span>`;
         /* Entfall: alles schlicht, durchgestrichen (app.css) */
         if (entfallen && !l.tokens) return esc(l.text);
         /* Zusatzstunde bzw. hierher verlegte Stunde: Lehrkraft schlicht – das Status-Tag unten sagt es schon */
@@ -1959,8 +1966,8 @@ function renderGrid(){
             }).join('')
           /* Offene Vertretung: neutral (nie rot) – Kollegium „(Abr)“, Schüler*innen und Eltern „Vertretung folgt“ */
           : offenGruen ? `<span class="feld feld--offen">${esc(state.isStudent ? 'Vertretung folgt' : feldText('', l.text, true))}</span>`
-          : l.changed ? `<span class="${cls2}">${esc(l.removed ? feldText('', l.text, true)
-                : feldText(werteListe(l.text).map(x => plusWert(card, l.key, x).replace(/^\+/, '')).join(KACHEL_TRENNER), kachelWert(card[l.key + 'Orig'])))}</span>` : esc(l.text);
+          : l.changed ? `<span class="${cls2}">${l.removed ? esc(feldText('', l.text, true))
+                : feldHtml(werteListe(l.text).map(x => plusWert(card, l.key, x).replace(/^\+/, '')).join(KACHEL_TRENNER), kachelWert(card[l.key + 'Orig']))}</span>` : esc(l.text);
       };
 
       const body = isHoliday
@@ -2549,12 +2556,24 @@ function planWechseln(neu){
 
 /* Beim eigenen Plan steht der Name über der Klasse — sonst weiß man
    nicht, wessen Plan man ansieht. */
+/* Gesuchter Plan wie „Mein Plan“: dieselbe Ansicht, Titel „Klasse 5a“, „Lehrkraft SNE“ bzw. „Raum R101“
+   und daneben der Knopf „Mein Plan“ zurück zum eigenen Plan. */
+const PLAN_ART = { class:'Klasse', teacher:'Lehrkraft', room:'Raum' };
 function setzeBeschriftung(){
   const el = $('#entityLabel');
-  if (el) el.textContent =
-    (state.entity.type === 'mine' && state.isStudent && BOOT.own && BOOT.own.info)
-      ? BOOT.own.info
-      : state.entity.label;
+  const art = PLAN_ART[state.entity.type];
+  if (el){
+    const mitArt = art && state.entity.label && !String(state.entity.label).startsWith(art);
+    if (state.entity.type === 'mine' && state.isStudent && BOOT && BOOT.own && BOOT.own.info) el.textContent = BOOT.own.info;
+    else if (mitArt){
+      const t = document.createElement('span'); t.className = 'topbar__art'; t.textContent = art + ' ';
+      el.replaceChildren(t, document.createTextNode(String(state.entity.label)));
+    }
+    else el.textContent = state.entity.label;
+    el.title = mitArt ? `${art} ${state.entity.label}` : '';
+  }
+  const zurueck = $('#btnMeinPlan');
+  if (zurueck) zurueck.hidden = state.entity.type === 'mine' || !state.entities.some(e => e.type === 'mine');
   const b = $('#btnInfo');
   if (b) b.hidden = !state.entity.info;
 }
@@ -6117,7 +6136,9 @@ function renderDetail(){
          Raum. Eine offene Vertretung steht allein durchgestrichen. */
       const trenn = SEP;
       if (!now) return `<s>${liste(orig)}</s>`;
-      return `<s>${liste(orig)}</s>${trenn}${liste(now)}`;
+      /* wie auf der Karte: neu, dahinter der bisherige Wert durchgestrichen in Klammern */
+      void trenn;
+      return `${liste(now)} (<s>${liste(orig)}</s>)`;
     }
     return liste(now || orig);
   };
@@ -6136,7 +6157,7 @@ function renderDetail(){
     if (!jetzt.length && vorher.length) return `<s>${vorher.map(esc).join(SEP)}</s>`;
     /* Nur Text, keine Plaketten — mehrere Räume durch „|“ getrennt. */
     const rechts = jetzt.map(x => esc(plusWert(c, 'room', x))).join(SEP);
-    if (weg.length) return `<s>${weg.map(esc).join(SEP)}</s><span class="arrow">→</span>${rechts}`;
+    if (weg.length) return `${rechts} (<s>${weg.map(esc).join(SEP)}</s>)`;
     return kurzListe(jetzt.map(x => esc(plusWert(c, 'room', x))), SEP);
   };
 
@@ -9057,3 +9078,9 @@ function planwachtStart(){
 
 /* Nach einer Prüfung aus der Schulseite: Plan sofort neu laden. */
 window.EDOPlanNeu = () => { wochenVergessen(); planNachladen(); };
+
+/* „Mein Plan“ in der Kopfzeile eines gesuchten Plans */
+(() => {
+  const b = document.getElementById('btnMeinPlan');
+  if (b) b.addEventListener('click', () => planWechseln(state.entities.find(e => e.type === 'mine')));
+})();

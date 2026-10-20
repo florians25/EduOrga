@@ -46,6 +46,7 @@ export function elementInfo(typ: PlanTyp, x: Element | undefined) {
 function langname(plan: Wochenplan) {
   let n = (plan.name || '').trim();
   if (n.toLowerCase().startsWith(plan.element.toLowerCase())) n = n.slice(plan.element.length).replace(/^\s*[–-]\s*/, '');
+  if (n.toLowerCase() === `${TYPEN[plan.typ]} ${plan.element}`.toLowerCase()) return '';
   return n && n !== plan.element ? n : '';
 }
 
@@ -239,6 +240,8 @@ export default function PlanSeite({ teile }: SeitenProps) {
             </ToggleButtonGroup>
           )}
           <Box sx={{ flex: 1 }} />
+          {/* Gesuchter Plan: dieselbe Ansicht wie „Mein Stundenplan“, mit schnellem Weg zurück */}
+          {!istMein && meinElement && <Button variant="outlined" onClick={() => navigieren(`#/plan/mein/${datum}`)}>Mein Plan</Button>}
           <Button variant="outlined" onClick={() => setLegende(true)}>Legende</Button>
           <AnsichtMenue einst={einst} setEinst={setEinst} mitAbwesenheiten={istMein} />
           <Tooltip title="Hilfe zum Stundenplan"><IconButton size="small" onClick={() => setHilfe(true)} aria-label="Hilfe zum Stundenplan"><HelpOutlineRounded fontSize="small" /></IconButton></Tooltip>

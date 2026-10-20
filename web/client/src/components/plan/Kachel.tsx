@@ -2,7 +2,7 @@
 // (Administration | Darstellung der Stundenkarten, siehe darstellung.tsx). Standard „EduOrga Standard“: kompakte helle Karte, die ihre
 // Rasterzelle füllt, 4-px-Leiste links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), darunter je eine Zeile Fach (600),
 // Klasse, Lehrkraft, Raum. Kennzeichnung nach den gemeinsamen Regeln (aenderung.ts): durchgehende 3-px-Leiste und 5-px-Kennzeichen in der
-// Statusfarbe, Tags „Gal ← Gor“, „105 ← 303“, „neu B070“; Entfall rot und durchgestrichen („entfällt“, „verlegt → …“); offen grau. Prüfung Bernstein, Veranstaltung als warmer Block ohne Kante, Buchung gestrichelt. Die übrigen Vorlagen
+// Statusfarbe, Tags „Gal (G̶o̶r̶)“, „105 (3̶0̶3̶)“, „neu B070“; Entfall rot und durchgestrichen („entfällt“, „verlegt auf …“); offen grau. Prüfung Bernstein, Veranstaltung als warmer Block ohne Kante, Buchung gestrichelt. Die übrigen Vorlagen
 // (Klassisch, Kompakt, Sachlich …) ändern Fachfarbe, Fläche, Rahmen, Radius, Dichte und Zeilenfolge – die Statusdarstellung bleibt gleich.
 // Die Bedeutung steht im aria-label und in der Kurzinfo beim Überfahren; Klick öffnet die Stundendetails.
 import { memo, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
@@ -39,14 +39,14 @@ export const mischen = (farbe: string, wert: number) => (farbe.startsWith('var('
 /** Leiste links in der Statusfarbe (Änderung grün, Entfall rot, offen grau) – durchgehend, 3 px. */
 export const leiste = (farbe: string, offen = false) => (offen ? `repeating-linear-gradient(180deg, ${farbe} 0 4px, transparent 4px 7px)` : farbe);
 
-/** Tag auf der Karte: „Gal ← Gor“, „105 ← 303“, „neu B070“, „entfällt“ – getönt mit feiner Linie (offen gestrichelt), Radius 3, Schrift ≥ 5:1 (WCAG AA), nie durchgestrichen. */
-export function Feld({ ton, children, titel, klein = false }: { ton: Ton; children: ReactNode; titel?: string; klein?: boolean }) {
+/** Tag auf der Karte: „Gal (G̶o̶r̶)“, „105 (3̶0̶3̶)“, „neu B070“, „entfällt“ – getönt mit feiner Linie (offen gestrichelt), Radius 3, Schrift ≥ 5:1 (WCAG AA), nie durchgestrichen. */
+export function Feld({ ton, children, titel, klein = false, alt }: { ton: Ton; children: ReactNode; titel?: string; klein?: boolean; /** bisheriger Wert: „neu (b̶i̶s̶h̶e̶r̶)“ */ alt?: string }) {
   return (
     <Box component="span" title={titel} data-feld={ton}
       sx={{ display: 'inline-flex', alignItems: 'center', gap: '3px', maxWidth: '100%', height: klein ? 15 : 16, px: '3px', borderRadius: '3px', fontSize: klein ? 11 : 12, lineHeight: 1,
         fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', boxSizing: 'border-box',
         bgcolor: ton === 'offen' ? 'status.offen.feld' : `status.${ton}.flaeche`, color: `status.${ton}.text`, border: '1px', borderStyle: ton === 'offen' ? 'dashed' : 'solid',
-        borderColor: (t: Theme) => mischen((t.vars ?? t).palette.status[ton].main, ton === 'offen' ? 0.9 : 0.55), textDecoration: 'none', fontVariantNumeric: 'tabular-nums' }}>{children}</Box>
+        borderColor: (t: Theme) => mischen((t.vars ?? t).palette.status[ton].main, ton === 'offen' ? 0.9 : 0.55), textDecoration: 'none', fontVariantNumeric: 'tabular-nums' }}>{children}{alt && <Box component="span" sx={{ fontWeight: 500 }}>{' ('}<Box component="s" sx={{ textDecorationThickness: '1px' }}>{alt}</Box>)</Box>}</Box>
   );
 }
 
@@ -62,7 +62,7 @@ function Teile({ teile, anzeige }: { teile: Teil[]; anzeige?: (t: string) => str
       {teile.map((t, i) => (
         <Box component="span" key={i}>
           {i > 0 && ', '}
-          {t.feld ? <Feld ton={t.feld} titel={t.titel}>{t.text}</Feld> : (anzeige ? anzeige(t.text) : t.text)}
+          {t.feld ? <Feld ton={t.feld} titel={t.titel} alt={t.alt}>{t.text}</Feld> : (anzeige ? anzeige(t.text) : t.text)}
         </Box>
       ))}
     </>

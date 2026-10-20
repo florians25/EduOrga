@@ -1,5 +1,5 @@
 // Darstellung der Werte einer Stunde (Klassen, Lehrkräfte, Räume) in Listen und Kopfzeilen – gleiche Sprache wie die Stundenkarte
-// (aenderung.ts): unveränderte Werte als Text, geänderter Wert als grüner Tag „neu ← bisher“, hinzugefügter Wert „neu B070“,
+// (aenderung.ts): unveränderte Werte als Text, geänderter Wert als grüner Tag „neu (bisher durchgestrichen)“, hinzugefügter Wert „neu B070“,
 // fehlender Wert „bisher fehlt“, offene Vertretung als gestricheltes „?“-Feld, abwesende Klasse grau durchgestrichen.
 // Die Bedeutung steht im Tooltip (title) und in der Legende.
 import { Box } from '@mui/material';
@@ -48,7 +48,7 @@ export function WertAnzeige({ w, entfall = false, mitAlt = true, weg = false, li
     </Box>
   );
   if (!w.k && w.neu) return fragezeichen('Vertretung offen');
-  if (w.alt) return <Kuerzel art="neu" title={`${w.k} statt ${w.alt}`}>{a(w.k, n(w.k))}{mitAlt && <> ← {a(w.alt, n(w.alt))}</>}</Kuerzel>;
+  if (w.alt) return <Kuerzel art="neu" title={`${w.k} statt ${w.alt}`}>{a(w.k, n(w.k))}{mitAlt && <> (<s>{a(w.alt, n(w.alt))}</s>)</>}</Kuerzel>;
   if (w.neu) return <Kuerzel art="plus" title={`${w.k} neu hinzugekommen`}>neu {a(w.k, n(w.k))}</Kuerzel>;
   return <span>{a(w.k, n(w.k))}</span>;
 }

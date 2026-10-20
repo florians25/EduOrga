@@ -100,7 +100,7 @@ public class WebOberflaecheTests
         Assert.Contains("line-through", kachel);
         Assert.Contains("kartenbild(k, typ)", kachel);
         var aenderung = Lesen("src", "components", "plan", "aenderung.ts");
-        foreach (var muster in new[] { "`${k} ← ${alt}`", "`neu ${k}`", "`${alt} fehlt`", "'Vertretung folgt'", "'entfällt'", "`verlegt → ${ziel}`", "`verlegt ← ${von}`", "'zusätzlich'", "`${k.fach} ← ${k.fachAlt}`" })
+        foreach (var muster in new[] { "text: k, alt, feld: 'aenderung'", "`neu ${k}`", "`${alt} fehlt`", "'Vertretung folgt'", "'entfällt'", "`verlegt auf ${ziel}`", "`verlegt von ${von}`", "'zusätzlich'", "text: k.fach, alt: k.fachAlt", "`${praefix}${k} statt ${alt}`" })
             Assert.Contains(muster, aenderung);
         var darstellung = Lesen("src", "components", "plan", "darstellung.tsx");
         // Standard „EduOrga Standard“: helle Karte auf hellgrauem Raster, Kante links (Fachfarbe mit Tönung), Fach · Klasse · Lehrkraft · Raum
@@ -277,7 +277,7 @@ public class WebOberflaecheTests
         var theme = Lesen("src", "theme.ts");
         Assert.Equal(2, Regex.Matches(theme, @"balken: '#[0-9a-f]{6}'").Count);
         var kachel = Lesen("src", "components", "plan", "Kachel.tsx");
-        Assert.Contains("palette.kachel.balken", kachel);
+        Assert.Contains("pal.kachel.balken", kachel);
         Assert.Contains("farbe ?? pal.kachel.balken", kachel);
         Assert.DoesNotContain("farbe ? 1 : 0.5", kachel);
         // gleichzeitige Stunden: erste Stunde über die volle Breite, „+X“ rechts, Klick listet alle

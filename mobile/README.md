@@ -113,8 +113,8 @@ Das Planraster der PWA ist die Referenz für alle Oberflächen (iOS spiegelt die
 
 | Fall | Darstellung |
 |---|---|
-| Geändert (Vertretung, Raum, Fach, Verlegung, Zusatz) | grüne 3-px-Leiste, helle grüne Fläche (`--up-aenderung-flaeche`), Kennzeichen (5 × 5 px) oben rechts; Tag auf der Zeile: „Gal ← Gor“, „105 ← 303“, „BI ← MU“, „neu B070“; geänderte Zeilen 600; unten „verlegt ← Mo 20.10., 3. Std“ bzw. „zusätzlich“ |
-| Entfällt | rote 3-px-Leiste, helle rote Fläche, **alles durchgestrichen**; unten „entfällt“ bzw. „verlegt → Di 21.10., 6. Std“; „5b fehlt“ bei abwesender Klasse |
+| Geändert (Vertretung, Raum, Fach, Verlegung, Zusatz) | grüne 3-px-Leiste, helle grüne Fläche (`--up-aenderung-flaeche`), Kennzeichen (5 × 5 px) oben rechts; Tag auf der Zeile: „Gal (G̶o̶r̶)“, „105 (3̶0̶3̶)“, „BI (M̶U̶)“ (bisher durchgestrichen), „neu B070“; geänderte Zeilen 600; unten „verlegt von Mo 20.10., 3. Std“ bzw. „zusätzlich“ |
+| Entfällt | rote 3-px-Leiste, helle rote Fläche, **alles durchgestrichen**; unten „entfällt“ bzw. „verlegt auf Di 21.10., 6. Std“; „5b fehlt“ bei abwesender Klasse |
 | Offen (Vertretung folgt) | grau: weiße Karte, graue Leiste, gestrichelter Rand, gestrichelter Tag „Abr fehlt“ (Kollegium) bzw. „Vertretung folgt“ (Schüler*innen, Eltern) – nie rot |
 | Tag | getönt mit feiner Linie (offen gestrichelt), Radius 3 px, ≥ 12 px/600, grüne Schrift #267349 (≥ 5:1), nie durchgestrichen |
 | Prüfung | 1-px-Linie `--up-pruefung`, Fläche `--up-pruefung-flaeche`, Wort „Prüfung“ |
@@ -129,6 +129,9 @@ Jede Karte trägt einen ausgeschriebenen zugänglichen Namen; `prefers-reduced-m
 mit Hinweis „Offline — Stand hh:mm“; neu geladen bei Rückkehr in die App, Fokus, wiederkehrendem Netz und alle zwei Minuten. Unter
 dem Plannamen und in „Mehr › Daten aktualisieren“ steht **„Stand EduOrga Studio: …“** (letzte Übertragung, Feld `studioStand`),
 nach mehr als 24 Stunden an Schultagen mit „Daten evtl. nicht aktuell“.
+
+**Gesuchter Plan:** dieselbe Ansicht wie „Mein Plan“, Titel „Klasse 5a“ (bzw. „Lehrkraft …“, „Raum …“), in der Kopfzeile der Knopf
+„Mein Plan“ zurück zum eigenen Plan.
 
 **Stundendetails:** für die eigene Stunde der Lehrkraft Reiter **Details | Klassenbuch** – im Klassenbuch zuerst das Thema
 (Eingabefeld), darunter „Anwesenheitskontrolle“ (mit Ergebnis) und „Alle anwesend“, dann Hausaufgaben, Einträge, Notizen und

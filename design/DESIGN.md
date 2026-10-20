@@ -250,15 +250,15 @@ Sachlich und ruhig: eine Leiste, ein Kennzeichen, kurze Tags. Barrierefreiheit i
 
 | Fall | Tag (Zeile) | Plandaten |
 |---|---|---|
-| Vertretung | „Gal ← Gor“ (Lehrkraft) | Wert `{ k: "Gal", alt: "Gor" }` |
-| Raumänderung | „105 ← 303“ (Raum) | Raum `{ k: "105", alt: "303" }` |
-| Fachänderung | „BI ← MU“ (Fach) | `fachAlt` (PWA `subjectOrig`) |
+| Vertretung | „Gal (G̶o̶r̶)“ – neu, bisher durchgestrichen in Klammern (Lehrkraft) | Wert `{ k: "Gal", alt: "Gor" }` |
+| Raumänderung | „105 (3̶0̶3̶)“ (Raum) | Raum `{ k: "105", alt: "303" }` |
+| Fachänderung | „BI (M̶U̶)“ (Fach) | `fachAlt` (PWA `subjectOrig`) |
 | hinzugekommen | „neu B070“ | Wert `{ k: "B070", neu: true }` ohne `alt` |
 | Lehrkraft fehlt, noch keine Vertretung | „Abr fehlt“ bzw. „Vertretung folgt“ – grau, gestrichelt | `{ k: "", alt: "Abr" }`, `vertretungOffen` (PWA `teacherOpen`) |
 | Klasse fehlt | „5b fehlt“ (rot, mit „entfällt“) | `abwesendeKlassen` (PWA `classAbsent`) |
 | Entfall | unten „entfällt“ | Status `entfall` bzw. `abwesend` ohne `lehrerAbwesend` |
-| verlegt (hier entfallen) | unten „verlegt → Di 21.10., 6. Std“ (rot) | `verlegung = "von"`, `verlegungNach { datum, stunde, beginn }` (PWA `movedTo.lesson`) |
-| verlegt (hierher) | unten „verlegt ← Mo 20.10., 3. Std“ (grün) | `verlegung = "nach"`, `verlegungVon` (PWA `movedFrom`) |
+| verlegt (hier entfallen) | unten „verlegt auf Di 21.10., 6. Std“ (rot) | `verlegung = "von"`, `verlegungNach { datum, stunde, beginn }` (PWA `movedTo.lesson`) |
+| verlegt (hierher) | unten „verlegt von Mo 20.10., 3. Std“ (grün) | `verlegung = "nach"`, `verlegungVon` (PWA `movedFrom`) |
 | Zusatzstunde | unten „zusätzlich“ (grün) | `zusaetzlich` bzw. Art Zusatz/Sondereinsatz (PWA `extra`) |
 | Mitteilung | gelbe Notiz | `tage[].mitteilungen` (PWA `notes`) – neu, abwärtskompatibel |
 
@@ -271,10 +271,10 @@ Musterkarte, rechts Titel, ein Satz und die Tags mit je einem Satz (Liste, keine
   6,2:1; Zeilen #4b5d62 auf
   #e6f4ea 6,1:1 bzw. auf #fdecea 6,0:1; Mitteilung #5c4a0f auf #fdf5c9 7,8:1; Termin #5c4a22 auf #f7f1e3 7,6:1. **#2f855a nur für
   Leisten, Linien und Kennzeichen** (Nicht-Text ≥ 3:1), nie als Schrift auf #e6f4ea (4,0:1).
-* **Nie nur Farbe:** Status steht immer auch als Zeichen bzw. Wort („←“ mit ausgeschriebenem zugänglichem Namen „… statt …“, „neu“, „fehlt“, „zusätzlich“, „entfällt“, „verlegt →/←“), Entfall zusätzlich
+* **Nie nur Farbe:** Status steht immer auch als Wort bzw. Form (bisheriger Wert durchgestrichen in Klammern, zugänglicher Name „Lehrkraft Gal statt Gor“, „neu“, „fehlt“, „zusätzlich“, „entfällt“, „verlegt auf/von“), Entfall zusätzlich
   durchgestrichen, offene Vertretung gestrichelt.
 * Jede Karte hat einen **ausgeschriebenen zugänglichen Namen** (Fach, Stunde und Uhrzeit, Klasse, Lehrkraft, Raum, jede Änderung, z. B.
-  „Raumänderung: 105 statt 303“), ist per Tastatur erreichbar (Enter/Leertaste öffnet die Details) und hat einen sichtbaren Fokusring
+  „Raum 105 statt 303“, „Lehrkraft Gal statt Gor“), ist per Tastatur erreichbar (Enter/Leertaste öffnet die Details) und hat einen sichtbaren Fokusring
   (2 px `--up-fokus`).
 * `prefers-reduced-motion`: keine Übergänge/Animationen an Karten und Streifen. Zoom 200 %: Zeilen kürzen mit „…“, Fach, Tags und
   Status bleiben stehen; der volle Text steht in Kurzinfo bzw. Details.
@@ -289,6 +289,10 @@ Musterkarte, rechts Titel, ein Satz und die Tags mit je einem Satz (Liste, keine
   (auch reine Vertretungspakete). Vollständiger Zeitpunkt in der Kurzinfo; älter als 24 Stunden an einem Schultag: Zusatz **„Daten evtl.
   nicht aktuell“** (Bernstein, als Text). Orte: Planseite unter der Kalenderwoche, Vertretungsplan, Mein Tag, Monitor (oben rechts),
   PWA unter dem Plannamen und in „Mehr › Daten aktualisieren“.
+
+**Gesuchter Plan wie „Mein Plan“:** Wer einen Plan sucht (Klasse, Lehrkraft, Raum), sieht genau dieselbe Ansicht wie beim eigenen
+Plan (Raster, Woche/Tag, Legende, Bedienung), Titel „Klasse 5a“, „Lehrkraft SNE“ bzw. „Raum R101“, daneben der Knopf **„Mein Plan“**
+zurück zum eigenen Plan (Web: Werkzeugleiste; PWA: Kopfzeile).
 
 **Stundendetails mobil (PWA, iOS):** für die eigene Stunde der Lehrkraft zwei Reiter **Details | Klassenbuch**. Klassenbuch: oben die
 Statuszeile („Thema eingetragen · Anwesenheit offen“), **zuerst das Eingabefeld Thema (Lehrstoff)**, direkt darunter groß
@@ -397,6 +401,6 @@ Die folgenden Maße gelten für iOS; Abweichungen von den Regeln oben (Farben, F
 ausgeschrieben.
 
 **Stundendetails (mobil)**: gruppierte Liste, Farbe nur für den Status. Kopf (Fach ausgeschrieben + Kürzel, Stunde und
-Zeit, Status als Wort), dann – nur bei Änderungen – Abschnitt „Änderung“ bzw. „Entfall“ mit „bisher → neu“ je Angabe,
+Zeit, Status als Wort), dann – nur bei Änderungen – Abschnitt „Änderung“ bzw. „Entfall“ mit „neu (bisher durchgestrichen)“ je Angabe,
 Verlegung und Vertretungstext/Grund, danach die geltenden Angaben (Zeit, Raum, Lehrkraft, Klasse), Hinweis, Online,
 Thema, Hausaufgaben, Notizen, Klassenbuch.

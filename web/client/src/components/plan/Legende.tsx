@@ -101,7 +101,7 @@ export function Musterkarte({ g }: { g: Kennzeichengruppe }) {
       {g.muster.map((z, i) => (
         <Typography key={i} component="div" noWrap sx={{ fontSize: i ? 12 : 13, lineHeight: i ? '17px' : '18px', fontWeight: i ? 400 : 600, textDecoration: entfall ? 'line-through' : 'none',
           color: entfall ? (i ? 'status.entfall.text' : 'status.entfall.main') : i ? 'text.secondary' : 'text.primary' }}>
-          {z.map((x, j) => x.feld ? <Feld key={j} ton={x.feld} klein>{x.text}</Feld> : <span key={j}>{x.text}</span>)}
+          {z.map((x, j) => x.feld ? <Feld key={j} ton={x.feld} klein alt={x.alt}>{x.text}</Feld> : <span key={j}>{x.text}</span>)}
         </Typography>
       ))}
       {g.status && <Box sx={{ mt: '3px' }}><StatusFeld s={g.status} klein /></Box>}
@@ -122,7 +122,7 @@ export function Kennzeichnungen() {
             <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'max-content minmax(0, 1fr)', columnGap: 1.25, rowGap: 0.5, alignItems: 'baseline' }}>
               {g.eintraege.map((e, i) => (
                 <Box key={i} sx={{ display: 'contents' }}>
-                  <Box component="dt" sx={{ m: 0 }}>{e.tag.feld ? <Feld ton={e.tag.feld}>{e.tag.text}</Feld>
+                  <Box component="dt" sx={{ m: 0 }}>{e.tag.feld ? <Feld ton={e.tag.feld} alt={e.tag.alt}>{e.tag.text}</Feld>
                     : <Box component="span" sx={{ fontSize: 12, fontWeight: 600, color: 'text.primary' }}>{e.tag.text}</Box>}</Box>
                   <Box component="dd" sx={{ m: 0, fontSize: 13, color: 'text.secondary' }}>{e.satz}</Box>
                 </Box>
