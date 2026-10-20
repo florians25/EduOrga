@@ -86,7 +86,8 @@ kbd {
 .fa-k-alt { color: var(--colorNeutralForeground3); font-weight: 400; margin-left: 4px; }
 .fa-tag {
   align-self: flex-start; max-width: 100%; margin-top: auto; padding: 0 3px; border-radius: 3px; font-size: 11px; font-weight: 600; line-height: 15px;
-  overflow: hidden; text-overflow: ellipsis; text-decoration: none; box-sizing: border-box;
+  overflow: hidden; text-decoration: none; box-sizing: border-box; white-space: normal; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
 .fa-tag-offen { color: var(--up-offen-text, var(--colorNeutralForeground2)); background: var(--up-offen-feld, var(--colorNeutralBackground3)); border: 1px dashed var(--up-offen, var(--colorNeutralStroke1)); }
 .fa-tag-neu { color: var(--up-aenderung-text, var(--up-aenderung)); background: var(--up-aenderung-flaeche); border: 1px solid color-mix(in srgb, var(--up-aenderung) 55%, transparent); }

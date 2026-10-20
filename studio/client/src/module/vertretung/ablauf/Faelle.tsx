@@ -51,7 +51,7 @@ function ergebnisText(f: Fall) {
   if (f.zustand === 'offen') return 'offen';
   return f.ergebnis || 'gelöst';
 }
-const ergebnisArt = (f: Fall) => (f.zustand !== 'erledigt' ? 'offen' : f.teile.every((t) => t.entfall) ? 'entfall' : 'geaendert');
+const ergebnisArt = (f: Fall) => (f.zustand !== 'erledigt' ? 'offen' : f.teile.every((t) => t.entfall && t.text !== 'Vorziehung') ? 'entfall' : 'geaendert');
 
 // ---------------------------------------------------------------------------------------------
 // Leiste: der Tag der Klasse (bzw. Lehrkraft) – je Stunde eine feste Spalte
@@ -70,7 +70,7 @@ function Karte({ e, mehr, lehrer }: { e: ME; mehr: number; lehrer: boolean }) {
   return (
     <>
       <span className="fa-k-fach">{e.f || e.art || '—'}{e.fa ? <s className="fa-k-alt">{e.fa}</s> : null}{mehr > 0 ? <span className="fa-k-mehr">{`+${mehr}`}</span> : null}</span>
-      {e.s === 'o' && !lehrer ? <span className="fa-k-zeile">{e.la || e.l}</span> : null}
+      {e.s === 'o' ? <span className="fa-k-zeile">{lehrer ? e.k : e.la || e.l}</span> : null}
       {e.s === 'o' || e.s === 'e' || e.s === 'x' ? null : (
         <span className="fa-k-zeile">
           {statt && (e.s === 'v' || e.s === 'r') ? <><b className="fa-k-neu">{zweit || '?'}</b><s className="fa-k-alt">{`(${statt})`}</s></> : <span>{zweit}</span>}
@@ -105,10 +105,10 @@ function Leiste({ zeile, stunden, lehrer, gewaehlt, faelle, beiWahl, ziele }: {
         const titel = e ? es.map((x) => `${x.f} ${lehrer ? x.k : x.l || x.la} ${x.r}${x.t ? ` – ${x.t}` : ''}`.trim()).join('\n') : a ? a.t || 'abwesend' : '';
         return (
           <div key={s.nr} role="gridcell" data-stunde={s.nr} data-status={e ? e.s : a ? 'abw' : 'leer'} data-v={e?.v ?? undefined} title={titel || undefined}
-            className={mergeClasses('fa-karte', e ? `fa-st-${e.s}` : a ? 'fa-st-abw' : 'fa-st-leer', sel && 'gewaehlt', !!fall && 'fall', ziel && 'ziel')}
+            className={mergeClasses('fa-karte', e ? `fa-st-${e.s}` : a && !lehrer ? 'fa-st-abw' : 'fa-st-leer', sel && 'gewaehlt', !!fall && 'fall', ziel && 'ziel')}
             onClick={() => { if (fall) beiWahl(fall); }}
             onDoubleClick={() => { if (e) miniplanOeffnen(lehrer ? 'klasse' : 'lehrer', lehrer ? e.ki : e.li ?? e.lo, lehrer ? e.k.split(',')[0]! : (e.l || e.la).split(',')[0]!); }}>
-            {e ? <Karte e={e} mehr={new Set(es.map((x) => `${x.f}|${x.l}|${x.s}`)).size - 1} lehrer={lehrer} /> : a ? <span className="fa-k-zeile">{a.t || (a.a === 'termin' ? 'Termin' : 'abwesend')}</span> : null}
+            {e ? <Karte e={e} mehr={new Set(es.map((x) => `${x.f}|${x.l}|${x.s}`)).size - 1} lehrer={lehrer} /> : a && !lehrer ? <span className="fa-k-zeile">{a.t || (a.a === 'termin' ? 'Termin' : 'Klasse abwesend')}</span> : null}
           </div>
         );
       })}
@@ -321,7 +321,7 @@ function Verlegen({ fall, schreiben, aktion, setVerlegen, datum, ziele, arbeitet
               <li key={`${v.datum}-${v.stunde}-${v.u}`} className="fa-vz">
                 <span className="fa-vz-text">
                   <b>{`${v.datum === datum ? '' : `${v.tag} `}${v.stunde}. Std. ${v.fach}`}</b><span>{` ${v.lehrer}`}</span>
-                  <span className="fa-leise">{v.art === 'Randstunde' ? `– danach entfällt die ${v.stunde}. Stunde` : '– es entsteht eine neue Lücke'}</span>
+                  <span className="fa-leise">{v.art === 'Randstunde' ? '– Randstunde, keine neue Lücke' : `– neue Lücke in der ${v.stunde}.`}</span>
                 </span>
                 <Button size="small" disabled={!schreiben || arbeitet} data-testid="fa-vorziehen"
                   onClick={() => aktion(() => vorziehen(id!, v), `${fall.klassen}: ${v.stunde}. Std. ${v.fach} in die ${luecke}. vorgezogen`)}>Vorziehen</Button>

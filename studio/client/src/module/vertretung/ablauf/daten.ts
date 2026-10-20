@@ -207,9 +207,9 @@ an('vertretung.datum', () => fallCacheLeeren());
 /** Hinweis zur Vertretung (Text im Vertretungsplan, z. B. „Aufgaben im Lernraum“). */
 export const hinweisSetzen = (ids: number[], text: string) => api.post(vpfad('/aendern'), { ids, spalte: 'Text', wert: text }, { quelle: QUELLE });
 export const vorziehen = (id: number, z: { datum: string; stunde: number; u: number | null }) =>
-  api.post(vpfad(`/vorschlag/${id}/vorziehen`), { datum: z.datum, stunde: z.stunde, unterricht: z.u }, { quelle: QUELLE });
+  api.post(vpfad(`/vorschlag/${id}/vorziehen`), { datum: z.datum, stunde: z.stunde, unterricht: z.u, alle: true }, { quelle: QUELLE });
 export interface Vorziehung { lehrer: string; tag: string; datum: string; stunde: number; klassen: string; fach: string; raum: string; art: string; beschreibung: string; u: number | null }
-export const vorziehungenLaden = (id: number) => api.get<{ vorziehungen: Vorziehung[] }>(vpfad(`/vorschlag/${id}`)).then((r) => r.vorziehungen);
+export const vorziehungenLaden = (id: number) => api.get<Vorziehung[]>(vpfad(`/tagesablauf/fallverlegungen?id=${id}`));
 
 /** Zahlen und Auftrag „Vorschläge für alle“ – zwischen „Fall für Fall“ und dem Kopf der Tagesplanung. */
 export const useFallKopf = create<{ offen: number; erledigt: number; anfrage: number; laeuft: boolean; vorschlaege: number }>(() => ({ offen: 0, erledigt: 0, anfrage: 0, laeuft: false, vorschlaege: 0 }));

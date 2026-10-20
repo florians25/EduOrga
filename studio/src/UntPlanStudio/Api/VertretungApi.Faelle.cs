@@ -26,6 +26,20 @@ public sealed partial class VertretungApi
             var menge = IdListe(ids, 12);
             return FallKandidaten(doc.Daten, doc.Index, doc.Daten.Vertretungen.Where(v => menge.Contains(v.Id)).ToList(), Math.Clamp(anzahl ?? 5, 1, 40));
         }));
+        // Verlegen: Stunden der Klasse, die sich in die Lücke vorziehen lassen (alle Möglichkeiten; Randstunden zuerst – dann entsteht keine neue Lücke)
+        g.MapGet("/tagesablauf/fallverlegungen", (Arbeitsdokument a, int id) => a.LesenAsync(doc =>
+        {
+            var d = doc.Daten;
+            var v = d.Vertretungen.FirstOrDefault(x => x.Id == id) ?? throw StudioFehler.NichtGefunden($"Die Vertretung Nr. {id}");
+            if (!v.Offen || v.Art == VertretungsArt.Pausenaufsicht) return new List<object>();
+            return VertretungsVorschlag.Vorziehungen(d, v, VorziehungsModus.AlleVerlegungen)
+                .OrderBy(x => x.Datum == v.Datum ? 0 : 1).ThenBy(x => x.Randstunde ? 0 : 1).ThenBy(x => x.Datum).ThenByDescending(x => x.Stunde).Take(12)
+                .Select(vz => (object)new
+                {
+                    lehrer = vz.Lehrer, tag = $"{VertretungPlan.TagKurz(vz.Datum)} {vz.Datum.Day}.{vz.Datum.Month}.", datum = vz.Datum, stunde = vz.Stunde, klassen = vz.Klassen,
+                    fach = vz.Fach, raum = vz.Raum, art = vz.Randstunde ? "Randstunde" : "erzeugt neue Lücke", beschreibung = vz.Beschreibung, u = vz.Eintrag.Unterricht?.Id,
+                }).ToList();
+        }));
         g.MapPost("/tagesablauf/fallvorschlaege", (Arbeitsdokument a, FallVorschlaegeAnfrage z, ClaimsPrincipal p) => a.LesenAsync(doc => FallVorschlaege(doc, z.Datum, B(p))));
     }
 
@@ -49,7 +63,10 @@ public sealed partial class VertretungApi
     {
         if (v.Offen) return "";
         if (v.RaumOffen) return "Raum fehlt";
-        if (v.IstEntfall) return v.Text == "Vorziehung" ? "Entfall (vorgezogen)" : "Entfall";
+        if (v.IstEntfall && v.Text == "Vorziehung")
+            return d.Vertretungen.FirstOrDefault(x => x.Datum == v.Datum && x.Stunde == v.Stunde && x.Art == VertretungsArt.Verlegung && x.VonStunde.HasValue && x.KlassenIds.Intersect(v.KlassenIds).Any()) is { } z
+                ? $"{ix.KFach(z.FachId)} aus der {(z.VonDatum is DateOnly vd && vd != v.Datum ? $"{VertretungPlan.TagKurz(vd)} " : "")}{z.VonStunde}. vorgezogen" : "vorgezogen";
+        if (v.IstEntfall) return "Entfall";
         if (v.Art is VertretungsArt.VertretungOhneLehrer) return "ohne Lehrkraft";
         if (v.Art is VertretungsArt.EigenverantwortlichesArbeiten) return "EVA";
         if (v.VertreterId is int l && v.Mitbetreuung) return $"zusammengelegt, {ix.KLehrer(l)} betreut";

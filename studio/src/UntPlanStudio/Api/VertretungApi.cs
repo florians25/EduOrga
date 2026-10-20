@@ -20,7 +20,8 @@ public sealed record AutomatikAnfrage(DateOnly Von, DateOnly? Bis, string Method
 public sealed record VaLehrerAnfrage(int Id, string? Wert, Dictionary<string, int>? Antworten = null);
 public sealed record UebernehmenAnfrage(int Lehrer, List<int>? Ids, bool Block = false, bool Dauer = false);
 public sealed record RaumAnfrage(int? Raum, bool Zusatz, List<int>? Ids, bool Block = false, Dictionary<string, int>? Antworten = null);
-public sealed record VorziehenAnfrage(DateOnly Datum, int Stunde, int? Unterricht);
+/// <param name="Alle">Alle möglichen Vorziehungen zulassen (Ansicht „Fall für Fall“ → Verlegen), nicht nur die nach der Einstellung vorgeschlagenen.</param>
+public sealed record VorziehenAnfrage(DateOnly Datum, int Stunde, int? Unterricht, bool Alle = false);
 public sealed record AbsenzEingabe(int Id, string? Element, DateOnly Von, DateOnly? Bis, int? Sv, int? Sb, string? Grund, string? Text, string? Begleit);
 public sealed record AbsenzSpeichern(string Art, List<AbsenzEingabe> Neu, List<int>? Alt, string? Text = null);
 public sealed record AbsenzNachfrage(string Art, List<int>? Ids, int? Va, int? Lehrer, List<DateOnly>? Tage, int? Absenz);
@@ -935,7 +936,7 @@ public sealed partial class VertretungApi : IStudioModul
             a.AendernAsync(B(p), "Vorziehung", V, d =>
             {
                 var v = d.Vertretungen.FirstOrDefault(x => x.Id == id) ?? throw StudioFehler.NichtGefunden($"Die Vertretung Nr. {id}");
-                var vz = VertretungsVorschlag.Vorziehungen(d, v).FirstOrDefault(x => x.Datum == z.Datum && x.Stunde == z.Stunde && (z.Unterricht is null || x.Eintrag.Unterricht?.Id == z.Unterricht))
+                var vz = VertretungsVorschlag.Vorziehungen(d, v, z.Alle ? VorziehungsModus.AlleVerlegungen : null).FirstOrDefault(x => x.Datum == z.Datum && x.Stunde == z.Stunde && (z.Unterricht is null || x.Eintrag.Unterricht?.Id == z.Unterricht))
                          ?? throw StudioFehler.Ungueltig("Die Vorziehung ist nicht mehr möglich.");
                 VertretungsVorschlag.VorziehungAusfuehren(d, v, vz, B(p));
             }, _ => new { ok = true }));
