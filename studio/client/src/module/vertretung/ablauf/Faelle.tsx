@@ -54,6 +54,8 @@ const stdText = (s: number[]) => (s.length > 1 ? `${s[0]}.–${s[s.length - 1]}.
 const offen = (f: Fall) => f.zustand !== 'erledigt';
 const merkSchluessel = () => `vertretung.faelle.${useStudio.getState().benutzer?.name || ''}`;
 const gruppenName = (f: Fall) => (f.gruppe ? `${f.fach} (${f.gruppe})` : f.fach);
+/** „Latein (Gr. 2)“ – Langname mit Gruppe; bei parallelen Gruppen „F (Gr. 1) + L (Gr. 2)“ */
+const langName = (f: Fall) => (f.parallel ? f.fach : `${f.fachLang || f.fach}${f.gruppe ? ` (${f.gruppe})` : ''}`);
 const fehlenText = (f: Fall) => (f.lehrer ? `${f.lehrer} ${f.lehrerIds.length > 1 ? 'fehlen' : 'fehlt'}` : '');
 const ZIELTEXT: Record<ZielStatus, string> = { quelle: 'gezogen', frei: 'frei', luecke: 'in die Lücke', tausch: 'Tausch', abwesend: 'Lehrkraft fehlt', kollision: 'belegt' };
 
@@ -257,7 +259,7 @@ function Kopf({ fall, satz }: { fall: Fall; satz?: Fall | null }) {
   return (
     <div className="fa-e-kopf">
       <div className="fa-e-zeit">{`${fall.pause ? `Aufsicht nach der ${fall.stunden[0]}.` : `${stdText(fall.stunden)} Stunde`} · ${fall.zeit}`}</div>
-      <h3 className="fa-e-titel">{fall.klassen || fall.raum}<span>{satz ? gruppenName(fall) : fall.parallel ? fall.fach : fall.fachLang || fall.fach}</span></h3>
+      <h3 className="fa-e-titel">{fall.klassen || fall.raum}<span>{satz ? gruppenName(fall) : fall.parallel ? fall.fach : langName(fall)}</span></h3>
       <div className="fa-e-meta">
         {fall.parallel ? <span>{fehlenText(fall)}</span> : fall.lehrer ? (
           <button type="button" className="fa-link" onClick={() => miniplanOeffnen('lehrer', fall.lehrerId, fall.lehrer)} title={`Tag von ${fall.lehrerName || fall.lehrer} als Miniplan`}>
@@ -586,7 +588,7 @@ function Verlegen(p: EntscheidungProps) {
     <section className="fa-e-abschnitt" data-testid="fa-verlegen-liste">
       <div className="fa-e-label">{`Andere Stunde in die ${luecke}. Stunde vorziehen`}</div>
       {liste === null ? <div className="fa-leise fa-laedt"><Spinner size="extra-tiny" /> Wird gesucht …</div>
-        : !liste.length ? <div className="fa-leise">Keine Stunde lässt sich vorziehen. Eine Stunde der Leiste lässt sich auch direkt verschieben (ziehen).</div> : (
+        : !liste.length ? <div className="fa-leise" data-testid="fa-vz-leer">Keine Stunde lässt sich vorziehen.</div> : (
           <ul className="fa-vorziehen">
             {liste.slice(0, 8).map((v) => <VorziehZeile key={`${v.datum}-${v.stunde}-${v.u}`} v={v} p={p} id={id!} luecke={luecke} />)}
           </ul>
@@ -981,7 +983,7 @@ export default function Faelle() {
                   <div key={x.schluessel} role="option" aria-selected={x.schluessel === fall?.schluessel} className={mergeClasses('fa-fall', x.schluessel === fall?.schluessel && 'gewaehlt')}
                     data-schluessel={x.schluessel} data-zustand={x.zustand} data-parallel={x.parallel?.length} onClick={() => waehlen({ gruppe: gruppe.id, fall: x.schluessel })}>
                     <span className="fa-fall-std">{x.pause ? `nach ${x.stunden[0]}.` : stdText(x.stunden)}</span>
-                    <span className="fa-fall-was"><b>{modus === 'lehrer' || !x.klassenIds.length ? `${x.klassen} ${x.parallel ? x.fach : x.fachLang || x.fach}`.trim() : x.parallel ? x.fach : x.fachLang || x.fach}</b>
+                    <span className="fa-fall-was"><b>{modus === 'lehrer' || !x.klassenIds.length ? `${x.klassen} ${langName(x)}`.trim() : langName(x)}</b>
                       <span className="fa-leise">{modus === 'lehrer' ? (x.raum ? `Raum ${x.raum}` : '') : `${fehlenText(x)}${x.grund ? ` (${x.grund})` : ''}${x.klassenIds.length > 1 && gruppe.elementId ? ` · mit ${x.klassen.split(',').filter((kk) => kk !== gruppe.k).join(',')}` : ''}`}</span>
                     </span>
                     <span className={mergeClasses('fa-fall-ergebnis', art)} data-testid="fa-fall-ergebnis">

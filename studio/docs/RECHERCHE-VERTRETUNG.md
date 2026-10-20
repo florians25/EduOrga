@@ -87,3 +87,44 @@ Klassen* bzw. *Lehrkräften* im Menü *Ansicht*.
 12. Vertretungskonzept eines Bremer Gymnasiums (Arten von Abwesenheit, Einsatz der Software): https://309.sixcms.schule.bremen.de/sixcms/media.php/13/Vertretungskonzept%20Gymnasium%20Horn%20Stand%202026%20-%20Version%20Homepage.pdf
 13. Übersicht von Werkzeugen zur Vertretungsplanung (Anbieterseite, kritisch gelesen): https://www.ki-syndikat.de/usecases/bildung/19-vertretungsplanung/
 14. Offene Anzeige-Apps: https://github.com/Skn0tt/vplan, https://f-droid.org/packages/io.vertretungsplan.client.android/
+
+## Nachtrag: NRW-Praxis – Gruppen, Mehrarbeit, Unterrichtsstatistik (Oktober 2026)
+
+Kurze Prüfung gegen Vorgaben und Schulkonzepte in Nordrhein-Westfalen (Websuche; die Seiten selbst ließen sich wieder nicht
+abrufen, ausgewertet wurden die Suchauszüge). Daraus übernommen, soweit einfach und für die Tagesplanung relevant:
+
+* **Unterrichtsstatistik.** NRW erhebt seit 2018/19 flächendeckend an allen öffentlichen Schulen den Unterrichtsausfall
+  („Unterrichtsausfallstatistik mit Detailerhebung“). Unterschieden werden u. a. Unterricht gemäß Stundenplan, Vertretung im
+  vorgesehenen Fach, fachfremde Vertretung, eigenverantwortliches Arbeiten (EVA, Oberstufe) und ersatzloser Ausfall; 2023/24
+  z. B. 8,1 % Vertretung bei unveränderter Lerngruppe, 1,4 % EVA, 4,8 % ersatzloser Ausfall, 2024/25 3,0 % Ausfall und 10,0 %
+  vertreten (davon 5,2 % im vorgesehenen Fach). *(Quellen 15–18)* → **Umgesetzt:** „Stand des Tages“ unter der Klassenliste in
+  „Fall für Fall“ zählt die Unterrichtsstunden der Fälle in diesen Kategorien (im Fach, fachfremd, zusammengelegt, ohne
+  Lehrkraft/EVA, verlegt, Ausfall, offen). Das ist eine Orientierung beim Planen („wie viel fällt heute aus, wie viel ist
+  fachgerecht vertreten?“), keine Meldung; gemeldet wird weiterhin aus der Zählung bzw. dem Schulverwaltungsprogramm.
+* **Mehrarbeit.** Lehrkräfte leisten Mehrarbeit, wenn zwingende dienstliche Gründe es erfordern (ADO); vergütet wird
+  Unterrichtsmehrarbeit nach BASS 21-22 Nr. 21, wenn im Kalendermonat mehr als drei Unterrichtsstunden über die Pflichtstunden
+  hinaus geleistet werden (dann ab der ersten Stunde), höchstens 288 Stunden im Jahr, bei Teilzeit anteilig. *(Quellen 19–21)*
+  Studio rechnete das schon in der Abrechnung (`Statistik.MehrarbeitNrw`, Grenze anteilig nach Teilzeitquote).
+  → **Umgesetzt:** Die Gründe eines Kandidaten nennen bei Lehrkräften ohne Bereitschaft bzw. Freisetzung die Mehrarbeit im Monat
+  („Mehrarbeit, 3. Std. im Monat – ab hier vergütet“), damit man gerecht verteilt und Vergütungsschwellen sieht.
+* **Vertretungskonzepte** der Schulen (Beispiele aus NRW) betonen: Vertretungsunterricht ist Unterricht; Fachlehrkräfte
+  stellen Material bereit; drohender Ausfall wird zuerst über die Auflösung von Doppelbesetzungen und das Zusammenlegen von
+  Lerngruppen aufgefangen. *(Quellen 22–24)* → **Umgesetzt:** Gruppen zur selben Zeit (Teilungsgruppen, Kurse, Kopplungen) sind
+  ein Fall, der sich mit *einer* Lehrkraft für alle Gruppen lösen lässt (die erste Gruppe vertritt sie, die übrigen betreut sie
+  mit) oder je Gruppe einzeln; fehlt nur die Lehrkraft einer Gruppe, steht *Zusammenlegen (gekoppelt)* mit der Lehrkraft der
+  anderen Gruppe vorn. Zusammenlegen im Block geht auch Stunde für Stunde mit verschiedenen Klassen. Ein Hinweis für den
+  Vertretungsplan („Aufgaben im Lernraum“) war schon da.
+* **Nicht umgesetzt** (bewusst): eine eigene Kategorie „Aufhebung von Doppelbesetzung“ (Studio kennt Doppelbesetzungen nur als
+  Kopplung, die Freisetzung zählt schon getrennt), Monats-/Jahresberichte in den Kategorien der Landesstatistik (gehört in
+  *Statistik und Abrechnung*), Höchstgrenze 288 Std./Jahr als Warnung (selten erreicht; Wochen-/Monatshöchstzahl je Lehrkraft gibt es).
+
+15. Schulministerium NRW, Bericht Unterrichtsausfall 2017/18: https://www.schulministerium.nrw/sites/default/files/documents/Bericht_Unterrichtsausfall-NRW2017-18.pdf
+16. Schulministerium NRW, Bericht Unterrichtsausfall: https://www.schulministerium.nrw/sites/default/files/documents/Bericht-Unterrichtsausfall.pdf
+17. Land NRW, Unterrichtsstatistik 2023/24: https://www.land.nrw/pressemitteilung/schulministerium-legt-detaillierte-unterrichtsstatistik-fuer-schuljahr-20232024
+18. Land NRW, Unterrichtsstatistik 2024/25: https://www.land.nrw/pressemitteilung/schulministerium-legt-unterrichtsstatistik-fuer-schuljahr-202425-vor
+19. BASS 21-22 Nr. 21 (Mehrarbeit und nebenamtlicher Unterricht im Schuldienst): https://bass.schule.nrw/1057.htm
+20. MSB NRW, Ausfüllanleitung A Bes 23 (Mehrarbeit, Drei-Stunden-Regel): https://schulverwaltungsprogramme.msb.nrw.de/download/Ausfuellanleitung_A_Bes_23.pdf
+21. Hinweise zur Mehrarbeit (Schule in NRW, LOGINEO): https://503204.logineonrw-lms.de/pluginfile.php/4773/mod_label/intro/260625%20Hinweise%20zur%20Mehrarbeit.pdf
+22. Schulministerium NRW, Vermeidung von Unterrichtsausfall: https://www.schulministerium.nrw/themen/schulsystem/unterricht/vermeidung-von-unterrichtsausfall
+23. Vertretungskonzept der Fridtjof-Nansen-Realschule Gronau: https://fnrs.gronau.de/:translation/ro/fridtjof-nansen-realschule/dokumente/vertretungskonzept.pdf?cid=hy1
+24. Vertretungskonzepte NRW (Beispiele): https://nrw.edumaps.de/file/1075955918937949576.docx/vjsa0be, https://124552.logineonrw-lms.de/pluginfile.php/3289/unilabeltype_accordion/content/1368/Vertretungskonzept.pdf

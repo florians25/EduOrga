@@ -57,22 +57,41 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   Stunde bzw. ein Block (Doppelstunde = ein Fall). Links die Klassen mit Fällen in fester Reihenfolge („5a · 2 offen“ → „erledigt“
   an derselben Stelle; wahlweise *Abwesende*), in der Mitte der Tag der Klasse als Leiste mit festen Spalten je Stunde und ihre
   Fälle, rechts die fünf besten Lehrkräfte für den ganzen Block mit Gründen in Worten („frei 1.–2. · Bereitschaft · unterrichtet
-  die 5a · Fach Englisch“) und *Übernehmen* mit einem Klick bzw. Enter. Daneben *Entfall*, *Verlegen* (eine andere Stunde der
-  Klasse in die Lücke vorziehen – die Leiste zeigt „von 6.“ bzw. „verlegt auf 1.“ an ihren Stunden), *Zusammenlegen*, *Ohne
-  Lehrkraft* und *Eigene Lösung* (Lehrkraft frei wählen, Raum, Vormerkung). Danach ist der nächste offene Fall gewählt; nichts
-  ordnet sich um. *Vorschläge für alle* schlägt blockweise für alle offenen Fälle eine Lösung vor (zur Prüfung, ohne Änderung).
-  Tasten: ↑/↓, 1–5, Enter, E, V, B, O, Z (rückgängig).
+  die 5a · Fach Englisch · Mehrarbeit, 3. Std. im Monat – ab hier vergütet“) und *Übernehmen* mit einem Klick bzw. Enter. Daneben
+  *Entfall*, *Verlegen* (eine andere Stunde der Klasse in die Lücke vorziehen – die Leiste zeigt „von 6.“ bzw. „verlegt auf 1.“ an
+  ihren Stunden), *Zusammenlegen* (im Block auch Stunde für Stunde mit verschiedenen Klassen), *Ohne Lehrkraft* und *Eigene Lösung*
+  (Lehrkraft frei wählen, Raum, Vormerkung). Danach ist der nächste offene Fall gewählt; nichts ordnet sich um. *Vorschläge für
+  alle* schlägt blockweise für alle offenen Fälle eine Lösung vor (zur Prüfung, ohne Änderung). Tasten: ↑/↓, 1–5, Enter, E, V, B,
+  O, G, Z (rückgängig).
+  * **Gruppen zur selben Zeit:** Teilungsgruppen, Kurse und Kopplungen (zwei fehlende Lehrkräfte gleichzeitig, Religion über zwei
+    Klassen) sind *ein* Fall „1.–2. · F (Gr. 1) + L (Gr. 2)“; die Leiste zeigt die Gruppen übereinander in ihrer Spalte. Rechts:
+    *Eine Lehrkraft für beide Gruppen (zusammengelegt)* – Kandidaten, die in allen Stunden aller Gruppen frei sind; die erste Gruppe
+    vertritt sie, die übrigen betreut sie mit (eine Rückgängig-Stufe) – oder je Gruppe *Einzeln lösen* (andere Lehrkraft, Entfall
+    nur einer Gruppe; Taste G). Gekoppelter Unterricht mehrerer Klassen steht in jeder Klasse und wird einmal gelöst.
+  * **Verlegen per Ziehen:** eine Stunde bzw. Doppelstunde der Leiste (Umschalt: nur diese Stunde) oder eine Stunde aus der Liste
+    *Verlegen* auf eine andere Stunde ziehen. Beim Ziehen zeigt jede Stunde der Leiste ihren Stand mit Grund („frei“, „in die
+    Lücke“, „Tausch mit SP (VOT)“, „belegt – KER unterrichtet 7b“, „Lehrkraft fehlt“), darunter erscheint – über der Fallliste,
+    ohne dass sich etwas verschiebt – der Tag der beteiligten Lehrkraft und des Raums in denselben Spalten. Ablegen in der Lücke
+    ist dasselbe Vorziehen wie der Knopf, sonst die Verlegung des Tagesplans (mit den Rückfragen Tausch/Kollision); Z macht es
+    rückgängig. Ohne Maus bleibt V.
+  * **Stand des Tages** unter der Klassenliste in den Kategorien der NRW-Unterrichtsstatistik: im Fach vertreten, fachfremd,
+    zusammengelegt, ohne Lehrkraft/EVA, verlegt, Ausfall, offen (siehe `docs/RECHERCHE-VERTRETUNG.md`).
 
   | 13-Zoll-Notebook (1280 × 800) | Nach dem Übernehmen | Verlegen: Stunde vorgezogen |
   |---|---|---|
   | ![Doppelstunde](docs/bilder/tagesplanung-1280-doppelstunde.png) | ![Übernommen](docs/bilder/tagesplanung-1280-uebernommen.png) | ![Vorgezogen](docs/bilder/tagesplanung-1280-vorgezogen.png) |
 
-  | 1440 × 900 | Vorschläge für alle | Nach abwesender Lehrkraft |
+  | Gruppen zur selben Zeit | Eine Lehrkraft für beide Gruppen | Je Gruppe: Gr. 2 Entfall |
   |---|---|---|
-  | ![Doppelstunde 1440](docs/bilder/tagesplanung-1440-doppelstunde.png) | ![Vorschläge](docs/bilder/tagesplanung-1440-vorschlaege.png) | ![Abwesende](docs/bilder/tagesplanung-1440-abwesende.png) |
+  | ![Parallele Gruppen](docs/bilder/tagesplanung-1280-parallel.png) | ![Zusammengelegt](docs/bilder/tagesplanung-1280-parallel-zusammengelegt.png) | ![Gruppe einzeln](docs/bilder/tagesplanung-1280-gruppe-einzeln.png) |
 
-  Aufnahmen mit der Lastschule aus dem Test (`Grossschule.cs`: 300 Lehrkräfte, 60 Klassen) und 15 Abwesenheiten (57 Fälle,
-  72 offene Stunden). Kandidaten für einen Block kommen in etwa 0,1–0,4 s vom Server, die Vorschläge für alle in wenigen Sekunden.
+  | Ziehen: Stand je Stunde und Tag der Lehrkraft | Vorschläge für alle (1440 × 900) | Nach abwesender Lehrkraft (1440 × 900) |
+  |---|---|---|
+  | ![Ziehen](docs/bilder/tagesplanung-1280-ziehen.png) | ![Vorschläge](docs/bilder/tagesplanung-1440-vorschlaege.png) | ![Abwesende](docs/bilder/tagesplanung-1440-abwesende.png) |
+
+  Aufnahmen mit der Lastschule aus dem Test (`Grossschule.cs`: 300 Lehrkräfte, 60 Klassen, Religion je zwei Klassen gekoppelt,
+  ab Jahrgang 7 Wahlpflicht geteilt) und 15 Abwesenheiten (davon beide Lehrkräfte einer geteilten Klasse; etwa 53 Fälle, 80
+  offene Stunden). Kandidaten für einen Block kommen in etwa 0,1–0,4 s vom Server, die Vorschläge für alle in wenigen Sekunden.
 * **Übersicht:** Kennzahlen der Schuldatei, Planqualität und häufige Aufgaben.
 * **Darstellung:** Marke EduOrga (`design/MARKE.md`): Primärfarbe Petrol #164C55 (Logo, Seitenleiste, Knöpfe), Akzent #28747A
   (aktive Bereiche, Links, Fokus), Seitenhintergrund #F5F7F8, Text #24363B; Fluent-Thema aus der Petrol-Reihe (`client/src/theme.ts`).
@@ -130,7 +149,8 @@ STUDIO_TEST_MYSQL="Server=127.0.0.1;Port=3306;User ID=root;Password=…" dotnet 
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke.cjs            # Rundgang über alle Seiten
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/planung.cjs          # Planen, Ziehen, Optimierung
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs       # Vertretungsplanung
-# Tagesplanung „Fall für Fall“ mit großer Schule (300 Lehrkräfte, 60 Klassen, 15 Abwesenheiten) bei 1280×800 und 1440×900:
+# Tagesplanung „Fall für Fall“ mit großer Schule (300 Lehrkräfte, 60 Klassen, Gruppen und Kopplungen, 15 Abwesenheiten) bei
+# 1280×800 und 1440×900 – Doppelstunde, Verlegen, Gruppen gemeinsam/einzeln lösen, Verlegen per Ziehen mit Lehrerplan:
 STUDIO_GROSSSCHULE=/tmp/gross.up dotnet test studio/tests/UntPlanStudio.Tests --filter GrosseSchuleMitFuenfzehnAbwesenheiten
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 STUDIO_GROSSSCHULE=/tmp/gross.up node studio/tests/smoke/tagesplanung-gross.cjs
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/druck.cjs            # Einstellungen, Druck, Formate

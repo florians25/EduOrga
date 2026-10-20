@@ -452,7 +452,7 @@ Seitenleiste auf dieser Seite von selbst ein; der Menüknopf oben links bzw. **S
 
 #### Fall für Fall (Standard)
 
-![Fall für Fall: Doppelstunde der 10i, die fünf besten Lehrkräfte für beide Stunden](../studio/docs/bilder/tagesplanung-1280-doppelstunde.png)
+![Fall für Fall: Doppelstunde Latein (Gr. 2) der 7g, die fünf besten Lehrkräfte für beide Stunden](../studio/docs/bilder/tagesplanung-1280-doppelstunde.png)
 
 Ein **Fall** ist eine Stunde bzw. ein Block, der vertreten werden muss: aufeinanderfolgende Stunden desselben Unterrichts
 derselben fehlenden Lehrkraft (die Doppelstunde Englisch 1.–2. ist *ein* Fall). Ein Fall bleibt stehen, wenn er gelöst ist –
@@ -483,9 +483,45 @@ die Seite ordnet sich beim Arbeiten nie um.
   Optional ein **Hinweis für den Vertretungsplan** („Aufgaben im Lernraum“).
 - Nach jeder Entscheidung ist der **nächste offene Fall** gewählt – erst in derselben Klasse, dann in der nächsten. Oben
   rechts steht „10i 1.–2. M: MOR eingetragen“ mit **Rückgängig** (Z). Ein gelöster Fall zeigt sein Ergebnis mit
-  *Zurücksetzen*.
+  *Zurücksetzen*. Wählen Sie währenddessen selbst einen anderen Fall, bleibt Ihre Wahl stehen.
+- Bei **Zusammenlegen** im Block gilt: Betreut niemand alle Stunden, schlägt Studio Stunde für Stunde die nächstgelegene
+  Klasse vor („Zusammenlegen: 1. mit 7h (KAI), 2. mit 7c (MUE)“) – ein Klick, eine Rückgängig-Stufe.
+- Die Gründe nennen bei Lehrkräften ohne Bereitschaft die **Mehrarbeit** im Kalendermonat („Mehrarbeit, 3. Std. im Monat – ab
+  hier vergütet“; NRW: vergütet, wenn im Monat mehr als 3 Unterrichtsstunden – bei Teilzeit anteilig – geleistet werden).
+- **Unter der Klassenliste** steht der *Stand des Tages* in den Kategorien der NRW-Unterrichtsstatistik: „12 im Fach · 5
+  fachfremd · 2 zusammengelegt · 1 ohne Lehrkraft/EVA · 3 verlegt · 4 Ausfall · 37 offen“ (Unterrichtsstunden der Fälle).
 
-**Vorschläge für alle:** Der Server schlägt für jeden offenen Fall die beste Lösung vor – blockweise und der Reihe nach (wer
+**Gruppen zur selben Zeit.** Laufen in einer Klasse mehrere Stunden gleichzeitig – Teilungsgruppen (Französisch Gr. 1 und
+Latein Gr. 2), Kurse, gekoppelter Religionsunterricht, zwei fehlende Lehrkräfte zur selben Zeit –, sind sie **ein Fall**:
+„1.–2. · F (Gr. 1) + L (Gr. 2) · SCH, HAH fehlen“. Die Leiste zeigt die Gruppen in ihrer Spalte übereinander (halbe Höhe,
+Fach mit Gruppe, darunter Lehrkraft bzw. Stand). Rechts stehen die Gruppen mit ihrem Stand und darunter **Eine Lehrkraft für
+beide Gruppen (zusammengelegt)**: Lehrkräfte, die in allen Stunden aller Gruppen frei sind. *Übernehmen* (bzw. Enter) trägt sie
+für die erste Gruppe als Vertretung ein und lässt sie die übrigen Gruppen mitbetreuen – eine Rückgängig-Stufe. Soll jede Gruppe
+anders gelöst werden (eine andere Lehrkraft, Entfall nur für Gr. 2), wählen Sie **Einzeln lösen** an der Gruppe, klicken auf
+ihre Karte in der Leiste oder drücken **G** (alle → Gr. 1 → Gr. 2 → alle); oben steht dann „← Alle Gruppen“. Ist nur noch
+eine Gruppe offen, zeigt die Entscheidung die Kandidaten für diese Gruppe. Gekoppelter Unterricht mehrerer Klassen (Religion
+5a,5b) steht bei jeder Klasse und wird einmal gelöst – der Stand ist in beiden Klassen derselbe. Fehlt nur die Lehrkraft einer
+Gruppe, ist *Zusammenlegen mit … (gekoppelt)* meist die erste Wahl: die Lehrkraft der anderen Gruppe betreut mit.
+
+| Gruppen zur selben Zeit | Eine Lehrkraft für beide Gruppen | Je Gruppe: Gr. 2 Entfall |
+|---|---|---|
+| ![Parallele Gruppen](../studio/docs/bilder/tagesplanung-1280-parallel.png) | ![Zusammengelegt](../studio/docs/bilder/tagesplanung-1280-parallel-zusammengelegt.png) | ![Gruppe einzeln](../studio/docs/bilder/tagesplanung-1280-gruppe-einzeln.png) |
+
+**Verlegen per Ziehen.** Jede Stunde der Leiste lässt sich mit der Maus auf eine andere Stunde ziehen – eine Doppelstunde als
+Ganzes (mit gedrückter Umschalttaste nur die gegriffene Stunde); ebenso eine Stunde aus der Liste *Verlegen* (auch von einem
+anderen Tag) auf die Lücke. Sobald Sie ziehen, zeigt jede Stunde der Leiste, ob es dort geht: **frei** und **in die Lücke**
+grün, **Tausch** (mit der dortigen Stunde) bernsteinfarben, **belegt** bzw. **Lehrkraft fehlt** rot umrandet – jeweils mit dem
+Grund („KER unterrichtet 7b D“, „7a hat M (MUE)“, „Raum 6.07 belegt – anderer Raum“). Darunter erscheint, über der Liste der
+Fälle und ohne dass sich etwas verschiebt, der **Tag der Lehrkraft** der gezogenen Stunde (bei Kopplungen aller Lehrkräfte) und
+des **Raums** in denselben Spalten; die Stunde unter dem Mauszeiger ist dort markiert und oben steht ihr Stand in Worten.
+Loslassen in der Lücke ist dasselbe **Vorziehen** wie der Knopf (die Lücke zeigt „GE aus der 7. vorgezogen“), auf einer anderen
+Stunde die Verlegung des Tagesplans mit den gewohnten Rückfragen (Tausch, Kollision, Lehrkraft fehlt). Oben rechts steht die
+Änderung mit **Rückgängig** (Z). Ohne Maus bleibt **V**.
+
+![Ziehen: GE aus der 7. in die Lücke der 1. Stunde – Stand je Stunde, darunter der Tag von SCI und des Raums 6.07](../studio/docs/bilder/tagesplanung-1280-ziehen.png)
+
+**Vorschläge für alle:** Der Server schlägt für jeden offenen Fall die beste Lösung vor – blockweise, bei Gruppen eine
+Lehrkraft für alle Gruppen, und der Reihe nach (wer
 für die 1.–2. Stunde eingeplant ist, steht für spätere Fälle derselben Zeit nicht mehr zur Verfügung), sonst Entfall bei
 Randstunden. Geändert wird noch nichts: In der Mitte erscheint „56 Vorschläge zur Prüfung“ mit **Alle übernehmen** und
 **Verwerfen**, jede Zeile zeigt „Vorschlag MUE“, die Entscheidung oben den Vorschlag mit *Übernehmen* (bzw. Enter). Alle
@@ -496,10 +532,11 @@ Randstunden. Geändert wird noch nichts: In der Mitte erscheint „56 Vorschläg
 | ↑ / ↓ | vorheriger / nächster Fall (über die Klassen hinweg) |
 | Bild↑ / Bild↓ | vorherige / nächste Klasse |
 | 1 – 5 | Lehrkraft wählen |
-| Enter | gewählte Lehrkraft (bzw. den Vorschlag) übernehmen |
+| G | Gruppen eines Falls durchgehen (alle → Gr. 1 → Gr. 2 → alle) |
+| Enter | gewählte Lehrkraft (bzw. den Vorschlag) übernehmen – bei Gruppen für alle Gruppen |
 | E, V, B, O | Entfall, Verlegen, Zusammenlegen, ohne Lehrkraft |
 | Z | letzte Änderung rückgängig |
-| Esc | Verlegen schließen |
+| Esc | Verlegen schließen bzw. zurück zu allen Gruppen; beim Ziehen: abbrechen |
 | N | Abwesenheit erfassen |
 
 Auch große Schulen bleiben flüssig: Der Server liefert die Fälle des Tages und den Tag aller Klassen in einem Zug, die

@@ -129,7 +129,7 @@ const lage = (page) => page.evaluate(() => ({
       } else await page.click(`${fa} [data-testid=fa-gruppen] [data-offen]:not([data-offen="0"])`);
       await page.waitForSelector(`${fa} [data-testid=fa-kandidat], ${fa} [data-testid=fa-keine]`, { timeout: 15000 });
       await page.keyboard.press('v');
-      await page.waitForSelector(`${fa} [data-testid=fa-verlegen-liste] :is([data-testid=fa-vorziehen], .fa-leise:not(.fa-laedt))`, { timeout: 15000 });
+      await page.waitForSelector(`${fa} [data-testid=fa-verlegen-liste] :is([data-testid=fa-vorziehen], [data-testid=fa-vz-leer])`, { timeout: 15000 });
       await foto('4-verlegen');
       if (await page.locator(`${fa} [data-testid=fa-vorziehen]`).count()) {
         const l1 = await lage(page);
