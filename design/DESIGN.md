@@ -304,7 +304,7 @@ Musterkarte, rechts Titel, ein Satz und die Tags mit je einem Satz (Liste, keine
   `/api/monitor/…`; `planAktualisiert` auf der Startseite; PWA `studioStand`) = Zeitpunkt der letzten Übertragung aus EduOrga Studio
   (auch reine Vertretungspakete). Vollständiger Zeitpunkt in der Kurzinfo; älter als 24 Stunden an einem Schultag: Zusatz **„Daten evtl.
   nicht aktuell“** (Bernstein, als Text). Orte: Planseite unter der Kalenderwoche, Vertretungsplan, Mein Tag, Monitor (oben rechts),
-  PWA unter dem Plannamen und in „Mehr › Daten aktualisieren“.
+  PWA (wie iOS) unten auf „Heute“ und in „Profil › Daten aktualisieren“.
 
 **Gesuchter Plan wie „Mein Plan“:** Wer einen Plan sucht (Klasse, Lehrkraft, Raum), sieht genau dieselbe Ansicht wie beim eigenen
 Plan (Raster, Woche/Tag, Legende, Bedienung), Titel „Klasse 5a“, „Lehrkraft SNE“ bzw. „Raum R101“, daneben der Knopf **„Mein Plan“**
@@ -462,6 +462,11 @@ Grafik ersetzt Text, Typografie statt Kästen:
 * **Stunden:** je Stunde links Beginn (15) über Ende (11), rechts eine Stundenkarte v7 mit zwei Zeilen – **Fach 17/600**, darunter
   Klasse bzw. Lehrkraft und Raum (15, geänderte Werte grün 600 „105 (3̶0̶3̶)“) –, rechts „entfällt“/„verlegt …“, „PRÜFUNG“ bzw.
   „jetzt“; 6 pt Abstand; laufende Stunde mit 2-pt-Petrol-Rahmen, vergangene 55 %. Große Schrift (Bedienungshilfen): untereinander.
+* **EduOrga Mobile (PWA) folgt iOS fast 1:1** (`mobile/.../assets/js/ansichten.js`, `app.css` Abschnitt „Angleichung an die iOS-App“):
+  fünf Reiter **Heute · Plan · Postfach · Schule · Profil**, Plankopf „Mein Plan ▾ / KW 43 · Okt. 2026 · A-Woche“ mit Kalenderknopf,
+  Planleiste unten (Agenda | Woche | Tag, „Nur Änderungen“, „Auswahl und Filter“), Agenda, dieselbe Seite „Heute“ (Daten über
+  `api/web/heute`), Stundendetails mit **Details | Klassenbuch**. Ohne Glas/Weichzeichner: die schwebende Leiste ist eine deckende
+  Fläche (94 %) mit 1-px-Rand und flachem Schatten.
 * **Entwurf zum Ansehen ohne Xcode:** HTML-Nachbau 390 × 844 (hell/dunkel) der Seiten Heute (Schultag, Ferien) und Woche –
   Bildschirmfotos in `ios/docs/bilder/entwurf-v7-*.png`.
 

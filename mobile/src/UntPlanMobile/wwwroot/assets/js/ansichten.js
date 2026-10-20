@@ -72,7 +72,9 @@ function art(c){
   if (c.blockType === 'change' || (c.changed || []).length) return 'aend';
   return 'normal';
 }
-const findetStatt = c => !istEntfall(c) && !istFeld(c) && !istAufsicht(c) && c.blockType !== 'standby';
+/* Ganztägiger Termin (Elternsprechtag, Projekttag): ohne Stunde, über den ganzen Tag */
+const ganztaegig = c => !!c.fullday || (['event', 'gs', 'absence'].includes(c.blockType) && (c.span || 1) >= 6);
+const findetStatt = c => !istEntfall(c) && !istFeld(c) && !istAufsicht(c) && c.blockType !== 'standby' && !ganztaegig(c);
 const fachfarbe = c => (c.color && /^#?[0-9a-f]{6}$/i.test(c.color)) ? (c.color[0] === '#' ? c.color : '#' + c.color) : '';
 /* Farbe des Streifens oben: Status vor Fachfarbe; regulär ohne Fachfarbe und offen ohne Streifen. */
 function streifen(c){
@@ -184,7 +186,8 @@ function kopfHtml(heuteIso, h, frei){
 
 /* Tagesband: der Schultag als Leiste, je Stunde ein Abschnitt nach seiner Dauer, Jetzt-Linie, Aufsichten als Marke. */
 function bandHtml(karten, istHeute){
-  const stunden = karten.filter(c => !istAufsicht(c) && !istFeld(c) && c.blockType !== 'ganztag').map(c => ({ c, z: zeiten(c) }))
+  /* ohne ganztägige Termine (wie iOS) – sie stehen als Zeile in den Stunden */
+  const stunden = karten.filter(c => !istAufsicht(c) && !istFeld(c) && !ganztaegig(c)).map(c => ({ c, z: zeiten(c) }))
     .filter(x => x.z.bis > x.z.von).sort((a, b) => a.z.von - b.z.von);
   if (!stunden.length) return '';
   /* gleichzeitige Stunden zusammenfassen: Änderung vor regulär */
@@ -337,7 +340,7 @@ function stundenHtml(karten, titel, istHeute, kind, tagIso){
       const a = art(c), s = streifen(c);
       return `<button type="button" class="h-zeile${vorbei ? ' is-vorbei' : ''}" data-oeffnen="${esc(c.date)}|${c.lesson}|${c._uid ?? ''}"
           aria-label="${esc((laeuft ? 'Läuft gerade. ' : vorbei ? 'Vorbei. ' : '') + satz(c, z))}">
-        <span class="h-zeit"><b class="${laeuft ? 'is-jetzt' : ''}">${uhr(z.von)}</b><small>${uhr(z.bis)}</small></span>
+        <span class="h-zeit">${ganztaegig(c) ? '<small>ganztägig</small>' : `<b class="${laeuft ? 'is-jetzt' : ''}">${uhr(z.von)}</b><small>${uhr(z.bis)}</small>`}</span>
         <span class="h-karte h-karte--${a}${laeuft ? ' is-jetzt' : ''}">${s ? `<i class="h-streifen" style="background:${s}"></i>` : ''}
           <span class="h-karte__haupt"><b class="h-fach">${a === 'ev' ? esc(c.subject || c.type || 'Termin') : fachHtml(c)}</b>
             ${a === 'ev' ? '' : `<span class="h-neben">${nebenzeile(c, kind)}</span>`}</span>
@@ -540,13 +543,13 @@ function agenda(byDate){
     for (const { c, z } of zeilen){
       const a = istAufsicht(c) ? 'auf' : art(c);
       const vorbei = istHeute && z.bis <= m, laeuft = istHeute && findetStatt(c) && z.von <= m && m < z.bis;
-      const nr = istAufsicht(c) || !c.lesson ? '' : ((c.span || 1) > 1 ? `${c.lesson}–${c.lesson + c.span - 1}` : `${c.lesson}`);
+      const nr = istAufsicht(c) || !c.lesson || ganztaegig(c) ? '' : ((c.span || 1) > 1 ? `${c.lesson}–${c.lesson + c.span - 1}` : `${c.lesson}`);
       const s = a === 'auf' ? '' : streifen(c);
       inhalt.push(`<button type="button" class="ag-zeile ag-zeile--${a}${vorbei ? ' is-vorbei' : ''}${laeuft ? ' is-jetzt' : ''}" data-ag="${d}|${c.lesson}|${c._uid}"
           aria-label="${esc((laeuft ? 'Läuft gerade. ' : '') + (a === 'auf' ? `Pausenaufsicht ${c.subject || ''}, ${uhr(z.von)} bis ${uhr(z.bis)} Uhr.` : satz(c, z)))}">
         ${s ? `<i class="h-streifen" style="background:${s}"></i>` : ''}
         <span class="ag-nr">${nr}</span>
-        <span class="ag-zeit"><span>${c.fullday ? 'ganz-' : uhr(z.von)}</span><span>${c.fullday ? 'tägig' : uhr(z.bis)}</span></span>
+        <span class="ag-zeit"><span>${ganztaegig(c) ? 'ganz-' : uhr(z.von)}</span><span>${ganztaegig(c) ? 'tägig' : uhr(z.bis)}</span></span>
         <span class="ag-haupt"><b>${a === 'auf' ? 'Aufsicht' : a === 'ev' ? esc(c.subject || c.type || 'Termin') : fachHtml(c)}</b>
           <span class="h-neben">${a === 'auf' ? `<span>${esc(c.subject || '')}</span>` : a === 'ev' ? `<span>${esc([c.class, c.room].filter(Boolean).join(' · '))}</span>` : nebenzeile(c, kind)}</span></span>
         <span class="ag-rechts">${a === 'auf' ? '' : rechts(c, laeuft)}</span>

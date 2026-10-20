@@ -257,12 +257,12 @@ public class Sprint27Tests
     public void Navigation_und_Zeilen_nach_dem_Designsystem()
     {
         var html = Datei("Vorlagen", "index.html");
-        // untere Leiste: Heute · Plan · Postfach · Mehr
-        var leiste = html[html.IndexOf("<nav class=\"tabbar\"", StringComparison.Ordinal)..html.IndexOf("</nav>", html.IndexOf("<nav class=\"tabbar\"", StringComparison.Ordinal), StringComparison.Ordinal)];
+        // untere Leiste wie iOS: Heute · Plan · Postfach · Schule · Profil
+        var leiste = html[html.IndexOf("<nav class=\"tabbar", StringComparison.Ordinal)..html.IndexOf("</nav>", html.IndexOf("<nav class=\"tabbar", StringComparison.Ordinal), StringComparison.Ordinal)];
         var reiter = Regex.Matches(leiste, @"<span( id=""[^""]+"")?>([^<]+)</span>").Select(m => m.Groups[2].Value).ToArray();
-        // „Mehr“ heißt für Lehrkräfte „Schule“ (schule.js setzt den Text nach der Rolle)
-        Assert.Equal(new[] { "Heute", "Plan", "Postfach", "Mehr" }, reiter);
-        Assert.Contains("tabText = R.kollegium ? 'Schule' : 'Mehr'", Datei("wwwroot", "assets", "js", "schule.js"));
+        // „Schule“ für alle Rollen (Profil ist ein eigener Reiter)
+        Assert.Equal(new[] { "Heute", "Plan", "Postfach", "Schule", "Profil" }, reiter);
+        Assert.Contains("const tabText = 'Schule';", Datei("wwwroot", "assets", "js", "schule.js"));
         // alle bisherigen Funktionen bleiben erreichbar
         foreach (var id in new[] { "btnSwitchAccount", "btnAddProfile", "themeSeg", "optCardTimes", "optLongNames", "optShowCancelled",
                                    "optNotify", "btnRefresh", "btnLogout", "btnAppointments", "btnAbsences", "btnClassLead", "btnSprechtag",

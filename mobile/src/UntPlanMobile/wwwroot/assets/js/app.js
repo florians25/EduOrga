@@ -1249,7 +1249,7 @@ function tagesPunkt(d){
 /* Zeitraum unter dem Plannamen (wie iOS): „KW 43 · Okt. 2026 · A-Woche“, im Tag „Di 20.10.2026“; mit „Nur Änderungen“
    dahinter „· Änderungen“ in Petrol. */
 const MONATE_KURZ = ['Jan.', 'Feb.', 'März', 'Apr.', 'Mai', 'Juni', 'Juli', 'Aug.', 'Sept.', 'Okt.', 'Nov.', 'Dez.'];
-function zeitraumSetzen(){
+function planZeitraumSetzen(){
   const el = $('#planZeitraum');
   if (!el) return;
   let text;
@@ -1266,7 +1266,7 @@ function zeitraumSetzen(){
 }
 
 function renderWeekHead(){
-  zeitraumSetzen();
+  planZeitraumSetzen();
   const dates = weekDates(state.weekStart);
   const mo = parseISO(state.weekStart);
   /* In der Tagesansicht gelten KW und Monat für den gezeigten Tag. */
@@ -1517,7 +1517,7 @@ function gefiltert(byDate){
 
 function renderGrid(){
   ansichtKlasse();
-  zeitraumSetzen();
+  planZeitraumSetzen();
   if (state.view === 'agenda'){
     const around = state.around || {};
     state.allByDate = Object.assign({}, (around.prev || {}).byDate, state.week.byDate, (around.next || {}).byDate);
@@ -8806,7 +8806,7 @@ $$('#planSeg button').forEach(b => b.addEventListener('click', () => {
 function nurAenderungenSetzen(an){
   state.opts.nurAenderungen = !!an;
   store.set('nurAenderungen', state.opts.nurAenderungen);
-  planSegSetzen(); zeitraumSetzen(); renderGrid();
+  planSegSetzen(); planZeitraumSetzen(); renderGrid();
   if (typeof markMenuView === 'function') markMenuView();
 }
 { const b = $('#btnNurAenderungen'); if (b) b.addEventListener('click', () => { buzz(); nurAenderungenSetzen(!state.opts.nurAenderungen); toast(state.opts.nurAenderungen ? 'Nur Änderungen' : 'Alle Stunden'); }); }

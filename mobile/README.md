@@ -10,13 +10,22 @@ wird mit dem Konto von EduOrga Web. Marke, Farben und Logo: [`design/MARKE.md`](
 > Unterstützung von Claude (Anthropic). Jede Schule bzw. jeder Betreiber ist für Einsatz, Betrieb und Datenschutz
 > selbst verantwortlich.
 
-| Woche (Standard) | Tag | Stundendetails | Parallele Stunden („+X“) |
-|---|---|---|---|
-| ![Woche](docs/bilder/plan-woche.png) | ![Tag](docs/bilder/plan-tag.png) | ![Stundendetails](docs/bilder/stundendetails.png) | ![Parallele Stunden](docs/bilder/parallel.png) |
+**Wie die iOS-App:** Aufbau, Reiter, Planbedienung und „Heute“ folgen den SwiftUI-Quellen in `ios/UntPlanNext/Neu/**`
+(design/DESIGN.md, Abschnitte 10 und 10.1) – web-nativ, aber fast deckungsgleich. Vergleich mit dem HTML-Entwurf der iOS-Seiten:
 
-| Heute | Schule (Lehrkraft) | Klassenbuch | Offene Stunden |
-|---|---|---|---|
-| ![Heute](docs/bilder/heute.png) | ![Schule](docs/bilder/schule.png) | ![Klassenbuch](docs/bilder/klassenbuch.png) | ![Offene Stunden](docs/bilder/offene-stunden.png) |
+![iOS und PWA nebeneinander](docs/bilder/vergleich-ios-pwa.png)
+
+| Heute | Heute in den Ferien | Woche (Standard) | Tag | Agenda |
+|---|---|---|---|---|
+| ![Heute](docs/bilder/heute.png) | ![Ferien](docs/bilder/heute-ferien.png) | ![Woche](docs/bilder/plan-woche.png) | ![Tag](docs/bilder/plan-tag.png) | ![Agenda](docs/bilder/plan-agenda.png) |
+
+| Stundendetails | Klassenbuch der Stunde | Auswahl und Filter | Schule | Profil |
+|---|---|---|---|---|
+| ![Stundendetails](docs/bilder/stundendetails.png) | ![Klassenbuch](docs/bilder/stundendetails-klassenbuch.png) | ![Filter](docs/bilder/menue.png) | ![Schule](docs/bilder/schule.png) | ![Profil](docs/bilder/profil.png) |
+
+| Parallele Stunden („+X“) | Klassenbuch (Schule) | Offene Stunden |
+|---|---|---|
+| ![Parallele Stunden](docs/bilder/parallel.png) | ![Klassenbuch](docs/bilder/klassenbuch.png) | ![Offene Stunden](docs/bilder/offene-stunden.png) |
 
 | Klassenbucheinträge | Schüler*innen | Prüfungen | Vertretungsplan |
 |---|---|---|---|
@@ -30,30 +39,31 @@ wird mit dem Konto von EduOrga Web. Marke, Farben und Logo: [`design/MARKE.md`](
 |---|---|---|---|
 | ![Mehr Eltern](docs/bilder/mehr-eltern.png) | ![Abwesenheiten](docs/bilder/abwesenheiten-eltern.png) | ![Hausaufgaben](docs/bilder/hausaufgaben-eltern.png) | ![Neuigkeiten](docs/bilder/neuigkeiten.png) |
 
-| Profil | Über EduOrga Mobile | Anmeldung | Postfach |
-|---|---|---|---|
-| ![Profil](docs/bilder/profil.png) | ![Über](docs/bilder/ueber.png) | ![Anmeldung](docs/bilder/anmeldung.png) | ![Postfach](docs/bilder/postfach.png) |
+| Über EduOrga Mobile | Anmeldung | Postfach | Plan auswählen | Kennzeichnungen | Termine |
+|---|---|---|---|---|---|
+| ![Über](docs/bilder/ueber.png) | ![Anmeldung](docs/bilder/anmeldung.png) | ![Postfach](docs/bilder/postfach.png) | ![Planauswahl](docs/bilder/planauswahl.png) | ![Kennzeichnungen](docs/bilder/zeichenerklaerung.png) | ![Termine](docs/bilder/termine.png) |
 
-| Plan auswählen | Menü des Plans | Kennzeichnungen | Termine |
-|---|---|---|---|
-| ![Planauswahl](docs/bilder/planauswahl.png) | ![Menü](docs/bilder/menue.png) | ![Kennzeichnungen](docs/bilder/zeichenerklaerung.png) | ![Termine](docs/bilder/termine.png) |
-
-| Dunkel: Woche | Dunkel: Details | Dunkel: Heute | Dunkel: Schule | Woche 430 × 932 |
+| Dunkel: Heute | Dunkel: Ferien | Dunkel: Woche | Dunkel: Tag | Dunkel: Agenda |
 |---|---|---|---|---|
-| ![Plan dunkel](docs/bilder/dunkel-plan-woche.png) | ![Details dunkel](docs/bilder/dunkel-stundendetails.png) | ![Heute dunkel](docs/bilder/dunkel-heute.png) | ![Schule dunkel](docs/bilder/dunkel-mehr.png) | ![Woche groß](docs/bilder/plan-woche-430.png) |
+| ![Heute dunkel](docs/bilder/dunkel-heute.png) | ![Ferien dunkel](docs/bilder/dunkel-heute-ferien.png) | ![Plan dunkel](docs/bilder/dunkel-plan-woche.png) | ![Tag dunkel](docs/bilder/dunkel-plan-tag.png) | ![Agenda dunkel](docs/bilder/dunkel-plan-agenda.png) |
+
+| Dunkel: Details | Dunkel: Klassenbuch | Dunkel: Schule | Dunkel: Profil | Woche 430 × 932 |
+|---|---|---|---|---|
+| ![Details dunkel](docs/bilder/dunkel-stundendetails.png) | ![Klassenbuch dunkel](docs/bilder/dunkel-klassenbuch.png) | ![Schule dunkel](docs/bilder/dunkel-mehr.png) | ![Profil dunkel](docs/bilder/dunkel-profil.png) | ![Woche groß](docs/bilder/plan-woche-430.png) |
 
 ## Aufbau der App
 
-Untere Leiste **Heute · Plan · Postfach · Schule** (Lehrkräfte) bzw. **Heute · Plan · Postfach · Mehr** (Schüler*innen,
-Eltern); Linien-Symbol und Beschriftung, keine Pillen. Jede Seite hat einen großen Titel, der beim Rollen in eine kompakte
-Kopfzeile übergeht. Hell und dunkel (Automatisch/Hell/Dunkel unter „Mehr“ bzw. „Schule“ → Darstellung).
+Untere Leiste wie iOS für alle Rollen: **Heute · Plan · Postfach · Schule · Profil** (Linien-Symbole Sonne, Kalender, Fach,
+Raster, Person; ungelesene Mitteilungen als kleine Zahl am Postfach), keine Pillen. Jede Seite hat einen großen Titel, der beim
+Rollen in eine kompakte Kopfzeile übergeht. Hell und dunkel (Automatisch/Hell/Dunkel unter „Profil“ → Darstellung).
 
 | Bereich | Inhalt |
 |---|---|
-| **Heute** | Datum, Hinweise des Tages, die nächsten Stunden, Termine und Prüfungen, eigene Abwesenheiten, Klassenleitung, Sprechtag |
-| **Plan** | Woche (Standard) über die ganze Breite oder Tag, Umschalter **Tag · Woche** oben rechts, Wischen = andere Woche bzw. anderer Tag, Aufziehen mit zwei Fingern = Tag, Zusammenziehen = Woche; Menü „⋮“: Gehe zu Datum, 2 bzw. 3 Tage, Abwesenheiten, Kennzeichnungen; Planauswahl (Klasse, Lehrkraft, Raum) über den Titel |
+| **Heute** | Tagesbriefing wie iOS (`assets/js/ansichten.js`): Wochentag und Datum, „A-Woche · KW 43“; **Tagesband** (der Schultag als Leiste mit Jetzt-Linie); **Fokuskarte** „Jetzt“/„Als Nächstes“ mit Restzeit, Fortschritt und – für Lehrkräfte – „Klassenbuch erfassen“; **Tageszahlen** (nur Werte über null: Änderungen, Klassenbuch offen, Aufsichten bzw. Hausaufgaben morgen, neue Nachrichten, Termine); Notizen der Schule; **Stunden** als Stundenkarten v7; **Kalender** (nächste Ferien, Feiertage); **in den Ferien** die Ferienfläche „Herbstferien · bis Samstag, 31.10. · noch 13 Tage“ mit dem nächsten Schultag und dessen Stunden; „Mehr anzeigen“: Termine und Prüfungen, Abwesenheiten, Klassenleitung, Sprechtag; unten „Stand EduOrga Studio“. Daten: eigener Wochenplan und `api/web/heute` (EduOrga Web `/api/app/heute`, Feld `kalender`) |
+| **Plan** | Kopf wie iOS: Planname mittig mit Pfeil (Planauswahl, gesuchte Pläne wie „Mein Plan“), darunter „KW 43 · Okt. 2026 · A-Woche“ (im Tag „Di 20.10.2026“, mit „Nur Änderungen“ „· Änderungen“), rechts der **Kalenderknopf** (Heute, Gehe zu Datum); Tageskopf „17.11“ über „Mo“ mit Punkt (grün Änderungen, rot Entfall). **Planleiste unten**: **Agenda · Woche · Tag**, Dreieck **„Nur Änderungen“**, Regler **„Auswahl und Filter“** (Ansicht inkl. 2/3 Tage, Nur Änderungen, Abwesenheiten, Gehe zu Datum, Kennzeichnungen, Aktualisieren). Wischen = andere Woche bzw. anderer Tag, Aufziehen = Tag, Zusammenziehen = Woche. **Agenda**: die Woche als Liste, je Tag links „19 / Mo“, rechts je Stunde eine Zeile (Nummer, Beginn/Ende, Fach, Klasse/Lehrkraft, Raum, Status) |
 | **Postfach** | Posteingang, Gesendet, Entwürfe; Lesen, Antworten, Schreiben, Löschen, Suche |
-| **Schule / Mehr** | Schulfunktionen nach Rolle (Tabelle unten), danach Konto und Profilwechsel, Darstellung, Benachrichtigungen, App installieren, Daten aktualisieren, Über EduOrga Mobile, Abmelden |
+| **Schule** | Schulfunktionen nach Rolle (Tabelle unten) |
+| **Profil** | Konto und Profilwechsel, Profil und Benachrichtigungen (E-Mail), Darstellung, Benachrichtigungen im Browser, App installieren, Daten aktualisieren, Über EduOrga Mobile, Datenschutz, Abmelden |
 
 ## Funktionen nach Rolle
 

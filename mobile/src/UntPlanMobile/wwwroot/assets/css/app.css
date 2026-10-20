@@ -2999,7 +2999,7 @@ body.show-card-times .card__times{ display:flex; }
 .ag-tag{ display:grid; grid-template-columns:44px minmax(0,1fr); gap:10px; padding:10px 0; border-bottom:1px solid var(--up-rand); }
 .ag-tag:last-child{ border-bottom:0; }
 .ag-datum{ display:flex; flex-direction:column; align-items:flex-start; padding-top:2px; color:var(--up-text); text-align:left; }
-.ag-datum b{ font-size:22px; font-weight:700; line-height:26px; font-variant-numeric:tabular-nums; }
+.ag-datum b{ font-size:22px; font-weight:600; line-height:26px; font-variant-numeric:tabular-nums; }
 .ag-datum span{ font-size:12px; color:var(--up-text-2); }
 .ag-tag.is-heute .ag-datum, .ag-tag.is-heute .ag-datum span{ color:var(--up-akzent); }
 .ag-liste{ display:flex; flex-direction:column; gap:4px; min-width:0; }
@@ -3010,7 +3010,7 @@ body.show-card-times .card__times{ display:flex; }
 .ag-nr{ font-size:20px; font-weight:400; text-align:center; font-variant-numeric:tabular-nums; }
 .ag-zeit{ display:flex; flex-direction:column; font-size:11px; line-height:13px; color:var(--up-text-2); font-variant-numeric:tabular-nums; }
 .ag-haupt{ min-width:0; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; row-gap:0; }
-.ag-haupt > b{ font-size:15px; font-weight:700; }
+.ag-haupt > b{ font-size:15px; font-weight:600; }
 .ag-haupt .h-neben{ font-size:13px; }
 .ag-rechts{ font-size:12px; }
 .ag-zeile--aend{ background:var(--up-aenderung-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 45%, transparent); }
@@ -3147,3 +3147,9 @@ body.show-card-times .card__times{ display:flex; }
 .heute__fuss .is-alt{ color:var(--st-pruefung); }
 @media (prefers-reduced-motion: reduce){ .planleiste__kapsel button, .heute__mehr .ico{ transition:none; } }
 @media (min-width:700px){ .planleiste{ bottom:16px; } }
+/* die frühere Startansicht bleibt nur als Rückfall im Dokument */
+.heute #startNews, .heute #startNext{ display:none !important; }
+/* Stundendetails wie iOS: weißer Kopf ohne Balken, Fachfarbe nur als kleines Quadrat vor dem Fach; Entfall ohne Schraffur */
+.dhead--fach{ padding-left:16px; }
+.dhead--fach::before{ left:16px; top:auto; bottom:auto; width:0; height:0; display:none; }
+.dhead.is-off{ background-image:none; background-color:var(--up-entfall-flaeche); }
