@@ -1,21 +1,47 @@
 import SwiftUI
 
-/// Ansicht des Plans: Woche (Raster, Standard) oder Tag.
+/// Ansicht des Plans: Agenda (Liste der Woche), Woche (Raster, Standard) oder Tag.
 enum Planmodus: String, CaseIterable, Identifiable {
-    case tag
+    case agenda
     case woche
+    case tag
 
     var id: String { rawValue }
-    var titel: String { self == .tag ? "Tag" : "Woche" }
+
+    var titel: String {
+        switch self {
+        case .agenda: return "Agenda"
+        case .woche: return "Woche"
+        case .tag: return "Tag"
+        }
+    }
+
+    /// Symbol in der Planleiste unten
+    var symbol: String {
+        switch self {
+        case .agenda: return "list.bullet"
+        case .woche: return "square.grid.3x3"
+        case .tag: return "calendar.day.timeline.left"
+        }
+    }
 }
 
-/// Darstellung eines Tages: Liste großer Kacheln (Standard) oder Zeitachse mit echter Länge der Stunden.
+/// Darstellung eines Tages: Raster wie die Woche (Standard, gleichzeitige Stunden nebeneinander), Liste großer Kacheln
+/// oder Zeitachse mit echter Länge der Stunden.
 enum Tagesdarstellung: String, CaseIterable, Identifiable {
+    case raster
     case liste
     case zeitachse
 
     var id: String { rawValue }
-    var titel: String { self == .liste ? "Liste" : "Zeitachse" }
+
+    var titel: String {
+        switch self {
+        case .raster: return "Raster"
+        case .liste: return "Liste"
+        case .zeitachse: return "Zeitachse"
+        }
+    }
 }
 
 /// Reiter „Plan“: der eigene Plan bzw. ein gewählter Plan (Klasse, Lehrkraft, Raum).
@@ -27,15 +53,17 @@ struct PlanView: View {
     }
 }
 
-/// Ein Plan zum Bedienen mit einer Hand. Startansicht ist die Woche als Raster (waagrecht wischen = andere Woche,
-/// Tageskopf antippen = Tag); in der Tagesansicht waagrecht wischen = nächster bzw. voriger Schultag (Seiten). Unten die
-/// schwebende Wochenleiste aus Glas (Tag antippen; waagrecht wischen bzw. Pfeile = andere Woche; nach oben ziehen =
-/// Woche, nach unten = Tag). Oben der Planname (Menü: eigener Plan, Favoriten, weitere Pläne),
-/// „Heute“ und das Menü (Tag/Woche, Liste/Zeitachse, Gehe zu Datum). Eine Stunde öffnet sich groß mit Zoom aus der
-/// Kachel; langes Drücken zeigt Raumplan, Plan der Lehrkraft bzw. Klasse, Teilen und den Online-Link.
+/// Ein Plan zum Bedienen mit einer Hand (design/DESIGN.md Abschnitt 10). Oben nur der Planname mit der Woche in der Mitte
+/// („KW 43 · Okt. 2026“, Menü: eigener Plan, Favoriten, Auswahl, Suche) und rechts ein Kalenderknopf (Heute, Gehe zu Datum,
+/// voriger/nächster Zeitraum) – auf schmalen iPhones kollidiert nichts. Unten schwebt die Planleiste aus Glas mit den
+/// Ansichten Agenda | Woche | Tag, dem Dreieck „Nur Änderungen“ und „Auswahl und Filter“. Woche: Raster bis zum Rand
+/// (waagrecht wischen = andere Woche, Tageskopf antippen bzw. aufziehen = Tag). Tag: oben die Wochenleiste der Schultage,
+/// waagrecht wischen = nächster bzw. voriger Schultag; zusammenziehen = Woche. Eine Stunde öffnet sich groß mit Zoom aus
+/// der Kachel; langes Drücken zeigt Raumplan, Plan der Lehrkraft bzw. Klasse, Teilen und den Online-Link. Mehrfachauswahl
+/// (Kontrollkästchen in der Auswahl): mehrere Pläne nebeneinander, oben als Felder mit „×“.
 ///
-/// `fest` = Plan aus der Suche (eigene Seite im Stapel der Suche, mit Stern für Favoriten); nil = Reiter „Plan“
-/// (eigener Plan, Planwechsel, Anfragen der anderen Reiter und Kurzbefehle).
+/// `fest` = Plan aus der Suche (eigene Seite im Stapel der Suche, Favorit im Kalendermenü); nil = Reiter „Plan“
+/// (eigener Plan, Planwechsel, Mehrfachauswahl, Anfragen der anderen Reiter und Kurzbefehle).
 struct PlanSeite: View {
     let fest: PlanAuswahl?
 
@@ -44,18 +72,22 @@ struct PlanSeite: View {
     @StateObject private var modell = Planmodell()
     @Namespace private var zoom
     @AppStorage("planModus") private var modusRoh = Planmodus.woche.rawValue
-    @AppStorage("tagesDarstellung") private var darstellungRoh = Tagesdarstellung.liste.rawValue
+    @AppStorage("tagesDarstellung") private var darstellungRoh = Tagesdarstellung.raster.rawValue
+    @AppStorage(Planfilter.schluesselAufsichten) private var filterAufsichten = true
+    @AppStorage(Planfilter.schluesselMitteilungen) private var filterMitteilungen = true
+    @AppStorage(Planfilter.schluesselFerien) private var filterFerien = true
+    @AppStorage(Planfilter.schluesselAenderungen) private var filterNurAenderungen = false
+    @AppStorage(Planfilter.schluesselIst) private var filterIstZustand = false
     @State private var tag: String? = nil
     @State private var wahl: Stundenwahl? = nil
-    @State private var auswahlOffen = false
     @State private var datumOffen = false
     @State private var bereit = false
-    /// Blatt „Stunden zur selben Zeit“ (hinter „+N“ im Wochenraster)
+    /// Blatt „Auswahl und Filter“ (Bereich beim Öffnen)
+    @State private var blatt: Auswahlbereich? = nil
+    /// Blatt „Stunden zur selben Zeit“ (hinter „+N“ im Raster)
     @State private var parallelGruppe: Parallelgruppe? = nil
-    /// Mehrere Pläne nebeneinander (iPad, Woche)
+    /// Mehrere Pläne nebeneinander (Mehrfachauswahl)
     @StateObject private var mehrfach = Mehrfachplaene()
-    @State private var mehrfachWahlOffen = false
-    @State private var legendeOffen = false
     @Environment(\.horizontalSizeClass) private var groessenklasse
 
     init(fest: PlanAuswahl?) {
@@ -64,12 +96,20 @@ struct PlanSeite: View {
 
     private var istReiter: Bool { fest == nil }
     private var modus: Planmodus { Planmodus(rawValue: modusRoh) ?? .woche }
+    private var darstellung: Tagesdarstellung { Tagesdarstellung(rawValue: darstellungRoh) ?? .raster }
 
-    /// Mehrfachansicht möglich: Reiter „Plan“ auf breitem Bildschirm (iPad) in der Woche.
-    private var mehrfachMoeglich: Bool { istReiter && groessenklasse == .regular && modus == .woche }
+    /// Mehrfachauswahl möglich: Reiter „Plan“ in Woche, Agenda bzw. Tag als Raster.
+    private var mehrfachMoeglich: Bool { istReiter && (modus != .tag || darstellung == .raster) }
     private var mehrfachAktiv: Bool { mehrfachMoeglich && mehrfach.aktiv }
+    /// Leiste mit den gewählten Plänen: auf dem iPad immer (mit „Pläne nebeneinander …“), auf dem iPhone bei Auswahl.
+    private var mehrfachLeisteZeigen: Bool { mehrfachMoeglich && (groessenklasse == .regular || mehrfach.aktiv) }
 
-    /// Woche der Seiten im Wochenraster: Wechsel der Woche führt den Tag mit (gleicher Wochentag).
+    private var filter: Planfilter {
+        Planfilter(aufsichten: filterAufsichten, mitteilungen: filterMitteilungen, ferien: filterFerien,
+                   nurAenderungen: filterNurAenderungen, nurIstZustand: filterIstZustand)
+    }
+
+    /// Woche der Seiten (Woche, Agenda): Wechsel der Woche führt den Tag mit (gleicher Wochentag).
     private var wocheBindung: Binding<String> {
         Binding(get: { aktuelleWoche }, set: { neu in
             guard neu != aktuelleWoche, let alt = Datumsformat.datum(aktuelleWoche), let ziel = Datumsformat.datum(neu) else { return }
@@ -78,7 +118,6 @@ struct PlanSeite: View {
             blaettern(wochen, animiert: false)
         })
     }
-    private var darstellung: Tagesdarstellung { Tagesdarstellung(rawValue: darstellungRoh) ?? .liste }
 
     // MARK: Zeitraum
 
@@ -108,7 +147,7 @@ struct PlanSeite: View {
 
     // MARK: Ansicht
 
-    /// Übergang zwischen Tag und Woche: die Woche „zoomt“ in den Tag hinein (und umgekehrt).
+    /// Übergang zwischen den Ansichten: die Woche „zoomt“ in den Tag hinein (und umgekehrt).
     private static let wechsel = Animation.snappy(duration: 0.34)
 
     var body: some View {
@@ -117,11 +156,12 @@ struct PlanSeite: View {
 
     private var inhalt: some View {
         ZStack {
-            if modus == .tag {
+            switch modus {
+            case .tag:
                 tagesBlaetter
                     .transition(.asymmetric(insertion: .scale(scale: 0.94).combined(with: .opacity),
                                             removal: .scale(scale: 0.94).combined(with: .opacity)))
-            } else {
+            case .woche:
                 WochenSeiten(modell: modell, mehrfach: mehrfach, mehrfachAktiv: mehrfachAktiv, montage: montage,
                              montag: wocheBindung, raum: zoom,
                              antippen: { k, t, quelle, plan in oeffnen(k, in: t, quelle: quelle, plan: plan) },
@@ -129,6 +169,12 @@ struct PlanSeite: View {
                              parallele: { parallelGruppe = $0 })
                     .transition(.asymmetric(insertion: .scale(scale: 1.06).combined(with: .opacity),
                                             removal: .scale(scale: 1.06).combined(with: .opacity)))
+            case .agenda:
+                AgendaSeiten(modell: modell, mehrfach: mehrfach, mehrfachAktiv: mehrfachAktiv, montage: montage,
+                             montag: wocheBindung, raum: zoom,
+                             antippen: { k, t, quelle, plan in oeffnen(k, in: t, quelle: quelle, plan: plan) },
+                             tagOeffnen: { tagWaehlen($0) })
+                    .transition(.opacity)
             }
         }
         .animation(PlanSeite.wechsel, value: modusRoh)
@@ -136,19 +182,32 @@ struct PlanSeite: View {
         .background(Farben.grund.ignoresSafeArea())
         .weicheRollkante(.bottom)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            // Woche: Raster bis zum Rand (wischen = Woche, Tageskopf = Tag); Tag: schwebende Wochenleiste
-            if modus == .tag {
-            Wochenschalter(modell: modell, montag: aktuelleWoche, gewaehlt: modus == .tag ? aktuellerTag : "",
-                           wocheAktiv: modus == .woche,
-                           waehlen: { tagWaehlen($0) }, blaettern: { blaettern($0) }, ansicht: { ansichtWechseln($0) })
+            Planleiste(modus: modus, nurAenderungen: filterNurAenderungen,
+                       filterAktiv: !filterAufsichten || !filterMitteilungen || !filterFerien || filterIstZustand,
+                       waehlen: { modusWaehlen($0) },
+                       aenderungenUmschalten: {
+                           Haptik.auswahl()
+                           withAnimation(.snappy(duration: 0.25)) { filterNurAenderungen.toggle() }
+                       },
+                       filterOeffnen: { blatt = .filter })
                 .padding(.horizontal, Stilmass.rand)
                 .padding(.top, Stilmass.raster)
                 .padding(.bottom, Stilmass.raster)
-            }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if mehrfachMoeglich {
-                Mehrfachleiste(mehrfach: mehrfach) { mehrfachWahlOffen = true }
+            VStack(spacing: 0) {
+                if mehrfachLeisteZeigen {
+                    Mehrfachleiste(mehrfach: mehrfach) { blatt = .auswahl }
+                }
+                if modus == .tag {
+                    // Tag: die Schultage der Woche oben (antippen; waagrecht wischen bzw. Pfeile = andere Woche;
+                    // nach oben ziehen = Woche)
+                    Wochenschalter(modell: modell, montag: aktuelleWoche, gewaehlt: aktuellerTag, wocheAktiv: false,
+                                   waehlen: { tagWaehlen($0) }, blaettern: { blaettern($0) }, ansicht: { ansichtWechseln($0) })
+                        .padding(.horizontal, Stilmass.rand)
+                        .padding(.top, 4)
+                        .padding(.bottom, 6)
+                }
             }
         }
         .overlay(alignment: .top) {
@@ -174,28 +233,13 @@ struct PlanSeite: View {
             }
             .environment(\.kartendarstellung, zustand.darstellung)
         }
-        .sheet(isPresented: $auswahlOffen) {
-            PlanAuswahlView(auswahl: Binding(get: { modell.auswahl }, set: { neu in
-                modell.waehlen(neu)
-                Haptik.auswahl()
-            }))
-            .environmentObject(zustand)
-            .environmentObject(favoriten)
-            .presentationDetents([.large])
-        }
-        .sheet(isPresented: $mehrfachWahlOffen) {
-            PlanAuswahlView(auswahl: Binding<PlanAuswahl?>(get: { nil }, set: { neu in
-                guard let neu else { return }
-                withAnimation(.snappy(duration: 0.2)) { mehrfach.hinzufuegen(neu) }
-                Haptik.auswahl()
-            }))
-            .environmentObject(zustand)
-            .environmentObject(favoriten)
-            .presentationDetents([.large])
-        }
-        .sheet(isPresented: $legendeOffen) {
-            PlanLegende()
+        .sheet(item: $blatt) { b in
+            PlanAuswahlBlatt(modell: modell, mehrfach: mehrfach, mehrfachErlaubt: istReiter, start: b,
+                             einzeln: { einzelnWaehlen($0) }, umschalten: { mehrfachUmschalten($0) })
+                .environmentObject(zustand)
+                .environmentObject(favoriten)
                 .environment(\.kartendarstellung, zustand.darstellung)
+                .presentationDetents([.large])
         }
         .sheet(isPresented: $datumOffen) {
             GeheZuDatumView(start: Datumsformat.datum(aktuellerTag) ?? Date()) { d in
@@ -207,6 +251,10 @@ struct PlanSeite: View {
         .sensoryFeedback(.selection, trigger: modusRoh)
         .sensoryFeedback(.selection, trigger: tag)
         .onAppear(perform: vorbereiten)
+        .onChange(of: filter) { _, neu in
+            modell.filter = neu
+            mehrfach.filter = neu
+        }
         .onChange(of: zustand.benutzer?.element) { _, _ in modell.einrichten(zustand: zustand) }
         .onChange(of: zustand.planAnfrage) { _, _ in anfragenAusfuehren() }
         .onChange(of: zustand.tagAnfrage) { _, _ in anfragenAusfuehren() }
@@ -229,7 +277,7 @@ struct PlanSeite: View {
 
     // MARK: Werkzeuge
 
-    /// Zwei Finger: zusammenziehen = Woche, aufziehen = Tag.
+    /// Zwei Finger: aufziehen = genauer (Agenda → Woche → Tag), zusammenziehen = Überblick (Tag → Woche).
     private var zoomGeste: some Gesture {
         MagnifyGesture(minimumScaleDelta: 0.04)
             .onEnded { wert in
@@ -241,52 +289,23 @@ struct PlanSeite: View {
             }
     }
 
-    /// Tag | Woche als Segmentschalter in der Navigationsleiste (ohne Untermenü).
-    private var modusBindung: Binding<Planmodus> {
-        Binding(get: { modus }, set: { neu in
-            if neu == .tag { tagWaehlen(aktuellerTag) } else { ansichtWechseln(true) }
-        })
-    }
-
+    /// Oben in der Mitte der Planname mit Zeitraum (Menü; ersetzt den Titel der Leiste), rechts genau ein Knopf: der
+    /// Kalender (auf dem iPad zusätzlich die Suche). Links bleibt Platz für „Zurück“ (Plan aus der Suche).
     @ToolbarContentBuilder
     private var werkzeuge: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            Picker("Ansicht", selection: modusBindung) {
-                Text("Tag").tag(Planmodus.tag)
-                Text("Woche").tag(Planmodus.woche)
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 132)
-            .accessibilityLabel("Ansicht: Tag oder Woche")
-        }
-        ToolbarItem(placement: .topBarLeading) {
             if istReiter {
                 Menu {
                     planMenue
                 } label: {
                     titelBlock(mitPfeil: true)
                 }
-                .accessibilityLabel("Plan: \(modell.planname). Anderen Plan wählen")
+                .accessibilityLabel("Plan: " + planTitel + ". Anderen Plan wählen")
             } else {
                 titelBlock(mitPfeil: false)
             }
         }
         ToolbarItemGroup(placement: .topBarTrailing) {
-            if let fest {
-                Button {
-                    Haptik.auswahl()
-                    favoriten.umschalten(fest)
-                } label: {
-                    Image(systemName: favoriten.enthaelt(fest) ? "star.fill" : "star")
-                }
-                .accessibilityLabel(favoriten.enthaelt(fest) ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")
-            }
-            Button("Heute") {
-                Haptik.tippen()
-                springen(zu: Date())
-            }
-            .fontWeight(.semibold)
-            // Auf schmalen Bildschirmen steht die Suche im Menü des Plannamens (Platz für Tag | Woche)
             if istReiter && groessenklasse == .regular {
                 Button {
                     Haptik.tippen()
@@ -297,46 +316,54 @@ struct PlanSeite: View {
                 .accessibilityLabel("Plan suchen")
             }
             Menu {
-                if modus == .woche {
-                    Section("Dichte der Woche") {
-                        WochendichteAuswahl()
-                    }
-                } else {
-                    Picker("Tag als", selection: $darstellungRoh) {
-                        ForEach(Tagesdarstellung.allCases) { d in
-                            Label(d.titel, systemImage: d == .liste ? "list.bullet.rectangle" : "calendar.day.timeline.left").tag(d.rawValue)
-                        }
-                    }
-                    if darstellung == .zeitachse {
-                        Section("Höhe der Zeitachse") {
-                            ZeitachsenDichteAuswahl()
-                        }
-                    }
+                Button {
+                    Haptik.tippen()
+                    springen(zu: Date())
+                } label: {
+                    Label("Heute", systemImage: "calendar.badge.clock")
                 }
                 Button {
                     datumOffen = true
                 } label: {
-                    Label("Gehe zu Datum", systemImage: "calendar")
+                    Label("Gehe zu Datum …", systemImage: "calendar")
                 }
                 Section {
                     Button {
-                        legendeOffen = true
+                        Haptik.auswahl()
+                        zeitraumBlaettern(-1)
                     } label: {
-                        Label("Legende", systemImage: "info.circle")
+                        Label(modus == .tag ? "Voriger Tag" : "Vorige Woche", systemImage: "chevron.left")
+                    }
+                    Button {
+                        Haptik.auswahl()
+                        zeitraumBlaettern(1)
+                    } label: {
+                        Label(modus == .tag ? "Nächster Tag" : "Nächste Woche", systemImage: "chevron.right")
+                    }
+                }
+                if let fest {
+                    Section {
+                        Button {
+                            Haptik.auswahl()
+                            favoriten.umschalten(fest)
+                        } label: {
+                            Label(favoriten.enthaelt(fest) ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen",
+                                  systemImage: favoriten.enthaelt(fest) ? "star.slash" : "star")
+                        }
                     }
                 }
             } label: {
-                Image(systemName: "ellipsis")
+                Image(systemName: "calendar")
             }
-            .accessibilityLabel("Ansicht und weitere Aktionen")
+            .accessibilityLabel("Datum: Heute, Gehe zu Datum, blättern")
         }
     }
 
-    /// Planname mit Woche („KW 43 · A-Woche“) als Titel.
+    /// Planname (bzw. „3 Pläne“) mit dem Zeitraum („KW 43 · Okt. 2026“, im Tag das Datum) als Titel.
     private func titelBlock(mitPfeil: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .center, spacing: 0) {
             HStack(spacing: 3) {
-                Text(mehrfachAktiv ? "\(mehrfach.auswahl.count) Pläne" : modell.planname)
+                Text(planTitel)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Farben.text)
                     .lineLimit(1)
@@ -347,22 +374,33 @@ struct PlanSeite: View {
                         .accessibilityHidden(true)
                 }
             }
-            Text(wochentitel)
+            untertitel
                 .font(.caption2)
-                .foregroundStyle(Farben.text2)
                 .lineLimit(1)
         }
-        .frame(maxWidth: fest == nil ? 118 : 92, alignment: .leading)
+        .frame(maxWidth: groessenklasse == .regular ? 320 : 200)
         .dynamicTypeSize(...DynamicTypeSize.xLarge)
+    }
+
+    /// Planname bzw. „3 Pläne“ (Mehrfachauswahl).
+    private var planTitel: String {
+        mehrfachAktiv ? "\(mehrfach.auswahl.count) Pläne" : modell.planname
+    }
+
+    /// Zeitraum, bei „Nur Änderungen“ mit Kennzeichnung in Petrol.
+    private var untertitel: Text {
+        let zeitraum = Text(zeitraumTitel).foregroundColor(Farben.text2)
+        guard filterNurAenderungen else { return zeitraum }
+        return zeitraum + Text("  ·  ").foregroundColor(Farben.text3) + Text("Änderungen").foregroundColor(Farben.akzent).fontWeight(.semibold)
     }
 
     @ViewBuilder
     private var planMenue: some View {
         Button {
             Haptik.auswahl()
-            modell.waehlen(nil)
+            einzelnWaehlen(nil)
         } label: {
-            if modell.istEigenerPlan {
+            if modell.istEigenerPlan && !mehrfachAktiv {
                 Label("Mein Plan", systemImage: "checkmark")
             } else {
                 Text("Mein Plan")
@@ -373,9 +411,9 @@ struct PlanSeite: View {
                 ForEach(favoriten.liste) { fav in
                     Button {
                         Haptik.auswahl()
-                        modell.waehlen(fav)
+                        einzelnWaehlen(fav)
                     } label: {
-                        if modell.auswahl?.id == fav.id {
+                        if modell.auswahl?.id == fav.id && !mehrfachAktiv {
                             Label(fav.anzeige, systemImage: "checkmark")
                         } else {
                             Text(fav.anzeige)
@@ -386,9 +424,9 @@ struct PlanSeite: View {
         }
         Section {
             Button {
-                auswahlOffen = true
+                blatt = .auswahl
             } label: {
-                Label("Weitere Pläne …", systemImage: "list.bullet")
+                Label("Auswahl …", systemImage: "line.3.horizontal.decrease")
             }
             Button {
                 zustand.sucheOffen = true
@@ -398,10 +436,14 @@ struct PlanSeite: View {
         }
     }
 
-    /// „KW 43 · A-Woche“
-    private var wochentitel: String {
+    /// „KW 43 · Okt. 2026 · A-Woche“ (Woche, Agenda) bzw. „Di 20.10.2026“ (Tag).
+    private var zeitraumTitel: String {
+        if modus == .tag {
+            return Datumsformat.anzeige(aktuellerTag, "EE").replacingOccurrences(of: ".", with: "") + " "
+                + Datumsformat.anzeige(aktuellerTag, "dd.MM.yyyy")
+        }
         let m = Datumsformat.datum(aktuelleWoche) ?? Date()
-        var t = "KW \(Datumsformat.kalenderwoche(m))"
+        var t = "KW \(Datumsformat.kalenderwoche(m)) · " + Datumsformat.anzeige(aktuelleWoche, "MMM yyyy")
         if let w = modell.plan(montag: aktuelleWoche)?.woche, !w.isEmpty {
             t += w.count == 1 ? " · \(w)-Woche" : " · \(w)"
         }
@@ -415,8 +457,16 @@ struct PlanSeite: View {
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 0) {
                     ForEach(alleTage, id: \.self) { d in
-                        TagSeite(modell: modell, datum: d, raum: zoom, darstellung: darstellung) { k, t, quelle in
-                            oeffnen(k, in: t, quelle: quelle)
+                        Group {
+                            if darstellung == .raster {
+                                TagRasterSeite(modell: modell, mehrfach: mehrfach, mehrfachAktiv: mehrfachAktiv, datum: d, raum: zoom,
+                                               antippen: { k, t, quelle, plan in oeffnen(k, in: t, quelle: quelle, plan: plan) },
+                                               parallele: { parallelGruppe = $0 })
+                            } else {
+                                TagSeite(modell: modell, datum: d, raum: zoom, darstellung: darstellung) { k, t, quelle in
+                                    oeffnen(k, in: t, quelle: quelle)
+                                }
+                            }
                         }
                         .containerRelativeFrame(.horizontal)
                         .id(d)
@@ -442,6 +492,8 @@ struct PlanSeite: View {
             UserDefaults.standard.set(true, forKey: "planWocheStandard")
             modusRoh = Planmodus.woche.rawValue
         }
+        modell.filter = filter
+        mehrfach.filter = filter
         modell.einrichten(zustand: zustand)
         if istReiter { mehrfach.einrichten(zustand: zustand) }
         if let fest { modell.waehlen(fest) }
@@ -452,9 +504,20 @@ struct PlanSeite: View {
         anfragenAusfuehren()
     }
 
-    /// Tag öffnen (aus der Woche mit Übergang: Tageskopf, Aufziehen, Segmentschalter).
+    /// Ansicht aus der Planleiste (Agenda, Woche, Tag).
+    private func modusWaehlen(_ m: Planmodus) {
+        guard m != modus else { return }
+        Haptik.auswahl()
+        if m == .tag {
+            tagWaehlen(aktuellerTag)
+        } else {
+            withAnimation(PlanSeite.wechsel) { modusRoh = m.rawValue }
+        }
+    }
+
+    /// Tag öffnen (aus Woche bzw. Agenda mit Übergang: Tageskopf, Aufziehen, Planleiste).
     private func tagWaehlen(_ d: String) {
-        if modus == .woche {
+        if modus != .tag {
             tag = d
             withAnimation(PlanSeite.wechsel) { modusRoh = Planmodus.tag.rawValue }
         } else {
@@ -476,6 +539,20 @@ struct PlanSeite: View {
         }
     }
 
+    /// Voriger bzw. nächster Zeitraum (Kalendermenü): im Tag der Schultag, sonst die Woche.
+    private func zeitraumBlaettern(_ richtung: Int) {
+        guard modus == .tag else {
+            blaettern(richtung)
+            return
+        }
+        let liste = alleTage
+        guard let i = liste.firstIndex(of: aktuellerTag), liste.indices.contains(i + richtung) else {
+            blaettern(richtung)
+            return
+        }
+        withAnimation(.snappy) { tag = liste[i + richtung] }
+    }
+
     private func ansichtWechseln(_ woche: Bool) {
         let neu = woche ? Planmodus.woche.rawValue : Planmodus.tag.rawValue
         guard neu != modusRoh else { return }
@@ -492,16 +569,56 @@ struct PlanSeite: View {
         withAnimation(.snappy) { tag = iso }
     }
 
+    // MARK: Auswahl
+
+    /// Plan der Seite als Auswahl (eigener Plan mit seinem Kürzel).
+    private var aktuellerPlan: PlanAuswahl {
+        modell.auswahl ?? PlanAuswahl(typ: modell.eigenerTyp, element: modell.eigenesElement, name: modell.eigenesElement)
+    }
+
+    private func istEigenerPlan(_ p: PlanAuswahl) -> Bool {
+        p.typ == modell.eigenerTyp && p.element.caseInsensitiveCompare(modell.eigenesElement) == .orderedSame
+    }
+
+    /// Genau einen Plan zeigen (Zeile der Auswahl, Planmenü): Mehrfachauswahl endet.
+    private func einzelnWaehlen(_ p: PlanAuswahl?) {
+        if mehrfach.aktiv { withAnimation(.snappy(duration: 0.2)) { mehrfach.leeren() } }
+        if let p, !istEigenerPlan(p) {
+            modell.waehlen(p)
+        } else {
+            modell.waehlen(nil)
+        }
+    }
+
+    /// Kontrollkästchen der Auswahl: Plan zur Mehrfachauswahl hinzufügen bzw. entfernen (der bisher gezeigte Plan ist
+    /// der erste). Bleibt nur ein Plan übrig, zeigt die Seite ihn wieder allein.
+    private func mehrfachUmschalten(_ p: PlanAuswahl) {
+        var liste = mehrfach.aktiv ? mehrfach.auswahl : [aktuellerPlan]
+        if let i = liste.firstIndex(where: { $0.typ == p.typ && $0.element.caseInsensitiveCompare(p.element) == .orderedSame }) {
+            liste.remove(at: i)
+        } else if liste.count < Mehrfachplaene.hoechstens {
+            liste.append(p)
+        }
+        withAnimation(.snappy(duration: 0.2)) {
+            if liste.count <= 1 {
+                mehrfach.leeren()
+                if let erster = liste.first, !istEigenerPlan(erster) { modell.waehlen(erster) } else { modell.waehlen(nil) }
+            } else {
+                mehrfach.ersetzen(liste)
+            }
+        }
+    }
+
     /// Anfragen anderer Reiter: Plan zeigen, Tag im eigenen Plan, Kurzbefehle (nur im Reiter „Plan“).
     private func anfragenAusfuehren() {
         guard istReiter else { return }
         if let p = zustand.planAnfrage {
             zustand.planAnfrage = nil
-            modell.waehlen(p.typ == modell.eigenerTyp && p.element.caseInsensitiveCompare(modell.eigenesElement) == .orderedSame ? nil : p)
+            einzelnWaehlen(p.typ == modell.eigenerTyp && p.element.caseInsensitiveCompare(modell.eigenesElement) == .orderedSame ? nil : p)
         }
         if let d = zustand.tagAnfrage {
             zustand.tagAnfrage = nil
-            modell.waehlen(nil)
+            einzelnWaehlen(nil)
             modusRoh = Planmodus.tag.rawValue
             if let datum = Datumsformat.datum(d) { springen(zu: datum) }
         }
@@ -509,7 +626,7 @@ struct PlanSeite: View {
             zustand.schnellaktion = nil
             switch a {
             case .stundenplan:
-                modell.waehlen(nil)
+                einzelnWaehlen(nil)
                 springen(zu: Date())
             default:
                 break
@@ -530,6 +647,59 @@ struct PlanSeite: View {
         let start = karten.firstIndex { $0.id == k.karte?.id } ?? 0
         guard !karten.isEmpty else { return }
         wahl = Stundenwahl(quelle: quelle, karten: karten, start: start, typ: typ, element: element)
+    }
+}
+
+// MARK: - Tag als Raster
+
+/// Seite eines Tages als Raster (wie die Woche, eine breite Spalte): Zeitspalte, Tageskopf, gleichzeitige Stunden
+/// nebeneinander, Termine im Raster. Mehrfachauswahl: je Plan eine Unterspalte.
+struct TagRasterSeite: View {
+    @ObservedObject var modell: Planmodell
+    @ObservedObject var mehrfach: Mehrfachplaene
+    let mehrfachAktiv: Bool
+    let datum: String
+    let raum: Namespace.ID?
+    let antippen: Rasterantippen
+    let parallele: (Parallelgruppe) -> Void
+
+    private var montag: String { Planmodell.montag(datum) }
+
+    private var ladeKennung: String {
+        mehrfachAktiv ? "m|\(mehrfach.kennung)|\(montag)" : "\(modell.typ)|\(modell.element)|\(montag)"
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            ScrollView(.vertical) {
+                Group {
+                    if mehrfachAktiv {
+                        Mehrfachraster(mehrfach: mehrfach, montag: montag, raum: raum, antippen: antippen,
+                                       tagOeffnen: { _ in }, parallele: parallele, verfuegbar: geo.size, nurTag: datum)
+                    } else {
+                        Wochenraster(modell: modell, montag: montag, raum: raum, antippen: antippen, tagOeffnen: { _ in },
+                                     parallele: parallele, verfuegbar: geo.size, nurTag: datum)
+                    }
+                }
+                .padding(.bottom, 6)
+            }
+            .scrollIndicators(.hidden)
+            .refreshable {
+                if mehrfachAktiv {
+                    await mehrfach.laden(montag: montag, erzwingen: true)
+                } else {
+                    await modell.laden(montag: montag, erzwingen: true)
+                }
+                Haptik.erfolg()
+            }
+        }
+        .task(id: ladeKennung) {
+            if mehrfachAktiv {
+                await mehrfach.laden(montag: montag)
+            } else {
+                await modell.laden(montag: montag)
+            }
+        }
     }
 }
 

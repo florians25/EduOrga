@@ -25,6 +25,14 @@ final class Planmodell: ObservableObject {
     @Published var fehler: String? = nil
     /// Gewählter Plan (nil = eigener Plan)
     @Published private(set) var auswahl: PlanAuswahl? = nil
+    /// Filter der Anzeige (Einblenden, Reduzieren) – gilt für Woche, Tag und Agenda
+    @Published var filter = Planfilter() {
+        didSet {
+            guard filter != oldValue else { return }
+            tagesSpeicher.removeAll()
+            stand += 1
+        }
+    }
 
     /// Eigener Plan aus der Sitzung
     var eigenerTyp = "klasse"
@@ -125,6 +133,7 @@ final class Planmodell: ObservableObject {
         if let t = tagesSpeicher[s] { return t }
         guard let p = plan(montag: Planmodell.montag(datum)) else { return nil }
         let t = Tagesansicht.bauen(datum: datum, plan: p, typ: typ, element: element, eigenerPlan: istEigenerPlan)
+            .gefiltert(filter)
         tagesSpeicher[s] = t
         return t
     }
@@ -136,6 +145,65 @@ final class Planmodell: ObservableObject {
         }
         guard let m = Datumsformat.datum(montag) else { return [] }
         return (0..<5).map { Datumsformat.iso(Datumsformat.tage($0, nach: m)) }
+    }
+}
+
+// MARK: - Filter
+
+/// Filter der Plananzeige (Blatt „Auswahl und Filter“, gespeichert auf dem Gerät): Aufsichten, Mitteilungen sowie
+/// Ferien und Feiertage einblenden; auf Änderungen bzw. den Ist-Zustand reduzieren.
+struct Planfilter: Equatable {
+    var aufsichten = true
+    var mitteilungen = true
+    var ferien = true
+    /// Nur Änderungen: regulärer Unterricht (und reguläre Aufsichten, Bereitschaften) ausgeblendet
+    var nurAenderungen = false
+    /// Nur Ist-Zustand: was nicht stattfindet (Entfall, abgegebene Stunden), ist ausgeblendet
+    var nurIstZustand = false
+
+    static let schluesselAufsichten = "planFilterAufsichten"
+    static let schluesselMitteilungen = "planFilterMitteilungen"
+    static let schluesselFerien = "planFilterFerien"
+    static let schluesselAenderungen = "planFilterNurAenderungen"
+    static let schluesselIst = "planFilterIstZustand"
+
+    var aktiv: Bool { !aufsichten || !mitteilungen || !ferien || nurAenderungen || nurIstZustand }
+
+    /// Bleibt die Kachel bei diesem Filter sichtbar?
+    func zeigt(_ k: Kachel) -> Bool {
+        if k.art == .aufsicht || (k.inPause && k.aufsicht != nil) {
+            guard aufsichten else { return false }
+            if nurIstZustand && k.aufsichtsstand == .entfall { return false }
+            if nurAenderungen && k.aufsichtsstand == .regulaer { return false }
+            return true
+        }
+        if nurIstZustand {
+            switch k.art {
+            case .entfall, .abgegeben, .bereitschaftAbwesend: return false
+            default: break
+            }
+        }
+        if nurAenderungen {
+            switch k.art {
+            case .normal: return k.raumAenderung || k.zusatz
+            case .bereitschaft: return false
+            default: return true
+            }
+        }
+        return true
+    }
+}
+
+extension Tagesansicht {
+    /// Tag mit angewandtem Filter (ohne Filter unverändert).
+    func gefiltert(_ f: Planfilter) -> Tagesansicht {
+        guard f.aktiv else { return self }
+        var kopfNeu = kopf
+        if !f.mitteilungen { kopfNeu?.hinweise = [] }
+        if !f.ferien, kopfNeu?.frei == true { kopfNeu?.frei = false }
+        return Tagesansicht(datum: datum, kopf: kopfNeu, raster: raster, kacheln: kacheln.filter { f.zeigt($0) },
+                            ganztags: ganztags, balken: balken, gesperrt: gesperrt, sperrhinweis: sperrhinweis,
+                            luecken: luecken, start: start, schluss: schluss)
     }
 }
 

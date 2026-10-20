@@ -142,3 +142,102 @@ struct Wochenschalter: View {
         return s
     }
 }
+
+// MARK: - Planleiste (schwebend, Glas)
+
+/// Schwebende Leiste unten im Plan, mit dem Daumen erreichbar: links die Ansichten Agenda | Woche | Tag (Symbol mit
+/// kurzer Beschriftung, die gewählte Petrol hinterlegt – die Markierung gleitet), rechts das Dreieck „Nur Änderungen“
+/// (aktiv Petrol-Glas) und „Auswahl und Filter“ (Punkt, wenn ein weiterer Filter wirkt). Passt auf das iPhone SE
+/// (375 pt): 3 × 60 pt + 2 × 44 pt + Abstände.
+struct Planleiste: View {
+    let modus: Planmodus
+    let nurAenderungen: Bool
+    let filterAktiv: Bool
+    let waehlen: (Planmodus) -> Void
+    let aenderungenUmschalten: () -> Void
+    let filterOeffnen: () -> Void
+
+    @Namespace private var markierung
+
+    var body: some View {
+        GlasGruppe(abstand: 8) {
+            HStack(spacing: 8) {
+                HStack(spacing: 2) {
+                    ForEach(Planmodus.allCases) { m in
+                        ansichtKnopf(m)
+                    }
+                }
+                .padding(3)
+                .glasFlaeche(Capsule(), interaktiv: true)
+
+                Spacer(minLength: 0)
+
+                Button(action: aenderungenUmschalten) {
+                    Image(systemName: nurAenderungen ? "triangle.fill" : "triangle")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(nurAenderungen ? Farben.aufAkzent : Farben.text)
+                        .frame(width: 44, height: 44)
+                        .glasFlaeche(Circle(), ton: nurAenderungen ? Farben.akzent : nil, interaktiv: true)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Nur Änderungen")
+                .accessibilityValue(nurAenderungen ? "an" : "aus")
+                .accessibilityAddTraits(nurAenderungen ? AccessibilityTraits([.isButton, .isSelected]) : AccessibilityTraits.isButton)
+
+                Button(action: filterOeffnen) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Farben.text)
+                        .frame(width: 44, height: 44)
+                        .glasFlaeche(Circle(), interaktiv: true)
+                        .overlay(alignment: .topTrailing) {
+                            if filterAktiv {
+                                Circle()
+                                    .fill(Farben.akzent)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: -6, y: 6)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(filterAktiv ? "Auswahl und Filter, Filter aktiv" : "Auswahl und Filter")
+            }
+            .frame(maxWidth: 520)
+            .frame(maxWidth: .infinity)
+        }
+        .animation(.snappy(duration: 0.28), value: modus)
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
+    }
+
+    private func ansichtKnopf(_ m: Planmodus) -> some View {
+        let gewaehlt = m == modus
+        return Button {
+            waehlen(m)
+        } label: {
+            VStack(spacing: 1) {
+                Image(systemName: m.symbol)
+                    .font(.system(size: 14, weight: .semibold))
+                Text(m.titel)
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(gewaehlt ? Farben.aufAkzent : Farben.text)
+            .frame(width: 60, height: 40)
+            .background {
+                if gewaehlt {
+                    Capsule()
+                        .fill(Farben.akzent)
+                        .matchedGeometryEffect(id: "ansicht", in: markierung)
+                }
+            }
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Ansicht \(m.titel)")
+        .accessibilityAddTraits(gewaehlt ? AccessibilityTraits([.isButton, .isSelected]) : AccessibilityTraits.isButton)
+    }
+}

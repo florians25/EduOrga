@@ -133,7 +133,7 @@ Leitbild: nüchterner Fachkalender – gerade Linien, weiße Flächen, Farbe nur
 | **Studio** | **EduOrga Studio**: React 18 + TypeScript + Fluent UI v9 (`studio/client`). Fluent-Thema aus der Petrol-Rampe (`studio/client/src/theme.ts`, Stufe 80 = Primär #164C55, 100 = Akzent #28747A), Neutraltöne Schiefer mit kräftigen Linien (#c9d1db, Stroke1 #b4bec8), Seitenhintergrund #F5F7F8, Text #24363B; eigenes dunkles Thema (Schiefer mit Petrolstich, Flächen #10161a/#141b1f/#182126, Linien #37434b, Text #e7ecee), Thema wird vor dem ersten Zeichnen gesetzt (`public/thema.js`, kein weißes Aufblitzen). Studio-Ergänzungen zu den Tokens in `studio/client/src/stile/thema.css`. Seitenbasierte Web-Anwendung (eine Seite je Aufgabe, Adresse in der URL). **Seitenleiste in Primärfarbe** (dunkel: #0e2a2f) mit weißer Schrift, Linien-Symbolen nur vor den Bereichen; Zeilen über die ganze Breite, eckig, gewählt = leicht hellere Zeile + 3-px-Kante links in der Modusfarbe + Schrift 600, keine Pillen. **Kopfleiste** weiß: Monogramm + Wortmarke „**Edu**Orga Studio“, Schuldatei, Modus als zwei schlichte Textreiter mit 3-px-Unterstrich in der Modusfarbe (keine Symbole, kein Rahmen), Rückgängig/Speicherstand, Suche (Strg+K), Konto. **Modusfarbe:** Stundenplanung Petrol #28747a, Vertretungsplanung Indigo #3b4a8f (dunkel #4f9298 / #7f8fe0) – Unterstrich des Modusreiters, 2-px-Linie über dem Seitenkopf, Kante des gewählten Navigationspunkts; sonst keine Flächen in Modusfarbe. **Seitenkopf** grau (#eef1f4) mit Bereich als schlichter Text (12 px, `--up-text-3`, ohne Quadrat/Großbuchstaben) und Titel 20 px, darunter die Werkzeugleiste auf derselben Fläche; Inhalt weiß; Kopfzeilen der Bereiche (#e6eaee) und Tabellenköpfe (#e9edf0) deutlich grau; Karten weiß mit 1-px-Linie auf grauem Grund. Umschalter (Tag/Woche) flach: 1-px-Rahmen, gewählt grau mit 2-px-Linie in Modusfarbe; Wochenstreifen als Text, Planungstag unterstrichen. Datumsfelder als Fluent DatePicker (deutsch, Woche ab Montag, Kalenderwochen, Eingabe „19.10.2026“), lange Auswahllisten als durchsuchbare Combobox. Rechteverwaltung als Matrix Gruppe × Bereich mit farbigen Stufen-Kennzeichen (Text, ohne Symbole). Arbeitsplätze (Tagesplanung, manuelles Planen, Verlegen und Tauschen) sind fest gestaltete Seiten mit verschiebbaren Trennern. Keine Verläufe, keine Symbolkacheln, keine Großbuchstaben-Plaketten als Dekoration. |
 | **Web** (EduOrga Web) | React 18 + TypeScript + MUI v7 (`web/client`), Thema nach `MARKE.md`: Primär Petrol #164C55 (Logo, Navigation, Knöpfe), Akzent #28747A (aktive Bereiche, Links, Fokus), Hintergrund #F5F7F8, Text #24363B, Statusfarben aus diesen Tokens (Änderung Violett #6d4fc2, Termin #a3347c), hell und dunkel (Petrol-Palette, wählbar im Kontomenü). Sachlich wie ein Schulsystem: Knöpfe und Felder Radius 6 px (Höhe 32 px), Karten 6 px mit schlichter Kopfzeile (Titel als Text, 1-px-Linie darunter, keine Tönung), Tabellenköpfe neutral grau, Seitenkopf mit Linie, Segmentschalter mit 1-px-Rahmen, Bearbeiten in Dialogen. **Seitenleiste in Petrol** mit Monogramm und Wortmarke „EduOrga Web“, Linien-Symbolen vor den Bereichen und Unterpunkten als eingerücktem Text; Zeilen über die volle Breite, eckig, aktive Zeile leicht getönt mit 3-px-Kante links und Schrift 600 (keine Pillen, kein Einzug); einklappbar zur Symbolleiste; mobil als Schublade unter einer Petrol-Kopfleiste. Eigene Gliederung: Start · Mein Tag · Stundenpläne · Vertretungen · Unterricht & Prüfungen · Klassenbuch · Kommunikation · Termine & Buchungen · Stammdaten · Verwaltung (alte Adressen bleiben, sprechende Aliase). Datums-/Zeitfelder nur als MUI-Picker mit Beschriftung oben und Mindestbreite. Anmeldung zweigeteilt mit Slogan „Einfach mehr Schulalltag.“ und „Über EduOrga“ (rechtlicher Hinweis). Eigener Stundenplan (Abschnitt 5, Standard „Klassisch“; ohne Fachfarbe immer grauer Balken – Themenfarbe `kachel.balken`, hell #a9b6bb, dunkel #6b8287; gleichzeitige Stunden: erste Stunde über die volle Breite mit kleinem „+X“ rechts oben, Klick listet alle – keine Zählerkarten). Klassenbuch als eigener Bereich mit Unternavigation (Unterricht · Schüler*innen · Klasse; am Desktop Spalte links, sonst Reiterleiste) und Fenster „Unterrichtsstunde“: großes zentriertes Fenster (≈ 94 % × 90 %, Telefon Vollbild), weißer Kopf mit Angaben als Schlüssel/Wert nebeneinander, Stand der Dokumentation als Text („Thema eingetragen · Anwesenheit offen“, Fehlendes in Bernstein, keine Häkchen-Symbole), Reiter Stunde · Anwesenheit · Einträge · Prüfungen · Verlauf (Anzahl als Zweittext-Ziffer, keine Plakette), Inhalt auf grauer Fläche in Bereichen mit schlichter Kopfzeile, Fuß mit Speicherstand (automatisches Speichern, als Text). Anwesenheit als Liste ohne Initialen-Avatare, je Schüler*in ein Segmentschalter mit Text (Anwesend/Abwesend/Verspätet/Früher weg; „Anwesend“ gewählt = neutral grau, nur Abweichungen in Statusfarbe; Symbole nur auf schmalen Bildschirmen statt der nicht gewählten Wörter). Online-Unterricht nur als Schild mit Link. Keine Namen, Symbole oder Grafiken anderer Produkte. |
 | **Mobile (PWA)** | Untere Leiste *Heute · Plan · Postfach · Mehr* (Linien-Symbol + Beschriftung, das ist auf Telefonen Standard), große Seitentitel, Listen statt Karten-Kacheln, keine Logo-Kachel. |
-| **iOS** (EduOrga, `ios/`; technisch UntPlanNext) | Tab-Leiste des Systems mit wenigen, festen Reitern *Heute · Plan · Postfach · Schule · Profil* (Profil = Konten, Einstellungen, Abmelden), Suche nach Plänen als Blatt über die Lupe oben rechts. Marke EduOrga: Monogramm und Wortmarke, Primär **Petrol** `#164C55`, Akzent/`AccentColor` `#28747A` (dunkel `#5FB0B5`), Hintergrund `#F5F7F8`, Text `#24363B`; Statusfarben wie `tokens.css` (Änderung/Vertretung Violett `#6d4fc2`, Termin Magenta `#a3347c`, Prüfung Bernstein, Entfall Rot, Ferien Blau). Einrichtung als ruhige Einstiegsseite (Logo, Slogan, Adresse mit Prüfung beim Tippen, QR-Code, zuletzt verwendete Schulen). **Plan öffnet mit der Woche als Raster** über die ganze Breite (Mo–Fr, schmale Stundenspalte, Zeilen passen den Schultag in die Bildschirmhöhe, Jetzt-Linie, wischen = Woche, Aufziehen = Dichte); Karten nach „Stundenkarte mobil (v3)“ (Abschnitt 10); auf dem iPad mehrere Pläne nebeneinander; Inhalte nach der schulweiten Kartendarstellung. Tag als Liste bzw. Zeitachse mit denselben Karten. **Liquid Glass** (iOS 26) nur auf der Bedienebene; iOS 18 mit Material. Systemschrift SF Pro mit Dynamic Type, 8-pt-Raster. Die frühere App „UntPlan für iOS“ liegt nur noch als Archiv in `archiv/ios-alt/`. |
+| **iOS** (EduOrga, `ios/`; technisch UntPlanNext) | Tab-Leiste des Systems mit wenigen, festen Reitern *Heute · Plan · Postfach · Schule · Profil* (Profil = Konten, Einstellungen, Abmelden), Suche nach Plänen als Blatt über die Lupe oben rechts. Marke EduOrga: Monogramm und Wortmarke, Primär **Petrol** `#164C55`, Akzent/`AccentColor` `#28747A` (dunkel `#5FB0B5`), Hintergrund `#F5F7F8`, Text `#24363B`; Statusfarben wie `tokens.css` (Änderung/Vertretung Violett `#6d4fc2`, Termin Magenta `#a3347c`, Prüfung Bernstein, Entfall Rot, Ferien Blau). Einrichtung als ruhige Einstiegsseite (Logo, Slogan, Adresse mit Prüfung beim Tippen, QR-Code, zuletzt verwendete Schulen). **Plan öffnet mit der Woche als Raster** über die ganze Breite (Mo–Fr, schmale Stundenspalte, Zeilen passen den Schultag in die Bildschirmhöhe, Jetzt-Linie, wischen = Woche, Aufziehen = Dichte); Karten nach „Stundenkarte mobil (v3)“ (Abschnitt 10); Termine im Raster nach ihrer echten Uhrzeit; Ansichten **Agenda | Woche | Tag** in der schwebenden Planleiste unten (dazu „Nur Änderungen“ und „Auswahl und Filter“), oben nur Planname mit Zeitraum und ein Kalenderknopf; Mehrfachauswahl (mehrere Pläne nebeneinander) auf iPhone und iPad; Inhalte nach der schulweiten Kartendarstellung. Tag als Raster (Standard), Liste bzw. Zeitachse mit denselben Karten. **Liquid Glass** (iOS 26) nur auf der Bedienebene; iOS 18 mit Material. Systemschrift SF Pro mit Dynamic Type, 8-pt-Raster. Die frühere App „UntPlan für iOS“ liegt nur noch als Archiv in `archiv/ios-alt/`. |
 
 ## 8. Sprache und Abgrenzung
 
@@ -207,7 +207,8 @@ Schulsoftware), nicht wie ein generiertes Dashboard. Jede neue Seite und jede Ü
 
 ## 10. Stundenkarte mobil (v3)
 
-Verbindlich für iOS (umgesetzt in `ios/UntPlanNext/Neu/Plan/Kartengestaltung.swift` und `Wochenraster.swift`); die PWA
+Verbindlich für iOS (umgesetzt in `ios/UntPlanNext/Neu/Plan/Kartengestaltung.swift`, `Wochenraster.swift`,
+`Mehrfachplan.swift`, `Agenda.swift`, `Planauswahlblatt.swift`, `Wochenansichten.swift` und `PlanView.swift`); die PWA
 und die mobile Ansicht von EduOrga Web übernehmen sie später mit denselben Werten (px statt pt). Ziel: ein ruhiges,
 sofort lesbares Wochenraster, in dem Änderungen ohne Suchen auffallen. Eigene Gestaltung – Grundsätze, keine
 übernommenen Maße, Farben, Symbole oder Texte anderer Produkte.
@@ -242,25 +243,76 @@ sofort lesbares Wochenraster, in dem Änderungen ohne Suchen auffallen. Eigene G
 * **Termin / Raumbuchung**: ohne Balken, gestrichelt (Termin Magenta-Titel, Buchung Blau).
 * Vergangene Stunden 62 % Deckkraft.
 
+* **Abweichende Uhrzeit**: beginnt bzw. endet eine Stunde nicht mit ihrer Rasterzeile (z. B. 14:05 statt 14:00), steht
+  die Karte genau nach der Uhrzeit versetzt (mindestens 22 pt hoch) und trägt unter dem Raum eine zusätzliche Zeile
+  „14:05–14:45“ (11,5/400 `--up-text-2`).
+
 **Gleichzeitige Stunden**
-* Die vordere Stunde (Änderung vor regulär, dann die längere, dann der Rang) füllt die Zelle. Ein **Reiter „+N“** sitzt
-  innen am rechten Rand, senkrecht mittig: Fläche `--up-primaer-flaeche`, Linie `--up-primaer-rand` 0,75 pt, links
-  Radius 4, rechts bündig, Schrift 11,5/600 Akzent. Er ragt nie über die Zelle hinaus. Antippen listet alle Stunden
-  dieser Zeit.
+* Reihenfolge: Änderung vor regulär, dann die längere, dann der Rang. Bis zur Einstellung **„Parallele Stunden
+  nebeneinander“** (Filter-Blatt, 1–4, Standard 1; höchstens so viele, wie mit ≥ 44 pt nebeneinander passen; im Tag als
+  Raster mindestens eine je 96 pt) stehen sie **nebeneinander** in der Zelle, 2 pt Abstand. Die übrigen liegen hinter
+  einem **Reiter „+N“** innen am rechten Rand der letzten sichtbaren Karte, senkrecht mittig: Fläche
+  `--up-primaer-flaeche`, Linie `--up-primaer-rand` 0,75 pt, links Radius 4, rechts bündig, Schrift 11,5/600 Akzent.
+  Er ragt nie über die Zelle hinaus. Antippen listet alle Stunden dieser Zeit.
 
-**Veranstaltungen**
-* AG, Schulfest, Termin: eigener Block über ihre Stunden in **warmem Neutral** (Fläche #f7f1e3, Linie #e2d6bb, Titel
-  #5c4a22; dunkel #2a2519 / #4a4130 / #e6d7b0), ohne Balken: Titel 12,5/600, Beteiligte 11,5, Uhrzeit unten 10,5.
-  Liegt eine Veranstaltung über Unterricht, steht sie hinter „+N“. Ganztägige bzw. ≥ 3 Stunden lange Termine als
-  Banner (20 pt) im Tageskopf.
+**Veranstaltungen und Termine im Raster**
+* AG, Schulfest, Chor, Termin, ganztägiger Termin: **im Raster** über ihre **echte Zeit** – Beginn und Ende werden auf
+  die Zeilen abgebildet (anteilig in Stunde bzw. Pausenband), dürfen also mitten in einer Stunde beginnen oder enden;
+  ohne genaue Uhrzeit über ihre Stunden. Block in **warmem Neutral** (Fläche #f7f1e3, Linie 1 pt #e2d6bb, Titel
+  #5c4a22; dunkel #2a2519 / #4a4130 / #e6d7b0), ohne Balken, Radius 6: oben **Titel 12,5/600** (bis 3 Zeilen), darunter
+  die Beteiligten 11,5 (z. B. „1. Treffen Klassen 5“, „5a, 5b, 5c“), **unten die Uhrzeit** „14:15–15:30“ 10,5
+  (ganztägig: „ganztägig“).
+* **Ohne Unterricht** zur selben Zeit füllt der Termin die Spalte; mehrere gleichzeitige Termine teilen sich die
+  Breite (2 pt Abstand).
+* **Mit Unterricht** zur selben Zeit rückt der Termin als **schmaler Block an den rechten Rand** (≈ 36 % der Spalte,
+  mindestens 22 pt, höchstens 45 %); nur die Stunden, die er überschneidet, werden um diese Breite schmaler.
+  **Ganztägige Termine** an Tagen mit Unterricht sind ein **schmaler warmer Streifen über den ganzen Tag** (10 pt unter
+  90 pt Spaltenbreite, sonst ≈ 22 %, höchstens 36 pt; unter 30 pt nur mit Kalenderzeichen). An Tagen ohne Unterricht
+  ist der ganztägige Termin ein Block über alle Zeilen. Kein Banner im Tageskopf mehr – der Kopf bleibt 42 pt.
 
-**Mehrere Pläne (Tablet, Querformat)**
-* Leiste über dem Raster mit den gewählten Klassen/Lehrkräften/Räumen (Felder Radius 6, `--up-primaer-flaeche`, „×“
-  zum Entfernen, „Hinzufügen …“ umrandet). Jeder Tag teilt sich in Unterspalten je Plan (2 pt Abstand), darüber das
-  Kürzel 11/600. Veranstaltungen, zu deren Zeit in keinem gewählten Plan Unterricht liegt, laufen über den ganzen Tag.
+**Mehrere Pläne (Mehrfachauswahl)**
+* Kontrollkästchen im Blatt „Auswahl“ (iPhone und iPad, bis zu sechs). Leiste unter der Navigationsleiste mit den
+  gewählten Klassen/Lehrkräften/Räumen (Felder Radius 6, `--up-primaer-flaeche`, „×“ zum Entfernen, „Hinzufügen …“
+  umrandet; auf dem iPad immer sichtbar, auf dem iPhone nur bei Auswahl). Jeder Tag teilt sich in Unterspalten je Plan
+  (2 pt Abstand), darüber das Kürzel 11/600. Termine, zu deren Zeit in keinem gewählten Plan Unterricht liegt, laufen
+  genau nach ihrer Uhrzeit über den ganzen Tag. Gilt für Woche, Tag als Raster und Agenda (dort jede Stunde einmal).
 
-**Legende** (Menü „…“): je Zustand eine kleine Musterkarte mit einem Satz; Status nie nur über Farbe – Schraffur,
-Durchstreichung, Strichelung und Wörter tragen ihn mit, der zugängliche Name der Karte nennt ihn ausgeschrieben.
+**Ansichten und Bedienung (iPhone ab 375 pt)**
+* **Navigationsleiste: nur zwei Dinge.** In der Mitte der Planname (bzw. „3 Pläne“) 15/600 mit Pfeil, darunter der
+  Zeitraum 11 `--up-text-2` („KW 43 · Okt. 2026 · A-Woche“, im Tag „Di 20.10.2026“; bei „Nur Änderungen“ dahinter
+  „· Änderungen“ in Petrol) – Menü: Mein Plan, Favoriten, Auswahl …, Suchen; höchstens 200 pt breit. Rechts genau
+  **ein Kalenderknopf** (Heute, Gehe zu Datum …, voriger/nächster Zeitraum; bei einem Plan aus der Suche auch der
+  Favorit). Auf dem iPad zusätzlich die Lupe. Kein Segmentschalter in der Leiste – nichts kollidiert auf 375/393/430 pt.
+* **Planleiste unten** (schwebend, Glas, über der Tab-Leiste, höchstens 520 pt breit): links die Ansichten **Agenda |
+  Woche | Tag** als Kapsel (je 60 × 40 pt, Symbol 14/600 über Beschriftung 10,5/600; gewählt Petrol mit weißer Schrift,
+  die Markierung gleitet), rechts zwei runde Knöpfe 44 pt: **Dreieck „Nur Änderungen“** (aktiv gefülltes Dreieck auf
+  Petrol-Glas) und **„Auswahl und Filter“** (Regler; Petrol-Punkt 8 pt, wenn ein weiterer Filter wirkt). Breite auf
+  dem iPhone SE: 3 × 60 + 2 × 44 + Abstände = 304 pt.
+* Abkürzungen bleiben: **Tageskopf antippen** = Tag, **aufziehen** (> 1,3) = Tag, **zusammenziehen** (< 0,75) = Woche,
+  waagrecht wischen = andere Woche (Agenda, Woche) bzw. anderer Schultag (Tag). Im Tag steht die Wochenleiste der
+  Schultage oben unter der Navigationsleiste (Pfeile = andere Woche, nach oben ziehen = Woche).
+* **Agenda**: die Woche als Liste, je Tag links „17“ 22/700 mit „Mo“ 12 (heute Petrol; antippen = Tag), rechts je
+  Stunde, Termin bzw. Aufsicht eine flache Zeile (mindestens 44 pt) in der Kartensprache: Stundennummer 20/400, Beginn
+  und Ende 11 untereinander, Fach 15/700, dann Klasse, Lehrkraft, Raum 13 (Änderungen als Feld „neu (bisher)“),
+  rechts das Statuswort. Ganztägige Termine zuerst, sonst nach Uhrzeit; Ferien als Ferienzeile, Mitteilungen darunter.
+* **Tag**: Standard **Raster** (wie die Woche mit einer breiten Spalte, gleichzeitige Stunden nebeneinander);
+  wahlweise Liste bzw. Zeitachse (Filter-Blatt bzw. Profil › Darstellung).
+
+**Blatt „Auswahl und Filter“** (Regler unten bzw. „Auswahl …“ im Planmenü; oben umschaltbar Auswahl | Filter)
+* **Auswahl:** „Mein Plan“ immer ganz oben; Bereiche **Klassen | Lehrkräfte | Räume** als Segmente (mit Zahl der
+  markierten, z. B. „Klassen · 2“; Lehrkräfte nur fürs Kollegium), Suchfeld, Einträge mit Kürzel, Name, bei Klassen
+  die Klassenleitung, Stern für Favoriten. **Zeile antippen = genau dieser Plan** (Blatt schließt), **Kästchen =
+  Mehrfachauswahl** (Pläne nebeneinander; der bisher gezeigte Plan ist der erste, bleibt nur einer übrig, zeigt der
+  Plan ihn allein).
+* **Filter:** *Einblenden* – Aufsichten, Mitteilungen, Ferien und Feiertage; *Reduzieren* – **Nur Änderungen**
+  (regulärer Unterricht, reguläre Aufsichten und Bereitschaften ausgeblendet; auch über das Dreieck) und **Nur
+  Ist-Zustand** (Entfall, abgegebene Stunden, Bereitschaft der abwesenden Lehrkraft ausgeblendet); *Layout* – parallele
+  Stunden nebeneinander (1–4), Dichte der Woche, Tag als Raster/Liste/Zeitachse; dazu die **Legende** und „Filter
+  zurücksetzen“. Alles bleibt auf dem Gerät gespeichert.
+
+**Legende** (Blatt „Auswahl und Filter“): je Zustand eine kleine Musterkarte mit einem Satz; Status nie nur über Farbe
+– Schraffur, Durchstreichung, Strichelung und Wörter tragen ihn mit, der zugängliche Name der Karte nennt ihn
+ausgeschrieben.
 
 **Stundendetails (mobil)**: gruppierte Liste, Farbe nur für den Status. Kopf (Fach ausgeschrieben + Kürzel, Stunde und
 Zeit, Status als Wort), dann – nur bei Änderungen – Abschnitt „Änderung“ bzw. „Entfall“ mit „bisher → neu“ je Angabe,

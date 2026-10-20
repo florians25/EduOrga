@@ -65,7 +65,7 @@ struct PlanLegende: View {
                     stil: entfall, zeile2: "Entfall", entfall: true),
             Eintrag(id: "pruefung", titel: "Prüfung", text: "Bernsteinfarbener Rand und helle Fläche.",
                     stil: pruefung),
-            Eintrag(id: "ereignis", titel: "Veranstaltung", text: "Eigener ruhiger Block über die ganze Zeit (AG, Schulfest, Termin).",
+            Eintrag(id: "ereignis", titel: "Veranstaltung", text: "Warmer Block im Raster über die echte Uhrzeit (AG, Schulfest, Termin) – neben Unterricht schmal am rechten Rand.",
                     stil: ereignis, fach: "AG", zeile2: "14:15"),
         ]
     }

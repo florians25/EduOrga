@@ -78,20 +78,26 @@ ios/
   - **Änderungen sofort erkennbar:** schraffierter violetter Balken, feine violette Linie (mit Statusfläche helles
     Violett) und der geänderte Wert als **violettes Feld „neu (alt)“**, z. B. „Ara (Abr)“, „+B070“. **Entfall:** grau,
     schraffiert, Fach durchgestrichen, darunter „Entfall“ in Rot. **Offen:** gestrichelt violett mit „?“. Prüfung
-    Bernstein. Die **Legende** steht im Menü „…“ des Plans.
-  - **Gleichzeitige Stunden:** die vordere Stunde (Änderungen zuerst) füllt die Zelle; ein weicher Reiter **„+N“**
-    (Petrol hell) sitzt innen am rechten Rand, senkrecht mittig – immer innerhalb der Zelle. Antippen öffnet das Blatt
-    „N Stunden zur selben Zeit“.
-  - **Veranstaltungen** (AG, Schulfest, Termin) als eigener, warmer Block über ihre Zeit (Titel, Beteiligte, Uhrzeit
-    unten); ganztägige bzw. ab drei Stunden lange Termine als schmales Banner im Tageskopf.
-  - **iPad (Woche): mehrere Pläne nebeneinander** – oben eine Leiste mit den gewählten Klassen, Lehrkräften bzw. Räumen
-    („×“ entfernt, „Hinzufügen …“ öffnet die Planauswahl, bis zu sechs, auf dem Gerät gespeichert); jeder Tag teilt sich
-    in Unterspalten je Plan, darüber das Kürzel. Veranstaltungen ohne Unterricht in allen gewählten Plänen laufen über
-    den ganzen Tag. Ohne Auswahl bleibt es beim einzelnen Plan.
+    Bernstein. Die **Legende** steht im Blatt „Auswahl und Filter“. Weicht die Uhrzeit vom Raster ab (14:05 statt
+    14:00), steht die Karte genau nach der Uhrzeit versetzt mit einer Zeile „14:05–14:45“.
+  - **Gleichzeitige Stunden:** bis zur eingestellten Zahl („Parallele Stunden nebeneinander“, 1–4, Standard 1)
+    nebeneinander (Änderungen zuerst); die übrigen hinter einem weichen Reiter **„+N“** (Petrol hell) innen am rechten
+    Rand der letzten sichtbaren Karte – immer innerhalb der Zelle. Antippen öffnet das Blatt „N Stunden zur selben Zeit“.
+  - **Veranstaltungen und Termine im Raster** (AG Schulfest 14:15–15:30, Chor, ganztägige Termine) über ihre **echte
+    Zeit** (auch ab bzw. bis mitten in einer Stunde) als warmer Block: Titel, Beteiligte, unten die Uhrzeit. Ohne
+    Unterricht zur selben Zeit füllt der Termin die Spalte; mit Unterricht rückt er als schmaler Block an den rechten
+    Rand, die überschnittenen Stunden werden schmaler. Ganztägige Termine an Tagen mit Unterricht: schmaler warmer
+    Streifen über den ganzen Tag. Kein Banner im Tageskopf. (Der Server liefert Termine derzeit nach Stunden; liefert er
+    in `karten[].beginn/ende` genaue Uhrzeiten, nutzt die App sie.)
+  - **Mehrere Pläne nebeneinander** (iPhone und iPad, Woche, Tag als Raster, Agenda): Kontrollkästchen im Blatt
+    „Auswahl“; oben eine Leiste mit den gewählten Klassen, Lehrkräften bzw. Räumen („×“ entfernt, „Hinzufügen …“
+    öffnet die Auswahl, bis zu sechs, auf dem Gerät gespeichert; auf dem iPad immer sichtbar); jeder Tag teilt sich in
+    Unterspalten je Plan, darüber das Kürzel. Termine ohne Unterricht in allen gewählten Plänen laufen genau nach ihrer
+    Uhrzeit über den ganzen Tag.
   - Die schulweite **Kartendarstellung** aus `/api/app/sitzung` (`darstellung`) steuert Fach als Kürzel bzw. Name,
     Raum und Zeile 2 (Änderungen bleiben sichtbar), Statuswörter, Fachfarbe an/aus, Tönung und Deckkraft, Radius,
     Balkenbreite und die Statusfläche.
-- **Liquid Glass** nur auf der Bedienebene (Tab-Leiste, Wochenleiste der Tagesansicht, Werkzeugknöpfe, Filterchips,
+- **Liquid Glass** nur auf der Bedienebene (Tab-Leiste, Planleiste, Wochenleiste der Tagesansicht, Werkzeugknöpfe, Filterchips,
   Knöpfe über dem Kopf der Stundenansicht); Inhalte deckend.
 - SF Pro mit Dynamic Type, Abstände im 8-pt-Raster, Tippflächen mindestens 44 pt.
 
@@ -100,22 +106,27 @@ ios/
 Tab-Leiste mit wenigen, festen Reitern: **Heute · Plan · Postfach · Schule · Profil**. „Profil“ enthält Konten und
 Schulen, Termine, Einstellungen (Mitteilungen, Darstellung, Kontaktdaten, Passwort), Info und Abmelden. Die **Suche**
 nach Plänen (Klasse, Lehrkraft, Raum) öffnet sich als Blatt über die **Lupe oben rechts** (Heute, Postfach, Schule; im
-Plan auf dem iPad neben „Heute“, auf dem iPhone im Menü des Plannamens) und über den Kurzbefehl „Plan suchen“.
+Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über den Kurzbefehl „Plan suchen“.
 
 - **Einrichtung** – ruhige Einstiegsseite mit Monogramm, Wortmarke und Slogan. Schritt 1: EduOrga-Adresse der Schule
   (Prüfung schon beim Tippen: Format, dann Server und Schulname mit Häkchen bzw. verständlichem Fehler), **QR-Code
   scannen** (AVFoundation; erkennt `untplannext://einrichten?server=…`, Adressen mit `?server=` und reine Adressen),
   **Zuletzt verwendet** (Schulen bleiben auch nach dem Abmelden zur Hand). Schritt 2: Anmeldung mit Benutzername,
   Passwort (zeigen/verbergen) und „Passwort merken“; gespeicherte Konten zum Wechsel.
-- **Plan** – Woche (Standard) oder Tag. **Umschalten ohne Untermenü:** Segmentschalter **Tag | Woche** mitten in der
-  Navigationsleiste, **zwei Finger** (aufziehen > 1,3 = Tag, zusammenziehen < 0,75 = Woche) und **Tageskopf antippen** =
-  dieser Tag; der Wechsel ist animiert (die Woche „zoomt“ in den Tag und zurück). Links oben der Planname mit KW (Menü:
-  eigener Plan, Favoriten, weitere Pläne, Suche), rechts „Heute“ und das Menü (Dichte der Woche bzw. Liste/Zeitachse,
-  Gehe zu Datum, Legende). Woche: waagrecht wischen = andere Woche, Antippen = Stundendetails, langes
-  Drücken = Kontextmenü (Raumplan, Plan der Lehrkraft/Klasse, Teilen, Online-Link). **Tag:** Liste mit Uhrzeiten links
-  und großen, gut lesbaren Karten in derselben Kartensprache, laufende Stunde mit Rahmen, Restzeit und Fortschritt,
-  dazwischen die **Jetzt-Linie** mit Uhrzeit, Pausen und Freistunden als kompakte Zeile; waagrecht wischen = Tag,
-  schwebende Wochenleiste. Alternativ Zeitachse (Menü).
+- **Plan** – Agenda, Woche (Standard) oder Tag. **Oben nur zwei Dinge** (keine Kollision auf 375/393/430 pt): in der
+  Mitte der Planname mit Zeitraum („KW 43 · Okt. 2026“, im Tag „Di 20.10.2026“, bei „Nur Änderungen“ mit Kennzeichnung;
+  Menü: Mein Plan, Favoriten, Auswahl …, Suchen) und rechts der **Kalenderknopf** (Heute, Gehe zu Datum, voriger bzw.
+  nächster Zeitraum; Plan aus der Suche: Favorit). **Unten die schwebende Planleiste** aus Glas: **Agenda | Woche |
+  Tag**, das Dreieck **„Nur Änderungen“** und **„Auswahl und Filter“** (Blatt: Auswahl mit Mein Plan, Klassen /
+  Lehrkräfte / Räume, Suche, Zeile = ein Plan, Kästchen = Mehrfachauswahl; Filter: Aufsichten, Mitteilungen, Ferien
+  einblenden, nur Änderungen, nur Ist-Zustand, parallele Stunden nebeneinander, Dichte, Tag als Raster/Liste/Zeitachse,
+  Legende). Abkürzungen: **zwei Finger** (aufziehen > 1,3 = Tag, zusammenziehen < 0,75 = Woche) und **Tageskopf
+  antippen** = dieser Tag; der Wechsel ist animiert. Woche und Agenda: waagrecht wischen = andere Woche, Antippen =
+  Stundendetails, langes Drücken = Kontextmenü (Raumplan, Plan der Lehrkraft/Klasse, Teilen, Online-Link).
+  **Agenda:** die Woche als Liste nach Tagen (Stundennummer, Beginn/Ende, Fach, Klasse, Lehrkraft, Raum, Status).
+  **Tag:** Standard als Raster (eine breite Spalte, gleichzeitige Stunden nebeneinander), oben die Wochenleiste der
+  Schultage; wahlweise Liste mit großen Karten, laufender Stunde mit Restzeit und **Jetzt-Linie**, bzw. Zeitachse;
+  waagrecht wischen = Tag.
 - **Stundendetails** – ruhige, gut überblickbare Seite im Stil der gruppierten Listen des Systems (kein farbiger Kopf,
   keine Schmuck-Plaketten, Farbe nur für den Status): Navigationsleiste mit Datum, Schließen und Teilen. **Kopf:** Fach
   ausgeschrieben groß mit Kürzel, „3. Stunde · 9:45–10:30“, Status als Wort, Fortschritt der laufenden Stunde.

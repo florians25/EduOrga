@@ -1,11 +1,12 @@
 import SwiftUI
 import Combine
 
-// Mehrere Pläne nebeneinander (iPad, Woche): oben eine Leiste mit den gewählten Klassen, Lehrkräften bzw. Räumen
-// (Auswahl mit „×“ entfernen, „Hinzufügen …“ öffnet die Planauswahl), darunter das Wochenraster mit je einer Unterspalte
-// pro Plan in jedem Tag – im Querformat besonders übersichtlich. Gleiche Karten, Reiter „+N“, Jetzt-Linie und Gesten wie
-// in der Einzelansicht. Veranstaltungen, die zu einer Zeit ohne Unterricht in allen gewählten Plänen liegen (AG,
-// Schulfest), stehen als ein Block über den ganzen Tag. Die Auswahl bleibt auf dem Gerät gespeichert.
+// Mehrere Pläne nebeneinander (Mehrfachauswahl im Blatt „Auswahl“ per Kontrollkästchen; iPad und iPhone): oben eine
+// Leiste mit den gewählten Klassen, Lehrkräften bzw. Räumen als Felder mit „×“ („Hinzufügen …“ öffnet die Auswahl),
+// darunter das Raster (Woche bzw. ein Tag) mit je einer Unterspalte pro Plan in jedem Tag – im Querformat besonders
+// übersichtlich. Gleiche Karten, Reiter „+N“, Jetzt-Linie und Gesten wie in der Einzelansicht. Veranstaltungen, zu deren
+// Zeit in keinem gewählten Plan Unterricht liegt (AG Schulfest 14:15–15:30), stehen genau nach ihrer Uhrzeit als ein
+// Block über den ganzen Tag. Die Auswahl bleibt auf dem Gerät gespeichert.
 
 // MARK: - Modell
 
@@ -16,6 +17,13 @@ final class Mehrfachplaene: ObservableObject {
     nonisolated static let hoechstens = 6
 
     @Published private(set) var auswahl: [PlanAuswahl] = []
+    /// Filter der Anzeige (wie im Plan der Seite) für alle gewählten Pläne
+    var filter = Planfilter() {
+        didSet {
+            guard filter != oldValue else { return }
+            for m in modelle.values { m.filter = filter }
+        }
+    }
 
     private var modelle: [String: Planmodell] = [:]
     private var abos: [String: AnyCancellable] = [:]
@@ -52,6 +60,11 @@ final class Mehrfachplaene: ObservableObject {
         setzen([])
     }
 
+    /// Ganze Auswahl ersetzen (Mehrfachauswahl im Blatt „Auswahl“).
+    func ersetzen(_ liste: [PlanAuswahl]) {
+        setzen(Array(liste.prefix(Mehrfachplaene.hoechstens)))
+    }
+
     /// Alle gewählten Pläne einer Woche laden.
     func laden(montag: String, erzwingen: Bool = false) async {
         for p in auswahl {
@@ -68,6 +81,7 @@ final class Mehrfachplaene: ObservableObject {
             }
             let m = Planmodell()
             if let zustand { m.einrichten(zustand: zustand) }
+            m.filter = filter
             m.waehlen(p)
             neu[p.id] = m
             abos[p.id] = m.objectWillChange.sink { [weak self] _ in
@@ -186,8 +200,8 @@ private struct Tagesereignis: Identifiable {
     let kachel: Kachel
     let tag: Tagesansicht
     let plan: PlanAuswahl
-    let von: Int
-    let bis: Int
+    let y: CGFloat
+    let h: CGFloat
 
     var id: String { Rastergeometrie.ereignisSchluessel(kachel) }
 }
@@ -200,8 +214,11 @@ struct Mehrfachraster: View {
     let tagOeffnen: (String) -> Void
     let parallele: (Parallelgruppe) -> Void
     var verfuegbar: CGSize = .zero
+    /// Nur dieser Tag (Tagesansicht als Raster); nil = die ganze Woche
+    var nurTag: String? = nil
 
     @AppStorage(Wochendichte.schluessel) private var dichte: Double = Wochendichte.normal
+    @AppStorage(Rastermass.parallelSchluessel) private var parallelSichtbar: Int = 1
     @ScaledMetric(relativeTo: .caption) private var zeitBreite: CGFloat = 38
 
     /// Zeile mit den Namen der Pläne unter dem Tageskopf
@@ -220,6 +237,7 @@ struct Mehrfachraster: View {
     }
 
     private var tage: [String] {
+        if let nurTag { return [nurTag] }
         guard let erster = eintraege.first else { return [] }
         return erster.modell.tage(montag: montag)
     }
@@ -319,6 +337,7 @@ struct Mehrfachraster: View {
                     .accessibilityHidden(true)
                 if let t = e.modell.tag(d) {
                     Tagesspalte(tag: t, geo: geo, breite: unterbreite, raum: raum, plan: e.plan, ausgelassen: ausgelassen,
+                                sichtbar: Rastermass.sichtbar(parallelSichtbar, breite: unterbreite, tag: nurTag != nil),
                                 antippen: antippen, parallele: parallele)
                         .offset(x: CGFloat(e.index) * (unterbreite + innenLuecke), y: kopf)
                 }
@@ -330,8 +349,7 @@ struct Mehrfachraster: View {
     }
 
     private func ereignisBlock(_ g: Tagesereignis, breite: CGFloat, geo: Rastergeometrie) -> some View {
-        let s = geo.lage.spanne(von: g.von, bis: g.bis)
-        let h = max(0, s.h - 2 * Rastermass.einzug)
+        let h = max(0, g.h - 2 * Rastermass.einzug)
         let quelle = "woche-\(g.kachel.id.uuidString)"
         return Button {
             antippen(g.kachel, g.tag, quelle, g.plan)
@@ -342,27 +360,30 @@ struct Mehrfachraster: View {
         .buttonStyle(KachelDruckStil())
         .stundenMenue(g.kachel) { antippen(g.kachel, g.tag, quelle, g.plan) }
         .frame(width: breite, height: h)
-        .offset(x: 0, y: kopfHoehe + s.y + Rastermass.einzug)
+        .offset(x: 0, y: kopfHoehe + g.y + Rastermass.einzug)
     }
 
-    /// Veranstaltungen des Tages (aus allen Plänen, je einmal), zu deren Zeit in keinem gewählten Plan Unterricht liegt.
+    /// Veranstaltungen und Termine des Tages (aus allen Plänen, je einmal), zu deren Zeit in keinem gewählten Plan
+    /// Unterricht liegt – genau nach ihrer Uhrzeit (auch ab bzw. bis mitten in einer Stunde).
     private func gemeinsameEreignisse(_ d: String, eintraege liste: [Mehrfacheintrag], geo: Rastergeometrie) -> [Tagesereignis] {
-        var stunden: [(Int, Int)] = []
+        var stunden: [(y: CGFloat, h: CGFloat)] = []
         var kandidaten: [Tagesereignis] = []
         for e in liste {
             guard let t = e.modell.tag(d), t.freiText == nil else { continue }
-            for k in t.kacheln where !k.inPause && k.karte != nil && !Rastergeometrie.istBanner(k) {
-                guard let z = geo.zeilen(k) else { continue }
+            for k in t.kacheln + t.ganztags {
                 if Rastergeometrie.istEreignis(k) {
+                    guard let l = geo.lageGenau(k) else { continue }
                     let schluessel = Rastergeometrie.ereignisSchluessel(k)
                     if !kandidaten.contains(where: { $0.id == schluessel }) {
-                        kandidaten.append(Tagesereignis(kachel: k, tag: t, plan: e.plan, von: z.von, bis: z.bis))
+                        kandidaten.append(Tagesereignis(kachel: k, tag: t, plan: e.plan, y: l.y, h: l.h))
                     }
-                } else {
-                    stunden.append((z.von, z.bis))
+                } else if !k.inPause && k.karte != nil, let l = geo.lageGenau(k) {
+                    stunden.append((l.y, l.h))
                 }
             }
         }
-        return kandidaten.filter { g in !stunden.contains { $0.0 <= g.bis && g.von <= $0.1 } }
+        let frei = kandidaten.filter { g in !stunden.contains { $0.y < g.y + g.h - 1 && g.y < $0.y + $0.h - 1 } }
+        // Gleichzeitige gemeinsame Termine würden sich überdecken: dann zeichnet jede Unterspalte sie selbst
+        return frei.filter { g in !frei.contains { o in o.id != g.id && o.y < g.y + g.h - 1 && g.y < o.y + o.h - 1 } }
     }
 }

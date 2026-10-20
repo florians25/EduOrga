@@ -287,11 +287,11 @@ struct MehrView: View {
     }
 }
 
-/// Darstellung: Tag als Liste oder Zeitachse, Dichte der Zeitachse und Startansicht des Plans.
+/// Darstellung: Tag als Raster, Liste oder Zeitachse, Dichte der Zeitachse und Startansicht des Plans.
 struct DarstellungView: View {
     @AppStorage("zeitachseDichte") private var dichte: Double = 1.0
     @AppStorage("planModus") private var modusRoh = Planmodus.woche.rawValue
-    @AppStorage("tagesDarstellung") private var darstellungRoh = Tagesdarstellung.liste.rawValue
+    @AppStorage("tagesDarstellung") private var darstellungRoh = Tagesdarstellung.raster.rawValue
 
     var body: some View {
         List {
@@ -306,7 +306,7 @@ struct DarstellungView: View {
             } header: {
                 Text("Tag im Plan")
             } footer: {
-                Text("Liste: große Kacheln, Pausen und Freistunden kompakt. Zeitachse: Stunden in ihrer echten Länge.")
+                Text("Raster: wie die Woche, gleichzeitige Stunden nebeneinander. Liste: große Kacheln, Pausen und Freistunden kompakt. Zeitachse: Stunden in ihrer echten Länge.")
             }
             Section {
                 Picker("Zeitachse", selection: $dichte) {

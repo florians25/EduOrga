@@ -6,10 +6,16 @@ import SwiftUI
 // Schultag bis zur letzten belegten (mindestens der 6.) Stunde auf den Bildschirm passt.
 // Zeitspalte: Beginn oben, Stundennummer in der Mitte, Ende unten. Tageskopf: Datum groß („17.11“), darunter der
 // Wochentag. Karten füllen ihre Zelle mit kleinen, gleichmäßigen Abständen und sind nie breiter als die Spalte.
-// Gleichzeitige Stunden: die vordere Stunde (Änderungen zuerst) füllt die Zelle, am rechten Rand innen sitzt ein weicher
-// Reiter „+N“; Antippen öffnet ein Blatt mit allen Stunden dieser Zeit. Veranstaltungen (AG, Schulfest …) stehen als
-// eigener, warmer Block über ihre Zeit. Antippen einer Karte öffnet die Stunde, langes Drücken zeigt die Aktionen,
-// Antippen des Tageskopfs öffnet den Tag. Mehrere Pläne nebeneinander (iPad): Mehrfachplan.swift.
+// Gleichzeitige Stunden: bis zur eingestellten Zahl („parallel sichtbar“, Filter-Blatt) stehen sie nebeneinander, am
+// rechten Rand der letzten sichtbaren sitzt ein weicher Reiter „+N“ für die übrigen; Antippen öffnet ein Blatt mit allen
+// Stunden dieser Zeit. Weicht die Uhrzeit einer Stunde vom Raster ab (Beginn 14:05 statt 14:00), steht die Karte genau
+// nach der Uhrzeit versetzt und trägt eine zusätzliche Zeile „14:05–14:45“.
+// Veranstaltungen und Termine (AG, Schulfest, Chor, ganztägige Termine) stehen IM Raster über ihre echte Zeit – auch ab
+// bzw. bis mitten in einer Stunde – als warmer Block mit Titel, Beteiligten und unten der Uhrzeit. Liegt zur selben
+// Zeit Unterricht, rückt der Termin als schmaler Block an den rechten Rand der Spalte (die Stunden daneben werden
+// schmaler); ganztägige Termine an Tagen mit Unterricht sind ein schmaler warmer Streifen über den ganzen Tag. Ohne
+// Unterricht füllt der Termin die Spalte. Antippen einer Karte öffnet die Stunde, langes Drücken zeigt die Aktionen,
+// Antippen des Tageskopfs öffnet den Tag. Mehrere Pläne nebeneinander: Mehrfachplan.swift.
 
 // MARK: - Dichte
 
@@ -153,8 +159,10 @@ struct WochenSeite: View {
 enum Rastermass {
     /// Höhe des Tageskopfs (Datum und Wochentag)
     static let datumHoehe: CGFloat = 42
-    /// Höhe eines Banners (ganztägige bzw. mehrstündige Termine) im Tageskopf
-    static let bannerHoehe: CGFloat = 20
+    /// Einstellung „Maximal sichtbare parallele Stunden“ (Filter-Blatt, 1–4)
+    static let parallelSchluessel = "planParallelSichtbar"
+    /// Abstand zwischen nebeneinanderstehenden Karten bzw. Terminen einer Spalte
+    static let innenLuecke: CGFloat = 2
     /// Abstand zwischen den Tagesspalten
     static let spaltenLuecke: CGFloat = 3
     /// Band für kurze Pausen bzw. große Pausen (ab 15 Minuten)
@@ -164,6 +172,15 @@ enum Rastermass {
     static let zeileMax: CGFloat = 112
     /// Abstand der Karte zum Zeilenrand (oben und unten) – zusammen mit der Spaltenlücke gleichmäßige Abstände
     static let einzug: CGFloat = 1.5
+
+    /// Sichtbare parallele Stunden in einer Spalte: die Einstellung (1–4), höchstens so viele, wie mit mindestens 44 pt
+    /// nebeneinander passen; in der Tagesansicht (eine breite Spalte) mindestens so viele, wie mit 96 pt passen.
+    static func sichtbar(_ einstellung: Int, breite: CGFloat, tag: Bool) -> Int {
+        var n = min(4, max(1, einstellung))
+        if tag { n = max(n, min(6, Int(breite / 96))) }
+        let passend = max(1, Int((breite + innenLuecke) / (44 + innenLuecke)))
+        return max(1, min(n, passend))
+    }
 
     /// Linke Kante der Tagesspalte `i`.
     static func spaltenX(_ i: Int, breite: CGFloat, zeit: CGFloat) -> CGFloat {
@@ -254,28 +271,46 @@ struct Rastergeometrie {
 
     func zeilen(_ k: Kachel) -> (von: Int, bis: Int)? { Rastergeometrie.zeilen(k, raster: raster) }
 
-    /// Ganztägige und mehrstündige Termine bzw. Veranstaltungen (Elternsprechtag, Pädagogischer Tag …): nicht als hohe
-    /// Säule, sondern als schmales Banner im Tageskopf – die Stunden bleiben lesbar.
-    static func istBanner(_ k: Kachel) -> Bool {
-        guard !k.inPause, let karte = k.karte, !karte.istRaumbuchung else { return false }
-        guard k.art == .termin || k.art == .veranstaltung || k.art == .ganztagTermin else { return false }
-        return k.bis - k.von >= 2 || k.ende - k.beginn >= 180
-    }
-
-    static func banner(_ t: Tagesansicht) -> [Kachel] {
-        t.ganztags + t.kacheln.filter { istBanner($0) }
-    }
-
-    /// Veranstaltung bzw. Termin im Raster (eigener Block statt Stundenkarte).
+    /// Veranstaltung bzw. Termin im Raster (eigener Block statt Stundenkarte); ganztägige Termine gehören dazu.
     static func istEreignis(_ k: Kachel) -> Bool {
+        if k.art == .ganztagTermin { return true }
         guard !k.inPause, k.karte != nil else { return false }
         if k.art == .veranstaltung { return true }
         return k.art == .termin && k.karte?.istRaumbuchung != true
     }
 
+    /// Genaue Uhrzeit einer Kachel in Minuten: die Uhrzeiten der Karte (Veranstaltung 14:15–15:30, Stunde ab 14:05),
+    /// sonst Beginn und Ende aus dem Raster. Geteilte Teile einer Karte (Pausenaufsicht dazwischen) behalten ihre Lage.
+    static func minuten(_ k: Kachel) -> (beginn: Int, ende: Int) {
+        if k.stamm == nil, let karte = k.karte, let b = Rasterzeit.minuten(karte.beginn), let e = Rasterzeit.minuten(karte.ende), e > b {
+            return (b, e)
+        }
+        return (k.beginn, k.ende)
+    }
+
+    /// Senkrechte Lage einer Kachel: über ihre Rasterzeilen; weicht die Uhrzeit ab, genau nach der Uhrzeit (auch ab bzw.
+    /// bis mitten in einer Stunde). Ganztägige Termine reichen über den ganzen Tag. `abweichend` = Uhrzeit anzeigen.
+    func lageGenau(_ k: Kachel) -> (y: CGFloat, h: CGFloat, abweichend: Bool)? {
+        if k.art == .ganztagTermin { return (0, lage.hoehe, false) }
+        guard let z = zeilen(k), raster.indices.contains(z.von), raster.indices.contains(z.bis) else { return nil }
+        let s = lage.spanne(von: z.von, bis: z.bis)
+        let m = Rastergeometrie.minuten(k)
+        let start = raster[z.von].beginn
+        let schluss = raster[z.bis].ende
+        guard m.beginn != start || m.ende != schluss else { return (s.y, s.h, false) }
+        let erste = raster.first?.beginn ?? m.beginn
+        let letzte = raster.last?.ende ?? m.ende
+        guard m.beginn < letzte, m.ende > erste,
+              let y0 = y(max(m.beginn, erste)), let y1 = y(min(m.ende, letzte)) else { return (s.y, s.h, false) }
+        let h = max(22, y1 - y0)
+        return (min(y0, max(0, lage.hoehe - h)), h, true)
+    }
+
     /// Gleiche Veranstaltung in mehreren Plänen (Mehrfachansicht): Titel, Datum und Stunden.
     static func ereignisSchluessel(_ k: Kachel) -> String {
-        "\(k.datum)|\(k.von)|\(k.bis)|\(k.anzeigeTitel.lowercased())"
+        let m = minuten(k)
+        let zeit = k.art == .ganztagTermin ? "ganz" : "\(m.beginn)-\(m.ende)"
+        return "\(k.datum)|\(zeit)|\(k.anzeigeTitel.lowercased())"
     }
 
     /// Letzte belegte Rasterzeile der Tage, mindestens die 6. Stunde.
@@ -283,7 +318,7 @@ struct Rastergeometrie {
         guard !raster.isEmpty else { return 0 }
         var letzte = min(5, raster.count - 1)
         for t in tage {
-            for k in t.kacheln where !k.inPause && k.karte != nil && !istBanner(k) {
+            for k in t.kacheln where !k.inPause && k.karte != nil {
                 if let z = zeilen(k, raster: raster) { letzte = max(letzte, z.bis) }
             }
         }
@@ -315,24 +350,20 @@ struct Wochenraster: View {
     let parallele: (Parallelgruppe) -> Void
     /// Verfügbare Fläche der Seite: die Zeilen werden so hoch, dass der Schultag auf den Bildschirm passt
     var verfuegbar: CGSize = .zero
+    /// Nur dieser Tag (Tagesansicht als Raster); nil = die ganze Woche
+    var nurTag: String? = nil
 
     @AppStorage(Wochendichte.schluessel) private var dichte: Double = Wochendichte.normal
+    @AppStorage(Rastermass.parallelSchluessel) private var parallelSichtbar: Int = 1
     @ScaledMetric(relativeTo: .caption) private var zeitBreite: CGFloat = 38
 
-    private var tage: [String] { modell.tage(montag: montag) }
-
-    /// Kopf über dem Raster: Datum und (falls in der Woche vorhanden) bis zu zwei Bannerzeilen.
-    private var kopfHoehe: CGFloat {
-        Rastermass.datumHoehe + CGFloat(bannerZeilen) * Rastermass.bannerHoehe + (bannerZeilen > 0 ? 2 : 0)
+    private var tage: [String] {
+        if let nurTag { return [nurTag] }
+        return modell.tage(montag: montag)
     }
 
-    private var bannerZeilen: Int {
-        var n = 0
-        for d in tage {
-            if let t = modell.tag(d), t.freiText == nil { n = max(n, Rastergeometrie.banner(t).count) }
-        }
-        return min(n, 2)
-    }
+    /// Kopf über dem Raster: Datum und Wochentag (Termine stehen im Raster selbst).
+    private var kopfHoehe: CGFloat { Rastermass.datumHoehe }
 
     private var raster: [Rasterzeit] {
         for d in tage {
@@ -392,7 +423,7 @@ struct Wochenraster: View {
                 WochenJetztLinie(geo: geo, tage: tage, zeitBreite: zeitBreite, breite: breite, gesamt: g.size.width, kopf: kopf,
                                  nurPunkt: false)
                 ForEach(Array(tage.enumerated()), id: \.element) { i, d in
-                    tagesSpalte(d, breite: breite, geo: geo)
+                    tagesSpalte(d, breite: breite, geo: geo, sichtbar: Rastermass.sichtbar(parallelSichtbar, breite: breite, tag: nurTag != nil))
                         .frame(width: breite, height: kopf + l.hoehe, alignment: .topLeading)
                         .offset(x: Rastermass.spaltenX(i, breite: breite, zeit: zeitBreite), y: 0)
                 }
@@ -405,10 +436,9 @@ struct Wochenraster: View {
         .animation(.snappy(duration: 0.2), value: dichte)
     }
 
-    private func tagesSpalte(_ d: String, breite: CGFloat, geo: Rastergeometrie) -> some View {
+    private func tagesSpalte(_ d: String, breite: CGFloat, geo: Rastergeometrie, sichtbar: Int) -> some View {
         let heute = Datumsformat.istHeute(d)
         let t = modell.tag(d)
-        let zeilen = bannerZeilen
         let kopf = kopfHoehe
         return ZStack(alignment: .topLeading) {
             if heute {
@@ -420,17 +450,8 @@ struct Wochenraster: View {
                     .accessibilityHidden(true)
             }
             RasterTageskopf(datum: d, tag: t, breite: breite, hoehe: Rastermass.datumHoehe) { tagOeffnen(d) }
-            if let t, t.freiText == nil {
-                let liste = Rastergeometrie.banner(t)
-                ForEach(Array(liste.prefix(zeilen).enumerated()), id: \.element.id) { i, k in
-                    Tagesbanner(kachel: k, breite: breite, mehr: i == zeilen - 1 ? liste.count - zeilen : 0, raum: raum) { quelle in
-                        antippen(k, t, quelle, nil)
-                    }
-                    .offset(y: Rastermass.datumHoehe + CGFloat(i) * Rastermass.bannerHoehe)
-                }
-            }
             if let t {
-                Tagesspalte(tag: t, geo: geo, breite: breite, raum: raum, antippen: antippen, parallele: parallele)
+                Tagesspalte(tag: t, geo: geo, breite: breite, raum: raum, sichtbar: sichtbar, antippen: antippen, parallele: parallele)
                     .offset(y: kopf)
             }
         }
@@ -552,52 +573,6 @@ struct RasterTageskopf: View {
     }
 }
 
-/// Schmales Banner im Tageskopf: Titel und Zeit (bzw. „ganztägig“), warmes Feld wie die Veranstaltungen im Raster.
-struct Tagesbanner: View {
-    let kachel: Kachel
-    let breite: CGFloat
-    let mehr: Int
-    let raum: Namespace.ID?
-    let antippen: (String) -> Void
-
-    var body: some View {
-        let quelle = "woche-b-\(kachel.id.uuidString)"
-        let ganztags = kachel.art == .ganztagTermin
-        let zeit = ganztags ? "" : " \(Uhr.uhrzeit(kachel.beginn))–\(Uhr.uhrzeit(kachel.ende))"
-        let form = RoundedRectangle(cornerRadius: 4, style: .continuous)
-        Button {
-            antippen(quelle)
-        } label: {
-            HStack(spacing: 2) {
-                Text(kachel.anzeigeTitel)
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(Farben.ereignisText)
-                if breite >= 90 && !zeit.isEmpty {
-                    Text(zeit)
-                        .font(.system(size: 10))
-                        .monospacedDigit()
-                        .foregroundStyle(Farben.text2)
-                }
-                Spacer(minLength: 0)
-                if mehr > 0 {
-                    Text("+\(mehr)")
-                        .font(.system(size: 9.5, weight: .semibold))
-                        .foregroundStyle(Farben.text2)
-                }
-            }
-            .lineLimit(1)
-            .padding(.horizontal, 4)
-            .frame(width: max(0, breite), height: Rastermass.bannerHoehe - 3, alignment: .leading)
-            .background(Farben.ereignisFlaeche, in: form)
-            .overlay { form.strokeBorder(Farben.ereignisRand, lineWidth: 1) }
-            .zoomQuelle(quelle, in: raum)
-        }
-        .buttonStyle(KachelDruckStil())
-        .stundenMenue(kachel) { antippen(quelle) }
-        .accessibilityLabel("\(kachel.anzeigeTitel), " + (ganztags ? "ganztägig" : "\(Uhr.uhrzeit(kachel.beginn)) bis \(Uhr.uhrzeit(kachel.ende))"))
-    }
-}
-
 /// Jetzt-Linie: dünn über die ganze Woche, am heutigen Tag kräftiger; der Punkt am Rand der Stundenspalte liegt über den
 /// Karten.
 struct WochenJetztLinie: View {
@@ -642,20 +617,165 @@ struct WochenJetztLinie: View {
 
 // MARK: - Tagesspalte
 
-/// Vordere Stunde einer Zeit (füllt die Zelle) mit den dahinterliegenden gleichzeitigen Stunden.
-struct Rasterblock: Identifiable {
+/// Lage einer Stundenkarte in der Tagesspalte (Punkte relativ zur Oberkante des Rasters bzw. zur linken Spaltenkante).
+struct Kartenlage: Identifiable {
     let kachel: Kachel
-    let von: Int
-    let bis: Int
-    var verdeckt: [Kachel]
-    /// Veranstaltung bzw. Termin (eigener Block)
-    let ereignis: Bool
+    let x: CGFloat
+    let y: CGFloat
+    let w: CGFloat
+    let h: CGFloat
+    /// Uhrzeit weicht vom Raster ab: Karte trägt eine Zeile mit der Uhrzeit
+    let abweichend: Bool
+    /// Weitere gleichzeitige Stunden hinter dieser Karte (Reiter „+N“ an ihrem rechten Rand)
+    var verdeckt: [Kachel] = []
+    /// Alle Stunden dieser Zeit (Blatt hinter „+N“)
+    var gruppe: [Kachel] = []
 
     var id: UUID { kachel.id }
 }
 
+/// Lage einer Veranstaltung bzw. eines Termins in der Tagesspalte.
+struct Ereignislage: Identifiable {
+    let kachel: Kachel
+    let x: CGFloat
+    let y: CGFloat
+    let w: CGFloat
+    let h: CGFloat
+    /// Neben Unterricht an den rechten Rand gerückt
+    let seitlich: Bool
+
+    var id: UUID { kachel.id }
+}
+
+/// Anordnung einer Tagesspalte: Stundenkarten (nebeneinander bis zur sichtbaren Zahl, Rest hinter „+N“) und Termine.
+struct Spaltenanordnung {
+    var karten: [Kartenlage] = []
+    var ereignisse: [Ereignislage] = []
+
+    /// Gleichzeitige Stunden gruppieren (Änderungen zuerst, dann die längere, dann der Rang), Termine im Raster nach ihrer
+    /// Uhrzeit: ohne Unterricht zur selben Zeit füllen sie die Spalte (mehrere gleichzeitige teilen sie sich), sonst
+    /// rücken sie als schmaler Block an den rechten Rand und die Stunden daneben werden schmaler.
+    static func bauen(_ t: Tagesansicht, geo: Rastergeometrie, breite: CGFloat, sichtbar: Int,
+                      ausgelassen: Set<String> = []) -> Spaltenanordnung {
+        let luecke = Rastermass.innenLuecke
+        // Stunden (ohne Termine) mit Zeilen und genauer Lage
+        typealias Stunde = (k: Kachel, von: Int, bis: Int, y: CGFloat, h: CGFloat, abweichend: Bool)
+        var stunden: [Stunde] = []
+        for k in t.kacheln where !k.inPause && k.karte != nil && !Rastergeometrie.istEreignis(k) {
+            guard let z = geo.zeilen(k), let l = geo.lageGenau(k) else { continue }
+            stunden.append((k, z.von, z.bis, l.y, l.h, l.abweichend))
+        }
+        stunden.sort { a, b in
+            if a.von != b.von { return a.von < b.von }
+            if a.k.vorrang != b.k.vorrang { return a.k.vorrang }
+            if a.bis != b.bis { return a.bis > b.bis }
+            return a.k.rang < b.k.rang
+        }
+        // Gruppen gleichzeitiger Stunden (über die Rasterzeilen)
+        var gruppen: [[Stunde]] = []
+        for st in stunden {
+            if let i = gruppen.firstIndex(where: { g in g.contains { $0.von <= st.bis && st.von <= $0.bis } }) {
+                gruppen[i].append(st)
+            } else {
+                gruppen.append([st])
+            }
+        }
+
+        // Termine mit genauer Lage
+        typealias Termin = (k: Kachel, y: CGFloat, h: CGFloat)
+        var termine: [Termin] = []
+        for k in t.kacheln + t.ganztags where Rastergeometrie.istEreignis(k) {
+            guard !ausgelassen.contains(Rastergeometrie.ereignisSchluessel(k)), let l = geo.lageGenau(k) else { continue }
+            termine.append((k, l.y, l.h))
+        }
+        termine.sort { a, b in
+            if (a.k.art == .ganztagTermin) != (b.k.art == .ganztagTermin) { return a.k.art == .ganztagTermin }
+            return a.y < b.y
+        }
+        func ueberlappt(_ y1: CGFloat, _ h1: CGFloat, _ y2: CGFloat, _ h2: CGFloat) -> Bool {
+            y1 < y2 + h2 - 1 && y2 < y1 + h1 - 1
+        }
+        let seitlich = termine.filter { e in stunden.contains { ueberlappt($0.y, $0.h, e.y, e.h) } }
+        let frei = termine.filter { e in !stunden.contains { ueberlappt($0.y, $0.h, e.y, e.h) } }
+
+        var ergebnis = Spaltenanordnung()
+
+        // Seitliche Termine: Bahnen am rechten Rand (ganztägig schmal, mit Uhrzeit etwas breiter)
+        var bahnen: [[Termin]] = []
+        for e in seitlich {
+            if let i = bahnen.firstIndex(where: { b in !b.contains { ueberlappt($0.y, $0.h, e.y, e.h) } }) {
+                bahnen[i].append(e)
+            } else {
+                bahnen.append([e])
+            }
+        }
+        let bahnBreiten: [CGFloat] = bahnen.map { b in
+            let mitZeit = b.contains { $0.k.art != .ganztagTermin }
+            if mitZeit { return min(breite * 0.45, max(22, (breite * 0.36).rounded())) }
+            return breite < 90 ? 10 : min(36, (breite * 0.22).rounded())
+        }
+        let seite = bahnBreiten.isEmpty ? 0 : bahnBreiten.reduce(0, +) + CGFloat(bahnBreiten.count) * luecke
+        var x = breite - seite + luecke
+        for (i, b) in bahnen.enumerated() {
+            for e in b {
+                ergebnis.ereignisse.append(Ereignislage(kachel: e.k, x: x, y: e.y, w: bahnBreiten[i], h: e.h, seitlich: true))
+            }
+            x += bahnBreiten[i] + luecke
+        }
+
+        // Freie Termine: füllen die Spalte; gleichzeitige teilen sie sich (Gruppen nach Überschneidung)
+        var haufen: [[Termin]] = []
+        for e in frei {
+            if let i = haufen.firstIndex(where: { h in h.contains { ueberlappt($0.y, $0.h, e.y, e.h) } }) {
+                haufen[i].append(e)
+            } else {
+                haufen.append([e])
+            }
+        }
+        for h in haufen {
+            var spuren: [[Termin]] = []
+            var spurVon: [UUID: Int] = [:]
+            for e in h {
+                if let i = spuren.firstIndex(where: { s in !s.contains { ueberlappt($0.y, $0.h, e.y, e.h) } }) {
+                    spuren[i].append(e)
+                    spurVon[e.k.id] = i
+                } else {
+                    spuren.append([e])
+                    spurVon[e.k.id] = spuren.count - 1
+                }
+            }
+            let n = CGFloat(max(1, spuren.count))
+            let w = max(0, (breite - (n - 1) * luecke) / n)
+            for e in h {
+                let i = CGFloat(spurVon[e.k.id] ?? 0)
+                ergebnis.ereignisse.append(Ereignislage(kachel: e.k, x: i * (w + luecke), y: e.y, w: w, h: e.h, seitlich: false))
+            }
+        }
+
+        // Stunden: nebeneinander bis zur sichtbaren Zahl, schmaler neben seitlichen Terminen
+        for g in gruppen {
+            let neben = seitlich.contains { e in g.contains { ueberlappt($0.y, $0.h, e.y, e.h) } }
+            let flaeche = max(0, breite - (neben ? seite : 0))
+            let zeigen = Array(g.prefix(max(1, sichtbar)))
+            let rest = Array(g.dropFirst(zeigen.count))
+            let n = CGFloat(zeigen.count)
+            let w = max(0, (flaeche - (n - 1) * luecke) / n)
+            for (i, st) in zeigen.enumerated() {
+                var lage = Kartenlage(kachel: st.k, x: CGFloat(i) * (w + luecke), y: st.y, w: w, h: st.h, abweichend: st.abweichend)
+                if i == zeigen.count - 1 && !rest.isEmpty {
+                    lage.verdeckt = rest.map { $0.k }
+                    lage.gruppe = g.map { $0.k }
+                }
+                ergebnis.karten.append(lage)
+            }
+        }
+        return ergebnis
+    }
+}
+
 /// Inhalt einer Tagesspalte unter dem Kopf (Einzelansicht: der Tag; Mehrfachansicht: ein Plan des Tages): Karten,
-/// Reiter „+N“, Veranstaltungen und Pausenaufsichten. Alle Lagen sind relativ zur Oberkante des Rasters.
+/// Reiter „+N“, Veranstaltungen und Termine im Raster und Pausenaufsichten. Alle Lagen sind relativ zur Oberkante des
+/// Rasters.
 struct Tagesspalte: View {
     let tag: Tagesansicht
     let geo: Rastergeometrie
@@ -665,20 +785,28 @@ struct Tagesspalte: View {
     var plan: PlanAuswahl? = nil
     /// Veranstaltungen, die die Mehrfachansicht selbst über den ganzen Tag zeichnet
     var ausgelassen: Set<String> = []
+    /// Höchstens so viele gleichzeitige Stunden nebeneinander (Rest hinter „+N“)
+    var sichtbar: Int = 1
     let antippen: Rasterantippen
     let parallele: (Parallelgruppe) -> Void
 
     var body: some View {
-        let bloecke = Tagesspalte.bloecke(tag, geo: geo, ausgelassen: ausgelassen)
+        let anordnung = Spaltenanordnung.bauen(tag, geo: geo, breite: breite, sichtbar: sichtbar, ausgelassen: ausgelassen)
         ZStack(alignment: .topLeading) {
             if let f = tag.freiText {
                 freiFeld(f.titel)
             } else {
-                ForEach(bloecke) { b in
-                    block(b)
+                ForEach(anordnung.ereignisse.filter { !$0.seitlich }) { e in
+                    ereignis(e)
                 }
-                ForEach(bloecke.filter { !$0.verdeckt.isEmpty }) { b in
-                    plusReiter(b)
+                ForEach(anordnung.karten) { k in
+                    karte(k)
+                }
+                ForEach(anordnung.karten.filter { !$0.verdeckt.isEmpty }) { k in
+                    plusReiter(k)
+                }
+                ForEach(anordnung.ereignisse.filter { $0.seitlich }) { e in
+                    ereignis(e)
                 }
                 ForEach(aufsichten) { a in
                     aufsichtZeichen(a)
@@ -688,77 +816,53 @@ struct Tagesspalte: View {
         .frame(width: max(0, breite), height: geo.lage.hoehe, alignment: .topLeading)
     }
 
-    /// Je Zeit eine vordere Stunde: Änderungen zuerst, dann die längere, dann der Rang. Jede weitere Stunde, die sich mit
-    /// einer vorderen überschneidet, liegt dahinter („+N“). Veranstaltungen kommen nach den Stunden: überschneiden sie
-    /// eine Stunde, liegen sie dahinter, sonst bekommen sie ihren eigenen Block.
-    static func bloecke(_ t: Tagesansicht, geo: Rastergeometrie, ausgelassen: Set<String> = []) -> [Rasterblock] {
-        let kandidaten = t.kacheln
-            .filter { !$0.inPause && $0.karte != nil && !Rastergeometrie.istBanner($0) }
-            .filter { !Rastergeometrie.istEreignis($0) || !ausgelassen.contains(Rastergeometrie.ereignisSchluessel($0)) }
-            .compactMap { k -> (Kachel, Int, Int)? in
-                guard let z = geo.zeilen(k) else { return nil }
-                return (k, z.von, z.bis)
-            }
-        let stunden = kandidaten
-            .filter { !Rastergeometrie.istEreignis($0.0) }
-            .sorted { a, b in
-                if a.1 != b.1 { return a.1 < b.1 }
-                if a.0.vorrang != b.0.vorrang { return a.0.vorrang }
-                if a.2 != b.2 { return a.2 > b.2 }
-                return a.0.rang < b.0.rang
-            }
-        let ereignisse = kandidaten
-            .filter { Rastergeometrie.istEreignis($0.0) }
-            .sorted { $0.1 < $1.1 }
-        var ergebnis: [Rasterblock] = []
-        for e in stunden + ereignisse {
-            if let i = ergebnis.firstIndex(where: { $0.von <= e.2 && e.1 <= $0.bis }) {
-                ergebnis[i].verdeckt.append(e.0)
-            } else {
-                ergebnis.append(Rasterblock(kachel: e.0, von: e.1, bis: e.2, verdeckt: [], ereignis: Rastergeometrie.istEreignis(e.0)))
-            }
-        }
-        return ergebnis
-    }
-
-    private func block(_ b: Rasterblock) -> some View {
-        let quelle = "woche-\(b.kachel.id.uuidString)"
-        let s = geo.lage.spanne(von: b.von, bis: b.bis)
-        let h = max(0, s.h - 2 * Rastermass.einzug)
-        let w = max(0, breite)
+    private func karte(_ k: Kartenlage) -> some View {
+        let quelle = "woche-\(k.kachel.id.uuidString)"
+        let h = max(0, k.h - 2 * Rastermass.einzug)
+        let w = max(0, k.w)
+        let m = Rastergeometrie.minuten(k.kachel)
         return Button {
-            antippen(b.kachel, tag, quelle, plan)
+            antippen(k.kachel, tag, quelle, plan)
         } label: {
-            Group {
-                if b.ereignis {
-                    Ereigniskarte(kachel: b.kachel, hoehe: h, breite: w,
-                                  vergangen: Tagesansicht.vergangen(b.kachel, jetzt: Date()))
-                } else {
-                    RasterKarte(kachel: b.kachel, weitere: b.verdeckt.count, hoehe: h, breite: w,
-                                vergangen: Tagesansicht.vergangen(b.kachel, jetzt: Date()))
-                }
-            }
-            .zoomQuelle(quelle, in: raum)
+            RasterKarte(kachel: k.kachel, weitere: k.verdeckt.count, hoehe: h, breite: w,
+                        vergangen: Tagesansicht.vergangen(k.kachel, jetzt: Date()),
+                        zeit: k.abweichend ? "\(Uhr.uhrzeit(m.beginn))–\(Uhr.uhrzeit(m.ende))" : nil)
+                .zoomQuelle(quelle, in: raum)
         }
         .buttonStyle(KachelDruckStil())
-        .stundenMenue(b.kachel) { antippen(b.kachel, tag, quelle, plan) }
+        .stundenMenue(k.kachel) { antippen(k.kachel, tag, quelle, plan) }
         .frame(width: w, height: h)
-        .offset(x: 0, y: s.y + Rastermass.einzug)
+        .offset(x: k.x, y: k.y + Rastermass.einzug)
     }
 
-    /// Weicher Reiter „+N“ innen am rechten Rand der Zelle, senkrecht in der Mitte – bleibt immer innerhalb der Spalte.
-    private func plusReiter(_ b: Rasterblock) -> some View {
-        let alle = [b.kachel] + b.verdeckt
-        let anzahl = b.verdeckt.count
-        let vorbei = alle.allSatisfy { Tagesansicht.vergangen($0, jetzt: Date()) }
-        let s = geo.lage.spanne(von: b.von, bis: b.bis)
-        let h = max(0, s.h - 2 * Rastermass.einzug)
-        let schmal = breite < 48
+    private func ereignis(_ e: Ereignislage) -> some View {
+        let quelle = "woche-\(e.kachel.id.uuidString)"
+        let h = max(0, e.h - 2 * Rastermass.einzug)
+        let w = max(0, e.w)
+        return Button {
+            antippen(e.kachel, tag, quelle, plan)
+        } label: {
+            Ereigniskarte(kachel: e.kachel, hoehe: h, breite: w, vergangen: Tagesansicht.vergangen(e.kachel, jetzt: Date()))
+                .zoomQuelle(quelle, in: raum)
+        }
+        .buttonStyle(KachelDruckStil())
+        .stundenMenue(e.kachel) { antippen(e.kachel, tag, quelle, plan) }
+        .frame(width: w, height: h)
+        .offset(x: e.x, y: e.y + Rastermass.einzug)
+    }
+
+    /// Weicher Reiter „+N“ innen am rechten Rand der letzten sichtbaren Karte, senkrecht in der Mitte – bleibt immer
+    /// innerhalb der Spalte.
+    private func plusReiter(_ k: Kartenlage) -> some View {
+        let anzahl = k.verdeckt.count
+        let vorbei = k.gruppe.allSatisfy { Tagesansicht.vergangen($0, jetzt: Date()) }
+        let h = max(0, k.h - 2 * Rastermass.einzug)
+        let schmal = k.w < 48
         let form = UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 4, bottomTrailingRadius: 0,
                                           topTrailingRadius: 0, style: .continuous)
         return Button {
             Haptik.tippen()
-            parallele(Parallelgruppe(kacheln: alle, tag: tag, plan: plan))
+            parallele(Parallelgruppe(kacheln: k.gruppe, tag: tag, plan: plan))
         } label: {
             Text("+\(anzahl)")
                 .font(.system(size: schmal ? 10 : 11.5, weight: .semibold))
@@ -770,14 +874,14 @@ struct Tagesspalte: View {
                 .background(Farben.primaerFlaeche, in: form)
                 .overlay { form.stroke(Farben.primaerRand, lineWidth: 0.75) }
                 .opacity(vorbei ? 0.7 : 1)
-                // größere Tippfläche nach links und oben/unten – nie über den rechten Rand der Spalte hinaus
+                // größere Tippfläche nach links und oben/unten – nie über den rechten Rand der Karte hinaus
                 .padding(.leading, 8)
                 .padding(.vertical, 6)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .frame(width: max(0, breite), height: h, alignment: .trailing)
-        .offset(x: 0, y: s.y + Rastermass.einzug)
+        .frame(width: max(0, k.x + k.w), height: h, alignment: .trailing)
+        .offset(x: 0, y: k.y + Rastermass.einzug)
         .accessibilityLabel(anzahl == 1 ? "1 weitere Stunde zur selben Zeit" : "\(anzahl) weitere Stunden zur selben Zeit")
         .accessibilityHint("Zeigt alle Stunden dieser Zeit")
     }
@@ -874,6 +978,8 @@ struct RasterKarte: View {
     let hoehe: CGFloat
     let breite: CGFloat
     let vergangen: Bool
+    /// Vom Raster abweichende Uhrzeit („14:05–14:45“) als zusätzliche Zeile; nil = wie im Raster
+    var zeit: String? = nil
 
     @Environment(\.kartendarstellung) private var darstellung
 
@@ -906,7 +1012,8 @@ struct RasterKarte: View {
         let zeileHoehe: CGFloat = schmal ? 13 : 15
         let platz = max(0, Int((hoehe - 7 - titelHoehe) / zeileHoehe))
         let mitEntfallWort = entfall && platz >= 1
-        let rest = max(0, platz - (mitEntfallWort ? 1 : 0))
+        let mitZeit = zeit != nil && platz - (mitEntfallWort ? 1 : 0) >= 2
+        let rest = max(0, platz - (mitEntfallWort ? 1 : 0) - (mitZeit ? 1 : 0))
         let liste = nebenzeilen
         let sichtbar = Array(liste.prefix(rest))
         let wort = entfall ? nil : Statuslehre.kartenwort(kachel, darstellung)
@@ -932,6 +1039,14 @@ struct RasterKarte: View {
                            farbe: Farben.text2)
                     .frame(height: zeileHoehe, alignment: .leading)
             }
+            if mitZeit, let zeit {
+                Text(zeit)
+                    .font(.system(size: schmal ? 10 : 11.5))
+                    .foregroundStyle(Farben.text2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(height: zeileHoehe, alignment: .leading)
+            }
             Spacer(minLength: 0)
             if wortPlatz, let wort {
                 Statuswort(merkmal: wort)
@@ -948,13 +1063,14 @@ struct RasterKarte: View {
         .opacity(vergangen ? 0.62 : (stil.gedaempft && !entfall ? 0.8 : 1))
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(kachel.vorlesetext + (weitere > 0 ? ", \(weitere) weitere Stunden zur selben Zeit" : ""))
+        .accessibilityLabel(kachel.vorlesetext + (zeit.map { ", \($0)" } ?? "") + (weitere > 0 ? ", \(weitere) weitere Stunden zur selben Zeit" : ""))
         .accessibilityAddTraits(.isButton)
     }
 }
 
-/// Veranstaltung bzw. Termin im Raster: eigener, warmer Block über die ganze Spalte (bzw. in der Mehrfachansicht über
-/// den ganzen Tag) – Titel, Beteiligte, unten die Uhrzeit.
+/// Veranstaltung bzw. Termin im Raster: warmer Block über die echte Zeit (bzw. in der Mehrfachansicht über den ganzen
+/// Tag) – oben der Titel, darunter die Beteiligten, unten die Uhrzeit („14:15–15:30“, ganztägig: „ganztägig“). Sehr
+/// schmal (neben Unterricht) nur als warmer Streifen mit Kalenderzeichen.
 struct Ereigniskarte: View {
     let kachel: Kachel
     let hoehe: CGFloat
@@ -967,46 +1083,66 @@ struct Ereigniskarte: View {
         kachel.zeilen.filter { $0.schluessel != "fach" && $0.schluessel != "anlass" && !$0.text.isEmpty }
     }
 
+    private var ganztags: Bool { kachel.art == .ganztagTermin }
+
+    private var zeit: String {
+        if ganztags { return "ganztägig" }
+        let m = Rastergeometrie.minuten(kachel)
+        return "\(Uhr.uhrzeit(m.beginn))–\(Uhr.uhrzeit(m.ende))"
+    }
+
     var body: some View {
         var stil = Klassikstil.fuer(kachel, darstellung)
         stil.flaeche = Farben.ereignisFlaeche
         stil.ton = nil
         stil.mitBalken = false
         stil.titel = Farben.ereignisText
-        if kachel.art == .veranstaltung { stil.rand = Farben.ereignisRand }
+        stil.rand = Farben.ereignisRand
+        stil.strich = StrokeStyle(lineWidth: 1)
         let entfall = kachel.kartenart == .entfall
+        let streifen = breite < 30
         return VStack(alignment: .leading, spacing: 1) {
-            Text(kachel.anzeigeTitel)
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundStyle(stil.titel)
-                .strikethrough(entfall, color: Farben.entfall)
-                .lineLimit(hoehe > 80 ? 3 : 1)
-                .minimumScaleFactor(0.8)
-            ForEach(Array(nebenzeilen.prefix(hoehe > 70 ? 2 : 0).enumerated()), id: \.offset) { _, z in
-                Text(z.text)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Farben.text2)
-                    .lineLimit(1)
+            if streifen {
+                Image(systemName: "calendar")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(Farben.ereignisText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 3)
+                Spacer(minLength: 0)
+            } else {
+                Text(kachel.anzeigeTitel)
+                    .font(.system(size: breite < 56 ? 11 : 12.5, weight: .semibold))
+                    .foregroundStyle(stil.titel)
+                    .strikethrough(entfall, color: Farben.entfall)
+                    .lineLimit(hoehe > 80 ? 3 : (hoehe > 40 ? 2 : 1))
                     .minimumScaleFactor(0.8)
-            }
-            Spacer(minLength: 0)
-            if hoehe >= 44 {
-                Text(kachel.zeitText)
-                    .font(.system(size: 10.5))
-                    .monospacedDigit()
-                    .foregroundStyle(Farben.text3)
-                    .lineLimit(1)
+                ForEach(Array(nebenzeilen.prefix(hoehe > 70 ? 2 : (hoehe > 50 ? 1 : 0)).enumerated()), id: \.offset) { _, z in
+                    Text(z.text)
+                        .font(.system(size: breite < 56 ? 10.5 : 11.5))
+                        .foregroundStyle(Farben.text2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                Spacer(minLength: 0)
+                if hoehe >= 44 {
+                    Text(zeit)
+                        .font(.system(size: breite < 56 ? 9.5 : 10.5))
+                        .monospacedDigit()
+                        .foregroundStyle(Farben.text2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
             }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 5)
+        .padding(.horizontal, streifen ? 0 : (breite < 56 ? 4 : 6))
+        .padding(.vertical, streifen ? 0 : 5)
         .frame(width: max(0, breite), height: max(0, hoehe), alignment: .topLeading)
         .clipped()
-        .klassikKarte(stil, radius: 6)
+        .klassikKarte(stil, radius: streifen ? 4 : 6)
         .opacity(vergangen ? 0.62 : 1)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(kachel.vorlesetext)
+        .accessibilityLabel("\(kachel.anzeigeTitel), \(zeit)" + nebenzeilen.map { ", " + $0.text }.joined())
         .accessibilityAddTraits(.isButton)
     }
 }
