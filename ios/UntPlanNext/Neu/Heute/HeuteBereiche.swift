@@ -24,7 +24,7 @@ extension Kachel {
         default: return nil
         }
         if kartenart == .entfall {
-            var text = statusChip.map { $0.text.replacingOccurrences(of: "× ", with: "") } ?? "entfällt"
+            var text = statusChip?.gesprochen ?? "entfällt"
             if text == "entfällt" && klasseFehlt {
                 text = "Klasse \(k.abwesendeKlassen.joined(separator: ", ")) abwesend"
             }
@@ -62,7 +62,7 @@ extension Kachel {
             wort = wort ?? "Fachänderung"
         }
         if k.verlegung == "nach" {
-            if let c = statusChip { teile.append(c.text.replacingOccurrences(of: "⊕ ", with: "")) }
+            if let c = statusChip { teile.append(c.gesprochen) }
             wort = wort ?? "Verlegt"
         }
         if zusatz || k.istZusatzstunde {

@@ -510,8 +510,7 @@ extension Kachel {
         }
         if let m = Statuslehre.merkmal(self) { teile.append(m.text) }
         if let c = statusChip {
-            teile.append(c.text.replacingOccurrences(of: "× ", with: "").replacingOccurrences(of: "⊕ ", with: "")
-                .replacingOccurrences(of: " | ", with: ", "))
+            teile.append(c.gesprochen)
         }
         if online { teile.append("online") }
         return teile.joined(separator: ", ")

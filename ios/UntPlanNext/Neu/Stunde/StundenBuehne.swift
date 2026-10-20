@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// Stundendetails (bildschirmfüllend, mit Zoom aus der Kachel): ruhige, gut überblickbare Seite im Stil der gruppierten
-/// Listen des Systems – kein farbiger Kopf, keine Schmuck-Plaketten, Farbe nur für den Status. Reihenfolge:
-/// 1. Kopf: Fach ausgeschrieben und Kürzel, Stunde und Uhrzeit (Datum in der Leiste), Status als Wort, Fortschritt.
-/// 2. „Änderung“ bzw. „Entfall“ (nur wenn etwas anders ist): jede geänderte Angabe „bisher → neu“, Verlegung,
-///    Vertretungstext bzw. Grund.
-/// 3. Angaben, wie sie jetzt gelten: Zeit, Raum, Lehrkraft, Klasse(n), fehlende Klassen.
-/// 4. Hinweis bzw. Information/Prüfung, Online-Unterricht, Thema, Hausaufgaben, Notizen, für Lehrkräfte das Klassenbuch
-///    (Anwesenheit, Lehrstoff, Einträge) und „Im Plan anzeigen“. Unterseiten öffnen sich im selben Stapel.
+/// Stundendetails (bildschirmfüllend, mit Zoom aus der Kachel) mit zwei Reitern als Segmentschalter oben im Blatt (kein
+/// TabView; der zuletzt gewählte Reiter wird je Rolle gemerkt):
+/// - „Details“ – ruhig und sachlich im Stil der gruppierten Listen: Kopf (Fach ausgeschrieben und Kürzel, Datum, Stunde und
+///   Uhrzeit, Status, Fortschritt), „Änderung“ bzw. „Entfall“ (nur wenn etwas anders ist; je Art ein Kennzeichen – Grün, Rot
+///   nur für Entfall, Grau für eine offene Vertretung – und „bisher → neu“), die Angaben (Raum, Lehrkraft, Klasse(n)),
+///   Hinweis bzw. Information/Prüfung, Online-Unterricht, Thema, Hausaufgaben (lesen), Notiz und „Im Plan anzeigen“.
+/// - „Klassenbuch“ – nur Lehrkräfte (für Schüler*innen und Eltern ausgeblendet): `KlassenbuchReiter` (Thema mit
+///   Vorschlägen und automatischem Speichern, Anwesenheitskontrolle, Hausaufgaben, Prüfung eintragen, Einträge, Notizen,
+///   Verlauf) – dieselbe Seite wie „Stunde jetzt“.
 struct StundenBuehne: View {
     let wahl: Stundenwahl
     @EnvironmentObject var zustand: AppZustand
@@ -45,6 +46,12 @@ struct StundenBuehne: View {
 
 // MARK: - Inhalt einer Stunde
 
+/// Reiter der Stundendetails (nur Lehrkräfte sehen „Klassenbuch“).
+enum Stundenreiter: String, Hashable {
+    case details
+    case klassenbuch
+}
+
 struct StundenBuehneInhalt: View {
     let karte: Karte
     let karten: [Karte]
@@ -56,8 +63,8 @@ struct StundenBuehneInhalt: View {
     @EnvironmentObject var zustand: AppZustand
     @Environment(\.openURL) private var oeffneURL
     @StateObject private var daten: Stundendaten
-    /// Klassenbuch-Schnellerfassung („Stunde jetzt“) mit denselben Stundendaten
-    @State private var schnellerfassung = false
+    /// Zuletzt gewählter Reiter je Rolle („lehrer=klassenbuch;admin=details“) – auf dem Gerät gemerkt
+    @AppStorage("stundenReiterJeRolle") private var gemerkteReiter = ""
 
     init(karte: Karte, karten: [Karte], auswahl: Binding<Int>, typ: String, element: String, schliessen: @escaping () -> Void) {
         self.karte = karte
@@ -72,6 +79,8 @@ struct StundenBuehneInhalt: View {
     private var kollegium: Bool { zustand.istKollegium }
     private var mitUnterricht: Bool { karte.unterricht != nil }
     private var istVeranstaltung: Bool { karte.istVeranstaltung }
+    /// Reiter „Klassenbuch“: nur Lehrkräfte, nur Stunden mit Unterricht (für Schüler*innen und Eltern ausgeblendet).
+    private var klassenbuchVerfuegbar: Bool { kollegium && mitUnterricht && !istVeranstaltung }
 
     /// Kachel derselben fachlichen Logik wie im Plan (Status, Zeilen).
     private var kachel: Kachel? {
@@ -83,15 +92,87 @@ struct StundenBuehneInhalt: View {
         return kachel.flatMap { Statuslehre.merkmal($0) }
     }
 
+    // MARK: Reiter
+
+    private var rolle: String {
+        let r = (zustand.benutzer?.rolle ?? "").lowercased()
+        return r.isEmpty ? "standard" : r
+    }
+
+    private var reiter: Stundenreiter {
+        guard klassenbuchVerfuegbar else { return .details }
+        for teil in gemerkteReiter.split(separator: ";") {
+            let paar = teil.split(separator: "=", maxSplits: 1).map(String.init)
+            if paar.count == 2, paar[0] == rolle, let r = Stundenreiter(rawValue: paar[1]) { return r }
+        }
+        return .details
+    }
+
+    private var reiterBindung: Binding<Stundenreiter> {
+        Binding(get: { reiter }, set: { neu in
+            Haptik.auswahl()
+            Tastatur.schliessen()
+            var paare = gemerkteReiter.split(separator: ";").map(String.init).filter { !$0.hasPrefix(rolle + "=") }
+            paare.append("\(rolle)=\(neu.rawValue)")
+            gemerkteReiter = paare.joined(separator: ";")
+        })
+    }
+
     var body: some View {
-        List {
-            if karten.count > 1 {
-                Section {
-                    parallelAuswahl
-                } footer: {
-                    Text("\(karten.count) Stunden zur selben Zeit")
-                }
+        Group {
+            if reiter == .klassenbuch {
+                KlassenbuchReiter(karte: karte, daten: daten)
+            } else {
+                detailsListe
             }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) { kopfleiste }
+        .navigationTitle(Datumsformat.anzeige(karte.datum, "EEEE, d. MMMM"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { werkzeuge }
+        .navigationDestination(for: Detailseite.self) { seite in
+            ziel(seite)
+                .environmentObject(daten)
+                .environmentObject(zustand)
+        }
+        .task { await daten.laden(kollegium: kollegium) }
+        .environmentObject(daten)
+        .sensoryFeedback(.selection, trigger: auswahl)
+    }
+
+    /// Oben im Blatt: gleichzeitige Stunden (falls mehrere) und der Segmentschalter „Details | Klassenbuch“, darunter der
+    /// Ladebalken.
+    private var kopfleiste: some View {
+        VStack(spacing: 0) {
+            if karten.count > 1 || klassenbuchVerfuegbar {
+                VStack(spacing: 8) {
+                    if karten.count > 1 {
+                        parallelAuswahl
+                    }
+                    if klassenbuchVerfuegbar {
+                        Picker("Ansicht", selection: reiterBindung) {
+                            Text("Details").tag(Stundenreiter.details)
+                            Text("Klassenbuch").tag(Stundenreiter.klassenbuch)
+                        }
+                        .pickerStyle(.segmented)
+                        .accessibilityLabel("Ansicht der Stunde")
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+            if mitUnterricht && !daten.geladen {
+                Ladebalken(aktiv: true)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .background(Farben.grund)
+    }
+
+    // MARK: Reiter „Details“
+
+    private var detailsListe: some View {
+        List {
             Section {
                 titelZeile
             }
@@ -104,34 +185,14 @@ struct StundenBuehneInhalt: View {
             themaAbschnitt
             hausaufgabenAbschnitt
             notizenAbschnitt
-            klassenbuchAbschnitt
+            klassenbuchHinweis
             planzieleAbschnitt
         }
         .listStyle(.insetGrouped)
         .listSectionSpacing(.compact)
         .scrollContentBackground(.hidden)
         .background(Farben.grund.ignoresSafeArea())
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if mitUnterricht && !daten.geladen {
-                Ladebalken(aktiv: true)
-            }
-        }
         .overlay(alignment: .bottom) { hinweisToast }
-        .navigationTitle(Datumsformat.anzeige(karte.datum, "EEEE, d. MMMM"))
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { werkzeuge }
-        .navigationDestination(for: Detailseite.self) { seite in
-            ziel(seite)
-                .environmentObject(daten)
-                .environmentObject(zustand)
-        }
-        .task { await daten.laden(kollegium: kollegium) }
-        .environmentObject(daten)
-        .fullScreenCover(isPresented: $schnellerfassung) {
-            StundeJetztSeite(karte: karte, daten: daten)
-                .environmentObject(zustand)
-        }
-        .sensoryFeedback(.selection, trigger: auswahl)
     }
 
     // MARK: - Werkzeuge
@@ -197,15 +258,20 @@ struct StundenBuehneInhalt: View {
                 }
             }
             .pickerStyle(.segmented)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
+            .accessibilityLabel("\(karten.count) Stunden zur selben Zeit")
         } else {
-            Picker("Stunde", selection: bindung) {
-                ForEach(Array(karten.indices), id: \.self) { i in
-                    Text(reitertitel(karten[i])).tag(i)
+            HStack {
+                Text("\(karten.count) Stunden zur selben Zeit")
+                    .font(.footnote)
+                    .foregroundStyle(Farben.text2)
+                Spacer()
+                Picker("Stunde", selection: bindung) {
+                    ForEach(Array(karten.indices), id: \.self) { i in
+                        Text(reitertitel(karten[i])).tag(i)
+                    }
                 }
+                .pickerStyle(.menu)
             }
-            .pickerStyle(.menu)
         }
     }
 
@@ -237,20 +303,20 @@ struct StundenBuehneInhalt: View {
 
     /// Balken des Kopfs: Fachfarbe bzw. grau (wie die Karte im Plan).
     private var balkenFarbe: Color {
-        if karte.istEntfall { return Farben.balkenGrau }
+        if karte.istEntfall { return Farben.entfall }
         return Fachfarbe.voll(karte.farbe) ?? Farben.balkenGrau
     }
 
-    /// Kopf: Fach ausgeschrieben groß, daneben das Kürzel; darunter Stunde und Uhrzeit (das Datum steht in der Leiste),
-    /// der Status als Wort in seiner Farbe und – heute – der Fortschritt der laufenden Stunde.
+    /// Kopf: Fach ausgeschrieben groß, daneben das Kürzel; darunter Datum, Stunde und Uhrzeit, der Status als Wort in seiner
+    /// Farbe und – heute – der Fortschritt der laufenden Stunde.
     private var titelZeile: some View {
         HStack(alignment: .top, spacing: 12) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
                 .fill(balkenFarbe)
-                .frame(width: 4)
+                .frame(width: 3)
                 .frame(minHeight: 44)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(fachLang.isEmpty ? fachKurz : fachLang)
                         .font(.title2.weight(.semibold))
@@ -265,10 +331,13 @@ struct StundenBuehneInhalt: View {
                             .lineLimit(1)
                     }
                 }
-                Text("\(stundentext) · \(zeitKurz)")
+                Text(Datumsformat.anzeige(karte.datum, "EEEE, d. MMMM yyyy"))
                     .font(.subheadline)
-                    .monospacedDigit()
                     .foregroundStyle(Farben.text2)
+                Text("\(stundentext) · \(zeitKurz)")
+                    .font(.subheadline.weight(.medium))
+                    .monospacedDigit()
+                    .foregroundStyle(Farben.text)
                 if let merkmal {
                     Text(merkmal.text)
                         .font(.subheadline.weight(.semibold))
@@ -315,7 +384,7 @@ struct StundenBuehneInhalt: View {
         return k.art == .aenderung || k.art == .abgegeben || k.raumAenderung
     }
 
-    private var geaenderteLehrer: [Wert] { karte.lehrer.filter { $0.geaendert } }
+    private var geaenderteLehrer: [Wert] { karte.lehrer.filter { $0.geaendert && !$0.k.isEmpty } }
     private var geaenderteRaeume: [Wert] { daten.aktuelleRaeume.filter { $0.geaendert } }
     private var geaenderteKlassen: [Wert] { (karte.klassen + karte.mitklassen).filter { $0.geaendert } }
 
@@ -324,42 +393,45 @@ struct StundenBuehneInhalt: View {
         return a
     }
 
-    private var lehrkraftOffen: Bool { karte.istOffeneVertretung && karte.lehrer.allSatisfy { $0.k.isEmpty } }
+    private var lehrkraftOffen: Bool { karte.istOffeneVertretung }
 
-    /// Gibt es außer dem Status konkrete Angaben „bisher → neu“?
-    private var aenderungMitAngaben: Bool {
-        if karte.istEntfall { return true }
-        return lehrkraftOffen || !geaenderteLehrer.isEmpty || !geaenderteRaeume.isEmpty || !geaenderteKlassen.isEmpty
-            || fachVorher != nil || karte.verlegung != nil || !detailText.isEmpty
-    }
-
-    /// Abschnitt „Änderung“ bzw. „Entfall“ ganz oben: jede geänderte Angabe als „bisher → neu“ (bisher grau
-    /// durchgestrichen, neu grün), Verlegung, dazu der Vertretungstext bzw. der Grund des Entfalls.
+    /// Abschnitt „Änderung“ bzw. „Entfall“ ganz oben: je Änderungsart ein Kennzeichen (Grün; Rot nur für den Entfall, Grau
+    /// für eine offene Vertretung) und rechts „bisher → neu“, dazu Verlegung, Vertretungstext bzw. Grund des Entfalls.
     @ViewBuilder
     private var aenderungAbschnitt: some View {
         if hatAenderung {
             Section {
                 if karte.istEntfall {
-                    wertZeile("Status", Text("Entfällt").foregroundColor(Farben.entfall).fontWeight(.semibold))
+                    aenderungZeile("Entfall", .entfall, Text("Die Stunde entfällt").foregroundColor(Farben.entfall).fontWeight(.semibold))
                 } else {
-                    if !aenderungMitAngaben, let merkmal {
-                        wertZeile("Art", Text(merkmal.text).foregroundColor(merkmal.farbe).fontWeight(.semibold))
-                    }
                     if lehrkraftOffen {
-                        wertZeile("Lehrkraft", Text(karte.offeneLehrkraefte.joined(separator: ", "))
-                                    .strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
-                                    + Text(" → noch offen").foregroundColor(Farben.aenderung))
-                    } else if !geaenderteLehrer.isEmpty {
-                        wertZeile(geaenderteLehrer.count > 1 ? "Lehrkräfte" : "Lehrkraft", wechselText(geaenderteLehrer))
+                        if kollegium {
+                            aenderungZeile("Vertretung folgt", .offen, offenText)
+                        } else {
+                            aenderungZeile("Vertretung folgt", .offen, Text("Die Vertretung wird noch eingeteilt").foregroundColor(Farben.text2))
+                        }
+                    }
+                    if !geaenderteLehrer.isEmpty {
+                        aenderungZeile("Vertretung", .aenderung, wechselText(geaenderteLehrer))
                     }
                     if !geaenderteRaeume.isEmpty {
-                        wertZeile(geaenderteRaeume.count > 1 ? "Räume" : "Raum", wechselText(geaenderteRaeume))
+                        aenderungZeile("Raumänderung", .aenderung, wechselText(geaenderteRaeume))
                     }
                     if !geaenderteKlassen.isEmpty {
-                        wertZeile(geaenderteKlassen.count > 1 ? "Klassen" : "Klasse", wechselText(geaenderteKlassen))
+                        let nurFehlend = geaenderteKlassen.allSatisfy { $0.k.isEmpty }
+                        aenderungZeile(nurFehlend ? "Klasse fehlt" : "Klasse", nurFehlend ? .offen : .aenderung, wechselText(geaenderteKlassen))
                     }
                     if let alt = fachVorher {
-                        wertZeile("Fach", wechselText([Wert(k: karte.fach, alt: alt, neu: true)]))
+                        aenderungZeile("Fachänderung", .aenderung, wechselText([Wert(k: karte.fach, alt: alt, neu: true)]))
+                    }
+                    if karte.istZusatzstunde || kachel?.zusatz == true {
+                        aenderungZeile("Zusätzlich", .aenderung, Text("Zusätzliche Stunde"))
+                    }
+                    if kachel?.art == .abgegeben {
+                        aenderungZeile("Vertreten", .offen, Text("Eine andere Lehrkraft übernimmt"))
+                    }
+                    if !aenderungMitAngaben, let merkmal, !lehrkraftOffen {
+                        aenderungZeile(merkmal.text, .aenderung, Text(""))
                     }
                 }
                 verlegungZeilen
@@ -375,21 +447,57 @@ struct StundenBuehneInhalt: View {
             } header: {
                 Text(karte.istEntfall ? "Entfall" : "Änderung")
             } footer: {
-                if !karte.istEntfall && (!geaenderteLehrer.isEmpty || !geaenderteRaeume.isEmpty || !geaenderteKlassen.isEmpty) {
-                    Text("Grau durchgestrichen: bisher. Grün: neu.")
+                if !karte.istEntfall && (!geaenderteLehrer.isEmpty || !geaenderteRaeume.isEmpty || !geaenderteKlassen.isEmpty || fachVorher != nil) {
+                    Text("Grau durchgestrichen: bisher. Grün unterstrichen: neu.")
                 }
             }
         }
+    }
+
+    /// „Abr → noch offen“ (bisher grau durchgestrichen).
+    private var offenText: Text {
+        let wer = karte.offeneLehrkraefte.filter { $0 != "???" }.joined(separator: ", ")
+        let offen = Text("noch offen").foregroundColor(Farben.text2)
+        guard !wer.isEmpty else { return offen }
+        return Text(wer).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3) + Text(" → ") + offen
+    }
+
+    /// Gibt es außer dem Status konkrete Angaben?
+    private var aenderungMitAngaben: Bool {
+        !geaenderteLehrer.isEmpty || !geaenderteRaeume.isEmpty || !geaenderteKlassen.isEmpty || fachVorher != nil
+            || karte.verlegung != nil || karte.istZusatzstunde || kachel?.zusatz == true || kachel?.art == .abgegeben
+    }
+
+    /// Zeile der Änderung: links das Kennzeichen der Art, rechts der Wert („bisher → neu“).
+    private func aenderungZeile(_ art: String, _ ton: Chipton, _ wert: Text) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Chipfeld(ton: ton) {
+                Text(art)
+                    .font(.footnote.weight(.semibold))
+                    .padding(.vertical, 1)
+            }
+            .fixedSize()
+            Spacer(minLength: 8)
+            wert
+                .font(.body)
+                .monospacedDigit()
+                .foregroundStyle(Farben.text)
+                .multilineTextAlignment(.trailing)
+                .textSelection(.enabled)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
     private var verlegungZeilen: some View {
         if let richtung = karte.verlegung {
             if let von = karte.verlegungVon?.text, !von.isEmpty {
-                wertZeile(richtung == "von" ? "Verlegt von" : "Hierher von", Text(von))
+                aenderungZeile(richtung == "von" ? "Verlegt" : "Hierher verlegt", karte.istEntfall ? .entfall : .aenderung,
+                               Text("von \(von)"))
             }
             if let nach = karte.verlegungNach?.text, !nach.isEmpty {
-                wertZeile("Verlegt nach", Text(nach))
+                aenderungZeile("Verlegt", karte.istEntfall ? .entfall : .aenderung, Text("auf \(nach)"))
             }
         }
     }
@@ -429,13 +537,13 @@ struct StundenBuehneInhalt: View {
 
     private var lehrerText: String {
         if !lehrerListe.isEmpty { return lehrerListe.joined(separator: ", ") }
-        return lehrkraftOffen || karte.istOffeneVertretung ? "noch offen" : "–"
+        if lehrkraftOffen { return kollegium ? "noch offen" : "Vertretung folgt" }
+        return "–"
     }
 
     /// Angaben der Stunde, so wie sie jetzt gelten – ohne Farbe (die Änderung steht im Abschnitt darüber).
     @ViewBuilder
     private var faktenZeilen: some View {
-        wertZeile("Zeit", Text("\(zeitKurz) · \(stundentext)"))
         wertZeile("Raum", Text(raumText))
         wertZeile(lehrerListe.count > 1 ? "Lehrkräfte" : "Lehrkraft", Text(lehrerText))
         wertZeile(karte.klassen.count + karte.mitklassen.count > 1 ? "Klassen" : "Klasse",
@@ -548,26 +656,20 @@ struct StundenBuehneInhalt: View {
         }
     }
 
-    // MARK: - Thema, Hausaufgaben
+    // MARK: - Thema, Hausaufgaben (lesen)
 
     private var thema: String { daten.eintrag?.thema ?? "" }
     private var geerbtesThema: String { daten.geerbterEintrag?.thema ?? "" }
-    private var lehrstoffBearbeitbar: Bool { kollegium && daten.darf }
 
+    /// Thema der Stunde zum Lesen (nur wenn eingetragen; Lehrkräfte bearbeiten es im Reiter „Klassenbuch“).
     @ViewBuilder
     private var themaAbschnitt: some View {
-        let sichtbar = !thema.isEmpty || !geerbtesThema.isEmpty || lehrstoffBearbeitbar
-        if mitUnterricht && !istVeranstaltung && sichtbar {
-            Section(kollegium ? "Thema (Lehrstoff)" : "Thema") {
-                verweis(.lehrstoff, aktiv: lehrstoffBearbeitbar) {
-                    if !thema.isEmpty {
-                        langText(thema)
-                    } else if !geerbtesThema.isEmpty {
-                        Text("Block: \(geerbtesThema)").foregroundStyle(Farben.text2)
-                    } else {
-                        Text(lehrstoffBearbeitbar ? "Thema eintragen" : "Noch kein Thema eingetragen")
-                            .foregroundStyle(lehrstoffBearbeitbar ? Farben.akzent : Farben.text3)
-                    }
+        if mitUnterricht && !istVeranstaltung && (!thema.isEmpty || !geerbtesThema.isEmpty) {
+            Section("Thema") {
+                if !thema.isEmpty {
+                    langText(thema)
+                } else {
+                    Text("Block: \(geerbtesThema)").foregroundStyle(Farben.text2)
                 }
             }
         }
@@ -577,7 +679,7 @@ struct StundenBuehneInhalt: View {
     private var hausaufgabenAbschnitt: some View {
         let hausaufgaben = daten.hausaufgaben?.liste ?? []
         let faellig = daten.hausaufgaben?.faellig ?? []
-        if mitUnterricht && !istVeranstaltung && (!hausaufgaben.isEmpty || !faellig.isEmpty || daten.geladen) {
+        if mitUnterricht && !istVeranstaltung && (!hausaufgaben.isEmpty || !faellig.isEmpty || (daten.geladen && !kollegium)) {
             if !faellig.isEmpty {
                 Section("Heute fällig") {
                     ForEach(faellig) { h in hausaufgabenZeile(h) }
@@ -590,9 +692,11 @@ struct StundenBuehneInhalt: View {
                 } else {
                     ForEach(hausaufgaben.prefix(5)) { h in hausaufgabenZeile(h) }
                 }
-                NavigationLink(value: Detailseite.hausaufgaben) {
-                    Text(kollegium && daten.darf ? "Hausaufgaben bearbeiten" : (hausaufgaben.count > 5 ? "Alle \(hausaufgaben.count) Hausaufgaben" : "Details"))
-                        .foregroundStyle(Farben.akzent)
+                if hausaufgaben.count > 5 || (!hausaufgaben.isEmpty && !kollegium) {
+                    NavigationLink(value: Detailseite.hausaufgaben) {
+                        Text(hausaufgaben.count > 5 ? "Alle \(hausaufgaben.count) Hausaufgaben" : "Details")
+                            .foregroundStyle(Farben.akzent)
+                    }
                 }
             }
         }
@@ -618,113 +722,46 @@ struct StundenBuehneInhalt: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Notizen
+    // MARK: - Notizen (Schüler*innen, Eltern: lesen; Lehrkräfte im Reiter „Klassenbuch“)
 
     @ViewBuilder
     private var notizenAbschnitt: some View {
         let schueler = daten.notizSchueler
-        let lehrer = daten.notizLehrer
-        let zeigeSchueler = (kollegium && mitUnterricht) || !schueler.isEmpty
-        let zeigeLehrer = kollegium && (mitUnterricht || !lehrer.isEmpty)
-        if zeigeSchueler || zeigeLehrer {
-            Section("Notizen") {
-                if zeigeSchueler {
-                    verweis(.notizSchueler, aktiv: kollegium) {
-                        notiz("Für Schüler*innen", schueler)
-                    }
-                }
-                if zeigeLehrer {
-                    verweis(.notizLehrer, aktiv: true) {
-                        notiz("Für Lehrkräfte", lehrer)
-                    }
-                }
+        if !klassenbuchVerfuegbar && !schueler.isEmpty {
+            Section("Notiz") {
+                langText(schueler)
             }
         }
     }
 
-    private func notiz(_ titel: String, _ text: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(titel)
-                .font(.footnote)
-                .foregroundStyle(Farben.text2)
-            Text(text.isEmpty ? "Keine Notiz" : text)
-                .foregroundStyle(text.isEmpty ? Farben.text3 : Farben.text)
-                .lineLimit(6)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    // MARK: - Klassenbuch (Lehrkräfte)
+    // MARK: - Hinweis auf den Reiter „Klassenbuch“ (Lehrkräfte)
 
     @ViewBuilder
-    private var klassenbuchAbschnitt: some View {
-        if kollegium && mitUnterricht && !istVeranstaltung {
+    private var klassenbuchHinweis: some View {
+        if klassenbuchVerfuegbar {
+            let kontrolliert = daten.anwesenheit?.kontrolliert == true
             Section {
-                if daten.hatEinzelstunden {
-                    bereichsMenue
-                }
                 Button {
-                    Haptik.fest()
-                    schnellerfassung = true
+                    reiterBindung.wrappedValue = .klassenbuch
                 } label: {
-                    Label("Schnellerfassung (Stunde jetzt)", systemImage: "checklist.checked")
-                        .font(.body.weight(.semibold))
-                }
-                NavigationLink(value: Detailseite.schueler) {
-                    LabeledContent {
-                        if daten.anwesenheit != nil || daten.geladen {
-                            SchuelerPlakette(zahl: daten.abwesendAnzahl, kontrolliert: daten.anwesenheit?.kontrolliert == true)
-                        }
-                    } label: {
+                    HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Anwesenheit")
-                            Text(daten.anwesenheit?.kontrolliert == true ? "kontrolliert" : "noch nicht kontrolliert")
+                            Text("Klassenbuch")
+                                .foregroundStyle(Farben.text)
+                            Text("Thema \(thema.isEmpty && geerbtesThema.isEmpty ? "offen" : "✓") · Anwesenheit \(kontrolliert ? "✓" : "offen") · Hausaufgabe \((daten.hausaufgaben?.liste ?? []).isEmpty ? "–" : "✓")")
                                 .font(.footnote)
-                                .foregroundStyle(daten.anwesenheit?.kontrolliert == true ? Farben.ok : Farben.text2)
+                                .foregroundStyle(Farben.text2)
                         }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Farben.pfeil)
+                            .accessibilityHidden(true)
                     }
+                    .contentShape(Rectangle())
                 }
-                NavigationLink(value: Detailseite.lehrstoff) {
-                    LabeledContent("Lehrstoff", value: thema.isEmpty ? "offen" : "eingetragen")
-                }
-                if !daten.klassen.isEmpty {
-                    NavigationLink(value: Detailseite.klassenbuch) {
-                        LabeledContent("Klassenbucheinträge", value: daten.geladen ? "\(daten.vermerke.count)" : "")
-                    }
-                }
-            } header: {
-                Text("Klassenbuch")
-            }
-        }
-    }
-
-    /// Doppel- bzw. Blockstunde: Einträge für den ganzen Block oder nur eine Stunde.
-    private var bereichsMenue: some View {
-        Menu {
-            Button {
-                Task { await daten.bereichWaehlen(nil, kollegium: kollegium) }
-            } label: {
-                Menuezeile(titel: "Ganzer Block (\(karte.von).–\(karte.bis). Stunde)", gewaehlt: daten.einzelstunde == nil)
-            }
-            ForEach(daten.blockStunden) { s in
-                Button {
-                    Task { await daten.bereichWaehlen(s.stunde, kollegium: kollegium) }
-                } label: {
-                    Menuezeile(titel: "\(s.stunde). Stunde" + (s.beginn.isEmpty ? "" : " \(Detailmass.uhrzeit(s.beginn))–\(Detailmass.uhrzeit(s.ende))")
-                               + (s.eintrag ? " •" : ""), gewaehlt: daten.einzelstunde == s.stunde)
-                }
-            }
-        } label: {
-            LabeledContent {
-                HStack(spacing: 4) {
-                    Text(daten.bereichText)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.footnote.weight(.semibold))
-                }
-                .foregroundStyle(Farben.akzent)
-            } label: {
-                Text("Einträge gelten für")
-                    .foregroundStyle(Farben.text)
+                .buttonStyle(.plain)
+                .accessibilityHint("Wechselt zum Reiter Klassenbuch")
             }
         }
     }
@@ -770,19 +807,7 @@ struct StundenBuehneInhalt: View {
         }
     }
 
-    // MARK: - Bausteine
-
-    /// Zeile, die (wenn aktiv) eine Unterseite öffnet.
-    @ViewBuilder
-    private func verweis<Inhalt: View>(_ seite: Detailseite, aktiv: Bool, @ViewBuilder inhalt: () -> Inhalt) -> some View {
-        if aktiv {
-            NavigationLink(value: seite) {
-                inhalt()
-            }
-        } else {
-            inhalt()
-        }
-    }
+    // MARK: - Unterseiten
 
     @ViewBuilder
     private func ziel(_ seite: Detailseite) -> some View {

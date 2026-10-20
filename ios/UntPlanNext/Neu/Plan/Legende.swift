@@ -1,15 +1,14 @@
 import SwiftUI
 
-/// Legende der Stundenkarten (Menü „…“ des Plans) wie die Änderungslegende von Enbrea („Änderungstyp | Darstellung“):
-/// links der Änderungstyp mit einem sachlichen Satz, rechts eine kleine Musterkarte. Die Muster benutzen dieselben
-/// Bausteine wie das Raster (`Klassikstil`, `klassikKarte`, `Chipfeld`, `Statuschip`), stimmen also hell und dunkel.
-/// EduOrga-Anpassungen: jede Änderung einheitlich Grün, Rot nur für den Entfall (alles durchgestrichen), offene
-/// Vertretung neutral grau und gestrichelt („Vertretung folgt“); ohne Fachfarbe bleibt die Karte neutral. Felder in derselben
-/// Größe wie die übrigen Zeilen, Titel und Mitteilungen einzeilig mit „…“.
+/// „Kennzeichnungen“ der Stundenkarten (Blatt „Auswahl und Filter“): EduOrgas eigene Übersicht, nach Bedeutung gruppiert –
+/// Unterricht, Geändert, Offen, Entfällt, Hinweise. Je Zeile links eine kleine Musterkarte aus denselben Bausteinen wie
+/// das Raster (`Klassikstil`, `klassikKarte`, `Chipfeld`, `Statuschip`, `Kartenmarke`), rechts Name und ein sachlicher Satz.
+/// Grün für jede Änderung, Rot nur für den Entfall (alles durchgestrichen), Grau für eine offene Vertretung; Kennzeichen in
+/// Worten bzw. mit Pfeil („Gal ← Gor“, „entfällt“, „zusätzlich“), Titel und Mitteilungen einzeilig mit „…“.
 struct PlanLegende: View {
     @Environment(\.dismiss) private var schliessen
 
-    /// Eine Zeile der Musterkarte: Text, grünes bzw. rotes Feld.
+    /// Eine Zeile der Musterkarte: Text bzw. Kennzeichen.
     fileprivate enum Musterzeile {
         case text(String)
         case feld(String, Chipton)
@@ -24,8 +23,14 @@ struct PlanLegende: View {
         var zeilen: [Musterzeile]
         var chip: Kartenchip? = nil
         var entfall: Bool = false
-        /// Mitteilung: hellgelber Block mit Text statt Karte
+        /// Mitteilung: hellgelber Block mit Titel statt Karte
         var notiz: String? = nil
+    }
+
+    fileprivate struct Gruppe: Identifiable {
+        let id: String
+        let titel: String
+        let eintraege: [Eintrag]
     }
 
     private static func neutral() -> Klassikstil {
@@ -43,9 +48,9 @@ struct PlanLegende: View {
     private static var aenderung: Klassikstil {
         var s = neutral()
         s.balken = Farben.aenderung
-        s.gestreift = true
         s.rand = Farben.aenderung.opacity(0.55)
         s.flaeche = Farben.aenderungFlaeche
+        s.marke = Farben.aenderung
         return s
     }
 
@@ -53,10 +58,9 @@ struct PlanLegende: View {
         var s = neutral()
         s.flaeche = Farben.flaeche2
         s.balken = Farben.entfall
-        s.gestreift = true
-        s.schraffur = true
         s.rand = Farben.entfall.opacity(0.35)
         s.titel = Farben.text3
+        s.marke = Farben.entfall
         return s
     }
 
@@ -64,6 +68,7 @@ struct PlanLegende: View {
         var s = neutral()
         s.rand = Farben.text3
         s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+        s.marke = Farben.text3
         return s
     }
 
@@ -84,83 +89,80 @@ struct PlanLegende: View {
         return s
     }
 
-    fileprivate static let unterricht: [Eintrag] = [
-        Eintrag(id: "regulaer", titel: "Unterricht", text: "Neutrale Karte mit grauem Balken – Fach, Klasse, Lehrkraft, Raum.",
-                stil: neutral(), fach: .text("D"), zeilen: [.text("5a"), .text("Mül"), .text("204")]),
-        Eintrag(id: "fachfarbe", titel: "Unterricht mit Fachfarbe", text: "Nur wenn die Schule dem Fach eine Farbe gegeben hat: Balken und leichte Fläche in dieser Farbe.",
-                stil: fachfarbe(Color(hexWert: 0x3E7CC9)), fach: .text("M"), zeilen: [.text("5a"), .text("Rth"), .text("126")]),
-    ]
-
-    fileprivate static let aenderungen: [Eintrag] = [
-        Eintrag(id: "klasse-fehlt", titel: "Klasse fehlt", text: "Die Klasse ist abwesend: alles durchgestrichen, „(5b)“ und „× entfällt“ rot.",
-                stil: entfall, fach: .text("NAWI"), zeilen: [.feld("(5b)", .entfall), .text("Maq"), .text("122")],
-                chip: Kartenchip(text: "× entfällt", ton: .entfall), entfall: true),
-        Eintrag(id: "lehrer-fehlt", titel: "Lehrer fehlt, Vertretung folgt", text: "Bewusst neutral (kein Entfall): gestrichelter grauer Rand, die fehlende Lehrkraft als graues Feld „(Abr)“ – für Schüler*innen und Eltern „Vertretung folgt“.",
-                stil: offen, fach: .text("E4"), zeilen: [.text("12"), .feld("(Abr)", .offen), .text("21")]),
-        Eintrag(id: "entfall", titel: "Vertretungsentfall", text: "Die Stunde entfällt: alles grau durchgestrichen, darunter „× entfällt“.",
-                stil: entfall, fach: .text("E"), zeilen: [.text("7c"), .text("Had"), .text("403")],
-                chip: Kartenchip(text: "× entfällt", ton: .entfall), entfall: true),
-        Eintrag(id: "vertretung", titel: "Lehrervertretung", text: "Grün schraffierter Rand, die neue Lehrkraft mit der bisherigen in Klammern.",
-                stil: aenderung, fach: .text("SP1"), zeilen: [.text("6b"), .feld("+Gal (Gor)", .aenderung), .text("UH")]),
-        Eintrag(id: "raum", titel: "Raumänderung", text: "Neuer Raum mit dem bisherigen in Klammern.",
-                stil: aenderung, fach: .text("BILI"), zeilen: [.text("6b"), .text("Abr"), .feld("+105 (303)", .aenderung)]),
-        Eintrag(id: "fach", titel: "Fachänderung", text: "Neues Fach mit dem bisherigen in Klammern.",
-                stil: aenderung, fach: .feld("+BI (MU)", .aenderung), zeilen: [.text("6b"), .text("Kre"), .text("023")]),
-        Eintrag(id: "verlegt-nach", titel: "Verschoben auf einen anderen Termin", text: "Die Stunde findet hier nicht statt (durchgestrichen) – unten der neue Termin: Tag, Datum, Stunde und Uhrzeit.",
-                stil: entfall, fach: .text("M"), zeilen: [.text("10e"), .text("Rth"), .text("126")],
-                chip: Kartenchip(text: "× auf Di 21.10. 6 | 12:20", ton: .entfall), entfall: true),
-        Eintrag(id: "verlegt-von", titel: "Verschoben von einem anderen Termin", text: "Hierher verlegte Stunde – unten der ursprüngliche Termin.",
-                stil: aenderung, fach: .text("M"), zeilen: [.text("10e"), .text("Rth"), .text("126")],
-                chip: Kartenchip(text: "⊕ von Mo 20.10. 3 | 09:45", ton: .aenderung)),
-        Eintrag(id: "zusatz", titel: "Zusatzunterricht", text: "Zusätzliche Stunde mit „⊕ Zusatz“.",
-                stil: aenderung, fach: .text("BI"), zeilen: [.text("5e, 11"), .text("Abr"), .text("03")],
-                chip: Kartenchip(text: "⊕ Zusatz", ton: .aenderung)),
-        Eintrag(id: "mitteilung", titel: "Mitteilung", text: "Hinweis bzw. Veranstaltung als hellgelber Block über die echte Uhrzeit – zu lange Texte enden mit „…“ (ganz in den Details).",
-                stil: notiz, fach: .text(""), zeilen: [], notiz: "Aufbau der Bühne ab 16:00 Uhr"),
-        Eintrag(id: "pruefung", titel: "Prüfung", text: "Bernsteinfarbener Rand und helle Fläche.",
-                stil: pruefung, fach: .text("D"), zeilen: [.text("9a"), .text("Mül"), .text("204")]),
+    fileprivate static let gruppen: [Gruppe] = [
+        Gruppe(id: "unterricht", titel: "Unterricht", eintraege: [
+            Eintrag(id: "regulaer", titel: "Wie geplant", text: "Weiße Karte mit grauem Balken: Fach, Klasse, Lehrkraft, Raum.",
+                    stil: neutral(), fach: .text("D"), zeilen: [.text("5a"), .text("Mül"), .text("204")]),
+            Eintrag(id: "fachfarbe", titel: "Mit Fachfarbe", text: "Nur wenn die Schule dem Fach eine Farbe gegeben hat: Balken und leichte Tönung.",
+                    stil: fachfarbe(Color(hexWert: 0x3E7CC9)), fach: .text("M"), zeilen: [.text("5a"), .text("Rth"), .text("126")]),
+        ]),
+        Gruppe(id: "aenderungen", titel: "Geändert (grün)", eintraege: [
+            Eintrag(id: "vertretung", titel: "Vertretung", text: "Grüner Balken und Marke; auf der Lehrerzeile neu ← bisher.",
+                    stil: aenderung, fach: .text("SP1"), zeilen: [.text("6b"), .feld("Gal ← Gor", .aenderung), .text("UH")]),
+            Eintrag(id: "raum", titel: "Anderer Raum", text: "Neuer Raum ← bisheriger; ein zusätzlicher Raum als „neu B070“.",
+                    stil: aenderung, fach: .text("BILI"), zeilen: [.text("6b"), .text("Abr"), .feld("105 ← 303", .aenderung)]),
+            Eintrag(id: "fach", titel: "Anderes Fach", text: "Neues Fach ← bisheriges.",
+                    stil: aenderung, fach: .feld("BI ← MU", .aenderung), zeilen: [.text("6b"), .text("Kre"), .text("023")]),
+            Eintrag(id: "verlegt-von", titel: "Hierher verlegt", text: "Unten der ursprüngliche Termin.",
+                    stil: aenderung, fach: .text("M"), zeilen: [.text("10e"), .text("Rth"), .text("126")],
+                    chip: Kartenchip(text: "verlegt ← Mo 20.10., 3. Std", ton: .aenderung)),
+            Eintrag(id: "zusatz", titel: "Zusätzliche Stunde", text: "Unten „zusätzlich“.",
+                    stil: aenderung, fach: .text("BI"), zeilen: [.text("5e, 11"), .text("Abr"), .text("03")],
+                    chip: Kartenchip(text: "zusätzlich", ton: .aenderung)),
+        ]),
+        Gruppe(id: "offen", titel: "Offen (grau)", eintraege: [
+            Eintrag(id: "lehrer-fehlt", titel: "Vertretung folgt", text: "Die Lehrkraft fehlt, die Vertretung ist noch nicht eingeteilt – die Stunde fällt nicht aus. Schüler*innen und Eltern sehen „Vertretung folgt“.",
+                    stil: offen, fach: .text("E4"), zeilen: [.text("12"), .feld("Abr fehlt", .offen), .text("21")]),
+        ]),
+        Gruppe(id: "entfall", titel: "Entfällt (rot)", eintraege: [
+            Eintrag(id: "entfall", titel: "Entfall", text: "Roter Balken und Marke, alles durchgestrichen, unten „entfällt“.",
+                    stil: entfall, fach: .text("E"), zeilen: [.text("7c"), .text("Had"), .text("403")],
+                    chip: Kartenchip(text: "entfällt", ton: .entfall), entfall: true),
+            Eintrag(id: "verlegt-nach", titel: "Verlegt", text: "Findet hier nicht statt – unten der neue Termin.",
+                    stil: entfall, fach: .text("M"), zeilen: [.text("10e"), .text("Rth"), .text("126")],
+                    chip: Kartenchip(text: "verlegt → Di 21.10., 6. Std", ton: .entfall), entfall: true),
+            Eintrag(id: "klasse-fehlt", titel: "Klasse fehlt", text: "Die Klasse ist abwesend (z. B. Exkursion): „5b fehlt“ und „entfällt“.",
+                    stil: entfall, fach: .text("NAWI"), zeilen: [.feld("5b fehlt", .entfall), .text("Maq"), .text("122")],
+                    chip: Kartenchip(text: "entfällt", ton: .entfall), entfall: true),
+        ]),
+        Gruppe(id: "hinweise", titel: "Hinweise", eintraege: [
+            Eintrag(id: "pruefung", titel: "Prüfung", text: "Bernsteinfarbene Kontur und helle Fläche.",
+                    stil: pruefung, fach: .text("D"), zeilen: [.text("9a"), .text("Mül"), .text("204")]),
+            Eintrag(id: "mitteilung", titel: "Mitteilung, Veranstaltung", text: "Hellgelber Block über die echte Uhrzeit; zu lange Titel enden mit „…“ (ganz in den Details).",
+                    stil: notiz, fach: .text(""), zeilen: [], notiz: "Aufbau der Bühne für das Schulfest ab 16:00 Uhr"),
+        ]),
     ]
 
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    ForEach(PlanLegende.unterricht) { zeile($0) }
-                } header: {
-                    kopf
+                ForEach(PlanLegende.gruppen) { g in
+                    Section(g.titel) {
+                        ForEach(g.eintraege) { zeile($0) }
+                    }
                 }
                 Section {
-                    ForEach(PlanLegende.aenderungen) { zeile($0) }
-                    HStack(alignment: .top, spacing: 14) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Weitere Stunden")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Farben.text)
-                            Text("Zur selben Zeit finden weitere Stunden statt. Antippen zeigt alle.")
-                                .font(.footnote)
-                                .foregroundStyle(Farben.text2)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Spacer(minLength: 8)
+                    HStack(alignment: .center, spacing: 14) {
                         Text("+2")
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .monospacedDigit()
                             .foregroundStyle(Farben.akzent)
-                            .padding(.horizontal, 5)
-                            .frame(minHeight: 20)
-                            .background(Farben.primaerFlaeche, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                            .padding(.horizontal, 6)
+                            .frame(minHeight: 22)
+                            .background(Farben.primaerFlaeche, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
                             .frame(width: PlanLegende.musterBreite, alignment: .center)
+                        beschreibung("Weitere Stunden", "Zur selben Zeit finden weitere Stunden statt – antippen zeigt alle.")
                     }
                     .padding(.vertical, 2)
                     .accessibilityElement(children: .combine)
                 } header: {
-                    Text("Änderungen")
+                    Text("Im Raster")
                 } footer: {
-                    Text("Jede Änderung ist grün, rot ist nur der Entfall, eine offene Vertretung grau. Zeichen („+“, „×“, „⊕“, Klammern) zeigen die Art auch ohne Farbe. Ein Punkt im Tageskopf zeigt Änderungen (grün) bzw. Entfall (rot) an diesem Tag. Die Stundendetails nennen jede Änderung ausführlich.")
+                    Text("Die Art steht immer auch in Worten bzw. mit Pfeil – nicht nur als Farbe. Ein Punkt im Tageskopf zeigt Änderungen (grün) bzw. Entfall (rot) an diesem Tag; die Stundendetails nennen jede Änderung ausführlich.")
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Legende")
+            .navigationTitle("Kennzeichnungen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -172,30 +174,25 @@ struct PlanLegende: View {
         .presentationDragIndicator(.visible)
     }
 
-    private var kopf: some View {
-        HStack {
-            Text("Änderungstyp")
-            Spacer()
-            Text("Darstellung")
-                .frame(width: PlanLegende.musterBreite, alignment: .center)
+    private func beschreibung(_ titel: String, _ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(titel)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Farben.text)
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(Farben.text2)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func zeile(_ e: Eintrag) -> some View {
         HStack(alignment: .top, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(e.titel)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Farben.text)
-                Text(e.text)
-                    .font(.footnote)
-                    .foregroundStyle(Farben.text2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 8)
             muster(e)
+            beschreibung(e.titel, e.text)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 3)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(e.titel). \(e.text)")
     }
@@ -227,6 +224,11 @@ struct PlanLegende: View {
                     .foregroundStyle(Farben.ereignisText)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                Text("16:00–18:00")
+                    .font(.system(size: 11))
+                    .monospacedDigit()
+                    .foregroundStyle(Farben.text2)
+                    .padding(.top, 2)
             } else {
                 musterzeile(e.fach, entfall: e.entfall, titel: true)
                     .frame(height: 15.5, alignment: .leading)
@@ -241,11 +243,11 @@ struct PlanLegende: View {
                 }
             }
         }
-        .padding(.leading, e.stil.mitBalken ? 9 : 6)
-        .padding(.trailing, 3)
-        .padding(.top, 3)
-        .padding(.bottom, 2)
-        .frame(width: PlanLegende.musterBreite, height: 80, alignment: .topLeading)
+        .padding(.leading, e.stil.mitBalken ? 8 : 6)
+        .padding(.trailing, 4)
+        .padding(.top, 4)
+        .padding(.bottom, 3)
+        .frame(width: PlanLegende.musterBreite, height: e.notiz == nil ? 82 : 44, alignment: .topLeading)
         .clipped()
         .klassikKarte(e.stil, radius: 6)
         .accessibilityHidden(true)

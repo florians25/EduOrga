@@ -452,7 +452,7 @@ struct ListenKachel: View {
     /// Statuswort und kleine Zeichen rechts unten (Online, Hausaufgabe, Info).
     private var zeichen: some View {
         HStack(spacing: 6) {
-            // Feld wie in der Enbrea-Legende („× entfällt“, „⊕ von …“, „⊕ Zusatz“), sonst das Statuswort
+            // Kennzeichen („entfällt“, „verlegt ← …“, „zusätzlich“), sonst das Statuswort
             if let chip = kachel.statusChip {
                 Statuschip(chip: chip, schrift: .footnote.weight(.semibold))
             } else if let merkmal {

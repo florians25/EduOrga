@@ -346,7 +346,7 @@ struct Agendazeile: View {
         .padding(.trailing, 10)
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .klassikKarte(stil, radius: 6, balkenBreite: 4)
+        .klassikKarte(stil, radius: 6, balkenBreite: 3)
         .opacity(vergangen ? 0.62 : (stil.gedaempft && !entfall ? 0.8 : 1))
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)

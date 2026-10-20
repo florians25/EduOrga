@@ -357,39 +357,39 @@ struct SprechtagView: View {
                     Spacer(minLength: 4)
                     if !istEltern, lehrkraft?.lehrer?.online == true {
                         Text("Online-Gespräche")
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                             .lineLimit(1)
                     } else if !istEltern, let raum = lehrkraft?.lehrer?.raum, !raum.isEmpty {
                         Text("Raum \(raum)")
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                             .lineLimit(1)
                     }
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(info.datumText.isEmpty ? Datumsformat.anzeige(info.datum, "EEEE, d. MMMM yyyy") : info.datumText)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.callout.weight(.medium))
                         .foregroundStyle(Farben.text)
                     if !info.zeitenText.isEmpty {
                         Text("\(info.zeitenText) Uhr" + (info.dauer > 0 ? " · je \(info.dauer) Minuten" : ""))
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                     }
                     if !info.ort.isEmpty {
                         Text(info.ort)
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                     }
                     if istEltern && !info.anmeldungBis.isEmpty && info.phase != "vorbei" && !info.abgesagt && !info.angekuendigt {
                         Text("Anmeldung bis \(Datumsformat.anzeige(info.anmeldungBis, "d.M.yyyy"))")
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                     }
                 }
                 if info.angekuendigt && !info.abgesagt {
                     Text(info.ankuendigungText)
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Farben.text2)
                 }
                 if !istEltern, let d = lehrkraft, !d.zeitfenster.isEmpty {
@@ -401,12 +401,12 @@ struct SprechtagView: View {
                 if info.abgesagt {
                     Label("Der Sprechtag wurde abgesagt." + (info.absageGrund.isEmpty ? "" : " Grund: \(info.absageGrund)"),
                           systemImage: "xmark.octagon")
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Farben.entfall)
                 }
                 if !info.hinweis.isEmpty {
                     Text(info.hinweis)
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Farben.text2)
                 }
             }
@@ -422,26 +422,26 @@ struct SprechtagView: View {
                          farbe: k.buchbar ? Farben.ok : (k.angekuendigt ? Farben.akzent : Farben.text2))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(k.datumText.isEmpty ? Datumsformat.anzeige(k.datum, "EEEE, d. MMMM yyyy") : k.datumText)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.callout.weight(.medium))
                         .foregroundStyle(Farben.text)
                     if !k.beginn.isEmpty {
                         Text(k.ende.isEmpty ? "\(k.beginn) Uhr" : "\(k.beginn) – \(k.ende) Uhr")
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                     }
                     if !k.ort.isEmpty {
                         Text(k.ort)
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(Farben.text2)
                     }
                 }
                 if !k.text.isEmpty {
                     Text(k.text)
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Farben.text2)
                 } else if k.angekuendigt && !k.anmeldungVonText.isEmpty {
                     Text("Anmeldung ab \(k.anmeldungVonText)")
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Farben.text2)
                 }
             }
@@ -599,19 +599,19 @@ struct SprechtagView: View {
                 if let t = f.termin {
                     Statusmarke(text: "Gebucht", farbe: Farben.akzent)
                     Text(t.schueler?.anzeige.isEmpty == false ? (t.schueler?.anzeige ?? "") : "Termin")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.callout.weight(.medium))
                         .foregroundStyle(Farben.text)
                         .lineLimit(1)
                     let zusatz = [t.schueler?.klasse ?? "", t.gebuchtVon.isEmpty ? "" : "gebucht von \(t.gebuchtVon)"].filter { !$0.isEmpty }
                     if !zusatz.isEmpty {
                         Text(zusatz.joined(separator: " · "))
-                            .font(.system(size: 13))
+                            .font(.footnote)
                             .foregroundStyle(Farben.text2)
                             .lineLimit(2)
                     }
                     if !t.bemerkung.isEmpty {
                         Text(t.bemerkung)
-                            .font(.system(size: 13))
+                            .font(.footnote)
                             .italic()
                             .foregroundStyle(Farben.text2)
                             .lineLimit(3)
@@ -619,12 +619,12 @@ struct SprechtagView: View {
                 } else if f.gesperrt {
                     Statusmarke(text: "Gesperrt", farbe: Farben.text3, symbol: "lock.fill")
                     Text("Nicht buchbar")
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Farben.text3)
                 } else {
                     Statusmarke(text: "Frei", farbe: Farben.ok)
                     Text("Noch nicht gebucht")
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Farben.text2)
                 }
             }
@@ -722,19 +722,19 @@ struct SprechtagView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Statusmarke(text: "Gebucht", farbe: Farben.akzent)
                 Text(t.lehrerName.isEmpty ? t.lehrer : t.lehrerName)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.callout.weight(.medium))
                     .foregroundStyle(Farben.text)
                     .lineLimit(1)
                 let zusatz = [t.schueler?.anzeige ?? "", t.online ? "Online" : (t.raum.isEmpty ? "" : "Raum \(t.raum)")].filter { !$0.isEmpty }
                 if !zusatz.isEmpty {
                     Text(zusatz.joined(separator: " · "))
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(Farben.text2)
                         .lineLimit(2)
                 }
                 if !t.bemerkung.isEmpty {
                     Text(t.bemerkung)
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .italic()
                         .foregroundStyle(Farben.text2)
                         .lineLimit(3)
@@ -742,7 +742,7 @@ struct SprechtagView: View {
                 if t.online, let url = Karte.onlineURL(t.link) {
                     Link(destination: url) {
                         Text("Online-Termin öffnen")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.footnote.weight(.medium))
                             .foregroundStyle(Farben.akzent)
                     }
                 }
@@ -769,7 +769,7 @@ struct SprechtagView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(l.anzeige)
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.callout.weight(.medium))
                             .foregroundStyle(Farben.text)
                             .lineLimit(1)
                         if l.eingeladen {
@@ -781,7 +781,7 @@ struct SprechtagView: View {
                         .filter { !$0.isEmpty }
                     if !unten.isEmpty {
                         Text(unten.joined(separator: " · "))
-                            .font(.system(size: 13))
+                            .font(.footnote)
                             .foregroundStyle(Farben.text2)
                             .lineLimit(2)
                     }
@@ -790,7 +790,7 @@ struct SprechtagView: View {
             }
             if l.eingeladen && !l.einladungText.isEmpty {
                 Text(l.einladungText)
-                    .font(.system(size: 13))
+                    .font(.footnote)
                     .foregroundStyle(Farben.text2)
                     .lineLimit(4)
             }
@@ -837,7 +837,7 @@ struct SprechtagView: View {
                 }
                 if l.zeitfenster.contains(where: \.konflikt) {
                     Label("Überschneidung mit einem Ihrer Termine", systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(Farben.warnung)
                 }
             } else {
@@ -1023,17 +1023,19 @@ private struct Zeitspalte: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(beginn)
-                .font(.system(size: 20, weight: .semibold).monospacedDigit())
+                .font(.title3.weight(.semibold).monospacedDigit())
                 .foregroundStyle(aktiv ? Farben.text : Farben.text2)
             if !ende.isEmpty {
                 Text("bis \(ende)")
-                    .font(.system(size: 12).monospacedDigit())
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(Farben.text3)
             }
         }
         .lineLimit(1)
         .minimumScaleFactor(0.8)
-        .frame(width: 62, alignment: .leading)
+        .frame(minWidth: 62, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ende.isEmpty ? "\(beginn) Uhr" : "\(beginn) bis \(ende) Uhr")
     }
 }
 
@@ -1053,7 +1055,7 @@ private struct Statusmarke: View {
                     .frame(width: 7, height: 7)
             }
             Text(text)
-                .font(.system(size: 13, weight: .medium))
+                .font(.footnote.weight(.medium))
                 .lineLimit(1)
         }
         .foregroundStyle(farbe)
@@ -1076,13 +1078,16 @@ private struct Zeitchip: View {
                 .font(.subheadline.weight(.medium).monospacedDigit())
         }
         .foregroundStyle(farbe)
-        .padding(.horizontal, 10)
-        .frame(height: 30)
+        .padding(.horizontal, 12)
+        .frame(minHeight: 44)
         .background(fenster.konflikt ? Farben.warnungFlaeche : Farben.primaerFlaeche, in: form)
         .overlay {
             form.strokeBorder(fenster.konflikt ? Farben.warnung.opacity(0.4) : Farben.primaerRand, lineWidth: 1)
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Freie Zeit \(fenster.beginn) Uhr" + (fenster.konflikt ? ", überschneidet sich mit einem anderen Termin" : ""))
+        .accessibilityAddTraits(.isButton)
     }
 }
 

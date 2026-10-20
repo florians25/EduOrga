@@ -310,7 +310,7 @@ struct PlanAuswahlBlatt: View {
                 Button {
                     legendeOffen = true
                 } label: {
-                    Label("Legende", systemImage: "info.circle")
+                    Label("Kennzeichnungen", systemImage: "info.circle")
                 }
                 if nurAenderungen || nurIstZustand || !aufsichten || !mitteilungen || !ferien {
                     Button("Filter zurücksetzen", role: .destructive) {

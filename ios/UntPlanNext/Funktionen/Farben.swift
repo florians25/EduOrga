@@ -34,7 +34,7 @@ extension Color {
 /// **Petrol** #164C55 (Logo, hervorgehobene Flächen), Akzentfarbe #28747A (Knöpfe, Auswahl, Links, Fokus, Jetzt-Linie –
 /// 5,4 : 1 auf Weiß; im Dunkelmodus #5FB0B5, 6,8 : 1 auf dunklem Grund), Seitenhintergrund #F5F7F8, Text #24363B.
 /// Fachliche Statusfarben wie in design/tokens.css mit heller Fläche und bewusst weit weg vom Petrol der Marke:
-/// Änderung/Vertretung einheitlich Grün #2f855a (Enbrea-Legende mit EduOrga-Anpassung), Termin Magenta #a3347c, Prüfung
+/// Änderung/Vertretung einheitlich Grün #2f855a (EduOrga-Kennzeichnung), Termin Magenta #a3347c, Prüfung
 /// Bernstein, Entfall Rot #b42318, Mitteilung Hellgelb, Ferien Blau. Im
 /// Dunkelmodus haben sie eine aufgehellte Variante, damit Text und Linien auf dunklen Flächen lesbar bleiben.
 enum Farben {
@@ -123,7 +123,7 @@ enum Farben {
     static let entfallChip = Color(hell: 0xFDECEA, dunkel: 0x3D1A17)
     static let entfallChipText = Color(hell: 0xB42318, dunkel: 0xF4A69E)
     /// Jede Änderung (Vertretung, Raum-, Fach- und Lehrerwechsel, Verlegung, Zusatzunterricht): einheitlich Grün #2f855a
-    /// (EduOrga-Anpassung der Enbrea-Legende – statt einer Farbe je Änderungstyp)
+    /// (eine Farbe für alle Änderungsarten)
     static let aenderung = Color(hell: 0x2F855A, dunkel: 0x5FC48C)
     /// Helle Statusfläche einer geänderten Karte (heller als das Feld, damit es sich abhebt)
     static let aenderungFlaeche = Color(hell: 0xF4FBF6, dunkel: 0x14241B)
@@ -143,8 +143,7 @@ enum Farben {
     /// Veranstaltung, Termin, Raumbuchung (Magenta – unterscheidbar von Änderung und Entfall)
     static let termin = Color(hell: 0xA3347C, dunkel: 0xEE8CC9)
     static let terminFlaeche = Color(hell: 0xFAEEF5, dunkel: 0x341A2C)
-    /// Mitteilung bzw. Veranstaltung im Wochenraster (AG, Schulfest, Hinweis): hellgelber Notizblock wie in der
-    /// Enbrea-Legende, als eigener Block über die Spalte
+    /// Mitteilung bzw. Veranstaltung im Wochenraster (AG, Schulfest, Hinweis): hellgelber Block über die Spalte
     static let ereignisFlaeche = Color(hell: 0xFFF6CF, dunkel: 0x2E2910)
     static let ereignisRand = Color(hell: 0xEADB98, dunkel: 0x54491E)
     static let ereignisText = Color(hell: 0x5A4708, dunkel: 0xF0DF9C)

@@ -81,6 +81,11 @@ struct SprechtagListeView: View {
                           s?.zeitenText ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.subheadline)
                         .foregroundStyle(Farben.text2)
+                    if let s, let anmeldung = anmeldungText(s) {
+                        Text(anmeldung)
+                            .font(.footnote)
+                            .foregroundStyle(Farben.text2)
+                    }
                     HStack(spacing: 6) {
                         if let s {
                             Plakette(text: s.phaseText, farbe: s.abgesagt ? Farben.entfall : (s.buchbar ? Farben.ok : Farben.text2))
@@ -99,13 +104,22 @@ struct SprechtagListeView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(Farben.pfeil)
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(zustand.istKollegium && !e.beteiligt)
+    }
+
+    /// „Anmeldung bis 5.11.2026“ bzw. „Anmeldung ab …“ (nicht bei abgesagten bzw. vergangenen Sprechtagen).
+    private func anmeldungText(_ s: SprechtagInfo) -> String? {
+        guard !s.abgesagt, s.phase != "vorbei", s.status != "vorbei" else { return nil }
+        if s.angekuendigt && !s.anmeldungVonText.isEmpty { return "Anmeldung ab \(s.anmeldungVonText)" }
+        if !s.anmeldungBisText.isEmpty { return "Anmeldung bis \(s.anmeldungBisText)" }
+        if !s.anmeldungBis.isEmpty { return "Anmeldung bis \(Datumsformat.anzeige(s.anmeldungBis, "d.M.yyyy"))" }
+        return nil
     }
 
     private func laden() async {

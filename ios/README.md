@@ -62,11 +62,12 @@ ios/
 
 - **Farben der Marke:** Primärfarbe Petrol `#164C55` (Monogramm, Primärknöpfe der Einrichtung), Akzent `#28747A`
   (`AccentColor`, Knöpfe, Auswahl, Links, Jetzt-Linie – 5,4 : 1 auf Weiß; Dunkelmodus `#5FB0B5`, 6,8 : 1),
-  Hintergrund `#F5F7F8`, Text `#24363B`. Statusfarben (EduOrga-Anpassung der Enbrea-Legende): **jede Änderung
-  Grün** `#2f855a` (Feld `#e6f4ea`, Schrift `#1d5c3a`; dunkel `#5fc48c`/`#1e3a29`/`#a8e6c1`), **Entfall und Fehlendes Rot**
-  `#b42318` (Feld `#fdecea`), Mitteilung Hellgelb, **Termin Magenta** `#a3347c`, Prüfung Bernstein `#a15c07`, Ferien Blau
-  `#2f6f9f`.
-- **Planraster und Stundenkarten (Woche, Tag, Zeitachse)** – „Stundenkarte mobil (v4)“ (gleiche Karte wie Web/PWA,
+  Hintergrund `#F5F7F8`, Text `#24363B`. Statusfarben: **jede Änderung Grün** `#2f855a` für
+  Balken/Linien (Kennzeichen `#e6f4ea` mit Schrift `#1d5c3a`, 7,0 : 1; kleine grüne Schrift `#267349`, ≥ 5 : 1 – `#2f855a`
+  erreicht auf `#e6f4ea` nur 4,0 : 1; dunkel `#5fc48c`/`#1e3a29`/`#a8e6c1`), **Rot `#b42318` nur für den Entfall**
+  (Kennzeichen `#fdecea`, 5,8 : 1), **offene Vertretung neutral grau** (Kennzeichen `#ebeef2`, Schrift `#4d5866`, 6,2 : 1),
+  Mitteilung Hellgelb, **Termin Magenta** `#a3347c`, Prüfung Bernstein `#a15c07`, Ferien Blau `#2f6f9f`.
+- **Planraster und Stundenkarten (Woche, Tag, Zeitachse)** – „Stundenkarte mobil (v5)“ (gleiche Karte wie Web/PWA,
   `design/DESIGN.md`): hellgraue Rasterfläche (`#edf1f2`, dunkel `#0b0f13`), **eine kompakte Zeile je Stunde, alle
   gleich hoch** (verfügbare Höhe ÷ Stunden bis zur letzten belegten, mindestens der 6. – aber nie höher als nötig:
   iPhone hochkant 52–62 pt, breite Flächen bis 88 pt; die Dichte Kompakt/Normal/Komfortabel skaliert), Pausen als Band (ab 15 Minuten 12 pt, kürzere 3 pt), Doppel- und Blockstunden über ihre
@@ -76,26 +77,30 @@ ios/
     Punkt zeigt Änderungen (grün) bzw. Entfall (rot). Antippen öffnet den Tag.
   - **Karte:** füllt die Zelle mit gleichmäßigen Abständen (1,5 pt oben/unten, 3 pt zwischen den Spalten), **feste
     Breite und Höhe, Inhalt beschnitten – nie breiter als die Spalte**. Radius 6, **standardmäßig neutral** (weiß, grauer
-    4-pt-Balken links) – Fachfarbe (Balken, leichte Tönung) nur, wenn die Schule dem Fach eine Farbe gegeben hat; kein
-    Schatten. Oben links das **Fach fett** (13 pt), darunter je eine Zeile **Klasse, Lehrkraft, Raum** (11 pt, Zeilenhöhe
-    12,5 pt) – vier kurze Zeilen in rund 60 pt.
-  - **Änderungen wie in der Enbrea-Legende** („Änderungstyp | Darstellung“): schraffierter linker Rand in der
-    Statusfarbe und ein kleines Feld auf der betroffenen Zeile (`Kartengestaltung.swift`: `Kartenwert`, `Kartenfach`,
-    `Statuschip`, `Kachel.statusChip`):
-    Klasse fehlt „(5b)“ + „× entfällt“ · Lehrer fehlt ohne Vertretung „(Abr)“ (rot, gestrichelt) · Vertretungsentfall
-    „× entfällt“ · Lehrervertretung „+Gal (Gor)“ · Raumänderung „+105 (303)“ · Fachänderung „+BI (MU)“ · verschoben auf
-    „× auf Di 21.10. 6 | 12:20“ · verschoben von „⊕ von Mo 20.10. 3 | 09:45“ · Zusatzunterricht „⊕ Zusatz“ · Mitteilung
-    bzw. Veranstaltung als hellgelber Block. EduOrga-Anpassungen: alle Änderungen grün, Entfall/Fehlendes rot, bei
-    Entfall ist **alles auf der Karte durchgestrichen**. Quelle der Typen: `klassen`/`abwesendeKlassen`, `lehrer` und
-    `raeume` (`k`/`alt`/`neu`/`plus`), `fachAlt`, `verlegung` mit `verlegungVon`/`verlegungNach`, `zusaetzlich`,
-    `vertretungOffen`, `status` (wie `Plandienst.cs`). Prüfung Bernstein. Die **Legende** (Blatt „Auswahl und Filter“)
-    zeigt jeden Änderungstyp mit Musterkarte. Weicht die Uhrzeit vom Raster ab (14:05 statt
+    3-pt-Balken links) – Fachfarbe (Balken, leichte Tönung) nur, wenn die Schule dem Fach eine Farbe gegeben hat; kein
+    Schatten. Oben links das **Fach fett** (13,5 pt), darunter je eine Zeile **Klasse, Lehrkraft, Raum** (12 pt, Zeilenhöhe
+    13,5 pt) – vier kurze Zeilen in rund 60 pt. Alle Zeilen einzeilig, zu lange Texte enden mit „…“.
+  - **Kennzeichnung von Änderungen (EduOrga-eigene Formensprache):** durchgehender 3-pt-Balken links in der
+    Statusfarbe (keine Schraffur), eine kleine quadratische Statusmarke oben rechts und ein kompaktes **Kennzeichen**
+    (Radius 3, getönt mit feiner Kontur, offen gestrichelt) auf der betroffenen Zeile – in Worten bzw. mit Pfeil
+    (`Kartengestaltung.swift`: `Kartenwert`, `Kartenfach`, `Statuschip`, `Kartenmarke`, `Kachel.statusChip`):
+    Vertretung „Gal ← Gor“ · anderer Raum „105 ← 303“, zusätzlicher Raum „neu B070“ · anderes Fach „BI ← MU“ · Lehrkraft
+    fehlt, Vertretung offen „Abr fehlt“ (grau; **Schüler*innen und Eltern: „Vertretung folgt“** –
+    `Kartendarstellung.fuerFamilie`) · Entfall „entfällt“ (rot, **alles durchgestrichen**) · Klasse fehlt „5b fehlt“ +
+    „entfällt“ · verlegt „verlegt → Di 21.10., 6. Std“ bzw. „verlegt ← Mo 20.10., 3. Std“ · Zusatzunterricht
+    „zusätzlich“ · Mitteilung bzw. Veranstaltung als hellgelber Block. Quelle der Typen: `klassen`/`abwesendeKlassen`,
+    `lehrer` und `raeume` (`k`/`alt`/`neu`/`plus`), `fachAlt`, `verlegung` mit `verlegungVon`/`verlegungNach`,
+    `zusaetzlich`, `vertretungOffen`, `status` (wie `Plandienst.cs`). Prüfung Bernstein. Das Blatt **„Kennzeichnungen“**
+    (in „Auswahl und Filter“, `Legende.swift`) zeigt die Arten nach Bedeutung gruppiert (Unterricht · Geändert · Offen ·
+    Entfällt · Hinweise) mit Musterkarte. Weicht die Uhrzeit vom Raster ab (14:05 statt
     14:00), steht die Karte genau nach der Uhrzeit versetzt mit einer Zeile „14:05–14:45“.
   - **Gleichzeitige Stunden:** bis zur eingestellten Zahl („Parallele Stunden nebeneinander“, 1–4, Standard 1)
     nebeneinander (Änderungen zuerst); die übrigen hinter einem weichen Reiter **„+N“** (Petrol hell) innen am rechten
     Rand der letzten sichtbaren Karte – immer innerhalb der Zelle. Antippen öffnet das Blatt „N Stunden zur selben Zeit“.
   - **Veranstaltungen und Termine im Raster** (AG Schulfest 14:15–15:30, Chor, ganztägige Termine) über ihre **echte
-    Zeit** (auch ab bzw. bis mitten in einer Stunde) als warmer Block: Titel, Beteiligte, unten die Uhrzeit. Ohne
+    Zeit** (auch ab bzw. bis mitten in einer Stunde) als warmer Block: Titel, Beteiligte, unten die Uhrzeit – **jede Zeile
+    einzeilig, zu lange Texte enden mit „…“** (kein Umbruch; voller Text in den Details und für VoiceOver; ebenso in
+    Mehrfachplan, Tag, Agenda und den Mustern der Kennzeichnungen). Ohne
     Unterricht zur selben Zeit füllt der Termin die Spalte; mit Unterricht rückt er als schmaler Block an den rechten
     Rand, die überschnittenen Stunden werden schmaler. Ganztägige Termine an Tagen mit Unterricht: schmaler warmer
     Streifen über den ganzen Tag. Kein Banner im Tageskopf. (Der Server liefert Termine derzeit nach Stunden; liefert er
@@ -111,6 +116,20 @@ ios/
 - **Liquid Glass** nur auf der Bedienebene (Tab-Leiste, Planleiste, Wochenleiste der Tagesansicht, Werkzeugknöpfe, Filterchips,
   Knöpfe über dem Kopf der Stundenansicht); Inhalte deckend.
 - SF Pro mit Dynamic Type, Abstände im 8-pt-Raster, Tippflächen mindestens 44 pt.
+- **Barrierefreiheit (Regeln für alle Karten und Kennzeichen):**
+  - Kontrast WCAG AA (≥ 4,5 : 1) für jede Schrift auf ihrer Fläche (Werte oben); grüne Schrift auf hellem Grund
+    `Farben.aenderungSchrift`.
+  - Nie nur Farbe: jede Art steht auch in Worten bzw. mit Pfeil („entfällt“, „fehlt“, „zusätzlich“, „←“, „→“),
+    Entfall zusätzlich durchgestrichen, offen gestrichelt.
+  - Kennzeichen mindestens so groß wie die übrigen Zeilen (12 pt, halbfett; Listen `.footnote`).
+  - Dynamic Type: Schrift der Rasterkarten wächst mit (`DynamicTypeSize.kartenfaktor`, gedeckelt bei 1,6), die
+    Rasterzeilen langsamer (`rasterfaktor`) – bei großen Größen zeigt die Karte weniger Zeilen, **geänderte Zeilen und
+    das Kennzeichen zuerst**; Listen und Blätter nutzen Textstile.
+  - VoiceOver: je Karte ein ganzer Satz (`Kachel.vorlesetext`, z. B. „3. Stunde, M, Mathematik, 9:45 bis 10:30, Raum
+    geändert von 303 nach 105, Lehrkraft Gal statt Gor, Klasse 7a, Vertretung“), Termine mit Art („Veranstaltung, …“).
+  - Tippflächen ≥ 44 pt (Reiter „+N“, Zeiten beim Sprechtag, Vorlagen und Fälligkeit im Klassenbuch).
+  - „Bewegung reduzieren“: kein Zoom aus der Kachel (`ZoomZiel`), Ansichtswechsel nur überblendet, Karten beim Drücken
+    nur abgedunkelt statt verkleinert.
 
 ## Oberfläche
 
@@ -138,15 +157,33 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
   **Tag:** Standard als Raster (eine breite Spalte, gleichzeitige Stunden nebeneinander), oben die Wochenleiste der
   Schultage; wahlweise Liste mit großen Karten, laufender Stunde mit Restzeit und **Jetzt-Linie**, bzw. Zeitachse;
   waagrecht wischen = Tag.
-- **Stundendetails** – ruhige, gut überblickbare Seite im Stil der gruppierten Listen des Systems (kein farbiger Kopf,
-  keine Schmuck-Plaketten, Farbe nur für den Status): Navigationsleiste mit Datum, Schließen und Teilen. **Kopf:** Fach
-  ausgeschrieben groß mit Kürzel, „3. Stunde · 9:45–10:30“, Status als Wort, Fortschritt der laufenden Stunde.
-  **Änderung** bzw. **Entfall** (nur wenn etwas anders ist) direkt darunter: jede geänderte Angabe als „bisher → neu“
-  (Lehrkraft, Raum, Klasse, Fach), Verlegung, Vertretungstext bzw. Grund des Entfalls. Danach die **Angaben**, wie sie
-  jetzt gelten (Zeit, Raum, Lehrkraft, Klasse(n), fehlende Klassen), Hinweis bzw. Information/Prüfung,
-  **Online-Unterricht beitreten**, **Thema**, **Hausaufgaben**, **Notizen**, für Lehrkräfte **Klassenbuch** (Einträge
-  gelten für Block/Einzelstunde, Anwesenheit, Lehrstoff, Klassenbucheinträge) und „Im Plan anzeigen“. Gleichzeitige
-  Stunden: Segmentschalter oben.
+- **Stundendetails** (`Neu/Stunde/StundenBuehne.swift`) – zwei Reiter als **Segmentschalter oben im Blatt**
+  („Details | Klassenbuch“, kein TabView; der zuletzt gewählte Reiter wird je Rolle auf dem Gerät gemerkt), darüber bei
+  gleichzeitigen Stunden deren Auswahl.
+  - **Details** – ruhig, im Stil der gruppierten Listen (kein farbiger Kopf, Farbe nur für den Status): **Kopf** Fach
+    ausgeschrieben mit Kürzel, Datum, „3. Stunde · 9:45–10:30“, Status, Fortschritt der laufenden Stunde. **Änderung**
+    bzw. **Entfall** (nur wenn etwas anders ist) direkt darunter: je Art ein Kennzeichen (Vertretung, Raumänderung,
+    Klasse, Fachänderung, Zusätzlich, Verlegt – grün; Entfall rot; Vertretung folgt grau) und rechts „bisher → neu“, dazu
+    Vertretungstext bzw. Grund. Danach die **Angaben** (Raum, Lehrkraft, Klasse(n), fehlende Klassen), Hinweis bzw.
+    Information/Prüfung, **Online-Unterricht beitreten**, Thema (lesen), **Hausaufgaben** (lesen), Notiz, für
+    Lehrkräfte eine Zeile „Klassenbuch: Thema ✓ · Anwesenheit offen · Hausaufgabe –“ (wechselt den Reiter) und „Im Plan
+    anzeigen“.
+  - **Klassenbuch** – nur Lehrkräfte, nur Stunden mit Unterricht (für Schüler*innen und Eltern ausgeblendet;
+    `Neu/Stunde/KlassenbuchReiter.swift`, dieselbe Seite wie „Stunde jetzt“): oben der Stand „Thema ✓/offen ·
+    Anwesenheit ✓/offen · Hausaufgabe“ und bei Doppelstunden „Einträge gelten für“; dann
+    1. **Thema / Lehrstoff** – Eingabefeld mit Vorschlägen (Themenplan, „Fortsetzung: …“, frühere Themen), **speichert
+       automatisch** (1,5 s nach der letzten Eingabe, beim Verlassen des Felds bzw. Reiters) mit Statuszeile
+       („Automatisch gespeichert · 10:42“, „Ohne Verbindung gesichert …“, Fehler mit „Erneut speichern“);
+    2. **Anwesenheitskontrolle** – großer Knopf mit Zusammenfassung („24 anwesend · 1 abwesend · 1 verspätet“,
+       kontrolliert/offen), öffnet die Anwesenheit; Schnellaktion **„Alle anwesend“** (PUT mit leerer Liste wie im Web,
+       mit Rückfrage, wenn schon Abwesenheiten eingetragen sind) und die Schnellerfassung (Wischen bzw. Namensraster,
+       `SchnellanwesenheitSeite`);
+    3. **Hausaufgaben** – Liste, neue Hausaufgabe mit Fälligkeit als Schnellwahl (nächste Stunde · in 1 Woche · Datum ·
+       ohne), „Hausaufgaben bearbeiten“;
+    4. **Klausur/Prüfung eintragen** (Recht `pruefung.anlegen`) – vorbelegt aus der Stunde;
+    5. **Einträge** – heutige Klassenbucheinträge, Vorlagen, eigener Eintrag, alle Einträge;
+    6. **Notizen** (für Schüler*innen bzw. Lehrkräfte);
+    7. **Verlauf** – die letzten Themen dieses Kurses und der Kursverlauf.
 - **Anwesenheit** (Lehrkräfte, wie in EduOrga Web): Kopf „24 / 27 anwesend · 2 abwesend · 1 verspätet“, gemeldete
   Abwesenheiten der Eltern (mit „Als abwesend eintragen“), Abwesenheiten aus der Vorstunde („Für diese Stunde
   übernehmen“), je Schüler*in ein Segmentschalter **Anwesend · Abwesend · Verspätet · Entsch.** (Verspätung mit
@@ -156,7 +193,7 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
   ohne Netz in den Schreibpuffer), `POST /klassenbuch/abwesenheit/verlaengern`.
 - **Schule** – nur das Wichtigste (Plan, Heute und Postfach sind eigene Reiter):
   - Lehrkräfte: **Klassenbuch** (offene Stunden, Klassenbucheinträge, Hausaufgaben, Abwesenheiten und
-    Entschuldigungen), **Unterricht** (Vertretungen, Prüfungen, Prüfung eintragen), **Melden** (Abwesenheit melden, Meine
+    Entschuldigungen), **Unterricht** (Vertretungen, Prüfungen – eintragen, ändern/verlegen, löschen –, Prüfung eintragen), **Melden** (Abwesenheit melden, Meine
     Meldungen, Meine Abwesenheiten), **Elternsprechtag**.
   - Schüler*innen und Eltern: Hausaufgaben, Abwesenheiten und Entschuldigungen (Eltern: Entschuldigungsschreiben als
     PDF), Prüfungen, Vertretungen, Elternsprechtag.
@@ -165,7 +202,20 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
     Infocenter-Extras (Neuigkeiten, Termine).
   Rechte aus der Sitzung (`benutzer.rechte`, z. B. `pruefung.anlegen`, `vertretung.*`) blenden Einträge aus; der Server
   prüft zusätzlich.
-- **Elternsprechtag** (`/api/app/sprechtag`, wie `web/src/UntPlanWeb/Api/SprechtagApi.cs`):
+- **Prüfungen eintragen und ändern** (Lehrkräfte mit Recht „Prüfungen eintragen“, `pruefung.anlegen`;
+  `Neu/Schule/Unterrichtsseiten.swift` → `PruefungFormular`, gleiche Endpunkte wie Unterricht → Prüfungen bzw. der
+  Prüfungsdialog der Stunde im Web): aus dem Reiter „Klassenbuch“ der Stunde (vorbelegt: Datum, Stunden, Klassen, Raum,
+  Lehrkraft als Aufsicht, Fach als Titel) und im Reiter „Schule“ (Liste nach KW: „+“ = neu, Antippen einer eigenen
+  künftigen Prüfung = ändern bzw. verlegen, Wischen bzw. Knopf = löschen). Felder: **Art** (`GET /pruefungsarten`, sonst
+  Klausur, Klassenarbeit, Test, Prüfung …), **Titel/Thema**, **Datum**, **von/bis Stunde** (Dauer mit Uhrzeit), Klassen,
+  Räume, Aufsicht, **Hinweis** (gesendet als „Art: Hinweis“ wie im Web). Neu `POST /meldungen/klausur`, ändern
+  `POST /meldungen/klausur/verlegen` (`{alt, neu}`), löschen `POST /meldungen/klausur/loeschen`. **Konflikte** meldet der
+  Server (Prüfungssperre „Die Klasse 7a hat in dieser Woche bereits 2 Prüfung(en).“, kein Unterricht, rückwirkend, Raum
+  …) – sie stehen rot über dem Knopf; vorab zeigt das Formular, wie viele Prüfungen die gewählten Klassen in dieser
+  Woche schon haben.
+- **Elternsprechtag** (`/api/app/sprechtag`, wie `web/src/UntPlanWeb/Api/SprechtagApi.cs`): Liste mit Datum, Zeiten,
+  Phase und **„Anmeldung bis …“** bzw. „Anmeldung ab …“; Schrift in Textstilen (Dynamic Type), Zeiten als 44-pt-Felder
+  mit VoiceOver-Text („Freie Zeit 15:20 Uhr“).
   - Eltern: Einladungen und Lehrkräfte je Kind mit freien Zeiten (Überschneidungen markiert), **buchen**
     (`POST /{id}/buchen`), **absagen** mit Grund (`POST /{id}/termine/{tid}/absagen`), **Warteliste** bei ausgebuchten
     Lehrkräften (`POST/DELETE /{id}/warteliste`), **eigener Ablauf** („Meine Termine“ nach Uhrzeit, Raum bzw.
@@ -179,8 +229,9 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
     Termine“, Standard 15), Lehrkräfte zusätzlich ein Überblick vor dem ersten Termin; bei jedem Laden neu geplant
     (`Kern/Dienste/Sprechtagerinnerung.swift`).
 - **Klassenbuch „Stunde jetzt“** (`Neu/Klassenbuch/StundeJetzt.swift`): auf „Heute“ ein Tippen für Lehrkräfte
-  (laufende eigene Stunde ab 10 Minuten vorher, sonst die nächste, sonst bis 45 Minuten danach zum Nachtragen), auch als
-  „Schnellerfassung“ in den Stundendetails. Eine Seite: **Anwesenheit** als Liste (nach rechts wischen = anwesend,
+  (laufende eigene Stunde ab 10 Minuten vorher, sonst die nächste, sonst bis 45 Minuten danach zum Nachtragen). Die
+  Seite ist der Reiter „Klassenbuch“ der Stundendetails (`KlassenbuchReiter`) mit Kopf (Fach, Klasse, Raum,
+  Fortschritt). Schnellerfassung der Anwesenheit (`SchnellanwesenheitSeite`) als Liste (nach rechts wischen = anwesend,
   nach links = abwesend, lange drücken = verspätet mit Minuten 5–45 bzw. Stepper) oder als **Raster großer
   Namensfelder** (Antippen schaltet um), Zähler da/fehlen/verspätet, „Anwesenheit bestätigen“; **Thema** mit
   Vorschlägen (nächstes Thema des persönlichen Themenplans, „Fortsetzung: …“, frühere Themen aus
@@ -194,13 +245,27 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
 - **Aktualität der Plandaten:** Plan und Heute laden beim Erscheinen, beim Ziehen zum Aktualisieren, wenn die App in
   den Vordergrund kommt, bei einer (stillen) Push- bzw. lokalen Mitteilung und beim Antippen einer Mitteilung sofort
   neu (`AppZustand.frischLaden`, `Kachelspeicher.veralten`). Zwischengespeicherte Wochen sind nur Platzhalter: bis die
-  frische Antwort da ist, steht oben „Stand hh:mm“. Kein HTTP-Cache (`urlCache = nil`, `reloadIgnoringLocalCacheData`,
+  frische Antwort da ist, steht oben „Stand hh:mm“. **Stand EduOrga Studio** (`Neu/Gestaltung/Studiostand.swift`): wann
+  die Planung die Daten zuletzt übertragen hat – aus der Sitzung `paket.empfangen` bzw. (neuere Server)
+  `paket.letzteVertretungen`, der neuere Zeitpunkt gilt –, klar getrennt von der Ladezeit der App („aktualisiert 14:35“):
+  auf „Heute“ unter Datum und Schule („Stand EduOrga Studio: vor 5 Min. · aktualisiert 14:35“, Antippen zeigt „Di 20.10.,
+  14:32“), im Plan als Kapsel einige Sekunden nach dem Öffnen bzw. Wochenwechsel und im Menü des Plannamens
+  („Datenstand“). Ist der Stand an einem Schultag älter als 24 Stunden, bleibt die Kapsel mit einem ruhigen Hinweis in
+  der Warnfarbe stehen. Kein HTTP-Cache (`urlCache = nil`, `reloadIgnoringLocalCacheData`,
   `Cache-Control: no-cache` je Anfrage).
 - **Offline:** Lehrstoff, Hausaufgaben, Klassenbucheinträge und Anwesenheit, die ohne Verbindung gespeichert werden,
   landen im **Schreibpuffer** (je Konto) und werden gesendet, sobald das Netz zurück ist (Netzbeobachtung), die App in
   den Vordergrund kommt oder „Senden“ gewählt wird; bis dahin zeigt die App den lokalen Stand („wartet auf
   Verbindung“). Andere Schreibzugriffe melden einen klaren Fehler.
-- **Heute, Postfach, Suche, Profil** – wie bisher (Profil jetzt als eigener Reiter, Suche als Blatt); im Profil zusätzlich **Benachrichtigungen** (E-Mail-Adresse und
+- **Heute** (`Neu/Heute/HeuteView.swift`, `HeuteBereiche.swift`) – ruhig, dicht, sachlich, gruppierte Bereiche mit
+  klaren Überschriften (keine Schmuck-Symbole): Datum, Schule und **Stand EduOrga Studio**; Jetzt-Karte (laufende Stunde
+  mit Restzeit, nächste Stunde); **Änderungen heute** (Zahl und je Stunde Kennzeichen + was sich geändert hat, z. B.
+  „Vertretung · 3. Std. · 9:45 · M · 7a – Gal statt Gor“; Antippen öffnet die Stunde); der Tag als kompakte Liste
+  (Termine einzeilig); Lehrkräfte zusätzlich „Stunde jetzt“ und **Klassenbuch und Aufsichten** (offene Stunden, heutige
+  Aufsichten mit Zeit/Status); Schüler*innen und Eltern **Für morgen und diese Woche** (morgen fällige Hausaufgaben,
+  Prüfungen dieser Woche, neue Mitteilungen); **Heute an der Schule** (Nachrichten, Veranstaltungen, Hinweise);
+  **Nächster Schultag** (Beginn mit erster Stunde und Änderungen); Übersicht.
+- **Postfach, Suche, Profil** – wie bisher (Profil jetzt als eigener Reiter, Suche als Blatt); im Profil zusätzlich **Benachrichtigungen** (E-Mail-Adresse und
   „Bei neuen Mitteilungen per E-Mail benachrichtigen“) und unter **Darstellung** die Dichte der Woche.
 
 ## Einrichtung

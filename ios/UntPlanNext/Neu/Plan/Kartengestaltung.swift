@@ -4,27 +4,28 @@ import SwiftUI
 // (nie breiter als die Spalte), standardmäßig neutral (weiß bzw. hellgrau mit grauem Balken links; Fachfarbe nur, wenn die
 // Schule eine gesetzt hat), Fach fett oben links, darunter Klasse, Lehrkraft und Raum je eine kurze Zeile.
 //
-// Änderungen wie in der Änderungslegende von Enbrea („Änderungstyp | Darstellung“): schraffierter linker Rand in der
-// Statusfarbe und ein kleines Feld auf der betroffenen Zeile – mit den EduOrga-Anpassungen: jede Änderung einheitlich Grün
-// (#2f855a für Balken/Linien, Feld #e6f4ea mit Schrift #1d5c3a – 7,0 : 1), Rot (#b42318, Feld #fdecea) NUR für Entfall; bei
-// Entfall ist zusätzlich alles auf der Karte durchgestrichen. Offene Vertretungen und fehlende Werte ohne Entfall sind
-// neutral grau (Feld #ebeef2, Schrift #4d5866 – 6,2 : 1, gestrichelter grauer Rand), für Schüler*innen und Eltern als
-// „Vertretung folgt“.
+// Kennzeichnung von Änderungen (EduOrga-eigene Formensprache, sachlich): ein durchgehender 3-pt-Balken links in der
+// Statusfarbe, eine kleine Statusmarke oben rechts und ein kompaktes Kennzeichen (Radius 3, getönt mit feiner Kontur) auf
+// der betroffenen Zeile – in Worten bzw. mit Pfeil statt Zierzeichen. Grün (#2f855a für Balken/Linien, Kennzeichen #e6f4ea
+// mit Schrift #1d5c3a – 7,0 : 1) für jede Änderung, Rot (#b42318, Kennzeichen #fdecea) NUR für den Entfall – dann ist
+// zusätzlich alles auf der Karte durchgestrichen. Offene Vertretungen und fehlende Werte ohne Entfall sind neutral grau
+// (Kennzeichen #ebeef2, Schrift #4d5866 – 6,2 : 1, gestrichelte Kontur), für Schüler*innen und Eltern „Vertretung folgt“.
 //
-// Barrierefreiheit: Felder mindestens so groß wie die übrigen Zeilen (12 pt, halbfett), alle Texte WCAG AA, nie nur Farbe
-// (Zeichen „+“, „×“, „⊕“, Klammern, „Vertretung folgt“), Schrift und Zeilen wachsen mit Dynamic Type (`kartenfaktor`) – bei
-// großen Größen weniger Zeilen, Änderungen zuerst; VoiceOver liest je Karte einen vollständigen Satz (`vorlesetext`).
+// Barrierefreiheit: Kennzeichen mindestens so groß wie die übrigen Zeilen (12 pt, halbfett), alle Texte WCAG AA, nie nur
+// Farbe (Wörter „statt“, „fehlt“, „entfällt“, „zusätzlich“, Pfeile ← →), Schrift und Zeilen wachsen mit Dynamic Type
+// (`kartenfaktor`) – bei großen Größen weniger Zeilen, Änderungen zuerst; VoiceOver liest je Karte einen ganzen Satz
+// (`vorlesetext`).
 //
-//   Klasse fehlt                 „(5b)“ auf der Klassenzeile und „× entfällt“
-//   Lehrer fehlt, keine Vertr.   „(Abr)“ auf der Lehrerzeile (grau, gestrichelt; Familie: „Vertretung folgt“)
-//   Vertretungsentfall           „× entfällt“
-//   Lehrervertretung             „+Gal (Gor)“ auf der Lehrerzeile
-//   Raumänderung                 „+105 (303)“ auf der Raumzeile
-//   Fachänderung                 „+BI (MU)“ auf der Fachzeile
-//   Verschoben (weg)             „× auf Di 21.10. 6 | 12:20“
-//   Verschoben (hierher)         „⊕ von Mo 20.10. 3 | 09:45“
-//   Zusatzunterricht             „⊕ Zusatz“
-//   Mitteilung                   eigener hellgelber Block mit Text
+//   Vertretung                   „Gal ← Gor“ auf der Lehrerzeile (neu ← bisher)
+//   Raumänderung                 „105 ← 303“ auf der Raumzeile, hinzugekommen „neu B070“
+//   Fachänderung                 „BI ← MU“ auf der Fachzeile
+//   Lehrkraft fehlt, offen       „Abr fehlt“ (grau, gestrichelt; Familie: „Vertretung folgt“)
+//   Entfall                      „entfällt“ (rot), alles durchgestrichen
+//   Klasse fehlt                 „5b fehlt“ und „entfällt“
+//   Verlegt (weg)                „verlegt → Di 21.10., 6. Std“ (rot, durchgestrichen)
+//   Verlegt (hierher)            „verlegt ← Mo 20.10., 3. Std“
+//   Zusatzunterricht             „zusätzlich“
+//   Mitteilung, Veranstaltung    hellgelber Block, Titel einzeilig mit „…“
 //
 // Die schulweite Kartendarstellung (Feld `darstellung` der Sitzung) steuert Fach als Kürzel/Name, Raum, Zeile 2,
 // Statuswörter, Fachfarbe an/aus, Tönung und Statusfläche.
@@ -96,8 +97,8 @@ extension Kachel {
         return alt
     }
 
-    /// Feld unten auf der Karte (Enbrea-Legende): „× entfällt“, „× auf Di 21.10. 6 | 12:20“, „⊕ von Mo 20.10. 3 | 09:45“,
-    /// „⊕ Zusatz“ – nil bei Unterricht ohne solche Änderung, Terminen, Aufsichten und Bereitschaften.
+    /// Kennzeichen unten auf der Karte: „entfällt“, „verlegt → Di 21.10., 6. Std“, „verlegt ← Mo 20.10., 3. Std“,
+    /// „zusätzlich“ – nil bei Unterricht ohne solche Änderung, Terminen, Aufsichten und Bereitschaften.
     var statusChip: Kartenchip? {
         guard let k = karte, !inPause else { return nil }
         switch art {
@@ -107,19 +108,19 @@ extension Kachel {
         let weg = kartenart == .entfall
         if k.verlegung == "von", art == .entfall || art == .abgegeben || weg {
             if let ziel = k.verlegungNach, let t = Kartenchip.termin(ziel) {
-                return Kartenchip(text: "× auf \(t)", ton: .entfall)
+                return Kartenchip(text: "verlegt → \(t)", ton: .entfall, vorlesen: "verlegt auf \(t)")
             }
-            return Kartenchip(text: "× verlegt", ton: .entfall)
+            return Kartenchip(text: "verlegt", ton: .entfall)
         }
-        if weg { return Kartenchip(text: "× entfällt", ton: .entfall) }
+        if weg { return Kartenchip(text: "entfällt", ton: .entfall) }
         if k.verlegung == "nach", art == .aenderung || art == .normal {
             if let quelle = k.verlegungVon, let t = Kartenchip.termin(quelle) {
-                return Kartenchip(text: "⊕ von \(t)", ton: .aenderung)
+                return Kartenchip(text: "verlegt ← \(t)", ton: .aenderung, vorlesen: "verlegt von \(t)")
             }
-            return Kartenchip(text: "⊕ verlegt", ton: .aenderung)
+            return Kartenchip(text: "hierher verlegt", ton: .aenderung)
         }
         if zusatz || (art == .aenderung && k.istZusatzstunde) {
-            return Kartenchip(text: "⊕ Zusatz", ton: .aenderung)
+            return Kartenchip(text: "zusätzlich", ton: .aenderung, vorlesen: "zusätzliche Stunde")
         }
         return nil
     }
@@ -178,12 +179,12 @@ extension Statuslehre {
 
 // MARK: - Grundstil v3 (Wochenraster, Tagesliste, Zeitachse)
 
-/// Stundenkarte mobil (v4): die Karte füllt ihre Zelle, Radius 6, neutral (weiß, grauer Balken), Fachfarbe nur, wenn die
-/// Schule eine gesetzt hat (Balken und leichte Tönung). Status wie in der Enbrea-Legende mit EduOrga-Farben: Änderung mit
-/// grün schraffiertem Balken, feiner grüner Linie und dem geänderten Wert als grünes Feld „+neu (alt)“; Entfall rot
-/// schraffiert, alles grau durchgestrichen, „× entfällt“ als rotes Feld; fehlende Lehrkraft ohne Vertretung rot
-/// schraffiert und gestrichelt mit „(Abr)“; Prüfung Bernstein; Termin/Buchung gestrichelt; Mitteilung bzw. Veranstaltung
-/// als hellgelber Block. Kein Schatten – eine feine Kontur trennt die Karte vom Raster.
+/// Stundenkarte mobil (v5, EduOrga-Kennzeichnung): die Karte füllt ihre Zelle, Radius 6, neutral (weiß, grauer Balken),
+/// Fachfarbe nur, wenn die Schule eine gesetzt hat (Balken und leichte Tönung). Änderung: durchgehender grüner 3-pt-Balken,
+/// feine grüne Kontur, grüne Statusmarke und das Kennzeichen „neu ← bisher“ auf der Zeile; Entfall: roter Balken und rote
+/// Marke, alles grau durchgestrichen, „entfällt“ rot; offene Vertretung neutral (grauer Balken, gestrichelte graue Kontur,
+/// „Abr fehlt“ bzw. „Vertretung folgt“); Prüfung Bernstein; Termin/Buchung gestrichelt; Mitteilung bzw. Veranstaltung als
+/// hellgelber Block. Kein Schatten – eine feine Kontur trennt die Karte vom Raster.
 struct Klassikstil {
     var balken: Color
     var flaeche: Color
@@ -195,8 +196,10 @@ struct Klassikstil {
     var gedaempft: Bool
     /// Balken zeigen (Termine und Sonderfelder ohne Balken)
     var mitBalken: Bool = true
-    /// Geänderte Stunde: Balken schraffiert
+    /// Früher: schraffierter Balken. Bleibt als Merkmal „geändert“, gezeichnet wird immer ein durchgehender Balken.
     var gestreift: Bool = false
+    /// Kleine Statusmarke oben rechts (Änderung grün, Entfall rot, offen grau); nil = keine
+    var marke: Color? = nil
     /// Offene Vertretung bzw. offener Raum: „?“ an der Karte
     var offen: Bool = false
     /// Farbe der ersten Zeile
@@ -230,14 +233,16 @@ struct Klassikstil {
             s.flaeche = Farben.flaeche2
             s.balken = Farben.entfall
             s.gestreift = true
-            s.schraffur = true
+            s.schraffur = false
             s.gedaempft = true
             s.rand = Farben.entfall.opacity(0.35)
             s.titel = Farben.text3
+            s.marke = Farben.entfall
         case .aenderung:
             s.balken = Farben.aenderung
             s.gestreift = true
             s.rand = Farben.aenderung.opacity(0.55)
+            s.marke = Farben.aenderung
             if d.statusflaeche {
                 s.ton = nil
                 s.flaeche = Farben.aenderungFlaeche
@@ -288,6 +293,7 @@ struct Klassikstil {
             s.gestreift = false
             s.rand = Farben.text3
             s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+            s.marke = Farben.text3
             if d.statusflaeche {
                 s.ton = nil
                 s.flaeche = Farben.karte
@@ -297,28 +303,32 @@ struct Klassikstil {
     }
 }
 
-/// Balken links an der Karte: Fachfarbe deckend bzw. (geänderte Stunde) schräg schraffiert.
+/// Balken links an der Karte: immer durchgehend in der Fach- bzw. Statusfarbe (keine Schraffur).
 struct Kartenbalken: View {
     let farbe: Color
+    /// Ohne Wirkung (früher schraffiert) – der Status steht in Farbe, Marke und Kennzeichen
     var gestreift: Bool = false
 
     var body: some View {
-        if gestreift {
-            ZStack {
-                Rectangle().fill(farbe.opacity(0.25))
-                Streifenmuster(abstand: 5)
-                    .stroke(farbe, lineWidth: 2)
-            }
-            .clipped()
-        } else {
-            Rectangle().fill(farbe)
-        }
+        Rectangle().fill(farbe)
+    }
+}
+
+/// Kleine Statusmarke oben rechts auf der Karte: ein Quadrat 5 × 5 pt mit Radius 1 in der Statusfarbe.
+struct Kartenmarke: View {
+    let farbe: Color
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 1, style: .continuous)
+            .fill(farbe)
+            .frame(width: 5, height: 5)
+            .accessibilityHidden(true)
     }
 }
 
 extension View {
     /// Fläche, Tönung, Schraffur, Balken (bündig links, von der Kartenform beschnitten), Linie bzw. gestrichelter Rand.
-    func klassikKarte(_ s: Klassikstil, radius: CGFloat = 6, balkenBreite: CGFloat = 4) -> some View {
+    func klassikKarte(_ s: Klassikstil, radius: CGFloat = 6, balkenBreite: CGFloat = 3) -> some View {
         let form = RoundedRectangle(cornerRadius: radius, style: .continuous)
         return self
             .background {
@@ -326,10 +336,6 @@ extension View {
                     form.fill(s.flaeche)
                     if let ton = s.ton {
                         form.fill(ton)
-                    }
-                    if s.schraffur {
-                        Streifenmuster(abstand: 6)
-                            .stroke(Farben.entfall.opacity(0.10), lineWidth: 1)
                     }
                     if s.mitBalken {
                         Kartenbalken(farbe: s.balken, gestreift: s.gestreift)
@@ -344,6 +350,13 @@ extension View {
                     form.strokeBorder(rand, style: s.strich)
                 } else {
                     form.strokeBorder(Farben.karteKontur, lineWidth: 0.5)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if let marke = s.marke {
+                    Kartenmarke(farbe: marke)
+                        .padding(.top, 3)
+                        .padding(.trailing, 3)
                 }
             }
             .overlay(alignment: .bottomTrailing) {
@@ -426,22 +439,28 @@ extension DynamicTypeSize {
 struct Kartenchip: Hashable {
     let text: String
     let ton: Chipton
+    /// Text für VoiceOver (nil = wie `text`)
+    var vorlesen: String? = nil
 
-    /// Kurzform einer Verlegungsseite wie in der Enbrea-Legende: „Di 21.10. 6 | 12:20“ (ohne Stunde bzw. Uhrzeit kürzer).
+    var gesprochen: String { vorlesen ?? text }
+
+    /// Kurzform einer Verlegungsseite: „Di 21.10., 6. Std“ (ohne Stunde mit Uhrzeit „Di 21.10., 12:20“).
     static func termin(_ s: Verlegungsseite) -> String? {
         guard !s.datum.isEmpty else { return nil }
         var tag = Datumsformat.anzeige(s.datum, "EEE")
         while tag.hasSuffix(".") { tag.removeLast() }
-        var teile = ["\(tag) \(Datumsformat.anzeige(s.datum, "dd.MM."))"]
-        if let st = s.stunde { teile.append("\(st)") }
-        var text = teile.joined(separator: " ")
-        if !s.beginn.isEmpty { text += " | " + s.beginn }
+        var text = "\(tag) \(Datumsformat.anzeige(s.datum, "d.M."))"
+        if let st = s.stunde {
+            text += ", \(st). Std"
+        } else if !s.beginn.isEmpty {
+            text += ", " + s.beginn
+        }
         return text
     }
 }
 
-/// Kleines Feld auf der Karte: helle Fläche, feine Linie, Schrift in der Statusfarbe – eine Zeile, verkleinert bzw.
-/// gekürzt, nie breiter als die Karte.
+/// Kennzeichen auf der Karte (EduOrga-Stil): Radius 3, getönte Fläche mit feiner Kontur (offen: gestrichelt), Schrift in der
+/// Statusfarbe – eine Zeile, notfalls leicht verkleinert bzw. mit „…“ gekürzt, nie breiter als die Karte.
 struct Chipfeld<Inhalt: View>: View {
     let ton: Chipton
     @ViewBuilder let inhalt: () -> Inhalt
@@ -452,7 +471,8 @@ struct Chipfeld<Inhalt: View>: View {
             .lineLimit(1)
             .truncationMode(.tail)
             .minimumScaleFactor(0.85)
-            .padding(.horizontal, 3)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 0.5)
             .background(ton.flaeche, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
@@ -476,7 +496,7 @@ struct Statuschip: View {
     }
 }
 
-/// Fach der Karte: unverändert als Text, bei einer Fachänderung als grünes Feld „+BI (MU)“, bei Entfall grau und
+/// Fach der Karte: unverändert als Text, bei einer Fachänderung als grünes Kennzeichen „BI ← MU“, bei Entfall grau und
 /// durchgestrichen.
 struct Kartenfach: View {
     let kachel: Kachel
@@ -489,7 +509,7 @@ struct Kartenfach: View {
     var body: some View {
         if let alt = kachel.fachVorher {
             Chipfeld(ton: .aenderung) {
-                (Text("+" + text).font(schrift) + Text(" (\(alt))").font(schrift.weight(.regular)))
+                (Text(text).font(schrift) + Text(" ← \(alt)").font(schrift.weight(.regular)))
             }
         } else {
             Text(text)
@@ -505,11 +525,11 @@ struct Kartenfach: View {
 
 // MARK: - Geänderter Wert als Feld
 
-/// Eine Zeile der Stundenkarte (Lehrkraft, Klasse, Raum): unveränderte Werte als Text, geänderte als kleines Feld wie in
-/// der Enbrea-Legende – „+Gal (Gor)“ für eine Vertretung, „+105 (303)“ für eine Raumänderung, „+B070“ für einen
-/// hinzugekommenen Raum (grün); „(Abr)“ für eine fehlende Lehrkraft ohne Vertretung bzw. „(5b)“ für eine fehlende Klasse
-/// (rot). Auf einer entfallenen Stunde ist alles grau durchgestrichen – nur die fehlende Klasse bleibt als rotes Feld.
-/// Das Feld wird nie breiter als die Karte (eine Zeile, verkleinert bzw. gekürzt).
+/// Eine Zeile der Stundenkarte (Lehrkraft, Klasse, Raum): unveränderte Werte als Text, geänderte als Kennzeichen –
+/// „Gal ← Gor“ für eine Vertretung, „105 ← 303“ für eine Raumänderung, „neu B070“ für einen hinzugekommenen Raum (grün);
+/// „Abr fehlt“ für eine fehlende Lehrkraft ohne Vertretung (grau), „5b fehlt“ bzw. „ohne 303“ für Weggefallenes. Auf einer
+/// entfallenen Stunde ist alles grau durchgestrichen – nur die fehlende Klasse bleibt als rotes Kennzeichen. Nie breiter
+/// als die Karte (eine Zeile, notfalls mit „…“).
 struct Kartenwert: View {
     let zeile: Kachelzeile
     let karte: Karte?
@@ -538,8 +558,10 @@ struct Kartenwert: View {
 
     var body: some View {
         if fehlendeKlasse {
+            // „5b fehlt“ (die abwesende Klasse; übrige Klassen als Text)
             Chipfeld(ton: .entfall) {
-                Kartenwert.aenderungsText(zeile, karte: karte).font(schrift)
+                Text(zeile.teile.map { t in t.stil == .text ? t.text + t.trenner : t.text + " fehlt" + t.trenner }.joined())
+                    .font(schrift)
             }
         } else if !entfall && vertretungOffen && darstellung.fuerFamilie {
             // Schüler*innen und Eltern: kein Kürzel der abwesenden Lehrkraft, sondern ein ruhiger Hinweis
@@ -561,7 +583,8 @@ struct Kartenwert: View {
         }
     }
 
-    /// Text im Feld: „+neu (alt)“ für ersetzte Werte, „+neu“ für hinzugekommene, „(alt)“ für fehlende bzw. weggefallene.
+    /// Text im Kennzeichen: „neu ← alt“ für ersetzte Werte, „neu X“ für hinzugekommene, „X fehlt“ für offene bzw. fehlende,
+    /// „ohne X“ für weggefallene.
     static func aenderungsText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
         let werte: [Wert]
         switch zeile.schluessel {
@@ -571,7 +594,7 @@ struct Kartenwert: View {
         default: werte = []
         }
         func gleich(_ a: String, _ b: String) -> Bool { a.caseInsensitiveCompare(b) == .orderedSame }
-        func plus(_ t: String) -> String { t.hasPrefix("+") ? t : "+" + t }
+        func kern(_ t: String) -> String { t.hasPrefix("+") ? String(t.dropFirst()) : t }
         let teile = zeile.teile
         var ergebnis = Text("")
         var i = 0
@@ -581,22 +604,23 @@ struct Kartenwert: View {
             case .text:
                 ergebnis = ergebnis + Text(teil.text)
             case .plakette:
-                ergebnis = ergebnis + Text(plus(teil.text)).fontWeight(.semibold)
-                let kern = teil.text.hasPrefix("+") ? String(teil.text.dropFirst()) : teil.text
-                if let alt = werte.first(where: { $0.ersetzt && gleich($0.k, kern) })?.alt, !alt.isEmpty {
-                    ergebnis = ergebnis + Text(" (\(alt))")
+                let neu = kern(teil.text)
+                if let alt = werte.first(where: { $0.ersetzt && gleich($0.k, neu) })?.alt, !alt.isEmpty {
+                    ergebnis = ergebnis + Text(neu).fontWeight(.semibold) + Text(" ← \(alt)")
+                } else {
+                    ergebnis = ergebnis + Text("neu ") + Text(neu).fontWeight(.semibold)
                 }
             case .weg:
-                // „alt | neu“ (Kopplung) wird zu „+neu (alt)“
+                // „alt | neu“ (Kopplung) wird zu „neu ← alt“
                 if i + 1 < teile.count && teile[i + 1].stil == .plakette {
                     let neu = teile[i + 1]
-                    ergebnis = ergebnis + Text(plus(neu.text)).fontWeight(.semibold) + Text(" (\(teil.text))") + Text(neu.trenner)
+                    ergebnis = ergebnis + Text(kern(neu.text)).fontWeight(.semibold) + Text(" ← \(teil.text)") + Text(neu.trenner)
                     i += 2
                     continue
                 }
-                ergebnis = ergebnis + Text("(\(teil.text))")
+                ergebnis = ergebnis + Text("ohne \(teil.text)")
             case .offen:
-                ergebnis = ergebnis + Text("(\(teil.text))").fontWeight(.semibold)
+                ergebnis = ergebnis + Text(teil.text == "???" ? "offen" : teil.text).fontWeight(.semibold) + Text(teil.text == "???" ? "" : " fehlt")
             }
             ergebnis = ergebnis + Text(teil.trenner)
             i += 1

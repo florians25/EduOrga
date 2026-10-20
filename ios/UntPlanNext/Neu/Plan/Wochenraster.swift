@@ -1003,7 +1003,8 @@ struct RasterKarte: View {
     private var entfall: Bool { kachel.kartenart == .entfall }
     /// Radius 6 (Schulwert 5 und mehr), kleiner nur, wenn die Schule es so eingestellt hat
     private var radius: CGFloat { CGFloat(min(6, max(3, darstellung.eckenradius + 1))) }
-    private var balken: CGFloat { CGFloat(min(6, max(3, darstellung.balkenbreite))) }
+    /// Durchgehender Balken: 3 pt (die Schule kann ihn bis 5 pt verbreitern)
+    private var balken: CGFloat { CGFloat(min(5, max(3, darstellung.balkenbreite - 1))) }
 
     /// Zeilen unter dem Fach: Klasse, Lehrkraft, Anlass, Raum – ausgeblendete Angaben erscheinen, sobald sie sich ändern.
     private var nebenzeilen: [Kachelzeile] {

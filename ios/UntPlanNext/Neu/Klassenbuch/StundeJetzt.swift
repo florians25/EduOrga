@@ -1,7 +1,8 @@
 import SwiftUI
 
 // „Stunde jetzt“: die Klassenbuch-Schnellerfassung für die laufende (bzw. nächste) eigene Stunde – ein Tippen von „Heute“.
-// Alles auf einer Seite, mit einer Hand bedienbar:
+// Die Seite ist der Reiter „Klassenbuch“ der Stundendetails (`KlassenbuchReiter`) mit Kopf; die Anwesenheit öffnet sich als
+// Kontrolle bzw. als Schnellerfassung (`SchnellanwesenheitSeite`). Mit einer Hand bedienbar:
 // - Anwesenheit als Liste mit Wischgesten (rechts = anwesend, links = abwesend, langes Drücken = verspätet mit Minuten)
 //   oder als Raster großer Namensfelder (Antippen schaltet anwesend/abwesend, langes Drücken = verspätet), Zähler und
 //   „Anwesenheit bestätigen“.
@@ -87,44 +88,14 @@ struct StundeJetztStarter: View {
 
 // MARK: - Seite
 
+/// „Stunde jetzt“ (von „Heute“): dieselbe Seite wie der Reiter „Klassenbuch“ der Stundendetails (`KlassenbuchReiter`) mit
+/// Kopf (Fach, Klasse, Raum, Fortschritt) – Thema, Anwesenheitskontrolle, Hausaufgaben, Prüfung, Einträge, Notizen, Verlauf.
 struct StundeJetztSeite: View {
     let karte: Karte
 
     @EnvironmentObject var zustand: AppZustand
     @Environment(\.dismiss) private var schliessen
     @StateObject private var daten: Stundendaten
-    @ObservedObject private var puffer = Schreibpuffer.shared
-
-    enum Ansicht: String, Hashable {
-        case liste
-        case raster
-    }
-
-    @AppStorage("stundeJetztAnsicht") private var ansichtRoh = Ansicht.liste.rawValue
-    @State private var arbeitet: Set<Int> = []
-    @State private var fehler: String? = nil
-    @State private var meldung: String? = nil
-    @State private var verspaetung: Schueler? = nil
-    @State private var vorlage: Eintragsvorlage? = nil
-    // Thema
-    @State private var thema = ""
-    @State private var themaUebernommen = false
-    @State private var themaSpeichert = false
-    @State private var vorstunden: [Vorstundenthema] = []
-    @State private var plan: [String] = []
-    @State private var planOffen = false
-    // Hausaufgabe
-    @State private var hausaufgabe = ""
-    @State private var faelligWahl: Faelligkeit = .naechsteStunde
-    @State private var faelligDatum = Date()
-    @State private var naechsteStunde: Date? = nil
-    @State private var hausaufgabeSpeichert = false
-    @FocusState private var fokus: Feld?
-
-    enum Feld: Hashable {
-        case thema
-        case hausaufgabe
-    }
 
     /// Vorlage eines Klassenbucheintrags (Art und Text) für das Blatt.
     struct Eintragsvorlage: Identifiable {
@@ -156,14 +127,56 @@ struct StundeJetztSeite: View {
         _daten = StateObject(wrappedValue: daten ?? Stundendaten(karte: karte))
     }
 
+    var body: some View {
+        NavigationStack {
+            KlassenbuchReiter(karte: karte, daten: daten, mitKopf: true)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if !daten.geladen {
+                        Ladebalken(aktiv: true)
+                    }
+                }
+                .navigationTitle("Stunde jetzt")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Fertig") {
+                            Haptik.tippen()
+                            Tastatur.schliessen()
+                            schliessen()
+                        }
+                    }
+                }
+        }
+        .environmentObject(daten)
+    }
+}
+
+// MARK: - Schnellerfassung der Anwesenheit
+
+/// Anwesenheit mit einer Hand: Liste mit Wischgesten (rechts = anwesend, links = abwesend, langes Drücken = verspätet mit
+/// Minuten) oder Raster großer Namensfelder (Antippen schaltet um), Zähler und „Anwesenheit bestätigen“. Jede Änderung wird
+/// sofort gespeichert (ohne Verbindung im Schreibpuffer).
+struct SchnellanwesenheitSeite: View {
+    let karte: Karte
+
+    @EnvironmentObject var daten: Stundendaten
+    @EnvironmentObject var zustand: AppZustand
+
+    enum Ansicht: String, Hashable {
+        case liste
+        case raster
+    }
+
+    @AppStorage("stundeJetztAnsicht") private var ansichtRoh = Ansicht.liste.rawValue
+    @State private var arbeitet: Set<Int> = []
+    @State private var fehler: String? = nil
+    @State private var meldung: String? = nil
+    @State private var verspaetung: Schueler? = nil
+
     private var ansicht: Ansicht { Ansicht(rawValue: ansichtRoh) ?? .liste }
     private var liste: Anwesenheitsliste? { daten.anwesenheit }
     private var schueler: [Schueler] { liste?.schueler ?? [] }
     private var bedienbar: Bool { liste?.darf == true && karte.datum <= Datumsformat.iso(Date()) }
-
-    private var klassenText: String {
-        daten.klassen.joined(separator: ", ")
-    }
 
     private var zaehler: (da: Int, fehlt: Int, spaet: Int) {
         var fehlt = 0
@@ -178,154 +191,47 @@ struct StundeJetztSeite: View {
         return (schueler.count - fehlt - spaet, fehlt, spaet)
     }
 
-    private var behandelt: [String] {
-        vorstunden.map(\.thema) + [thema]
-    }
-
-    // MARK: Ansicht
-
     var body: some View {
-        NavigationStack {
-            List {
-                kopfAbschnitt
-                if puffer.anzahl > 0 {
-                    Section {
-                        SchreibpufferLeiste()
-                            .listRowInsets(EdgeInsets())
-                            .listRowBackground(Color.clear)
-                    }
-                }
-                if let fehler {
-                    Section {
-                        Fehlerhinweis(text: fehler)
-                            .listRowInsets(EdgeInsets())
-                            .listRowBackground(Color.clear)
-                            .onTapGesture { self.fehler = nil }
-                    }
-                }
-                anwesenheitAbschnitt
-                themaAbschnitt
-                hausaufgabeAbschnitt
-                eintragAbschnitt
-                verlaufAbschnitt
-            }
-            .listStyle(.insetGrouped)
-            .listSectionSpacing(.compact)
-            .scrollDismissesKeyboard(.interactively)
-            .background(Farben.grund.ignoresSafeArea())
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if !daten.geladen {
-                    Ladebalken(aktiv: true)
+        List {
+            if let fehler {
+                Section {
+                    Fehlerhinweis(text: fehler)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .onTapGesture { self.fehler = nil }
                 }
             }
-            .overlay(alignment: .bottom) { meldungsToast }
-            .navigationTitle("Stunde jetzt")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fertig") {
-                        Haptik.tippen()
-                        schliessen()
-                    }
-                }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Fertig") { fokus = nil }
-                }
-            }
-            .refreshable {
-                await daten.laden(kollegium: true)
-                await vorschlaegeLaden()
-            }
-            .task {
-                if !daten.geladen { await daten.laden(kollegium: true) }
-                themaUebernehmen()
-                if let u = karte.unterricht { plan = Themenplan.laden(u) }
-                await vorschlaegeLaden()
-                await naechsteStundeSuchen()
-            }
-            .onChange(of: daten.geladen) { _, _ in themaUebernehmen() }
-            .sheet(item: $verspaetung) { s in
-                VerspaetungBlatt(name: s.anzeige) { minuten in
-                    verspaetung = nil
-                    setzen(s, .verspaetet(minuten))
-                }
-                .presentationDetents([.height(300)])
-            }
-            .sheet(item: $vorlage) { v in
-                EintragVorlageBlatt(vorlage: v, schueler: schueler, arten: daten.vermerkArten) { auswahl, art, text in
-                    vorlage = nil
-                    eintragSpeichern(auswahl, art: art, text: text)
-                }
-                .presentationDetents([.medium, .large])
-            }
-            .sheet(isPresented: $planOffen) {
-                ThemenplanBlatt(themen: plan, behandelt: behandelt) { neu in
-                    plan = neu
-                    if let u = karte.unterricht { Themenplan.speichern(neu, unterricht: u) }
-                }
-                .presentationDetents([.medium, .large])
-            }
+            anwesenheitAbschnitt
         }
-        .environmentObject(daten)
-    }
-
-    // MARK: Kopf
-
-    private var kopfAbschnitt: some View {
-        Section {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(karte.fachName.isEmpty ? karte.fach : karte.fachName)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(Farben.text)
-                        .lineLimit(1)
-                    if !klassenText.isEmpty {
-                        Text(klassenText)
-                            .font(.headline)
-                            .foregroundStyle(Farben.text2)
-                            .lineLimit(1)
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(.compact)
+        .scrollContentBackground(.hidden)
+        .background(Farben.grund.ignoresSafeArea())
+        .overlay(alignment: .bottom) { meldungsToast }
+        .navigationTitle("Anwesenheit")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if !schueler.isEmpty {
+                    Picker("Darstellung", selection: $ansichtRoh) {
+                        Image(systemName: "list.bullet").tag(Ansicht.liste.rawValue)
+                        Image(systemName: "square.grid.3x3").tag(Ansicht.raster.rawValue)
                     }
-                    Spacer(minLength: 4)
-                    let raeume = daten.aktuelleRaeume.map(\.k).filter { !$0.isEmpty }.joined(separator: ", ")
-                    if !raeume.isEmpty {
-                        Text(raeume)
-                            .font(.subheadline.weight(.semibold))
-                            .monospacedDigit()
-                            .foregroundStyle(Farben.text)
-                    }
-                }
-                Text("\(kurzdatum(karte.datum)) · \(daten.bereichText) · \(karte.beginn)–\(karte.ende)")
-                    .font(.subheadline)
-                    .monospacedDigit()
-                    .foregroundStyle(Farben.text2)
-                fortschritt
-            }
-            .padding(.vertical, 2)
-            .accessibilityElement(children: .combine)
-        }
-    }
-
-    /// Fortschritt der Stunde (nur heute während der Stunde).
-    @ViewBuilder
-    private var fortschritt: some View {
-        if Datumsformat.istHeute(karte.datum), let b = Rasterzeit.minuten(karte.beginn), let e = Rasterzeit.minuten(karte.ende), e > b {
-            TimelineView(.periodic(from: .now, by: 30)) { kontext in
-                let m = Uhr.minuten(kontext.date)
-                if m >= b && m < e {
-                    VStack(alignment: .leading, spacing: 3) {
-                        ProgressView(value: Double(m - b), total: Double(e - b))
-                            .tint(Farben.akzent)
-                        Text("noch \(Uhr.dauer(e - m))")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Farben.akzent)
-                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 96)
+                    .accessibilityLabel("Darstellung der Anwesenheit")
                 }
             }
         }
+        .refreshable { await daten.anwesenheitLaden() }
+        .sheet(item: $verspaetung) { s in
+            VerspaetungBlatt(name: s.anzeige) { minuten in
+                verspaetung = nil
+                setzen(s, .verspaetet(minuten))
+            }
+            .presentationDetents([.height(300)])
+        }
     }
-
-    // MARK: Anwesenheit
 
     @ViewBuilder
     private var anwesenheitAbschnitt: some View {
@@ -362,20 +268,6 @@ struct StundeJetztSeite: View {
                               systemImage: "checkmark.seal")
                             .font(.body.weight(.semibold))
                     }
-                }
-            }
-        } header: {
-            HStack {
-                Text("Anwesenheit")
-                Spacer()
-                if !schueler.isEmpty {
-                    Picker("Darstellung", selection: $ansichtRoh) {
-                        Image(systemName: "list.bullet").tag(Ansicht.liste.rawValue)
-                        Image(systemName: "square.grid.3x3").tag(Ansicht.raster.rawValue)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 96)
-                    .accessibilityLabel("Darstellung der Anwesenheit")
                 }
             }
         } footer: {
@@ -548,234 +440,6 @@ struct StundeJetztSeite: View {
         .accessibilityAction(named: "Verspätet") { verspaetung = s }
     }
 
-    // MARK: Thema
-
-    @ViewBuilder
-    private var themaAbschnitt: some View {
-        if daten.darf {
-            Section {
-                TextField("Thema der Stunde", text: $thema, axis: .vertical)
-                    .lineLimit(1...4)
-                    .focused($fokus, equals: .thema)
-                    .submitLabel(.done)
-                let vorschlaege = themenVorschlaege
-                if !vorschlaege.isEmpty {
-                    ScrollView(.horizontal) {
-                        HStack(spacing: 6) {
-                            ForEach(vorschlaege, id: \.self) { v in
-                                Vorschlagsfeld(text: v.anzeige, symbol: v.symbol) {
-                                    Haptik.auswahl()
-                                    thema = v.uebernahme
-                                }
-                            }
-                        }
-                        .padding(.vertical, 2)
-                    }
-                    .scrollIndicators(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                }
-                Button {
-                    Task { await themaSpeichern() }
-                } label: {
-                    HStack {
-                        Label("Thema speichern", systemImage: "square.and.arrow.down")
-                            .font(.body.weight(.semibold))
-                        Spacer()
-                        if themaSpeichert { ProgressView() }
-                    }
-                }
-                .disabled(themaSpeichert || thema.trimmingCharacters(in: .whitespacesAndNewlines) == (daten.eintrag?.thema ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
-            } header: {
-                HStack {
-                    Text("Thema")
-                    Spacer()
-                    Button {
-                        planOffen = true
-                    } label: {
-                        Text(plan.isEmpty ? "Themenplan anlegen" : "Themenplan")
-                            .font(.footnote.weight(.semibold))
-                            .textCase(nil)
-                    }
-                }
-            } footer: {
-                if let v = vorstunden.first {
-                    Text("Zuletzt (\(kurzdatum(v.datum))): \(v.thema)")
-                        .lineLimit(2)
-                }
-            }
-        }
-    }
-
-    /// Vorschlag für das Thema.
-    struct Themenvorschlag: Hashable {
-        let anzeige: String
-        let uebernahme: String
-        let symbol: String
-    }
-
-    /// Vorschläge: Fortsetzung der letzten Stunde, die nächsten Themen des Themenplans, weitere frühere Themen.
-    private var themenVorschlaege: [Themenvorschlag] {
-        var liste: [Themenvorschlag] = []
-        func hinzu(_ v: Themenvorschlag) {
-            guard !v.uebernahme.isEmpty, !liste.contains(where: { $0.uebernahme.caseInsensitiveCompare(v.uebernahme) == .orderedSame }) else { return }
-            liste.append(v)
-        }
-        for t in Themenplan.naechste(plan, behandelt: vorstunden.map(\.thema)) {
-            hinzu(Themenvorschlag(anzeige: t, uebernahme: t, symbol: "list.number"))
-        }
-        if let letzte = vorstunden.first {
-            hinzu(Themenvorschlag(anzeige: "Fortsetzung: \(letzte.thema)", uebernahme: "Fortsetzung: \(letzte.thema)", symbol: "arrow.turn.down.right"))
-        }
-        for v in vorstunden.prefix(4) {
-            hinzu(Themenvorschlag(anzeige: v.thema, uebernahme: v.thema, symbol: "clock.arrow.circlepath"))
-        }
-        return liste
-    }
-
-    // MARK: Hausaufgabe
-
-    @ViewBuilder
-    private var hausaufgabeAbschnitt: some View {
-        if daten.darf {
-            Section {
-                ForEach(daten.hausaufgaben?.liste ?? []) { h in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(h.text)
-                            .foregroundStyle(Farben.text)
-                        if let f = h.faellig, !f.isEmpty {
-                            Text("fällig \(kurzdatum(String(f.prefix(10))))")
-                                .font(.caption)
-                                .foregroundStyle(Farben.text2)
-                        }
-                    }
-                }
-                TextField("Neue Hausaufgabe", text: $hausaufgabe, axis: .vertical)
-                    .lineLimit(1...4)
-                    .focused($fokus, equals: .hausaufgabe)
-                ScrollView(.horizontal) {
-                    HStack(spacing: 6) {
-                        faelligFeld(.naechsteStunde, naechsteStunde.map { "Nächste Stunde (\(kurzdatum(Datumsformat.iso($0))))" } ?? "Nächste Stunde")
-                        faelligFeld(.eineWoche, "In 1 Woche")
-                        faelligFeld(.datum, "Datum …")
-                        faelligFeld(.keine, "Ohne Termin")
-                    }
-                    .padding(.vertical, 2)
-                }
-                .scrollIndicators(.hidden)
-                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                if faelligWahl == .datum {
-                    DatePicker("Fällig am", selection: $faelligDatum, in: Date()..., displayedComponents: .date)
-                }
-                Button {
-                    Task { await hausaufgabeSpeichern() }
-                } label: {
-                    HStack {
-                        Label("Hausaufgabe eintragen", systemImage: "plus.circle")
-                            .font(.body.weight(.semibold))
-                        Spacer()
-                        if hausaufgabeSpeichert { ProgressView() }
-                    }
-                }
-                .disabled(hausaufgabeSpeichert || hausaufgabe.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            } header: {
-                Text("Hausaufgabe")
-            }
-        }
-    }
-
-    private func faelligFeld(_ wahl: Faelligkeit, _ text: String) -> some View {
-        let gewaehlt = faelligWahl == wahl
-        return Button {
-            Haptik.auswahl()
-            faelligWahl = wahl
-        } label: {
-            Text(text)
-                .font(.footnote.weight(.semibold))
-                .lineLimit(1)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .foregroundStyle(gewaehlt ? Farben.aufAkzent : Farben.text)
-                .background(gewaehlt ? Farben.akzent : Farben.neutralFlaeche, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(gewaehlt ? .isSelected : [])
-    }
-
-    private var faelligAm: Date? {
-        let tag = Datumsformat.datum(karte.datum) ?? Date()
-        switch faelligWahl {
-        case .naechsteStunde: return naechsteStunde ?? Datumsformat.tage(7, nach: tag)
-        case .eineWoche: return Datumsformat.tage(7, nach: tag)
-        case .datum: return faelligDatum
-        case .keine: return nil
-        }
-    }
-
-    // MARK: Einträge
-
-    @ViewBuilder
-    private var eintragAbschnitt: some View {
-        if !daten.klassen.isEmpty {
-            Section {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], spacing: 8) {
-                    ForEach(StundeJetztSeite.vorlagen, id: \.self) { v in
-                        Button {
-                            Haptik.tippen()
-                            vorlage = Eintragsvorlage(art: kategorie(v.art), text: v.text)
-                        } label: {
-                            Text(v.titel)
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(Farben.text)
-                                .lineLimit(1)
-                                .frame(maxWidth: .infinity, minHeight: 34)
-                                .background(Farben.neutralFlaeche, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.vertical, 4)
-                Button {
-                    vorlage = Eintragsvorlage(art: daten.vermerkArten.first ?? "Vermerk", text: "")
-                } label: {
-                    Label("Eigener Eintrag …", systemImage: "square.and.pencil")
-                }
-            } header: {
-                HStack {
-                    Text("Klassenbucheinträge")
-                    Spacer()
-                    if daten.geladen {
-                        Text("heute \(daten.vermerke.count)")
-                            .font(.footnote)
-                            .textCase(nil)
-                    }
-                }
-            } footer: {
-                Text("Vorlage antippen, Schüler*innen wählen, speichern – ohne Verbindung wird der Eintrag später gesendet.")
-            }
-        }
-    }
-
-    /// Art einer Vorlage auf die Kategorien der Schule abbilden (sonst „Vermerk“ bzw. die erste Kategorie).
-    private func kategorie(_ art: String) -> String {
-        let arten = daten.vermerkArten
-        if let a = arten.first(where: { $0.caseInsensitiveCompare(art) == .orderedSame }) { return a }
-        if let a = arten.first(where: { $0.caseInsensitiveCompare("Vermerk") == .orderedSame }) { return a }
-        return arten.first ?? art
-    }
-
-    // MARK: Verlauf
-
-    private var verlaufAbschnitt: some View {
-        Section {
-            NavigationLink {
-                KursverlaufSeite(karte: karte, themenplan: plan)
-                    .environmentObject(zustand)
-            } label: {
-                Label("Kursverlauf (Themen der letzten Wochen)", systemImage: "chart.bar.doc.horizontal")
-            }
-        }
-    }
-
     // MARK: Meldung
 
     @ViewBuilder
@@ -847,86 +511,6 @@ struct StundeJetztSeite: View {
             } catch {
                 Haptik.fehler()
                 fehler = error.localizedDescription
-            }
-        }
-    }
-
-    private func themaUebernehmen() {
-        guard !themaUebernommen, daten.geladen else { return }
-        themaUebernommen = true
-        if thema.isEmpty { thema = daten.eintrag?.thema ?? "" }
-    }
-
-    private func themaSpeichern() async {
-        let text = thema.trimmingCharacters(in: .whitespacesAndNewlines)
-        themaSpeichert = true
-        defer { themaSpeichert = false }
-        do {
-            try await daten.speichern(thema: text)
-            fokus = nil
-            Haptik.erfolg()
-            melden("Thema gespeichert")
-        } catch {
-            Haptik.fehler()
-            fehler = error.localizedDescription
-        }
-    }
-
-    private func hausaufgabeSpeichern() async {
-        let text = hausaufgabe.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        hausaufgabeSpeichert = true
-        defer { hausaufgabeSpeichert = false }
-        do {
-            try await daten.hausaufgabeAnlegen(text: text, faellig: faelligAm, bemerkung: "")
-            hausaufgabe = ""
-            fokus = nil
-            Haptik.erfolg()
-            melden("Hausaufgabe eingetragen")
-        } catch {
-            Haptik.fehler()
-            fehler = error.localizedDescription
-        }
-    }
-
-    private func eintragSpeichern(_ auswahl: [Schueler], art: String, text: String) {
-        Task {
-            do {
-                try await daten.vermerkAnlegen(schueler: auswahl, art: art, text: text)
-                Haptik.erfolg()
-                melden(auswahl.count > 1 ? "\(auswahl.count) Einträge gespeichert" : "Eintrag gespeichert")
-            } catch {
-                Haptik.fehler()
-                fehler = error.localizedDescription
-            }
-        }
-    }
-
-    private func vorschlaegeLaden() async {
-        guard let u = karte.unterricht else { return }
-        if let liste = try? await zustand.api.lehrstoffVorstunden(datum: karte.datum, stunde: karte.von, unterricht: u,
-                                                                 lehrer: daten.lehrerHinweis) {
-            vorstunden = liste
-        }
-    }
-
-    /// Datum der nächsten Stunde desselben Unterrichts im eigenen Plan (diese und die zwei folgenden Wochen).
-    private func naechsteStundeSuchen() async {
-        guard naechsteStunde == nil, let u = karte.unterricht, let tag = Datumsformat.datum(karte.datum) else { return }
-        let typ = (zustand.benutzer?.typ ?? "").isEmpty ? "lehrer" : (zustand.benutzer?.typ ?? "lehrer")
-        let element = zustand.benutzer?.element ?? ""
-        guard !element.isEmpty else { return }
-        for versatz in [0, 7, 14] {
-            let d = Datumsformat.tage(versatz, nach: tag)
-            guard let p = try? await zustand.api.plan(typ: typ, element: element, datum: d) else { continue }
-            let treffer = p.karten
-                .filter { $0.unterricht == u && !$0.istEntfall && $0.datum > karte.datum }
-                .map(\.datum)
-                .sorted()
-                .first
-            if let t = treffer, let datum = Datumsformat.datum(t) {
-                naechsteStunde = datum
-                return
             }
         }
     }
