@@ -2,32 +2,143 @@
    Tagesbilanz und Belastung. Sachlich nach design/DESIGN.md: 1-px-Linien, Radius 3–6 px, Modusfarbe nur als Linie bzw. sehr leichte
    Fläche, Status über Farbe der Statusrollen, keine Verläufe und keine Schatten außer auf schwebenden Ebenen. */
 
-/* ---- Schritte im Tageskopf ---- */
-.ta-schritte {
-  flex-basis: 100%; display: flex; align-items: stretch; gap: 0; margin: 2px -12px -6px -12px; padding: 0 6px;
-  border-top: 1px solid var(--colorNeutralStroke2);
+/* ---- Kopf der Tagesplanung (eine Zeile im Seitenkopf) ---- */
+.tp-kopf { display: flex; align-items: center; gap: 16px; min-width: 0; flex: 1; font-size: 13px; }
+.tp-kopf-tag { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.tp-kopf-datum { font-size: 14px; font-weight: 600; color: var(--colorNeutralForeground1); }
+.tp-kopf-datum .tp-kurz { display: none; }
+.tp-kopf-summe { display: inline-flex; align-items: baseline; color: var(--colorNeutralForeground2); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; }
+.tp-kopf-summe > span + span::before { content: '·'; margin: 0 8px; color: var(--colorNeutralForeground4); font-weight: 400; }
+.tp-kopf-rechts { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.tp-woche { display: inline-flex; align-items: stretch; gap: 2px; }
+.tp-zahl { margin-left: 6px; color: var(--colorNeutralForeground3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.tp-veroeffentlichen { display: inline-flex; align-items: center; gap: 8px; }
+.tp-sendestand { font-size: 12px; color: var(--colorNeutralForeground3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tp-schalter.an { box-shadow: inset 0 -2px 0 var(--edo-modus); }
+.tp-offen { color: var(--up-entfall); font-weight: 600; }
+.tp-frei { color: var(--up-frei); }
+.tp-pruefung { color: var(--up-pruefung); }
+.tp-leise { color: var(--colorNeutralForeground3); font-size: 13px; }
+@media (max-width: 1439px) {
+  .tp-kopf { gap: 12px; }
+  .tp-kopf-datum .tp-lang, .tp-sendestand, .tp-breit { display: none; }
+  .tp-kopf-datum .tp-kurz { display: inline; }
 }
-.ta-schritt {
-  all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 6px 10px; cursor: pointer;
-  font-size: 13px; color: var(--colorNeutralForeground2); box-shadow: inset 0 -2px 0 transparent; white-space: nowrap;
+@media (max-width: 1100px) { .tp-kopf-tag .tp-leise { display: none; } }
+
+/* ---- Liste der offenen Stunden und Entscheidung ---- */
+.tp-flaeche { display: flex; flex: 1; min-width: 0; min-height: 0; background: var(--colorNeutralBackground1); }
+.tp-spalte { width: clamp(272px, 28%, 360px); flex-shrink: 0; display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--colorNeutralStroke2); }
+.tp-reiterzeile { display: flex; align-items: stretch; gap: 16px; padding: 0 4px 0 12px; height: 40px; flex-shrink: 0; border-bottom: 1px solid var(--colorNeutralStroke2); box-sizing: border-box; }
+.tp-reiter {
+  all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 2px; cursor: pointer; font-size: 13px;
+  color: var(--colorNeutralForeground2); box-shadow: inset 0 -2px 0 transparent;
 }
-.ta-schritt:hover { color: var(--colorNeutralForeground1); box-shadow: inset 0 -2px 0 var(--colorNeutralStroke1); }
-.ta-schritt:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
-.ta-schritt.aktiv { color: var(--colorNeutralForeground1); font-weight: 600; box-shadow: inset 0 -2px 0 var(--edo-modus); cursor: default; }
-.ta-schritt-nr {
-  display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 3px; font-size: 11px; font-weight: 600;
-  border: 1px solid var(--colorNeutralStroke1); color: var(--colorNeutralForeground2); font-variant-numeric: tabular-nums;
+.tp-reiter:hover { color: var(--colorNeutralForeground1); box-shadow: inset 0 -2px 0 var(--colorNeutralStroke1); }
+.tp-reiter:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.tp-reiter.aktiv { color: var(--colorNeutralForeground1); font-weight: 600; box-shadow: inset 0 -2px 0 var(--edo-modus); cursor: default; }
+.tp-reiter-zahl { color: var(--colorNeutralForeground3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.tp-reiter-zahl.offen { color: var(--up-entfall); font-weight: 600; }
+.tp-reiter-rechts { margin-left: auto; display: inline-flex; align-items: center; }
+.tp-filter { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; flex-shrink: 0; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.tp-filterflaeche { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; min-width: 200px; }
+.tp-filterfeld { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--colorNeutralForeground3); }
+.tp-liste { flex: 1; min-height: 0; overflow-y: auto; outline: none; padding-bottom: 8px; }
+.tp-liste:focus-visible .tp-zeile.gewaehlt { outline: 1px solid var(--colorStrokeFocus2); outline-offset: -1px; }
+.tp-gruppe { display: flex; align-items: flex-end; gap: 8px; padding: 0 12px 4px 12px; box-sizing: border-box; font-size: 12px; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; }
+.tp-gruppe-std { color: var(--colorNeutralForeground2); font-weight: 600; }
+.tp-gruppe-zahl { margin-left: auto; }
+.tp-zeile {
+  display: grid; grid-template-columns: minmax(40px, 64px) minmax(32px, 56px) minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 0 12px 0 9px;
+  box-sizing: border-box; border-left: 3px solid transparent; cursor: pointer; font-size: 13px; user-select: none; white-space: nowrap;
 }
-.ta-schritt.aktiv .ta-schritt-nr { border-color: var(--edo-modus); color: var(--edo-modus); }
-.ta-schritt-stand { font-size: 12px; font-weight: 400; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; }
-.ta-schritt-stand.achtung { color: var(--up-entfall); font-weight: 600; }
-.ta-schritt + .ta-schritt { margin-left: 6px; }
-.ta-schritte-rechts { margin-left: auto; display: inline-flex; align-items: center; padding: 0 6px; }
-@media (max-width: 1450px) { .ta-schritt { padding: 7px 10px 6px 8px; } }
+.tp-zeile:hover { background: var(--colorNeutralBackground1Hover); }
+.tp-zeile.gewaehlt, .tp-zeile.markiert { background: color-mix(in srgb, var(--edo-modus-flaeche) 80%, var(--colorNeutralBackground1)); border-left-color: var(--edo-modus); }
+.tp-zeile > span { overflow: hidden; text-overflow: ellipsis; }
+.tp-zkl { font-weight: 600; color: var(--colorNeutralForeground1); }
+.tp-zfach { color: var(--colorNeutralForeground1); }
+.tp-zfehlt { color: var(--colorNeutralForeground3); }
+.tp-zhinweis { font-size: 12px; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; }
+.tp-zergebnis { font-weight: 500; color: var(--up-aenderung); }
+.tp-zergebnis[data-entfall] { color: var(--up-entfall); }
+.tp-statt { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--up-entfall) 60%, transparent); }
+.tp-fuss { padding: 8px 12px; border-top: 1px solid var(--colorNeutralStroke2); flex-shrink: 0; display: flex; }
+.tp-fuss > button { flex: 1; }
+.tp-rechts { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.tp-leer { padding: 16px; color: var(--colorNeutralForeground2); font-size: 13px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.tp-leer-knoepfe { display: inline-flex; gap: 8px; }
+.tp-tasten-symbol { font-weight: 600; }
+
+/* Entscheidung zur gewählten Stunde */
+.tp-zuletzt { display: flex; align-items: baseline; gap: 12px; padding: 8px 32px; border-bottom: 1px solid var(--colorNeutralStroke3); color: var(--colorNeutralForeground2); font-size: 12px; max-width: 760px; box-sizing: border-box; }
+.tp-zuletzt > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tp-zuletzt .tp-link { padding: 0; font-size: 12px; }
+@media (max-width: 1439px) { .tp-zuletzt { padding: 8px 24px; } }
+.tp-entscheidung { padding: 24px 32px 32px 32px; max-width: 760px; display: flex; flex-direction: column; gap: 24px; box-sizing: border-box; font-size: 13px; }
+.tp-ekopf-zeile { display: flex; align-items: baseline; gap: 8px; font-variant-numeric: tabular-nums; }
+.tp-estd { font-weight: 600; color: var(--colorNeutralForeground2); }
+.tp-enr { margin-left: auto; color: var(--colorNeutralForeground3); font-size: 12px; white-space: nowrap; }
+.tp-etitel { display: flex; align-items: baseline; gap: 12px; margin-top: 4px; font-size: 20px; line-height: 28px; }
+.tp-etitel b { font-weight: 600; color: var(--colorNeutralForeground1); }
+.tp-etitel span { color: var(--colorNeutralForeground2); }
+.tp-emeta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; color: var(--colorNeutralForeground2); }
+.tp-label { font-size: 12px; font-weight: 500; color: var(--colorNeutralForeground3); margin: 0 0 8px 0; }
+.tp-empfehlung { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.tp-empfehlung-knopf { min-height: 40px; padding: 0 16px; font-size: 14px; }
+.tp-taste-hell { font: inherit; font-size: 11px; font-weight: 600; margin-left: 12px; padding: 0 4px; line-height: 16px; border-radius: 3px; border: 1px solid color-mix(in srgb, currentColor 45%, transparent); opacity: .85; }
+.tp-begruendung { color: var(--colorNeutralForeground2); min-width: 0; }
+.tp-laedt { display: inline-flex; align-items: center; gap: 8px; }
+.tp-alternativen { display: flex; flex-direction: column; border-top: 1px solid var(--colorNeutralStroke3); }
+.tp-alt {
+  all: unset; box-sizing: border-box; display: grid; grid-template-columns: 20px 48px minmax(64px, 180px) minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  height: 36px; padding: 0 8px; border-bottom: 1px solid var(--colorNeutralStroke3); cursor: pointer; white-space: nowrap;
+}
+.tp-alt:hover:not(:disabled) { background: var(--colorNeutralBackground1Hover); }
+.tp-alt:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.tp-alt:disabled { cursor: default; }
+.tp-alt > span { overflow: hidden; text-overflow: ellipsis; }
+.tp-alt-kurz { font-weight: 600; color: var(--colorNeutralForeground1); }
+.tp-alt.rot .tp-alt-kurz { color: var(--up-entfall); }
+.tp-alt-name { color: var(--colorNeutralForeground1); }
+.tp-alt-grund { color: var(--colorNeutralForeground3); font-size: 12px; }
+.tp-alt-last { visibility: hidden; color: var(--colorNeutralForeground3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tp-alt:hover .tp-alt-last, .tp-alt:focus-visible .tp-alt-last { visibility: visible; }
+.tp-alt kbd, .tp-andere kbd {
+  font: inherit; font-size: 11px; font-weight: 600; min-width: 16px; height: 16px; line-height: 14px; text-align: center; border-radius: 3px; display: inline-block;
+  border: 1px solid var(--colorNeutralStroke1); color: var(--colorNeutralForeground3); background: var(--colorNeutralBackground2); padding: 0 3px; box-sizing: border-box;
+}
+.tp-andere kbd { margin-left: 8px; }
+.tp-link { all: unset; cursor: pointer; color: var(--colorBrandForeground1); padding: 8px 8px 0 8px; align-self: flex-start; }
+.tp-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+.tp-link:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+.tp-andere { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tp-ergebnis { font-size: 16px; font-weight: 600; color: var(--up-aenderung); }
+.tp-ergebnis[data-entfall] { color: var(--up-entfall); }
+.tp-entscheidung-flaeche { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; outline: none; background: var(--colorNeutralBackground1); }
+.tp-entscheidung-flaeche .tp-entscheidung { padding: 16px 20px 24px 20px; gap: 20px; }
+.tp-entscheidung-flaeche .tp-etitel { font-size: 18px; }
+@container (max-width: 520px) { .tp-alt { grid-template-columns: 20px 44px minmax(0, 1fr) auto; } .tp-alt-name { display: none; } }
+.tp-rechts, .tp-entscheidung-flaeche { container-type: inline-size; }
+@media (max-width: 1439px) { .tp-entscheidung { padding: 20px 24px 24px 24px; gap: 20px; } }
+.tp-rechts .ta-sammel, .tp-entscheidung-flaeche .ta-sammel { background: transparent; border-bottom: none; padding: 24px 32px; max-width: 760px; }
+.tp-entscheidung-flaeche .ta-sammel { padding: 16px 20px; }
+.tp-rechts .ta-pruefung-kopf, .ta-pruefung-kopf { background: transparent; }
+.ta-eingebettet { display: flex; flex-direction: column; flex-shrink: 0; }
+.tp-blatt-oben { flex-shrink: 0; display: flex; flex-direction: column; }
+.tp-blatt-oben > [data-bereich] { flex: none; overflow: visible; }
+.tp-blatt-oben .ta-eingebettet > div { flex: none; overflow: visible; }
+
+/* Tabelle der Tagesplanung: Zustand als Text statt Plakette (design/DESIGN.md, Abschnitt 9) */
+[data-arbeitsplatz=tagesplanung] .tb-zelle.vt-chipzelle > span.t, [data-arbeitsplatz=tagesplanung] .tb-zelle.vt-z-offen::after {
+  background: none; padding: 0; text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 400; line-height: inherit; color: var(--colorNeutralForeground2);
+}
+[data-arbeitsplatz=tagesplanung] .tb-zelle.vt-z-offen::after { content: 'offen'; color: var(--up-entfall); font-weight: 600; }
+[data-arbeitsplatz=tagesplanung] .tb-zelle.vt-chip-entfall > span.t { color: var(--up-entfall); }
 
 /* ---- Kontextbereich neben der Arbeitsliste ---- */
 .ta-kontext { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; gap: 6px; }
-.ta-kontext-reiter { display: flex; gap: 2px; flex-shrink: 0; border-bottom: 1px solid var(--colorNeutralStroke2); }
+.ta-kontext-reiter { display: flex; align-items: center; gap: 2px; flex-shrink: 0; border-bottom: 1px solid var(--colorNeutralStroke2); }
+.ta-kontext-zu { margin-left: auto; }
 .ta-reiter {
   all: unset; box-sizing: border-box; padding: 4px 12px 5px 12px; font-size: 13px; cursor: pointer; color: var(--colorNeutralForeground2);
   box-shadow: inset 0 -2px 0 transparent;
@@ -37,14 +148,7 @@
 .ta-reiter.aktiv { color: var(--colorNeutralForeground1); font-weight: 600; box-shadow: inset 0 -2px 0 var(--edo-modus); }
 .ta-kontext > div[style] > div[data-bereich], .ta-kontext > div[style] > div:not([data-bereich]) { flex: 1; }
 
-/* ---- Karten der Arbeitsliste ---- */
-.ta-karte {
-  box-sizing: border-box; background: var(--colorNeutralBackground1); border: 1px solid var(--edo-karte-rand, var(--colorNeutralStroke1)); border-radius: 6px;
-  padding: 7px 10px 8px 12px; cursor: pointer; position: relative; font-size: 13px;
-}
-.ta-karte:hover { border-color: var(--colorNeutralStroke1Hover); }
-.ta-karte.gewaehlt { border-color: var(--edo-modus); box-shadow: inset 3px 0 0 var(--edo-modus); background: color-mix(in srgb, var(--edo-modus-flaeche) 45%, var(--colorNeutralBackground1)); }
-.ta-karte.klausur:not(.gewaehlt) { box-shadow: inset 3px 0 0 var(--up-pruefung); }
+/* ---- Bausteine (Prüfung der Automatik, gemeinsame Kandidaten) ---- */
 .ta-kopf { display: flex; align-items: baseline; gap: 10px; min-width: 0; line-height: 20px; }
 .ta-std { font-weight: 600; font-size: 14px; min-width: 30px; font-variant-numeric: tabular-nums; color: var(--colorNeutralForeground1); }
 .ta-zeit { color: var(--colorNeutralForeground3); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -100,7 +204,6 @@
 .ta-aktion:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
 .ta-aktion.empfohlen { border-color: var(--up-entfall); color: var(--up-entfall); }
 .ta-aktion-mehr { margin-left: auto; }
-.ta-karte.erledigt .ta-kopf { line-height: 22px; }
 .ta-ergebnis { font-weight: 600; color: var(--up-aenderung); white-space: nowrap; }
 .ta-ergebnis[data-entfall] { color: var(--up-entfall); }
 
@@ -117,6 +220,9 @@
 .ta-pzeile { display: flex; align-items: center; gap: 10px; padding: 2px 14px 2px 8px; border-bottom: 1px solid var(--colorNeutralStroke3); min-height: 34px; font-size: 13px; }
 .ta-pzeile.aus { color: var(--colorNeutralForeground3); }
 .ta-pzeile .ta-gruende { flex: 1; }
+.ta-pzeile .ta-std { min-width: 28px; }
+.ta-pzeile .ta-was { width: 150px; flex-shrink: 0; }
+.ta-pzeile .ta-pziel { width: 72px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ta-pfeil { color: var(--colorNeutralForeground3); }
 .ta-pziel { font-weight: 600; color: var(--up-aenderung); min-width: 64px; }
 .ta-pziel.entfall { color: var(--up-entfall); }
@@ -192,8 +298,6 @@
 @media (max-width: 1400px) { .ta-legende span:nth-child(n+5) { display: none; } }
 
 /* ---- Mehrfachauswahl ---- */
-.ta-karte { user-select: none; }
-.ta-karte.markiert { border-color: var(--edo-modus); background: color-mix(in srgb, var(--edo-modus-flaeche) 75%, var(--colorNeutralBackground1)); box-shadow: inset 3px 0 0 var(--edo-modus); }
 .ta-sammel { flex-shrink: 0; padding: 8px 12px 10px 12px; border-bottom: 1px solid var(--colorNeutralStroke1); background: color-mix(in srgb, var(--edo-modus-flaeche) 55%, var(--colorNeutralBackground1)); }
 .ta-sammel-kopf { display: flex; align-items: baseline; gap: 10px; }
 

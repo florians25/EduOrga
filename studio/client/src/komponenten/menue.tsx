@@ -115,9 +115,12 @@ export interface MenueKnopfProps {
   icon?: JSX.Element;
   appearance?: 'subtle' | 'secondary' | 'transparent' | 'primary';
   deaktiviert?: boolean;
+  /** Größe des normalen Knopfs (art „knopf“) */
+  size?: 'small' | 'medium';
+  testid?: string;
 }
 
-export function MenueKnopf({ text, eintraege, titel, art = 'toolbar', icon, appearance, deaktiviert }: MenueKnopfProps) {
+export function MenueKnopf({ text, eintraege, titel, art = 'toolbar', icon, appearance, deaktiviert, size, testid }: MenueKnopfProps) {
   const [liste, setListe] = useState<MenueListe>([]);
   const oeffnen = async (offen: boolean) => {
     if (!offen) return;
@@ -125,9 +128,9 @@ export function MenueKnopf({ text, eintraege, titel, art = 'toolbar', icon, appe
   };
   const knopf = art === 'toolbar'
     ? (text
-      ? <ToolbarButton title={titel || text} icon={icon} disabled={deaktiviert}>{text}<ChevronDown16Regular style={{ marginLeft: 4 }} /></ToolbarButton>
-      : <ToolbarButton title={titel} aria-label={titel} icon={icon} disabled={deaktiviert} />)
-    : <MenuButton title={titel || text} icon={icon} appearance={appearance} disabled={deaktiviert} menuIcon={<ChevronDown16Regular />}>{text}</MenuButton>;
+      ? <ToolbarButton title={titel || text} icon={icon} disabled={deaktiviert} data-testid={testid}>{text}<ChevronDown16Regular style={{ marginLeft: 4 }} /></ToolbarButton>
+      : <ToolbarButton title={titel} aria-label={titel} icon={icon} disabled={deaktiviert} data-testid={testid} />)
+    : <MenuButton title={titel || text} aria-label={text ? undefined : titel} icon={icon} appearance={appearance} disabled={deaktiviert} size={size} data-testid={testid} menuIcon={text ? <ChevronDown16Regular /> : null}>{text || undefined}</MenuButton>;
   return (
     <Menu onOpenChange={(_, d) => { void oeffnen(d.open); }}>
       <MenuTrigger disableButtonEnhancement={art === 'toolbar'}>{knopf}</MenuTrigger>

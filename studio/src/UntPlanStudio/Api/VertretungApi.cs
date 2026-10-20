@@ -449,12 +449,26 @@ public sealed partial class VertretungApi : IStudioModul
                 }).Prepend(new { k = "???", l = "offen (kein Raum)", c = "" }).ToList();
             if (spalte == "NFach")
                 return Stammdaten.Sortiert(d.Faecher).Where(f => !f.Ignorieren).Select(f => new { k = f.Kurzname, l = f.Langname, c = "" }).ToList();
-            return Stammdaten.Sortiert(d.Lehrer).Where(l => !l.Ignorieren).Select(l =>
+            // offene Stunde: die besten Kandidaten des Vertretungsvorschlags zuerst (gereiht, mit Begründung), dann alle Lehrkräfte
+            var beste = new List<Kandidat>();
+            if (v.Offen && v.Art is not (VertretungsArt.Pausenaufsicht or VertretungsArt.Veranstaltung))
+            {
+                try { beste = VertretungsVorschlag.Berechnen(d, v, false).Where(k => !k.Rot).Take(5).ToList(); } catch (Exception) { beste = new(); }
+            }
+            var besteIds = beste.Select(k => k.Lehrer.Id).ToHashSet();
+            var vorne = beste.Select((k, i) => new
+            {
+                k = k.Lehrer.Kurzname,
+                l = $"{k.Lehrer.VollerName} – Vorschlag {i + 1}: {string.Join(" · ", new[] { k.Lage }.Concat(k.Kriterien).Where(x => !string.IsNullOrEmpty(x)).Distinct())}",
+                c = "gruen",
+            });
+            return Stammdaten.Sortiert(d.Lehrer).Where(l => !l.Ignorieren && !besteIds.Contains(l.Id)).Select(l =>
             {
                 var belegt = Vertretungen.LehrerBelegt(d, tp, l.Id, v.Stunde, v);
                 var gruen = belegt is null && (Vertretungen.HatBereitschaft(d, tp, l.Id, v.Stunde) || Vertretungen.IstFreigesetzt(d, tp, l.Id, v.Stunde));
                 return new { k = l.Kurzname, l = belegt is null ? l.VollerName : $"{l.VollerName} – {belegt}", c = belegt != null ? "rot" : gruen ? "gruen" : "" };
-            }).Prepend(new { k = "---", l = "Entfall", c = "" }).Prepend(new { k = "+++", l = Vertretungen.OhneLehrerText, c = "" }).ToList();
+            }).Prepend(new { k = "---", l = "Entfall", c = "" }).Prepend(new { k = "+++", l = Vertretungen.OhneLehrerText, c = "" }).ToList() is var rest
+                ? rest.Take(2).Concat(vorne).Concat(rest.Skip(2)).ToList() : null;
         }));
 
         // Eingabe in einer Spalte (Vertreter, Fach, Raum, Text, Statistik …) – auf die bearbeitete bzw. alle markierten Zeilen

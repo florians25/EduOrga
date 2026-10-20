@@ -1,6 +1,6 @@
-// Daten und Aktionen des Tagesablaufs (Arbeitsplatz „Tagesplanung“): Arbeitsliste der offenen Stunden, die besten Kandidaten
-// je Stunde (gebündelt nachgeladen, solange die Karte sichtbar ist; bei Änderungen verworfen), „Wer ist frei?“, Tagesbilanz,
-// Probe der automatischen Vertretung und die Aktionen einer Karte (zuweisen, Entfall, Betreuung, ohne Lehrkraft, Raum, zurücksetzen).
+// Daten und Aktionen der Tagesplanung: Arbeitsliste der offenen Stunden, die besten Kandidaten je Stunde (gebündelt
+// nachgeladen für die gewählte und die nächsten Stunden; bei Änderungen verworfen), „Wer ist frei?“, Tagesbilanz,
+// Probe der automatischen Vertretung und die Aktionen einer Stunde (zuweisen, Entfall, Betreuung, ohne Lehrkraft, Raum, zurücksetzen).
 import { create } from 'zustand';
 import { api } from '@/api/client';
 import { an, betrifft } from '@/kern/ereignisse';
@@ -11,7 +11,7 @@ export const QUELLE = 'tagesablauf';
 export interface OffeneStunde {
   id: number; stunde: number; stundeText: string; zeit: string; klassen: string; klasse: number | null; fach: string; lehrer: string; lehrerId: number | null;
   raum: string; offen: boolean; raumOffen: boolean; pause: boolean; klausur: boolean; veranstaltung: boolean; art: string; grund: string; text: string;
-  jahrgang: number; block: number[] | null; blockIds: number[] | null;
+  jahrgang: number; jahrgangText: string; abteilung: string; block: number[] | null; blockIds: number[] | null;
 }
 export interface BearbeiteteStunde {
   id: number; stunde: number; stundeText: string; zeit: string; klassen: string; klasse: number | null; fach: string; lehrer: string; lehrerId: number | null;
@@ -129,6 +129,28 @@ export const stundenText = (o: { stunde: number; block?: number[] | null }, bloc
   block && o.block && o.block.length > 1 ? `${o.block[0]}.–${o.block[o.block.length - 1]}.` : `${o.stunde}.`;
 
 export const mehrzahl = (n: number, eins: string, viele: string) => `${n} ${n === 1 ? eins : viele}`;
+
+/** Lage der Lehrkraft zur Stunde in Worten. */
+export function lageText(lage: string): string {
+  if (!lage) return '';
+  if (lage === 'sonst frei') return 'heute sonst frei';
+  if (lage === 'anschließend') return 'schließt an';
+  const m = lage.match(/^Abstand (\d+)$/);
+  if (m) return `${m[1]} Std. Abstand`;
+  return lage;
+}
+
+/** Begründung eines Kandidaten: Lage und Kriterien ohne Wiederholungen („schließt an · kennt Klasse · Fach“). */
+export function gruendeText(k: Kandidat): string {
+  return [lageText(k.lage), ...k.gruende.filter((g) => g !== k.lage && !(k.lage === 'Bereitschaft' && g === 'Bereitschaft') && !(k.lage === 'freigesetzt' && g === 'freigesetzt'))].filter(Boolean).join(' · ');
+}
+
+/** Belastung eines Kandidaten als Kurzinfo (Woche, Monat, Mehrarbeit NRW). */
+export function lastTitel(k: Kandidat): string {
+  const ma = k.mehrarbeitMonat;
+  return `Vertretungen diese Woche: ${k.woche}${k.maxWoche ? ` von höchstens ${k.maxWoche}` : ''}\nIm Monat: ${k.monat}${k.maxMonat ? ` von höchstens ${k.maxMonat}` : ''}`
+    + (k.mehrarbeit ? `\nMehrarbeit im Monat: ${ma.geleistet} Std. (NRW: ab mehr als ${ma.grenze} Std. vergütungsfähig${ma.verguetung ? `, derzeit ${ma.verguetung}` : ''})` : '\nKeine Mehrarbeit (Bereitschaft bzw. freigesetzt)');
+}
 
 // ---------------------------------------------------------------------------------------------
 // Mehrere Stunden auf einmal: gemeinsame Kandidaten (in allen Stunden frei)

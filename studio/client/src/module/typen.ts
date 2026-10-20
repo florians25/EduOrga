@@ -8,6 +8,8 @@ export interface ArbeitsplatzDef {
   titel: string;
   modus?: Modus;
   komponente: LazyExoticComponent<ComponentType> | ComponentType;
+  /** Inhalt rechts neben dem Titel im Seitenkopf (eine Zeile, z. B. Kennzahlen und Aktionen des Arbeitsplatzes) */
+  kopf?: LazyExoticComponent<ComponentType> | ComponentType;
 }
 
 export interface StudioModul {

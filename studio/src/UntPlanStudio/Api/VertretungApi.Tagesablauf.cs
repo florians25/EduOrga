@@ -61,6 +61,7 @@ public sealed partial class VertretungApi
                 var pause = v.Art == VertretungsArt.Pausenaufsicht;
                 var block = pause ? new List<Vertretung>() : VertretungsVorschlag.Block(d, v);
                 var klausur = !pause && Klausuraufsicht(d, v);
+                var kl = v.NeueKlassenIds.Select(k => ix.Klassen.GetValueOrDefault(k)).FirstOrDefault(x => x is not null);
                 return new
                 {
                     id = v.Id, stunde = v.Stunde, stundeText = Vertretungsplan.StundeText(v), zeit = Zeit(d, v.Stunde),
@@ -69,7 +70,7 @@ public sealed partial class VertretungApi
                     raum = pause ? ix.K(ElementTyp.Gang, v.GangId) : ix.KRaum(v.VertretungsraumId ?? v.RaumId),
                     offen = v.Offen, raumOffen = v.RaumOffen, pause, klausur, veranstaltung = v.Art == VertretungsArt.Veranstaltung,
                     art = Vertretungsplan.ArtText(d, v.Art), grund = v.GrundId is int gid ? ix.K(ElementTyp.Abwesenheitsgrund, gid) : v.Grund, text = v.Text,
-                    jahrgang = Jahrgang(ix, v.NeueKlassenIds),
+                    jahrgang = Jahrgang(ix, v.NeueKlassenIds), jahrgangText = kl?.Jahrgang ?? "", abteilung = ix.K(ElementTyp.Abteilung, kl?.AbteilungId),
                     block = block.Count > 1 ? block.Select(x => x.Stunde).OrderBy(x => x).ToList() : null,
                     blockIds = block.Count > 1 ? block.Where(x => x.Offen).Select(x => x.Id).ToList() : null,
                 };

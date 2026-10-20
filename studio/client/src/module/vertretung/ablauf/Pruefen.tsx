@@ -1,4 +1,4 @@
-// Prüfen und veröffentlichen (Tagesablauf, Schritt 3): Stand des Tages (offene Stunden, Räume, Kollisionen von Lehrkräften und
+// Prüfen und veröffentlichen (Tagesplanung, Blatt „Veröffentlichen“): Stand des Tages (offene Stunden, Räume, Kollisionen von Lehrkräften und
 // Räumen), Zahlen (Vertretungen, Zusammenlegungen, Aufsichten, Entfälle …), Nachrichten zum Tag (Tagestexte hinzufügen) und die
 // Notiz des Vertretungsplaners, dann „An EduOrga Web senden“ und Drucken (Klassen- und Lehrerversion, Monitor).
 // Daneben die Belastung der Lehrkräfte (Vertretungen heute, in der Woche und im Monat, Mehrarbeit nach NRW-Regel) als Balken.
@@ -9,10 +9,11 @@ import { api } from '@/api/client';
 import { seiteOeffnen } from '@/kern/befehle';
 import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben } from '@/kern/zustand';
+import type { AnsichtProps } from '@/kern/ansichten';
 import { AnsichtRahmen, Leer } from '@/komponenten/ansicht';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { direktLaden, useDirekt, vertretungenSenden } from '../../untplanweb/Senden';
-import { tpSchrittSetzen, usePlanungsdatum, vpfad } from '../kern';
+import { tpBlattSetzen, usePlanungsdatum, vpfad } from '../kern';
 import { QUELLE, bilanzLaden, mehrzahl } from './daten';
 import './ablauf.css';
 
@@ -38,7 +39,8 @@ function Status({ ok, warn, children }: { ok: boolean; warn?: boolean; children:
   );
 }
 
-export default function Pruefen() {
+/** Im Blatt der Tagesplanung (p.eingebettet): ohne eigenen Rahmen und Titel. */
+export default function Pruefen({ p }: AnsichtProps) {
   const s = useStile();
   const datum = usePlanungsdatum();
   const schreiben = useDarfSchreiben();
@@ -75,14 +77,14 @@ export default function Pruefen() {
     try { await api.post(vpfad('/kalendertag'), { datum, art: kt.art, grund: kt.grund, stunden: kt.stunden, notiz }, { quelle: QUELLE }); await neuLaden(true); hinweis('Notiz gespeichert.', 'ok', 1500); } catch (e) { fehlerMelden(e); }
   }
 
-  return (
-    <AnsichtRahmen titel="Prüfen und veröffentlichen">
+  const inhalt = (
+    <>
       {!b || !z ? null : (
         <div className={s.inhalt} data-testid="pruefen">
           <section className="ta-karte-flach" aria-label="Stand des Tages">
             <div className="ta-abschnitt-titel">Stand des Tages</div>
             <ul className="ta-statusliste">
-              <Status ok={z.offen === 0}>{z.offen ? <>{`${mehrzahl(z.offen, 'Stunde ist', 'Stunden sind')} noch offen – `}<button type="button" className="ta-link" onClick={() => tpSchrittSetzen('loesen')}>lösen</button></> : 'Alle Stunden sind besetzt'}</Status>
+              <Status ok={z.offen === 0}>{z.offen ? <>{`${mehrzahl(z.offen, 'Stunde ist', 'Stunden sind')} noch offen – `}<button type="button" className="ta-link" onClick={() => tpBlattSetzen(null)}>lösen</button></> : 'Alle Stunden sind besetzt'}</Status>
               <Status ok={z.raumOffen === 0} warn>{z.raumOffen ? `${mehrzahl(z.raumOffen, 'Stunde', 'Stunden')} ohne Raum` : 'Alle Stunden haben einen Raum'}</Status>
               <Status ok={b.kollisionen.lehrer.length === 0}>{b.kollisionen.lehrer.length ? `${mehrzahl(b.kollisionen.lehrer.length, 'Kollision', 'Kollisionen')} von Lehrkräften` : 'Keine Lehrkraft ist doppelt eingeplant'}</Status>
               {b.kollisionen.lehrer.map((x) => <li key={x} className="ta-status-detail">{x}</li>)}
@@ -143,8 +145,10 @@ export default function Pruefen() {
 
         </div>
       )}
-    </AnsichtRahmen>
+    </>
   );
+  if (p.eingebettet) return <div className="ta-eingebettet" data-ansicht="vertretung.tagesbilanz">{inhalt}</div>;
+  return <AnsichtRahmen titel="Prüfen und veröffentlichen">{inhalt}</AnsichtRahmen>;
 }
 
 /** Belastung der Lehrkräfte: Vertretungen heute, in der Woche und im Monat (Balken), Mehrarbeit im Monat nach NRW-Regel. */

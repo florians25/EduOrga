@@ -23,7 +23,7 @@ import { MenueKnopf, type MenueListe } from '@/komponenten/menue';
 import { Tabelle, type Spalte, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
 import { useElemente } from '../gemeinsam';
 import { ANSICHTEN, ARTEN_AUS, ansichtText, artenDialog, feldEinstellungen, felderDialog, raumDialog, spaltenFeld, spaltenTitel, type ListenSpalte } from './dialoge';
-import { auswahlMelden, datumSetzen, kurzText, mitRueckfragen, planungsdatum, seitenansichtSetzen, tageswechsel, tagKurz, usePlanungsdatum, useTagesplanung, vpfad } from './kern';
+import { auswahlMelden, datumSetzen, kurzText, mitRueckfragen, planungsdatum, seitenansichtSetzen, tageswechsel, tagKurz, tpKontextSetzen, usePlanungsdatum, useTagesplanung, vpfad } from './kern';
 import { OptionenKnopf, OptionenTitel, useZeitraum, ZeitraumAuswahl } from './steuer';
 import { automatikDialog, einstellungenDialog, sondereinsatzDialog } from './weitere';
 import './vertretung.css';
@@ -285,7 +285,8 @@ export default function Liste({ p }: AnsichtProps) {
   function vorschlagOeffnen() {
     const t = tabelle.current;
     if (t) gewaehlt(t.ausgewaehlte(), t.aktiveZeile());
-    a.oeffnen('vertretung.vorschlag', {});
+    // Tagesplanung: alle Kandidaten im Seitenbereich neben der Entscheidung
+    if (tagesplanung) tpKontextSetzen('vorschlag'); else a.oeffnen('vertretung.vorschlag', {});
   }
 
   // ---- Auswahl und Verknüpfung ----

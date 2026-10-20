@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { api } from '@/api/client';
 import type { Stunde } from '@/api/typen';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
-import { melden, useEreignis } from '@/kern/ereignisse';
+import { melden, useEreignis, type VertretungsAuswahl } from '@/kern/ereignisse';
 import { useDaten } from '@/kern/laden';
 import { elemente, useDarfSchreiben } from '@/kern/zustand';
 import { AnsichtRahmen, ElementAuswahl, Trenner } from '@/komponenten/ansicht';
@@ -24,7 +24,7 @@ import { MenueKnopf, menue, type MenueListe } from '@/komponenten/menue';
 import { Raster, type RasterBlock } from '@/komponenten/raster/Raster';
 import type { AblageDaten, ZiehDaten } from '@/komponenten/ziehen';
 import { ersterOder, useElemente } from '../gemeinsam';
-import { auswahlMelden, datumSetzen, mitRueckfragen, planansichtSetzen, planVergroessern, useTagesplanung, usePlanungsdatum, vpfad, type Zeitansicht } from './kern';
+import { aktuelleAuswahl, auswahlMelden, datumSetzen, mitRueckfragen, planansichtSetzen, planVergroessern, useTagesplanung, usePlanungsdatum, vpfad, type Zeitansicht } from './kern';
 import { onlineStundeDialog } from './online';
 import { Umschalter } from './steuer';
 import './vertretung.css';
@@ -136,12 +136,15 @@ export default function Tagesplan({ p }: AnsichtProps) {
 
   useEffect(() => { if (element != null && p.element !== element) a.parameterSetzen({ element }); }, [element]); // eslint-disable-line react-hooks/exhaustive-deps
   useEreignis('element', (e) => { if (verknuepft && e.quelle !== a.id && e.typ === typ && e.id !== element) a.parameterSetzen({ element: e.id }); });
-  useEreignis('vertretung.auswahl', (x) => {
+  const auswahlFolgen = (x: VertretungsAuswahl | null) => {
     if (!verknuepft || x?.quelle === a.id || !x?.zeile) return;
     const z = x.zeile;
     const ziel = typ === 'klasse' ? z.klasse : typ === 'lehrer' ? (p.rolle === 'vertreter' ? z.vertreter : z.lehrer) : typ === 'raum' ? z.raum : null;
     if (ziel && ziel !== element) a.parameterSetzen({ element: ziel });
-  });
+  };
+  useEreignis('vertretung.auswahl', auswahlFolgen);
+  // erst später eingeblendet (z. B. „Pläne“ der Tagesplanung): der bereits gewählten Vertretung folgen
+  useEffect(() => { if (tagesplanung) auswahlFolgen(aktuelleAuswahl()); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- Ziehen: Zielstatus für Stunden aus diesem Plan ----
   const ladeNr = useRef(0);

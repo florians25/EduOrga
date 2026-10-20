@@ -99,16 +99,20 @@ export async function blaettern(richtung: number, woche = false): Promise<void> 
 // Tag- bzw. Wochenansicht der Tagesplanung (je Benutzer im Browser gemerkt)
 
 export type Zeitansicht = 'tag' | 'woche';
-/** Darstellung der Tagesplanung: geführter Tagesablauf oder die bisherige Expertenansicht (Liste, Vorschlag, Pläne). */
-export type TpAnsicht = 'ablauf' | 'experte';
-/** Schritt des Tagesablaufs: Abwesenheiten erfassen, offene Stunden lösen, prüfen und veröffentlichen. */
+/** Darstellung der Tagesplanung: ruhige Liste der offenen Stunden mit Entscheidung oder die dichte Tabelle. */
+export type TpAnsicht = 'liste' | 'tabelle';
+/** Blatt über der Tagesplanung: Abwesenheiten erfassen bzw. prüfen und veröffentlichen (null = keins). */
+export type TpBlatt = 'abwesenheiten' | 'veroeffentlichen' | null;
+/** Frühere Schritte des Tagesablaufs (Kompatibilität): erfassen → Blatt Abwesenheiten, prüfen → Blatt Veröffentlichen. */
 export type TpSchritt = 'erfassen' | 'loesen' | 'pruefen';
-/** Kontextbereich neben der Arbeitsliste: Pläne von Klasse und Lehrkraft, „Wer ist frei?“, alle Kandidaten. */
+/** Seitenbereich neben der Entscheidung: Pläne von Klasse und Lehrkraft, „Wer ist frei?“, alle Kandidaten. */
 export type TpKontext = 'plaene' | 'frei' | 'vorschlag';
 interface TagesplanungZustand {
   ansicht: TpAnsicht;
-  schritt: TpSchritt;
+  /** Seitenbereich (Pläne, Wer ist frei?, Kandidaten) eingeblendet */
+  kontextOffen: boolean;
   kontext: TpKontext;
+  blatt: TpBlatt;
   /** Ansicht der Seite: Liste nur des Planungstags oder der ganzen Woche */
   seite: Zeitansicht;
   /** Ansicht je Tagesplan (klasse, lehrer) */
@@ -116,17 +120,17 @@ interface TagesplanungZustand {
   /** vergrößerter Tagesplan (klasse, lehrer) oder null */
   gross: string | null;
 }
-const TP_STANDARD: TagesplanungZustand = { ansicht: 'ablauf', schritt: 'loesen', kontext: 'plaene', seite: 'tag', plaene: { klasse: 'tag', lehrer: 'tag' }, gross: null };
-const TP_SCHRITTE: TpSchritt[] = ['erfassen', 'loesen', 'pruefen'];
+const TP_STANDARD: TagesplanungZustand = { ansicht: 'liste', kontextOffen: false, kontext: 'plaene', blatt: null, seite: 'tag', plaene: { klasse: 'tag', lehrer: 'tag' }, gross: null };
 const TP_KONTEXTE: TpKontext[] = ['plaene', 'frei', 'vorschlag'];
 const tpSchluessel = () => `vertretung.tagesplanung.${useStudio.getState().benutzer?.name || ''}`;
 function tpLesen(): TagesplanungZustand {
   try {
-    const w = JSON.parse(localStorage.getItem(tpSchluessel()) || 'null') as Partial<TagesplanungZustand> | null;
+    const w = JSON.parse(localStorage.getItem(tpSchluessel()) || 'null') as (Omit<Partial<TagesplanungZustand>, 'ansicht'> & { ansicht?: string }) | null;
     if (w) {
       return {
-        ansicht: w.ansicht === 'experte' ? 'experte' : 'ablauf', schritt: TP_SCHRITTE.includes(w.schritt as TpSchritt) ? w.schritt! : 'loesen',
-        kontext: TP_KONTEXTE.includes(w.kontext as TpKontext) ? w.kontext! : 'plaene',
+        // frühere Werte: „ablauf“ = Liste, „experte“ = Tabelle
+        ansicht: w.ansicht === 'tabelle' || w.ansicht === 'experte' ? 'tabelle' : 'liste',
+        kontextOffen: w.kontextOffen === true, kontext: TP_KONTEXTE.includes(w.kontext as TpKontext) ? w.kontext! : 'plaene', blatt: null,
         seite: w.seite === 'woche' ? 'woche' : 'tag', plaene: { ...TP_STANDARD.plaene, ...(w.plaene || {}) }, gross: null,
       };
     }
@@ -136,15 +140,29 @@ function tpLesen(): TagesplanungZustand {
 export const useTagesplanung = create<TagesplanungZustand>(() => tpLesen());
 function tpSetzen(n: Partial<TagesplanungZustand>) {
   useTagesplanung.setState(n);
-  const { ansicht, schritt, kontext, seite, plaene } = useTagesplanung.getState();
-  try { localStorage.setItem(tpSchluessel(), JSON.stringify({ ansicht, schritt, kontext, seite, plaene })); } catch { /* privat */ }
+  const { ansicht, kontextOffen, kontext, seite, plaene } = useTagesplanung.getState();
+  try { localStorage.setItem(tpSchluessel(), JSON.stringify({ ansicht, kontextOffen, kontext, seite, plaene })); } catch { /* privat */ }
 }
-/** Tagesablauf oder Expertenansicht der Tagesplanung (je Benutzer im Browser gemerkt). */
-export const tpAnsichtSetzen = (ansicht: TpAnsicht) => { if (useTagesplanung.getState().ansicht !== ansicht) tpSetzen({ ansicht, gross: null }); };
-/** Schritt des Tagesablaufs wählen. */
-export const tpSchrittSetzen = (schritt: TpSchritt) => { if (useTagesplanung.getState().schritt !== schritt) tpSetzen({ schritt, gross: null }); };
-/** Inhalt des Kontextbereichs neben der Arbeitsliste wählen. */
-export const tpKontextSetzen = (kontext: TpKontext) => { if (useTagesplanung.getState().kontext !== kontext) tpSetzen({ kontext }); };
+/** Liste oder Tabelle der Tagesplanung (je Benutzer im Browser gemerkt); „experte“/„ablauf“ wie früher. */
+export const tpAnsichtSetzen = (ansicht: TpAnsicht | 'experte' | 'ablauf') => {
+  const a: TpAnsicht = ansicht === 'tabelle' || ansicht === 'experte' ? 'tabelle' : 'liste';
+  if (useTagesplanung.getState().ansicht !== a) tpSetzen({ ansicht: a, gross: null });
+};
+/** Blatt öffnen bzw. schließen (Abwesenheiten, Veröffentlichen). */
+export const tpBlattSetzen = (blatt: TpBlatt) => { if (useTagesplanung.getState().blatt !== blatt) useTagesplanung.setState({ blatt }); };
+/** Früherer Schritt des Tagesablaufs: erfassen und prüfen öffnen das jeweilige Blatt, lösen schließt es. */
+export const tpSchrittSetzen = (schritt: TpSchritt) => tpBlattSetzen(schritt === 'erfassen' ? 'abwesenheiten' : schritt === 'pruefen' ? 'veroeffentlichen' : null);
+/** Inhalt des Seitenbereichs wählen und ihn einblenden. */
+export const tpKontextSetzen = (kontext: TpKontext) => {
+  const z = useTagesplanung.getState();
+  if (z.kontext !== kontext || !z.kontextOffen) tpSetzen({ kontext, kontextOffen: true });
+};
+/** Seitenbereich ein- bzw. ausblenden (P). */
+export const tpKontextUmschalten = (offen?: boolean) => {
+  const z = useTagesplanung.getState();
+  const neu = offen ?? !z.kontextOffen;
+  if (neu !== z.kontextOffen) tpSetzen({ kontextOffen: neu, gross: neu ? z.gross : null });
+};
 useStudio.subscribe((s, alt) => { if (s.benutzer?.name !== alt.benutzer?.name) useTagesplanung.setState(tpLesen()); });
 
 /** Ansicht der ganzen Tagesplanung: Liste und beide Tagespläne folgen. */

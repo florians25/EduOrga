@@ -87,7 +87,8 @@ const useStile = makeStyles({
 
 const uhr = (iso: string | null | undefined) => (iso ? datumDe(iso).split(', ')[1] || datumDe(iso) : '');
 
-function statusText(st: DirektStand | null, sendet: boolean): { text: string; titel: string; fehler: boolean; art?: 'ok' | 'faellig' | 'fehler'; zeit?: string } {
+/** Stand der Übertragung an EduOrga Web als Text („Gesendet · 10:42“), Kurzinfo und Art (ok, fällig, Fehler). */
+export function sendeStatus(st: DirektStand | null, sendet: boolean): { text: string; titel: string; fehler: boolean; art?: 'ok' | 'faellig' | 'fehler'; zeit?: string } {
   if (!st) return { text: '', titel: '', fehler: false };
   if (sendet || st.laufend) return { text: 'Wird gesendet …', titel: st.laufend ? sachlich(st.laufend.text) : '', fehler: false };
   const auto = st.automatisch ? `Automatische Übertragung ${st.sekunden} s nach jeder Änderung ist eingeschaltet.` : 'Automatische Übertragung: aus (Einstellungen für UntPlan Web).';
@@ -116,7 +117,7 @@ export function VertretungenSendenKnopf({ mitText = true, kompakt = false }: { m
     return () => clearInterval(t);
   }, []);
   if (!schreiben) return null;
-  const st = statusText(stand, sendet);
+  const st = sendeStatus(stand, sendet);
   if (kompakt) {
     const punkt = st.art === 'ok' ? s.punktOk : st.art === 'faellig' ? s.punktFaellig : st.art === 'fehler' ? s.punktFehler : null;
     return (

@@ -25,12 +25,17 @@ const useStile = makeStyles({
   },
   pfad: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, lineHeight: '16px' },
   titel: { margin: 0, fontSize: '20px', lineHeight: '28px', fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
+  /* Seitenkopf in einer Zeile: Titel links, Inhalt des Arbeitsplatzes (Kennzahlen, Aktionen) daneben */
+  kopfZeile: { flexDirection: 'row', alignItems: 'center', gap: '16px', padding: '6px 16px 6px 20px', minHeight: '44px', boxSizing: 'border-box' },
+  titelZeile: { whiteSpace: 'nowrap', flexShrink: 0 },
+  kopfInhalt: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' },
   flaeche: { flex: 1, minHeight: 0, display: 'flex', padding: '10px 12px 12px 12px', backgroundColor: tokens.colorNeutralBackground2 },
   teilung: { display: 'flex', flex: 1, minWidth: 0, minHeight: 0 },
   zeilen: { flexDirection: 'column' },
   teil: { display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden' },
   trennerS: { width: '8px', flexShrink: 0, cursor: 'col-resize', ':hover': { backgroundColor: tokens.colorBrandBackground2 } },
   trennerW: { height: '8px', flexShrink: 0, cursor: 'row-resize', ':hover': { backgroundColor: tokens.colorBrandBackground2 } },
+  flach: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden' },
   bereich: {
     display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden',
     border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusLarge, backgroundColor: tokens.colorNeutralBackground1,
@@ -84,13 +89,21 @@ export function ArbeitsplatzSeite() {
 
   if (!def) return <Leer text="Diesen Arbeitsplatz gibt es nicht." />;
   const K = def.komponente;
+  const Kopf = def.kopf;
   return (
     <ArbeitsplatzKontext.Provider value={kontext}>
       <div className={s.seite} data-arbeitsplatz={name}>
-        <header className={s.kopf}>
-          <div className={s.pfad}>{bereichVon({ arbeitsplatz: name, p: {} }, modus) || ''}</div>
-          <h1 className={s.titel}>{def.titel}</h1>
-        </header>
+        {Kopf ? (
+          <header className={mergeClasses(s.kopf, s.kopfZeile)}>
+            <h1 className={mergeClasses(s.titel, s.titelZeile)} title={bereichVon({ arbeitsplatz: name, p: {} }, modus) || undefined}>{def.titel}</h1>
+            <div className={s.kopfInhalt}>{dokument ? <Suspense fallback={null}><Kopf key={dokument} /></Suspense> : null}</div>
+          </header>
+        ) : (
+          <header className={s.kopf}>
+            <div className={s.pfad}>{bereichVon({ arbeitsplatz: name, p: {} }, modus) || ''}</div>
+            <h1 className={s.titel}>{def.titel}</h1>
+          </header>
+        )}
         <div className={s.flaeche}>{dokument ? <Suspense fallback={<Spinner size="small" />}><K key={dokument} /></Suspense> : <KeinDokument />}</div>
       </div>
       <OverlayDrawer open={!!seitlich} position="end" size="large" modalType="non-modal" onOpenChange={(_, d) => { if (!d.open) setSeitlich(null); }}>
@@ -107,8 +120,11 @@ export function ArbeitsplatzSeite() {
   );
 }
 
-/** Bereich eines Arbeitsplatzes mit einer Ansicht. id: fester Name innerhalb des Arbeitsplatzes (Parameter werden gemerkt). */
-export function Bereich({ id, typ, p: start = {} }: { id: string; typ: string; p?: Params }) {
+/**
+ * Bereich eines Arbeitsplatzes mit einer Ansicht. id: fester Name innerhalb des Arbeitsplatzes (Parameter werden gemerkt).
+ * flach: ohne eigenen Rahmen (z. B. in einem Blatt, das selbst den Rahmen bildet).
+ */
+export function Bereich({ id, typ, p: start = {}, flach = false }: { id: string; typ: string; p?: Params; flach?: boolean }) {
   const s = useStile();
   const ap = useContext(ArbeitsplatzKontext)!;
   const navigate = useNavigate();
@@ -121,7 +137,7 @@ export function Bereich({ id, typ, p: start = {} }: { id: string; typ: string; p
   }, [speicher]);
   useEffect(() => ap.registrieren(id, { typ, p: () => pRef.current, setzen: parameterSetzen }), [ap, id, typ, parameterSetzen]);
   return (
-    <div className={s.bereich} data-bereich={id}>
+    <div className={flach ? s.flach : s.bereich} data-bereich={id}>
       <AnsichtHost typ={typ} p={p} lage="bereich" parameterSetzen={parameterSetzen} oeffnen={ap.oeffnen}
         alsSeite={() => navigate(adresseVon(typ, pRef.current))} />
     </div>

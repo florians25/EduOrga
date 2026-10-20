@@ -1,13 +1,14 @@
-// Abwesenheiten erfassen (Tagesablauf, Schritt 1): Schnellerfassung „Lehrkraft(en) … ganztägig bzw. ab/bis Stunde … bis Datum …
+// Abwesenheiten erfassen (Tagesplanung, Blatt „Abwesenheiten“): Schnellerfassung „Lehrkraft(en) … ganztägig bzw. ab/bis Stunde … bis Datum …
 // Grund … Text“ – mehrere Lehrkräfte (bzw. Klassen, Räume) auf einmal, Enter speichert. Darunter Rückmeldungen aus EduOrga Web
 // (Krankmeldungen, sofern die Verbindung eingerichtet ist) und die Auswirkungen: entstandene offene Stunden je abwesender Lehrkraft,
 // mit dem Übergang zu „Offene Stunden lösen“. Die vollständige Liste (bearbeiten, teilen, löschen) steht daneben.
 import { Button, Input, Select, makeStyles, tokens } from '@fluentui/react-components';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
-import { seiteOeffnen } from '@/kern/befehle';
+import { arbeitsplatzOeffnen, seiteOeffnen } from '@/kern/befehle';
 import { useDaten } from '@/kern/laden';
 import { useDarfSchreiben, useStudio } from '@/kern/zustand';
+import type { AnsichtProps } from '@/kern/ansichten';
 import { AnsichtRahmen } from '@/komponenten/ansicht';
 import { DatumFeld } from '@/komponenten/eingaben';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
@@ -15,7 +16,7 @@ import { SuchAuswahl } from '@/komponenten/suchauswahl';
 import { useElemente } from '../../gemeinsam';
 import { direktLaden, useDirekt } from '../../untplanweb/Senden';
 import { absenzenSpeichern } from '../Absenzen';
-import { tpSchrittSetzen, usePlanungsdatum } from '../kern';
+import { tpBlattSetzen, usePlanungsdatum } from '../kern';
 import { Umschalter } from '../steuer';
 import { QUELLE, arbeitslisteLaden, mehrzahl } from './daten';
 import './ablauf.css';
@@ -39,7 +40,8 @@ const ARTEN: { wert: Art; text: string; titel: string }[] = [
   { wert: 'raum', text: 'Raum', titel: 'Gesperrte Räume' },
 ];
 
-export default function Erfassen() {
+/** Im Blatt der Tagesplanung (p.eingebettet): ohne eigenen Rahmen und Titel. */
+export default function Erfassen({ p }: AnsichtProps) {
   const s = useStile();
   const datum = usePlanungsdatum();
   const schreiben = useDarfSchreiben();
@@ -102,8 +104,7 @@ export default function Erfassen() {
     } catch (e) { fehlerMelden(e); }
   }
 
-  return (
-    <AnsichtRahmen titel="Abwesenheiten erfassen">
+  const inhalt = (
       <div className={s.inhalt}>
         {schreiben ? (
           <section className="ta-karte-flach" aria-label="Abwesenheit erfassen">
@@ -179,12 +180,13 @@ export default function Erfassen() {
             </ul>
           ) : <span className={s.leise}>Mit dem Erfassen einer Abwesenheit erscheinen hier die Stunden, die neu besetzt werden müssen.</span>}
           <div className={s.zeile} style={{ marginTop: 8 }}>
-            <Button appearance={nOffen ? 'primary' : 'secondary'} size="small" onClick={() => tpSchrittSetzen('loesen')} data-testid="weiter-loesen">
-              {nOffen ? `Weiter: ${mehrzahl(nOffen, 'offene Stunde', 'offene Stunden')} lösen` : 'Weiter: Offene Stunden'}
+            <Button appearance={nOffen ? 'primary' : 'secondary'} size="small" onClick={() => { if (p.eingebettet) tpBlattSetzen(null); else arbeitsplatzOeffnen('tagesplanung'); }} data-testid="weiter-loesen">
+              {nOffen ? `${mehrzahl(nOffen, 'offene Stunde', 'offene Stunden')} lösen` : 'Zu den offenen Stunden'}
             </Button>
           </div>
         </section>
       </div>
-    </AnsichtRahmen>
   );
+  if (p.eingebettet) return <div className="ta-eingebettet" data-ansicht="vertretung.erfassen">{inhalt}</div>;
+  return <AnsichtRahmen titel="Abwesenheiten erfassen">{inhalt}</AnsichtRahmen>;
 }

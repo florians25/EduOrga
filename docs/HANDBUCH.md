@@ -432,107 +432,124 @@ Mit dem Datum wechselt automatisch die gültige Periode.
 
 ### Tagesplanung
 
-*Vertretungsplanung → Tagesplanung* ist der Arbeitsplatz für den Planungstag. Er führt in drei Schritten durch den Tag
-(**Tagesablauf**, Standard); der Umschalter **Tagesablauf | Expertenansicht** neben den Schritten wechselt zur
-bisherigen Aufteilung (Liste, Vorschlag und Pläne nebeneinander) – beides lässt sich jederzeit mischen, nichts geht
-verloren. Im Tageskopf stehen außerdem **An Web senden** (mit Stand der letzten Übertragung) und die Kurzübersicht.
+*Vertretungsplanung → Tagesplanung* ist der Arbeitsplatz für den Planungstag: eine ruhige Seite, eine Aufgabe nach der
+anderen. Das Datum blättern Sie wie überall in der Kopfleiste (**Strg+Bild↑ / Strg+Bild↓**, eine Woche mit
+**Strg+Umschalt+Bild↑ / Strg+Umschalt+Bild↓**). Auf Bildschirmen unter 1440 px Breite (z. B. MacBook 13") klappt die
+Seitenleiste auf dieser Seite von selbst ein; der Menüknopf oben links bzw. **Strg+B** zeigt sie wieder.
+
+**Kopf (eine Zeile):** Tag und Wochentyp, die Zahl der offenen Stunden (rot), Entfälle und Kollisionen; rechts
+
+- **Liste | Tabelle** – die ruhige Liste mit Entscheidung (Standard) oder die dichte Tabelle (siehe unten),
+- **Pläne** – blendet rechts die Tagespläne von Klasse und Lehrkraft, *Wer ist frei?* und *Alle Kandidaten* ein (P),
+- **Abwesenheiten** (mit Anzahl) – öffnet das Blatt zum Erfassen (auch Taste **N**),
+- **Veröffentlichen** – öffnet das Blatt *Prüfen und veröffentlichen*; daneben der Stand der letzten Übertragung an
+  EduOrga Web („Gesendet · 10:42“, auf schmalen Bildschirmen in der Kurzinfo),
+- **…** – Wer ist frei?, Alle Kandidaten, *Ganze Woche* (Tabelle und Pläne zeigen die Woche, dazu der Wochenstreifen
+  mit den offenen Stunden je Tag), *Blöcke gemeinsam besetzen*, Alle Abwesenheiten (Strg+M), Kalender und Tagestexte,
+  Belastung, Automatische Vertretung und Einstellungen.
 
 **Änderungen aus EduOrga Web:** Beim Öffnen der Tagesplanung fragt Studio, wenn EduOrga Web verbunden ist und noch nicht
 bearbeitete Rückmeldungen oder Stundenplanänderungen vorliegen: „Wollen Sie folgende Änderungen aus EduOrga Web
 übernehmen?“ mit der Liste. **Ja** übernimmt sie, **Nein** markiert sie nach einer Warnung als ignoriert (sie werden
 nicht erneut angeboten), **Später** fragt beim nächsten Öffnen wieder. Liegt nichts vor, erscheint keine Frage.
 
-**1 Abwesenheiten erfassen.** Schnellerfassung oben links: Art (Lehrkraft, Klasse, Raum), eine oder **mehrere**
-Lehrkräfte auf einmal (Kürzel oder Name tippen), *Ganztägig* oder *Stunden* (ab/bis Stunde), bis einschließlich
-(mehrtägig), Grund und Text; **Enter** speichert. Die offenen Stunden entstehen sofort; darunter steht, welche Stunden
-je Lehrkraft daraus entstanden sind, und **Weiter: … offene Stunden lösen**. Rechts die vollständige Liste der
-Abwesenheiten des Tages (direkt bearbeiten, teilen, übertragen, löschen). Ist EduOrga Web verbunden, holt
-*Abwesenheiten abrufen* Krankmeldungen aus dem Portal.
+**Liste (Standard).** Links stehen die offenen Stunden des Tages, nach Stunden gegliedert („2. Stunde 08:45–09:30 · 4“),
+eine Zeile je Stunde: Klasse · Fach · fehlende Lehrkraft (durchgestrichen), rechts ggf. *Klausur* (Aufsicht), *Raum*
+(nur der Raum fehlt) oder der Block („2.–3.“). Reiter **Offen** und **Gelöst** mit Anzahl. Rechts steht die
+**Entscheidung** zur gewählten Stunde:
 
-**2 Offene Stunden lösen.** Die Arbeitsliste zeigt jede offene Stunde als Karte, nach Dringlichkeit geordnet:
-Klausuraufsichten zuerst, dann nach Uhrzeit, jüngere Klassen vor älteren. Jede Karte nennt Stunde, Zeit, Klasse, Fach,
-die fehlende Lehrkraft (durchgestrichen), Raum und ggf. Block (Doppelstunde) und darunter die **drei besten
-Lehrkräfte** mit Begründung (Hohlstunde, Bereitschaft, freigesetzt, schließt an, kennt Klasse, Klassenlehrer, Fach …),
-ihrer Belastung (Vertretungen diese Woche als kleiner Balken gegen das Wochenmaximum, im Monat) und Mehrarbeit (NRW;
-„keine MA“ bei Bereitschaft bzw. Freisetzung). Ein Klick auf eine Lehrkraft – oder die Taste **1**, **2**, **3** –
-weist sie zu; danach ist die nächste offene Stunde gewählt. Alternativen der gewählten Karte: **Entfall** (E, rot
-umrandet, wenn er sinnvoll ist), **Zusammenlegen** mit einer Lehrkraft, die nebenher betreut (B), **Ohne Lehrkraft**
-(O), **Raum …** (R), **Alle Kandidaten** (V) sowie unter *Mehr* Vorziehen, Verlegen/Tauschen (Drag & Drop in den
-Plänen) und Vormerken.
+- oben, was fehlt: Stunde und Zeit, Klasse und Fach, *fehlt: KOC*, Raum, Grund, Block, „3 von 16“;
+- **Empfehlung** – die beste Lehrkraft als ein Knopf („SRO übernehmen“, **Enter**) mit Begründung (schließt an,
+  Hohlstunde, Bereitschaft, freigesetzt, kennt Klasse, Klassenlehrer, Fach …). Fehlt nur der Raum, ist es der beste freie
+  Raum; ist keine Lehrkraft frei, der Entfall (Randstunde) bzw. das Zusammenlegen;
+- **Alternativen** – die nächsten beiden Lehrkräfte als schlichte Zeilen (**2**, **3**); die Belastung (Vertretungen in
+  Woche und Monat, Mehrarbeit nach NRW) zeigt die Zeile beim Überfahren bzw. ihre Kurzinfo. *Alle Kandidaten* öffnet den
+  vollständigen Vorschlag (V);
+- **Andere Lösung** – **Entfall** (E), **Zusammenlegen** mit einer Lehrkraft, die nebenher betreut (B), und
+  **Weitere Möglichkeiten** (M): Ohne Lehrkraft (O), Raum zuordnen (R), Vorziehen, Verlegen oder tauschen (Pläne, Drag &
+  Drop), Als Vormerkung beiseitelegen, Alle Kandidaten, Wer ist frei?, In der Tabelle bearbeiten.
+
+Nach jeder Entscheidung ist die nächste offene Stunde gewählt; über der Entscheidung steht „Zuletzt: 2. Std. 7a M: SRO
+eingetragen“ mit **Rückgängig** (wie Strg+Z). Für eine gelöste Stunde zeigt die Entscheidung das Ergebnis mit
+*Zurücksetzen* (Entf) und *Andere Lehrkraft*.
 
 | Taste | Wirkung |
 |---|---|
+| Enter bzw. 1 | Empfehlung übernehmen |
+| 2 3 | Alternative übernehmen |
 | J / K, ↓ / ↑ | nächste / vorherige Stunde |
-| 1 2 3 | Kandidat zuweisen |
 | E, B, O, R | Entfall, Zusammenlegen, ohne Lehrkraft, Raum |
-| V, F, P | Kontext: alle Kandidaten, Wer ist frei?, Pläne |
-| A | Automatisch vorschlagen |
-| Entf | (Bearbeitet) Stunde zurücksetzen |
-| Esc | Mehrfachauswahl aufheben |
+| M | Weitere Möglichkeiten |
+| V, F, P | Alle Kandidaten, Wer ist frei?, Pläne ein-/ausblenden |
+| A | Empfehlungen für alle prüfen |
+| N | Abwesenheit erfassen |
+| Entf | (Gelöst) Stunde zurücksetzen |
+| Esc | Mehrfachauswahl aufheben bzw. Blatt schließen |
 
-- **Mehrere Stunden auf einmal:** Mit gedrückter Maustaste über mehrere Karten ziehen (oder Strg+Klick,
-  Umschalt+Klick) markiert sie. Oben erscheinen die **gemeinsamen Kandidaten** – Lehrkräfte, die in allen markierten
-  Stunden frei sind –; ein Klick (bzw. 1–3) trägt die Lehrkraft für alle ein. Entfall, Zusammenlegen, ohne Lehrkraft und
-  Raum gelten ebenfalls für alle. Dasselbe gilt in der Vertretungsliste: Zeilen mit der Maus aufziehen, der
-  Vertretungsvorschlag zeigt dann oben die gemeinsamen Kandidaten, das Kontextmenü *Vertretung zuweisen* ebenso.
-- **Blöcke gemeinsam** (Schalter): Doppel- und Blockstunden werden zusammen besetzt (die Kandidaten sind in allen
-  Stunden frei).
-- **Automatisch vorschlagen** rechnet die automatische Vertretung (bester Vorschlag, sonst Entfall in Randstunden)
-  zunächst nur zur Probe und zeigt die Vorschläge zur Prüfung: jeder Vorschlag mit Begründung und Häkchen, **Alle
-  übernehmen** bzw. **Auswahl übernehmen** oder einzeln *Übernehmen*; *Verwerfen* ändert nichts. Die Übernahme ist eine
+- **Große Schulen:** Die Liste ist virtualisiert und lädt Kandidaten nur für die gewählte und die nächsten Stunden – auch
+  mit 200 Lehrkräften und 150 offenen Stunden am Tag bleibt sie flüssig. Bei mehr als acht Stunden erscheint über der Liste
+  eine Suche (Klasse, Fach, Lehrkraft) und **Filter** (Stunde, Jahrgang, Abteilung).
+- **Empfehlungen für alle prüfen** (unter der Liste, Taste A) rechnet die automatische Vertretung (bester Vorschlag,
+  sonst Entfall in Randstunden) zunächst nur zur Probe und zeigt die Vorschläge rechts zur Prüfung: jeder mit Begründung
+  und Häkchen, **Alle übernehmen** bzw. **Auswahl übernehmen** oder einzeln *Übernehmen*; *Verwerfen* ändert nichts. Ist
+  die Liste gefiltert (z. B. nur Jahrgang 5), sind zunächst nur deren Vorschläge gewählt. Die Übernahme ist eine
   Rückgängig-Stufe.
-- **Bearbeitet** zeigt die heute besetzten, entfallenen oder geänderten Stunden mit Ergebnis; *Zurücksetzen* macht
-  eine Stunde wieder offen, *Andere Lehrkraft* öffnet alle Kandidaten.
-- **Kontext** rechts folgt der gewählten Stunde: **Pläne** von Klasse und Lehrkraft (Umschalter Tag | Woche,
-  Vergrößern, Verlegen und Tauschen per Drag & Drop), **Wer ist frei?** – alle Lehrkräfte × Stunden des Tages
-  (Unterricht, vertritt, Bereitschaft, freigesetzt, Hohlstunde, abwesend) mit Vertretungen in Woche und Monat; die
-  Spalte der gewählten Stunde ist hervorgehoben, ein Doppelklick auf eine freie Zelle dort weist die Lehrkraft zu;
-  Suche, „heute mit Unterricht“, „frei in der gewählten Stunde“, Sortierung nach Belastung – und **Alle Kandidaten**
-  (vollständiger Vertretungsvorschlag mit Betreuungen, Räumen, Vorziehungen).
+- **Mehrere Stunden auf einmal:** Mit gedrückter Maustaste über mehrere Zeilen ziehen (oder Strg+Klick, Umschalt+Klick)
+  markiert sie. Rechts erscheinen die **gemeinsamen Kandidaten** – Lehrkräfte, die in allen markierten Stunden frei
+  sind –; ein Klick (bzw. Enter, 1–3) trägt die Lehrkraft für alle ein. Entfall, Zusammenlegen, ohne Lehrkraft und Raum
+  gelten ebenfalls für alle; Esc hebt die Auswahl auf.
+- **Blöcke gemeinsam** (Menü …): Doppel- und Blockstunden werden zusammen besetzt (die Kandidaten sind in allen Stunden
+  frei).
+- **Pläne** (P) blendet rechts einen Bereich mit drei Reitern ein, der der gewählten Stunde folgt: **Pläne** von Klasse
+  und Lehrkraft (Umschalter Tag | Woche, Vergrößern, Verlegen und Tauschen per Drag & Drop), **Wer ist frei?** – alle
+  Lehrkräfte × Stunden des Tages (Unterricht, vertritt, Bereitschaft, freigesetzt, Hohlstunde, abwesend) mit
+  Vertretungen in Woche und Monat; die Spalte der gewählten Stunde ist hervorgehoben, ein Doppelklick auf eine freie
+  Zelle dort weist die Lehrkraft zu – und **Alle Kandidaten** (vollständiger Vertretungsvorschlag mit Betreuungen,
+  Räumen, Vorziehungen). Das × bzw. P blendet den Bereich wieder aus; die Wahl wird je Benutzer gemerkt.
 
-**3 Prüfen und veröffentlichen.** *Stand des Tages* (offene Stunden, Stunden ohne Raum, doppelt eingeplante
-Lehrkräfte, doppelt belegte Räume – jeweils mit Einzelheiten), **Veröffentlichen** (*An EduOrga Web senden* mit Stand
-der letzten Übertragung, Drucken Klassen- bzw. Lehrerversion als PDF, Monitor, Seitenlayout), *Zahlen des Tages*
-(Vertretungen, Zusammenlegungen, Pausenaufsichten, Entfälle, ohne Lehrkraft, Raumänderungen, Verlegungen,
-Freisetzungen), *Nachrichten zum Tag* (Tagestext hinzufügen bzw. entfernen) und die *Notiz* des Vertretungsplaners.
-Rechts die **Belastung der Lehrkräfte** (Vertretungen heute, in der Woche und im Monat als Balken mit Höchstwert,
-Mehrarbeit nach NRW-Regel) und die Vertretungsliste des Tages. *Wer ist frei?* und *Belastung der Lehrkräfte* gibt es
-auch als eigene Seiten (Befehlssuche).
+**Blatt „Abwesenheiten“** (Kopf *Abwesenheiten* bzw. N): Schnellerfassung – Art (Lehrkraft, Klasse, Raum), eine oder
+**mehrere** Lehrkräfte auf einmal (Kürzel oder Name tippen), *Ganztägig* oder *Stunden* (ab/bis Stunde), bis
+einschließlich (mehrtägig), Grund und Text; **Enter** speichert. Die offenen Stunden entstehen sofort; darunter steht,
+welche Stunden je Lehrkraft daraus entstanden sind, und **… offene Stunden lösen** schließt das Blatt. Ist EduOrga Web
+verbunden, holt *Abwesenheiten abrufen* Krankmeldungen aus dem Portal. Unten die vollständige Liste der Abwesenheiten
+des Tages (direkt bearbeiten, teilen, übertragen, löschen).
 
-Die Arbeitsliste lädt die Kandidaten nur für die sichtbaren Karten und ist wie *Wer ist frei?* virtualisiert – auch
-mit 200 Lehrkräften und 100 offenen Stunden am Tag bleibt sie flüssig.
+**Blatt „Veröffentlichen“:** *Stand des Tages* (offene Stunden, Stunden ohne Raum, doppelt eingeplante Lehrkräfte,
+doppelt belegte Räume – jeweils mit Einzelheiten), **Veröffentlichen** (*An EduOrga Web senden* mit Stand der letzten
+Übertragung, Drucken Klassen- bzw. Lehrerversion als PDF, Monitor, Seitenlayout), *Zahlen des Tages* (Vertretungen,
+Zusammenlegungen, Pausenaufsichten, Entfälle, ohne Lehrkraft, Raumänderungen, Verlegungen, Freisetzungen), *Nachrichten
+zum Tag* (Tagestext hinzufügen bzw. entfernen), die *Notiz* des Vertretungsplaners und darunter die **Belastung der
+Lehrkräfte** (Vertretungen heute, in der Woche und im Monat als Balken mit Höchstwert, Mehrarbeit nach NRW-Regel).
+*Wer ist frei?* und *Belastung der Lehrkräfte* gibt es auch als eigene Seiten (Befehlssuche).
 
-**Expertenansicht:**
+**Tabelle.** Für alle, die lieber in einer Tabelle arbeiten (ersetzt die frühere Expertenansicht): links die
+Vertretungen des Tages (bzw. mit *Ganze Woche* der Woche), rechts dieselbe **Entscheidung** zur gewählten Zeile.
 
-- **Tageskopf:** Tag blättern (auch **Strg+Bild↑ / Strg+Bild↓**, eine Woche mit **Strg+Umschalt+Bild↑ /
-  Strg+Umschalt+Bild↓**), Heute, Datum wählen, Wochentyp, der Umschalter **Tag | Woche** für die ganze Seite, der
-  **Wochenstreifen** (Mo–Fr bzw. die Tage des Zeitrasters mit der Zahl der offenen Vertretungen je Tag; ein Klick wechselt
-  zu diesem Tag, unterrichtsfreie Tage sind gekennzeichnet) und eine Kurzübersicht (offene Vertretungen, Abwesenheiten,
-  Entfälle, Kollisionen, Tagestexte). **Abwesenheit** erfasst eine Abwesenheit für eine Lehrkraft, Klasse oder einen Raum
-  direkt und führt zu den Seiten *Alle Abwesenheiten* (Strg+M) und *Kalender*; auf breiten Bildschirmen stehen beide
-  zusätzlich als Verweise im Kopf.
-- **Vertretungen:** Std., Klasse, Fach, Lehrkraft, Vertretung, Raum und Art; offene Stunden tragen die Plakette
-  **Offen**. Sichtbar sind *Vorschlag*, *Nächste offene* (F3), *Entfall* (-) und *Ohne Lehrkraft* (+); **Filter**
-  enthält *Nur offene*, *Nur Kollisionen*, *Veranstaltungen zusammenfassen*, Ansicht, Klasse bzw. Lehrkraft und
-  Zeitraum; im Menü **…** stehen Zurücksetzen (Entf), Raum zuordnen, Teilen, Vormerken, Fixieren, Nicht drucken,
-  Automatische Vertretung, Neu berechnen, Löschen und die Darstellung (auf Wunsch alle Spalten der Listenansicht).
-  Im Wochenmodus (bzw. Zeitraum *Woche*) zeigt die Liste die ganze Woche, gegliedert durch Tageszeilen wie
-  „Mo 02.11.“ mit der Zahl der offenen Vertretungen; der Planungstag ist markiert. Ein Klick auf eine Tageszeile oder
-  eine Vertretung eines anderen Tages macht diesen Tag zum Planungstag.
-- **Vertretungsvorschlag** zur gewählten Zeile: zuerst die fünf besten Lehrkräfte, *Alle anzeigen* klappt den Rest auf;
-  Reiter Betreuungen, Räume und Vorziehungen. Schalter wie *Stundenblock*, *Dauervertretung* oder *Danach nächste
-  offene* stehen unter **Optionen**.
+- **Vertretungen:** Std., Klasse, Fach, Lehrkraft, Vertretung, Raum und Art; offene Stunden stehen als rotes Wort
+  *offen* in der Spalte. Direkte Eingabe in *Vertretung*, *Raum*, *Fach* und *Text* für die bearbeitete bzw. alle
+  markierten Zeilen – die Auswahlliste der Spalte *Vertretung* nennt bei offenen Stunden zuerst die **besten Kandidaten**
+  des Vorschlags in ihrer Reihenfolge mit Begründung („Vorschlag 1: schließt an · kennt Klasse“), danach alle
+  Lehrkräfte (frei grün, belegt rot). Sichtbar sind *Vorschlag* (öffnet *Alle Kandidaten*), *Nächste offene* (F3),
+  *Entfall* (-) und *Ohne Lehrkraft* (+); **Filter** enthält *Nur offene*, *Nur Kollisionen*, *Veranstaltungen
+  zusammenfassen*, Ansicht, Klasse bzw. Lehrkraft und Zeitraum; im Menü **…** stehen Zurücksetzen (Entf), Raum
+  zuordnen, Teilen, Vormerken, Fixieren, Nicht drucken, Automatische Vertretung, Neu berechnen, Löschen und die
+  Darstellung (auf Wunsch alle Spalten der Listenansicht). Mehrere Zeilen mit der Maus aufziehen: die Entscheidung zeigt
+  dann die gemeinsamen Kandidaten, das Kontextmenü *Vertretung zuweisen* ebenso. Die Tasten der Entscheidung (Enter, 1–3,
+  E, B, O, R, M) gelten, wenn der Fokus in der Entscheidung liegt; in der Tabelle gelten deren Tasten.
+- **Ganze Woche:** Die Tabelle zeigt die ganze Woche, gegliedert durch Tageszeilen wie „Mo 02.11.“ mit der Zahl der
+  offenen Vertretungen; der Planungstag ist markiert. Ein Klick auf eine Tageszeile, eine Vertretung eines anderen Tages
+  oder einen Tag im **Wochenstreifen** des Kopfs macht diesen Tag zum Planungstag.
 - **Pläne** der Klasse und der Lehrkraft der gewählten Vertretung, Verlegen und Tauschen per Drag & Drop wie in den
-  Tagesplänen. Jeder Plan hat im Kopf den Umschalter **Tag | Woche** (je Benutzer im Browser gemerkt; der Umschalter im
-  Tageskopf stellt beide Pläne und die Liste gemeinsam um). In der Wochenansicht ist der Planungstag mit einer Linie in
-  der Markenfarbe und einer hellen Fläche hervorgehoben, die Spaltenköpfe zeigen die offenen Stunden je Tag. Ein Klick
-  auf eine Stunde oder den Kopf eines anderen Tages wechselt dorthin (Tageskopf, Liste und Vorschlag folgen; eine offene
+  Tagesplänen. Jeder Plan hat im Kopf den Umschalter **Tag | Woche** (je Benutzer im Browser gemerkt; *Ganze Woche*
+  stellt beide Pläne und die Tabelle gemeinsam um). In der Wochenansicht ist der Planungstag mit einer Linie in der
+  Markenfarbe und einer hellen Fläche hervorgehoben, die Spaltenköpfe zeigen die offenen Stunden je Tag. Ein Klick auf
+  eine Stunde oder den Kopf eines anderen Tages wechselt dorthin (Kopf, Liste und Entscheidung folgen; eine offene
   Stunde wird als Vertretung gewählt). Ein Klick auf eine Stunde im Klassenplan zeigt im anderen Plan deren Lehrkraft,
   ein Klick im Lehrkräfteplan die Klasse; die Wahl einer Vertretung stellt beide Pläne ein.
 - **Aufteilung:** Zeigt ein Plan die Woche, stehen die beiden Pläne untereinander in einer breiteren rechten Spalte.
   Auf niedrigen Bildschirmen (etwa 1366×768) werden die Stunden einzeilig (Fach und Raum, Einzelheiten im Tooltip),
   damit die ganze Woche sichtbar bleibt. **Vergrößern** (⤢ im Plankopf) zeigt einen Plan über die ganze Fläche; Esc
-  oder der Knopf stellen die Aufteilung wieder her.
+  oder der Knopf stellen die Aufteilung wieder her. Alle Trenner lassen sich verschieben (gemerkt).
 
 ### Kalender und Nachrichten zum Tag
 

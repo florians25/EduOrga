@@ -24,8 +24,8 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
 
 * **Seiten statt Fenster:** Jede Aufgabe ist eine Seite mit eigener Adresse (Lesezeichen, Zurück-Taste des Browsers).
   Aufgaben, die mehrere Inhalte gleichzeitig brauchen, sind feste **Arbeitsplätze** – *Manuell planen* (Unterricht und
-  Klassenplan), *Tagesplanung* der Vertretung (Tageskopf, Vertretungen, Vorschlag, Tagespläne von Klasse und Lehrkraft; Kalender und
-  Abwesenheiten auf eigenen Seiten),
+  Klassenplan), *Tagesplanung* der Vertretung (offene Stunden eine nach der anderen mit Empfehlung, wahlweise als Tabelle; Pläne,
+  Wer ist frei?, Abwesenheiten und Veröffentlichen auf Abruf),
   *Verlegen und Tauschen*. Inhalte, die aus einer Seite heraus geöffnet werden (z. B. der Unterricht zu einem Plan),
   erscheinen rechts daneben; „Öffnen“ macht daraus eine eigene Seite.
 * **Navigation** links (in schmalen Fenstern über den Menüknopf): *Stammdaten, Unterricht, Planung, Stundenpläne, Oberstufe, Auswertung, Ausgabe,
