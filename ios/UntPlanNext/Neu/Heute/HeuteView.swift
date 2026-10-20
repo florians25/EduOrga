@@ -19,6 +19,8 @@ struct HeuteView: View {
     /// Zeitpunkt des gezeigten Stands und ob er seit dem letzten Anstoß (Vordergrund, Push) bestätigt ist
     @State private var stand: Date? = nil
     @State private var bestaetigt = false
+    /// „Stunde jetzt“ (Klassenbuch-Schnellerfassung) für diese Karte
+    @State private var jetztKarte: Karte? = nil
     @Environment(\.horizontalSizeClass) private var groessenklasse
 
     var body: some View {
@@ -88,6 +90,13 @@ struct HeuteView: View {
             }
         }
         .stundenBuehne($wahl, raum: zoom, zustand: zustand)
+        .fullScreenCover(item: $jetztKarte, onDismiss: {
+            Task { await laden() }
+        }) { karte in
+            StundeJetztSeite(karte: karte)
+                .environmentObject(zustand)
+                .environment(\.kartendarstellung, zustand.darstellung)
+        }
     }
 
     // MARK: - Kopf
@@ -164,6 +173,10 @@ struct HeuteView: View {
             }
             if istHeute && Jetztlage.berechnen(alle, minuten: Uhr.minuten()) != nil {
                 JetztKarte(kacheln: alle, raum: zoom) { k, quelle in oeffnen(k, alle: alle, h: h, quelle: quelle) }
+            }
+            // Lehrkräfte: ein Tippen zur Klassenbuch-Schnellerfassung der laufenden bzw. nächsten eigenen Stunde
+            if istHeute && zustand.istKollegium, let ziel = StundeJetztWahl.ziel(alle), let karte = ziel.karte {
+                StundeJetztStarter(kachel: ziel) { jetztKarte = karte }
             }
             VStack(alignment: .leading, spacing: Stilmass.raster) {
                 HStack(alignment: .firstTextBaseline) {
@@ -337,6 +350,7 @@ struct HeuteView: View {
             Heutespeicher.stand = stand
             Heutespeicher.veraltet = false
             if zustand.ungelesen != neu.ungelesen { zustand.ungelesen = neu.ungelesen }
+            if zustand.offeneStunden != neu.offeneStunden { zustand.offeneStunden = neu.offeneStunden }
             fehler = nil
             if neu.ferien == nil {
                 ferien = await ferienSuchen(neu)

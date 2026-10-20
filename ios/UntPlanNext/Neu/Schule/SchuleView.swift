@@ -224,11 +224,12 @@ struct SchuleView: View {
         async let meldungen = try? api.meldungen()
         if zustand.istKollegium {
             await zustand.entschuldigungsrechteLaden()
-            if let h = Heutespeicher.heute {
+            if let h = try? await api.heute() {
                 offen = h.offeneStunden
-            } else if let h = try? await api.heute() {
+            } else if let h = Heutespeicher.heute {
                 offen = h.offeneStunden
             }
+            if let offen, zustand.offeneStunden != offen { zustand.offeneStunden = offen }
         }
         ungelesen = await info?.ungelesen ?? 0
         meldungenOffen = (await meldungen ?? []).filter { $0.status == "offen" }.count

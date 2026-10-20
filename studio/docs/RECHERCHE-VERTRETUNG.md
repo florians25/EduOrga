@@ -44,7 +44,7 @@ Zusammenlegen → Pläne prüfen (Kollisionen, Raum) → veröffentlichen; im La
 
 * **Klassen zuerst.** Die Hauptansicht ist eine *Tagesübersicht* Klassen × Stunden. Jede Zelle zeigt Fach, Raum und
   Lehrkraft; Status über Linie, Durchstreichung, Schraffur und Textfarbe (nicht über Wörter oder Farbflächen): offen = rote
-  Linie mit „?“, vertreten = violette Linie, neue Lehrkraft violett und bisherige durchgestrichen, Entfall schraffiert,
+  Linie mit „?“, vertreten = Linie in der Änderungsfarbe, neue Lehrkraft hervorgehoben und bisherige durchgestrichen, Entfall schraffiert,
   Raumänderung, ohne Lehrkraft, Termin, Klausur. Doppelstunden sind eine Zelle, eine abwesende Klasse ein Band über die
   Stunden. Gruppiert nach Jahrgang (einklappbar), Filter *Nur Änderungen*, Jahrgang und Suche; virtualisiert für große
   Schulen (70+ Klassen, 200+ Lehrkräfte).

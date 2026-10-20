@@ -36,8 +36,10 @@ const BEISPIELE: Karte[] = [
   karteAus({ datum: TAGE[1], von: 3, bis: 4, ...zeit(3, 4), status: 'klausur', art: 'Klausur', fach: 'M', fachName: 'Mathematik', farbe: '#2f6f9f', lehrer: ['MUE'], raeume: ['R101'], klassen: ['5a'] }),
   karteAus({ datum: TAGE[2], von: 1, ...zeit(1), fach: 'EK', fachName: 'Erdkunde', farbe: '#a0712b', lehrer: ['LOR'], raeume: ['R205'], klassen: ['5a'], online: true, onlineLink: 'https://example.org/unterricht' }),
   karteAus({ datum: TAGE[2], von: 2, ...zeit(2), status: 'veranstaltung', art: 'Veranstaltung', text: 'Lesewettbewerb', lehrer: ['HOF'], raeume: ['Aula'], klassen: ['5a'] }),
-  karteAus({ datum: TAGE[2], von: 3, ...zeit(3), fach: 'KU', fachName: 'Kunst', farbe: '#c0508a', lehrer: ['ROS'], raeume: ['K1'], klassen: ['5a'] }),
-  karteAus({ datum: TAGE[2], von: 4, ...zeit(4), fach: 'SP', fachName: 'Sport', farbe: '#2b8c8c', lehrer: ['BRA'], raeume: ['TH'], klassen: ['5a'] }),
+  karteAus({ datum: TAGE[2], von: 3, ...zeit(3), status: 'geaendert', art: 'Vertretung', fach: 'BI', fachAlt: 'MU', fachName: 'Biologie', lehrer: [{ k: 'ROS', alt: 'KOC', neu: true }], raeume: ['K1'], klassen: ['5a'] }),
+  karteAus({ datum: TAGE[2], von: 4, ...zeit(4), status: 'geaendert', art: 'Zusatzunterricht', zusaetzlich: true, fach: 'SP', fachName: 'Sport', lehrer: ['BRA'], raeume: ['TH'], klassen: ['5a'] }),
+  karteAus({ datum: TAGE[0], von: 4, ...zeit(4), status: 'entfall', art: 'Verlegung', fach: 'GE', fachName: 'Geschichte', lehrer: ['LOR'], raeume: ['R105'], klassen: ['5a'], verlegung: 'von',
+    verlegungNach: { datum: TAGE[1], beginn: '10:45', ende: '11:30', stunde: 4, bisStunde: 4 } }),
 ];
 const PLAN: Wochenplan = {
   typ: 'klasse', element: '5a', name: '5a', montag: TAGE[0], woche: '', zeitraster: ZEITEN, karten: BEISPIELE, aufsichten: [], gesperrt: false, sperrhinweis: null, abwesenheiten: [],
@@ -94,7 +96,7 @@ function Vorschau({ d }: { d: Kartendarstellung }) {
         <Wochenraster plan={PLAN} onOpen={() => undefined} optionen={{ nurTag: ansicht === 'tag' ? 0 : null }} />
       </Paper>
       <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1 }}>
-        Beispiele: Doppelstunde, Vertretung (BEC statt HOF), Raumänderung, Entfall, offene Vertretung, Prüfung, Online-Unterricht, Termin.
+        Beispiele: Doppelstunde, Lehrervertretung „+BEC (HOF)“, Raumänderung, verschobene Stunde mit „+1“ (gleichzeitig), Entfall, Lehrkraft fehlt „(WEI)“, Prüfung, Online-Unterricht, Termin, Fachänderung, Zusatz.
       </Typography>
       <Typography variant="h4" component="h3" sx={{ mt: 2, mb: 1 }}>Listen und Stundendetails</Typography>
       <Paper variant="outlined" sx={{ p: 1.5 }}>
@@ -138,7 +140,7 @@ export default function Stundenkarten() {
     catch (err) { fehler(err); } finally { setSpeichert(false); }
   };
   const zuruecksetzen = async () => {
-    if (!(await bestaetigen('Auf Standard zurücksetzen?', 'Die Stundenkarten erscheinen danach für alle Konten wieder in der Standarddarstellung „Klassisch“.', 'Zurücksetzen'))) return;
+    if (!(await bestaetigen('Auf Standard zurücksetzen?', 'Die Stundenkarten erscheinen danach für alle Konten wieder in der Standarddarstellung „EduOrga Standard“.', 'Zurücksetzen'))) return;
     setSpeichert(true);
     try { uebernehmen(mitStandard(await api<Kartendarstellung>('/api/app/darstellung', { methode: 'DELETE' }))); toast('Standarddarstellung wiederhergestellt.'); }
     catch (err) { fehler(err); } finally { setSpeichert(false); }
@@ -192,7 +194,7 @@ export default function Stundenkarten() {
 
               <Abschnitt titel="Inhalt">
                 <Feld titel="Reihenfolge" hilfe="Untereinander braucht eine Karte mindestens 45 Minuten Höhe; kürzere Karten zeigen Fach und Lehrkraft bzw. Klasse in einer Zeile.">
-                  <Wahl label="Reihenfolge" wert={d.reihenfolge} onWahl={v => set('reihenfolge', v)} optionen={[['element', 'Lehrkraft/Klasse · Fach · Raum'], ['fach', 'Fach und Raum oben']]} />
+                  <Wahl label="Reihenfolge" wert={d.reihenfolge} onWahl={v => set('reihenfolge', v)} optionen={[['zeilen', 'Fach · Klasse · Lehrkraft · Raum'], ['element', 'Lehrkraft/Klasse · Fach · Raum'], ['fach', 'Fach und Raum oben']]} />
                 </Feld>
                 <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
                   <TextField select label="Fach als" value={d.fach} onChange={e => set('fach', e.target.value as Kartendarstellung['fach'])} sx={{ minWidth: 180 }}>
@@ -212,7 +214,7 @@ export default function Stundenkarten() {
 
               <Abschnitt titel="Status">
                 <Typography variant="body2" color="text.secondary">Linie, Schraffur, Durchstreichung und Kürzel-Plaketten bleiben unverändert.</Typography>
-                <FormControlLabel control={<Switch checked={d.statusflaeche} onChange={e => set('statusflaeche', e.target.checked)} />} label="Änderungen und Prüfungen hell hinterlegen (Vertretung violett, Prüfung bernstein)" />
+                <FormControlLabel control={<Switch checked={d.statusflaeche} onChange={e => set('statusflaeche', e.target.checked)} />} label="Änderungen und Prüfungen hell hinterlegen (Änderung grün, Prüfung bernstein)" />
                 <FormControlLabel control={<Switch checked={d.statuswoerter} onChange={e => set('statuswoerter', e.target.checked)} />} label="Statuswörter auf Kacheln anzeigen (Entfall, Offen, Vertreten …)" />
               </Abschnitt>
 

@@ -1,6 +1,6 @@
 // Tagesübersicht der Tagesplanung als Matrix („Klassen“ bzw. „Lehrkräfte“): Zeilen = Klassen (nach Jahrgang gegliedert, einklappbar)
 // bzw. Lehrkräfte (abwesende zuerst), Spalten = Stunden des Planungstags. Jede Zelle zeigt die Stunde kompakt (Fach, Raum, Lehrkraft
-// bzw. Klasse) mit ihrem Stand: regulär (ruhig), offen (rote Linie, „?“), vertreten (violett, bisherige Lehrkraft durchgestrichen),
+// bzw. Klasse) mit ihrem Stand: regulär (ruhig), offen (rote Linie, „?“), vertreten (Änderungsfarbe, bisherige Lehrkraft durchgestrichen),
 // Raumänderung, ohne Lehrkraft, Entfall (schraffiert, Fach durchgestrichen), zusätzlich/verlegt, Termin, Klausur; Doppelstunden als
 // eine Zelle, eine abwesende Klasse (Ausflug) als durchgehendes Band. Im Spaltenkopf je Stunde die offenen Stunden und die verfügbaren
 // Lehrkräfte (Bereitschaft, freigesetzt, Hohlstunde), darunter die Bereitschaften des Tages. Rechts die Entscheidung zur gewählten

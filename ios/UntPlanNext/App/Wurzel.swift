@@ -170,6 +170,8 @@ struct AppTabView: View {
             Tab("Schule", systemImage: "square.grid.2x2", value: AppReiter.schule) {
                 SchuleView()
             }
+            // Offene Klassenbuch-Stunden (nur Kollegium) als Plakette am Reiter mit dem Klassenbuch
+            .badge(zustand.istKollegium ? zustand.offeneStunden : 0)
             Tab("Profil", systemImage: "person.crop.circle", value: AppReiter.profil) {
                 MehrView()
             }

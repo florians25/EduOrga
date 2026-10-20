@@ -27,6 +27,8 @@ final class AppZustand: ObservableObject {
     /// Zählt hoch, wenn Plan- und Vertretungsdaten sofort frisch geladen werden sollen (App im Vordergrund, Push bzw.
     /// angetippte Mitteilung, Ziehen zum Aktualisieren auf „Heute“): Plan und Heute laden neu, Zwischenspeicher veralten.
     @Published var frischeAnfrage = 0
+    /// Offene Klassenbuch-Stunden der Lehrkraft (Lehrstoff bzw. Anwesenheit fehlt) – Plakette am Reiter „Schule“
+    @Published var offeneStunden = 0
     /// Zuletzt gespeicherte Notiz einer Stunde – der Stundenplan passt die Karte sofort an (Info-Zeichen) und lädt neu.
     @Published var notizAenderung: NotizAenderung? = nil
     /// Plan, den der Stundenplan öffnen soll („Im Stundenplan anzeigen“ aus den Stundendetails).

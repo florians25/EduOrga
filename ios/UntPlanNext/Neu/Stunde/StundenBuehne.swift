@@ -56,6 +56,8 @@ struct StundenBuehneInhalt: View {
     @EnvironmentObject var zustand: AppZustand
     @Environment(\.openURL) private var oeffneURL
     @StateObject private var daten: Stundendaten
+    /// Klassenbuch-Schnellerfassung („Stunde jetzt“) mit denselben Stundendaten
+    @State private var schnellerfassung = false
 
     init(karte: Karte, karten: [Karte], auswahl: Binding<Int>, typ: String, element: String, schliessen: @escaping () -> Void) {
         self.karte = karte
@@ -125,6 +127,10 @@ struct StundenBuehneInhalt: View {
         }
         .task { await daten.laden(kollegium: kollegium) }
         .environmentObject(daten)
+        .fullScreenCover(isPresented: $schnellerfassung) {
+            StundeJetztSeite(karte: karte, daten: daten)
+                .environmentObject(zustand)
+        }
         .sensoryFeedback(.selection, trigger: auswahl)
     }
 
@@ -656,6 +662,13 @@ struct StundenBuehneInhalt: View {
             Section {
                 if daten.hatEinzelstunden {
                     bereichsMenue
+                }
+                Button {
+                    Haptik.fest()
+                    schnellerfassung = true
+                } label: {
+                    Label("Schnellerfassung (Stunde jetzt)", systemImage: "checklist.checked")
+                        .font(.body.weight(.semibold))
                 }
                 NavigationLink(value: Detailseite.schueler) {
                     LabeledContent {

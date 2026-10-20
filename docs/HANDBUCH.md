@@ -465,11 +465,11 @@ Lehrkraft darunter – und ihren Stand:
 |---|---|
 | ruhige graue Kachel | regulärer Unterricht |
 | rote Linie, bisherige Lehrkraft durchgestrichen, rotes „?“ | offen – Vertretung fehlt (gestrichelt: nur der Raum fehlt) |
-| violette Linie, neue Lehrkraft violett, bisherige durchgestrichen | vertreten bzw. zusammengelegt |
-| violetter Raum | Raumänderung |
-| violett gestrichelt, „ohne“ | ohne Lehrkraft (Aufgaben, EVA) |
+| Linie in der Änderungsfarbe, neue Lehrkraft in der Änderungsfarbe, bisherige durchgestrichen | vertreten bzw. zusammengelegt |
+| Raum in der Änderungsfarbe | Raumänderung |
+| gestrichelt in der Änderungsfarbe, „ohne“ | ohne Lehrkraft (Aufgaben, EVA) |
 | schraffiert, Fach rot durchgestrichen | Entfall |
-| violette Linie | zusätzlich bzw. verlegt |
+| Linie in der Änderungsfarbe | zusätzlich bzw. verlegt |
 | gestrichelte Linie in der Terminfarbe | Termin; ein Band über mehrere Stunden: Klasse abwesend (Ausflug, Praktikum …) mit Text |
 | bernsteinfarbene Linie | Klausur |
 

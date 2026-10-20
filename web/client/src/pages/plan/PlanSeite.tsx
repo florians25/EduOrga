@@ -17,7 +17,6 @@ import { ElementWahl, ZeitNavi } from '../../components/Auswahl';
 import { Fehler, Laden, Seite } from '../../components/Seite';
 import { Wochenraster, type Aufsichtsmodus } from '../../components/plan/Wochenraster';
 import { Legende, LegendeTabelle } from '../../components/plan/Legende';
-import { useDarstellung } from '../../components/plan/darstellung';
 import { Stundendetails } from '../../components/plan/Stundendetails';
 import type { Art } from '../../components/plan/logik';
 import { heuteIso, istIsoDatum, kalenderwoche, montag, wochenText, wochentagKurz, datumKurz } from '../../lib/datum';

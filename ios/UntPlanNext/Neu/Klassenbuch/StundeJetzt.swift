@@ -135,13 +135,19 @@ struct StundeJetztSeite: View {
     }
 
     /// Schnellvorlagen für Klassenbucheinträge (die Art wird auf die Kategorien der Schule abgebildet).
-    static let vorlagen: [(titel: String, art: String, text: String)] = [
-        ("Material vergessen", "Material vergessen", "Material vergessen"),
-        ("Hausaufgabe fehlt", "Hausaufgabe fehlt", "Hausaufgabe nicht erledigt"),
-        ("Lob", "Lob", "Sehr gute Mitarbeit"),
-        ("Störung", "Vermerk", "Wiederholte Störung des Unterrichts"),
-        ("Handy", "Vermerk", "Handy im Unterricht benutzt"),
-        ("Elterngespräch", "Elterngespräch", "Elterngespräch vereinbart"),
+    struct Schnellvorlage: Hashable {
+        let titel: String
+        let art: String
+        let text: String
+    }
+
+    static let vorlagen: [Schnellvorlage] = [
+        Schnellvorlage(titel: "Material vergessen", art: "Material vergessen", text: "Material vergessen"),
+        Schnellvorlage(titel: "Hausaufgabe fehlt", art: "Hausaufgabe fehlt", text: "Hausaufgabe nicht erledigt"),
+        Schnellvorlage(titel: "Lob", art: "Lob", text: "Sehr gute Mitarbeit"),
+        Schnellvorlage(titel: "Störung", art: "Vermerk", text: "Wiederholte Störung des Unterrichts"),
+        Schnellvorlage(titel: "Handy", art: "Vermerk", text: "Handy im Unterricht benutzt"),
+        Schnellvorlage(titel: "Elterngespräch", art: "Elterngespräch", text: "Elterngespräch vereinbart"),
     ]
 
     /// Mit vorhandenen Stundendaten (aus den Stundendetails) bzw. neu für die Karte.
@@ -712,7 +718,7 @@ struct StundeJetztSeite: View {
         if !daten.klassen.isEmpty {
             Section {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], spacing: 8) {
-                    ForEach(StundeJetztSeite.vorlagen, id: \.titel) { v in
+                    ForEach(StundeJetztSeite.vorlagen, id: \.self) { v in
                         Button {
                             Haptik.tippen()
                             vorlage = Eintragsvorlage(art: kategorie(v.art), text: v.text)
