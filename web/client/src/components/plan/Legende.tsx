@@ -92,12 +92,12 @@ export function Musterkarte({ e }: { e: Legendeneintrag }) {
     <Box aria-hidden sx={{ width: 104, minHeight: 64, p: '5px 6px', borderRadius: '4px', bgcolor: 'kachel.notiz', color: 'kachel.notizText', border: 1, borderColor: 'kachel.notizRand', fontSize: 11.5, lineHeight: '14px' }}>{e.notiz}</Box>
   );
   const entfall = e.ton === 'entfall';
-  const flaeche = e.ton ? pal.status[e.ton].flaeche : pal.background.paper;
+  const flaeche = e.ton && e.ton !== 'offen' ? pal.status[e.ton].flaeche : pal.background.paper;
   const kante = e.ton ? pal.status[e.ton].main : pal.kachel.balken;
   return (
     <Box aria-hidden data-muster={e.id} sx={{ position: 'relative', width: 104, minHeight: 64, pl: '10px', pr: '4px', py: '3px', borderRadius: '4px', bgcolor: flaeche, overflow: 'hidden',
-      boxShadow: e.ton ? `inset 0 0 0 1px ${mischen(kante, 0.35)}` : '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)', fontVariantNumeric: 'tabular-nums' }}>
-      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: e.ton ? schraffur(kante) : kante }} />
+      boxShadow: e.ton && e.ton !== 'offen' ? `inset 0 0 0 1px ${mischen(kante, 0.35)}` : '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)', fontVariantNumeric: 'tabular-nums' }}>
+      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: e.ton === 'offen' ? `repeating-linear-gradient(180deg, ${kante} 0 4px, transparent 4px 7px)` : e.ton ? schraffur(kante) : kante }} />
       {e.zeilen.map((z, i) => (
         <Typography key={i} component="div" noWrap sx={{ fontSize: i ? 11.5 : 12.5, lineHeight: i ? '14px' : '16px', fontWeight: i ? 400 : 600, textDecoration: entfall ? 'line-through' : 'none',
           color: entfall ? (i ? 'status.entfall.text' : 'status.entfall.main') : i ? 'text.secondary' : 'text.primary' }}>

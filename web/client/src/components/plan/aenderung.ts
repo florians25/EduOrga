@@ -11,7 +11,8 @@ import type { Karte, Verlegungszeit, Wert } from '../../api/types';
 import { datumKurz, wochentagKurz } from '../../lib/datum';
 import { abwesendSet, artVon, istEntfall, istOnline, istVerlegung, istZusatz, KEIN_ELEMENT, lehrerAbwesend, verlegungsRichtung, type Typ } from './logik';
 
-export type Ton = 'aenderung' | 'entfall';
+/** Status-Tönung: grün (Änderung), rot (nur Entfall), neutral grau (offene Vertretung – „Vertretung folgt“, nie rot). */
+export type Ton = 'aenderung' | 'entfall' | 'offen';
 
 /** Teil einer Kartenzeile: Text oder Feld (Chip) in der Status-Tönung. */
 export interface Teil { text: string; feld?: Ton; titel?: string }
@@ -46,15 +47,16 @@ export function verlegungKurz(v: Verlegungszeit | null | undefined): string {
 const gleich = (a: string | null | undefined, b: string | null | undefined) => (a || '').toLowerCase() === (b || '').toLowerCase();
 
 /** Ein Wert als Teil: unverändert Text, ersetzt „+neu (bisher)“, hinzugekommen „+neu“, fehlend „(bisher)“, offen „?“. */
-export function wertTeil(w: Wert, { entfall, abwesend, zusatzLehrer = false }: { entfall: boolean; abwesend?: Set<string>; zusatzLehrer?: boolean }): Teil {
+export function wertTeil(w: Wert, { entfall, abwesend, zusatzLehrer = false, kollegium = true }: { entfall: boolean; abwesend?: Set<string>; zusatzLehrer?: boolean; kollegium?: boolean }): Teil {
   const k = KEIN_ELEMENT.test(w.k || '') ? '' : w.k || '';
   const alt = KEIN_ELEMENT.test(w.alt || '') ? '' : w.alt || '';
   if (abwesend?.has(k.toLowerCase())) return { text: `(${k})`, feld: entfall ? 'entfall' : 'aenderung', titel: `${k} fehlt` };
   if (entfall) return { text: k || alt };
   if (zusatzLehrer) return { text: k || alt };
   if (alt && k && !gleich(alt, k)) return { text: `+${k} (${alt})`, feld: 'aenderung', titel: `${k} statt ${alt}` };
-  if (alt && !k) return { text: `(${alt})`, feld: 'aenderung', titel: `${alt} fehlt – noch ohne Vertretung` };
-  if (!k && w.neu) return { text: '?', feld: 'aenderung', titel: 'Vertretung offen' };
+  // Offene Vertretung: neutral (nie rot) – Kollegium sieht die fehlende Lehrkraft „(Abr)“, Schüler*innen und Eltern „Vertretung folgt“
+  if (alt && !k) return kollegium ? { text: `(${alt})`, feld: 'offen', titel: `${alt} fehlt – Vertretung folgt` } : { text: 'Vertretung folgt', feld: 'offen', titel: 'Vertretung folgt' };
+  if (!k && w.neu) return { text: kollegium ? '?' : 'Vertretung folgt', feld: 'offen', titel: 'Vertretung folgt' };
   if (k && w.neu && !alt) return { text: `+${k}`, feld: 'aenderung', titel: `${k} hinzugekommen` };
   return { text: k || alt };
 }
@@ -65,14 +67,14 @@ const zeile = (art: ZeilenArt, teile: Teil[]): Kartenzeile => ({ art, teile, gea
  * Kartenbild einer Stunde: Zeilen (Fach, Klasse, Lehrkraft, Raum) mit Feldern, Tönung und Statusfeld nach den gemeinsamen Regeln.
  * `typ` ist die Planart (die Zeile des gezeigten Elements entfällt, solange sie unverändert ist).
  */
-export function kartenbild(k: Karte, typ: Typ): Kartenbild {
+export function kartenbild(k: Karte, typ: Typ, { kollegium = true }: { kollegium?: boolean } = {}): Kartenbild {
   const entfall = istEntfall(k, typ);
   const abw = abwesendSet(k);
   const typen: Aenderungstyp[] = [];
   const verlegt = istVerlegung(k) && k.status !== 'klausur' && k.status !== 'veranstaltung';
   const richtung = verlegt ? verlegungsRichtung(k, typ) : null;
   const zusatz = !verlegt && istZusatz(k) && k.status !== 'veranstaltung';
-  const optionen = { entfall, abwesend: abw };
+  const optionen = { entfall, abwesend: abw, kollegium };
   const teile = (l: Wert[] | null | undefined, extra: Partial<typeof optionen> & { zusatzLehrer?: boolean } = {}) =>
     (l || []).filter(w => w.k || w.alt || w.neu).map(w => wertTeil(w, { ...optionen, ...extra }));
 
@@ -100,7 +102,7 @@ export function kartenbild(k: Karte, typ: Typ): Kartenbild {
   if (abw.size) typen.push('klasse-fehlt');
   if (k.fachAlt && !entfall) typen.push('fachaenderung');
   if (!entfall) {
-    if (lehrer.some(t => t.feld && t.text.startsWith('('))) typen.push('lehrer-fehlt');
+    if (lehrer.some(t => t.feld === 'offen')) typen.push('lehrer-fehlt');
     if (lehrer.some(t => t.feld && t.text.startsWith('+') && t.text.includes('('))) typen.push('lehrervertretung');
     if (raeume.some(t => t.feld && t.text.startsWith('+') && t.text.includes('('))) typen.push('raumaenderung');
     if ([...lehrer, ...raeume, ...klassen, ...mit].some(t => t.feld && t.text.startsWith('+') && !t.text.includes('('))) typen.push('hinzugefuegt');
@@ -124,8 +126,11 @@ export function kartenbild(k: Karte, typ: Typ): Kartenbild {
   }
 
   const art = artVon(k, typ);
+  // Nur eine offene Vertretung (sonst nichts geändert): neutrale Karte mit grau gestrichelter Kante
+  const nurOffen = !entfall && !status && !k.fachAlt && zeilen.some(z => z.teile.some(t => t.feld === 'offen'))
+    && !zeilen.some(z => z.teile.some(t => t.feld && t.feld !== 'offen'));
   const geaendert = zeilen.some(z => z.geaendert) || !!status || art === 'aenderung' || art === 'abwesend';
-  const ton: Ton | null = entfall ? 'entfall' : k.status === 'klausur' || k.status === 'veranstaltung' || k.status === 'buchung' || k.status === 'vorgemerkt'
+  const ton: Ton | null = nurOffen ? 'offen' : entfall ? 'entfall' : k.status === 'klausur' || k.status === 'veranstaltung' || k.status === 'buchung' || k.status === 'vorgemerkt'
     ? (zeilen.some(z => z.geaendert) ? 'aenderung' : null) : geaendert ? 'aenderung' : null;
   return { ton, entfall, zeilen, status, typen };
 }
@@ -141,8 +146,8 @@ export const LEGENDE_EINTRAEGE: Legendeneintrag[] = [
     zeilen: [[{ text: 'D' }], [{ text: '6b' }], [{ text: 'Kre' }], [{ text: '023' }]] },
   { id: 'klasse-fehlt', titel: 'Klasse fehlt', text: 'Die Klasse ist abwesend, die Stunde entfällt.', ton: 'entfall',
     zeilen: [[{ text: 'NAWI' }], [{ text: '(5b)', feld: 'entfall' }], [{ text: 'Maq' }], [{ text: '122' }]], status: { text: 'entfällt', ton: 'entfall', zeichen: '×', titel: '' } },
-  { id: 'lehrer-fehlt', titel: 'Lehrkraft fehlt, keine Vertretung erstellt', text: 'Die Stunde ist noch offen; die fehlende Lehrkraft steht in Klammern.', ton: 'aenderung',
-    zeilen: [[{ text: 'E4' }], [{ text: '12' }], [{ text: '(Abr)', feld: 'aenderung' }], [{ text: '21' }]] },
+  { id: 'lehrer-fehlt', titel: 'Lehrkraft fehlt, keine Vertretung erstellt', text: 'Neutral, grau gestrichelte Kante: die Vertretung folgt. Lehrkräfte sehen die fehlende Lehrkraft in Klammern, Schüler*innen und Eltern „Vertretung folgt“.', ton: 'offen',
+    zeilen: [[{ text: 'E4' }], [{ text: '12' }], [{ text: '(Abr)', feld: 'offen' }], [{ text: '21' }]] },
   { id: 'vertretungsentfall', titel: 'Vertretungsentfall', text: 'Die Stunde entfällt (z. B. weil die Lehrkraft fehlt) – alles durchgestrichen, rot.', ton: 'entfall',
     zeilen: [[{ text: 'E' }], [{ text: '7c' }], [{ text: 'Had' }], [{ text: '403' }]], status: { text: 'entfällt', ton: 'entfall', zeichen: '×', titel: '' } },
   { id: 'lehrervertretung', titel: 'Lehrervertretung', text: 'Neue Lehrkraft, dahinter in Klammern die bisherige.', ton: 'aenderung',

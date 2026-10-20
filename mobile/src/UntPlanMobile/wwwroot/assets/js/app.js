@@ -1924,6 +1924,8 @@ function renderGrid(){
                 : esc(t.text);
               return `<span class="tok tok--${t.state}">${kern}${komma}</span>`;
             }).join('')
+          /* Offene Vertretung: neutral (nie rot) – Kollegium „(Abr)“, Schüler*innen und Eltern „Vertretung folgt“ */
+          : offenGruen ? `<span class="feld feld--offen">${esc(state.isStudent ? 'Vertretung folgt' : feldText('', l.text, true))}</span>`
           : l.changed ? `<span class="${cls2}">${esc(l.removed ? feldText('', l.text, true)
                 : feldText(werteListe(l.text).map(x => plusWert(card, l.key, x).replace(/^\+/, '')).join(KACHEL_TRENNER), kachelWert(card[l.key + 'Orig'])))}</span>` : esc(l.text);
       };
@@ -2045,6 +2047,9 @@ function renderGrid(){
       }
       if (online) cls.push('has-online');
       if (feld) cls.push('has-feld', 'feld-' + feld.ton);
+      /* Nur eine offene Vertretung (sonst nichts geändert): neutrale Karte mit grau gestrichelter Kante */
+      if (card.blockType === 'change' && (card.openSub || card.teacherOpen || card.openRoom) && !feld && !card.subjectOrig
+          && (card.changed || []).every(k => (k === 'teacher' && (card.openSub || card.teacherOpen)) || (k === 'room' && card.openRoom))) cls.push('is-offen');
 
       /* Statusplakette oben rechts – nur auf Kacheln, die breit genug sind
          (Container-Abfrage in app.css); auf schmalen Wochenspalten tragen
@@ -2067,10 +2072,20 @@ function renderGrid(){
         if (h - 9 - lines.length * karteZeile() >= 12 && kachelBreit >= wortBreite) cls.push('is-hoch');
         if (state.darstellung.statuswoerter || plakette === 'Prüfung' || plakette === 'Termin') cls.push('zeige-status');
       }
+      /* Zugänglicher Name: ausgeschrieben, mit Zeit, allen Zeilen und dem Status (nie nur über Farbe) */
+      const sprech = isHoliday ? '' : [card.subjectLong || card.subject || card.info || '', `${card.lesson}. Stunde${timeA ? ', ' + timeA + ' bis ' + timeB : ''}`,
+        lines.filter(l => l.key !== 'subject').map(l => l.text).join(', '),
+        card.subjectOrig && card.blockType === 'change' ? `Fachänderung, bisher ${card.subjectOrig}` : '',
+        (card.changed || []).includes('teacher') && card.teacherOrig && card.teacher ? `Lehrervertretung: ${card.teacher} statt ${card.teacherOrig}` : '',
+        (card.changed || []).includes('room') && card.roomOrig && card.room ? `Raumänderung: ${card.room} statt ${card.roomOrig}` : '',
+        (card.openSub || card.teacherOpen) && card.blockType === 'change' ? 'Vertretung folgt' : '',
+        card.classAbsent ? 'Klasse fehlt' : '',
+        feld ? (feld.zeichen === '×' ? 'Entfällt' : '') + (feld.text === 'entfällt' ? '' : (feld.zeichen === '×' ? ', verschoben ' : '') + feld.text) : (plakette || '')
+      ].filter(Boolean).join('. ');
       const tag = isHoliday ? 'div' : 'button';
       html += `<${tag} class="${cls.join(' ')}" style="${style}"
                  data-date="${date}" data-lesson="${card.lesson}" data-idx="${card._uid}"
-                 ${isHoliday ? '' : 'type="button"'}>
+                 ${isHoliday ? '' : `type="button" aria-label="${esc(sprech)}"`}>
         ${body}
         ${feld ? `<span class="card__line card__line--feld"><span class="feld feld--${feld.ton}"><b aria-hidden="true">${feld.zeichen}</b> ${esc(feld.text)}</span></span>` : ''}
         ${eckzeichen}

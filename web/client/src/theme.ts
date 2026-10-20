@@ -32,7 +32,7 @@ export interface NavFarben { flaeche: string; text: string; text2: string; hover
 export interface FlaechenFarben { kopf: string; band: string; rand: string }
 declare module '@mui/material/styles' {
   interface Palette {
-    status: { entfall: StatusFarbe; aenderung: StatusFarbe; pruefung: StatusFarbe; termin: StatusFarbe; frei: StatusFarbe; ok: StatusFarbe };
+    status: { entfall: StatusFarbe; aenderung: StatusFarbe; offen: StatusFarbe; pruefung: StatusFarbe; termin: StatusFarbe; frei: StatusFarbe; ok: StatusFarbe };
     marine: typeof farben.marine;
     kachel: KachelFarben;
     nav: NavFarben;
@@ -52,6 +52,8 @@ export const SCHRIFT = '"IBM Plex Sans", -apple-system, "Segoe UI", system-ui, R
 const status = (dunkel: boolean) => ({
   entfall: { main: dunkel ? '#f07167' : farben.entfall, flaeche: dunkel ? '#2e1916' : farben.entfallFlaeche, text: dunkel ? '#ffc9c3' : farben.entfallText, feld: dunkel ? '#4a2420' : farben.entfallFeld },
   aenderung: { main: dunkel ? '#5cbf86' : farben.aenderung, flaeche: dunkel ? '#15281d' : farben.aenderungFlaeche, text: dunkel ? '#b5e6c8' : farben.aenderungText, feld: dunkel ? '#1f4630' : farben.aenderungFeld },
+  // offene Vertretung: neutral grau (nie rot), Kante gestrichelt, Feld „(Abr)“ bzw. „Vertretung folgt“
+  offen: { main: dunkel ? '#8a9aa0' : '#7d8b90', flaeche: dunkel ? '#132226' : '#ffffff', text: dunkel ? '#d3dde0' : '#3d4d52', feld: dunkel ? '#26363b' : '#e6eaec' },
   pruefung: { main: dunkel ? '#e9a640' : farben.pruefung, flaeche: dunkel ? '#2b2111' : farben.pruefungFlaeche },
   termin: { main: dunkel ? '#e27bbd' : farben.termin, flaeche: dunkel ? '#331a2b' : farben.terminFlaeche },
   frei: { main: dunkel ? '#78b3e0' : farben.frei, flaeche: dunkel ? '#132331' : farben.freiFlaeche },

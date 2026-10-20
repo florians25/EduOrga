@@ -80,3 +80,9 @@ export function SitzungsAnbieter({ sitzung, setSitzung, children }: { sitzung: S
     </Kontext.Provider>
   );
 }
+
+/** Kollegium (Lehrkräfte, Leitung, Verwaltung)? Ohne Sitzung (Vorschau): ja. Für die Stundenkarte (offene Vertretung „(Abr)“ bzw. „Vertretung folgt“). */
+export function useKollegium(): boolean {
+  const k = useContext(Kontext);
+  return k ? !!k.ich.kollegium : true;
+}

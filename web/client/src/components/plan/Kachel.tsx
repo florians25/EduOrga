@@ -15,6 +15,7 @@ import type { Karte } from '../../api/types';
 import { artVon, gueltigeFarbe, infoText, istEntfall, istOnline, plaketten, sichererLink, statusText, titelText, KACHEL_PLAKETTEN, type Typ, type Plakette } from './logik';
 import { wertText } from './Werte';
 import { kartenbild, type Kartenbild, type Kartenzeile, type Statusfeld, type Teil, type Ton } from './aenderung';
+import { useKollegium } from '../../app/sitzung';
 import { DICHTE, mitToenung, nameVon, STANDARD, useDarstellung, type Kartendarstellung, type Namen } from './darstellung';
 
 /** Statusbezeichnung: 10–11 px Großbuchstaben in der Statusfarbe, ohne Fläche (keine Pillen). */
@@ -43,7 +44,7 @@ export const schraffur = (farbe: string) => `repeating-linear-gradient(135deg, $
 export function Feld({ ton, children, titel, klein = false }: { ton: Ton; children: ReactNode; titel?: string; klein?: boolean }) {
   return (
     <Box component="span" title={titel} data-feld={ton}
-      sx={{ display: 'inline-flex', alignItems: 'center', gap: '3px', maxWidth: '100%', height: klein ? 14 : 15, px: '3px', borderRadius: '3px', fontSize: klein ? 10.5 : 11.5, lineHeight: 1,
+      sx={{ display: 'inline-flex', alignItems: 'center', gap: '3px', maxWidth: '100%', height: klein ? 15 : 16, px: '3px', borderRadius: '3px', fontSize: klein ? 11 : 12, lineHeight: 1,
         fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', boxSizing: 'border-box',
         bgcolor: `status.${ton}.feld`, color: `status.${ton}.text`, textDecoration: 'none', fontVariantNumeric: 'tabular-nums' }}>{children}</Box>
   );
@@ -91,6 +92,7 @@ export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = 
   if (art === 'pruefung') return { backgroundColor: d.statusflaeche ? s.pruefung.flaeche : grund, border: statusLinie(s.pruefung.main), ...schatten };
   if (art === 'buchung') return { backgroundColor: papier, border: statusLinie(s.frei.main, 'dashed') };
   if (bild.ton === 'aenderung') return { backgroundColor: d.statusflaeche ? s.aenderung.flaeche : grund, border: statusLinie(mischen(s.aenderung.main, 0.4)), ...schatten };
+  if (bild.ton === 'offen') return { backgroundColor: grund, border: `1px solid ${linie}`, ...schatten };
   if (mitToenung(d.fachfarbe) && fach) { const ton = mischen(fach, d.deckkraft / 100); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   if (d.flaeche === 'getoent') { const ton = mischen(pal.primary.main, 0.05); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   return { backgroundColor: grund, border: `1px solid ${linie}`, ...schatten, ...(bilder.length ? { backgroundImage: bilder.join(', ') } : {}) };
@@ -99,7 +101,7 @@ export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = 
 /** Kurzinfo beim Überfahren: alle Angaben der Stunde. */
 export function KachelInfo({ k, typ }: { k: Karte; typ: Typ }) {
   const entfall = istEntfall(k, typ);
-  const bild = kartenbild(k, typ);
+  const bild = kartenbild(k, typ, { kollegium: useKollegium() });
   const zeile = (titel: string, inhalt: ReactNode) => (
     <Stack direction="row" gap={1.5}><Typography variant="caption" sx={{ color: 'text.secondary', width: 66, flex: 'none' }}>{titel}</Typography><Typography variant="body2" component="div">{inhalt}</Typography></Stack>
   );
@@ -109,7 +111,7 @@ export function KachelInfo({ k, typ }: { k: Karte; typ: Typ }) {
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.75 }}>
         {gueltigeFarbe(k.farbe) && <FachQuadrat farbe={k.farbe} groesse={10} />}
         <Typography sx={{ fontWeight: 600 }}>{k.fachName || k.fach || k.text || k.art}</Typography>
-        {st && k.status !== 'regulaer' && <Typography variant="caption" sx={{ ml: 'auto', fontWeight: 600, color: entfall ? 'status.entfall.main' : 'status.aenderung.main' }}>{st}</Typography>}
+        {st && k.status !== 'regulaer' && <Typography variant="caption" sx={{ ml: 'auto', fontWeight: 600, color: entfall ? 'status.entfall.main' : 'status.aenderung.text' }}>{st}</Typography>}
       </Stack>
       <Stack gap={0.25}>
         {zeile('Zeit', `${k.von === k.bis ? `${k.von}.` : `${k.von}.–${k.bis}.`} Std. · ${k.beginn}–${k.ende}`)}
@@ -123,6 +125,17 @@ export function KachelInfo({ k, typ }: { k: Karte; typ: Typ }) {
       </Stack>
     </Box>
   );
+}
+
+/** Zugänglicher Name der Karte: ausgeschrieben, mit jeder Änderung (z. B. „Mathematik, 3. Stunde 09:45–10:30, Raumänderung: 105 statt 303“). */
+export function sprechtext(k: Karte, _typ: Typ, bild: Kartenbild): string {
+  const art: Record<string, string> = { 'klasse-fehlt': 'Klasse fehlt', 'lehrer-fehlt': 'Lehrkraft fehlt, Vertretung folgt', vertretungsentfall: 'Vertretungsentfall', entfall: 'Entfall',
+    lehrervertretung: 'Lehrervertretung', raumaenderung: 'Raumänderung', fachaenderung: 'Fachänderung', 'verschoben-auf': 'verschoben', 'verschoben-von': 'hierher verschoben',
+    zusatz: 'Zusatzunterricht', hinzugefuegt: 'hinzugekommen', klassenaenderung: 'Klassenänderung' };
+  const zeit = `${k.von === k.bis ? `${k.von}.` : `${k.von}. bis ${k.bis}.`} Stunde${k.beginn ? `, ${k.beginn} bis ${k.ende}` : ''}`;
+  const felder = bild.zeilen.flatMap(z => z.teile.filter(t => t.feld && t.titel).map(t => t.titel!));
+  return [k.fachName || k.fach || k.text, zeit, titelText(k).split(' · ').slice(1).join(', '), ...bild.typen.map(x => art[x]).filter(Boolean),
+    ...felder, bild.status?.titel].filter(Boolean).join('. ');
 }
 
 export interface KachelProps {
@@ -151,7 +164,8 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   const { d, namen } = useDarstellung();
   const pal = (t.vars ?? t).palette;
   const dichte = DICHTE[d.dichte];
-  const bild = kartenbild(k, typ);
+  const kollegium = useKollegium();
+  const bild = kartenbild(k, typ, { kollegium });
   const entfall = bild.entfall;
   const art = artVon(k, typ);
   const termin = k.status === 'veranstaltung';
@@ -237,18 +251,19 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   return (
     <Tooltip title={<KachelInfo k={k} typ={typ} />} placement="right-start" enterDelay={450} enterNextDelay={300} disableInteractive
       slotProps={{ tooltip: { sx: { bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', boxShadow: '0 8px 24px rgba(21,26,33,.14)', p: 1.5, maxWidth: 360 } }, arrow: { sx: { color: 'background.paper', '&:before': { border: 1, borderColor: 'divider' } } } }}>
-      <Box role="button" tabIndex={0} aria-label={[titelText(k), bild.status?.titel].filter(Boolean).join(' · ')} onClick={() => onOpen?.(k)} onKeyDown={tasten}
+      <Box role="button" tabIndex={0} aria-label={sprechtext(k, typ, bild)} onClick={() => onOpen?.(k)} onKeyDown={tasten}
         data-karte="" data-art={art} data-ton={bild.ton ?? 'keiner'} data-fachfarbe={d.fachfarbe} data-typen={bild.typen.join(' ') || undefined}
         sx={{
           position: 'relative', ...kachelStil(k, typ, t, d, bild), borderRadius: `${d.eckenradius}px`, pl: `${termin ? dichte.px : einzugLinks}px`, pr: `${Math.min(dichte.px, 5)}px`, pt: `${py + balkenOben}px`, pb: `${py}px`,
           overflow: 'hidden', cursor: onOpen ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', gap: 0, fontVariantNumeric: 'tabular-nums',
           opacity: gedimmt ? 0.3 : vorbei ? 0.72 : 1, containerType: 'inline-size', transition: 'opacity .12s, filter .12s',
-          '&:hover': { ...hover, zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
+          '&:hover': { ...hover, zIndex: 3, opacity: 1 }, '&:focus-visible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1, zIndex: 4 },
+          '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
           ...style,
         }}>
-        {kante && <Box aria-hidden data-fachbalken={innen && !bild.ton ? 'innen' : bild.ton ? 'schraffiert' : 'links'} data-ohne-fachfarbe={farbe ? undefined : ''}
+        {kante && <Box aria-hidden data-fachbalken={innen && !bild.ton ? 'innen' : bild.ton === 'offen' ? 'gestrichelt' : bild.ton ? 'schraffiert' : 'links'} data-ohne-fachfarbe={farbe ? undefined : ''}
           sx={{ position: 'absolute', ...(innen && !bild.ton ? { left: 4, top: 4, bottom: 4, borderRadius: '2px' } : { left: 0, top: 0, bottom: 0 }), width: kantenBreite,
-            background: bild.ton ? schraffur(kantenFarbe) : kantenFarbe }} />}
+            background: bild.ton === 'offen' ? `repeating-linear-gradient(180deg, ${kantenFarbe} 0 4px, transparent 4px 7px)` : bild.ton ? schraffur(kantenFarbe) : kantenFarbe }} />}
         {balkenOben > 0 && <Box aria-hidden data-fachbalken="oben" sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: balkenOben, bgcolor: farbe ?? pal.kachel.balken }} />}
         {zeilenInhalt}
         {termin && hoehe >= 44 && <Typography component="div" noWrap sx={{ mt: 'auto', fontSize: 10.5, lineHeight: '14px', color: 'kachel.ereignisText', opacity: 0.85 }}>{k.beginn && k.ende ? `${k.beginn}–${k.ende}` : 'ganztägig'}</Typography>}

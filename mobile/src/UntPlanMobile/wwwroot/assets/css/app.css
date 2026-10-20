@@ -2718,3 +2718,15 @@ body.show-card-times .card__times{ display:flex; }
 .card .card__line, .card--standby .card__line, .card--gs .card__line, .card--event .card__line, .card--absence .card__line{
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
+/* Offene Vertretung: neutral, grau gestrichelte Kante, Feld „(Abr)“ bzw. „Vertretung folgt“ – nie rot */
+.feld--offen{ background:var(--offen-feld, #e6eaec); color:var(--offen-text, #3d4d52); }
+:root[data-thema="dunkel"]{ --offen-feld:#26363b; --offen-text:#d3dde0; }
+.card--change.is-offen{ background-color:var(--karte); box-shadow:var(--karte-rahmen); }
+.card--change.is-offen::before{ background:repeating-linear-gradient(180deg, var(--up-text-3) 0 4px, transparent 4px 7px); }
+/* Felder so groß wie die Zeilen (12 px, 600), gut lesbar */
+.badge, .feld{ font-size:12px; font-weight:600; }
+/* Bewegung reduzieren */
+@media (prefers-reduced-motion: reduce){
+  .card, .weekhead__strip, .colstrip, .plusbadge{ transition:none !important; animation:none !important; }
+}
+.card:focus-visible, .plusbadge:focus-visible, .notiz:focus-visible{ outline:2px solid var(--up-fokus); outline-offset:1px; z-index:7; }
