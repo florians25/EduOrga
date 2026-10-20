@@ -331,7 +331,10 @@ struct Rastergeometrie {
     /// Zeilenhöhe: kompakt – möglichst alle Stunden bis zur letzten belegten in der Höhe, aber nie höher als nötig
     /// (iPhone hochkant 52–62 pt, sonst bis 88 pt; im Querformat mindestens 52). Die Dichte (Kompakt/Normal/Komfortabel)
     /// skaliert das Ergebnis; mindestens 40 pt.
-    static func zeilenHoehe(raster: [Rasterzeit], bis: Int, verfuegbar: CGSize, kopf: CGFloat, dichte: Double) -> CGFloat {
+    /// `schrift`: Faktor aus Dynamic Type (`DynamicTypeSize.rasterfaktor`) – größere Schrift, höhere Zeilen (dann scrollt
+    /// das Raster senkrecht).
+    static func zeilenHoehe(raster: [Rasterzeit], bis: Int, verfuegbar: CGSize, kopf: CGFloat, dichte: Double,
+                            schrift: CGFloat = 1) -> CGFloat {
         guard !raster.isEmpty else { return 60 }
         var baender: CGFloat = 0
         for i in 0..<max(0, bis) { baender += band(raster, nach: i) }
@@ -341,7 +344,7 @@ struct Rastergeometrie {
         let passend = verfuegbar.height > 0 ? ((verfuegbar.height - kopf - 10 - baender) / anzahl).rounded(.down) : 60
         let basis = min(obergrenze, max(Rastermass.zeileMin, passend))
         let faktor = CGFloat(min(Wochendichte.bereich.upperBound, max(Wochendichte.bereich.lowerBound, dichte)))
-        return max(40, (basis * faktor).rounded())
+        return max(40, (basis * faktor * max(0.9, schrift)).rounded())
     }
 }
 
@@ -362,6 +365,7 @@ struct Wochenraster: View {
     @AppStorage(Wochendichte.schluessel) private var dichte: Double = Wochendichte.normal
     @AppStorage(Rastermass.parallelSchluessel) private var parallelSichtbar: Int = 1
     @ScaledMetric(relativeTo: .caption) private var zeitBreite: CGFloat = 38
+    @Environment(\.dynamicTypeSize) private var schriftgroesse
 
     private var tage: [String] {
         if let nurTag { return [nurTag] }
@@ -409,7 +413,8 @@ struct Wochenraster: View {
     private var rasterflaeche: some View {
         let ansichten = tage.compactMap { modell.tag($0) }
         let letzte = Rastergeometrie.letzteZeile(ansichten, raster: raster)
-        let zeile = Rastergeometrie.zeilenHoehe(raster: raster, bis: letzte, verfuegbar: verfuegbar, kopf: kopfHoehe, dichte: dichte)
+        let zeile = Rastergeometrie.zeilenHoehe(raster: raster, bis: letzte, verfuegbar: verfuegbar, kopf: kopfHoehe, dichte: dichte,
+                                                schrift: schriftgroesse.rasterfaktor)
         let geo = Rastergeometrie(raster: raster, zeile: zeile)
         let l = geo.lage
         let kopf = kopfHoehe
@@ -880,9 +885,10 @@ struct Tagesspalte: View {
                 .background(Farben.primaerFlaeche, in: form)
                 .overlay { form.stroke(Farben.primaerRand, lineWidth: 0.75) }
                 .opacity(vorbei ? 0.7 : 1)
-                // größere Tippfläche nach links und oben/unten – nie über den rechten Rand der Karte hinaus
-                .padding(.leading, 8)
-                .padding(.vertical, 6)
+                // Tippfläche mindestens 44 pt (soweit die Karte so hoch ist) nach links und oben/unten – nie über den
+                // rechten Rand der Karte hinaus
+                .padding(.leading, 12)
+                .frame(minHeight: min(44, h))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -949,9 +955,13 @@ struct Tagesspalte: View {
                     .strokeBorder(m?.betont == true ? (m?.farbe ?? Farben.randStark) : Farben.randStark, lineWidth: 1)
             }
             .zoomQuelle(quelle, in: raum)
+            // größere Tippfläche (das Zeichen selbst ist nur 12 pt hoch)
+            .padding(.vertical, 8)
+            .padding(.trailing, 10)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .offset(x: 4, y: a.y - 6)
+        .offset(x: 4, y: a.y - 14)
         .accessibilityLabel("Pausenaufsicht \(a.kachel.anzeigeTitel), \(a.kachel.zeitText)")
     }
 }
@@ -988,6 +998,7 @@ struct RasterKarte: View {
     var zeit: String? = nil
 
     @Environment(\.kartendarstellung) private var darstellung
+    @Environment(\.dynamicTypeSize) private var schriftgroesse
 
     private var entfall: Bool { kachel.kartenart == .entfall }
     /// Radius 6 (Schulwert 5 und mehr), kleiner nur, wenn die Schule es so eingestellt hat
@@ -1024,9 +1035,13 @@ struct RasterKarte: View {
     var body: some View {
         let stil = Klassikstil.fuer(kachel, darstellung)
         let schmal = breite < 56
-        // Kompakt: Fach 13 pt fett, Zeilen 11 pt mit enger Zeilenhöhe (vier kurze Zeilen in rund 60 pt)
-        let titelHoehe: CGFloat = schmal ? 13.5 : 15
-        let zeileHoehe: CGFloat = schmal ? 11.5 : 12.5
+        // Kompakt: Fach 13,5 pt fett, Zeilen und Felder 12 pt mit enger Zeilenhöhe (vier kurze Zeilen in rund 60 pt);
+        // alles wächst mit Dynamic Type (gedeckelt) – bei großer Schrift passen weniger Zeilen, Änderungen bleiben zuerst
+        let f = schriftgroesse.kartenfaktor
+        let titelGroesse: CGFloat = (schmal ? 12 : 13.5) * f
+        let zeileGroesse: CGFloat = (schmal ? 11 : 12) * f
+        let titelHoehe: CGFloat = titelGroesse + 2
+        let zeileHoehe: CGFloat = zeileGroesse + 1.5
         let platz = max(0, Int((hoehe - 5 - titelHoehe) / zeileHoehe))
         let chip = kachel.statusChip
         let mitChip = chip != nil && platz >= 1
@@ -1038,25 +1053,27 @@ struct RasterKarte: View {
         let wortPlatz = rest > sichtbar.count
         VStack(alignment: .leading, spacing: 0) {
             Kartenfach(kachel: kachel, text: kachel.fachText(darstellung),
-                       schrift: .system(size: schmal ? 11.5 : 13, weight: .bold), farbe: stil.titel)
+                       schrift: .system(size: titelGroesse, weight: .bold), farbe: stil.titel)
                 .frame(height: titelHoehe, alignment: .leading)
             ForEach(Array(sichtbar.enumerated()), id: \.offset) { _, z in
-                Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall, schrift: .system(size: schmal ? 10 : 11),
+                // geänderte Zeilen halbfett, damit Felder („+105 (303)“) mindestens so kräftig sind wie die übrigen Zeilen
+                Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall,
+                           schrift: .system(size: zeileGroesse, weight: z.nurText ? .regular : .semibold),
                            farbe: Farben.text2)
                     .frame(height: zeileHoehe, alignment: .leading)
             }
             if mitZeit, let zeit {
                 Text(zeit)
-                    .font(.system(size: schmal ? 9.5 : 10.5))
+                    .font(.system(size: zeileGroesse - 0.5))
                     .foregroundStyle(entfall ? Farben.text3 : Farben.text2)
                     .strikethrough(entfall, color: Farben.entfall.opacity(0.8))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .truncationMode(.tail)
                     .frame(height: zeileHoehe, alignment: .leading)
             }
             Spacer(minLength: 0)
             if mitChip, let chip {
-                Statuschip(chip: chip, schrift: .system(size: schmal ? 9 : 10, weight: .semibold))
+                Statuschip(chip: chip, schrift: .system(size: zeileGroesse, weight: .semibold))
                     .frame(height: zeileHoehe, alignment: .leading)
             } else if wortPlatz, let wort {
                 Statuswort(merkmal: wort)
@@ -1088,6 +1105,7 @@ struct Ereigniskarte: View {
     var vergangen: Bool = false
 
     @Environment(\.kartendarstellung) private var darstellung
+    @Environment(\.dynamicTypeSize) private var schriftgroesse
 
     private var nebenzeilen: [Kachelzeile] {
         kachel.zeilen.filter { $0.schluessel != "fach" && $0.schluessel != "anlass" && !$0.text.isEmpty }
@@ -1111,6 +1129,7 @@ struct Ereigniskarte: View {
         stil.strich = StrokeStyle(lineWidth: 1)
         let entfall = kachel.kartenart == .entfall
         let streifen = breite < 30
+        let f = schriftgroesse.kartenfaktor
         return VStack(alignment: .leading, spacing: 1) {
             if streifen {
                 Image(systemName: "calendar")
@@ -1120,27 +1139,29 @@ struct Ereigniskarte: View {
                     .padding(.top, 3)
                 Spacer(minLength: 0)
             } else {
+                // Titel und Unterzeilen immer einzeilig, zu lange Texte enden mit „…“ (voller Text in den Details und
+                // für VoiceOver)
                 Text(kachel.anzeigeTitel)
-                    .font(.system(size: breite < 56 ? 11 : 12.5, weight: .semibold))
+                    .font(.system(size: (breite < 56 ? 11.5 : 12.5) * f, weight: .semibold))
                     .foregroundStyle(stil.titel)
                     .strikethrough(entfall, color: Farben.entfall)
-                    .lineLimit(hoehe > 80 ? 3 : (hoehe > 40 ? 2 : 1))
-                    .minimumScaleFactor(0.8)
-                ForEach(Array(nebenzeilen.prefix(hoehe > 70 ? 2 : (hoehe > 50 ? 1 : 0)).enumerated()), id: \.offset) { _, z in
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                ForEach(Array(nebenzeilen.prefix(hoehe > 70 * f ? 2 : (hoehe > 50 * f ? 1 : 0)).enumerated()), id: \.offset) { _, z in
                     Text(z.text)
-                        .font(.system(size: breite < 56 ? 10.5 : 11.5))
+                        .font(.system(size: (breite < 56 ? 11 : 12) * f))
                         .foregroundStyle(Farben.text2)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .truncationMode(.tail)
                 }
                 Spacer(minLength: 0)
-                if hoehe >= 44 {
+                if hoehe >= 44 * f {
                     Text(zeit)
-                        .font(.system(size: breite < 56 ? 9.5 : 10.5))
+                        .font(.system(size: (breite < 56 ? 10.5 : 11) * f))
                         .monospacedDigit()
                         .foregroundStyle(Farben.text2)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .truncationMode(.tail)
                 }
             }
         }
@@ -1152,7 +1173,8 @@ struct Ereigniskarte: View {
         .opacity(vergangen ? 0.62 : 1)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(kachel.anzeigeTitel), \(zeit)" + nebenzeilen.map { ", " + $0.text }.joined())
+        .accessibilityLabel(Kachel.ereignisArt(kachel) + "\(kachel.anzeigeTitel), \(zeit)" + nebenzeilen.map { ", " + $0.text }.joined()
+                            + (entfall ? ", entfällt" : ""))
         .accessibilityAddTraits(.isButton)
     }
 }

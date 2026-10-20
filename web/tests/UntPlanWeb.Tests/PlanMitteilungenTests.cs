@@ -42,4 +42,26 @@ public class PlanMitteilungenTests
         Assert.Contains(miL, x => x.StartsWith("Lehrerkonferenz um 14:15"));
         Assert.DoesNotContain("Aufbau der Bühne ab 16:00 Uhr", miL);   // Klassentext gehört nicht in den Lehrerplan
     }
+
+    [Fact]
+    public async Task Plan_Vertretungsplan_und_Monitor_nennen_den_Stand_der_letzten_Uebertragung()
+    {
+        await using var s = await Testserver.StartenAsync();
+        var lehrer = await s.AlsAsync("sne", "lehrer", "SNE");
+        var plan = await Testserver.HolenAsync(lehrer, "/api/app/plan?typ=lehrer&element=SNE&datum=2026-10-12");
+        var stand = plan["stand"]!.GetValue<string>();
+        Assert.Matches(@"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$", stand);
+        Assert.Equal(Testserver.Jetzt.ToString("yyyy-MM-dd HH:mm:ss"), stand);   // Zeitpunkt des Empfangs (Uhr der Schule)
+        var vp = await Testserver.HolenAsync(lehrer, "/api/app/vertretungen?datum=2026-10-14&tage=1");
+        Assert.Equal(stand, vp["stand"]!.GetValue<string>());
+        // auch ein reines Vertretungspaket setzt den Stand neu (neuester Empfang)
+        var neu = new DateTime(2026, 10, 14, 11, 30, 0);
+        s.Dienst<UntPlanWeb.Dienste.Uhr>().Fest = neu;
+        var paket = Testserver.Beispielpaket();
+        paket["revision"] = 90;
+        paket["teile"] = new JsonArray("vertretungen");
+        Assert.Equal(HttpStatusCode.OK, (await s.PaketSendenAsync(paket)).StatusCode);
+        var plan2 = await Testserver.HolenAsync(lehrer, "/api/app/plan?typ=lehrer&element=SNE&datum=2026-10-12");
+        Assert.Equal("2026-10-14 11:30:00", plan2["stand"]!.GetValue<string>());
+    }
 }

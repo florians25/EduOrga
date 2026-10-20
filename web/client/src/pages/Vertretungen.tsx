@@ -1,5 +1,6 @@
 // Vertretungsplan (Schüler- bzw. Lehrerversion je nach Konto): je Tag eine Karte mit Nachrichten, Veranstaltungen, abwesenden Klassen,
 // Lehrkräften und gesperrten Räumen; Tabelle der Änderungen (alt durchgestrichen → neu). Filter nach Klasse bzw. Lehrkraft, 1/2/5 Tage.
+import { DatenStand } from '../components/DatenStand';
 import { useState } from 'react';
 import { alpha, Box, Button, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, ToggleButton, ToggleButtonGroup, Typography, useTheme } from '@mui/material';
 import CampaignOutlined from '@mui/icons-material/CampaignOutlined';
@@ -78,7 +79,7 @@ export default function Vertretungen({ teile }: SeitenProps) {
   const datum = istIsoDatum(teile[0]) ? teile[0] : heuteIso();
   const [tage, setTage] = useState(() => lesen<number>('untplan:vt-tage', 2) || 2);
   const [filter, setFilter] = useState('');
-  const g = useLaden(s => holen<{ tage: VTag[] }>(`/api/app/vertretungen?datum=${datum}&tage=${tage}`, s), [datum, tage]);
+  const g = useLaden(s => holen<{ tage: VTag[]; stand?: string | null }>(`/api/app/vertretungen?datum=${datum}&tage=${tage}`, s), [datum, tage]);
   return (
     <Seite titel="Vertretungsplan" untertitel={ich.kollegium ? 'Lehrerversion' : undefined} aktionen={<Stack direction="row" gap={1}>
       <Button variant="outlined" onClick={() => window.open(`/api/app/vertretungen.pdf?datum=${datum}&tage=${tage}`, '_blank', 'noopener')}>PDF</Button>
@@ -92,7 +93,7 @@ export default function Vertretungen({ teile }: SeitenProps) {
         </ToggleButtonGroup>
         <ZeitNavi art="tag" datum={datum} onDatum={d => navigieren(`#/vertretungen/${d}`)} />
       </>}>
-      <Geladen g={g}>{d => d.tage.length ? <>{d.tage.map(t => <VertretungsTag key={t.datum} t={t} kollegium={ich.kollegium} filter={filter} />)}</> : <Leer text="Keine Unterrichtstage im gewählten Zeitraum." />}</Geladen>
+      <Geladen g={g}>{d => d.tage.length ? <><DatenStand stand={d.stand} sx={{ display: 'block', mb: 1 }} />{d.tage.map(t => <VertretungsTag key={t.datum} t={t} kollegium={ich.kollegium} filter={filter} />)}</> : <Leer text="Keine Unterrichtstage im gewählten Zeitraum." />}</Geladen>
     </Seite>
   );
 }

@@ -38,6 +38,9 @@ struct Kartendarstellung: Decodable, Equatable, Sendable {
     var statusflaeche = true
     /// element (Lehrkraft bzw. Klasse oben, Standard) | fach (Fach oben)
     var reihenfolge = "element"
+    /// Nicht vom Server: Karten für Schüler*innen, Eltern bzw. Klassenkonten – eine offene Vertretung steht dann als
+    /// „Vertretung folgt“ statt mit dem Kürzel der abwesenden Lehrkraft (gesetzt in `AppZustand.darstellung`).
+    var fuerFamilie = false
 
     init() {}
 

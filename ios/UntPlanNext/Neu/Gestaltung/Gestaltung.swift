@@ -108,19 +108,20 @@ enum Statuslehre {
             return Statusmerkmal(text: "Entfall", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche, symbol: "xmark", betont: true)
         case .aenderung:
             if k.raumAenderung {
-                return Statusmerkmal(text: "Raumänderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.right", betont: true)
+                return Statusmerkmal(text: "Raumänderung", farbe: Farben.aenderungSchrift, flaeche: Farben.aenderungFlaeche, symbol: "arrow.right", betont: true)
             }
             if k.zusatz {
-                return Statusmerkmal(text: "Zusatzstunde", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "plus", betont: true)
+                return Statusmerkmal(text: "Zusatzstunde", farbe: Farben.aenderungSchrift, flaeche: Farben.aenderungFlaeche, symbol: "plus", betont: true)
             }
             if k.karte?.istOffeneVertretung == true {
-                return Statusmerkmal(text: "Offen", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "questionmark", betont: true)
+                // Offene Vertretung bewusst neutral (nicht rot, nicht grün): „Vertretung folgt“
+                return Statusmerkmal(text: "Vertretung folgt", farbe: Farben.text2, flaeche: Farben.neutralFlaeche, symbol: "hourglass", betont: true)
             }
-            return Statusmerkmal(text: "Vertretung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche,
+            return Statusmerkmal(text: "Vertretung", farbe: Farben.aenderungSchrift, flaeche: Farben.aenderungFlaeche,
                                  symbol: "arrow.left.arrow.right", betont: true)
         case .normal:
             if k.raumAenderung {
-                return Statusmerkmal(text: "Raumänderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.right", betont: true)
+                return Statusmerkmal(text: "Raumänderung", farbe: Farben.aenderungSchrift, flaeche: Farben.aenderungFlaeche, symbol: "arrow.right", betont: true)
             }
             return nil
         case .klausur:
@@ -140,7 +141,7 @@ enum Statuslehre {
         case .aufsicht:
             switch k.aufsichtsstand {
             case .regulaer: return Statusmerkmal(text: "Aufsicht", farbe: Farben.text2, flaeche: Farben.neutralFlaeche, symbol: "figure.walk")
-            case .vertretung: return Statusmerkmal(text: "Vertretung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche, symbol: "arrow.left.arrow.right", betont: true)
+            case .vertretung: return Statusmerkmal(text: "Vertretung", farbe: Farben.aenderungSchrift, flaeche: Farben.aenderungFlaeche, symbol: "arrow.left.arrow.right", betont: true)
             case .abgegeben: return Statusmerkmal(text: "Vertreten", farbe: Farben.text2, flaeche: Farben.neutralFlaeche, symbol: "arrow.uturn.right")
             case .entfall: return Statusmerkmal(text: "Entfällt", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche, symbol: "xmark", betont: true)
             }

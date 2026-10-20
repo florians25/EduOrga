@@ -296,7 +296,7 @@ public static class AppApi
             // Klassenkonten: nur die eigene Klasse
             if (!b.Kollegium)
                 res = res.Select(t => t with { Zeilen = t.Zeilen.Where(z => z.Klassen.Split(", ").Any(b.HatKlasse)).ToList() }).ToList();
-            return Results.Json(new { tage = res });
+            return Results.Json(new { tage = res, stand = s.Empfangen });
         });
 
         // Vertretungsplan als PDF (Aushang, Schwarz-Weiß): gleiche Rechte und Filter wie die Liste; gross=true für das Schwarze Brett
@@ -781,6 +781,8 @@ public static class AppApi
                 // Monitoransichten (Administration): Ticker, Kopfzeile, Aktualisierungsintervall
                 anzeige = vw.Einstellung("monitor"),
                 jetzt = uhr.Jetzt.ToString("yyyy-MM-ddTHH:mm:ss"),
+                // Datenstand: letzte Übertragung aus EduOrga Studio
+                stand = s?.Empfangen,
                 tage = s is null ? new List<Vertretungstag>() : vp.NaechsteTage(s, uhr.Heute, mon.Tage).Select(d => vp.Tag(s, d, lehrer, vw.Wahr("monitor", "nurOeffentlich") ? "monitor-oeffentlich" : "monitor")).ToList(),
             });
         });

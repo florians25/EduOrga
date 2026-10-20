@@ -229,6 +229,7 @@ struct Mehrfachraster: View {
     var nurTag: String? = nil
 
     @AppStorage(Wochendichte.schluessel) private var dichte: Double = Wochendichte.normal
+    @Environment(\.dynamicTypeSize) private var schriftgroesse
     @AppStorage(Rastermass.parallelSchluessel) private var parallelSichtbar: Int = 1
     @ScaledMetric(relativeTo: .caption) private var zeitBreite: CGFloat = 38
 
@@ -286,7 +287,8 @@ struct Mehrfachraster: View {
         let liste = eintraege
         let ansichten = liste.flatMap { e in tage.compactMap { e.modell.tag($0) } }
         let letzte = Rastergeometrie.letzteZeile(ansichten, raster: raster)
-        let zeile = Rastergeometrie.zeilenHoehe(raster: raster, bis: letzte, verfuegbar: verfuegbar, kopf: kopfHoehe, dichte: dichte)
+        let zeile = Rastergeometrie.zeilenHoehe(raster: raster, bis: letzte, verfuegbar: verfuegbar, kopf: kopfHoehe, dichte: dichte,
+                                                schrift: schriftgroesse.rasterfaktor)
         let geo = Rastergeometrie(raster: raster, zeile: zeile)
         let l = geo.lage
         let kopf = kopfHoehe

@@ -169,7 +169,7 @@ struct ZeitKachel: View {
     private var marken: some View {
         HStack(spacing: 4) {
             if let chip = kachel.statusChip {
-                Statuschip(chip: chip, schrift: .caption2.weight(.semibold))
+                Statuschip(chip: chip, schrift: .footnote.weight(.semibold))
             } else if let merkmal {
                 Statusabzeichen(merkmal: merkmal, klein: true, gefuellt: merkmal.betont)
             }
@@ -220,7 +220,7 @@ struct ZeitKachel: View {
                 if !kachel.personenzeilen.isEmpty { personenText }
                 Spacer(minLength: 0)
                 if let chip = kachel.statusChip {
-                    Statuschip(chip: chip, schrift: .caption2.weight(.semibold))
+                    Statuschip(chip: chip, schrift: .footnote.weight(.semibold))
                 } else if let merkmal {
                     Statusabzeichen(merkmal: merkmal, klein: true, gefuellt: merkmal.betont)
                 }

@@ -157,6 +157,8 @@ export interface Wochenplan {
   gesperrt: boolean;
   sperrhinweis: string | null;
   abwesenheiten: PlanAbwesenheit[];
+  /** Letzte Übertragung aus EduOrga Studio („yyyy-MM-dd HH:mm:ss“); ältere Server: fehlt. */
+  stand?: string | null;
 }
 
 export interface Tageszeile { kurz: string; name: string; karten: Karte[] }

@@ -480,21 +480,68 @@ extension Kachel {
     /// „1.–2. Std.“
     var stundenText: String { von == bis ? "\(von). Std." : "\(von).–\(bis). Std." }
 
-    /// Für VoiceOver: Fach, Zeit, Raum, Personen, Status.
+    /// Für VoiceOver ein vollständiger Satz je Karte, z. B. „3. Stunde, M, Mathematik, 9:45 bis 10:30, Raum geändert von
+    /// 303 nach 105, Lehrkraft Gal statt Gor, Klasse 7a, Vertretung“ – jede Änderung in Worten (nicht nur als Farbe).
     var vorlesetext: String {
-        var teile = [anzeigeTitel]
+        var teile: [String] = []
+        if von > 0 && !inPause && karte?.unterricht != nil {
+            teile.append(von == bis ? "\(von). Stunde" : "\(von). bis \(bis). Stunde")
+        }
+        teile.append(anzeigeTitel)
         if !fachname.isEmpty { teile.append(fachname) }
+        if let alt = fachVorher { teile.append("Fach geändert, statt \(alt)") }
         teile.append("\(Uhr.uhrzeit(beginn)) bis \(Uhr.uhrzeit(ende))")
-        if let r = zeile("raum"), !r.text.isEmpty { teile.append("Raum \(r.text)") }
-        for z in personenzeilen where !z.text.isEmpty { teile.append(z.text) }
+        if let k = karte, [.normal, .aenderung, .entfall, .abgegeben, .klausur].contains(art) {
+            if zeile("raum") != nil || k.raeume.contains(where: { $0.geaendert }) {
+                teile += Kachel.vorlesen(k.raeume, einzahl: "Raum", mehrzahl: "Räume", fehlt: { "Raum \($0) entfällt" })
+            }
+            teile += Kachel.vorlesen(k.lehrer, einzahl: "Lehrkraft", mehrzahl: "Lehrkräfte",
+                                     fehlt: { "Lehrkraft \($0) abwesend, Vertretung folgt" })
+            if k.lehrer.isEmpty && k.istOffeneVertretung { teile.append("Vertretung folgt") }
+            teile += Kachel.vorlesen(k.klassen + k.mitklassen, einzahl: "Klasse", mehrzahl: "Klassen", fehlt: { "Klasse \($0) fehlt" })
+        } else {
+            if let r = zeile("raum"), !r.text.isEmpty { teile.append("Raum \(r.text)") }
+            for z in personenzeilen where !z.text.isEmpty { teile.append(z.text) }
+        }
         if let m = Statuslehre.merkmal(self) { teile.append(m.text) }
-        if let alt = fachVorher { teile.append("statt \(alt)") }
         if let c = statusChip {
             teile.append(c.text.replacingOccurrences(of: "× ", with: "").replacingOccurrences(of: "⊕ ", with: "")
                 .replacingOccurrences(of: " | ", with: ", "))
         }
         if online { teile.append("online") }
         return teile.joined(separator: ", ")
+    }
+
+    /// Werte einer Zeile in Worten: unverändert „Raum 105“, ersetzt „Raum geändert von 303 nach 105“, hinzugekommen
+    /// „Raum B070 neu“, weggefallen bzw. offen über `fehlt`.
+    static func vorlesen(_ werte: [Wert], einzahl: String, mehrzahl: String, fehlt: (String) -> String) -> [String] {
+        var gleich: [String] = []
+        var saetze: [String] = []
+        for w in werte {
+            let alt = (w.alt ?? "").trimmingCharacters(in: .whitespaces)
+            if w.ersetzt {
+                saetze.append(einzahl == "Lehrkraft" ? "Lehrkraft \(w.k) statt \(alt)" : "\(einzahl) geändert von \(alt) nach \(w.k)")
+            } else if w.k.isEmpty {
+                if !alt.isEmpty { saetze.append(fehlt(alt)) }
+            } else if w.geaendert {
+                saetze.append("\(einzahl) \(w.k) neu")
+            } else if !gleich.contains(w.k) {
+                gleich.append(w.k)
+            }
+        }
+        var ergebnis: [String] = []
+        if !gleich.isEmpty { ergebnis.append("\(gleich.count > 1 ? mehrzahl : einzahl) \(gleich.joined(separator: ", "))") }
+        return ergebnis + saetze
+    }
+
+    /// Art eines Ereignisses für VoiceOver („Veranstaltung, “, „Termin, “).
+    static func ereignisArt(_ k: Kachel) -> String {
+        switch k.art {
+        case .veranstaltung: return "Veranstaltung, "
+        case .ganztagTermin: return "Ganztägiger Termin, "
+        case .termin: return k.karte?.istRaumbuchung == true ? "Raumbuchung, " : "Termin, "
+        default: return ""
+        }
     }
 }
 

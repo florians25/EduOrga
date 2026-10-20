@@ -6,11 +6,17 @@ import SwiftUI
 //
 // Änderungen wie in der Änderungslegende von Enbrea („Änderungstyp | Darstellung“): schraffierter linker Rand in der
 // Statusfarbe und ein kleines Feld auf der betroffenen Zeile – mit den EduOrga-Anpassungen: jede Änderung einheitlich Grün
-// (#2f855a, Feld #e6f4ea mit Schrift #1d5c3a), Entfall und Fehlendes Rot (#b42318, Feld #fdecea); bei Entfall ist zusätzlich
-// alles auf der Karte durchgestrichen.
+// (#2f855a für Balken/Linien, Feld #e6f4ea mit Schrift #1d5c3a – 7,0 : 1), Rot (#b42318, Feld #fdecea) NUR für Entfall; bei
+// Entfall ist zusätzlich alles auf der Karte durchgestrichen. Offene Vertretungen und fehlende Werte ohne Entfall sind
+// neutral grau (Feld #ebeef2, Schrift #4d5866 – 6,2 : 1, gestrichelter grauer Rand), für Schüler*innen und Eltern als
+// „Vertretung folgt“.
+//
+// Barrierefreiheit: Felder mindestens so groß wie die übrigen Zeilen (12 pt, halbfett), alle Texte WCAG AA, nie nur Farbe
+// (Zeichen „+“, „×“, „⊕“, Klammern, „Vertretung folgt“), Schrift und Zeilen wachsen mit Dynamic Type (`kartenfaktor`) – bei
+// großen Größen weniger Zeilen, Änderungen zuerst; VoiceOver liest je Karte einen vollständigen Satz (`vorlesetext`).
 //
 //   Klasse fehlt                 „(5b)“ auf der Klassenzeile und „× entfällt“
-//   Lehrer fehlt, keine Vertr.   „(Abr)“ auf der Lehrerzeile (rot)
+//   Lehrer fehlt, keine Vertr.   „(Abr)“ auf der Lehrerzeile (grau, gestrichelt; Familie: „Vertretung folgt“)
 //   Vertretungsentfall           „× entfällt“
 //   Lehrervertretung             „+Gal (Gor)“ auf der Lehrerzeile
 //   Raumänderung                 „+105 (303)“ auf der Raumzeile
@@ -276,10 +282,11 @@ struct Klassikstil {
             }
         }
         if offen && art != .entfall {
-            // Lehrkraft fehlt, keine Vertretung erstellt: roter schraffierter Rand, gestrichelte Linie, „(Abr)“ als rotes Feld
-            s.balken = Farben.entfall
-            s.gestreift = true
-            s.rand = Farben.entfall.opacity(0.7)
+            // Lehrkraft fehlt, Vertretung noch nicht erstellt: bewusst neutral (nicht rot – das hieße „Entfall“) – normale
+            // Karte, grauer Balken, gestrichelter grauer Rand, „(Abr)“ bzw. „Vertretung folgt“ als graues Feld
+            s.balken = Farben.balkenGrau
+            s.gestreift = false
+            s.rand = Farben.text3
             s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
             if d.statusflaeche {
                 s.ton = nil
@@ -343,11 +350,11 @@ extension View {
                 if s.offen {
                     Text("?")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Farben.aenderung)
+                        .foregroundStyle(Farben.text2)
                         .frame(width: 13, height: 13)
                         .overlay {
                             RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                .strokeBorder(Farben.aenderung.opacity(0.8), style: StrokeStyle(lineWidth: 1, dash: [2, 1.5]))
+                                .strokeBorder(Farben.text3, style: StrokeStyle(lineWidth: 1, dash: [2, 1.5]))
                         }
                         .padding(3)
                         .accessibilityHidden(true)
@@ -358,14 +365,61 @@ extension View {
 
 // MARK: - Felder (Chips)
 
-/// Farbe eines Feldes auf der Karte: Änderung (grün) bzw. Entfall und Fehlendes (rot).
+/// Farbe eines Feldes auf der Karte: Änderung (grün), Entfall (rot) bzw. offen/fehlend ohne Entfall (neutral grau,
+/// gestrichelt). Alle Kombinationen erfüllen WCAG AA (≥ 4,5 : 1).
 enum Chipton: Hashable {
     case aenderung
     case entfall
+    case offen
 
-    var flaeche: Color { self == .entfall ? Farben.entfallChip : Farben.aenderungChip }
-    var schrift: Color { self == .entfall ? Farben.entfallChipText : Farben.aenderungText }
-    var rand: Color { self == .entfall ? Farben.entfall.opacity(0.35) : Farben.aenderung.opacity(0.4) }
+    var flaeche: Color {
+        switch self {
+        case .aenderung: return Farben.aenderungChip
+        case .entfall: return Farben.entfallChip
+        case .offen: return Farben.offenChip
+        }
+    }
+
+    var schrift: Color {
+        switch self {
+        case .aenderung: return Farben.aenderungText
+        case .entfall: return Farben.entfallChipText
+        case .offen: return Farben.offenChipText
+        }
+    }
+
+    var rand: Color {
+        switch self {
+        case .aenderung: return Farben.aenderung.opacity(0.55)
+        case .entfall: return Farben.entfall.opacity(0.45)
+        case .offen: return Farben.text3
+        }
+    }
+
+    /// Gestrichelter Rand (offen) statt durchgezogen.
+    var gestrichelt: Bool { self == .offen }
+}
+
+extension DynamicTypeSize {
+    /// Schriftfaktor der Stundenkarten im Raster (Dynamic Type): wächst mit der Systemschrift, gedeckelt, damit die Karte
+    /// lesbar bleibt (bei großen Größen zeigt sie dafür weniger Zeilen – Änderungen zuerst).
+    var kartenfaktor: CGFloat {
+        switch self {
+        case .xSmall: return 0.92
+        case .small: return 0.96
+        case .medium, .large: return 1
+        case .xLarge: return 1.08
+        case .xxLarge: return 1.16
+        case .xxxLarge: return 1.24
+        case .accessibility1: return 1.36
+        case .accessibility2: return 1.48
+        default: return 1.6
+        }
+    }
+
+    /// Faktor der Zeilenhöhe des Rasters: wächst langsamer als die Schrift (große Schrift = weniger Zeilen je Karte,
+    /// statt eines endlos hohen Rasters).
+    var rasterfaktor: CGFloat { 1 + (kartenfaktor - 1) * 0.6 }
 }
 
 /// Feld unten auf der Karte („× entfällt“, „⊕ Zusatz“ …).
@@ -396,12 +450,13 @@ struct Chipfeld<Inhalt: View>: View {
         inhalt()
             .foregroundStyle(ton.schrift)
             .lineLimit(1)
-            .minimumScaleFactor(0.65)
+            .truncationMode(.tail)
+            .minimumScaleFactor(0.85)
             .padding(.horizontal, 3)
             .background(ton.flaeche, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .strokeBorder(ton.rand, lineWidth: 0.5)
+                    .strokeBorder(ton.rand, style: StrokeStyle(lineWidth: ton.gestrichelt ? 1 : 0.75, dash: ton.gestrichelt ? [2, 1.5] : []))
             }
     }
 }
@@ -409,7 +464,7 @@ struct Chipfeld<Inhalt: View>: View {
 /// Feld unten auf der Karte (Entfall, Verlegung, Zusatz).
 struct Statuschip: View {
     let chip: Kartenchip
-    var schrift: Font = .system(size: 10, weight: .semibold)
+    var schrift: Font = .system(size: 12, weight: .semibold)
 
     var body: some View {
         Chipfeld(ton: chip.ton) {
@@ -442,7 +497,8 @@ struct Kartenfach: View {
                 .foregroundStyle(entfall ? Farben.text3 : farbe)
                 .strikethrough(entfall, color: Farben.entfall)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .truncationMode(.tail)
+                .minimumScaleFactor(0.85)
         }
     }
 }
@@ -458,12 +514,21 @@ struct Kartenwert: View {
     let zeile: Kachelzeile
     let karte: Karte?
     var entfall: Bool = false
-    var schrift: Font = .system(size: 11)
+    var schrift: Font = .system(size: 12)
     var farbe: Color = Farben.text2
 
-    /// Rot, wenn nur Fehlendes (durchgestrichen bzw. offen) und nichts Neues in der Zeile steht.
+    @Environment(\.kartendarstellung) private var darstellung
+
+    /// Grün, sobald etwas Neues in der Zeile steht; nur Fehlendes bzw. Offenes (ohne Entfall) neutral grau – Rot gibt es
+    /// nur für den Entfall.
     private var ton: Chipton {
-        zeile.teile.contains { $0.stil == .plakette } ? .aenderung : .entfall
+        zeile.teile.contains { $0.stil == .plakette } ? .aenderung : .offen
+    }
+
+    /// Offene Vertretung in der Lehrerzeile (nur fehlende Lehrkräfte, nichts Neues).
+    private var vertretungOffen: Bool {
+        zeile.schluessel == "lehrer" && zeile.teile.contains { $0.stil == .offen }
+            && !zeile.teile.contains { $0.stil == .plakette }
     }
 
     /// Entfallene Stunde mit fehlender Klasse: die Klassenzeile bleibt als rotes Feld „(5b)“.
@@ -476,6 +541,11 @@ struct Kartenwert: View {
             Chipfeld(ton: .entfall) {
                 Kartenwert.aenderungsText(zeile, karte: karte).font(schrift)
             }
+        } else if !entfall && vertretungOffen && darstellung.fuerFamilie {
+            // Schüler*innen und Eltern: kein Kürzel der abwesenden Lehrkraft, sondern ein ruhiger Hinweis
+            Chipfeld(ton: .offen) {
+                Text("Vertretung folgt").font(schrift)
+            }
         } else if !entfall && !zeile.nurText {
             Chipfeld(ton: ton) {
                 Kartenwert.aenderungsText(zeile, karte: karte).font(schrift)
@@ -486,7 +556,8 @@ struct Kartenwert: View {
                 .foregroundStyle(entfall ? Farben.text3 : farbe)
                 .strikethrough(entfall, color: Farben.entfall.opacity(0.8))
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .truncationMode(.tail)
+                .minimumScaleFactor(0.85)
         }
     }
 

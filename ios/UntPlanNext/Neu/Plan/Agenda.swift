@@ -287,7 +287,7 @@ struct Agendazeile: View {
         let ganztags = kachel.art == .ganztagTermin
         return HStack(alignment: .center, spacing: 10) {
             Text(nummer)
-                .font(.system(size: nummer.count > 2 ? 14 : 20, weight: .regular))
+                .font(nummer.count > 2 ? .subheadline : .title3)
                 .monospacedDigit()
                 .foregroundStyle(Farben.text)
                 .lineLimit(1)
@@ -302,17 +302,19 @@ struct Agendazeile: View {
                     Text(Uhr.uhrzeit(zeit.ende))
                 }
             }
-            .font(.system(size: 11))
+            .font(.caption2)
             .monospacedDigit()
             .foregroundStyle(Farben.text2)
-            .frame(width: 36, alignment: .leading)
+            .lineLimit(1)
+            .frame(minWidth: 36, alignment: .leading)
             if ereignis {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(kachel.anzeigeTitel)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(stil.titel)
                         .strikethrough(entfall, color: Farben.entfall)
-                        .lineLimit(2)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     let wer = kachel.zeilen.filter { $0.schluessel != "fach" && $0.schluessel != "anlass" && !$0.text.isEmpty }
                         .map(\.text).joined(separator: " · ")
                     if !wer.isEmpty {
@@ -320,6 +322,7 @@ struct Agendazeile: View {
                             .font(.caption)
                             .foregroundStyle(Farben.text2)
                             .lineLimit(1)
+                            .truncationMode(.tail)
                     }
                 }
             } else {
@@ -333,7 +336,7 @@ struct Agendazeile: View {
             }
             Spacer(minLength: 4)
             if let chip = kachel.statusChip {
-                Statuschip(chip: chip, schrift: .caption2.weight(.semibold))
+                Statuschip(chip: chip, schrift: .footnote.weight(.semibold))
                     .layoutPriority(1)
             } else if let m = Statuslehre.kartenwort(kachel, darstellung) {
                 Statuswort(merkmal: m)
@@ -342,12 +345,12 @@ struct Agendazeile: View {
         .padding(.leading, stil.mitBalken ? 8 : 6)
         .padding(.trailing, 10)
         .padding(.vertical, 4)
-        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .klassikKarte(stil, radius: 6, balkenBreite: 4)
         .opacity(vergangen ? 0.62 : (stil.gedaempft && !entfall ? 0.8 : 1))
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(kachel.vorlesetext)
+        .accessibilityLabel(Kachel.ereignisArt(kachel) + kachel.vorlesetext)
         .accessibilityAddTraits(.isButton)
     }
 }

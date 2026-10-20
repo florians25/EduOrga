@@ -69,7 +69,11 @@ final class AppZustand: ObservableObject {
     var benutzer: SitzungsBenutzer? { sitzung?.benutzer }
 
     /// Darstellung der Stundenkarten (schulweit aus der Sitzung; ohne Angabe der Standard „Klassisch“).
-    var darstellung: Kartendarstellung { sitzung?.darstellung ?? Kartendarstellung() }
+    var darstellung: Kartendarstellung {
+        var d = sitzung?.darstellung ?? Kartendarstellung()
+        d.fuerFamilie = !istKollegium
+        return d
+    }
 
     /// Erziehungsberechtigte (Buchen beim Sprechtag, Entschuldigungsschreiben).
     var istEltern: Bool { (benutzer?.rolle ?? "").lowercased() == "eltern" }

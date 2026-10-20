@@ -175,6 +175,11 @@ public sealed record Wochenplan(string Typ, string Element, string Name, string 
     /// Klassenbuch). Der Plan zeigt sie als graue Fläche hinter den Stunden (Menü „⋮“ → „Abwesenheiten anzeigen“).
     /// </summary>
     public List<PlanAbwesenheit> Abwesenheiten { get; init; } = new();
+    /// <summary>
+    /// Datenstand: Zeitpunkt der letzten Übertragung aus EduOrga Studio („yyyy-MM-dd HH:mm:ss“, Zeitzone der Schule) – auch reine
+    /// Vertretungspakete setzen ihn neu. Die Oberflächen zeigen „Stand EduOrga Studio: … (vor 5 Min.)“. Ältere Server: fehlt.
+    /// </summary>
+    public string? Stand { get; init; }
 
     public Wochenplan Sperren() => this with
     {
@@ -1290,7 +1295,7 @@ public sealed class Plandienst
             karten.AddRange(Karten(s, d, typ, kurz, zusaetzlich?.Invoke(d)));
             if (typ == Elementtyp.Lehrer && kollegium) aufsichten.AddRange(Aufsichten(s, d, kurz));
         }
-        return new Wochenplan(typ, kurz, Name(s, typ, kurz), Iso(montag), Woche(s, montag), Zeitraster(s), koepfe, karten, aufsichten);
+        return new Wochenplan(typ, kurz, Name(s, typ, kurz), Iso(montag), Woche(s, montag), Zeitraster(s), koepfe, karten, aufsichten) { Stand = s.Empfangen };
     }
 
     /// <summary>Tagesübersicht aller Klassen, Lehrkräfte bzw. Räume (nur Elemente mit Stunden).</summary>

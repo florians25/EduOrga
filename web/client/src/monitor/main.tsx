@@ -1,5 +1,6 @@
 // Monitoranzeige (ohne Anmeldung, über geheimen Link /monitor/<token>): Vertretungsplan für Bildschirme im Schulhaus auf dunkler
 // Marine-Fläche mit Uhr, automatischem Bildlauf, einstellbarer Aktualisierung und Nachrichten (Kopfzeile oder Laufschrift).
+import { standDatum, standText } from '../components/DatenStand';
 import { StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Box, CssBaseline, GlobalStyles, ThemeProvider, Typography } from '@mui/material';
@@ -10,7 +11,7 @@ import { datumLang } from '../lib/datum';
 
 interface Zeile { klassen: string; stunde: string; fach: string; fachAlt?: string; lehrer: string; lehrerAlt?: string; raum: string; raumAlt?: string; art: string; text: string; status: string }
 interface Tag { datum: string; woche?: string; frei?: boolean; freiGrund?: string; nachrichten: string[]; veranstaltungen?: string[]; abwesendeKlassen: string[]; abwesendeLehrer: string[]; blockierteRaeume: string[]; zeilen: Zeile[] }
-interface Daten { name: string; schule: string; jetzt: string; version: string; tage: Tag[]; anzeige?: { ticker?: boolean; kopfzeile?: boolean; aktualisierung?: number } }
+interface Daten { name: string; schule: string; jetzt: string; stand?: string | null; version: string; tage: Tag[]; anzeige?: { ticker?: boolean; kopfzeile?: boolean; aktualisierung?: number } }
 
 const token = location.pathname.split('/').filter(Boolean).pop() ?? '';
 const M = farben.marine;
@@ -125,7 +126,8 @@ function Monitor() {
         <Box sx={{ pr: 2, borderRight: '1px solid rgba(255,255,255,.2)' }}><Marke hell zusatz="" groesse={30} /></Box>
         <Box><Typography component="h1" sx={{ fontSize: { xs: 20, md: 28 }, fontWeight: 600, color: '#fff' }}>{fehlt ? 'Monitor nicht gefunden' : 'Vertretungsplan'}</Typography>
           <Typography sx={{ color: M[200] }}>{fehlt ? 'Der Link ist ungültig oder wurde zurückgesetzt.' : d?.schule}</Typography></Box>
-        {!fehlt && <Typography sx={{ ml: 'auto', fontSize: { xs: 26, md: 40 }, fontWeight: 600, color: '#fff' }}>{uhr}</Typography>}
+        {!fehlt && d?.stand && <Typography sx={{ ml: 'auto', fontSize: { xs: 12, md: 14 }, color: 'rgba(255,255,255,.75)', textAlign: 'right' }}>Stand EduOrga Studio<br />{standText(standDatum(d.stand)!)}</Typography>}
+        {!fehlt && <Typography sx={{ ml: d?.stand ? 2 : 'auto', fontSize: { xs: 26, md: 40 }, fontWeight: 600, color: '#fff' }}>{uhr}</Typography>}
       </Box>
       {d && (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(auto-fit, minmax(560px, 1fr))' }, gap: 2 }}>

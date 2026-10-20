@@ -1,6 +1,7 @@
 // Stundenpläne (Klasse, Lehrkraft, Raum, „Mein Stundenplan“): flache Werkzeugleiste mit Elementwahl (Alt+←/→), Woche bzw. Tag mit
 // Kalender, Segmentschalter Woche/Tag, Legende als Text mit kleinen Mustern (Hervorhebung), Menü „Ansicht“ und Hilfe; darunter das Wochenraster. Klick auf eine Stunde öffnet
 // die Stundendetails (mit Klassenbuch für Lehrkräfte).
+import { DatenStand } from '../../components/DatenStand';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid, IconButton, ListItemIcon, ListItemText, ListSubheader, Menu, MenuItem,
@@ -247,6 +248,7 @@ export default function PlanSeite({ teile }: SeitenProps) {
             <Box sx={{ minWidth: 0, mr: 1 }}>
               <Typography component="h1" sx={{ fontSize: 20, fontWeight: 600, lineHeight: 1.25 }} noWrap>{TYPEN[typ]} {p.element}{langname(p) ? <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}> · {langname(p)}</Box> : null}</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>KW {kalenderwoche(mo)} · {wochenText(mo, p.tage.length)}{p.woche ? ` · ${p.woche}-Woche` : ''}</Typography>
+              <DatenStand stand={p.stand} sx={{ display: 'block' }} />
             </Box>
             <Box sx={{ ml: { md: 'auto' } }}><Legende karten={p.karten} typ={typ} fokus={fokus} setFokus={setFokus} /></Box>
           </Stack>

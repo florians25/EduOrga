@@ -297,7 +297,8 @@ struct Tagesliste: View {
                     .accessibilityHidden(true)
                 Text(g.anzeigeTitel)
                     .font(.subheadline.weight(.semibold))
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Spacer(minLength: 0)
                 Text("Ganztägig")
                     .font(.caption.weight(.medium))
@@ -453,7 +454,7 @@ struct ListenKachel: View {
         HStack(spacing: 6) {
             // Feld wie in der Enbrea-Legende („× entfällt“, „⊕ von …“, „⊕ Zusatz“), sonst das Statuswort
             if let chip = kachel.statusChip {
-                Statuschip(chip: chip, schrift: .caption2.weight(.semibold))
+                Statuschip(chip: chip, schrift: .footnote.weight(.semibold))
             } else if let merkmal {
                 Statuswort(merkmal: merkmal, klein: false)
             }

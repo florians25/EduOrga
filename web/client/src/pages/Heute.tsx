@@ -1,6 +1,7 @@
 // Heute – Startseite: Datum, letzte Anmeldung und Planaktualisierung, Nachrichten zum Tag (formatierte Tagestexte, RSS, Bearbeiten),
 // Hinweis auf offene Stunden, Sprechtag und „Mein nächster Unterricht“ als Zeitleiste (Uhrzeit, Fach in der Fachfarbe, Klasse, Raum,
 // Lehrkraft, Status, Klassenbuch-Stand). Klick öffnet die Stundendetails.
+import { DatenStand } from '../components/DatenStand';
 import { useState } from 'react';
 import { alpha, Alert, Box, Button, ButtonBase, Grid, IconButton, Link, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material';
 import RssFeedRounded from '@mui/icons-material/RssFeedRounded';
@@ -167,6 +168,7 @@ export default function Heute() {
                     <Typography sx={{ fontWeight: 500, mb: 1 }}>{d.letzteAnmeldung ? `${wochentag(d.letzteAnmeldung.slice(0, 10))}, ${zeitstempel(d.letzteAnmeldung)}` : '–'}</Typography>
                     <Typography variant="body2" color="text.secondary">Letzte Planaktualisierung aus EduOrga Studio</Typography>
                     <Typography sx={{ fontWeight: 500 }}>{d.planAktualisiert ? `${wochentag(d.planAktualisiert.slice(0, 10))}, ${zeitstempel(d.planAktualisiert)}` : '–'}</Typography>
+                    <DatenStand stand={d.planAktualisiert} sx={{ display: 'block', whiteSpace: 'normal' }} />
                   </Paper>
                   {!ich.kollegium && <Link href="#/plan/mein" sx={{ display: ich.element ? 'block' : 'none' }}>Zum Stundenplan</Link>}
                 </Stack>

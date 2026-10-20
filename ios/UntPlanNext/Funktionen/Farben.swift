@@ -130,6 +130,13 @@ enum Farben {
     /// Geänderter Wert auf der Stundenkarte („+Gal (Gor)“, „+105 (303)“): helle grüne Fläche #e6f4ea, dunkelgrüne Schrift
     static let aenderungChip = Color(hell: 0xE6F4EA, dunkel: 0x1E3A29)
     static let aenderungText = Color(hell: 0x1D5C3A, dunkel: 0xA8E6C1)
+    /// Grün für kleine Schrift (Statuswörter, „bisher → neu“): #267349 erreicht auf Weiß 5,8 : 1, auf der Statusfläche
+    /// 5,5 : 1 und auf dem Feld 5,1 : 1 (WCAG AA) – #2f855a bleibt für Balken, Linien und Rahmen (auf #e6f4ea nur 4,0 : 1).
+    static let aenderungSchrift = Color(hell: 0x267349, dunkel: 0x5FC48C)
+    /// Offene Vertretung bzw. fehlender Wert ohne Entfall: neutrales graues Feld (#ebeef2, Schrift #4d5866, 6,2 : 1) –
+    /// bewusst nicht rot, damit Schüler*innen eine offene Vertretung nicht für einen Entfall halten.
+    static let offenChip = Color(hell: 0xEBEEF2, dunkel: 0x2A323D)
+    static let offenChipText = Color(hell: 0x4D5866, dunkel: 0xC7CED8)
     /// Klausur, Prüfung
     static let pruefung = Color(hell: 0xA15C07, dunkel: 0xE3A54B)
     static let pruefungFlaeche = Color(hell: 0xFDF4E3, dunkel: 0x2A2010)
@@ -191,11 +198,11 @@ struct Kartenstil {
         case "entfall":
             self.init(durchgestrichen: true, plakette: "Entfall", farbe: Farben.entfall, flaeche: Farben.entfallFlaeche)
         case "geaendert" where Kartenstil.nurRaumGeaendert(karte):
-            self.init(durchgestrichen: false, plakette: "Raumänderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche)
+            self.init(durchgestrichen: false, plakette: "Raumänderung", farbe: Farben.aenderungSchrift, flaeche: Farben.aenderungFlaeche)
         case "geaendert":
-            self.init(durchgestrichen: false, plakette: "Änderung", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche)
+            self.init(durchgestrichen: false, plakette: "Änderung", farbe: Farben.aenderungSchrift, flaeche: Farben.aenderungFlaeche)
         case "offen":
-            self.init(durchgestrichen: false, plakette: "Offen", farbe: Farben.aenderung, flaeche: Farben.aenderungFlaeche)
+            self.init(durchgestrichen: false, plakette: "Vertretung folgt", farbe: Farben.text2, flaeche: Farben.neutralFlaeche)
         case "klausur":
             self.init(durchgestrichen: false, plakette: "Prüfung", farbe: Farben.pruefung, flaeche: Farben.pruefungFlaeche)
         case "abwesend":
