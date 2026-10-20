@@ -100,6 +100,8 @@ public sealed partial class VertretungApi
                     ki = (e.KlassenIds.Count > 0 ? e.KlassenIds : r?.KlassenIds ?? new List<int>()).Cast<int?>().FirstOrDefault(),
                     art = v is null ? "" : Vertretungsplan.ArtText(d, v.Art), t = v?.Text ?? "",
                     kl = v?.ArtVorKlassenabwesenheit.HasValue == true, w = durch,
+                    // Schülergruppe bzw. Kurs (Teilungsgruppen, Kopplungen: „Gr. 1“)
+                    g = r is not null ? VeranstaltungsLogik.Schuelergruppe(r) : v?.Schuelergruppe is { Length: > 0 } vg ? vg : v?.UnterrichtId is int vu && ix.Unterrichte.GetValueOrDefault(vu) is { } un ? VeranstaltungsLogik.Schuelergruppe(un, v.ZeilenIndex) : "",
                     vn = v?.NachStunde is int ns ? StundeAm(datum, v.NachDatum, ns) : "", vv = v?.VonStunde is int vs ? StundeAm(datum, v.VonDatum, vs) : "",
                 });
             }

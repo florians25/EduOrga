@@ -13,6 +13,7 @@ import { hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf } from '@/komponenten/menue';
 import { Tabelle, type Spalte, type Spaltenart, type TabelleApi } from '@/komponenten/tabelle/Tabelle';
 import { ersterOder, titelBreite, useElemente } from '../gemeinsam';
+import { neuerUnterrichtDialog } from '../planung/neuerUnterricht';
 import { onlineDialog } from './online';
 
 const SICHTEN: Record<string, string> = { klasse: 'Klasse', lehrer: 'Lehrkraft', fach: 'Fach', alle: 'Alle Unterrichte' };
@@ -74,6 +75,15 @@ export default function Unterricht({ p }: AnsichtProps) {
 
   const aktuell = () => tabelle.current?.aktiveZeile() ?? null;
 
+  // „Neu“: Dialog „Neuer Unterricht“, vorbelegt mit dem Element der Sicht; danach neu laden und die neue Zeile wählen
+  async function neuImDialog() {
+    const erg = await neuerUnterrichtDialog(sicht === 'klasse' ? { klasse: element } : sicht === 'lehrer' ? { lehrer: element } : sicht === 'fach' ? { fach: element } : {});
+    if (!erg) return;
+    const q = sicht === 'alle' ? '' : `?sicht=${sicht}&element=${element}`;
+    setDaten(await api.get<Antwort>(api.dok(`/unterricht${q}`)));
+    setTimeout(() => tabelle.current?.waehle(`${erg.id}:0`));
+  }
+
   async function zeileNeu() {
     const z = aktuell();
     if (!z) { hinweis('Bitte zuerst den Unterricht wählen.', 'warnung'); return; }
@@ -120,7 +130,7 @@ export default function Unterricht({ p }: AnsichtProps) {
       werkzeuge={<>
         {sicht !== 'alle' ? <><ElementAuswahl typ={sicht} liste={liste} wert={element} beiWahl={(id) => { a.parameterSetzen({ element: id }); melden('element', { typ: sicht, id, quelle: a.id }); }} /><Trenner /></> : null}
         {schreiben ? <>
-          <Werkzeug text="Neu" titel="Neuer Unterricht" aktion={() => { tabelle.current?.waehle('__neu', 'Fach'); tabelle.current?.fokus(); tabelle.current?.bearbeiten(); }} />
+          <Werkzeug text="Neu" titel="Neuer Unterricht im Dialog (Fach, Klassen, Lehrkräfte, Stunden, Doppelstunden, Raum, Kopplung)" aktion={neuImDialog} />
           <Werkzeug text="Kopplungszeile" titel="Kopplungszeile hinzufügen (weitere Lehrkraft bzw. Gruppe)" aktion={zeileNeu} />
           <Werkzeug text="Löschen" titel="Markierten Unterricht löschen (Entf)" aktion={loeschen} />
           <Trenner />

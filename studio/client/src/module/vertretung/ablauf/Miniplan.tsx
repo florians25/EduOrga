@@ -53,11 +53,12 @@ function eingepasst(f: Fenster): Fenster {
 }
 
 /** Miniplan öffnen (vorhandenes Fenster desselben Elements kommt nach vorn und wird ausgeklappt). */
-export function miniplanOeffnen(typ: MiniTyp, element: number | null | undefined, kurz: string, { folgt = false }: { folgt?: boolean } = {}) {
+export function miniplanOeffnen(typ: MiniTyp, element: number | null | undefined, kurz: string, { folgt = false, woche }: { folgt?: boolean; woche?: boolean } = {}) {
   if (!element) return;
   const { fenster, z } = useMiniplaene.getState();
   const da = fenster.find((x) => x.typ === typ && x.element === element) ?? (folgt ? fenster.find((x) => x.typ === typ && x.folgt) : undefined);
-  if (da) { aendern(da.id, { element, kurz, min: false, ...(folgt ? { folgt: true } : {}) }); nachVorn(da.id); return; }
+  const wo = woche === undefined ? {} : { woche, w: woche ? Math.max(da?.w ?? 0, 520) : 240 };
+  if (da) { aendern(da.id, { element, kurz, min: false, ...(folgt ? { folgt: true } : {}), ...wo }); nachVorn(da.id); return; }
   // neue Fenster unten rechts über der Matrix (links der Entscheidung) nebeneinander, damit die Entscheidung frei bleibt
   const n = fenster.filter((x) => !x.min).length;
   const w = 240, h = Math.min(300, window.innerHeight - 200);
@@ -65,7 +66,7 @@ export function miniplanOeffnen(typ: MiniTyp, element: number | null | undefined
   let x = rechts - w - 12 - n * (w + 8);
   let y = window.innerHeight - h - 12;
   if (x < 80) { x = rechts - w - 12 - (n % 3) * 28; y = window.innerHeight - h - 12 - (n % 3) * 28; }
-  const neu = eingepasst({ id: `${Date.now().toString(36)}${fenster.length}`, typ, element, kurz, w, h, min: false, folgt, woche: false, z: z + 1, x, y });
+  const neu = eingepasst({ id: `${Date.now().toString(36)}${fenster.length}`, typ, element, kurz, w, h, min: false, folgt, woche: false, z: z + 1, x, y, ...wo });
   useMiniplaene.setState({ z: z + 1 });
   setzen((l) => [...l, neu]);
 }
@@ -110,6 +111,36 @@ function Eintrag({ e, typ, datum, stunde }: { e: MEintrag; typ: MiniTyp; datum: 
       <span className="mp-zweit">{alt ? <><s>{alt}</s> </> : null}{st === 'o' && typ !== 'lehrer' ? null : zweit}{st === 'o' ? <b className="mp-frage">{typ === 'lehrer' ? ' ?' : '?'}</b> : null}</span>
       {typ !== 'raum' ? <span className="mp-raum">{e.raum}</span> : null}
     </button>
+  );
+}
+
+/**
+ * Der Tag einer Lehrkraft bzw. eines Raums als eine Zeile, in denselben Spalten wie die Leiste der Tagesplanung („Fall für Fall“):
+ * beim Ziehen einer Stunde eingeblendet, damit man sieht, wann die Lehrkraft frei ist. Daten wie der Miniplan (tagesaktueller Plan).
+ */
+export function Tagesreihe({ typ, element, kurz, zusatz, stunden, markiert }: {
+  typ: MiniTyp; element: number; kurz: string; zusatz?: string; stunden: { nr: number }[]; markiert?: Map<number, string>;
+}) {
+  const datum = usePlanungsdatum();
+  const { daten } = useDaten(() => api.get<MPlan>(vpfad(`/plan/${typ}/${element}?datum=${datum}`)), [typ, element, datum],
+    { bereiche: ['Vertretung', 'Stundenplan', 'Unterricht', 'Stammdaten'], aktiv: !!datum });
+  const tag = daten?.tage.findIndex((t) => t.datum === datum) ?? -1;
+  return (
+    <div className="mp-reihe" data-testid="tagesreihe" data-typ={typ} data-kurz={kurz}>
+      <div className="mp-reihe-titel"><b>{kurz}</b><span>{zusatz || TYPTEXT[typ]}</span></div>
+      <div className="mp-reihe-zellen" style={{ gridTemplateColumns: `repeat(${stunden.length}, minmax(0, 1fr))` }}>
+        {stunden.map((s) => {
+          const z = daten && tag >= 0 ? daten.zellen.find((x) => x.tag === tag && x.stunde === s.nr) : undefined;
+          const e = z?.eintraege || [];
+          return (
+            <span key={s.nr} className={mergeClasses('mp-reihe-zelle', !e.length && 'frei', markiert?.get(s.nr))} data-stunde={s.nr}>
+              {!daten ? null : e.length ? <Eintrag e={e[0]!} typ={typ} datum={datum!} stunde={s.nr} /> : <span className="mp-reihe-frei">frei</span>}
+              {e.length > 1 ? <span className="mp-mehr">{`+${e.length - 1}`}</span> : null}
+            </span>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

@@ -8,13 +8,21 @@ using UntPlanStudio.Grundlagen;
 namespace UntPlanStudio.Api;
 
 public sealed record FallVorschlaegeAnfrage(DateOnly Datum);
+/// <summary>Teil einer Lösung: Stunden (Vertretungen) und was mit ihnen geschieht – „lehrer“ (Vertretung), „mit“ (mitbetreuen, zusammengelegt),
+/// „entfall“ oder „ohne“ (ohne Lehrkraft).</summary>
+public sealed record FallLoesungTeil(List<int> Ids, string Art, int? Lehrer);
+public sealed record FallLoesenAnfrage(List<FallLoesungTeil> Teile, string? Text);
 
 /// <summary>
 /// „Fall für Fall“ (Standardansicht der Tagesplanung): die Arbeit des Tages als Fälle. Ein Fall ist eine Stunde bzw. ein Block
 /// (Doppelstunde: aufeinanderfolgende Stunden desselben Unterrichts und derselben fehlenden Lehrkraft) – unabhängig davon, ob er
-/// schon gelöst ist, damit sich die Liste beim Lösen nicht umordnet. Dazu die Kandidaten für den ganzen Block mit Begründung in
-/// Worten und Vorschläge für alle offenen Fälle (Probe auf einer Kopie, blockweise, nichts wird geändert). Die Regeln stammen
-/// unverändert aus dem Vertretungsvorschlag (<see cref="VertretungsVorschlag"/>).
+/// schon gelöst ist, damit sich die Liste beim Lösen nicht umordnet. Laufen in einer Klasse mehrere offene Stunden gleichzeitig
+/// (Teilungsgruppen, Kurse, Kopplungen, zwei fehlende Lehrkräfte), sind sie <b>ein</b> Fall mit parallelen Teilen („E (Gr. 1) + F (Gr. 2)“):
+/// eine Lehrkraft für alle Gruppen (zusammengelegt), je Gruppe eine eigene Lösung oder Entfall nur einer Gruppe. Gekoppelte Stunden
+/// mehrerer Klassen stehen in jeder Klasse und werden einmal gelöst. Dazu die Kandidaten für den ganzen Block bzw. alle Gruppen mit
+/// Begründung in Worten, Vorschläge für alle offenen Fälle (Probe auf einer Kopie, nichts wird geändert) und die Zielstunden beim
+/// Ziehen einer Stunde in der Leiste (<see cref="FallZiele"/>). Die Regeln stammen unverändert aus dem Vertretungsvorschlag
+/// (<see cref="VertretungsVorschlag"/>) und der Tagesverlegung (<see cref="Tagesverlegung"/>).
 /// </summary>
 public sealed partial class VertretungApi
 {
@@ -23,7 +31,7 @@ public sealed partial class VertretungApi
         g.MapGet("/tagesablauf/faelle", (Arbeitsdokument a, DateOnly datum) => a.LesenAsync(doc => Faelle(doc, datum)));
         g.MapGet("/tagesablauf/fallkandidaten", (Arbeitsdokument a, string ids, int? anzahl) => a.LesenAsync(doc =>
         {
-            var menge = IdListe(ids, 12);
+            var menge = IdListe(ids, 24);
             return FallKandidaten(doc.Daten, doc.Index, doc.Daten.Vertretungen.Where(v => menge.Contains(v.Id)).ToList(), Math.Clamp(anzahl ?? 5, 1, 40));
         }));
         // Verlegen: Stunden der Klasse, die sich in die Lücke vorziehen lassen (alle Möglichkeiten; Randstunden zuerst – dann entsteht keine neue Lücke)
@@ -38,9 +46,12 @@ public sealed partial class VertretungApi
                 {
                     lehrer = vz.Lehrer, tag = $"{VertretungPlan.TagKurz(vz.Datum)} {vz.Datum.Day}.{vz.Datum.Month}.", datum = vz.Datum, stunde = vz.Stunde, klassen = vz.Klassen,
                     fach = vz.Fach, raum = vz.Raum, art = vz.Randstunde ? "Randstunde" : "erzeugt neue Lücke", beschreibung = vz.Beschreibung, u = vz.Eintrag.Unterricht?.Id,
+                    lehrerIds = vz.Eintrag.LehrerIds,
                 }).ToList();
         }));
         g.MapPost("/tagesablauf/fallvorschlaege", (Arbeitsdokument a, FallVorschlaegeAnfrage z, ClaimsPrincipal p) => a.LesenAsync(doc => FallVorschlaege(doc, z.Datum, B(p))));
+        g.MapPost("/tagesablauf/fallloesen", (Arbeitsdokument a, FallLoesenAnfrage z, ClaimsPrincipal p) => FallLoesen(a, p, z));
+        FallZiehenRegistrieren(g);
     }
 
     private static HashSet<int> IdListe(string ids, int hoechstens) =>
@@ -58,14 +69,20 @@ public sealed partial class VertretungApi
         return v.LehrerId is int l && v.Art is not (VertretungsArt.Verlegung or VertretungsArt.Tausch) && Absenzen.LehrerAbwesend(d, l, v.Datum, v.Stunde);
     }
 
+    /// <summary>Verlegte Stunde, die eine entfallene Stunde ersetzt (in die Lücke vorgezogen bzw. per Ziehen dorthin verlegt).</summary>
+    private static Vertretung? VerlegungsZiel(Schuldatei d, Vertretung v) =>
+        d.Vertretungen.FirstOrDefault(x => x.Datum == v.Datum && x.Stunde == v.Stunde && x.Art is VertretungsArt.Verlegung or VertretungsArt.Verlegt or VertretungsArt.Tausch &&
+                                           x.VonStunde.HasValue && x.UnterrichtId != v.UnterrichtId && x.NeueKlassenIds.Intersect(v.NeueKlassenIds).Any());
+
     /// <summary>Ergebnis einer Fallzeile in Worten („SRO“, „Entfall“, „mit ERN zusammengelegt“, „ohne Lehrkraft“ …).</summary>
     private static string FallErgebnis(Schuldatei d, DatenIndex ix, Vertretung v)
     {
         if (v.Offen) return "";
         if (v.RaumOffen) return "Raum fehlt";
-        if (v.IstEntfall && v.Text == "Vorziehung")
-            return d.Vertretungen.FirstOrDefault(x => x.Datum == v.Datum && x.Stunde == v.Stunde && x.Art == VertretungsArt.Verlegung && x.VonStunde.HasValue && x.KlassenIds.Intersect(v.KlassenIds).Any()) is { } z
-                ? $"{ix.KFach(z.FachId)} aus der {(z.VonDatum is DateOnly vd && vd != v.Datum ? $"{VertretungPlan.TagKurz(vd)} " : "")}{z.VonStunde}. vorgezogen" : "vorgezogen";
+        if (v.IstEntfall && VerlegungsZiel(d, v) is { } z)
+            return $"{ix.KFach(z.FachId)} aus der {(z.VonDatum is DateOnly vd && vd != v.Datum ? $"{VertretungPlan.TagKurz(vd)} " : "")}{z.VonStunde}. vorgezogen";
+        if (v.IstEntfall && v.Text == "Vorziehung") return "vorgezogen";
+        if (v.IstEntfall && v.NachStunde is int ns) return $"verlegt auf {StundeAm(v.Datum, v.NachDatum, ns)}";
         if (v.IstEntfall) return "Entfall";
         if (v.Art is VertretungsArt.VertretungOhneLehrer) return "ohne Lehrkraft";
         if (v.Art is VertretungsArt.EigenverantwortlichesArbeiten) return "EVA";
@@ -96,6 +113,144 @@ public sealed partial class VertretungApi
         return gruppen.OrderBy(x => x.Item2[0].Stunde).ThenBy(x => x.Item2[0].Id).ToList();
     }
 
+    /// <summary>
+    /// Parallele Fälle zu einem Fall zusammenfassen: Fälle, die sich zeitlich überschneiden und denselben Unterricht (Kopplung, Kurse)
+    /// oder eine Klasse gemeinsam haben (Teilungsgruppen, zwei fehlende Lehrkräfte zur selben Zeit). Ein Satz mit einem Teil ist ein
+    /// gewöhnlicher Fall; der Schlüssel eines Satzes mit mehreren Teilen ist „g:“ + die Schlüssel der Teile (unabhängig vom Stand).
+    /// </summary>
+    internal static List<(string Schluessel, List<(string Schluessel, List<Vertretung> Zeilen)> Teile)> FallSaetze(Schuldatei d, DateOnly datum)
+    {
+        var gr = FallGruppen(d, datum);
+        var n = gr.Count;
+        var wurzel = Enumerable.Range(0, n).ToArray();
+        int W(int i) { while (wurzel[i] != i) i = wurzel[i] = wurzel[wurzel[i]]; return i; }
+        var info = gr.Select(x => (
+            Pause: x.Zeilen[0].Art == VertretungsArt.Pausenaufsicht,
+            Std: x.Zeilen.Select(v => v.Stunde).ToHashSet(),
+            U: x.Zeilen[0].UnterrichtId,
+            K: x.Zeilen.SelectMany(v => v.NeueKlassenIds).ToHashSet())).ToList();
+        for (var i = 0; i < n; i++)
+            for (var j = i + 1; j < n; j++)
+            {
+                var (a, b) = (info[i], info[j]);
+                if (a.Pause || b.Pause || !a.Std.Overlaps(b.Std)) continue;
+                if ((a.U is int ua && ua == b.U) || a.K.Overlaps(b.K)) wurzel[W(j)] = W(i);
+            }
+        return Enumerable.Range(0, n).GroupBy(W).OrderBy(x => x.Min())
+            .Select(x =>
+            {
+                var teile = x.OrderBy(i => gr[i].Zeilen[0].Stunde).ThenBy(i => gr[i].Zeilen[0].Id).Select(i => gr[i]).ToList();
+                return (teile.Count == 1 ? teile[0].Schluessel : "g:" + string.Join("|", teile.Select(t => t.Schluessel)), teile);
+            }).ToList();
+    }
+
+    public sealed record FallTeilAus(int Id, int Stunde, bool Offen, bool RaumOffen, string Ergebnis, bool Entfall, bool Verlegt, int? Vertreter, bool Fix, string Text);
+
+    /// <summary>Ein Fall für die Oberfläche; bei parallelen Gruppen mit ihren Teilen (<see cref="Parallel"/>).</summary>
+    public sealed class FallAus
+    {
+        public string Schluessel { get; init; } = "";
+        public List<int> Ids { get; init; } = new();
+        public List<int> OffeneIds { get; init; } = new();
+        public List<int> KlassenIds { get; init; } = new();
+        public string Klassen { get; init; } = "";
+        public List<int> Stunden { get; init; } = new();
+        public string Zeit { get; init; } = "";
+        public string Fach { get; init; } = "";
+        public string FachLang { get; init; } = "";
+        /// <summary>Schülergruppe bzw. Kurs („Gr. 1“), leer = ganze Klasse.</summary>
+        public string Gruppe { get; init; } = "";
+        public string Lehrer { get; init; } = "";
+        public int? LehrerId { get; init; }
+        public List<int> LehrerIds { get; init; } = new();
+        public string LehrerName { get; init; } = "";
+        public string Raum { get; init; } = "";
+        public int? RaumId { get; init; }
+        public int? Unterricht { get; init; }
+        public bool Pause { get; init; }
+        public bool Klausur { get; init; }
+        public bool Veranstaltung { get; init; }
+        public string Grund { get; init; } = "";
+        public string GrundLang { get; init; } = "";
+        public string Zustand { get; init; } = "";
+        public string Ergebnis { get; init; } = "";
+        public List<FallTeilAus> Teile { get; init; } = new();
+        public string Text { get; init; } = "";
+        /// <summary>Parallele Gruppen (null = gewöhnlicher Fall).</summary>
+        public List<FallAus>? Parallel { get; init; }
+    }
+
+    private static string StundenZeit(Schuldatei d, List<int> std) =>
+        std.Count > 1 ? $"{Zeit(d, std[0]).Split('–')[0]}–{Zeit(d, std[^1]).Split('–').Last()}" : Zeit(d, std[0]);
+
+    private static FallAus FallObjekt(Schuldatei d, DatenIndex ix, DateOnly datum, string schluessel, List<Vertretung> l)
+    {
+        var v = l[0];
+        var pause = v.Art == VertretungsArt.Pausenaufsicht;
+        var offen = l.Where(x => x.OffenOderRaumOffen && !x.Fixiert).ToList();
+        var std = l.Select(x => x.Stunde).Distinct().OrderBy(x => x).ToList();
+        var teile = l.Select(x => new FallTeilAus(x.Id, x.Stunde, x.Offen, x.RaumOffen, FallErgebnis(d, ix, x), x.IstEntfall,
+            x.IstEntfall && (x.NachStunde.HasValue || VerlegungsZiel(d, x) is not null || x.Text == "Vorziehung"), x.VertreterId, x.Fixiert, x.Text)).ToList();
+        var ergebnisse = teile.Where(t => !t.Offen && !t.RaumOffen).Select(t => t.Ergebnis).Distinct().ToList();
+        var grund = v.GrundId is int gid ? ix.K(ElementTyp.Abwesenheitsgrund, gid) : v.Grund;
+        if (v.LehrerId is int lid && grund.Length == 0 && Absenzen.Lehrer(d, lid, datum, v.Stunde) is { GrundId: int ag }) grund = ix.K(ElementTyp.Abwesenheitsgrund, ag);
+        var grundLang = v.LehrerId is int lg && Absenzen.Lehrer(d, lg, datum, v.Stunde) is { GrundId: int gl } && d.Abwesenheitsgruende.FirstOrDefault(x => x.Id == gl) is { } ga ? ga.Langname : "";
+        var gruppe = v.Schuelergruppe is { Length: > 0 } sg ? sg : v.UnterrichtId is int u && ix.Unterrichte.GetValueOrDefault(u) is { } un ? VeranstaltungsLogik.Schuelergruppe(un, v.ZeilenIndex) : "";
+        return new FallAus
+        {
+            Schluessel = schluessel, Ids = l.Select(x => x.Id).ToList(), OffeneIds = offen.Select(x => x.Id).ToList(),
+            KlassenIds = v.NeueKlassenIds.ToList(), Klassen = ix.KKlassen(v.NeueKlassenIds), Stunden = std, Zeit = StundenZeit(d, std),
+            Fach = pause ? "Aufsicht" : ix.KFach(v.FachId), FachLang = pause ? $"Pausenaufsicht {ix.K(ElementTyp.Gang, v.GangId)}" : v.FachId is int f && ix.Faecher.GetValueOrDefault(f) is { } fa ? fa.Langname : "",
+            Gruppe = pause ? "" : gruppe,
+            Lehrer = ix.KLehrer(v.LehrerId), LehrerId = v.LehrerId, LehrerIds = v.LehrerId is int li ? new() { li } : new(),
+            LehrerName = v.LehrerId is int ln && ix.Lehrer.GetValueOrDefault(ln) is { } le ? le.VollerName : "",
+            Raum = pause ? ix.K(ElementTyp.Gang, v.GangId) : ix.KRaum(v.VertretungsraumId ?? v.RaumId), RaumId = v.VertretungsraumId ?? v.RaumId,
+            Unterricht = v.UnterrichtId, Pause = pause, Klausur = !pause && l.Any(x => Klausuraufsicht(d, x)),
+            Veranstaltung = v.Art == VertretungsArt.Veranstaltung || v.VeranstaltungOffen, Grund = grund, GrundLang = grundLang,
+            Zustand = offen.Count == 0 ? "erledigt" : offen.Count < l.Count ? "teilweise" : "offen",
+            Ergebnis = ergebnisse.Count == 1 && offen.Count == 0 ? ergebnisse[0] : string.Join(" · ", teile.Select(t => $"{t.Stunde}. {(t.Offen || t.RaumOffen ? "offen" : t.Ergebnis)}")),
+            Teile = teile, Text = string.Join(" ", l.Select(x => x.Text).Where(x => x.Length > 0 && x != "Vorziehung" && x != "Vertretung durch Verlegung").Distinct()),
+        };
+    }
+
+    /// <summary>Bezeichnung einer Gruppe im Satz: „E (Gr. 1)“, bei gleichem Fach ohne Gruppe mit der fehlenden Lehrkraft („KR KER“).</summary>
+    private static List<string> GruppenNamen(List<FallAus> teile, bool lang)
+    {
+        string F(FallAus t) => lang && t.FachLang.Length > 0 ? t.FachLang : t.Fach;
+        var namen = teile.Select(t => t.Gruppe.Length > 0 ? $"{F(t)} ({t.Gruppe})" : F(t)).ToList();
+        if (namen.Distinct().Count() < namen.Count) namen = teile.Select((t, i) => $"{namen[i]} {t.Lehrer}".Trim()).ToList();
+        return namen;
+    }
+
+    private static FallAus SatzObjekt(Schuldatei d, DatenIndex ix, string schluessel, List<FallAus> teile)
+    {
+        var std = teile.SelectMany(t => t.Stunden).Distinct().OrderBy(x => x).ToList();
+        var klassen = teile.SelectMany(t => t.KlassenIds).Distinct().ToList();
+        var namen = GruppenNamen(teile, false);
+        var offen = teile.SelectMany(t => t.OffeneIds).ToList();
+        var alle = teile.SelectMany(t => t.Ids).ToList();
+        var erledigt = teile.All(t => t.Zustand == "erledigt");
+        var ergebnisse = teile.Select(t => t.Ergebnis).Distinct().ToList();
+        var ersteT = teile[0];
+        return new FallAus
+        {
+            Schluessel = schluessel, Ids = alle, OffeneIds = offen, KlassenIds = klassen,
+            Klassen = ix.KKlassen(d.Klassen.Where(k => klassen.Contains(k.Id)).Select(k => k.Id)), Stunden = std, Zeit = StundenZeit(d, std),
+            Fach = string.Join(" + ", namen), FachLang = string.Join(" + ", GruppenNamen(teile, true)), Gruppe = "",
+            Lehrer = string.Join(", ", teile.Select(t => t.Lehrer).Where(x => x.Length > 0).Distinct()), LehrerId = ersteT.LehrerId,
+            LehrerIds = teile.SelectMany(t => t.LehrerIds).Distinct().ToList(),
+            LehrerName = string.Join(", ", teile.Select(t => t.LehrerName).Where(x => x.Length > 0).Distinct()),
+            Raum = string.Join(", ", teile.Select(t => t.Raum).Where(x => x.Length > 0).Distinct()), RaumId = ersteT.RaumId, Unterricht = ersteT.Unterricht,
+            Pause = false, Klausur = teile.Any(t => t.Klausur), Veranstaltung = teile.Any(t => t.Veranstaltung),
+            Grund = string.Join(", ", teile.Select(t => t.Grund).Where(x => x.Length > 0).Distinct()),
+            GrundLang = string.Join(", ", teile.Select(t => t.GrundLang).Where(x => x.Length > 0).Distinct()),
+            Zustand = offen.Count == 0 ? "erledigt" : offen.Count < alle.Count ? "teilweise" : "offen",
+            Ergebnis = erledigt && ergebnisse.Count == 1 ? ergebnisse[0] : string.Join(" · ", teile.Select((t, i) => $"{namen[i]}: {(t.Zustand == "erledigt" ? t.Ergebnis : "offen")}")),
+            Teile = teile.SelectMany(t => t.Teile).ToList(), Text = string.Join(" ", teile.Select(t => t.Text).Where(x => x.Length > 0).Distinct()),
+            Parallel = teile,
+        };
+    }
+
     internal static object Faelle(Dokument doc, DateOnly datum)
     {
         var d = doc.Daten;
@@ -103,37 +258,12 @@ public sealed partial class VertretungApi
         var stunden = d.Zeitraster.Zeiten.Select(z => z.Nr).Where(n => n >= 1).OrderBy(n => n).ToList();
         if (stunden.Count == 0) stunden = Enumerable.Range(1, d.Zeitraster.StundenProTag).ToList();
         var unterrichtstag = Kalender.IstUnterrichtstag(d, datum);
-        var gruppen = FallGruppen(d, datum);
-        var faelle = gruppen.Select(gr =>
+        var saetze = FallSaetze(d, datum);
+        var faelle = saetze.Select(s =>
         {
-            var (schluessel, l) = gr;
-            var v = l[0];
-            var pause = v.Art == VertretungsArt.Pausenaufsicht;
-            var offen = l.Where(x => x.OffenOderRaumOffen && !x.Fixiert).ToList();
-            var std = l.Select(x => x.Stunde).Distinct().OrderBy(x => x).ToList();
-            var klausur = !pause && l.Any(x => Klausuraufsicht(d, x));
-            var teile = l.Select(x => new
-            {
-                id = x.Id, stunde = x.Stunde, offen = x.Offen, raumOffen = x.RaumOffen, ergebnis = FallErgebnis(d, ix, x), entfall = x.IstEntfall,
-                vertreter = x.VertreterId, fix = x.Fixiert, text = x.Text,
-            }).ToList();
-            var ergebnisse = teile.Where(t => !t.offen && !t.raumOffen).Select(t => t.ergebnis).Distinct().ToList();
-            var grund = v.GrundId is int gid ? ix.K(ElementTyp.Abwesenheitsgrund, gid) : v.Grund;
-            if (v.LehrerId is int lid && grund.Length == 0 && Absenzen.Lehrer(d, lid, datum, v.Stunde) is { GrundId: int ag }) grund = ix.K(ElementTyp.Abwesenheitsgrund, ag);
-            var grundLang = v.LehrerId is int lg && Absenzen.Lehrer(d, lg, datum, v.Stunde) is { GrundId: int gl } && d.Abwesenheitsgruende.FirstOrDefault(x => x.Id == gl) is { } ga ? ga.Langname : "";
-            return new
-            {
-                schluessel, ids = l.Select(x => x.Id).ToList(), offeneIds = offen.Select(x => x.Id).ToList(),
-                klassenIds = v.NeueKlassenIds, klassen = ix.KKlassen(v.NeueKlassenIds), stunden = std, zeit = std.Count > 1 ? $"{Zeit(d, std[0]).Split('–')[0]}–{Zeit(d, std[^1]).Split('–').Last()}" : Zeit(d, std[0]),
-                fach = pause ? "Aufsicht" : ix.KFach(v.FachId), fachLang = pause ? $"Pausenaufsicht {ix.K(ElementTyp.Gang, v.GangId)}" : v.FachId is int f && ix.Faecher.GetValueOrDefault(f) is { } fa ? fa.Langname : "",
-                lehrer = ix.KLehrer(v.LehrerId), lehrerId = v.LehrerId, lehrerName = v.LehrerId is int ln && ix.Lehrer.GetValueOrDefault(ln) is { } le ? le.VollerName : "",
-                raum = pause ? ix.K(ElementTyp.Gang, v.GangId) : ix.KRaum(v.VertretungsraumId ?? v.RaumId), raumId = v.VertretungsraumId ?? v.RaumId,
-                unterricht = v.UnterrichtId, pause, klausur, veranstaltung = v.Art == VertretungsArt.Veranstaltung || v.VeranstaltungOffen, grund, grundLang,
-                zustand = offen.Count == 0 ? "erledigt" : offen.Count < l.Count ? "teilweise" : "offen",
-                ergebnis = ergebnisse.Count == 1 && offen.Count == 0 ? ergebnisse[0] : string.Join(" · ", teile.Select(t => $"{t.stunde}. {(t.offen || t.raumOffen ? "offen" : t.ergebnis)}")),
-                teile, text = string.Join(" ", l.Select(x => x.Text).Where(x => x.Length > 0 && x != "Vorziehung").Distinct()),
-            };
-        }).OrderBy(x => x.stunden[0]).ThenBy(x => x.klassen, StringComparer.Ordinal).ToList();
+            var teile = s.Teile.Select(t => FallObjekt(d, ix, datum, t.Schluessel, t.Zeilen)).ToList();
+            return teile.Count == 1 ? teile[0] : SatzObjekt(d, ix, s.Schluessel, teile);
+        }).OrderBy(x => x.Stunden[0]).ThenBy(x => x.Klassen, StringComparer.Ordinal).ToList();
 
         // abwesende Lehrkräfte des Tages (Liste „nach Lehrkraft“) und Klassen mit Fällen in fester Reihenfolge (Jahrgang, Name)
         var abwesend = d.Abwesenheiten.Where(x => x.Art == AbwesenheitsArt.Lehrer && x.Von <= datum && x.Bis >= datum)
@@ -149,7 +279,7 @@ public sealed partial class VertretungApi
                     zeit = von <= 1 && bis >= stunden[^1] ? "ganztägig" : bis >= stunden[^1] ? $"ab {von}. Std." : $"{von}.–{bis}. Std.", text = x.Text,
                 };
             }).OrderBy(x => x.k, StringComparer.OrdinalIgnoreCase).ToList();
-        var mitFall = faelle.SelectMany(f => f.klassenIds).ToHashSet();
+        var mitFall = faelle.SelectMany(f => f.KlassenIds).ToHashSet();
         var klassen = d.Klassen.Where(k => !k.Ignorieren && mitFall.Contains(k.Id))
             .OrderBy(k => Nrw.JahrgangRang(k.Jahrgang)).ThenBy(k => System.Text.RegularExpressions.Regex.Replace(k.Kurzname, @"\d+", m => m.Value.PadLeft(4, '0')), StringComparer.OrdinalIgnoreCase)
             .Select(k => new { id = k.Id, k = k.Kurzname, name = k.Langname, jahrgang = k.Jahrgang, leitung = string.Join(", ", k.KlassenlehrerIds.Select(ix.KLehrer)) }).ToList();
@@ -157,8 +287,29 @@ public sealed partial class VertretungApi
         {
             datum, unterrichtstag, frei = unterrichtstag ? "" : Kalender.FreiBezeichnung(d, datum),
             stunden = stunden.Select(s => new { nr = s, zeit = Zeit(d, s) }).ToList(),
-            klassen, abwesend, faelle,
+            klassen, abwesend, faelle, statistik = TagesStatistik(d, saetze.SelectMany(s => s.Teile).SelectMany(t => t.Zeilen)),
         };
+    }
+
+    /// <summary>
+    /// Stand des Tages in den Kategorien der NRW-Unterrichtsstatistik (Schulministerium, flächendeckende Erhebung seit 2018/19):
+    /// Vertretung im vorgesehenen Fach, fachfremde Vertretung, zusammengelegt (Betreuung), eigenverantwortliches Arbeiten bzw. ohne
+    /// Lehrkraft, verlegt/vorgezogen und ersatzloser Ausfall – je Unterrichtsstunde der Fälle (ohne Pausenaufsichten). Nur zur
+    /// Orientierung beim Planen; die Meldung selbst kommt aus der Zählung der Vertretungen.
+    /// </summary>
+    private static object TagesStatistik(Schuldatei d, IEnumerable<Vertretung> zeilen)
+    {
+        int imFach = 0, fachfremd = 0, zusammen = 0, eva = 0, verlegt = 0, ausfall = 0, offen = 0;
+        var lehrer = d.Lehrer.ToDictionary(l => l.Id);
+        foreach (var v in zeilen.Where(v => v.Art != VertretungsArt.Pausenaufsicht && v.UnterrichtId.HasValue))
+        {
+            if (v.Offen) offen++;
+            else if (v.IstEntfall) { if (v.NachStunde.HasValue || v.Text == "Vorziehung" || VerlegungsZiel(d, v) is not null) verlegt++; else ausfall++; }
+            else if (v.Art is VertretungsArt.VertretungOhneLehrer or VertretungsArt.EigenverantwortlichesArbeiten) eva++;
+            else if (v.VertreterId is int l && v.Mitbetreuung) zusammen++;
+            else if (v.VertreterId is int l2) { if ((v.VertretungsfachId ?? v.FachId) is int f && lehrer.GetValueOrDefault(l2)?.FaecherIds.Contains(f) == true) imFach++; else fachfremd++; }
+        }
+        return new { imFach, fachfremd, zusammen, eva, verlegt, ausfall, offen };
     }
 
     /// <summary>Gründe eines Kandidaten in Worten, wichtigste zuerst („frei 1.–2.“, „Bereitschaft“, „unterrichtet die 5a“, „Fach Englisch“, „heute 1 Vertretung“).</summary>
@@ -178,16 +329,35 @@ public sealed partial class VertretungApi
             var x when x.StartsWith("Abstand ") => $"{x[8..]} Std. Abstand",
             _ => k.Lage,
         });
-        var klassen = ix.KKlassen(v.NeueKlassenIds);
+        var klassen = ix.KKlassen(stunden.SelectMany(x => x.NeueKlassenIds).Distinct());
         if (k.Klassenlehrer) res.Add($"Klassenleitung {klassen}");
         else if (k.KenntKlasse) res.Add($"unterrichtet die {klassen}");
-        if (k.Fachlehrer && v.FachId is int f) res.Add($"Fach {(ix.Faecher.GetValueOrDefault(f)?.Langname is { Length: > 0 } fl ? fl : ix.KFach(f))}");
+        var faecher = stunden.Select(x => x.FachId).OfType<int>().Distinct().Where(f => k.Lehrer.FaecherIds.Contains(f)).ToList();
+        if (k.Fachlehrer && v.FachId is int f0 && !faecher.Contains(f0)) faecher.Insert(0, f0);
+        if (faecher.Count > 0) res.Add($"Fach {string.Join(", ", faecher.Select(f => ix.Faecher.GetValueOrDefault(f)?.Langname is { Length: > 0 } fl ? fl : ix.KFach(f)))}");
         if (heute > 0) res.Add(heute == 1 ? "heute schon 1 Vertretung" : $"heute schon {heute} Vertretungen");
         if (k.Kriterien.Contains("Maximum erreicht")) res.Add("Höchstzahl erreicht");
         if (k.Zeitwunsch < 0) res.Add(k.Zeitwunsch <= -3 ? "Zeitwunsch: gesperrt" : "Zeitwunsch: lieber nicht");
         if (k.Kriterien.Contains("Std./Tag überschritten")) res.Add("mehr Stunden als gewünscht");
         if (k.Disloziert) res.Add("anderes Gebäude");
         return res;
+    }
+
+    /// <summary>
+    /// Mehrarbeit NRW in Worten (BASS 21-22 Nr. 21: vergütet wird, wenn im Kalendermonat mehr als 3 Unterrichtsstunden – bei
+    /// Teilzeit anteilig – geleistet werden, dann ab der ersten Stunde): „Mehrarbeit, 3. Std. im Monat – ab hier vergütet“. Nur bei
+    /// Lehrkräften ohne Bereitschaft bzw. Freisetzung; verrechnet mit Minderleistung wie die Abrechnung.
+    /// </summary>
+    private static string MehrarbeitText(Schuldatei d, Lehrer l, DateOnly datum, int stunden)
+    {
+        var monat = new DateOnly(datum.Year, datum.Month, 1);
+        var m = Statistik.MehrarbeitNrw(d, l, monat, monat.AddMonths(1).AddDays(-1)).FirstOrDefault();
+        var vorher = m?.Saldo ?? 0;
+        var grenze = m?.Grenze ?? Math.Round(d.Einstellungen.Mehrarbeitsgrenze * Statistik.Teilzeitquote(d, l), 1);
+        var naechste = vorher + 1;
+        if (vorher > grenze) return $"Mehrarbeit, {naechste}. Std. im Monat (vergütet)";
+        if (vorher + stunden > grenze) return $"Mehrarbeit, {naechste}. Std. im Monat – ab hier vergütet";
+        return $"Mehrarbeit, {naechste}. Std. im Monat";
     }
 
     /// <summary>
@@ -207,6 +377,24 @@ public sealed partial class VertretungApi
             .OrderBy(x => x.Item3).ThenBy(x => x.Item1.Lehrer.Kurzname).ToList();
     }
 
+    /// <summary>Teile (Gruppen) einer Auswahl von Stunden: je Unterricht, Kopplungszeile, fehlender Lehrkraft und Klassen, nach Stunden geordnet.</summary>
+    private static List<List<Vertretung>> FallTeile(IEnumerable<Vertretung> liste) =>
+        liste.GroupBy(FallSchluessel).Select(g => g.OrderBy(v => v.Stunde).ToList()).OrderBy(g => g[0].Stunde).ThenBy(g => g[0].Id).ToList();
+
+    /// <summary>
+    /// Eine Lehrkraft für alle parallelen Gruppen (sie werden zusammengelegt): wer in allen Stunden jeder Gruppe frei ist, nach der Summe
+    /// der Schlechtpunkte (je Gruppe wie <see cref="FallReihung"/>).
+    /// </summary>
+    internal static List<(Kandidat K, bool Rot, double Punkte)> ParallelReihung(Schuldatei d, List<List<Vertretung>> teile)
+    {
+        if (teile.Count == 1) return FallReihung(d, teile[0]);
+        var je = teile.Select(t => FallReihung(d, t).ToDictionary(x => x.K.Lehrer.Id)).ToList();
+        var absent = teile.Select(t => t[0].LehrerId).OfType<int>().ToHashSet();
+        return je[0].Keys.Where(l => !absent.Contains(l) && je.All(x => x.ContainsKey(l)))
+            .Select(l => (je[0][l].K, je.Any(x => x[l].Rot), je.Sum(x => x[l].Punkte)))
+            .OrderBy(x => x.Item3).ThenBy(x => x.K.Lehrer.Kurzname).ToList();
+    }
+
     internal static object FallKandidaten(Schuldatei d, DatenIndex ix, List<Vertretung> alle, int anzahl)
     {
         var liste = alle.Where(v => v.Offen && v.Art != VertretungsArt.Pausenaufsicht).OrderBy(v => v.Stunde).ToList();
@@ -223,12 +411,14 @@ public sealed partial class VertretungApi
                     lehrer = l.Id, k = l.Kurzname, name = l.VollerName, rot = false,
                     gruende = new List<string> { $"frei nach der {v.Stunde}. Std.", $"{UntPlan.Core.Module.Pausenaufsichten.Anzahl(d, l.Id)} Aufsichten in der Woche" },
                 }).ToList(),
-                weitere = Math.Max(0, pk.Count - anzahl), betreuung = (object?)null, entfallSinnvoll = false, gleicheZeit = false,
+                weitere = Math.Max(0, pk.Count - anzahl), betreuung = (object?)null, betreuungJeStunde = (object?)null, entfallSinnvoll = false, gleicheZeit = false, gruppen = 0,
             };
         }
-        if (liste.Count == 0) return new { ids = Array.Empty<int>(), kandidaten = Array.Empty<object>(), weitere = 0, betreuung = (object?)null, entfallSinnvoll = false, gleicheZeit = false };
+        if (liste.Count == 0) return new { ids = Array.Empty<int>(), kandidaten = Array.Empty<object>(), weitere = 0, betreuung = (object?)null, betreuungJeStunde = (object?)null, entfallSinnvoll = false, gleicheZeit = false, gruppen = 0 };
+        var teile = FallTeile(liste);
+        // mehrere Stunden zur selben Zeit: parallele Gruppen – eine Lehrkraft für alle (zusammengelegt)
         var gleicheZeit = liste.GroupBy(v => v.Stunde).Any(x => x.Count() > 1);
-        var reihe = gleicheZeit ? new List<(Kandidat K, bool Rot, double Punkte)>() : FallReihung(d, liste);
+        var reihe = gleicheZeit ? ParallelReihung(d, teile) : FallReihung(d, liste);
         // offener Platz einer Veranstaltung: wer schon teilnimmt, kommt als Ersatz nicht in Frage
         foreach (var v in liste.Where(v => v.VeranstaltungOffen && v.VeranstaltungId.HasValue))
             if (d.Veranstaltungen.FirstOrDefault(x => x.Id == v.VeranstaltungId) is { } va)
@@ -237,27 +427,94 @@ public sealed partial class VertretungApi
                 reihe = reihe.Where(x => !dabei.Contains(x.K.Lehrer.Id)).ToList();
             }
         var datum = liste[0].Datum;
+        var stundenJeLehrkraft = liste.Select(v => v.Stunde).Distinct().Count();
         var bet = liste.Select(v => VertretungsVorschlag.Betreuungen(d, v)).ToList();
         var gemeinsam = bet[0].FirstOrDefault(b => bet.All(x => x.Any(y => y.Lehrer.Id == b.Lehrer.Id)));
+        // Zusammenlegen im Block: betreut niemand alle Stunden, dann je Stunde die beste Betreuung (z. B. 1. mit 7h, 2. mit 7c)
+        List<object>? jeStunde = null;
+        if (gemeinsam is null && !gleicheZeit && liste.Count > 1)
+        {
+            jeStunde = new();
+            foreach (var (v, b) in liste.Zip(bet))
+            {
+                if (b.FirstOrDefault() is not { } x) { jeStunde = null; break; }
+                jeStunde.Add(new { stunde = v.Stunde, ids = new[] { v.Id }, lehrer = x.Lehrer.Id, k = x.Lehrer.Kurzname, name = x.Lehrer.VollerName, klassen = x.Klassen, fach = x.Fach, naehe = x.NaeheText });
+            }
+        }
         return new
         {
-            ids = liste.Select(v => v.Id).ToList(), gleicheZeit,
-            kandidaten = reihe.Take(anzahl).Select(x => new
+            ids = liste.Select(v => v.Id).ToList(), gleicheZeit, gruppen = teile.Count,
+            kandidaten = reihe.Take(anzahl).Select(x =>
             {
-                lehrer = x.K.Lehrer.Id, k = x.K.Lehrer.Kurzname, name = x.K.Lehrer.VollerName, rot = x.Rot, lage = x.K.Lage,
-                gruende = KandidatGruende(d, ix, x.K, liste, Vertretungen.Zaehler(d, x.K.Lehrer.Id, datum, datum)),
-                woche = x.K.ZaehlerWoche, maxWoche = x.K.Lehrer.VertretungenMaxWoche, mehrarbeit = x.K.Mehrarbeit,
+                var gruende = KandidatGruende(d, ix, x.K, liste, Vertretungen.Zaehler(d, x.K.Lehrer.Id, datum, datum));
+                if (x.K.Mehrarbeit) gruende.Add(MehrarbeitText(d, x.K.Lehrer, datum, stundenJeLehrkraft));
+                return new
+                {
+                    lehrer = x.K.Lehrer.Id, k = x.K.Lehrer.Kurzname, name = x.K.Lehrer.VollerName, rot = x.Rot, lage = x.K.Lage, gruende,
+                    woche = x.K.ZaehlerWoche, maxWoche = x.K.Lehrer.VertretungenMaxWoche, mehrarbeit = x.K.Mehrarbeit,
+                };
             }).ToList(),
             weitere = Math.Max(0, reihe.Count - anzahl),
             betreuung = gemeinsam is null ? null : new { lehrer = gemeinsam.Lehrer.Id, k = gemeinsam.Lehrer.Kurzname, name = gemeinsam.Lehrer.VollerName, klassen = gemeinsam.Klassen, fach = gemeinsam.Fach, naehe = gemeinsam.NaeheText },
+            betreuungJeStunde = jeStunde,
             entfallSinnvoll = liste.All(v => VertretungsVorschlag.EntfallSinnvoll(d, v)),
         };
     }
 
     /// <summary>
+    /// Lösung eines Falls in einer Rückgängig-Stufe: je Teil Vertretung, Mitbetreuung (zusammengelegt), Entfall oder ohne Lehrkraft –
+    /// für parallele Gruppen („eine Lehrkraft für beide Gruppen“: die erste Gruppe vertritt sie, die anderen betreut sie mit) und
+    /// für das Zusammenlegen eines Blocks Stunde für Stunde mit verschiedenen Klassen. Vertreten darf nur, wer frei ist.
+    /// </summary>
+    private static async Task<object> FallLoesen(Arbeitsdokument a, ClaimsPrincipal p, FallLoesenAnfrage z)
+    {
+        var teile = (z.Teile ?? new()).Where(t => t.Ids is { Count: > 0 }).ToList();
+        if (teile.Count == 0) return new { ok = true, anzahl = 0 };
+        foreach (var t in teile)
+            if (t.Art is not ("lehrer" or "mit" or "entfall" or "ohne") || (t.Art is "lehrer" or "mit" && t.Lehrer is null))
+                throw StudioFehler.Ungueltig($"Unbekannte Lösung „{t.Art}“.");
+        var text = await a.LesenAsync(doc =>
+        {
+            var d = doc.Daten;
+            var ix = doc.Index;
+            var alle = teile.SelectMany(t => t.Ids).ToHashSet();
+            foreach (var t in teile.Where(t => t.Art == "lehrer"))
+                foreach (var v in d.Vertretungen.Where(v => t.Ids.Contains(v.Id) && v.Offen))
+                {
+                    var tp = Tagesplan.Berechnen(d, v.Datum);
+                    // belegt durch eine andere Stunde dieser Lösung zählt nicht (sie wird mitbetreut)
+                    var grund = Vertretungen.LehrerBelegt(d, tp, t.Lehrer!.Value, v.Stunde, v);
+                    if (grund is not null && !(grund == "vertritt bereits" && tp.Stunde(v.Stunde).Any(e => e.Vertretung is { } w && alle.Contains(w.Id) && e.LehrerIds.Contains(t.Lehrer.Value))))
+                        throw StudioFehler.Ungueltig($"{ix.KLehrer(t.Lehrer)} ist in der {v.Stunde}. Stunde nicht frei ({grund}).");
+                }
+            return z.Text is { Length: > 0 } x ? x : string.Join(", ", teile.Select(t => t.Art switch
+            {
+                "lehrer" => $"Vertreter {ix.KLehrer(t.Lehrer)}", "mit" => $"Betreuung {ix.KLehrer(t.Lehrer)}", "entfall" => "Entfall", _ => "Ohne Lehrkraft",
+            }).Distinct());
+        });
+        // erst vertreten, dann mitbetreuen (die Betreuung setzt die vertretene Gruppe voraus)
+        var reihe = teile.OrderBy(t => t.Art == "lehrer" ? 0 : t.Art == "mit" ? 1 : 2).ToList();
+        return await a.AendernAsync(B(p), text, V, d =>
+        {
+            foreach (var t in reihe)
+                foreach (var v in d.Vertretungen.Where(v => t.Ids.Contains(v.Id) && v.Offen && !v.Fixiert && v.Art != VertretungsArt.Pausenaufsicht).OrderBy(v => v.Stunde).ToList())
+                {
+                    switch (t.Art)
+                    {
+                        case "lehrer": Vertretungen.VertreterSetzen(d, v, t.Lehrer, false, B(p)); break;
+                        case "mit": Vertretungen.VertreterSetzen(d, v, t.Lehrer, true, B(p)); break;
+                        case "entfall": Vertretungen.EntfallUmschalten(d, v, B(p)); break;
+                        default: Vertretungen.OhneLehrer(v, B(p)); break;
+                    }
+                    Vertretungen.AlsGeaendertMarkieren(v, B(p));
+                }
+        }, _ => (object)new { ok = true, anzahl = teile.Sum(t => t.Ids.Count) });
+    }
+
+    /// <summary>
     /// Vorschläge für alle offenen Fälle des Tages: auf einer Kopie Fall für Fall (nach Uhrzeit) die beste Lehrkraft für den ganzen Block
-    /// eintragen (wie die automatische Vertretung, aber blockweise), sonst Entfall, wo er sinnvoll ist. Nichts wird geändert; übernommen
-    /// wird mit „/tagesablauf/anwenden“.
+    /// bzw. für alle parallelen Gruppen eintragen (wie die automatische Vertretung, aber blockweise), sonst Entfall, wo er sinnvoll ist.
+    /// Nichts wird geändert; übernommen wird mit „/tagesablauf/anwenden“ (bei Gruppen: die erste vertreten, die anderen mitbetreuen).
     /// </summary>
     internal static object FallVorschlaege(Dokument doc, DateOnly datum, string benutzer)
     {
@@ -266,26 +523,31 @@ public sealed partial class VertretungApi
         var probe = Dokument.VertretungsProbe(d, datum, datum);
         var res = new List<object>();
         var ohne = new List<string>();
-        foreach (var (schluessel, zeilen) in FallGruppen(d, datum))
+        foreach (var (schluessel, saetze) in FallSaetze(d, datum))
         {
-            var ids = zeilen.Where(v => v.Offen && !v.Fixiert && v.Art != VertretungsArt.Pausenaufsicht).Select(v => v.Id).ToHashSet();
+            var ids = saetze.SelectMany(s => s.Zeilen).Where(v => v.Offen && !v.Fixiert && v.Art != VertretungsArt.Pausenaufsicht).Select(v => v.Id).ToHashSet();
             var liste = probe.Vertretungen.Where(v => ids.Contains(v.Id) && v.Offen && !v.Fixiert && !v.VeranstaltungOffen).OrderBy(v => v.Stunde).ToList();
             if (liste.Count == 0) continue;
-            var reihe = liste.GroupBy(v => v.Stunde).Any(x => x.Count() > 1) ? new() : FallReihung(probe, liste);
+            var teile = FallTeile(liste);
+            var parallel = liste.GroupBy(v => v.Stunde).Any(x => x.Count() > 1);
+            var reihe = parallel ? ParallelReihung(probe, teile) : FallReihung(probe, liste);
             var best = reihe.FirstOrDefault(x => !x.Rot);
             if (best.K is not null)
             {
-                foreach (var v in liste) Vertretungen.VertreterSetzen(probe, v, best.K.Lehrer.Id, false, benutzer);
+                var l = best.K.Lehrer.Id;
+                for (var i = 0; i < teile.Count; i++)
+                    foreach (var v in teile[i]) Vertretungen.VertreterSetzen(probe, v, l, parallel && i > 0, benutzer);
                 res.Add(new
                 {
-                    schluessel, ids = liste.Select(v => v.Id).ToList(), art = "lehrer", lehrerId = (int?)best.K.Lehrer.Id, text = best.K.Lehrer.Kurzname,
-                    grund = string.Join(" · ", KandidatGruende(probe, ix, best.K, liste, Vertretungen.Zaehler(d, best.K.Lehrer.Id, datum, datum)).Where(x => !x.StartsWith("frei ")).Take(3)),
+                    schluessel, ids = liste.Select(v => v.Id).ToList(), art = "lehrer", lehrerId = (int?)l, text = best.K.Lehrer.Kurzname,
+                    grund = (parallel ? "für alle Gruppen · " : "") + string.Join(" · ", KandidatGruende(probe, ix, best.K, liste, Vertretungen.Zaehler(d, l, datum, datum)).Where(x => !x.StartsWith("frei ")).Take(3)),
+                    teile = parallel ? teile.Select((t, i) => new { ids = t.Select(v => v.Id).ToList(), art = i == 0 ? "lehrer" : "mit" }).ToList() : null,
                 });
             }
             else if (liste.All(v => VertretungsVorschlag.EntfallSinnvoll(probe, v)))
             {
                 foreach (var v in liste) Vertretungen.EntfallUmschalten(probe, v, benutzer);
-                res.Add(new { schluessel, ids = liste.Select(v => v.Id).ToList(), art = "entfall", lehrerId = (int?)null, text = "Entfall", grund = "niemand frei, Randstunde" });
+                res.Add(new { schluessel, ids = liste.Select(v => v.Id).ToList(), art = "entfall", lehrerId = (int?)null, text = "Entfall", grund = "niemand frei, Randstunde", teile = (object?)null });
             }
             else ohne.Add(schluessel);
         }

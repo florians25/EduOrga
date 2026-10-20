@@ -7,7 +7,9 @@ namespace UntPlanStudio.Tests;
 /// <summary>
 /// Große Schule für Last- und Oberflächentests der Tagesplanung: 60 Klassen (Jahrgänge 5–10, je a–j), 300 Lehrkräfte (90 mit voller
 /// Stelle tragen den Unterricht der Sek. I, die übrigen haben nur wenige Stunden – Teilzeit bzw. überwiegend Oberstufe), Fachräume in
-/// Gruppen, Doppelstunden in den Hauptfächern, 30 Lehrkräfte mit Bereitschaft. Der Stundenplan entsteht mit der Optimierung (fester
+/// Gruppen, Doppelstunden in den Hauptfächern, 30 Lehrkräfte mit Bereitschaft. Dazu Teilungsgruppen und Kopplungen wie im Alltag:
+/// Religion je zwei Parallelklassen gekoppelt (KR und ER, beide Klassen in beiden Gruppen) und ab Jahrgang 7 der Wahlpflichtbereich
+/// in jeder Klasse geteilt (F in Gr. 1, L in Gr. 2, zweite Gruppe im Kursraum) – damit „Fall für Fall“ parallele Gruppen zeigt. Der Stundenplan entsteht mit der Optimierung (fester
 /// Startwert, etwa 10 s) und wird je Testlauf einmal erzeugt.
 /// </summary>
 public static class Grossschule
@@ -55,6 +57,7 @@ public static class Grossschule
             F(f).FachraumgruppeId = G(k, $"{n}räume", Enumerable.Range(1, z).Select(i => R($"{k}{i}", $"{n} {i}", "Fachraum"))).Id;
         F("KU").Doppelstunden = new Bereich(1, 1);
         F("KR").Randstunde = true;
+        var kursraeume = G("KURS", "Kursräume", Enumerable.Range(1, 24).Select(i => R($"K{i:00}", $"Kursraum {i}", "Kursraum", 16)));
 
         var buchst = "abcdefghijklmnop";
         var klassen = new List<Klasse>();
@@ -70,8 +73,8 @@ public static class Grossschule
         d.Klassen.AddRange(klassen);
 
         // Lehrkräfte: je zwei Fächer; ein Drittel mit wenigen Stunden in der Sek. I (Teilzeit bzw. überwiegend Oberstufe)
-        string[] faecher = { "D", "M", "E", "F", "BI", "PH", "CH", "EK", "GE", "PK", "KR", "KU", "MU", "SP", "IF" };
-        int[] gewicht = { 9, 9, 8, 4, 4, 3, 3, 2, 3, 2, 2, 2, 2, 5, 1 };
+        string[] faecher = { "D", "M", "E", "F", "BI", "PH", "CH", "EK", "GE", "PK", "KR", "KU", "MU", "SP", "IF", "ER", "L" };
+        int[] gewicht = { 9, 9, 8, 4, 4, 3, 3, 2, 3, 2, 2, 2, 2, 5, 1, 2, 2 };
         var pool = faecher.SelectMany((f, i) => Enumerable.Repeat(f, gewicht[i])).ToArray();
         var rnd = new Random(11);
         var kurz = new HashSet<string>();
@@ -97,6 +100,8 @@ public static class Grossschule
         {
             foreach (var (fk, std) in Tafel[k.Jahrgang])
             {
+                // Religion (gekoppelt) und Wahlpflicht (geteilt) folgen unten
+                if (fk == "KR" || (fk == "F" && k.Jahrgang != "6")) continue;
                 var l = Waehle(fk);
                 last[l.Id] = last.GetValueOrDefault(l.Id) + std;
                 var f = F(fk);
@@ -108,6 +113,36 @@ public static class Grossschule
             }
             k.KlassenlehrerIds = d.Unterrichte.Where(u => u.KlassenIds.Contains(k.Id) && u.HauptfachId == F("D").Id).SelectMany(u => u.LehrerIds).Take(1).ToList();
         }
+        Lehrer Last(string fach, int std) { var l = Waehle(fach); last[l.Id] = last.GetValueOrDefault(l.Id) + std; return l; }
+        // Religion: je zwei Parallelklassen gekoppelt – KR und ER, beide Klassen in beiden Gruppen (gekoppelter Unterricht über Klassen)
+        foreach (var jg in Tafel.Keys)
+        {
+            var ks = klassen.Where(k => k.Jahrgang == jg).ToList();
+            for (var i = 0; i + 1 < ks.Count; i += 2)
+            {
+                var paar = new List<int> { ks[i].Id, ks[i + 1].Id };
+                d.Unterrichte.Add(new Unterricht
+                {
+                    Id = d.NeueId(), Wochenstunden = 2, Text = "Religion gekoppelt",
+                    Zeilen =
+                    {
+                        new Kopplungszeile { LehrerId = Last("KR", 2).Id, FachId = F("KR").Id, KlassenIds = paar.ToList(), StammraumId = ks[i].StammraumId, Schuelergruppe = "kath." },
+                        new Kopplungszeile { LehrerId = Last("ER", 2).Id, FachId = F("ER").Id, KlassenIds = paar.ToList(), StammraumId = ks[i + 1].StammraumId, Schuelergruppe = "ev." },
+                    },
+                });
+            }
+        }
+        // Wahlpflicht ab Jahrgang 7: die Klasse geteilt – Französisch (Gr. 1) im Klassenraum, Latein (Gr. 2) im Kursraum
+        foreach (var k in klassen.Where(k => k.Jahrgang != "5" && k.Jahrgang != "6"))
+            d.Unterrichte.Add(new Unterricht
+            {
+                Id = d.NeueId(), Wochenstunden = 3, Doppelstunden = new Bereich(1, 1), Text = "Wahlpflicht geteilt",
+                Zeilen =
+                {
+                    new Kopplungszeile { LehrerId = Last("F", 3).Id, FachId = F("F").Id, KlassenIds = { k.Id }, StammraumId = k.StammraumId, Schuelergruppe = "Gr. 1" },
+                    new Kopplungszeile { LehrerId = Last("L", 3).Id, FachId = F("L").Id, KlassenIds = { k.Id }, FachraumgruppeId = kursraeume.Id, Schuelergruppe = "Gr. 2" },
+                },
+            });
         // Bereitschaften: 30 Lehrkräfte mit je 2 Bereitschaftsstunden
         foreach (var l in d.Lehrer.Where((_, i) => i % 10 == 4))
             d.Unterrichte.Add(new Unterricht { Id = d.NeueId(), Wochenstunden = 2, MehrmalsProTag = true, Text = "Bereitschaft", Zeilen = { new Kopplungszeile { LehrerId = l.Id, FachId = F("BER").Id } } });

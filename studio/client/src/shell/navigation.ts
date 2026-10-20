@@ -86,6 +86,7 @@ export const NAVIGATION: NavGruppe[] = [
   },
   {
     id: 'planung', titel: 'Planung', modus: 'stundenplan', symbol: 'planung', eintraege: [
+      { ref: 'planung.plantafel', text: 'Plantafel' },
       { text: 'Manuell planen', arbeitsplatz: 'manuell', braucht: 'dokument', hinweis: 'Unterricht und Klassenplan nebeneinander' },
       { ref: 'planung.optimierung', text: 'Automatische Planung' },
       { ref: 'planung.diagnose', text: 'Diagnose' },

@@ -146,6 +146,178 @@ public sealed class FallTests : IClassFixture<StudioFabrik>
         Assert.Contains(Liste(Zelle(von)!["e"]), e => S(e["vn"]) == $"{luecke}." && S(e["s"]) == "e");
     }
 
+    private async Task<(HttpClient C, string Dok, string Basis, string Datum)> GrossschuleAsync()
+    {
+        var c = await _f.AngemeldetAsync();
+        var r = await c.HochladenAsync("/api/dokumente/hochladen", Grossschule.AlsUp(), "Gesamtschule Großstadt.up");
+        var id = (await r.JsonAsync())["dokument"]!["id"]!.GetValue<string>();
+        return await SchuleAsync(c, id);
+    }
+
+    /// <summary>Lehrkräfte einer Kopplung, die am Tag gleichzeitig unterrichten (Teilungsgruppen in einer Klasse bzw. Religion über zwei Klassen).</summary>
+    private static async Task<(List<string> Lehrer, int Klasse)> KopplungAsync(HttpClient c, string basis, string datum, bool ueberKlassen)
+    {
+        var m = await c.GetJsonAsync($"{basis}/tagesablauf/matrix?datum={datum}&art=klasse");
+        foreach (var z in Liste(m["zeilen"]))
+            foreach (var zelle in Liste(z["zellen"]))
+            {
+                var e = Liste(zelle["e"]).Where(x => S(x["s"]) == "n" && x["u"] is not null).ToList();
+                foreach (var gr in e.GroupBy(x => x["u"]!.GetValue<int>()))
+                {
+                    var lehrer = gr.Select(x => S(x["l"])).Where(x => x.Length > 0).Distinct().ToList();
+                    var klassen = S(gr.First()["k"]).Split(',').Length;
+                    if (lehrer.Count >= 2 && (klassen > 1) == ueberKlassen) return (lehrer.Take(2).ToList(), z["id"]!.GetValue<int>());
+                }
+            }
+        throw new Xunit.Sdk.XunitException("Keine Kopplung am Planungstag");
+    }
+
+    [Fact]
+    public async Task ParalleleGruppenSindEinFallUndWerdenGemeinsamGeloest()
+    {
+        var (c, dok, basis, datum) = await GrossschuleAsync();
+        var (lehrer, klasse) = await KopplungAsync(c, basis, datum, false);
+        await c.PostJsonAsync($"{basis}/absenzen/speichern", new { art = "lehrer", neu = lehrer.Select(k => new { id = 0, element = k, von = datum }).ToArray() });
+        var f = await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}");
+        var fall = Faelle(f).First(x => x["parallel"] is JsonArray && Ids(x["klassenIds"]).Contains(klasse));
+        var teile = Liste(fall["parallel"]);
+        _aus.WriteLine($"{S(fall["klassen"])} {string.Join(",", Ids(fall["stunden"]))}. {S(fall["fach"])} – {S(fall["lehrer"])} fehlen");
+        Assert.Equal(2, teile.Count);
+        Assert.Contains(" + ", S(fall["fach"]));
+        Assert.Contains("(Gr. 1)", S(fall["fach"]));
+        Assert.Equal("offen", S(fall["zustand"]));
+        Assert.Equal(Ids(fall["offeneIds"]).OrderBy(x => x), teile.SelectMany(t => Ids(t["offeneIds"])).OrderBy(x => x));
+        // kein Teil steht zusätzlich als eigener Fall da
+        Assert.DoesNotContain(Faelle(f), x => teile.Any(t => S(t["schluessel"]) == S(x["schluessel"])));
+
+        // eine Lehrkraft für beide Gruppen: in allen Stunden frei, nicht eine der fehlenden
+        var k = await c.GetJsonAsync($"{basis}/tagesablauf/fallkandidaten?ids={string.Join(",", Ids(fall["offeneIds"]))}&anzahl=5");
+        Assert.True(k["gleicheZeit"]!.GetValue<bool>());
+        Assert.Equal(2, k["gruppen"]!.GetValue<int>());
+        var kandidaten = Liste(k["kandidaten"]);
+        Assert.NotEmpty(kandidaten);
+        var frei = await c.GetJsonAsync($"{basis}/tagesablauf/frei?datum={datum}");
+        var spalten = Liste(frei["stunden"]).Select(s => s["nr"]!.GetValue<int>()).ToList();
+        foreach (var x in kandidaten)
+        {
+            Assert.DoesNotContain(S(x["k"]), lehrer);
+            var zeile = Liste(frei["lehrer"]).Single(l => l["id"]!.GetValue<int>() == x["lehrer"]!.GetValue<int>());
+            foreach (var s in Ids(fall["stunden"])) Assert.Contains(S(zeile["zellen"]![spalten.IndexOf(s)]![0]), new[] { "", "B", "X", "H" });
+        }
+        var wer = kandidaten[0]["lehrer"]!.GetValue<int>();
+        await c.PostJsonAsync($"{basis}/tagesablauf/fallloesen", new
+        {
+            teile = new object[] { new { ids = Ids(teile[0]["offeneIds"]), art = "lehrer", lehrer = wer }, new { ids = Ids(teile[1]["offeneIds"]), art = "mit", lehrer = wer } },
+            text = "Gruppen zusammengelegt",
+        });
+        var nach = Faelle(await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}")).Single(x => S(x["schluessel"]) == S(fall["schluessel"]));
+        Assert.Equal("erledigt", S(nach["zustand"]));
+        Assert.Contains("zusammengelegt", S(Liste(nach["parallel"])[1]["ergebnis"]));
+        Assert.Equal("Gruppen zusammengelegt", S((await c.GetJsonAsync(dok))["rueckgaengigText"]));
+        // die Bilanz kennt keine Kollision der Lehrkraft (die zweite Gruppe betreut sie mit)
+        Assert.DoesNotContain(S(kandidaten[0]["k"]), Liste((await c.GetJsonAsync($"{basis}/tagesablauf/bilanz?datum={datum}"))["kollisionen"]!["lehrer"]).Select(S));
+        await c.PostJsonAsync($"{dok}/rueckgaengig");
+
+        // je Gruppe anders: Gr. 1 eine Lehrkraft, Gr. 2 Entfall – eine Rückgängig-Stufe
+        var k1 = await c.GetJsonAsync($"{basis}/tagesablauf/fallkandidaten?ids={string.Join(",", Ids(teile[0]["offeneIds"]))}&anzahl=5");
+        Assert.False(k1["gleicheZeit"]!.GetValue<bool>());
+        var w1 = Liste(k1["kandidaten"])[0]["lehrer"]!.GetValue<int>();
+        await c.PostJsonAsync($"{basis}/tagesablauf/fallloesen", new
+        {
+            teile = new object[] { new { ids = Ids(teile[0]["offeneIds"]), art = "lehrer", lehrer = w1 }, new { ids = Ids(teile[1]["offeneIds"]), art = "entfall", lehrer = (int?)null } },
+        });
+        nach = Faelle(await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}")).Single(x => S(x["schluessel"]) == S(fall["schluessel"]));
+        Assert.Equal("erledigt", S(nach["zustand"]));
+        Assert.Equal("Entfall", S(Liste(nach["parallel"])[1]["ergebnis"]));
+        Assert.Contains("Entfall", S(nach["ergebnis"]));
+        var st = (await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}"))["statistik"]!;
+        Assert.True(st["ausfall"]!.GetValue<int>() >= Ids(teile[1]["offeneIds"]).Count);
+        // eine fehlende Lehrkraft darf nicht vertreten
+        await c.PostJsonAsync($"{dok}/rueckgaengig");
+        var fehlt = Liste((await c.GetJsonAsync($"{dok}/elemente?typen=lehrer"))["lehrer"]).First(l => S(l["k"]) == lehrer[0])["id"]!.GetValue<int>();
+        await c.PostJsonAsync($"{basis}/tagesablauf/fallloesen", new { teile = new[] { new { ids = Ids(teile[1]["offeneIds"]), art = "lehrer", lehrer = fehlt } } }, System.Net.HttpStatusCode.BadRequest);
+
+        // Vorschläge für alle: der parallele Fall bekommt eine Lehrkraft für beide Gruppen (erste vertritt, zweite betreut mit)
+        var v = Liste((await c.PostJsonAsync($"{basis}/tagesablauf/fallvorschlaege", new { datum }))["vorschlaege"]).SingleOrDefault(x => S(x["schluessel"]) == S(fall["schluessel"]));
+        if (v is not null && S(v["art"]) == "lehrer")
+            Assert.Equal(new[] { "lehrer", "mit" }, Liste(v["teile"]).Select(t => S(t["art"])));
+    }
+
+    [Fact]
+    public async Task GekoppelterUnterrichtMehrererKlassenStehtInJederKlasse()
+    {
+        var (c, _, basis, datum) = await GrossschuleAsync();
+        var (lehrer, klasse) = await KopplungAsync(c, basis, datum, true);
+        await c.PostJsonAsync($"{basis}/absenzen/speichern", new { art = "lehrer", neu = lehrer.Select(k => new { id = 0, element = k, von = datum }).ToArray() });
+        var f = await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}");
+        var fall = Faelle(f).First(x => x["parallel"] is JsonArray && Ids(x["klassenIds"]).Contains(klasse));
+        Assert.Equal(2, Ids(fall["klassenIds"]).Count);
+        Assert.All(Ids(fall["klassenIds"]), k => Assert.Contains(Liste(f["klassen"]), x => x["id"]!.GetValue<int>() == k));
+        var k = await c.GetJsonAsync($"{basis}/tagesablauf/fallkandidaten?ids={string.Join(",", Ids(fall["offeneIds"]))}");
+        var wer = Liste(k["kandidaten"])[0]["lehrer"]!.GetValue<int>();
+        var teile = Liste(fall["parallel"]);
+        await c.PostJsonAsync($"{basis}/tagesablauf/fallloesen", new
+        {
+            teile = teile.Select((t, i) => (object)new { ids = Ids(t["offeneIds"]), art = i == 0 ? "lehrer" : "mit", lehrer = wer }).ToArray(),
+        });
+        var nach = Faelle(await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}")).Single(x => S(x["schluessel"]) == S(fall["schluessel"]));
+        Assert.Equal("erledigt", S(nach["zustand"]));
+    }
+
+    [Fact]
+    public async Task ZiehenZeigtZieleMitGrundUndFuelltDieLuecke()
+    {
+        var c = await _f.AngemeldetAsync();
+        var (_, dok, basis, datum) = await SchuleAsync(c, (await c.PostJsonAsync("/api/dokumente/beispiel"))["id"]!.GetValue<string>());
+        var lehrer = Liste((await c.GetJsonAsync($"{dok}/elemente?typen=lehrer"))["lehrer"]);
+        // eine Lehrkraft fehlt; gesucht: eine offene Stunde, in die sich eine andere Stunde der Klasse vorziehen lässt
+        JsonNode? fall = null, vz = null;
+        foreach (var l in lehrer)
+        {
+            var erg = await c.PostJsonAsync($"{basis}/absenzen/speichern", new { art = "lehrer", neu = new[] { new { id = 0, element = S(l["k"]), von = datum } } });
+            foreach (var x in Faelle(await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}")).Where(x => S(x["zustand"]) == "offen" && x["parallel"] is null && !x["pause"]!.GetValue<bool>()))
+            {
+                vz = Liste(await c.GetJsonAsync($"{basis}/tagesablauf/fallverlegungen?id={Ids(x["offeneIds"])[0]}")).FirstOrDefault(y => S(y["datum"]) == datum);
+                if (vz is not null) { fall = x; break; }
+            }
+            if (fall is not null) break;
+            await c.PostJsonAsync($"{basis}/absenzen/loeschen", new { ids = Ids(erg["gespeichert"]) });
+        }
+        Assert.NotNull(fall);
+        var gap = Ids(fall!["offeneIds"])[0];
+        var luecke = Liste(fall["teile"]).Single(t => t["id"]!.GetValue<int>() == gap)["stunde"]!.GetValue<int>();
+        var von = vz!["stunde"]!.GetValue<int>();
+        var u = vz["u"]!.GetValue<int>();
+
+        // Ziele beim Ziehen: jede Stunde des Tages mit Stand und Grund, die Lücke „füllt die Lücke“ als Vorziehung
+        var z = await c.GetJsonAsync($"{basis}/tagesablauf/fallziele?datum={datum}&stunde={von}&unterricht={u}&laenge=1");
+        var ziele = Liste(z["ziele"]);
+        Assert.Equal(Liste((await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}"))["stunden"]).Count, ziele.Count);
+        Assert.Equal("quelle", S(ziele.Single(x => x["s"]!.GetValue<int>() == von)["status"]));
+        var ziel = ziele.Single(x => x["s"]!.GetValue<int>() == luecke);
+        Assert.Equal("luecke", S(ziel["status"]));
+        Assert.Equal(gap, ziel["luecke"]!.GetValue<int>());
+        Assert.Contains("fehlt", S(ziel["grund"]));
+        Assert.NotEmpty(Liste(z["lehrer"]));
+        Assert.All(ziele.Where(x => S(x["status"]) == "kollision" && S(x["grund"]).Length > 0), x => Assert.Matches("unterrichtet|hat|vertritt|passt", S(x["grund"])));
+
+        // Ablegen in der Lücke = Vorziehen (wie der Knopf), rückgängig in einer Stufe
+        await c.PostJsonAsync($"{basis}/vorschlag/{gap}/vorziehen", new { datum, stunde = von, unterricht = u, alle = true });
+        Assert.Contains("vorgezogen", S(Faelle(await c.GetJsonAsync($"{basis}/tagesablauf/faelle?datum={datum}")).Single(x => S(x["schluessel"]) == S(fall["schluessel"]))["ergebnis"]));
+        await c.PostJsonAsync($"{dok}/rueckgaengig");
+
+        // Ablegen auf einer freien Stunde (Verlegen wie im Plan): die Stunde steht dort mit „von …“
+        var frei = ziele.FirstOrDefault(x => S(x["status"]) == "frei");
+        if (frei is not null)
+        {
+            var s = frei["s"]!.GetValue<int>();
+            await c.PostJsonAsync($"{basis}/plan/verlegen", new { von = datum, vonStunde = von, unterricht = u, laenge = 1, ziel = datum, zielStunde = s });
+            var m = await c.GetJsonAsync($"{basis}/tagesablauf/matrix?datum={datum}");
+            var zeile = Liste(m["zeilen"]).Single(r => r["id"]!.GetValue<int>() == Ids(fall["klassenIds"])[0]);
+            Assert.Contains(Liste(zeile["zellen"]).Single(x => x["s"]!.GetValue<int>() == s)["e"]!.AsArray(), e => S(e!["vv"]) == $"{von}.");
+        }
+    }
+
     /// <summary>
     /// Last: 300 Lehrkräfte, 60 Klassen, 15 Lehrkräfte abwesend (die mit den meisten Stunden am Tag, drei erst ab der 3. Stunde).
     /// Mit STUDIO_GROSSSCHULE=Pfad wird die Schuldatei (ohne Abwesenheiten) für Oberflächentests und Bildschirmfotos dort abgelegt.

@@ -8,7 +8,8 @@ using UntPlanStudio.Grundlagen;
 namespace UntPlanStudio.Api;
 
 public sealed record ProbeAnfrage(DateOnly Datum);
-public sealed record AnwendenEintrag(int Id, int? Lehrer, int? Raum, bool Entfall = false);
+/// <param name="Mit">Die Lehrkraft betreut mit (parallele Gruppe zusammengelegt).</param>
+public sealed record AnwendenEintrag(int Id, int? Lehrer, int? Raum, bool Entfall = false, bool Mit = false);
 public sealed record AnwendenAnfrage(List<AnwendenEintrag> Eintraege);
 
 /// <summary>
@@ -330,7 +331,7 @@ public sealed partial class VertretungApi
                         if (d.Veranstaltungen.FirstOrDefault(x => x.Id == vaId) is { } va && !va.LehrerAm(v.Datum).Contains(lv)) VeranstaltungsLogik.ErsatzSetzen(d, vaId, v.Datum, v.ErsatzFuerLehrerId, lv);
                         continue;
                     }
-                    if (e.Lehrer is int l && v.Offen) Vertretungen.VertreterSetzen(d, v, l, false, B(p));
+                    if (e.Lehrer is int l && v.Offen) Vertretungen.VertreterSetzen(d, v, l, e.Mit, B(p));
                     else if (e.Entfall && v.Offen) Vertretungen.EntfallUmschalten(d, v, B(p));
                     else if (e.Raum is int r && v.RaumOffen) Raumvertretungen.Zuordnen(d, v, r, false, RaumKollisionsLoesung.MitKollision, B(p));
                     else continue;
