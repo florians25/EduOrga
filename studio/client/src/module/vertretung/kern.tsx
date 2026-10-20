@@ -99,12 +99,14 @@ export async function blaettern(richtung: number, woche = false): Promise<void> 
 // Tag- bzw. Wochenansicht der Tagesplanung (je Benutzer im Browser gemerkt)
 
 export type Zeitansicht = 'tag' | 'woche';
-/** Darstellung der Tagesplanung: Tagesübersicht nach Klassen (Standard) bzw. Lehrkräften (Matrix × Stunden), Liste der offenen
- *  Stunden mit Entscheidung oder die dichte Tabelle. */
-export type TpAnsicht = 'klassen' | 'lehrer' | 'liste' | 'tabelle';
-const TP_ANSICHTEN: TpAnsicht[] = ['klassen', 'lehrer', 'liste', 'tabelle'];
+/** Darstellung der Tagesplanung: „Fall für Fall“ (Standard: Klasse für Klasse, Block für Block), Tagesübersicht nach Klassen bzw.
+ *  Lehrkräften (Matrix × Stunden), Liste der offenen Stunden mit Entscheidung oder die dichte Tabelle. */
+export type TpAnsicht = 'faelle' | 'klassen' | 'lehrer' | 'liste' | 'tabelle';
+const TP_ANSICHTEN: TpAnsicht[] = ['faelle', 'klassen', 'lehrer', 'liste', 'tabelle'];
 /** gespeicherte bzw. frühere Werte lesen: „ablauf“ = Liste, „experte“ = Tabelle */
-const ansichtVon = (w: string | undefined): TpAnsicht => (w === 'experte' ? 'tabelle' : w === 'ablauf' ? 'liste' : TP_ANSICHTEN.includes(w as TpAnsicht) ? w as TpAnsicht : 'klassen');
+const ansichtVon = (w: string | undefined): TpAnsicht => (w === 'experte' ? 'tabelle' : w === 'ablauf' ? 'liste' : TP_ANSICHTEN.includes(w as TpAnsicht) ? w as TpAnsicht : 'faelle');
+/** Stand der gemerkten Ansicht: mit „Fall für Fall“ (Stand 2) beginnt jede Tagesplanung einmal in der neuen Standardansicht. */
+const TP_STAND = 2;
 /** Blatt über der Tagesplanung: Abwesenheiten erfassen bzw. prüfen und veröffentlichen (null = keins). */
 export type TpBlatt = 'abwesenheiten' | 'veroeffentlichen' | null;
 /** Frühere Schritte des Tagesablaufs (Kompatibilität): erfassen → Blatt Abwesenheiten, prüfen → Blatt Veröffentlichen. */
@@ -124,15 +126,15 @@ interface TagesplanungZustand {
   /** vergrößerter Tagesplan (klasse, lehrer) oder null */
   gross: string | null;
 }
-const TP_STANDARD: TagesplanungZustand = { ansicht: 'klassen', kontextOffen: false, kontext: 'plaene', blatt: null, seite: 'tag', plaene: { klasse: 'tag', lehrer: 'tag' }, gross: null };
+const TP_STANDARD: TagesplanungZustand = { ansicht: 'faelle', kontextOffen: false, kontext: 'plaene', blatt: null, seite: 'tag', plaene: { klasse: 'tag', lehrer: 'tag' }, gross: null };
 const TP_KONTEXTE: TpKontext[] = ['plaene', 'frei', 'vorschlag'];
 const tpSchluessel = () => `vertretung.tagesplanung.${useStudio.getState().benutzer?.name || ''}`;
 function tpLesen(): TagesplanungZustand {
   try {
-    const w = JSON.parse(localStorage.getItem(tpSchluessel()) || 'null') as (Omit<Partial<TagesplanungZustand>, 'ansicht'> & { ansicht?: string }) | null;
+    const w = JSON.parse(localStorage.getItem(tpSchluessel()) || 'null') as (Omit<Partial<TagesplanungZustand>, 'ansicht'> & { ansicht?: string; stand?: number }) | null;
     if (w) {
       return {
-        ansicht: ansichtVon(w.ansicht),
+        ansicht: (w.stand ?? 0) < TP_STAND ? 'faelle' : ansichtVon(w.ansicht),
         kontextOffen: w.kontextOffen === true, kontext: TP_KONTEXTE.includes(w.kontext as TpKontext) ? w.kontext! : 'plaene', blatt: null,
         seite: w.seite === 'woche' ? 'woche' : 'tag', plaene: { ...TP_STANDARD.plaene, ...(w.plaene || {}) }, gross: null,
       };
@@ -144,7 +146,7 @@ export const useTagesplanung = create<TagesplanungZustand>(() => tpLesen());
 function tpSetzen(n: Partial<TagesplanungZustand>) {
   useTagesplanung.setState(n);
   const { ansicht, kontextOffen, kontext, seite, plaene } = useTagesplanung.getState();
-  try { localStorage.setItem(tpSchluessel(), JSON.stringify({ ansicht, kontextOffen, kontext, seite, plaene })); } catch { /* privat */ }
+  try { localStorage.setItem(tpSchluessel(), JSON.stringify({ ansicht, kontextOffen, kontext, seite, plaene, stand: TP_STAND })); } catch { /* privat */ }
 }
 /** Ansicht der Tagesplanung (je Benutzer im Browser gemerkt); „experte“/„ablauf“ wie früher. */
 export const tpAnsichtSetzen = (ansicht: TpAnsicht | 'experte' | 'ablauf') => {

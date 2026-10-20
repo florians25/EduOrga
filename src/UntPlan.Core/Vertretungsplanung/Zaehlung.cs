@@ -62,13 +62,15 @@ public static class Zaehlung
     }
 
     /// <summary>Alle Zählzeilen eines Lehrers im Zeitraum (inkl. nicht zählender Ereignisse und Wertkorrekturen).</summary>
-    public static ZaehlSumme Lehrer(Schuldatei d, Lehrer l, DateOnly von, DateOnly bis)
+    /// <param name="index">Vorhandener Index der Schuldatei (spart den Aufbau, wenn viele Lehrkräfte nacheinander gezählt werden).</param>
+    public static ZaehlSumme Lehrer(Schuldatei d, Lehrer l, DateOnly von, DateOnly bis, DatenIndex? index = null)
     {
         var res = new ZaehlSumme();
         var e = d.Vertretungseinstellungen.Zaehler;
-        var ix = new DatenIndex(d);
-        var gruende = d.Abwesenheitsgruende.ToDictionary(g => g.Id);
         var relevant = d.Vertretungen.Where(v => v.Datum >= von && v.Datum <= bis && (v.VertreterId == l.Id || v.LehrerId == l.Id)).OrderBy(v => v.Datum).ThenBy(v => v.Stunde).ToList();
+        // Index und Gründe nur, wenn es etwas zu zählen gibt (der Vorschlag zählt alle Lehrkräfte einer großen Schule)
+        var ix = relevant.Count > 0 ? index ?? new DatenIndex(d) : null!;
+        var gruende = relevant.Count > 0 ? d.Abwesenheitsgruende.ToDictionary(g => g.Id) : new Dictionary<int, Abwesenheitsgrund>();
         var tagesplaene = new Dictionary<DateOnly, Tagesplan>();
         Tagesplan Tp(DateOnly t) => tagesplaene.TryGetValue(t, out var x) ? x : tagesplaene[t] = Tagesplan.Berechnen(d, t);
         foreach (var v in relevant)

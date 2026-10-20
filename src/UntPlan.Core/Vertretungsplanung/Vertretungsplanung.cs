@@ -1217,6 +1217,18 @@ public static class VertretungsVorschlag
         var monat = new DateOnly(v.Datum.Year, v.Datum.Month, 1);
         var kennzeichen = Kennzeichen(d, ix, v);
         var bereitschaften = RegelBereitschaften(d, ix);
+        // einmal je Vorschlag statt je Lehrkraft: wer die Klasse kennt bzw. das Fach unterrichtet, Ist-Werte (Wertrechnung)
+        var kennenKlasse = new HashSet<int>();
+        var unterrichtenFach = new HashSet<int>();
+        var ist = new Dictionary<int, decimal>();
+        foreach (var u in d.Unterrichte)
+            foreach (var z in u.Zeilen)
+            {
+                if (z.LehrerId is not int zl) continue;
+                if (klassen.Count > 0 && (e.KlasseAuchFuerKlassenteil ? z.KlassenIds.Intersect(klassen).Any() : klassen.All(z.KlassenIds.Contains))) kennenKlasse.Add(zl);
+                if (v.FachId is int vf && z.FachId == vf) unterrichtenFach.Add(zl);
+                if (!u.Ignorieren) ist[zl] = ist.GetValueOrDefault(zl) + Module.Wertrechnung.Wert(d, ix, u, z);
+            }
         foreach (var l in d.Lehrer.Where(l => !l.Ignorieren && l.Id != v.LehrerId))
         {
             if (stunden.Any(s => Vertretungen.LehrerBelegt(d, tp, l.Id, s, v) != null)) continue;
@@ -1230,26 +1242,25 @@ public static class VertretungsVorschlag
             k.UnterrichtAmTag = Vertretungen.UnterrichtAmTag(d, tp, l.Id);
             k.Stundenplan = StundenplanText(d, ix, tp, l.Id, v.Stunde);
             k.Zellen = StundenplanZellen(d, ix, tp, l.Id, v.Stunde);
-            k.KenntKlasse = klassen.Count > 0 && d.Unterrichte.Any(u => u.Zeilen.Any(z => z.LehrerId == l.Id &&
-                (e.KlasseAuchFuerKlassenteil ? z.KlassenIds.Intersect(klassen).Any() : klassen.All(z.KlassenIds.Contains))));
+            k.KenntKlasse = kennenKlasse.Contains(l.Id);
             k.Klassenlehrer = d.Klassen.Any(c => klassen.Contains(c.Id) && c.KlassenlehrerIds.Contains(l.Id));
-            k.Fachlehrer = v.FachId is int f && (l.FaecherIds.Contains(f) || d.Unterrichte.Any(u => u.Zeilen.Any(z => z.LehrerId == l.Id && z.FachId == f)));
+            k.Fachlehrer = v.FachId is int f && (l.FaecherIds.Contains(f) || unterrichtenFach.Contains(l.Id));
             k.Vorwoche = d.Vertretungen.Any(x => x.VertreterId == l.Id && x.Datum >= v.Datum.AddDays(-7) && x.Datum < v.Datum && x.KlassenIds.Intersect(klassen).Any());
-            var z = Zaehlung.Lehrer(d, l, zVon, zBis);
+            var z = Zaehlung.Lehrer(d, l, zVon, zBis, ix);
             k.Zaehler = z.Summe;
             k.Vertretungen = z.Vertretungen;
             k.Entfaelle = z.Entfaelle;
             (k.VertretungenWert, k.EntfaelleWert) = Werte(z);
             k.Bezahlt = z.Bezahlt;
             k.Betreuungen = z.Betreuungen;
-            k.Jahreszaehler = Zaehlung.Lehrer(d, l, d.Einstellungen.SchuljahrVon, d.Einstellungen.SchuljahrBis).Summe;
+            k.Jahreszaehler = Zaehlung.Lehrer(d, l, d.Einstellungen.SchuljahrVon, d.Einstellungen.SchuljahrBis, ix).Summe;
             k.ZaehlerWoche = Vertretungen.Zaehler(d, l.Id, montag, montag.AddDays(6));
             k.ZaehlerMonat = Vertretungen.Zaehler(d, l.Id, monat, monat.AddMonths(1).AddDays(-1));
             k.ZaehlerJahr = Vertretungen.Zaehler(d, l.Id, d.Einstellungen.SchuljahrVon, d.Einstellungen.SchuljahrBis);
             k.Saldo = k.Jahreszaehler;
             if (kennzeichen.TryGetValue(l.Id, out var kz)) { k.Kennzeichen = true; k.KennzeichenText = kz; }
             k.RegelBereitschaft = bereitschaften.GetValueOrDefault(l.Id);
-            k.Deputat = l.Soll > 0 ? Module.Wertrechnung.Ist(d, ix, l) - l.Soll : null;
+            k.Deputat = l.Soll > 0 ? ist.GetValueOrDefault(l.Id) + l.Wertkorrektur - l.Soll : null;
             k.Disloziert = Disloziert(ix, tp, v, l.Id, stunden);
             var vorher = tp.VonLehrer(l.Id).Where(x => x.Stunde < v.Stunde).Select(x => x.Stunde).DefaultIfEmpty(0).Max();
             k.Benachrichtigen = vorher == 0 && k.UnterrichtAmTag > 0 && v.Datum == DateOnly.FromDateTime(DateTime.Today);

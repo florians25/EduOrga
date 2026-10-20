@@ -9,7 +9,7 @@ namespace UntPlanStudio.Api;
 /// <summary>
 /// Tagesübersicht der Tagesplanung als Matrix: Zeilen = Klassen (bzw. Lehrkräfte), Spalten = Stunden des Planungstags. Jede Zelle
 /// nennt die Stunden des Elements in dieser Stunde kompakt (Fach, Lehrkraft bzw. Klasse, Raum) mit Status (regulär, offen, vertreten,
-/// Raumänderung, ohne Lehrkraft, Entfall, zusätzlich/verlegt, Termin, Klausur, Bereitschaft); dazu je Zeile die Abwesenheiten
+/// Raumänderung, ohne Lehrkraft, Entfall, zusätzlich/verlegt mit Ziel bzw. Herkunft der Verlegung, Termin, Klausur, Bereitschaft); dazu je Zeile die Abwesenheiten
 /// (Klasse auf Ausflug, Lehrkraft krank) und je Stunde die verfügbaren Lehrkräfte (Bereitschaft, freigesetzt, Hohlstunde).
 /// </summary>
 public sealed partial class VertretungApi
@@ -48,6 +48,10 @@ public sealed partial class VertretungApi
                 return Vertretungen.IstBereitschaftsfach(d, e.FachId) ? "b" : "n";
         }
     }
+
+    /// <summary>Ziel bzw. Herkunft einer Verlegung kurz: „5.“ am selben Tag, sonst „Di 3.11., 5.“.</summary>
+    private static string StundeAm(DateOnly heute, DateOnly? tag, int stunde) =>
+        tag is null || tag == heute ? $"{stunde}." : $"{VertretungPlan.TagKurz(tag.Value)} {tag.Value.Day}.{tag.Value.Month}., {stunde}.";
 
     internal static object Matrix(Dokument doc, DateOnly datum, ElementTyp typ)
     {
@@ -96,6 +100,7 @@ public sealed partial class VertretungApi
                     ki = (e.KlassenIds.Count > 0 ? e.KlassenIds : r?.KlassenIds ?? new List<int>()).Cast<int?>().FirstOrDefault(),
                     art = v is null ? "" : Vertretungsplan.ArtText(d, v.Art), t = v?.Text ?? "",
                     kl = v?.ArtVorKlassenabwesenheit.HasValue == true, w = durch,
+                    vn = v?.NachStunde is int ns ? StundeAm(datum, v.NachDatum, ns) : "", vv = v?.VonStunde is int vs ? StundeAm(datum, v.VonDatum, vs) : "",
                 });
             }
         }

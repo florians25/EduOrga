@@ -1,0 +1,184 @@
+/* „Fall für Fall“ (Tagesplanung): drei ruhige Spalten – Klassen, Tag der Klasse mit ihren Fällen, Entscheidung. Nach design/DESIGN.md
+   §9 und §10: 1-px-Linien, Radius ≤ 6 px, keine Plaketten, Status als Text; Stundenkarten wie in den Plänen (offen grau gestrichelt,
+   geändert grün mit bisherigem Wert durchgestrichen in Klammern, Entfall rot durchgestrichen). Abstände im 8-px-Raster. */
+
+.fa-flaeche {
+  display: grid; grid-template-columns: 200px minmax(0, 1fr) minmax(344px, 30%); flex: 1; min-width: 0; min-height: 0;
+  background: var(--colorNeutralBackground1); font-size: 13px; color: var(--colorNeutralForeground1);
+}
+@media (min-width: 1600px) { .fa-flaeche { grid-template-columns: 232px minmax(0, 1fr) 440px; } }
+.fa-flaeche.fa-leer { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 24px; color: var(--colorNeutralForeground2); }
+.fa-flaeche.fa-leer p { margin: 0; }
+.fa-leise { color: var(--colorNeutralForeground3); font-size: 12px; }
+.fa-laedt { display: inline-flex; align-items: center; gap: 8px; }
+.fa-warn { color: var(--up-pruefung); }
+.fa-link {
+  all: unset; cursor: pointer; color: var(--colorBrandForegroundLink); font-size: 12px; border-radius: 2px;
+}
+.fa-link:hover { text-decoration: underline; }
+.fa-link:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: 1px; }
+.fa-link.fa-leise { color: var(--colorNeutralForeground3); }
+.fa-link.fa-leise:hover { color: var(--colorNeutralForeground1); }
+.fa-link:disabled { color: var(--colorNeutralForegroundDisabled); cursor: default; text-decoration: none; }
+kbd {
+  font: 500 11px/1 var(--fontFamilyBase); color: var(--colorNeutralForeground3); border: 1px solid var(--colorNeutralStroke2);
+  border-radius: 3px; padding: 2px 4px; background: var(--colorNeutralBackground1); font-variant-numeric: tabular-nums;
+}
+
+/* ---- links: Klassen bzw. abwesende Lehrkräfte in fester Reihenfolge ---- */
+.fa-links { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--colorNeutralStroke2); }
+.fa-links-kopf { display: flex; gap: 16px; padding: 0 12px; height: 40px; flex-shrink: 0; border-bottom: 1px solid var(--colorNeutralStroke2); box-sizing: border-box; }
+.fa-reiter {
+  all: unset; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 2px; cursor: pointer; font-size: 13px;
+  color: var(--colorNeutralForeground2); box-shadow: inset 0 -2px 0 transparent;
+}
+.fa-reiter:hover { color: var(--colorNeutralForeground1); }
+.fa-reiter.aktiv { color: var(--colorNeutralForeground1); font-weight: 600; box-shadow: inset 0 -2px 0 var(--edo-modus); }
+.fa-reiter:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.fa-gruppen { flex: 1; min-height: 0; overflow-y: auto; padding: 0 0 16px 0; }
+.fa-jahrgang { padding: 16px 12px 4px 12px; font-size: 12px; color: var(--colorNeutralForeground3); }
+.fa-gruppe {
+  all: unset; box-sizing: border-box; display: flex; align-items: baseline; gap: 8px; width: 100%; height: 32px; padding: 0 12px 0 9px;
+  border-left: 3px solid transparent; cursor: pointer; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.fa-gruppe:hover { background: var(--colorNeutralBackground1Hover); }
+.fa-gruppe:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.fa-gruppe.gewaehlt { background: color-mix(in srgb, var(--edo-modus-flaeche) 80%, var(--colorNeutralBackground1)); border-left-color: var(--edo-modus); }
+.fa-gruppe { align-items: center; }
+.fa-gruppe-k { font-weight: 500; min-width: 32px; }
+.fa-gruppe-zusatz { color: var(--colorNeutralForeground3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.fa-gruppe-stand { margin-left: auto; color: var(--colorNeutralForeground3); font-size: 12px; }
+.fa-gruppe-stand.offen { color: var(--up-pruefung); font-weight: 600; }
+
+/* ---- Mitte: der Tag der Klasse und ihre Fälle ---- */
+.fa-mitte { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; padding: 0 24px 24px 24px; }
+.fa-vorschlagsleiste {
+  display: flex; align-items: center; gap: 8px; margin: 16px 0 0 0; padding: 8px 12px; border: 1px solid var(--colorNeutralStroke2);
+  border-left: 3px solid var(--edo-modus); border-radius: 4px; font-size: 13px;
+}
+.fa-vorschlagsleiste > span { flex: 1; min-width: 0; }
+.fa-mitte-kopf { display: flex; align-items: baseline; gap: 12px; padding: 16px 0 12px 0; }
+.fa-mitte-kopf h2 { margin: 0; font-size: 15px; font-weight: 600; white-space: nowrap; }
+.fa-mitte-plan { margin-left: auto; white-space: nowrap; }
+
+/* Leiste: je Stunde eine Spalte, Karten wie in den Plänen */
+.fa-leiste { display: grid; column-gap: 4px; row-gap: 4px; }
+.fa-l-kopf { display: flex; align-items: baseline; gap: 6px; padding: 0 2px; font-size: 12px; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+.fa-l-kopf b { color: var(--colorNeutralForeground1); font-weight: 600; font-size: 13px; }
+.fa-karte {
+  position: relative; display: flex; flex-direction: column; gap: 1px; min-width: 0; height: 84px; box-sizing: border-box; padding: 4px 6px 4px 9px;
+  border: 1px solid var(--edo-karte-rand, var(--colorNeutralStroke2)); border-radius: 4px; background: var(--colorNeutralBackground1);
+  font-size: 12px; line-height: 16px; color: var(--colorNeutralForeground2); overflow: hidden; white-space: nowrap; user-select: none;
+}
+.fa-karte::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--edo-karte-balken, #98a2af); }
+.fa-karte > span { overflow: hidden; text-overflow: ellipsis; }
+.fa-karte.fall { cursor: pointer; }
+.fa-karte.fall:hover { border-color: var(--colorNeutralStroke1); }
+.fa-karte.gewaehlt { outline: 2px solid var(--edo-modus); outline-offset: 1px; }
+.fa-karte.ziel { box-shadow: inset 0 0 0 1px var(--edo-modus); }
+.fa-st-leer { border-style: dashed; border-color: var(--colorNeutralStroke3); background: transparent; }
+.fa-st-leer::before, .fa-st-abw::before { display: none; }
+.fa-st-abw { background: var(--colorNeutralBackground3); border-color: var(--colorNeutralStroke3); padding-left: 6px; }
+.fa-k-fach { font-size: 13px; font-weight: 600; color: var(--colorNeutralForeground1); display: flex; gap: 4px; align-items: baseline; }
+.fa-k-mehr { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--colorNeutralForeground3); }
+.fa-k-zeile { display: block; }
+.fa-k-zeile b, .fa-k-neu { font-weight: 600; color: var(--up-aenderung-text, var(--up-aenderung)); }
+.fa-k-alt { color: var(--colorNeutralForeground3); font-weight: 400; margin-left: 4px; }
+.fa-tag {
+  align-self: flex-start; max-width: 100%; margin-top: auto; padding: 0 3px; border-radius: 3px; font-size: 11px; font-weight: 600; line-height: 15px;
+  overflow: hidden; text-overflow: ellipsis; text-decoration: none; box-sizing: border-box;
+}
+.fa-tag-offen { color: var(--up-offen-text, var(--colorNeutralForeground2)); background: var(--up-offen-feld, var(--colorNeutralBackground3)); border: 1px dashed var(--up-offen, var(--colorNeutralStroke1)); }
+.fa-tag-neu { color: var(--up-aenderung-text, var(--up-aenderung)); background: var(--up-aenderung-flaeche); border: 1px solid color-mix(in srgb, var(--up-aenderung) 55%, transparent); }
+.fa-tag-entfall { color: var(--up-entfall-text, var(--up-entfall)); background: var(--up-entfall-flaeche); border: 1px solid color-mix(in srgb, var(--up-entfall) 55%, transparent); }
+/* offen: grau, gestrichelter Rand – nie rot */
+.fa-st-o, .fa-st-ro { border-style: dashed; border-color: var(--up-offen, var(--colorNeutralStroke1)); }
+.fa-st-o::before, .fa-st-ro::before { background: var(--up-offen, #7d8b90); }
+/* geändert: grüne Leiste, helle Fläche */
+.fa-st-v, .fa-st-r, .fa-st-x, .fa-st-z, .fa-st-t, .fa-st-k { background: var(--up-aenderung-flaeche); border-color: color-mix(in srgb, var(--up-aenderung) 40%, transparent); }
+.fa-st-v::before, .fa-st-r::before, .fa-st-x::before, .fa-st-z::before, .fa-st-t::before, .fa-st-k::before { background: var(--up-aenderung); }
+/* Entfall: rot, Inhalt durchgestrichen, der Tag bleibt lesbar */
+.fa-st-e { background: var(--up-entfall-flaeche); border-color: color-mix(in srgb, var(--up-entfall) 40%, transparent); }
+.fa-st-e::before { background: var(--up-entfall); }
+.fa-st-e .fa-k-fach { color: var(--up-entfall-text, var(--up-entfall)); text-decoration: line-through; }
+.fa-st-e .fa-k-zeile { color: var(--up-entfall-text, var(--up-entfall)); }
+
+.fa-abschnitt-titel { margin: 24px 0 0 0; padding: 0 0 8px 0; font-size: 14px; font-weight: 600; border-bottom: 1px solid var(--colorNeutralStroke2); }
+.fa-faelle { display: flex; flex-direction: column; }
+.fa-fall {
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 40px; padding: 0 12px 0 9px;
+  border-left: 3px solid transparent; border-bottom: 1px solid var(--colorNeutralStroke3); cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.fa-fall:hover { background: var(--colorNeutralBackground1Hover); }
+.fa-fall.gewaehlt { background: color-mix(in srgb, var(--edo-modus-flaeche) 80%, var(--colorNeutralBackground1)); border-left-color: var(--edo-modus); }
+.fa-fall-std { color: var(--colorNeutralForeground2); font-weight: 600; white-space: nowrap; }
+.fa-fall-was { display: flex; align-items: baseline; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.fa-fall-was b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.fa-fall-ergebnis { white-space: nowrap; font-size: 13px; }
+.fa-fall-ergebnis.offen { color: var(--up-pruefung); font-weight: 600; }
+.fa-fall-ergebnis.geaendert { color: var(--up-aenderung-text, var(--up-aenderung)); font-weight: 600; }
+.fa-fall-ergebnis.entfall { color: var(--up-entfall-text, var(--up-entfall)); font-weight: 600; }
+.fa-fall-vorschlag { color: var(--colorNeutralForeground2); font-weight: 400; }
+.fa-fall-leer { padding: 12px; }
+
+/* ---- rechts: Entscheidung ---- */
+.fa-rechts { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; border-left: 1px solid var(--colorNeutralStroke2); }
+.fa-zuletzt {
+  display: flex; align-items: baseline; gap: 12px; padding: 8px 24px; border-bottom: 1px solid var(--colorNeutralStroke3); font-size: 12px; color: var(--colorNeutralForeground2);
+}
+.fa-zuletzt > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fa-entscheidung { display: flex; flex-direction: column; gap: 24px; padding: 16px 24px 24px 24px; }
+.fa-e-leer { padding: 16px 24px; }
+.fa-e-kopf { display: flex; flex-direction: column; gap: 4px; }
+.fa-e-zeit { color: var(--colorNeutralForeground3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.fa-e-titel { margin: 0; font-size: 15px; font-weight: 600; display: flex; gap: 8px; align-items: baseline; }
+.fa-e-titel span { font-weight: 400; }
+.fa-e-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--colorNeutralForeground2); font-size: 12px; }
+.fa-e-meta .fa-link { color: var(--colorNeutralForeground1); font-weight: 500; }
+.fa-e-abschnitt { display: flex; flex-direction: column; gap: 8px; }
+.fa-e-label { font-size: 12px; color: var(--colorNeutralForeground3); }
+.fa-e-vorschlag { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border: 1px solid var(--colorNeutralStroke2); border-left: 3px solid var(--edo-modus); border-radius: 4px; }
+.fa-vorschlag-zeile { display: flex; align-items: center; gap: 8px; }
+.fa-vorschlag-zeile > span { flex: 1; min-width: 0; }
+.fa-e-knoepfe { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fa-ergebnis { font-size: 14px; font-weight: 600; color: var(--up-aenderung-text, var(--up-aenderung)); }
+.fa-ergebnis.entfall { color: var(--up-entfall-text, var(--up-entfall)); }
+
+.fa-kandidaten { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--colorNeutralStroke3); }
+.fa-kandidat {
+  display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 8px 8px 5px; cursor: pointer;
+  border-left: 3px solid transparent; border-bottom: 1px solid var(--colorNeutralStroke3);
+}
+.fa-kandidat:hover { background: var(--colorNeutralBackground1Hover); }
+.fa-kandidat.gewaehlt { background: color-mix(in srgb, var(--edo-modus-flaeche) 70%, var(--colorNeutralBackground1)); border-left-color: var(--edo-modus); }
+.fa-kand-nr { color: var(--colorNeutralForeground3); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+.fa-kand-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fa-kand-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; white-space: nowrap; }
+.fa-kand-name b { font-weight: 600; }
+.fa-kand-name .fa-link { overflow: hidden; text-overflow: ellipsis; }
+.fa-kand-gruende { font-size: 12px; color: var(--colorNeutralForeground2); line-height: 16px; }
+.fa-kandidat.rot .fa-kand-gruende { color: var(--up-entfall-text, var(--up-entfall)); }
+.fa-weitere { align-self: flex-start; }
+.fa-andere { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.fa-loesung {
+  all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border-radius: 4px; cursor: pointer;
+  color: var(--colorNeutralForeground1); font-size: 13px; white-space: nowrap;
+}
+.fa-loesung:hover { background: var(--colorNeutralBackground1Hover); }
+.fa-loesung:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+.fa-loesung:disabled { color: var(--colorNeutralForegroundDisabled); cursor: default; background: none; }
+.fa-loesung .fa-leise { margin-left: 2px; }
+.fa-vorziehen { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--colorNeutralStroke3); }
+.fa-vz { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.fa-vz-text { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0 4px; align-items: baseline; }
+.fa-vz-text b { font-weight: 600; }
+.fa-hinweis { gap: 4px; }
+.fa-tasten {
+  margin-top: auto; display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 12px 24px; border-top: 1px solid var(--colorNeutralStroke3);
+  color: var(--colorNeutralForeground3); font-size: 12px;
+}
+.fa-tasten kbd { margin: 0 2px; }
+
+/* „Übernehmen“ nur an der gewählten bzw. überfahrenen Zeile – die Liste bleibt ruhig */
+.fa-kandidat .fa-kand-knopf { visibility: hidden; }
+.fa-kandidat.gewaehlt .fa-kand-knopf, .fa-kandidat:hover .fa-kand-knopf, .fa-kandidat:focus-within .fa-kand-knopf { visibility: visible; }

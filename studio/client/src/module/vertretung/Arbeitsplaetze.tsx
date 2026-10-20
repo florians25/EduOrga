@@ -15,10 +15,18 @@ import {
   aktuelleAuswahl, datumSetzen, datumText, planVergroessern, seitenansichtSetzen, tagKurz, tpAnsichtSetzen, tpBlattSetzen, tpKontextSetzen,
   tpKontextUmschalten, useTagesplanung, usePlanungsdatum, vpfad, type TpAnsicht, type TpKontext,
 } from './kern';
+
+/** Ansichten der Tagesplanung (Menü „Ansicht“). */
+const ANSICHTEN_TP: { wert: TpAnsicht; text: string; titel: string }[] = [
+  { wert: 'faelle', text: 'Fall für Fall', titel: 'Klasse für Klasse: der Tag der Klasse, ihre Fälle (Doppelstunden als ein Block) und die Entscheidung' },
+  { wert: 'klassen', text: 'Übersicht nach Klassen', titel: 'Tagesübersicht: alle Klassen × Stunden' },
+  { wert: 'lehrer', text: 'Übersicht nach Lehrkräften', titel: 'Tagesübersicht: alle Lehrkräfte × Stunden – Abwesende zuerst' },
+  { wert: 'liste', text: 'Offene Stunden als Liste', titel: 'Eine offene Stunde nach der anderen: Empfehlung, Alternativen, Entfall' },
+  { wert: 'tabelle', text: 'Tabelle', titel: 'Alle Vertretungen als Tabelle mit direkter Eingabe und Mehrfachauswahl' },
+];
 import { sendeStatus, useDirekt, direktBeobachten } from '../untplanweb/Senden';
-import { blockSetzen, useKandidaten } from './ablauf/daten';
+import { blockSetzen, useFallKopf, useKandidaten, vorschlaegeAnfordern } from './ablauf/daten';
 import { Miniplaene, miniplaeneUmschalten, useMiniplaene } from './ablauf/Miniplan';
-import { Umschalter } from './steuer';
 import './ablauf/ablauf.css';
 
 const useStile = makeStyles({
@@ -92,6 +100,8 @@ export function TagesplanungKopf() {
   const seite = useTagesplanung((x) => x.seite);
   const block = useKandidaten((x) => x.block);
   const matrix = ansicht === 'klassen' || ansicht === 'lehrer';
+  const faelle = ansicht === 'faelle';
+  const fk = useFallKopf();
   const miniFolgt = useMiniplaene((x) => x.fenster.some((f) => f.folgt));
   const direkt = useDirekt((x) => x.stand);
   const sendet = useDirekt((x) => x.sendet);
@@ -107,11 +117,11 @@ export function TagesplanungKopf() {
   const mehr = (): MenueListe => [
     { text: 'Wer ist frei?', taste: 'F', aktion: () => tpKontextSetzen('frei') },
     { text: 'Alle Kandidaten der Stunde', taste: 'V', aktion: () => tpKontextSetzen('vorschlag') },
-    { text: 'Pläne von Klasse und Lehrkraft', taste: matrix ? undefined : 'P', haken: kontextOffen, aktion: () => tpKontextUmschalten() },
+    faelle ? null : { text: 'Pläne von Klasse und Lehrkraft', taste: matrix ? undefined : 'P', haken: kontextOffen, aktion: () => tpKontextUmschalten() },
     matrix ? { text: 'Miniplan (folgt der Auswahl)', taste: 'P', haken: miniFolgt, aktion: () => miniplaeneUmschalten(ansicht === 'lehrer' ? 'klasse' : 'lehrer') } : null,
     null,
-    { text: 'Ganze Woche', haken: seite === 'woche', hinweis: 'Tabelle und Pläne zeigen die ganze Woche, dazu der Wochenstreifen', aktion: () => seitenansichtSetzen(seite === 'woche' ? 'tag' : 'woche') },
-    { text: 'Blöcke gemeinsam besetzen', haken: block, hinweis: 'Doppel- und Blockstunden gemeinsam besetzen (Kandidaten müssen in allen Stunden frei sein)', aktion: () => blockSetzen(!block) },
+    faelle ? null : { text: 'Ganze Woche', haken: seite === 'woche', hinweis: 'Tabelle und Pläne zeigen die ganze Woche, dazu der Wochenstreifen', aktion: () => seitenansichtSetzen(seite === 'woche' ? 'tag' : 'woche') },
+    faelle ? null : { text: 'Blöcke gemeinsam besetzen', haken: block, hinweis: 'Doppel- und Blockstunden gemeinsam besetzen (Kandidaten müssen in allen Stunden frei sein)', aktion: () => blockSetzen(!block) },
     null,
     { text: 'Alle Abwesenheiten', taste: 'Strg+M', aktion: () => seiteOeffnen('vertretung.absenzen') },
     { text: 'Kalender und Tagestexte', aktion: () => seiteOeffnen('vertretung.kalender') },
@@ -127,6 +137,12 @@ export function TagesplanungKopf() {
       </span>
       <span className="tp-kopf-summe" data-testid="tagessumme">
         {daten && !daten.unterrichtstag ? <span className="tp-frei">{t?.frei || 'kein Unterrichtstag'}</span>
+          : daten && faelle ? <>
+            <span className={fk.offen ? 'tp-offen-fall' : undefined} title="Offene Fälle (Stunde bzw. Block)" data-testid="fa-zahl-offen">{`${fk.offen} offen`}</span>
+            <span title="Gelöste Fälle des Tages" data-testid="fa-zahl-erledigt">{`${fk.erledigt} erledigt`}</span>
+            {daten.abwesend.lehrer ? <span className="tp-breit">{`${daten.abwesend.lehrer} abwesend`}</span> : null}
+            {koll ? <span className="tp-offen" title={`Lehrkräfte ${t!.kollL} · Räume ${t!.kollR}`}>{mehrzahl(koll, 'Kollision', 'Kollisionen')}</span> : null}
+          </>
           : daten ? <>
             <span className={t?.offen ? 'tp-offen' : undefined} title="Offene Vertretungen des Tages">{`${t?.offen ?? 0} offen`}</span>
             {liste?.entfall ? <span>{mehrzahl(liste.entfall, 'Entfall', 'Entfälle')}</span> : null}
@@ -136,29 +152,30 @@ export function TagesplanungKopf() {
       </span>
       {seite === 'woche' && daten && datum ? <Wochenstreifen woche={daten.woche} datum={datum} /> : null}
       <span className="tp-kopf-rechts">
-        <Umschalter<TpAnsicht> wert={ansicht} titel="Tagesübersicht nach Klassen bzw. Lehrkräften, offene Stunden eine nach der anderen oder Tabelle" testid="tp-modus" beiWahl={tpAnsichtSetzen}
-          optionen={[
-            { wert: 'klassen', text: 'Klassen', titel: 'Tagesübersicht: Klassen × Stunden – was in jeder Klasse heute passiert, offene Stunden direkt lösen' },
-            { wert: 'lehrer', text: 'Lehrkräfte', titel: 'Tagesübersicht: Lehrkräfte × Stunden – Abwesende zuerst, Vertretungen und Bereitschaften' },
-            { wert: 'liste', text: 'Offene Stunden', titel: 'Eine offene Stunde nach der anderen: Empfehlung, Alternativen, Entfall' },
-            { wert: 'tabelle', text: 'Tabelle', titel: 'Alle Vertretungen als Tabelle mit direkter Eingabe und Mehrfachauswahl' },
-          ]} />
-        {matrix ? (
+        {faelle ? null : matrix ? (
           <Button size="small" appearance={miniFolgt ? 'secondary' : 'subtle'} aria-pressed={miniFolgt} className={mergeClasses('tp-schalter', miniFolgt && 'an')} onClick={() => miniplaeneUmschalten(ansicht === 'lehrer' ? 'klasse' : 'lehrer')}
             title="Kleiner verschiebbarer Plan der Lehrkraft (bzw. Klasse) der gewählten Stunde, folgt der Auswahl (P) – weitere über das Kontextmenü einer Zelle oder eines Kandidaten" data-testid="tp-miniplan">Miniplan</Button>
         ) : (
           <Button size="small" appearance={kontextOffen ? 'secondary' : 'subtle'} aria-pressed={kontextOffen} className={mergeClasses('tp-schalter', kontextOffen && 'an')} onClick={() => tpKontextUmschalten()}
             title="Pläne von Klasse und Lehrkraft, Wer ist frei? und alle Kandidaten neben der Entscheidung (P)" data-testid="tp-plaene">Pläne</Button>
         )}
-        <Button size="small" appearance="subtle" onClick={() => tpBlattSetzen('abwesenheiten')} title="Abwesenheiten des Tages ansehen und erfassen" data-testid="tp-abwesenheiten">
-          Abwesenheiten<span className="tp-zahl">{abw}</span>
+        <Button size="small" appearance="subtle" onClick={() => tpBlattSetzen('abwesenheiten')} title="Abwesenheiten des Tages ansehen und erfassen – mehrere Lehrkräfte auf einmal (N)" data-testid="tp-abwesenheiten">
+          {faelle ? 'Abwesenheiten erfassen' : <>Abwesenheiten<span className="tp-zahl">{abw}</span></>}
         </Button>
+        {faelle && schreiben ? (
+          <Button size="small" appearance="subtle" disabled={fk.laeuft || !fk.offen} onClick={vorschlaegeAnfordern} data-testid="fa-alle-vorschlaege"
+            title="Für alle offenen Fälle die beste Lösung vorschlagen (ganze Blöcke, wie die automatische Vertretung) – zur Prüfung, noch ohne Änderung">
+            {fk.laeuft ? 'Wird berechnet …' : 'Vorschläge für alle'}
+          </Button>
+        ) : null}
         <span className="tp-veroeffentlichen" data-testid="tageskopf-senden">
           <Tooltip relationship="description" content={st.titel || st.text || 'Prüfen, an EduOrga Web senden und drucken'}>
             <Button size="small" onClick={() => tpBlattSetzen('veroeffentlichen')} data-testid="tp-veroeffentlichen" data-stand={st.art || ''}>Veröffentlichen</Button>
           </Tooltip>
           {st.text && direkt?.eingerichtet ? <span className={mergeClasses('tp-sendestand', st.fehler && 'tp-offen')} data-testid="untplanweb-senden">{st.text}</span> : null}
         </span>
+        <MenueKnopf art="knopf" size="small" appearance="subtle" text="Ansicht" titel="Fall für Fall, Übersichten, Liste oder Tabelle" testid="tp-modus"
+          eintraege={() => ANSICHTEN_TP.map((a) => ({ text: a.text, hinweis: a.titel, haken: a.wert === ansicht, aktion: () => tpAnsichtSetzen(a.wert) }))} />
         <MenueKnopf art="knopf" size="small" appearance="subtle" text="" titel="Weitere Ansichten und Einstellungen" icon={<MoreHorizontal20Regular />} eintraege={mehr} testid="tp-mehr" />
       </span>
     </div>
@@ -306,7 +323,10 @@ export function Tagesplanung() {
   const nurKontext = gross ? 1 : null;
   const kontext = <Kontext woche={woche} gross={gross} />;
   let inhalt;
-  if (ansicht === 'klassen' || ansicht === 'lehrer') {
+  if (ansicht === 'faelle') {
+    const fl = <Bereich id="faelle" typ="vertretung.faelle" flach />;
+    inhalt = kontextOffen ? <Teilung schluessel="tagesplanung.faelle.kontext" anteile={[66, 34]} nur={nurKontext}>{fl}{kontext}</Teilung> : fl;
+  } else if (ansicht === 'klassen' || ansicht === 'lehrer') {
     const art = ansicht === 'lehrer' ? 'lehrer' : 'klasse';
     const m = <Bereich key={art} id={`matrix-${art}`} typ="vertretung.matrix" p={{ art }} />;
     inhalt = kontextOffen ? (

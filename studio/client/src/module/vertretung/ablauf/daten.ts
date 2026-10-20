@@ -160,3 +160,57 @@ export const gemeinsamLaden = (ids: number[]) => api.get<Gemeinsam>(vpfad(`/tage
 /** Eine Lehrkraft für alle markierten Stunden (Rückfragen wie beim einzelnen Zuweisen). */
 export const alleZuweisen = (ids: number[], lehrer: number) => mitRueckfragen(vpfad(`/vorschlag/${ids[0]}/uebernehmen`), { lehrer, ids }, { quelle: QUELLE });
 export const alleBetreuen = (ids: number[], lehrer: number) => mitRueckfragen(vpfad(`/vorschlag/${ids[0]}/betreuung`), { lehrer, ids }, { quelle: QUELLE });
+
+// ---------------------------------------------------------------------------------------------
+// „Fall für Fall“: Fälle des Tages (Stunde bzw. Block einer fehlenden Lehrkraft, auch gelöst), Kandidaten für den ganzen Block,
+// Vorschläge für alle offenen Fälle (Probe, nichts geändert)
+
+export interface FallTeil { id: number; stunde: number; offen: boolean; raumOffen: boolean; ergebnis: string; entfall: boolean; vertreter: number | null; fix: boolean; text: string }
+export interface Fall {
+  schluessel: string; ids: number[]; offeneIds: number[]; klassenIds: number[]; klassen: string; stunden: number[]; zeit: string; fach: string; fachLang: string;
+  lehrer: string; lehrerId: number | null; lehrerName: string; raum: string; raumId: number | null; unterricht: number | null; pause: boolean; klausur: boolean;
+  veranstaltung: boolean; grund: string; grundLang: string; zustand: 'offen' | 'teilweise' | 'erledigt'; ergebnis: string; teile: FallTeil[]; text: string;
+}
+export interface FallKlasse { id: number; k: string; name: string; jahrgang: string; leitung: string }
+export interface FallAbwesend { id: number; k: string; name: string; grund: string; zeit: string; text: string }
+export interface FaelleDaten {
+  datum: string; unterrichtstag: boolean; frei: string; stunden: { nr: number; zeit: string }[];
+  klassen: FallKlasse[]; abwesend: FallAbwesend[]; faelle: Fall[];
+}
+export interface FallKandidat { lehrer: number; k: string; name: string; rot: boolean; lage?: string; gruende: string[]; woche?: number; maxWoche?: number; mehrarbeit?: boolean }
+export interface FallKandidaten {
+  ids: number[]; gleicheZeit: boolean; kandidaten: FallKandidat[]; weitere: number; entfallSinnvoll: boolean;
+  betreuung: { lehrer: number; k: string; name: string; klassen: string; fach: string; naehe: string } | null;
+}
+export interface FallVorschlag { schluessel: string; ids: number[]; art: 'lehrer' | 'entfall'; lehrerId: number | null; text: string; grund: string }
+
+export const faelleLaden = (datum: string) => api.get<FaelleDaten>(vpfad(`/tagesablauf/faelle?datum=${datum}`));
+export const fallVorschlaegeLaden = (datum: string) => api.post<{ datum: string; vorschlaege: FallVorschlag[]; ohne: string[] }>(vpfad('/tagesablauf/fallvorschlaege'), { datum });
+
+/** Kandidaten eines Falls (gemerkt, bis sich die Vertretungen ändern). */
+const fallCache = new Map<string, Promise<FallKandidaten>>();
+export const useFallStand = create<{ stand: number }>(() => ({ stand: 0 }));
+export function fallKandidaten(ids: number[], anzahl = 5): Promise<FallKandidaten> {
+  const key = `${[...ids].sort((a, b) => a - b).join(',')}|${anzahl}`;
+  let p = fallCache.get(key);
+  if (!p) {
+    p = api.get<FallKandidaten>(vpfad(`/tagesablauf/fallkandidaten?ids=${ids.join(',')}&anzahl=${anzahl}`));
+    fallCache.set(key, p);
+    p.catch(() => fallCache.delete(key));
+  }
+  return p;
+}
+function fallCacheLeeren() { fallCache.clear(); useFallStand.setState((s) => ({ stand: s.stand + 1 })); }
+an('daten', (e) => { if (betrifft(e, 'Vertretung', 'Stundenplan', 'Unterricht', 'Stammdaten', 'Einstellungen')) fallCacheLeeren(); });
+an('vertretung.datum', () => fallCacheLeeren());
+
+/** Hinweis zur Vertretung (Text im Vertretungsplan, z. B. „Aufgaben im Lernraum“). */
+export const hinweisSetzen = (ids: number[], text: string) => api.post(vpfad('/aendern'), { ids, spalte: 'Text', wert: text }, { quelle: QUELLE });
+export const vorziehen = (id: number, z: { datum: string; stunde: number; u: number | null }) =>
+  api.post(vpfad(`/vorschlag/${id}/vorziehen`), { datum: z.datum, stunde: z.stunde, unterricht: z.u }, { quelle: QUELLE });
+export interface Vorziehung { lehrer: string; tag: string; datum: string; stunde: number; klassen: string; fach: string; raum: string; art: string; beschreibung: string; u: number | null }
+export const vorziehungenLaden = (id: number) => api.get<{ vorziehungen: Vorziehung[] }>(vpfad(`/vorschlag/${id}`)).then((r) => r.vorziehungen);
+
+/** Zahlen und Auftrag „Vorschläge für alle“ – zwischen „Fall für Fall“ und dem Kopf der Tagesplanung. */
+export const useFallKopf = create<{ offen: number; erledigt: number; anfrage: number; laeuft: boolean; vorschlaege: number }>(() => ({ offen: 0, erledigt: 0, anfrage: 0, laeuft: false, vorschlaege: 0 }));
+export const vorschlaegeAnfordern = () => useFallKopf.setState((s) => ({ anfrage: s.anfrage + 1 }));

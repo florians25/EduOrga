@@ -306,3 +306,4 @@
 .ta-webzeile { display: grid; grid-template-columns: 78px 36px 90px 110px 70px minmax(0, 1fr); gap: 8px; padding: 4px 8px; border-bottom: 1px solid var(--colorNeutralStroke3); }
 .ta-webzeile > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ta-webzeile.kopf { position: sticky; top: 0; background: var(--colorNeutralBackground3); color: var(--colorNeutralForeground2); font-weight: 500; }
+.tp-offen-fall { color: var(--up-pruefung); font-weight: 600; }

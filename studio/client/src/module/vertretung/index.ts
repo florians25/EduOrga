@@ -35,6 +35,7 @@ const modul: StudioModul = {
     // Bausteine der Tagesplanung (auch als eigene Seiten)
     'vertretung.erfassen': { titel: 'Abwesenheiten erfassen', pfad: 'vertretung/abwesenheiten-erfassen', modus: V, komponente: lazy(() => import('./ablauf/Erfassen')) },
     'vertretung.arbeitsliste': { titel: 'Offene Stunden', pfad: 'vertretung/offene-stunden', modus: V, komponente: lazy(() => import('./ablauf/Arbeitsliste')) },
+    'vertretung.faelle': { titel: 'Fall für Fall', pfad: 'vertretung/fall-fuer-fall', modus: V, komponente: lazy(() => import('./ablauf/Faelle')) },
     'vertretung.matrix': { titel: 'Tagesübersicht', pfad: 'vertretung/tagesuebersicht', modus: V, schluessel: (p) => String(p.art || 'klasse'), komponente: lazy(() => import('./ablauf/Matrix')) },
     'vertretung.entscheidung': { titel: 'Entscheidung', pfad: 'vertretung/entscheidung', modus: V, komponente: lazy(() => import('./ablauf/Entscheidung')) },
     'vertretung.frei': { titel: 'Wer ist frei?', pfad: 'vertretung/wer-ist-frei', modus: V, komponente: lazy(() => import('./ablauf/WerIstFrei')) },
@@ -70,7 +71,7 @@ const modul: StudioModul = {
     'vertretung.vorherigeWoche': () => blaettern(-1, true),
   },
   eintraege: [
-    { id: 'vertretung.tagesplanung', text: 'Tagesplanung', arbeitsplatz: 'tagesplanung', braucht: D, gruppe: 'Vertretungsplanung', hinweis: 'Offene Stunden des Tages lösen – eine nach der anderen (Liste) oder in der Tabelle; Abwesenheiten erfassen, veröffentlichen' },
+    { id: 'vertretung.tagesplanung', text: 'Tagesplanung', arbeitsplatz: 'tagesplanung', braucht: D, gruppe: 'Vertretungsplanung', hinweis: 'Offene Stunden des Tages lösen – Fall für Fall je Klasse (Doppelstunden als ein Block), wahlweise Übersicht, Liste oder Tabelle; Abwesenheiten erfassen, veröffentlichen' },
     { id: 'vertretung.werIstFrei', text: 'Wer ist frei?', ansicht: ansicht('vertretung.frei'), braucht: D, gruppe: 'Vertretungsplanung', hinweis: 'Lehrkräfte × Stunden des Planungstags mit Belastung' },
     { id: 'vertretung.belastung', text: 'Belastung der Lehrkräfte', ansicht: ansicht('vertretung.belastung'), braucht: D, gruppe: 'Vertretungsplanung', hinweis: 'Vertretungen je Lehrkraft heute, in der Woche und im Monat, Mehrarbeit (NRW)' },
     { id: 'vertretung.kalender', text: 'Kalender', ansicht: ansicht('vertretung.kalender'), braucht: D, gruppe: 'Vertretungsplanung', menue: [
