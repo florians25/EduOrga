@@ -6,24 +6,25 @@ import SwiftUI
 //
 // Kennzeichnung von Änderungen (EduOrga-eigene Formensprache, sachlich): ein durchgehender 3-pt-Balken links in der
 // Statusfarbe, eine kleine Statusmarke oben rechts und ein kompaktes Kennzeichen (Radius 3, getönt mit feiner Kontur) auf
-// der betroffenen Zeile – in Worten bzw. mit Pfeil statt Zierzeichen. Grün (#2f855a für Balken/Linien, Kennzeichen #e6f4ea
+// der betroffenen Zeile – in Worten, ohne Pfeile: der neue Wert, dahinter der bisherige in Klammern und durchgestrichen
+// („Gal (G̶o̶r̶)“, `Wertwechsel`). Grün (#2f855a für Balken/Linien, Kennzeichen #e6f4ea
 // mit Schrift #1d5c3a – 7,0 : 1) für jede Änderung, Rot (#b42318, Kennzeichen #fdecea) NUR für den Entfall – dann ist
 // zusätzlich alles auf der Karte durchgestrichen. Offene Vertretungen und fehlende Werte ohne Entfall sind neutral grau
 // (Kennzeichen #ebeef2, Schrift #4d5866 – 6,2 : 1, gestrichelte Kontur), für Schüler*innen und Eltern „Vertretung folgt“.
 //
 // Barrierefreiheit: Kennzeichen mindestens so groß wie die übrigen Zeilen (12 pt, halbfett), alle Texte WCAG AA, nie nur
-// Farbe (Wörter „statt“, „fehlt“, „entfällt“, „zusätzlich“, Pfeile ← →), Schrift und Zeilen wachsen mit Dynamic Type
+// Farbe (Wörter „statt“, „fehlt“, „entfällt“, „zusätzlich“, „verlegt auf/von“, Durchstreichen des bisherigen Werts), Schrift und Zeilen wachsen mit Dynamic Type
 // (`kartenfaktor`) – bei großen Größen weniger Zeilen, Änderungen zuerst; VoiceOver liest je Karte einen ganzen Satz
 // (`vorlesetext`).
 //
-//   Vertretung                   „Gal ← Gor“ auf der Lehrerzeile (neu ← bisher)
-//   Raumänderung                 „105 ← 303“ auf der Raumzeile, hinzugekommen „neu B070“
-//   Fachänderung                 „BI ← MU“ auf der Fachzeile
+//   Vertretung                   „Gal (G̶o̶r̶)“ auf der Lehrerzeile (neu, bisher in Klammern durchgestrichen)
+//   Raumänderung                 „105 (3̶0̶3̶)“ auf der Raumzeile, hinzugekommen „neu B070“
+//   Fachänderung                 „BI (M̶U̶)“ auf der Fachzeile
 //   Lehrkraft fehlt, offen       „Abr fehlt“ (grau, gestrichelt; Familie: „Vertretung folgt“)
 //   Entfall                      „entfällt“ (rot), alles durchgestrichen
 //   Klasse fehlt                 „5b fehlt“ und „entfällt“
-//   Verlegt (weg)                „verlegt → Di 21.10., 6. Std“ (rot, durchgestrichen)
-//   Verlegt (hierher)            „verlegt ← Mo 20.10., 3. Std“
+//   Verlegt (weg)                „verlegt auf Di 21.10., 6. Std“ (rot, Karte durchgestrichen)
+//   Verlegt (hierher)            „verlegt von Mo 20.10., 3. Std“
 //   Zusatzunterricht             „zusätzlich“
 //   Mitteilung, Veranstaltung    hellgelber Block, Titel einzeilig mit „…“
 //
@@ -97,7 +98,7 @@ extension Kachel {
         return alt
     }
 
-    /// Kennzeichen unten auf der Karte: „entfällt“, „verlegt → Di 21.10., 6. Std“, „verlegt ← Mo 20.10., 3. Std“,
+    /// Kennzeichen unten auf der Karte: „entfällt“, „verlegt auf Di 21.10., 6. Std“, „verlegt von Mo 20.10., 3. Std“,
     /// „zusätzlich“ – nil bei Unterricht ohne solche Änderung, Terminen, Aufsichten und Bereitschaften.
     var statusChip: Kartenchip? {
         guard let k = karte, !inPause else { return nil }
@@ -108,14 +109,14 @@ extension Kachel {
         let weg = kartenart == .entfall
         if k.verlegung == "von", art == .entfall || art == .abgegeben || weg {
             if let ziel = k.verlegungNach, let t = Kartenchip.termin(ziel) {
-                return Kartenchip(text: "verlegt → \(t)", ton: .entfall, vorlesen: "verlegt auf \(t)")
+                return Kartenchip(text: "verlegt auf \(t)", ton: .entfall)
             }
             return Kartenchip(text: "verlegt", ton: .entfall)
         }
         if weg { return Kartenchip(text: "entfällt", ton: .entfall) }
         if k.verlegung == "nach", art == .aenderung || art == .normal {
             if let quelle = k.verlegungVon, let t = Kartenchip.termin(quelle) {
-                return Kartenchip(text: "verlegt ← \(t)", ton: .aenderung, vorlesen: "verlegt von \(t)")
+                return Kartenchip(text: "verlegt von \(t)", ton: .aenderung)
             }
             return Kartenchip(text: "hierher verlegt", ton: .aenderung)
         }
@@ -181,7 +182,7 @@ extension Statuslehre {
 
 /// Stundenkarte mobil (v5, EduOrga-Kennzeichnung): die Karte füllt ihre Zelle, Radius 6, neutral (weiß, grauer Balken),
 /// Fachfarbe nur, wenn die Schule eine gesetzt hat (Balken und leichte Tönung). Änderung: durchgehender grüner 3-pt-Balken,
-/// feine grüne Kontur, grüne Statusmarke und das Kennzeichen „neu ← bisher“ auf der Zeile; Entfall: roter Balken und rote
+/// feine grüne Kontur, grüne Statusmarke und das Kennzeichen „neu (b̶i̶s̶h̶e̶r̶)“ auf der Zeile; Entfall: roter Balken und rote
 /// Marke, alles grau durchgestrichen, „entfällt“ rot; offene Vertretung neutral (grauer Balken, gestrichelte graue Kontur,
 /// „Abr fehlt“ bzw. „Vertretung folgt“); Prüfung Bernstein; Termin/Buchung gestrichelt; Mitteilung bzw. Veranstaltung als
 /// hellgelber Block. Kein Schatten – eine feine Kontur trennt die Karte vom Raster.
@@ -496,7 +497,7 @@ struct Statuschip: View {
     }
 }
 
-/// Fach der Karte: unverändert als Text, bei einer Fachänderung als grünes Kennzeichen „BI ← MU“, bei Entfall grau und
+/// Fach der Karte: unverändert als Text, bei einer Fachänderung als grünes Kennzeichen „BI (M̶U̶)“, bei Entfall grau und
 /// durchgestrichen.
 struct Kartenfach: View {
     let kachel: Kachel
@@ -509,7 +510,8 @@ struct Kartenfach: View {
     var body: some View {
         if let alt = kachel.fachVorher {
             Chipfeld(ton: .aenderung) {
-                (Text(text).font(schrift) + Text(" ← \(alt)").font(schrift.weight(.regular)))
+                Wertwechsel.text(text, statt: alt, gewicht: nil, altSchrift: schrift.weight(.regular))
+                    .font(schrift)
             }
         } else {
             Text(text)
@@ -523,10 +525,51 @@ struct Kartenfach: View {
     }
 }
 
+// MARK: - Neuer und bisheriger Wert
+
+/// Geänderter Wert in EduOrga-Schreibweise (Karten, Details, Heute, Agenda, Legende): zuerst der neue Wert (halbfett),
+/// dahinter der bisherige in Klammern und durchgestrichen – „Gal (G̶o̶r̶)“, „105 (3̶0̶3̶)“, „BI (M̶U̶)“. Keine Pfeile. Nur die
+/// Klammern bleiben ungestrichen, damit das Durchstreichen eindeutig dem bisherigen Wert gilt. VoiceOver liest „Gal statt
+/// Gor“ (`gesprochen`) – die Aufrufer setzen das als zugänglichen Namen.
+enum Wertwechsel {
+    /// `gewicht`: Schriftstärke des neuen Werts (nil = wie die Umgebung); `altFarbe`: Farbe des bisherigen Werts (nil = wie
+    /// die Umgebung); `altSchrift`: eigene Schrift des bisherigen Werts samt Klammern (nil = wie die Umgebung);
+    /// `altGewicht`: Schriftstärke des bisherigen Werts samt Klammern (Standard normal, nil = wie die Umgebung).
+    static func text(_ neu: String, statt alt: String, gewicht: Font.Weight? = .semibold, altFarbe: Color? = nil,
+                     altSchrift: Font? = nil, altGewicht: Font.Weight? = .regular) -> Text {
+        var neuText = Text(neu)
+        if let gewicht { neuText = neuText.fontWeight(gewicht) }
+        var altText = Text(alt).strikethrough(true, color: altFarbe)
+        var auf = Text(" (")
+        var zu = Text(")")
+        if let altGewicht {
+            altText = altText.fontWeight(altGewicht)
+            auf = auf.fontWeight(altGewicht)
+            zu = zu.fontWeight(altGewicht)
+        }
+        if let altFarbe {
+            altText = altText.foregroundColor(altFarbe)
+            auf = auf.foregroundColor(altFarbe)
+            zu = zu.foregroundColor(altFarbe)
+        }
+        if let altSchrift {
+            altText = altText.font(altSchrift)
+            auf = auf.font(altSchrift)
+            zu = zu.font(altSchrift)
+        }
+        return neuText + auf + altText + zu
+    }
+
+    /// Für VoiceOver und reine Texte: „Gal statt Gor“.
+    static func gesprochen(_ neu: String, statt alt: String) -> String {
+        "\(neu) statt \(alt)"
+    }
+}
+
 // MARK: - Geänderter Wert als Feld
 
 /// Eine Zeile der Stundenkarte (Lehrkraft, Klasse, Raum): unveränderte Werte als Text, geänderte als Kennzeichen –
-/// „Gal ← Gor“ für eine Vertretung, „105 ← 303“ für eine Raumänderung, „neu B070“ für einen hinzugekommenen Raum (grün);
+/// „Gal (G̶o̶r̶)“ für eine Vertretung, „105 (3̶0̶3̶)“ für eine Raumänderung, „neu B070“ für einen hinzugekommenen Raum (grün);
 /// „Abr fehlt“ für eine fehlende Lehrkraft ohne Vertretung (grau), „5b fehlt“ bzw. „ohne 303“ für Weggefallenes. Auf einer
 /// entfallenen Stunde ist alles grau durchgestrichen – nur die fehlende Klasse bleibt als rotes Kennzeichen. Nie breiter
 /// als die Karte (eine Zeile, notfalls mit „…“).
@@ -583,7 +626,7 @@ struct Kartenwert: View {
         }
     }
 
-    /// Text im Kennzeichen: „neu ← alt“ für ersetzte Werte, „neu X“ für hinzugekommene, „X fehlt“ für offene bzw. fehlende,
+    /// Text im Kennzeichen: „neu (a̶l̶t̶)“ für ersetzte Werte, „neu X“ für hinzugekommene, „X fehlt“ für offene bzw. fehlende,
     /// „ohne X“ für weggefallene.
     static func aenderungsText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
         let werte: [Wert]
@@ -606,15 +649,15 @@ struct Kartenwert: View {
             case .plakette:
                 let neu = kern(teil.text)
                 if let alt = werte.first(where: { $0.ersetzt && gleich($0.k, neu) })?.alt, !alt.isEmpty {
-                    ergebnis = ergebnis + Text(neu).fontWeight(.semibold) + Text(" ← \(alt)")
+                    ergebnis = ergebnis + Wertwechsel.text(neu, statt: alt)
                 } else {
                     ergebnis = ergebnis + Text("neu ") + Text(neu).fontWeight(.semibold)
                 }
             case .weg:
-                // „alt | neu“ (Kopplung) wird zu „neu ← alt“
+                // „alt | neu“ (Kopplung) wird zu „neu (a̶l̶t̶)“
                 if i + 1 < teile.count && teile[i + 1].stil == .plakette {
                     let neu = teile[i + 1]
-                    ergebnis = ergebnis + Text(kern(neu.text)).fontWeight(.semibold) + Text(" ← \(teil.text)") + Text(neu.trenner)
+                    ergebnis = ergebnis + Wertwechsel.text(kern(neu.text), statt: teil.text) + Text(neu.trenner)
                     i += 2
                     continue
                 }

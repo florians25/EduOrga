@@ -82,12 +82,13 @@ ios/
     13,5 pt) – vier kurze Zeilen in rund 60 pt. Alle Zeilen einzeilig, zu lange Texte enden mit „…“.
   - **Kennzeichnung von Änderungen (EduOrga-eigene Formensprache):** durchgehender 3-pt-Balken links in der
     Statusfarbe (keine Schraffur), eine kleine quadratische Statusmarke oben rechts und ein kompaktes **Kennzeichen**
-    (Radius 3, getönt mit feiner Kontur, offen gestrichelt) auf der betroffenen Zeile – in Worten bzw. mit Pfeil
-    (`Kartengestaltung.swift`: `Kartenwert`, `Kartenfach`, `Statuschip`, `Kartenmarke`, `Kachel.statusChip`):
-    Vertretung „Gal ← Gor“ · anderer Raum „105 ← 303“, zusätzlicher Raum „neu B070“ · anderes Fach „BI ← MU“ · Lehrkraft
+    (Radius 3, getönt mit feiner Kontur, offen gestrichelt) auf der betroffenen Zeile – in Worten, **ohne Pfeile: der
+    neue Wert (halbfett), dahinter der bisherige in Klammern und durchgestrichen** (`Wertwechsel` in
+    `Kartengestaltung.swift`, dazu `Kartenwert`, `Kartenfach`, `Statuschip`, `Kartenmarke`, `Kachel.statusChip`):
+    Vertretung „Gal (G̶o̶r̶)“ · anderer Raum „105 (3̶0̶3̶)“, zusätzlicher Raum „neu B070“ · anderes Fach „BI (M̶U̶)“ · Lehrkraft
     fehlt, Vertretung offen „Abr fehlt“ (grau; **Schüler*innen und Eltern: „Vertretung folgt“** –
     `Kartendarstellung.fuerFamilie`) · Entfall „entfällt“ (rot, **alles durchgestrichen**) · Klasse fehlt „5b fehlt“ +
-    „entfällt“ · verlegt „verlegt → Di 21.10., 6. Std“ bzw. „verlegt ← Mo 20.10., 3. Std“ · Zusatzunterricht
+    „entfällt“ · verlegt „verlegt auf Di 21.10., 6. Std“ bzw. „verlegt von Mo 20.10., 3. Std“ · Zusatzunterricht
     „zusätzlich“ · Mitteilung bzw. Veranstaltung als hellgelber Block. Quelle der Typen: `klassen`/`abwesendeKlassen`,
     `lehrer` und `raeume` (`k`/`alt`/`neu`/`plus`), `fachAlt`, `verlegung` mit `verlegungVon`/`verlegungNach`,
     `zusaetzlich`, `vertretungOffen`, `status` (wie `Plandienst.cs`). Prüfung Bernstein. Das Blatt **„Kennzeichnungen“**
@@ -119,14 +120,16 @@ ios/
 - **Barrierefreiheit (Regeln für alle Karten und Kennzeichen):**
   - Kontrast WCAG AA (≥ 4,5 : 1) für jede Schrift auf ihrer Fläche (Werte oben); grüne Schrift auf hellem Grund
     `Farben.aenderungSchrift`.
-  - Nie nur Farbe: jede Art steht auch in Worten bzw. mit Pfeil („entfällt“, „fehlt“, „zusätzlich“, „←“, „→“),
-    Entfall zusätzlich durchgestrichen, offen gestrichelt.
+  - Nie nur Farbe: jede Art steht auch in Worten („entfällt“, „fehlt“, „zusätzlich“, „verlegt auf/von“), der bisherige
+    Wert in Klammern und durchgestrichen, Entfall zusätzlich ganz durchgestrichen, offen gestrichelt.
   - Kennzeichen mindestens so groß wie die übrigen Zeilen (12 pt, halbfett; Listen `.footnote`).
   - Dynamic Type: Schrift der Rasterkarten wächst mit (`DynamicTypeSize.kartenfaktor`, gedeckelt bei 1,6), die
     Rasterzeilen langsamer (`rasterfaktor`) – bei großen Größen zeigt die Karte weniger Zeilen, **geänderte Zeilen und
     das Kennzeichen zuerst**; Listen und Blätter nutzen Textstile.
   - VoiceOver: je Karte ein ganzer Satz (`Kachel.vorlesetext`, z. B. „3. Stunde, M, Mathematik, 9:45 bis 10:30, Raum
-    geändert von 303 nach 105, Lehrkraft Gal statt Gor, Klasse 7a, Vertretung“), Termine mit Art („Veranstaltung, …“).
+    105 statt 303, Lehrkraft Gal statt Gor, Klasse 7a, Vertretung“; Fach „Fach BI statt MU“; `Wertwechsel.gesprochen`),
+    Termine mit Art („Veranstaltung, …“). Die Änderungszeilen der Stundendetails lesen ebenso „Vertretung: Lehrkraft Gal
+    statt Gor“. Lokale Mitteilungen schreiben „Raum R201 statt R105“ (dort ist kein Durchstreichen möglich).
   - Tippflächen ≥ 44 pt (Reiter „+N“, Zeiten beim Sprechtag, Vorlagen und Fälligkeit im Klassenbuch).
   - „Bewegung reduzieren“: kein Zoom aus der Kachel (`ZoomZiel`), Ansichtswechsel nur überblendet, Karten beim Drücken
     nur abgedunkelt statt verkleinert.
@@ -136,7 +139,12 @@ ios/
 Tab-Leiste mit wenigen, festen Reitern: **Heute · Plan · Postfach · Schule · Profil**. „Profil“ enthält Konten und
 Schulen, Termine, Einstellungen (Mitteilungen, Darstellung, Kontaktdaten, Passwort), Info und Abmelden. Die **Suche**
 nach Plänen (Klasse, Lehrkraft, Raum) öffnet sich als Blatt über die **Lupe oben rechts** (Heute, Postfach, Schule; im
-Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über den Kurzbefehl „Plan suchen“.
+Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über den Kurzbefehl „Plan suchen“. **Ein
+Treffer (auch Favorit bzw. „Zuletzt geöffnet“) schließt die Suche und zeigt den Plan im Reiter „Plan“ – genau dieselbe
+Seite wie „Mein Plan“** (`AppZustand.planZeigen` → `PlanSeite`, keine eigene Ansicht): Woche/Tag/Agenda, Planleiste,
+Kennzeichnungen, Filter, Mehrfachauswahl, Stundendetails. Titel „Klasse 5a“ bzw. „Lehrkraft Gal“ / „Raum 105“
+(`Planmodell.plantitel`, Stern davor bei Favoriten); zurück links oben (Knopf „Mein Plan“, auf dem iPhone als
+Zurück-Pfeil) bzw. „Mein Plan“ im Menü des Titels; Favorit an/aus im Menü des Titels und im Kalendermenü.
 
 - **Einrichtung** – ruhige Einstiegsseite mit Monogramm, Wortmarke und Slogan. Schritt 1: EduOrga-Adresse der Schule
   (Prüfung schon beim Tippen: Format, dann Server und Schulname mit Häkchen bzw. verständlichem Fehler), **QR-Code
@@ -145,8 +153,9 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
   Passwort (zeigen/verbergen) und „Passwort merken“; gespeicherte Konten zum Wechsel.
 - **Plan** – Agenda, Woche (Standard) oder Tag. **Oben nur zwei Dinge** (keine Kollision auf 375/393/430 pt): in der
   Mitte der Planname mit Zeitraum („KW 43 · Okt. 2026“, im Tag „Di 20.10.2026“, bei „Nur Änderungen“ mit Kennzeichnung;
-  Menü: Mein Plan, Favoriten, Auswahl …, Suchen) und rechts der **Kalenderknopf** (Heute, Gehe zu Datum, voriger bzw.
-  nächster Zeitraum; Plan aus der Suche: Favorit). **Unten die schwebende Planleiste** aus Glas: **Agenda | Woche |
+  Menü: Mein Plan, bei fremdem Plan Favorit an/aus, Favoriten, Auswahl …, Suchen, Datenstand) und rechts der
+  **Kalenderknopf** (Heute, Gehe zu Datum, voriger bzw. nächster Zeitraum; fremder Plan: Favorit). Bei einem fremden
+  Plan links oben der Weg zurück zu „Mein Plan“. **Unten die schwebende Planleiste** aus Glas: **Agenda | Woche |
   Tag**, das Dreieck **„Nur Änderungen“** und **„Auswahl und Filter“** (Blatt: Auswahl mit Mein Plan, Klassen /
   Lehrkräfte / Räume, Suche, Zeile = ein Plan, Kästchen = Mehrfachauswahl; Filter: Aufsichten, Mitteilungen, Ferien
   einblenden, nur Änderungen, nur Ist-Zustand, parallele Stunden nebeneinander, Dichte, Tag als Raster/Liste/Zeitachse,
@@ -163,7 +172,9 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
   - **Details** – ruhig, im Stil der gruppierten Listen (kein farbiger Kopf, Farbe nur für den Status): **Kopf** Fach
     ausgeschrieben mit Kürzel, Datum, „3. Stunde · 9:45–10:30“, Status, Fortschritt der laufenden Stunde. **Änderung**
     bzw. **Entfall** (nur wenn etwas anders ist) direkt darunter: je Art ein Kennzeichen (Vertretung, Raumänderung,
-    Klasse, Fachänderung, Zusätzlich, Verlegt – grün; Entfall rot; Vertretung folgt grau) und rechts „bisher → neu“, dazu
+    Klasse, Fachänderung, Zusätzlich, Verlegt – grün; Entfall rot; Vertretung folgt grau) und rechts „neu (b̶i̶s̶h̶e̶r̶)“
+    (neu grün halbfett, bisher in Klammern grau durchgestrichen; VoiceOver „Lehrkraft Gal statt Gor“), Verlegung „von …“
+    bzw. „auf …“, dazu
     Vertretungstext bzw. Grund. Danach die **Angaben** (Raum, Lehrkraft, Klasse(n), fehlende Klassen), Hinweis bzw.
     Information/Prüfung, **Online-Unterricht beitreten**, Thema (lesen), **Hausaufgaben** (lesen), Notiz, für
     Lehrkräfte eine Zeile „Klassenbuch: Thema ✓ · Anwesenheit offen · Hausaufgabe –“ (wechselt den Reiter) und „Im Plan
@@ -248,8 +259,8 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
   frische Antwort da ist, steht oben „Stand hh:mm“. **Stand EduOrga Studio** (`Neu/Gestaltung/Studiostand.swift`): wann
   die Planung die Daten zuletzt übertragen hat – aus der Sitzung `paket.empfangen` bzw. (neuere Server)
   `paket.letzteVertretungen`, der neuere Zeitpunkt gilt –, klar getrennt von der Ladezeit der App („aktualisiert 14:35“):
-  auf „Heute“ unter Datum und Schule („Stand EduOrga Studio: vor 5 Min. · aktualisiert 14:35“, Antippen zeigt „Di 20.10.,
-  14:32“), im Plan als Kapsel einige Sekunden nach dem Öffnen bzw. Wochenwechsel und im Menü des Plannamens
+  auf „Heute“ klein als Fußnote ganz unten („Stand EduOrga Studio: vor 5 Min. · aktualisiert 14:35“, Antippen zeigt
+  „Di 20.10., 14:32“), im Plan als Kapsel einige Sekunden nach dem Öffnen bzw. Wochenwechsel und im Menü des Plannamens
   („Datenstand“). Ist der Stand an einem Schultag älter als 24 Stunden, bleibt die Kapsel mit einem ruhigen Hinweis in
   der Warnfarbe stehen. Kein HTTP-Cache (`urlCache = nil`, `reloadIgnoringLocalCacheData`,
   `Cache-Control: no-cache` je Anfrage).
@@ -257,14 +268,27 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
   landen im **Schreibpuffer** (je Konto) und werden gesendet, sobald das Netz zurück ist (Netzbeobachtung), die App in
   den Vordergrund kommt oder „Senden“ gewählt wird; bis dahin zeigt die App den lokalen Stand („wartet auf
   Verbindung“). Andere Schreibzugriffe melden einen klaren Fehler.
-- **Heute** (`Neu/Heute/HeuteView.swift`, `HeuteBereiche.swift`) – ruhig, dicht, sachlich, gruppierte Bereiche mit
-  klaren Überschriften (keine Schmuck-Symbole): Datum, Schule und **Stand EduOrga Studio**; Jetzt-Karte (laufende Stunde
-  mit Restzeit, nächste Stunde); **Änderungen heute** (Zahl und je Stunde Kennzeichen + was sich geändert hat, z. B.
-  „Vertretung · 3. Std. · 9:45 · M · 7a – Gal statt Gor“; Antippen öffnet die Stunde); der Tag als kompakte Liste
-  (Termine einzeilig); Lehrkräfte zusätzlich „Stunde jetzt“ und **Klassenbuch und Aufsichten** (offene Stunden, heutige
-  Aufsichten mit Zeit/Status); Schüler*innen und Eltern **Für morgen und diese Woche** (morgen fällige Hausaufgaben,
-  Prüfungen dieser Woche, neue Mitteilungen); **Heute an der Schule** (Nachrichten, Veranstaltungen, Hinweise);
-  **Nächster Schultag** (Beginn mit erster Stunde und Änderungen); Übersicht.
+- **Heute** (`Neu/Heute/HeuteView.swift`, `HeuteBereiche.swift`) – radikal reduziert, ruhig und sachlich: eine Ebene
+  (keine Karten in Karten), keine Symbol-Kacheln, **ein Akzent** (Petrol für „Jetzt“, Fortschritt und Links), sonst
+  Grautöne und die Statusfarben der Kennzeichen. Von oben:
+  1. großer Titel „Heute“, darunter eine Tageszeile „Dienstag, 20. Oktober · A-Woche“;
+  2. **Fokuskarte** (`HeuteFokus`, `HeuteFokuslage`): „Jetzt · noch 23 Min.“ bzw. „Als Nächstes · in 12 Min.“ (nach
+     Schulschluss bzw. an freien Tagen die erste Stunde des nächsten Schultags, „Als Nächstes · Mittwoch, 7:45“) – Fach
+     groß (`.title`, ausgeschrieben), „Raum 105“, Lehrkraft bzw. Klasse, „9:45–10:30 · 3. Std.“, Kennzeichen („Gal
+     (G̶o̶r̶)“, „verlegt von …“, „zusätzlich“), bei der laufenden Stunde eine dünne Fortschrittslinie (3 pt); antippen =
+     Stundendetails; Lehrkräfte darunter „Klassenbuch erfassen“ (wenn „Stunde jetzt“ diese Stunde ist);
+  3. **Heute** (bzw. der Wochentag) – alle Stunden des Tages, je eine Zeile `HeuteStundenzeile`: Beginn · Fach · Raum,
+     geänderte Lehrkraft/Klasse und Statuskennzeichen direkt in der Zeile, laufende Stunde mit Uhrzeit in Petrol und
+     „jetzt“, vergangene blass; rechts oben „Im Plan“; bei Bedienungshilfen-Schriftgrößen untereinander;
+  4. höchstens zwei weitere Abschnitte, nur wenn es etwas gibt: **Hinweise der Schule** (Abwesenheit, Nachrichten,
+     Veranstaltungen, Hinweise – zwei einzeilige Zeilen, „Alle“ zeigt alles vollständig) und je Rolle **Zu erledigen**
+     (Lehrkräfte: „2 Klassenbuch-Einträge offen“ → offene Stunden, „1 Aufsicht · Hof“ → Details der Aufsicht bzw. „3
+     Aufsichten“ → Liste, „Klassenbuch erfassen“ zum Nachtragen) bzw. **Demnächst** (Schüler*innen, Eltern: „1
+     Hausaufgabe für morgen“ → Hausaufgaben, „1 Prüfung diese Woche“ → Prüfungen);
+  5. **„Mehr anzeigen“** (auf dem Gerät gemerkt): Änderungen als Liste, nächster Schultag, Übersicht (Termine,
+     Abwesenheiten, Entschuldigungen, Hausaufgaben, Aufsichten, Sprechtage). Mitteilungen im Reiter „Postfach“;
+  6. ganz unten klein **Stand EduOrga Studio** und der Name der Schule.
+  Dynamic Type über Textstile, VoiceOver je Zeile ein ganzer Satz („Jetzt, noch 23 Minuten. 3. Stunde, M, …“).
 - **Postfach, Suche, Profil** – wie bisher (Profil jetzt als eigener Reiter, Suche als Blatt); im Profil zusätzlich **Benachrichtigungen** (E-Mail-Adresse und
   „Bei neuen Mitteilungen per E-Mail benachrichtigen“) und unter **Darstellung** die Dichte der Woche.
 

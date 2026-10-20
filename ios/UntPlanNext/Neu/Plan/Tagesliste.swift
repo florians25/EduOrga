@@ -2,7 +2,7 @@ import SwiftUI
 
 // Der Tag als Liste klassischer Stundenkarten (in „Heute“ und in der Tagesansicht des Plans): links Beginn, Ende und
 // Stunde, rechts die Karte nach der schulweiten Kartendarstellung – Fach fett oben links, Raum oben rechts, darunter
-// Lehrkraft bzw. Klasse. Änderungen fallen sofort auf (grüne Linie und Fläche, „alt → neu“), Entfall durchgestrichen
+// Lehrkraft bzw. Klasse. Änderungen fallen sofort auf (grüne Linie und Fläche, „neu (a̶l̶t̶)“), Entfall durchgestrichen
 // und schraffiert. Pausen und Freistunden nur als kompakte Zeile. Heute: laufende Stunde mit Fortschritt und Restzeit,
 // vergangene Stunden blass.
 
@@ -319,7 +319,7 @@ struct Tagesliste: View {
 /// Stundenkarte der Tagesliste im klassischen Grundstil wie das Wochenraster (eigenständig, nicht nachgebaut): weiße
 /// Karte ohne Rahmen, schmaler 3-pt-Balken innen links (grau bzw. Fachfarbe), Fach halbfett oben links, Raum oben
 /// rechts, darunter Lehrkraft bzw. Klasse; Inhalte nach der schulweiten Kartendarstellung. Status sachlich, aber nicht zu übersehen: Entfall rot
-/// durchgestrichen und schraffiert, Vertretung/Raumänderung grün (Linie, helle Fläche, „alt → neu“), Prüfung
+/// durchgestrichen und schraffiert, Vertretung/Raumänderung grün (Linie, helle Fläche, „neu (a̶l̶t̶)“), Prüfung
 /// Bernstein, Termin und Buchung gestrichelt; dazu das Statuswort oben rechts. Läuft die Stunde, steht „Jetzt · noch …“
 /// und unten der Fortschritt.
 struct ListenKachel: View {
@@ -452,7 +452,7 @@ struct ListenKachel: View {
     /// Statuswort und kleine Zeichen rechts unten (Online, Hausaufgabe, Info).
     private var zeichen: some View {
         HStack(spacing: 6) {
-            // Kennzeichen („entfällt“, „verlegt ← …“, „zusätzlich“), sonst das Statuswort
+            // Kennzeichen („entfällt“, „verlegt von …“, „zusätzlich“), sonst das Statuswort
             if let chip = kachel.statusChip {
                 Statuschip(chip: chip, schrift: .footnote.weight(.semibold))
             } else if let merkmal {

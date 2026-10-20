@@ -202,7 +202,7 @@ struct Wert: Decodable, Hashable, Sendable {
         return neu
     }
 
-    /// Ersetzter Wert (neuer Wert mit abweichendem altem Wert), z. B. Vertretung „MUE → LN“ bzw. Raum „C009 → A103“.
+    /// Ersetzter Wert (neuer Wert mit abweichendem altem Wert), z. B. Vertretung „LN (M̶U̶E̶)“ bzw. Raum „A103 (C̶0̶0̶9̶)“.
     var ersetzt: Bool {
         let a = (alt ?? "").trimmingCharacters(in: .whitespaces)
         return !k.isEmpty && !a.isEmpty && a.caseInsensitiveCompare(k) != .orderedSame
@@ -436,13 +436,13 @@ struct Karte: Decodable, Identifiable, Sendable {
 
     var istVerlegung: Bool { verlegung != nil }
 
-    /// Verlegung in Worten, immer Ursprung → Ziel: „09.10.2026 | 11:30 - 13:00 → 13.10.2026 | 12:15 - 13:00“
+    /// Verlegung in Worten, immer Ursprung, dann Ziel: „von 09.10.2026 | 11:30 - 13:00 auf 13.10.2026 | 12:15 - 13:00“
     /// (nil = Gegenseite unbekannt).
     var verlegungText: String? {
         guard verlegung != nil, let von = verlegungVon, let nach = verlegungNach else { return nil }
         let a = von.text, b = nach.text
         guard !a.isEmpty, !b.isEmpty else { return nil }
-        return "\(a) → \(b)"
+        return "von \(a) auf \(b)"
     }
 
     /// Automatisch erzeugte Standardtexte einer Zusatzstunde (erscheinen nie als Vertretungstext); manuell

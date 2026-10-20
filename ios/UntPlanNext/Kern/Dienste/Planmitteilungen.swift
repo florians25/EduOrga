@@ -12,7 +12,7 @@ import UserNotifications
 /// Planstand der Sitzung ab (Revision und Empfangszeit des letzten Imports). Nur wenn er sich geändert hat (bzw. spätestens
 /// nach einigen Stunden), lädt sie den eigenen Plan der aktuellen und der nächsten Woche, vergleicht ihn mit dem zuletzt
 /// gespeicherten Stand (Entfall, Vertretung, Raumänderung, neue Stunde, Prüfung …) und sendet je Änderung – ab vier
-/// Änderungen gebündelt – eine lokale Mitteilung („Mo 3. Std. D 7a: Raum R105 → R201“).
+/// Änderungen gebündelt – eine lokale Mitteilung („Mo 3. Std. D 7a: Raum R201 statt R105“).
 /// Ein Tipp auf die Mitteilung öffnet den Tag im Stundenplan.
 enum Planmitteilungen {
     /// Kennung der Hintergrund-Aufgabe (muss in Info.plist unter BGTaskSchedulerPermittedIdentifiers stehen).
@@ -411,10 +411,10 @@ enum Planvergleich {
         var teile: [String] = []
         if a.entfaellt && !n.entfaellt { teile.append("findet wieder statt") }
         if n.pruefung && !a.pruefung { teile.append("Prüfung") }
-        if !n.fach.isEmpty && n.fach != a.fach { teile.append("Fach \(a.fach.isEmpty ? "–" : a.fach) → \(n.fach)") }
-        if n.raeume != a.raeume && !n.raumbuchung { teile.append("Raum \(liste(a.raeume)) → \(liste(n.raeume))") }
-        if n.klassen != a.klassen { teile.append("Klasse \(liste(a.klassen)) → \(liste(n.klassen))") }
-        if n.lehrer != a.lehrer && !n.entfaellt { teile.append("Lehrkraft \(liste(a.lehrer)) → \(liste(n.lehrer))") }
+        if !n.fach.isEmpty && n.fach != a.fach { teile.append("Fach \(n.fach) statt \(a.fach.isEmpty ? "–" : a.fach)") }
+        if n.raeume != a.raeume && !n.raumbuchung { teile.append("Raum \(liste(n.raeume)) statt \(liste(a.raeume))") }
+        if n.klassen != a.klassen { teile.append("Klasse \(liste(n.klassen)) statt \(liste(a.klassen))") }
+        if n.lehrer != a.lehrer && !n.entfaellt { teile.append("Lehrkraft \(liste(n.lehrer)) statt \(liste(a.lehrer))") }
         if teile.isEmpty && n.status != a.status && !n.raumbuchung && !a.raumbuchung {
             if n.status == "regulaer" {
                 teile.append("wieder wie geplant")

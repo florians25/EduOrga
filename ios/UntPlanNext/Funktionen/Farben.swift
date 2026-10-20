@@ -130,7 +130,7 @@ enum Farben {
     /// Geänderter Wert auf der Stundenkarte („+Gal (Gor)“, „+105 (303)“): helle grüne Fläche #e6f4ea, dunkelgrüne Schrift
     static let aenderungChip = Color(hell: 0xE6F4EA, dunkel: 0x1E3A29)
     static let aenderungText = Color(hell: 0x1D5C3A, dunkel: 0xA8E6C1)
-    /// Grün für kleine Schrift (Statuswörter, „bisher → neu“): #267349 erreicht auf Weiß 5,8 : 1, auf der Statusfläche
+    /// Grün für kleine Schrift (Statuswörter, „neu (b̶i̶s̶h̶e̶r̶)“): #267349 erreicht auf Weiß 5,8 : 1, auf der Statusfläche
     /// 5,5 : 1 und auf dem Feld 5,1 : 1 (WCAG AA) – #2f855a bleibt für Balken, Linien und Rahmen (auf #e6f4ea nur 4,0 : 1).
     static let aenderungSchrift = Color(hell: 0x267349, dunkel: 0x5FC48C)
     /// Offene Vertretung bzw. fehlender Wert ohne Entfall: neutrales graues Feld (#ebeef2, Schrift #4d5866, 6,2 : 1) –

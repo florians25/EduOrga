@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Werte als Text
 
-/// Werte (Lehrkräfte, Klassen, Räume) als Text: alter Wert durchgestrichen, geänderter Wert grün unterstrichen.
+/// Werte (Lehrkräfte, Klassen, Räume) als Text: ersetzter Wert als „neu (a̶l̶t̶)“, hinzugekommener grün unterstrichen.
 /// `offen`: Lehrkräfte einer offenen Vertretung – die abwesende Lehrkraft ohne neuen Wert steht durchgestrichen in Petrol.
 func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> Text {
     var ergebnis = Text("")
@@ -14,8 +14,13 @@ func werteText(_ werte: [Wert], trenner: String = ", ", offen: Bool = false) -> 
             continue
         }
         if let alt = w.alt, !alt.isEmpty, alt.caseInsensitiveCompare(w.k) != .orderedSame {
-            ergebnis = ergebnis + Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
-            if !w.k.isEmpty { ergebnis = ergebnis + Text(" ") }
+            // „Gal (G̶o̶r̶)“: neuer Wert grün, der bisherige in Klammern durchgestrichen; ohne neuen Wert nur der bisherige
+            if w.k.isEmpty {
+                ergebnis = ergebnis + Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
+            } else {
+                ergebnis = ergebnis + Wertwechsel.text(w.k, statt: alt, altFarbe: Farben.text3).foregroundColor(Farben.aenderungSchrift)
+            }
+            continue
         }
         if w.geaendert {
             ergebnis = ergebnis + geaendertText(w.k)

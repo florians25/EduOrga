@@ -27,8 +27,9 @@ enum Suchverlauf {
 
 /// Suche als Blatt (Lupe oben rechts in jedem Reiter, Kurzbefehl „Plan suchen“): Pläne von Klassen, Lehrkräften und Räumen schnell finden. Oben
 /// Filterchips aus Glas (Alle · Klassen · Lehrkräfte · Räume), ohne Suchbegriff Favoriten (Stern, umsortieren, per
-/// Wischen entfernen), zuletzt geöffnete Pläne und alle Pläne nach Art mit Buchstabenregister. Ein Treffer öffnet den
-/// Plan direkt hier (mit Wochenleiste, Stundenansicht und Stern); „Plan“ bleibt beim eigenen Plan.
+/// Wischen entfernen), zuletzt geöffnete Pläne und alle Pläne nach Art mit Buchstabenregister. Ein Treffer schließt die
+/// Suche und zeigt den Plan **im Reiter „Plan“ – dieselbe Seite wie „Mein Plan“** (Woche/Tag/Agenda, Planleiste,
+/// Kennzeichnungen, Mehrfachauswahl …) mit Titel „Klasse 5a“, Stern und dem Weg zurück zu „Mein Plan“.
 struct SucheView: View {
     /// Als Blatt gezeigt (mit „Fertig“)
     var alsBlatt: Bool = false
@@ -88,9 +89,6 @@ struct SucheView: View {
                             .fontWeight(.semibold)
                     }
                 }
-            }
-            .navigationDestination(for: PlanAuswahl.self) { plan in
-                PlanSeite(fest: plan)
             }
             .navigationDestination(for: Plankategorie.self) { kategorie in
                 ElementlisteView(kategorie: kategorie, elemente: elemente, auswahl: nil) { plan in
@@ -240,11 +238,12 @@ struct SucheView: View {
 
     // MARK: - Abläufe
 
+    /// Plan im Reiter „Plan“ zeigen (schließt die Suche) – genau die Seite von „Mein Plan“, keine eigene Ansicht.
     private func oeffnen(_ plan: PlanAuswahl) {
         Haptik.auswahl()
         zuletzt = Suchverlauf.merken(plan, in: zuletzt)
         Suchverlauf.speichern(zuletzt)
-        pfad.append(plan)
+        zustand.planZeigen(plan)
     }
 
     private func laden() async {

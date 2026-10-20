@@ -88,6 +88,12 @@ final class Planmodell: ObservableObject {
     /// Name für den Kopf: „Mein Plan“ bzw. Kürzel des gewählten Plans.
     var planname: String { auswahl?.anzeige ?? "Mein Plan" }
 
+    /// Titel des Plans mit Art: „Mein Plan“ bzw. „Klasse 5a“, „Lehrkraft Gal“, „Raum 105“ (Plan aus der Suche).
+    var plantitel: String {
+        guard let a = auswahl else { return "Mein Plan" }
+        return "\(planart) \(a.anzeige)"
+    }
+
     /// Untertitel: Art des Plans bzw. eigenes Kürzel.
     var planart: String {
         guard let a = auswahl else { return eigenesElement }
@@ -485,8 +491,8 @@ extension Kachel {
     /// „1.–2. Std.“
     var stundenText: String { von == bis ? "\(von). Std." : "\(von).–\(bis). Std." }
 
-    /// Für VoiceOver ein vollständiger Satz je Karte, z. B. „3. Stunde, M, Mathematik, 9:45 bis 10:30, Raum geändert von
-    /// 303 nach 105, Lehrkraft Gal statt Gor, Klasse 7a, Vertretung“ – jede Änderung in Worten (nicht nur als Farbe).
+    /// Für VoiceOver ein vollständiger Satz je Karte, z. B. „3. Stunde, M, Mathematik, 9:45 bis 10:30, Raum 105 statt 303,
+    /// Lehrkraft Gal statt Gor, Klasse 7a, Vertretung“ – jede Änderung in Worten (nicht nur als Farbe).
     var vorlesetext: String {
         var teile: [String] = []
         if von > 0 && !inPause && karte?.unterricht != nil {
@@ -494,7 +500,7 @@ extension Kachel {
         }
         teile.append(anzeigeTitel)
         if !fachname.isEmpty { teile.append(fachname) }
-        if let alt = fachVorher { teile.append("Fach geändert, statt \(alt)") }
+        if let alt = fachVorher { teile.append("Fach " + Wertwechsel.gesprochen(anzeigeTitel, statt: alt)) }
         teile.append("\(Uhr.uhrzeit(beginn)) bis \(Uhr.uhrzeit(ende))")
         if let k = karte, [.normal, .aenderung, .entfall, .abgegeben, .klausur].contains(art) {
             if zeile("raum") != nil || k.raeume.contains(where: { $0.geaendert }) {
@@ -516,7 +522,7 @@ extension Kachel {
         return teile.joined(separator: ", ")
     }
 
-    /// Werte einer Zeile in Worten: unverändert „Raum 105“, ersetzt „Raum geändert von 303 nach 105“, hinzugekommen
+    /// Werte einer Zeile in Worten: unverändert „Raum 105“, ersetzt „Raum 105 statt 303“, hinzugekommen
     /// „Raum B070 neu“, weggefallen bzw. offen über `fehlt`.
     static func vorlesen(_ werte: [Wert], einzahl: String, mehrzahl: String, fehlt: (String) -> String) -> [String] {
         var gleich: [String] = []
@@ -524,7 +530,7 @@ extension Kachel {
         for w in werte {
             let alt = (w.alt ?? "").trimmingCharacters(in: .whitespaces)
             if w.ersetzt {
-                saetze.append(einzahl == "Lehrkraft" ? "Lehrkraft \(w.k) statt \(alt)" : "\(einzahl) geändert von \(alt) nach \(w.k)")
+                saetze.append("\(einzahl) " + Wertwechsel.gesprochen(w.k, statt: alt))
             } else if w.k.isEmpty {
                 if !alt.isEmpty { saetze.append(fehlt(alt)) }
             } else if w.geaendert {

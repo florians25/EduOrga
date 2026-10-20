@@ -4,7 +4,8 @@ import SwiftUI
 /// Unterricht, Geändert, Offen, Entfällt, Hinweise. Je Zeile links eine kleine Musterkarte aus denselben Bausteinen wie
 /// das Raster (`Klassikstil`, `klassikKarte`, `Chipfeld`, `Statuschip`, `Kartenmarke`), rechts Name und ein sachlicher Satz.
 /// Grün für jede Änderung, Rot nur für den Entfall (alles durchgestrichen), Grau für eine offene Vertretung; Kennzeichen in
-/// Worten bzw. mit Pfeil („Gal ← Gor“, „entfällt“, „zusätzlich“), Titel und Mitteilungen einzeilig mit „…“.
+/// Worten, ohne Pfeile – neuer Wert, dahinter der bisherige in Klammern durchgestrichen („Gal (G̶o̶r̶)“, `Wertwechsel`),
+/// „entfällt“, „zusätzlich“, „verlegt auf/von …“ –, Titel und Mitteilungen einzeilig mit „…“.
 struct PlanLegende: View {
     @Environment(\.dismiss) private var schliessen
 
@@ -12,6 +13,8 @@ struct PlanLegende: View {
     fileprivate enum Musterzeile {
         case text(String)
         case feld(String, Chipton)
+        /// Geänderter Wert als grünes Kennzeichen: neu, dahinter bisher in Klammern durchgestrichen
+        case wechsel(String, String)
     }
 
     fileprivate struct Eintrag: Identifiable {
@@ -97,15 +100,15 @@ struct PlanLegende: View {
                     stil: fachfarbe(Color(hexWert: 0x3E7CC9)), fach: .text("M"), zeilen: [.text("5a"), .text("Rth"), .text("126")]),
         ]),
         Gruppe(id: "aenderungen", titel: "Geändert (grün)", eintraege: [
-            Eintrag(id: "vertretung", titel: "Vertretung", text: "Grüner Balken und Marke; auf der Lehrerzeile neu ← bisher.",
-                    stil: aenderung, fach: .text("SP1"), zeilen: [.text("6b"), .feld("Gal ← Gor", .aenderung), .text("UH")]),
-            Eintrag(id: "raum", titel: "Anderer Raum", text: "Neuer Raum ← bisheriger; ein zusätzlicher Raum als „neu B070“.",
-                    stil: aenderung, fach: .text("BILI"), zeilen: [.text("6b"), .text("Abr"), .feld("105 ← 303", .aenderung)]),
-            Eintrag(id: "fach", titel: "Anderes Fach", text: "Neues Fach ← bisheriges.",
-                    stil: aenderung, fach: .feld("BI ← MU", .aenderung), zeilen: [.text("6b"), .text("Kre"), .text("023")]),
+            Eintrag(id: "vertretung", titel: "Vertretung", text: "Grüner Balken und Marke; auf der Lehrerzeile die neue Lehrkraft, dahinter die bisherige in Klammern durchgestrichen.",
+                    stil: aenderung, fach: .text("SP1"), zeilen: [.text("6b"), .wechsel("Gal", "Gor"), .text("UH")]),
+            Eintrag(id: "raum", titel: "Anderer Raum", text: "Neuer Raum, dahinter der bisherige in Klammern durchgestrichen; ein zusätzlicher Raum als „neu B070“.",
+                    stil: aenderung, fach: .text("BILI"), zeilen: [.text("6b"), .text("Abr"), .wechsel("105", "303")]),
+            Eintrag(id: "fach", titel: "Anderes Fach", text: "Neues Fach, dahinter das bisherige in Klammern durchgestrichen.",
+                    stil: aenderung, fach: .wechsel("BI", "MU"), zeilen: [.text("6b"), .text("Kre"), .text("023")]),
             Eintrag(id: "verlegt-von", titel: "Hierher verlegt", text: "Unten der ursprüngliche Termin.",
                     stil: aenderung, fach: .text("M"), zeilen: [.text("10e"), .text("Rth"), .text("126")],
-                    chip: Kartenchip(text: "verlegt ← Mo 20.10., 3. Std", ton: .aenderung)),
+                    chip: Kartenchip(text: "verlegt von Mo 20.10., 3. Std", ton: .aenderung)),
             Eintrag(id: "zusatz", titel: "Zusätzliche Stunde", text: "Unten „zusätzlich“.",
                     stil: aenderung, fach: .text("BI"), zeilen: [.text("5e, 11"), .text("Abr"), .text("03")],
                     chip: Kartenchip(text: "zusätzlich", ton: .aenderung)),
@@ -120,7 +123,7 @@ struct PlanLegende: View {
                     chip: Kartenchip(text: "entfällt", ton: .entfall), entfall: true),
             Eintrag(id: "verlegt-nach", titel: "Verlegt", text: "Findet hier nicht statt – unten der neue Termin.",
                     stil: entfall, fach: .text("M"), zeilen: [.text("10e"), .text("Rth"), .text("126")],
-                    chip: Kartenchip(text: "verlegt → Di 21.10., 6. Std", ton: .entfall), entfall: true),
+                    chip: Kartenchip(text: "verlegt auf Di 21.10., 6. Std", ton: .entfall), entfall: true),
             Eintrag(id: "klasse-fehlt", titel: "Klasse fehlt", text: "Die Klasse ist abwesend (z. B. Exkursion): „5b fehlt“ und „entfällt“.",
                     stil: entfall, fach: .text("NAWI"), zeilen: [.feld("5b fehlt", .entfall), .text("Maq"), .text("122")],
                     chip: Kartenchip(text: "entfällt", ton: .entfall), entfall: true),
@@ -158,7 +161,7 @@ struct PlanLegende: View {
                 } header: {
                     Text("Im Raster")
                 } footer: {
-                    Text("Die Art steht immer auch in Worten bzw. mit Pfeil – nicht nur als Farbe. Ein Punkt im Tageskopf zeigt Änderungen (grün) bzw. Entfall (rot) an diesem Tag; die Stundendetails nennen jede Änderung ausführlich.")
+                    Text("Die Art steht immer auch in Worten – nicht nur als Farbe; ein bisheriger Wert steht in Klammern und ist durchgestrichen. Ein Punkt im Tageskopf zeigt Änderungen (grün) bzw. Entfall (rot) an diesem Tag; die Stundendetails nennen jede Änderung ausführlich.")
                 }
             }
             .listStyle(.insetGrouped)
@@ -212,6 +215,11 @@ struct PlanLegende: View {
         case .feld(let t, let ton):
             Chipfeld(ton: ton) {
                 Text(t).font(titel ? .system(size: 13.5, weight: .bold) : .system(size: 12, weight: .semibold))
+            }
+        case .wechsel(let neu, let alt):
+            Chipfeld(ton: .aenderung) {
+                Wertwechsel.text(neu, statt: alt, gewicht: titel ? Font.Weight.bold : Font.Weight.semibold)
+                    .font(titel ? .system(size: 13.5) : .system(size: 12))
             }
         }
     }

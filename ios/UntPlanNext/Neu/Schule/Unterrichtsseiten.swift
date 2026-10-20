@@ -721,13 +721,12 @@ struct VertretungsplanView: View {
         }
     }
 
-    /// „M · MEI → SCH · R204“ (alt durchgestrichen → neu grün).
+    /// „M · SCH (M̶E̶I̶) · R204“ (neu grün, bisher in Klammern grau durchgestrichen – `Wertwechsel`).
     private func wechsel(_ z: Vertretungszeile) -> Text {
         func teil(_ neu: String, _ alt: String) -> Text {
             if !alt.isEmpty && alt != neu {
-                return Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
-                    + Text(" → ").foregroundColor(Farben.text3)
-                    + Text(neu.isEmpty ? "—" : neu).foregroundColor(Farben.aenderung)
+                return Wertwechsel.text(neu.isEmpty ? "—" : neu, statt: alt, altFarbe: Farben.text3)
+                    .foregroundColor(Farben.aenderungSchrift)
             }
             return Text(neu)
         }

@@ -425,7 +425,7 @@ enum Wertbaustein: Hashable {
     case pille(String)
 }
 
-/// Wertzeile im Kopf der Details: Änderungen als „alt → neu“ (alt durchgestrichen, neu grün unterstrichen),
+/// Wertzeile im Kopf der Details: Änderungen als „neu (a̶l̶t̶)“ (neu grün unterstrichen, bisher dahinter durchgestrichen),
 /// fehlende Werte (abwesende Lehrkraft bzw. Klasse) durchgestrichen. Genau eine Zeile; bei vielen Werten lässt sie sich
 /// waagrecht scrollen. Mit `kuerzenAb`: Sind es mehr Werte (z. B. alle Lehrkräfte oder alle Klassen einer
 /// Veranstaltung), stehen nur die ersten und dahinter „… +N“; Antippen klappt die ganze Liste umbrechend auf (und
@@ -600,7 +600,8 @@ struct Wertzeile: View {
         }
     }
 
-    /// Bausteine aus Werten: geänderte Werte als „alt → neu“ (nur Räume, `pfeil`) bzw. „alt · neu“ (Lehrkräfte, Klassen),
+    /// Bausteine aus Werten: geänderte Werte als „neu (a̶l̶t̶)“ – der bisherige Wert dahinter durchgestrichen, ohne Pfeil
+    /// (`pfeil` bleibt nur der Aufrufe wegen),
     /// offene Lehrkraft (kein neuer Wert) durchgestrichen.
     static func bausteine(_ werte: [Wert], durchgestrichen: Bool, offenAlsPlakette: Bool, pfeil: Bool = false) -> [Wertbaustein] {
         var ergebnis: [Wertbaustein] = []
@@ -616,16 +617,14 @@ struct Wertzeile: View {
                 // Offene Vertretung ohne bekannte Lehrkraft
                 teil.append(.offen("???"))
             } else {
-                var ersetzt = false
-                if !alt.isEmpty && alt != w.k {
-                    teil.append(.weg(alt))
-                    teil.append(.pfeil)
-                    ersetzt = true
-                }
+                let ersetzt = !alt.isEmpty && alt != w.k
                 // Hinzugekommener Wert (plus) mit „+“ davor, z. B. „+B070“
                 if !w.k.isEmpty {
                     let wert = w.plus ? "+" + w.k : w.k
                     teil.append(ersetzt || w.plus ? .neu(wert) : .text(wert))
+                }
+                if ersetzt {
+                    teil.append(.weg("(\(alt))"))
                 }
             }
             guard !teil.isEmpty else { continue }

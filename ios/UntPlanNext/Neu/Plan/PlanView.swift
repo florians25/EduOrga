@@ -62,7 +62,12 @@ struct PlanView: View {
 /// der Kachel; langes Drücken zeigt Raumplan, Plan der Lehrkraft bzw. Klasse, Teilen und den Online-Link. Mehrfachauswahl
 /// (Kontrollkästchen in der Auswahl): mehrere Pläne nebeneinander, oben als Felder mit „×“.
 ///
-/// `fest` = Plan aus der Suche (eigene Seite im Stapel der Suche, Favorit im Kalendermenü); nil = Reiter „Plan“
+/// Ein Treffer der Suche öffnet **genau diese Seite im Reiter „Plan“** (`AppZustand.planZeigen` → `planAnfrage`) – mit
+/// Woche/Tag/Agenda, Planleiste, Kennzeichnungen, Mehrfachauswahl und allen übrigen Funktionen wie „Mein Plan“. Titel
+/// „Klasse 5a“ bzw. „Lehrkraft Gal“ / „Raum 105“; zurück zum eigenen Plan über den Knopf links oben bzw. „Mein Plan“ im
+/// Menü des Titels; Favorit (Stern) im Menü des Titels und im Kalendermenü.
+///
+/// `fest` = fest vorgegebener Plan (eigene Seite in einem fremden Stapel, ohne Planwechsel); nil = Reiter „Plan“
 /// (eigener Plan, Planwechsel, Mehrfachauswahl, Anfragen der anderen Reiter und Kurzbefehle).
 struct PlanSeite: View {
     let fest: PlanAuswahl?
@@ -243,7 +248,7 @@ struct PlanSeite: View {
             try? await Task.sleep(nanoseconds: 5_000_000_000)
             studioZeigen = false
         }
-        .navigationTitle(modell.planname)
+        .navigationTitle(planTitel)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { werkzeuge }
         .stundenBuehne($wahl, raum: zoom, zustand: zustand)
@@ -339,8 +344,31 @@ struct PlanSeite: View {
 
     /// Oben in der Mitte der Planname mit Zeitraum (Menü; ersetzt den Titel der Leiste), rechts genau ein Knopf: der
     /// Kalender (auf dem iPad zusätzlich die Suche). Links bleibt Platz für „Zurück“ (Plan aus der Suche).
+    /// Gezeigter fremder Plan (aus der Suche, Favoriten bzw. Auswahl) – nil beim eigenen Plan und bei Mehrfachauswahl.
+    private var fremderPlan: PlanAuswahl? {
+        if let fest { return fest }
+        return mehrfachAktiv ? nil : modell.auswahl
+    }
+
     @ToolbarContentBuilder
     private var werkzeuge: some ToolbarContent {
+        // Fremder Plan im Reiter: links ein Knopf zurück zum eigenen Plan
+        if istReiter && fremderPlan != nil {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    Haptik.auswahl()
+                    withAnimation(.snappy(duration: 0.2)) { einzelnWaehlen(nil) }
+                } label: {
+                    if groessenklasse == .regular {
+                        Label("Mein Plan", systemImage: "chevron.backward")
+                            .labelStyle(.titleAndIcon)
+                    } else {
+                        Label("Mein Plan", systemImage: "chevron.backward")
+                    }
+                }
+                .accessibilityLabel("Zurück zu Mein Plan")
+            }
+        }
         ToolbarItem(placement: .principal) {
             if istReiter {
                 Menu {
@@ -389,15 +417,9 @@ struct PlanSeite: View {
                         Label(modus == .tag ? "Nächster Tag" : "Nächste Woche", systemImage: "chevron.right")
                     }
                 }
-                if let fest {
+                if let plan = fremderPlan {
                     Section {
-                        Button {
-                            Haptik.auswahl()
-                            favoriten.umschalten(fest)
-                        } label: {
-                            Label(favoriten.enthaelt(fest) ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen",
-                                  systemImage: favoriten.enthaelt(fest) ? "star.slash" : "star")
-                        }
+                        favoritKnopf(plan)
                     }
                 }
             } label: {
@@ -407,14 +429,32 @@ struct PlanSeite: View {
         }
     }
 
+    /// Stern: gezeigten Plan zu den Favoriten hinzufügen bzw. daraus entfernen.
+    private func favoritKnopf(_ plan: PlanAuswahl) -> some View {
+        Button {
+            Haptik.auswahl()
+            favoriten.umschalten(plan)
+        } label: {
+            Label(favoriten.enthaelt(plan) ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen",
+                  systemImage: favoriten.enthaelt(plan) ? "star.slash" : "star")
+        }
+    }
+
     /// Planname (bzw. „3 Pläne“) mit dem Zeitraum („KW 43 · Okt. 2026“, im Tag das Datum) als Titel.
     private func titelBlock(mitPfeil: Bool) -> some View {
         VStack(alignment: .center, spacing: 0) {
             HStack(spacing: 3) {
+                if let plan = fremderPlan, favoriten.enthaelt(plan) {
+                    Image(systemName: "star.fill")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Farben.text3)
+                        .accessibilityHidden(true)
+                }
                 Text(planTitel)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Farben.text)
                     .lineLimit(1)
+                    .truncationMode(.middle)
                 if mitPfeil {
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.bold))
@@ -430,9 +470,9 @@ struct PlanSeite: View {
         .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 
-    /// Planname bzw. „3 Pläne“ (Mehrfachauswahl).
+    /// „Mein Plan“, „Klasse 5a“ bzw. „3 Pläne“ (Mehrfachauswahl).
     private var planTitel: String {
-        mehrfachAktiv ? "\(mehrfach.auswahl.count) Pläne" : modell.planname
+        mehrfachAktiv ? "\(mehrfach.auswahl.count) Pläne" : modell.plantitel
     }
 
     /// Zeitraum, bei „Nur Änderungen“ mit Kennzeichnung in Petrol.
@@ -451,8 +491,11 @@ struct PlanSeite: View {
             if modell.istEigenerPlan && !mehrfachAktiv {
                 Label("Mein Plan", systemImage: "checkmark")
             } else {
-                Text("Mein Plan")
+                Label("Mein Plan", systemImage: "chevron.backward")
             }
+        }
+        if let plan = fremderPlan {
+            favoritKnopf(plan)
         }
         if !favoriten.liste.isEmpty {
             Section("Favoriten") {

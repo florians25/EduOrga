@@ -4,7 +4,7 @@ import SwiftUI
 /// TabView; der zuletzt gewählte Reiter wird je Rolle gemerkt):
 /// - „Details“ – ruhig und sachlich im Stil der gruppierten Listen: Kopf (Fach ausgeschrieben und Kürzel, Datum, Stunde und
 ///   Uhrzeit, Status, Fortschritt), „Änderung“ bzw. „Entfall“ (nur wenn etwas anders ist; je Art ein Kennzeichen – Grün, Rot
-///   nur für Entfall, Grau für eine offene Vertretung – und „bisher → neu“), die Angaben (Raum, Lehrkraft, Klasse(n)),
+///   nur für Entfall, Grau für eine offene Vertretung – und „neu (b̶i̶s̶h̶e̶r̶)“), die Angaben (Raum, Lehrkraft, Klasse(n)),
 ///   Hinweis bzw. Information/Prüfung, Online-Unterricht, Thema, Hausaufgaben (lesen), Notiz und „Im Plan anzeigen“.
 /// - „Klassenbuch“ – nur Lehrkräfte (für Schüler*innen und Eltern ausgeblendet): `KlassenbuchReiter` (Thema mit
 ///   Vorschlägen und automatischem Speichern, Anwesenheitskontrolle, Hausaufgaben, Prüfung eintragen, Einträge, Notizen,
@@ -396,7 +396,7 @@ struct StundenBuehneInhalt: View {
     private var lehrkraftOffen: Bool { karte.istOffeneVertretung }
 
     /// Abschnitt „Änderung“ bzw. „Entfall“ ganz oben: je Änderungsart ein Kennzeichen (Grün; Rot nur für den Entfall, Grau
-    /// für eine offene Vertretung) und rechts „bisher → neu“, dazu Verlegung, Vertretungstext bzw. Grund des Entfalls.
+    /// für eine offene Vertretung) und rechts „neu (b̶i̶s̶h̶e̶r̶)“ (`Wertwechsel`), dazu Verlegung, Vertretungstext bzw. Grund des Entfalls.
     @ViewBuilder
     private var aenderungAbschnitt: some View {
         if hatAenderung {
@@ -406,23 +406,27 @@ struct StundenBuehneInhalt: View {
                 } else {
                     if lehrkraftOffen {
                         if kollegium {
-                            aenderungZeile("Vertretung folgt", .offen, offenText)
+                            aenderungZeile("Vertretung folgt", .offen, offenText, vorlesen: offenGesprochen)
                         } else {
                             aenderungZeile("Vertretung folgt", .offen, Text("Die Vertretung wird noch eingeteilt").foregroundColor(Farben.text2))
                         }
                     }
                     if !geaenderteLehrer.isEmpty {
-                        aenderungZeile("Vertretung", .aenderung, wechselText(geaenderteLehrer))
+                        aenderungZeile("Vertretung", .aenderung, wechselText(geaenderteLehrer),
+                                       vorlesen: "Lehrkraft " + wechselGesprochen(geaenderteLehrer))
                     }
                     if !geaenderteRaeume.isEmpty {
-                        aenderungZeile("Raumänderung", .aenderung, wechselText(geaenderteRaeume))
+                        aenderungZeile("Raumänderung", .aenderung, wechselText(geaenderteRaeume),
+                                       vorlesen: "Raum " + wechselGesprochen(geaenderteRaeume))
                     }
                     if !geaenderteKlassen.isEmpty {
                         let nurFehlend = geaenderteKlassen.allSatisfy { $0.k.isEmpty }
-                        aenderungZeile(nurFehlend ? "Klasse fehlt" : "Klasse", nurFehlend ? .offen : .aenderung, wechselText(geaenderteKlassen))
+                        aenderungZeile(nurFehlend ? "Klasse fehlt" : "Klasse", nurFehlend ? .offen : .aenderung, wechselText(geaenderteKlassen),
+                                       vorlesen: "Klasse " + wechselGesprochen(geaenderteKlassen))
                     }
                     if let alt = fachVorher {
-                        aenderungZeile("Fachänderung", .aenderung, wechselText([Wert(k: karte.fach, alt: alt, neu: true)]))
+                        aenderungZeile("Fachänderung", .aenderung, wechselText([Wert(k: karte.fach, alt: alt, neu: true)]),
+                                       vorlesen: "Fach " + Wertwechsel.gesprochen(karte.fach, statt: alt))
                     }
                     if karte.istZusatzstunde || kachel?.zusatz == true {
                         aenderungZeile("Zusätzlich", .aenderung, Text("Zusätzliche Stunde"))
@@ -448,18 +452,23 @@ struct StundenBuehneInhalt: View {
                 Text(karte.istEntfall ? "Entfall" : "Änderung")
             } footer: {
                 if !karte.istEntfall && (!geaenderteLehrer.isEmpty || !geaenderteRaeume.isEmpty || !geaenderteKlassen.isEmpty || fachVorher != nil) {
-                    Text("Grau durchgestrichen: bisher. Grün unterstrichen: neu.")
+                    Text("Grün: neu. In Klammern durchgestrichen: bisher.")
                 }
             }
         }
     }
 
-    /// „Abr → noch offen“ (bisher grau durchgestrichen).
+    /// „noch offen (A̶b̶r̶)“ (bisherige Lehrkraft in Klammern grau durchgestrichen).
     private var offenText: Text {
         let wer = karte.offeneLehrkraefte.filter { $0 != "???" }.joined(separator: ", ")
-        let offen = Text("noch offen").foregroundColor(Farben.text2)
-        guard !wer.isEmpty else { return offen }
-        return Text(wer).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3) + Text(" → ") + offen
+        guard !wer.isEmpty else { return Text("noch offen").foregroundColor(Farben.text2) }
+        return Wertwechsel.text("noch offen", statt: wer, gewicht: nil, altFarbe: Farben.text3).foregroundColor(Farben.text2)
+    }
+
+    /// „Abr abwesend, Vertretung noch offen“ für VoiceOver.
+    private var offenGesprochen: String {
+        let wer = karte.offeneLehrkraefte.filter { $0 != "???" }.joined(separator: ", ")
+        return wer.isEmpty ? "Vertretung noch offen" : "\(wer) abwesend, Vertretung noch offen"
     }
 
     /// Gibt es außer dem Status konkrete Angaben?
@@ -468,9 +477,11 @@ struct StundenBuehneInhalt: View {
             || karte.verlegung != nil || karte.istZusatzstunde || kachel?.zusatz == true || kachel?.art == .abgegeben
     }
 
-    /// Zeile der Änderung: links das Kennzeichen der Art, rechts der Wert („bisher → neu“).
-    private func aenderungZeile(_ art: String, _ ton: Chipton, _ wert: Text) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+    /// Zeile der Änderung: links das Kennzeichen der Art, rechts der Wert („neu (b̶i̶s̶h̶e̶r̶)“).
+    /// `vorlesen`: zugänglicher Name des Werts in Worten („Lehrkraft Gal statt Gor“), nil = der Text selbst.
+    @ViewBuilder
+    private func aenderungZeile(_ art: String, _ ton: Chipton, _ wert: Text, vorlesen: String? = nil) -> some View {
+        let zeile = HStack(alignment: .firstTextBaseline, spacing: 12) {
             Chipfeld(ton: ton) {
                 Text(art)
                     .font(.footnote.weight(.semibold))
@@ -486,7 +497,14 @@ struct StundenBuehneInhalt: View {
                 .textSelection(.enabled)
         }
         .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
+        if let vorlesen {
+            zeile
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(art): \(vorlesen)")
+        } else {
+            zeile
+                .accessibilityElement(children: .combine)
+        }
     }
 
     @ViewBuilder
@@ -838,7 +856,7 @@ struct StundenBuehneInhalt: View {
 
 // MARK: - Pausenaufsicht
 
-/// Pausenaufsicht im selben ruhigen Stil: Ort, Zeit, Status, Aufsicht (alt → neu) und Grund.
+/// Pausenaufsicht im selben ruhigen Stil: Ort, Zeit, Status, Aufsicht (neu, bisher in Klammern durchgestrichen) und Grund.
 struct AufsichtBuehne: View {
     let aufsicht: Aufsicht
     let schliessen: () -> Void

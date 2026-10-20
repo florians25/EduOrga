@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Text einer Kachelzeile
 
 /// Zeile einer Kachel als Text: geänderte Werte grün unterstrichen, wegfallende durchgestrichen. Wurde genau ein
-/// Wert ersetzt (Vertretung, Raumänderung), steht „alt → neu“.
+/// Wert ersetzt (Vertretung, Raumänderung), steht „neu (a̶l̶t̶)“ (`Wertwechsel`).
 func kachelText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
     var ergebnis = Text("")
     let werte: [Wert]
@@ -21,9 +21,8 @@ func kachelText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
         case .plakette:
             let ersetzt = werte.filter { $0.ersetzt && $0.k.caseInsensitiveCompare(teil.text) == .orderedSame }
             if zeile.teile.count == 1, ersetzt.count == 1, let alt = ersetzt[0].alt {
-                stueck = Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
-                    + Text(" → ").foregroundColor(Farben.text3)
-                    + Text(teil.text).foregroundColor(Farben.aenderungSchrift).underline(true, color: Farben.aenderung).fontWeight(.semibold)
+                stueck = Wertwechsel.text(teil.text, statt: alt, altFarbe: Farben.text3)
+                    .foregroundColor(Farben.aenderungSchrift)
             } else {
                 stueck = Text(teil.text).foregroundColor(Farben.aenderungSchrift).underline(true, color: Farben.aenderung).fontWeight(.semibold)
             }
@@ -38,8 +37,8 @@ func kachelText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
     return ergebnis
 }
 
-/// Werte als „alt → neu“ für die große Stundenansicht (alt durchgestrichen, neu grün unterstrichen; ohne
-/// neuen Wert der alte Wert grün durchgestrichen).
+/// Werte als „neu (a̶l̶t̶)“ für die große Stundenansicht (neu grün halbfett, bisher in Klammern grau durchgestrichen; ohne
+/// neuen Wert der alte Wert grün durchgestrichen). Vorlesen: `wechselGesprochen`.
 func wechselText(_ werte: [Wert], trenner: String = ", ") -> Text {
     var ergebnis = Text("")
     var erster = true
@@ -50,9 +49,8 @@ func wechselText(_ werte: [Wert], trenner: String = ", ") -> Text {
         erster = false
         if w.ersetzt {
             ergebnis = ergebnis
-                + Text(alt).strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
-                + Text(" → ").foregroundColor(Farben.text3)
-                + Text(w.k).foregroundColor(Farben.aenderungSchrift).underline(true, color: Farben.aenderungSchrift)
+                + Wertwechsel.text(w.k, statt: alt, altFarbe: Farben.text3)
+                    .foregroundColor(Farben.aenderungSchrift)
         } else if w.k.isEmpty {
             ergebnis = ergebnis + Text(alt).strikethrough(true, color: Farben.aenderungSchrift).foregroundColor(Farben.aenderungSchrift)
         } else if w.geaendert {
@@ -62,6 +60,25 @@ func wechselText(_ werte: [Wert], trenner: String = ", ") -> Text {
         }
     }
     return ergebnis
+}
+
+/// `wechselText` in Worten für VoiceOver: „Gal statt Gor, B070 neu“.
+func wechselGesprochen(_ werte: [Wert]) -> String {
+    var teile: [String] = []
+    for w in werte {
+        let alt = (w.alt ?? "").trimmingCharacters(in: .whitespaces)
+        if w.k.isEmpty && alt.isEmpty { continue }
+        if w.ersetzt {
+            teile.append(Wertwechsel.gesprochen(w.k, statt: alt))
+        } else if w.k.isEmpty {
+            teile.append("\(alt) fehlt")
+        } else if w.geaendert {
+            teile.append("\(w.k) neu")
+        } else {
+            teile.append(w.k)
+        }
+    }
+    return teile.joined(separator: ", ")
 }
 
 // MARK: - Kachel auf der Zeitachse
