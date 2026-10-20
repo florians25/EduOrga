@@ -63,35 +63,44 @@ ios/
   (`AccentColor`, Knöpfe, Auswahl, Links, Jetzt-Linie – 5,4 : 1 auf Weiß; Dunkelmodus `#5FB0B5`, 6,8 : 1),
   Hintergrund `#F5F7F8`, Text `#24363B`. Statusfarben wie `design/tokens.css`: **Änderung/Vertretung Violett**
   `#6d4fc2`, **Termin Magenta** `#a3347c`, Prüfung Bernstein `#a15c07`, Entfall Rot `#b42318`, Ferien Blau `#2f6f9f`.
-- **Planraster und Stundenkarten (Woche, Tag, Zeitachse)** – gleiche Werte wie die PWA (`mobile/README.md`, Abschnitt
-  „Planraster“): hellgraue Rasterfläche (`#edf1f2`, dunkel `#0b0f13`), **eine Zeile je Stunde, alle gleich hoch**
-  (verfügbare Höhe ÷ Stunden bis zur letzten belegten, mindestens der 6., begrenzt auf 44–104 pt), Pausen als Band
-  zwischen den Zeilen (ab 15 Minuten 16 pt in `#e2e8ea`/`#080b0e`, kürzere 3 pt), Doppel- und Blockstunden reichen genau
-  über ihre Zeilen samt Band (Karte = Zeilenoberkante + 1 pt, Höhe − 2 pt). Zeitspalte 32 pt mit Nummer, Beginn und
-  (ab 52 pt Zeilenhöhe) Ende, bündig zur Zeile. Jetzt-Linie 2 pt am heutigen Tag, 1 pt (35 %) über die Woche, Punkt am
-  Rand der Zeitspalte; sie liegt hinter den Karten. **Karte:** weiß (`#1a2128` dunkel), flacher Schatten bzw. dunkle
-  Kontur, Radius 4–6 (Schulwert, Standard 5), **4-pt-Balken** innen links (4 pt Abstand, grau `#b4bec4`/`#56626c` ohne
-  Fachfarbe, sonst Fachfarbe), drei Zeilen à 14 pt: **Lehrkraft bzw. Klasse fett** · Fach · Raum (Reihenfolge „Fach
-  oben“ per Kartendarstellung). Status: Entfall rot durchgestrichen, fein schraffiert, rötliche Linie; Änderung violette
-  Linie und Fläche, geänderter Wert violett unterstrichen bzw. „alt → neu“; Prüfung Bernstein-Linie und -Fläche; offene
-  Vertretung gestrichelt violett mit „?“; Termin/Veranstaltung gestrichelt. Statuswort unten links nur, wo Platz ist.
-  - **Gleichzeitige Stunden** – keine Zählkarte: die vordere Stunde (Änderungen zuerst) bleibt voll breit, oben rechts in
-    ihrer Zelle (3 pt Abstand) steht ein kleines, **neutrales „+X“** (hellgraues Rechteck mit feiner Linie, Radius 4 –
-    den Status zeigt die Karte selbst). Antippen öffnet das Blatt „X Stunden zur selben Zeit“; eine Zeile antippen
-    öffnet ihre Details. In der Tagesliste stehen gleichzeitige Stunden untereinander.
-  - **Ganztägige und mehrstündige Termine** (Elternsprechtag, Pädagogischer Tag …, ab drei Stunden bzw. drei Zeitstunden)
-    stehen nicht als hohe gestrichelte Säule im Raster, sondern als schmales **Banner im Tageskopf** (Titel und Zeit, bis
-    zwei Zeilen, dahinter „+n“) – die Stunden bleiben lesbar.
-  - Die schulweite **Kartendarstellung** aus `/api/app/sitzung` (`darstellung`) steuert Inhalte (Fach als Kürzel bzw.
-    Name, Raum, Zeile 2, Reihenfolge, Statuswörter), Fachfarbe an/aus, Radius, Balkenbreite und die Statusfläche.
+- **Planraster und Stundenkarten (Woche, Tag, Zeitachse)** – „Stundenkarte mobil (v3)“, verbindlich beschrieben in
+  `design/DESIGN.md` (Abschnitt 10; Web/PWA sollen später folgen): hellgraue Rasterfläche (`#edf1f2`, dunkel `#0b0f13`),
+  **eine Zeile je Stunde, alle gleich hoch** (verfügbare Höhe ÷ Stunden bis zur letzten belegten, mindestens der 6.,
+  begrenzt auf 52–112 pt), Pausen als Band (ab 15 Minuten 12 pt, kürzere 3 pt), Doppel- und Blockstunden über ihre
+  Zeilen samt Band.
+  - **Zeitspalte** (38 pt, mit Dynamic Type): Beginn oben, **Stundennummer groß in der Mitte**, Ende unten.
+  - **Tageskopf:** Datum groß „17.11“, darunter der Wochentag „Mo“, zentriert; heute in Petrol mit 2-pt-Linie; ein
+    Punkt zeigt Änderungen (violett) bzw. Entfall (rot). Antippen öffnet den Tag.
+  - **Karte:** füllt die Zelle mit gleichmäßigen Abständen (1,5 pt oben/unten, 3 pt zwischen den Spalten), **feste
+    Breite und Höhe, Inhalt beschnitten – nie breiter als die Spalte**. Radius 6, leichte Tönung der Fachfarbe
+    (Deckkraft nach Kartendarstellung), 4-pt-Balken in der Fachfarbe bündig links, kein Schatten. Oben links das **Fach
+    fett** (14,5 pt), darunter je eine Zeile **Klasse, Lehrkraft, Raum** (12,5 pt).
+  - **Änderungen sofort erkennbar:** schraffierter violetter Balken, feine violette Linie (mit Statusfläche helles
+    Violett) und der geänderte Wert als **violettes Feld „neu (alt)“**, z. B. „Ara (Abr)“, „+B070“. **Entfall:** grau,
+    schraffiert, Fach durchgestrichen, darunter „Entfall“ in Rot. **Offen:** gestrichelt violett mit „?“. Prüfung
+    Bernstein. Die **Legende** steht im Menü „…“ des Plans.
+  - **Gleichzeitige Stunden:** die vordere Stunde (Änderungen zuerst) füllt die Zelle; ein weicher Reiter **„+N“**
+    (Petrol hell) sitzt innen am rechten Rand, senkrecht mittig – immer innerhalb der Zelle. Antippen öffnet das Blatt
+    „N Stunden zur selben Zeit“.
+  - **Veranstaltungen** (AG, Schulfest, Termin) als eigener, warmer Block über ihre Zeit (Titel, Beteiligte, Uhrzeit
+    unten); ganztägige bzw. ab drei Stunden lange Termine als schmales Banner im Tageskopf.
+  - **iPad (Woche): mehrere Pläne nebeneinander** – oben eine Leiste mit den gewählten Klassen, Lehrkräften bzw. Räumen
+    („×“ entfernt, „Hinzufügen …“ öffnet die Planauswahl, bis zu sechs, auf dem Gerät gespeichert); jeder Tag teilt sich
+    in Unterspalten je Plan, darüber das Kürzel. Veranstaltungen ohne Unterricht in allen gewählten Plänen laufen über
+    den ganzen Tag. Ohne Auswahl bleibt es beim einzelnen Plan.
+  - Die schulweite **Kartendarstellung** aus `/api/app/sitzung` (`darstellung`) steuert Fach als Kürzel bzw. Name,
+    Raum und Zeile 2 (Änderungen bleiben sichtbar), Statuswörter, Fachfarbe an/aus, Tönung und Deckkraft, Radius,
+    Balkenbreite und die Statusfläche.
 - **Liquid Glass** nur auf der Bedienebene (Tab-Leiste, Wochenleiste der Tagesansicht, Werkzeugknöpfe, Filterchips,
   Knöpfe über dem Kopf der Stundenansicht); Inhalte deckend.
 - SF Pro mit Dynamic Type, Abstände im 8-pt-Raster, Tippflächen mindestens 44 pt.
 
 ## Oberfläche
 
-Tab-Leiste: **Heute · Plan · Postfach · Schule · Suche**. Profil, Konten und Einstellungen öffnen sich als Blatt über
-den **Avatar oben rechts** (im Reiter „Plan“ über das Menü „…“, damit Tag | Woche Platz in der Leiste hat).
+Tab-Leiste mit wenigen, festen Reitern: **Heute · Plan · Postfach · Schule · Profil**. „Profil“ enthält Konten und
+Schulen, Termine, Einstellungen (Mitteilungen, Darstellung, Kontaktdaten, Passwort), Info und Abmelden. Die **Suche**
+nach Plänen (Klasse, Lehrkraft, Raum) öffnet sich als Blatt über die **Lupe oben rechts** (Heute, Postfach, Schule; im
+Plan auf dem iPad neben „Heute“, auf dem iPhone im Menü des Plannamens) und über den Kurzbefehl „Plan suchen“.
 
 - **Einrichtung** – ruhige Einstiegsseite mit Monogramm, Wortmarke und Slogan. Schritt 1: EduOrga-Adresse der Schule
   (Prüfung schon beim Tippen: Format, dann Server und Schulname mit Häkchen bzw. verständlichem Fehler), **QR-Code
@@ -102,18 +111,20 @@ den **Avatar oben rechts** (im Reiter „Plan“ über das Menü „…“, dami
   Navigationsleiste, **zwei Finger** (aufziehen > 1,3 = Tag, zusammenziehen < 0,75 = Woche) und **Tageskopf antippen** =
   dieser Tag; der Wechsel ist animiert (die Woche „zoomt“ in den Tag und zurück). Links oben der Planname mit KW (Menü:
   eigener Plan, Favoriten, weitere Pläne, Suche), rechts „Heute“ und das Menü (Dichte der Woche bzw. Liste/Zeitachse,
-  Gehe zu Datum, Profil und Einstellungen). Woche: waagrecht wischen = andere Woche, Antippen = Stundendetails, langes
+  Gehe zu Datum, Legende). Woche: waagrecht wischen = andere Woche, Antippen = Stundendetails, langes
   Drücken = Kontextmenü (Raumplan, Plan der Lehrkraft/Klasse, Teilen, Online-Link). **Tag:** Liste mit Uhrzeiten links
   und großen, gut lesbaren Karten in derselben Kartensprache, laufende Stunde mit Rahmen, Restzeit und Fortschritt,
   dazwischen die **Jetzt-Linie** mit Uhrzeit, Pausen und Freistunden als kompakte Zeile; waagrecht wischen = Tag,
   schwebende Wochenleiste. Alternativ Zeitachse (Menü).
-- **Stundendetails** – ruhige, gegliederte Seite im Stil der gruppierten Listen des Systems (kein farbiger Kopf, keine
-  Schmuck-Plaketten): Navigationsleiste mit Datum, Schließen und Teilen; **Titelzeile** (Fachbalken, Fach ausgeschrieben
-  und Kürzel, Zeit, Status als Text, Fortschritt der laufenden Stunde); **Angaben** als Schlüssel/Wert (Zeit, Raum,
-  Lehrkraft, Klasse, Status, Fach/Verlegung „alt → neu“, fehlende Klassen); Abschnitte Vertretungstext bzw.
-  Information/Prüfung, **Online-Unterricht beitreten**, **Thema**, **Hausaufgaben**, **Notizen**, für Lehrkräfte
-  **Klassenbuch** (Einträge gelten für Block/Einzelstunde, Anwesenheit, Lehrstoff, Klassenbucheinträge) und „Im Plan
-  anzeigen“. Gleichzeitige Stunden: Segmentschalter oben.
+- **Stundendetails** – ruhige, gut überblickbare Seite im Stil der gruppierten Listen des Systems (kein farbiger Kopf,
+  keine Schmuck-Plaketten, Farbe nur für den Status): Navigationsleiste mit Datum, Schließen und Teilen. **Kopf:** Fach
+  ausgeschrieben groß mit Kürzel, „3. Stunde · 9:45–10:30“, Status als Wort, Fortschritt der laufenden Stunde.
+  **Änderung** bzw. **Entfall** (nur wenn etwas anders ist) direkt darunter: jede geänderte Angabe als „bisher → neu“
+  (Lehrkraft, Raum, Klasse, Fach), Verlegung, Vertretungstext bzw. Grund des Entfalls. Danach die **Angaben**, wie sie
+  jetzt gelten (Zeit, Raum, Lehrkraft, Klasse(n), fehlende Klassen), Hinweis bzw. Information/Prüfung,
+  **Online-Unterricht beitreten**, **Thema**, **Hausaufgaben**, **Notizen**, für Lehrkräfte **Klassenbuch** (Einträge
+  gelten für Block/Einzelstunde, Anwesenheit, Lehrstoff, Klassenbucheinträge) und „Im Plan anzeigen“. Gleichzeitige
+  Stunden: Segmentschalter oben.
 - **Anwesenheit** (Lehrkräfte, wie in EduOrga Web): Kopf „24 / 27 anwesend · 2 abwesend · 1 verspätet“, gemeldete
   Abwesenheiten der Eltern (mit „Als abwesend eintragen“), Abwesenheiten aus der Vorstunde („Für diese Stunde
   übernehmen“), je Schüler*in ein Segmentschalter **Anwesend · Abwesend · Verspätet · Entsch.** (Verspätung mit
@@ -149,7 +160,7 @@ den **Avatar oben rechts** (im Reiter „Plan“ über das Menü „…“, dami
   landen im **Schreibpuffer** (je Konto) und werden gesendet, sobald das Netz zurück ist (Netzbeobachtung), die App in
   den Vordergrund kommt oder „Senden“ gewählt wird; bis dahin zeigt die App den lokalen Stand („wartet auf
   Verbindung“). Andere Schreibzugriffe melden einen klaren Fehler.
-- **Heute, Postfach, Suche, Profil** – wie bisher; im Profil zusätzlich **Benachrichtigungen** (E-Mail-Adresse und
+- **Heute, Postfach, Suche, Profil** – wie bisher (Profil jetzt als eigener Reiter, Suche als Blatt); im Profil zusätzlich **Benachrichtigungen** (E-Mail-Adresse und
   „Bei neuen Mitteilungen per E-Mail benachrichtigen“) und unter **Darstellung** die Dichte der Woche.
 
 ## Einrichtung

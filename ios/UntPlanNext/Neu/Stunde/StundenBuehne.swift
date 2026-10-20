@@ -1,10 +1,13 @@
 import SwiftUI
 
-/// Stundendetails (bildschirmfüllend, mit Zoom aus der Kachel): ruhige, gegliederte Seite im Stil der gruppierten Listen
-/// des Systems – kein farbiger Kopf, keine Schmuck-Plaketten. Oben Titelzeile (Fach ausgeschrieben und Kürzel, Status
-/// als Text, Zeit), darunter die Angaben als Schlüssel/Wert (Zeit, Raum, Lehrkraft, Klasse, Status bzw. Änderung
-/// „alt → neu“), dann Vertretungstext, Online-Link, Thema, Hausaufgaben, Notizen und für Lehrkräfte das Klassenbuch
-/// (Anwesenheit, Lehrstoff, Einträge). Unterseiten öffnen sich im selben Stapel.
+/// Stundendetails (bildschirmfüllend, mit Zoom aus der Kachel): ruhige, gut überblickbare Seite im Stil der gruppierten
+/// Listen des Systems – kein farbiger Kopf, keine Schmuck-Plaketten, Farbe nur für den Status. Reihenfolge:
+/// 1. Kopf: Fach ausgeschrieben und Kürzel, Stunde und Uhrzeit (Datum in der Leiste), Status als Wort, Fortschritt.
+/// 2. „Änderung“ bzw. „Entfall“ (nur wenn etwas anders ist): jede geänderte Angabe „bisher → neu“, Verlegung,
+///    Vertretungstext bzw. Grund.
+/// 3. Angaben, wie sie jetzt gelten: Zeit, Raum, Lehrkraft, Klasse(n), fehlende Klassen.
+/// 4. Hinweis bzw. Information/Prüfung, Online-Unterricht, Thema, Hausaufgaben, Notizen, für Lehrkräfte das Klassenbuch
+///    (Anwesenheit, Lehrstoff, Einträge) und „Im Plan anzeigen“. Unterseiten öffnen sich im selben Stapel.
 struct StundenBuehne: View {
     let wahl: Stundenwahl
     @EnvironmentObject var zustand: AppZustand
@@ -90,6 +93,7 @@ struct StundenBuehneInhalt: View {
             Section {
                 titelZeile
             }
+            aenderungAbschnitt
             Section {
                 faktenZeilen
             }
@@ -199,7 +203,7 @@ struct StundenBuehneInhalt: View {
         }
     }
 
-    // MARK: - Titelzeile
+    // MARK: - Kopf
 
     private var fachKurz: String {
         if istVeranstaltung { return karte.anzeigeText.isEmpty ? (karte.anzeigeArt.isEmpty ? "Veranstaltung" : karte.anzeigeArt) : karte.anzeigeText }
@@ -225,36 +229,29 @@ struct StundenBuehneInhalt: View {
         return "\(Uhr.uhrzeit(b))–\(Uhr.uhrzeit(e))"
     }
 
-    /// Balken der Titelzeile: Fachfarbe bzw. grau (wie die Karte im Plan).
+    /// Balken des Kopfs: Fachfarbe bzw. grau (wie die Karte im Plan).
     private var balkenFarbe: Color {
-        if karte.istEntfall { return Farben.entfall.opacity(0.5) }
+        if karte.istEntfall { return Farben.balkenGrau }
         return Fachfarbe.voll(karte.farbe) ?? Farben.balkenGrau
     }
 
+    /// Kopf: Fach ausgeschrieben groß, daneben das Kürzel; darunter Stunde und Uhrzeit (das Datum steht in der Leiste),
+    /// der Status als Wort in seiner Farbe und – heute – der Fortschritt der laufenden Stunde.
     private var titelZeile: some View {
         HStack(alignment: .top, spacing: 12) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(balkenFarbe)
                 .frame(width: 4)
-                .frame(minHeight: 40)
+                .frame(minHeight: 44)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    if let alt = karte.fachAlt, !alt.isEmpty, alt != karte.fach, !istVeranstaltung {
-                        Text(alt)
-                            .font(.title3)
-                            .strikethrough(true, color: Farben.text3)
-                            .foregroundStyle(Farben.text3)
-                        Image(systemName: "arrow.right")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Farben.text3)
-                            .accessibilityHidden(true)
-                    }
                     Text(fachLang.isEmpty ? fachKurz : fachLang)
                         .font(.title2.weight(.semibold))
-                        .foregroundStyle(karte.istEntfall ? Farben.entfall : Farben.text)
+                        .foregroundStyle(karte.istEntfall ? Farben.text2 : Farben.text)
                         .strikethrough(karte.istEntfall, color: Farben.entfall)
                         .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                     if !fachLang.isEmpty {
                         Text(fachKurz)
                             .font(.title3)
@@ -262,7 +259,7 @@ struct StundenBuehneInhalt: View {
                             .lineLimit(1)
                     }
                 }
-                Text("\(zeitKurz) · \(stundentext)")
+                Text("\(stundentext) · \(zeitKurz)")
                     .font(.subheadline)
                     .monospacedDigit()
                     .foregroundStyle(Farben.text2)
@@ -274,7 +271,7 @@ struct StundenBuehneInhalt: View {
                 fortschritt
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
     }
@@ -302,10 +299,96 @@ struct StundenBuehneInhalt: View {
         }
     }
 
-    // MARK: - Angaben (Schlüssel/Wert)
+    // MARK: - Änderung (oben, nur wenn sich etwas geändert hat)
 
-    private var lehrerGeaendert: Bool { karte.lehrer.contains(where: \.geaendert) || karte.istOffeneVertretung }
-    private var klasseGeaendert: Bool { karte.klassen.contains(where: \.geaendert) || !karte.mitklassen.filter(\.geaendert).isEmpty }
+    /// Entfall, Vertretung, Raum- bzw. Lehrerwechsel, Zusatzstunde, abgegebene Stunde.
+    private var hatAenderung: Bool {
+        guard !istVeranstaltung else { return false }
+        if karte.istEntfall { return true }
+        guard let k = kachel else { return false }
+        return k.art == .aenderung || k.art == .abgegeben || k.raumAenderung
+    }
+
+    private var geaenderteLehrer: [Wert] { karte.lehrer.filter { $0.geaendert } }
+    private var geaenderteRaeume: [Wert] { daten.aktuelleRaeume.filter { $0.geaendert } }
+    private var geaenderteKlassen: [Wert] { (karte.klassen + karte.mitklassen).filter { $0.geaendert } }
+
+    private var fachVorher: String? {
+        guard let a = karte.fachAlt, !a.isEmpty, a != karte.fach, !istVeranstaltung else { return nil }
+        return a
+    }
+
+    private var lehrkraftOffen: Bool { karte.istOffeneVertretung && karte.lehrer.allSatisfy { $0.k.isEmpty } }
+
+    /// Gibt es außer dem Status konkrete Angaben „bisher → neu“?
+    private var aenderungMitAngaben: Bool {
+        if karte.istEntfall { return true }
+        return lehrkraftOffen || !geaenderteLehrer.isEmpty || !geaenderteRaeume.isEmpty || !geaenderteKlassen.isEmpty
+            || fachVorher != nil || karte.verlegung != nil || !detailText.isEmpty
+    }
+
+    /// Abschnitt „Änderung“ bzw. „Entfall“ ganz oben: jede geänderte Angabe als „bisher → neu“ (bisher grau
+    /// durchgestrichen, neu violett), Verlegung, dazu der Vertretungstext bzw. der Grund des Entfalls.
+    @ViewBuilder
+    private var aenderungAbschnitt: some View {
+        if hatAenderung {
+            Section {
+                if karte.istEntfall {
+                    wertZeile("Status", Text("Entfällt").foregroundColor(Farben.entfall).fontWeight(.semibold))
+                } else {
+                    if !aenderungMitAngaben, let merkmal {
+                        wertZeile("Art", Text(merkmal.text).foregroundColor(merkmal.farbe).fontWeight(.semibold))
+                    }
+                    if lehrkraftOffen {
+                        wertZeile("Lehrkraft", Text(karte.offeneLehrkraefte.joined(separator: ", "))
+                                    .strikethrough(true, color: Farben.text3).foregroundColor(Farben.text3)
+                                    + Text(" → noch offen").foregroundColor(Farben.aenderung))
+                    } else if !geaenderteLehrer.isEmpty {
+                        wertZeile(geaenderteLehrer.count > 1 ? "Lehrkräfte" : "Lehrkraft", wechselText(geaenderteLehrer))
+                    }
+                    if !geaenderteRaeume.isEmpty {
+                        wertZeile(geaenderteRaeume.count > 1 ? "Räume" : "Raum", wechselText(geaenderteRaeume))
+                    }
+                    if !geaenderteKlassen.isEmpty {
+                        wertZeile(geaenderteKlassen.count > 1 ? "Klassen" : "Klasse", wechselText(geaenderteKlassen))
+                    }
+                    if let alt = fachVorher {
+                        wertZeile("Fach", wechselText([Wert(k: karte.fach, alt: alt, neu: true)]))
+                    }
+                }
+                verlegungZeilen
+                if !detailText.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(karte.istEntfall ? "Grund" : "Hinweis")
+                            .font(.footnote)
+                            .foregroundStyle(Farben.text2)
+                        langText(detailText)
+                    }
+                    .padding(.vertical, 2)
+                }
+            } header: {
+                Text(karte.istEntfall ? "Entfall" : "Änderung")
+            } footer: {
+                if !karte.istEntfall && (!geaenderteLehrer.isEmpty || !geaenderteRaeume.isEmpty || !geaenderteKlassen.isEmpty) {
+                    Text("Grau durchgestrichen: bisher. Violett: neu.")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var verlegungZeilen: some View {
+        if let richtung = karte.verlegung {
+            if let von = karte.verlegungVon?.text, !von.isEmpty {
+                wertZeile(richtung == "von" ? "Verlegt von" : "Hierher von", Text(von))
+            }
+            if let nach = karte.verlegungNach?.text, !nach.isEmpty {
+                wertZeile("Verlegt nach", Text(nach))
+            }
+        }
+    }
+
+    // MARK: - Angaben (Schlüssel/Wert)
 
     private func ohneDoppelte(_ werte: [String]) -> [String] {
         var ergebnis: [String] = []
@@ -321,33 +404,38 @@ struct StundenBuehneInhalt: View {
         return teile.joined(separator: ", ")
     }
 
+    /// Aktueller Wert (bei Entfall der geplante): neuer Wert, sonst der bisherige.
+    private func aktuell(_ werte: [Wert]) -> [String] {
+        ohneDoppelte(werte.map { w in
+            if !w.k.isEmpty { return w.k }
+            return karte.istEntfall ? (w.alt ?? "") : ""
+        })
+    }
+
+    private var raumText: String {
+        let r = aktuell(daten.aktuelleRaeume)
+        if !r.isEmpty { return r.joined(separator: ", ") }
+        if daten.istOnline { return "Online" }
+        return daten.aktuelleRaeume.contains { !($0.alt ?? "").isEmpty } ? "noch offen" : "–"
+    }
+
+    private var lehrerListe: [String] { aktuell(karte.lehrer) }
+
+    private var lehrerText: String {
+        if !lehrerListe.isEmpty { return lehrerListe.joined(separator: ", ") }
+        return lehrkraftOffen || karte.istOffeneVertretung ? "noch offen" : "–"
+    }
+
+    /// Angaben der Stunde, so wie sie jetzt gelten – ohne Farbe (die Änderung steht im Abschnitt darüber).
     @ViewBuilder
     private var faktenZeilen: some View {
-        let raeume = daten.aktuelleRaeume.filter { !$0.k.isEmpty || !($0.alt ?? "").isEmpty }
-        let lehrer = karte.lehrer.filter { !$0.k.isEmpty || !($0.alt ?? "").isEmpty }
         wertZeile("Zeit", Text("\(zeitKurz) · \(stundentext)"))
-        wertZeile("Raum", raeume.isEmpty ? Text(daten.istOnline ? "Online" : "–") : wechselText(raeume))
-        if karte.istOffeneVertretung && karte.lehrer.allSatisfy({ $0.k.isEmpty }) {
-            wertZeile("Lehrkraft", Text(karte.offeneLehrkraefte.joined(separator: ", ")).strikethrough(true, color: Farben.aenderung)
-                        + Text(" · offen").foregroundColor(Farben.aenderung))
-        } else {
-            wertZeile(lehrer.count > 1 ? "Lehrkräfte" : "Lehrkraft", lehrer.isEmpty ? Text("–") : wechselText(lehrer))
-        }
+        wertZeile("Raum", Text(raumText))
+        wertZeile(lehrerListe.count > 1 ? "Lehrkräfte" : "Lehrkraft", Text(lehrerText))
         wertZeile(karte.klassen.count + karte.mitklassen.count > 1 ? "Klassen" : "Klasse",
-                  klasseGeaendert ? wechselText(karte.klassen + karte.mitklassen) : Text(klassenText.isEmpty ? "–" : klassenText))
-        if let merkmal {
-            wertZeile("Status", Text(merkmal.text).foregroundColor(merkmal.farbe))
-        }
-        if let alt = karte.fachAlt, !alt.isEmpty, alt != karte.fach, !istVeranstaltung {
-            wertZeile("Fach", wechselText([Wert(k: karte.fach, alt: alt, neu: true)]))
-        }
-        if let richtung = karte.verlegung {
-            if let von = karte.verlegungVon?.text, !von.isEmpty {
-                wertZeile(richtung == "von" ? "Verlegt von" : "Hierher von", Text(von))
-            }
-            if let nach = karte.verlegungNach?.text, !nach.isEmpty {
-                wertZeile("Verlegt nach", Text(nach))
-            }
+                  Text(klassenText.isEmpty ? "–" : klassenText))
+        if !hatAenderung {
+            verlegungZeilen
         }
         if !karte.abwesendeKlassen.isEmpty {
             wertZeile("Fehlt", Text("\(karte.abwesendeKlassen.joined(separator: ", ")) – \(karte.abwesendText.isEmpty ? "abwesend" : karte.abwesendText)"))
@@ -401,8 +489,9 @@ struct StundenBuehneInhalt: View {
                     langText(karte.anzeigeText)
                 }
             }
-        } else if !detailText.isEmpty {
-            Section(textTitel) {
+        } else if !detailText.isEmpty && !hatAenderung {
+            // Bei einer Änderung steht der Text schon im Abschnitt „Änderung“
+            Section("Hinweis") {
                 langText(detailText)
             }
         }

@@ -54,7 +54,7 @@ struct HeuteView: View {
             .task { await laden() }
             .navigationTitle("Heute")
             .navigationBarTitleDisplayMode(.large)
-            .profilWerkzeug()
+            .suchWerkzeug()
             .navigationDestination(for: Startziel.self) { ziel in
                 Startzielseite(ziel: ziel, heute: heute, sprechtage: sprechtage) { karte in
                     wahl = Stundenwahl(quelle: "liste-\(karte.id.uuidString)", karten: [karte], typ: heute?.typ ?? "klasse",

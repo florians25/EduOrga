@@ -1,11 +1,11 @@
 import SwiftUI
 
-// Gestaltung der Stundenkarten (Woche, Tag, Zeitachse): klassischer Grundstil – in diese Richtung bekannter
-// Stundenplanportale, aber eigenständig (eigene Proportionen, Schrift, Statusformen, Wörter und Symbole): weiße Karte
-// ohne Rahmen, Radius 2–4, schmaler 3-pt-Balken innen links (grau bzw. Fachfarbe). Die schulweite Kartendarstellung
-// (Feld `darstellung` der Sitzung) steuert Inhalte (Fach als Kürzel/Name, Raum, Zeile 2, Statuswörter), Fachfarbe an/aus
-// und die Statusfläche. Status: Entfall rot durchgestrichen und schraffiert, Änderung violett (Balken, Fläche, „alt →
-// neu“), Prüfung Bernstein, offene Vertretung, Termin, Buchung und abgegebene Stunden gestrichelt.
+// Gestaltung der Stundenkarten (Woche, Tag, Zeitachse) – „Stundenkarte mobil (v3)“, siehe design/DESIGN.md: die Karte
+// füllt ihre Zelle (nie breiter als die Spalte), leichte Tönung der Fachfarbe, 4-pt-Balken bündig links, Fach fett oben
+// links, darunter Klasse, Lehrkraft und Raum je eine Zeile. Änderungen fallen sofort auf: schraffierter violetter Balken
+// und der geänderte Wert als violettes Feld „neu (alt)“; Entfall grau, durchgestrichen mit „Entfall“ in Rot; offen
+// gestrichelt. Die schulweite Kartendarstellung (Feld `darstellung` der Sitzung) steuert Fach als Kürzel/Name, Raum,
+// Zeile 2, Statuswörter, Fachfarbe an/aus, Tönung und Statusfläche.
 
 // MARK: - Umgebung
 
@@ -89,7 +89,7 @@ struct Statuswort: View {
             .tracking(0.3)
             .foregroundStyle(merkmal.farbe)
             .lineLimit(1)
-            .fixedSize()
+            .layoutPriority(1)
             .accessibilityHidden(true)
     }
 }
@@ -107,26 +107,41 @@ extension Statuslehre {
     }
 }
 
-// MARK: - Grundstil (Wochenraster, Tagesliste, Zeitachse)
+// MARK: - Grundstil v3 (Wochenraster, Tagesliste, Zeitachse)
 
-/// Grundstil der Karten in Woche und Tag (wie die PWA, „Planraster“): weiße Karte auf hellgrauem Raster mit sehr
-/// flachem Schatten (dunkel: feine Kontur), weicher Radius 5, 4-pt-Balken innen links mit runden Enden (grau ohne
-/// Fachfarbe, sonst die Fachfarbe). Darüber der eigene Status: Entfall rot durchgestrichen und fein schraffiert mit
-/// rötlicher Linie, Änderung violette Linie und helle violette Fläche, Prüfung Bernstein-Linie und -Fläche, offene
-/// Vertretung gestrichelt violett mit „?“, Termin/Veranstaltung/Buchung gestrichelt.
+/// Stundenkarte mobil (v3, design/DESIGN.md „Stundenkarte mobil (v3)“): die Karte füllt ihre Zelle, Radius 6, leichte
+/// Tönung der Fachfarbe als Fläche (Kartendarstellung „Balken und Tönung“, Deckkraft nach Schulwert), 4-pt-Balken in der
+/// Fachfarbe bündig am linken Rand. Status: Änderung mit schraffiertem violettem Balken, feiner violetter Linie und dem
+/// geänderten Wert als violettes Feld „neu (alt)“; Entfall grau, schraffiert, durchgestrichen mit dem Wort „Entfall“ in
+/// Rot; offene Vertretung gestrichelt violett mit „?“; Prüfung Bernstein; Termin/Buchung gestrichelt; Veranstaltung als
+/// warmes, ruhiges Feld. Kein Schatten – eine feine Kontur trennt die Karte vom Raster.
 struct Klassikstil {
     var balken: Color
     var flaeche: Color
+    /// Tönung der Fachfarbe über der Fläche (nil = keine)
+    var ton: Color? = nil
     var rand: Color?
     var strich: StrokeStyle
     var schraffur: Bool
     var gedaempft: Bool
     /// Balken zeigen (Termine und Sonderfelder ohne Balken)
     var mitBalken: Bool = true
+    /// Geänderte Stunde: Balken schraffiert
+    var gestreift: Bool = false
     /// Offene Vertretung bzw. offener Raum: „?“ an der Karte
     var offen: Bool = false
     /// Farbe der ersten Zeile
     var titel: Color = Farben.text
+
+    /// Tönung einer Fachfarbe mit der Deckkraft der Kartendarstellung (6–30 %, dunkel etwas kräftiger).
+    static func toenung(_ hex: String, prozent: Int) -> Color? {
+        guard let f = Fachfarbe.anteile(hex) else { return nil }
+        let hell = Double(min(30, max(6, prozent))) / 100
+        return Color(uiColor: UIColor { merkmale in
+            let deckkraft = merkmale.userInterfaceStyle == .dark ? min(0.4, hell * 1.8) : hell
+            return UIColor(red: CGFloat(f.r), green: CGFloat(f.g), blue: CGFloat(f.b), alpha: CGFloat(deckkraft))
+        })
+    }
 
     static func fuer(_ k: Kachel, _ d: Kartendarstellung) -> Klassikstil {
         let art = k.kartenart
@@ -134,37 +149,60 @@ struct Klassikstil {
         let fach = d.ohneFachfarbe ? nil : Fachfarbe.voll(k.balkenHex)
         var s = Klassikstil(balken: fach ?? Farben.balkenGrau, flaeche: Farben.karte, rand: nil, strich: StrokeStyle(lineWidth: 1),
                             schraffur: false, gedaempft: false)
+        if d.mitToenung && !d.ohneFachfarbe {
+            s.ton = toenung(k.balkenHex, prozent: d.deckkraft)
+        }
         switch art {
         case .normal:
             break
         case .entfall:
-            s.balken = (fach ?? Farben.balkenGrau).opacity(0.35)
+            s.ton = nil
+            s.flaeche = Farben.flaeche2
+            s.balken = Farben.balkenGrau.opacity(0.6)
             s.schraffur = true
             s.gedaempft = true
-            s.rand = Farben.entfall.opacity(0.45)
-            s.titel = Farben.entfall
+            s.rand = Farben.entfall.opacity(0.35)
+            s.titel = Farben.text3
         case .aenderung:
-            s.rand = Farben.aenderung
-            if d.statusflaeche { s.flaeche = Farben.aenderungFlaeche }
+            s.balken = Farben.aenderung
+            s.gestreift = true
+            s.rand = Farben.aenderung.opacity(0.55)
+            if d.statusflaeche {
+                s.ton = nil
+                s.flaeche = Farben.aenderungFlaeche
+            }
         case .pruefung:
             s.rand = Farben.pruefung
-            if d.statusflaeche { s.flaeche = Farben.pruefungFlaeche }
+            if d.statusflaeche {
+                s.ton = nil
+                s.flaeche = Farben.pruefungFlaeche
+            }
         case .termin:
+            s.ton = nil
             s.mitBalken = false
-            s.rand = Farben.text2.opacity(0.6)
-            s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
-            s.titel = Farben.termin
+            if k.art == .veranstaltung {
+                s.flaeche = Farben.ereignisFlaeche
+                s.rand = Farben.ereignisRand
+                s.titel = Farben.ereignisText
+            } else {
+                s.rand = Farben.text2.opacity(0.6)
+                s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+                s.titel = Farben.termin
+            }
         case .buchung:
+            s.ton = nil
             s.mitBalken = false
             s.rand = Farben.frei.opacity(0.8)
             s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
             s.titel = Farben.frei
         case .abwesend:
+            s.ton = nil
             s.mitBalken = false
             s.rand = Farben.text3
             s.strich = StrokeStyle(lineWidth: 1, dash: [2, 2])
             s.gedaempft = true
         case .neutral:
+            s.ton = nil
             s.flaeche = Farben.flaeche2
             s.mitBalken = false
             if k.art == .bereitschaft {
@@ -174,6 +212,8 @@ struct Klassikstil {
         }
         if offen {
             s.offen = true
+            s.balken = Farben.aenderung
+            s.gestreift = true
             s.rand = Farben.aenderung
             s.strich = StrokeStyle(lineWidth: 1.2, dash: [3, 2])
         }
@@ -181,28 +221,47 @@ struct Klassikstil {
     }
 }
 
+/// Balken links an der Karte: Fachfarbe deckend bzw. (geänderte Stunde) schräg schraffiert.
+struct Kartenbalken: View {
+    let farbe: Color
+    var gestreift: Bool = false
+
+    var body: some View {
+        if gestreift {
+            ZStack {
+                Rectangle().fill(farbe.opacity(0.25))
+                Streifenmuster(abstand: 5)
+                    .stroke(farbe, lineWidth: 2)
+            }
+            .clipped()
+        } else {
+            Rectangle().fill(farbe)
+        }
+    }
+}
+
 extension View {
-    /// Fläche, Schraffur, Balken, Linie bzw. gestrichelter Rand und der flache Schatten im Grundstil.
-    func klassikKarte(_ s: Klassikstil, radius: CGFloat = 5, balkenBreite: CGFloat = 4) -> some View {
+    /// Fläche, Tönung, Schraffur, Balken (bündig links, von der Kartenform beschnitten), Linie bzw. gestrichelter Rand.
+    func klassikKarte(_ s: Klassikstil, radius: CGFloat = 6, balkenBreite: CGFloat = 4) -> some View {
         let form = RoundedRectangle(cornerRadius: radius, style: .continuous)
         return self
             .background {
                 ZStack(alignment: .leading) {
                     form.fill(s.flaeche)
+                    if let ton = s.ton {
+                        form.fill(ton)
+                    }
                     if s.schraffur {
                         Streifenmuster(abstand: 6)
-                            .stroke(Farben.entfall.opacity(0.13), lineWidth: 1)
-                            .clipShape(form)
+                            .stroke(Farben.entfall.opacity(0.10), lineWidth: 1)
                     }
                     if s.mitBalken {
-                        RoundedRectangle(cornerRadius: balkenBreite / 2, style: .continuous)
-                            .fill(s.balken)
+                        Kartenbalken(farbe: s.balken, gestreift: s.gestreift)
                             .frame(width: balkenBreite)
-                            .padding(.vertical, 4)
-                            .padding(.leading, 4)
+                            .frame(maxHeight: .infinity)
                     }
                 }
-                .shadow(color: s.rand == nil ? Farben.karteSchatten : .clear, radius: 0.75, x: 0, y: 0.75)
+                .clipShape(form)
             }
             .overlay {
                 if let rand = s.rand {
@@ -225,5 +284,80 @@ extension View {
                         .accessibilityHidden(true)
                 }
             }
+    }
+}
+
+// MARK: - Geänderter Wert als Feld
+
+/// Eine Zeile der Stundenkarte (Lehrkraft, Klasse, Raum): unveränderte Werte als Text, geänderte als kleines violettes
+/// Feld „neu (alt)“ – z. B. „Ara (Abr)“ für eine Vertretung, „+B070“ für einen hinzugekommenen Raum, durchgestrichen
+/// für einen weggefallenen Wert, „?“ für eine offene Vertretung. Auf einer entfallenen Stunde grau durchgestrichen. Das
+/// Feld wird nie breiter als die Karte (eine Zeile, verkleinert bzw. gekürzt).
+struct Kartenwert: View {
+    let zeile: Kachelzeile
+    let karte: Karte?
+    var entfall: Bool = false
+    var schrift: Font = .system(size: 12)
+    var farbe: Color = Farben.text2
+
+    var body: some View {
+        if !entfall && !zeile.nurText {
+            Kartenwert.aenderungsText(zeile, karte: karte)
+                .font(schrift)
+                .foregroundStyle(Farben.aenderungText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 3)
+                .background(Farben.aenderungChip, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+        } else {
+            Text(zeile.text)
+                .font(schrift)
+                .foregroundStyle(entfall ? Farben.text3 : farbe)
+                .strikethrough(entfall, color: Farben.entfall.opacity(0.7))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+    }
+
+    /// Text im Feld: „neu (alt)“ für ersetzte Werte, „+neu“ für hinzugekommene, durchgestrichen für weggefallene.
+    static func aenderungsText(_ zeile: Kachelzeile, karte: Karte?) -> Text {
+        let werte: [Wert]
+        switch zeile.schluessel {
+        case "lehrer": werte = karte?.lehrer ?? []
+        case "raum": werte = karte?.raeume ?? []
+        case "klasse": werte = (karte?.klassen ?? []) + (karte?.mitklassen ?? [])
+        default: werte = []
+        }
+        func gleich(_ a: String, _ b: String) -> Bool { a.caseInsensitiveCompare(b) == .orderedSame }
+        let teile = zeile.teile
+        var ergebnis = Text("")
+        var i = 0
+        while i < teile.count {
+            let teil = teile[i]
+            switch teil.stil {
+            case .text:
+                ergebnis = ergebnis + Text(teil.text)
+            case .plakette:
+                let plus = werte.contains { $0.plus && gleich($0.k, teil.text) }
+                ergebnis = ergebnis + Text((plus ? "+" : "") + teil.text).fontWeight(.semibold)
+                if let alt = werte.first(where: { $0.ersetzt && gleich($0.k, teil.text) })?.alt, !alt.isEmpty {
+                    ergebnis = ergebnis + Text(" (\(alt))")
+                }
+            case .weg:
+                // „alt | neu“ (Kopplung) wird zu „neu (alt)“
+                if i + 1 < teile.count && teile[i + 1].stil == .plakette {
+                    let neu = teile[i + 1]
+                    ergebnis = ergebnis + Text(neu.text).fontWeight(.semibold) + Text(" (\(teil.text))") + Text(neu.trenner)
+                    i += 2
+                    continue
+                }
+                ergebnis = ergebnis + Text(teil.text).strikethrough(true)
+            case .offen:
+                ergebnis = ergebnis + Text(teil.text).strikethrough(true) + Text(" ?").fontWeight(.semibold)
+            }
+            ergebnis = ergebnis + Text(teil.trenner)
+            i += 1
+        }
+        return ergebnis
     }
 }

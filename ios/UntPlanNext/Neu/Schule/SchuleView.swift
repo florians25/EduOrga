@@ -89,7 +89,7 @@ struct SchuleView: View {
             .listStyle(.insetGrouped)
             .navigationTitle("Schule")
             .navigationBarTitleDisplayMode(.large)
-            .profilWerkzeug()
+            .suchWerkzeug()
             .navigationDestination(for: Schulziel.self) { ziel in
                 Schulzielseite(ziel: ziel)
                     .environmentObject(zustand)

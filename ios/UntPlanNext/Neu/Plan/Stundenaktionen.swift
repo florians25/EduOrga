@@ -147,7 +147,22 @@ extension AppZustand {
     }
 }
 
-/// Avatar oben rechts in jedem Reiter: öffnet Profil und Einstellungen („Mehr“) als Blatt.
+/// Lupe oben rechts in den Reitern: öffnet die Suche nach Plänen (Klasse, Lehrkraft, Raum) als Blatt.
+struct SuchKnopf: View {
+    @EnvironmentObject var zustand: AppZustand
+
+    var body: some View {
+        Button {
+            Haptik.tippen()
+            zustand.sucheOffen = true
+        } label: {
+            Image(systemName: "magnifyingglass")
+        }
+        .accessibilityLabel("Plan suchen")
+    }
+}
+
+/// Avatar mit Initialen (früher oben rechts in jedem Reiter): öffnet Profil und Einstellungen.
 struct ProfilKnopf: View {
     @EnvironmentObject var zustand: AppZustand
 

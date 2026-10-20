@@ -11,10 +11,10 @@ enum Mehrseite: Hashable {
     case benachrichtigungen
 }
 
-/// Profil und Einstellungen („Mehr“) als Blatt über dem Avatar oben rechts: oben das Profil (Name, Rolle, Schule) mit
+/// Reiter „Profil“ (Profil und Einstellungen): oben das Profil (Name, Rolle, Schule) mit
 /// Konten und Schulen, darunter Schule und Unterricht (Termine, Abwesenheiten, Entschuldigungen, Aufsichten,
 /// Hausaufgaben, Änderungen), Sprechtage, Einstellungen (Mitteilungen, Darstellung, Kontaktdaten und Kalender,
-/// Passwort) und Info sowie Abmelden. Pläne anderer Klassen, Lehrkräfte und Räume stehen im Reiter „Suche“.
+/// Passwort) und Info sowie Abmelden. Pläne anderer Klassen, Lehrkräfte und Räume findet die Suche (Lupe oben rechts).
 struct MehrView: View {
     @EnvironmentObject var zustand: AppZustand
     @Namespace private var zoom
@@ -84,13 +84,9 @@ struct MehrView: View {
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Profil")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fertig") { schliessen() }
-                        .fontWeight(.semibold)
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .scrollContentBackground(.hidden)
+            .background(Farben.grund.ignoresSafeArea())
             .navigationDestination(for: Mehrseite.self) { seite in
                 switch seite {
                 case .kontaktdaten: KontaktdatenView(profil: profil, name: name)

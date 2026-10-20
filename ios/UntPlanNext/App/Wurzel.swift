@@ -97,18 +97,19 @@ struct HauptView: View {
             zustand.schnellaktion = aktion
             zustand.reiter = .plan
         case .suche:
-            zustand.reiter = .suche
+            zustand.sucheOffen = true
         }
     }
 }
 
-/// Reiter der Tab-Leiste. Profil, Konten und Einstellungen („Mehr“) öffnen sich als Blatt über den Avatar oben rechts.
+/// Reiter der Tab-Leiste: vier Arbeitsbereiche und „Profil“ (Konten, Einstellungen, Abmelden). Die Suche nach Plänen
+/// öffnet sich als Blatt über die Lupe oben rechts.
 enum AppReiter: Hashable, CaseIterable {
     case heute
     case plan
     case postfach
     case schule
-    case suche
+    case profil
 
     var titel: String {
         switch self {
@@ -116,7 +117,7 @@ enum AppReiter: Hashable, CaseIterable {
         case .plan: return "Plan"
         case .postfach: return "Postfach"
         case .schule: return "Schule"
-        case .suche: return "Suche"
+        case .profil: return "Profil"
         }
     }
 
@@ -127,16 +128,16 @@ enum AppReiter: Hashable, CaseIterable {
         case .plan: return "calendar"
         case .postfach: return "tray"
         case .schule: return "square.grid.2x2"
-        case .suche: return "magnifyingglass"
+        case .profil: return "person.crop.circle"
         }
     }
 }
 
-/// Tab-Leiste des Systems: Heute · Plan · Postfach · Schule · Suche (Schule: Klassenbuch, Melden, Buchen, Prüfungen,
-/// Vertretungsplan, Sprechtag, Hausaufgaben, Abwesenheiten, Neuigkeiten je nach Rolle; Suche mit der Rolle „Suche“ – ab iOS 26 als eigene
-/// Glasfläche rechts, das Suchfeld wandert in die Leiste). Ab iOS 26 klappt die Leiste beim Rollen nach unten ein.
-/// Der Zähler ungelesener Mitteilungen steht als Plakette am Postfach; erneutes Antippen von „Plan“ führt zu heute
-/// zurück. Profil und Einstellungen als Blatt (Avatar oben rechts in jedem Reiter).
+/// Tab-Leiste des Systems mit wenigen, festen Reitern: Heute · Plan · Postfach · Schule · Profil (Schule: Klassenbuch,
+/// Melden, Prüfungen, Vertretungsplan, Sprechtag, Hausaufgaben, Abwesenheiten je nach Rolle; Profil: Konten, Termine,
+/// Einstellungen, Abmelden). Ab iOS 26 klappt die Leiste beim Rollen nach unten ein. Der Zähler ungelesener Mitteilungen
+/// steht als Plakette am Postfach; erneutes Antippen von „Plan“ führt zu heute zurück. Die Suche nach Plänen öffnet sich
+/// als Blatt (Lupe oben rechts in jedem Reiter, im Plan neben „Heute“).
 @MainActor
 struct AppTabView: View {
     @EnvironmentObject var zustand: AppZustand
@@ -162,20 +163,34 @@ struct AppTabView: View {
             Tab("Schule", systemImage: "square.grid.2x2", value: AppReiter.schule) {
                 SchuleView()
             }
-            Tab("Suche", systemImage: "magnifyingglass", value: AppReiter.suche, role: .search) {
-                SucheView()
+            Tab("Profil", systemImage: "person.crop.circle", value: AppReiter.profil) {
+                MehrView()
             }
         }
         .tabLeisteEinklappbar()
         .tint(Farben.akzent)
         .environment(\.kartendarstellung, zustand.darstellung)
         .sensoryFeedback(.selection, trigger: zustand.reiter)
-        .sheet(isPresented: $zustand.mehrOffen) {
-            MehrView()
+        // Profil öffnen (Einrichtungslink, Kurzbefehle, ältere Aufrufe): zum Reiter „Profil“ wechseln
+        .onChange(of: zustand.mehrOffen) { _, neu in
+            if neu { profilZeigen() }
+        }
+        .onAppear {
+            if zustand.mehrOffen { profilZeigen() }
+        }
+        .sheet(isPresented: $zustand.sucheOffen) {
+            SucheView(alsBlatt: true)
                 .environmentObject(zustand)
                 .environmentObject(favoriten)
                 .environment(\.kartendarstellung, zustand.darstellung)
+                .presentationDetents([.large])
         }
+    }
+
+    private func profilZeigen() {
+        zustand.mehrOffen = false
+        zustand.sucheOffen = false
+        zustand.reiter = .profil
     }
 }
 

@@ -16,8 +16,10 @@ final class AppZustand: ObservableObject {
     @Published var ungelesen = 0
     /// Gewählter Reiter der Tab-Leiste (die App startet mit „Heute“).
     @Published var reiter: AppReiter = .heute
-    /// Profil und Einstellungen („Mehr“) als Blatt über dem Reiter (Avatar oben rechts)
+    /// Profil und Einstellungen öffnen: wechselt zum Reiter „Profil“ (AppTabView setzt den Wert gleich wieder zurück)
     @Published var mehrOffen = false
+    /// Suche nach Plänen (Klasse, Lehrkraft, Raum) als Blatt über dem Reiter (Lupe oben rechts)
+    @Published var sucheOffen = false
     /// Zählt hoch, wenn der bereits gewählte Reiter „Plan“ erneut angetippt wird (zurück zur heutigen Woche).
     @Published var stundenplanHeute = 0
     /// Zählt hoch, wenn sich der Plan geändert hat (z. B. Raumbuchung in den Stundendetails) – der Stundenplan lädt neu.
@@ -152,6 +154,7 @@ final class AppZustand: ObservableObject {
         ungelesen = 0
         reiter = .heute
         mehrOffen = false
+        sucheOffen = false
         planAnfrage = nil
         schnellaktion = nil
         tagAnfrage = nil
@@ -239,6 +242,7 @@ final class AppZustand: ObservableObject {
     func planZeigen(_ plan: PlanAuswahl) {
         planAnfrage = plan
         mehrOffen = false
+        sucheOffen = false
         reiter = .plan
     }
 

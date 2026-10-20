@@ -50,8 +50,13 @@ struct PlanSeite: View {
     @State private var auswahlOffen = false
     @State private var datumOffen = false
     @State private var bereit = false
-    /// Blatt „Stunden zur selben Zeit“ (hinter „+X“ im Wochenraster)
+    /// Blatt „Stunden zur selben Zeit“ (hinter „+N“ im Wochenraster)
     @State private var parallelGruppe: Parallelgruppe? = nil
+    /// Mehrere Pläne nebeneinander (iPad, Woche)
+    @StateObject private var mehrfach = Mehrfachplaene()
+    @State private var mehrfachWahlOffen = false
+    @State private var legendeOffen = false
+    @Environment(\.horizontalSizeClass) private var groessenklasse
 
     init(fest: PlanAuswahl?) {
         self.fest = fest
@@ -59,6 +64,10 @@ struct PlanSeite: View {
 
     private var istReiter: Bool { fest == nil }
     private var modus: Planmodus { Planmodus(rawValue: modusRoh) ?? .woche }
+
+    /// Mehrfachansicht möglich: Reiter „Plan“ auf breitem Bildschirm (iPad) in der Woche.
+    private var mehrfachMoeglich: Bool { istReiter && groessenklasse == .regular && modus == .woche }
+    private var mehrfachAktiv: Bool { mehrfachMoeglich && mehrfach.aktiv }
 
     /// Woche der Seiten im Wochenraster: Wechsel der Woche führt den Tag mit (gleicher Wochentag).
     private var wocheBindung: Binding<String> {
@@ -113,8 +122,9 @@ struct PlanSeite: View {
                     .transition(.asymmetric(insertion: .scale(scale: 0.94).combined(with: .opacity),
                                             removal: .scale(scale: 0.94).combined(with: .opacity)))
             } else {
-                WochenSeiten(modell: modell, montage: montage, montag: wocheBindung, raum: zoom,
-                             antippen: { k, t, quelle in oeffnen(k, in: t, quelle: quelle) },
+                WochenSeiten(modell: modell, mehrfach: mehrfach, mehrfachAktiv: mehrfachAktiv, montage: montage,
+                             montag: wocheBindung, raum: zoom,
+                             antippen: { k, t, quelle, plan in oeffnen(k, in: t, quelle: quelle, plan: plan) },
                              tagOeffnen: { tagWaehlen($0) },
                              parallele: { parallelGruppe = $0 })
                     .transition(.asymmetric(insertion: .scale(scale: 1.06).combined(with: .opacity),
@@ -136,6 +146,11 @@ struct PlanSeite: View {
                 .padding(.bottom, Stilmass.raster)
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if mehrfachMoeglich {
+                Mehrfachleiste(mehrfach: mehrfach) { mehrfachWahlOffen = true }
+            }
+        }
         .overlay(alignment: .top) {
             if let fehler = modell.fehler {
                 Fehlerhinweis(text: fehler)
@@ -154,7 +169,7 @@ struct PlanSeite: View {
                 parallelGruppe = nil
                 // erst das Blatt schließen, dann die Stunde groß öffnen
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                    oeffnen(k, in: g.tag, quelle: "woche-\(k.id.uuidString)")
+                    oeffnen(k, in: g.tag, quelle: "woche-\(k.id.uuidString)", plan: g.plan)
                 }
             }
             .environment(\.kartendarstellung, zustand.darstellung)
@@ -167,6 +182,20 @@ struct PlanSeite: View {
             .environmentObject(zustand)
             .environmentObject(favoriten)
             .presentationDetents([.large])
+        }
+        .sheet(isPresented: $mehrfachWahlOffen) {
+            PlanAuswahlView(auswahl: Binding<PlanAuswahl?>(get: { nil }, set: { neu in
+                guard let neu else { return }
+                withAnimation(.snappy(duration: 0.2)) { mehrfach.hinzufuegen(neu) }
+                Haptik.auswahl()
+            }))
+            .environmentObject(zustand)
+            .environmentObject(favoriten)
+            .presentationDetents([.large])
+        }
+        .sheet(isPresented: $legendeOffen) {
+            PlanLegende()
+                .environment(\.kartendarstellung, zustand.darstellung)
         }
         .sheet(isPresented: $datumOffen) {
             GeheZuDatumView(start: Datumsformat.datum(aktuellerTag) ?? Date()) { d in
@@ -187,7 +216,10 @@ struct PlanSeite: View {
             withAnimation(.snappy) { tag = PlanSeite.startTag }
         }
         .onChange(of: zustand.planGeaendert) { _, _ in
-            Task { await modell.laden(montag: aktuelleWoche, erzwingen: true) }
+            Task {
+                await modell.laden(montag: aktuelleWoche, erzwingen: true)
+                if mehrfach.aktiv { await mehrfach.laden(montag: aktuelleWoche, erzwingen: true) }
+            }
         }
         .onChange(of: zustand.notizAenderung) { _, neu in
             guard let neu else { return }
@@ -254,6 +286,16 @@ struct PlanSeite: View {
                 springen(zu: Date())
             }
             .fontWeight(.semibold)
+            // Auf schmalen Bildschirmen steht die Suche im Menü des Plannamens (Platz für Tag | Woche)
+            if istReiter && groessenklasse == .regular {
+                Button {
+                    Haptik.tippen()
+                    zustand.sucheOffen = true
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityLabel("Plan suchen")
+            }
             Menu {
                 if modus == .woche {
                     Section("Dichte der Woche") {
@@ -276,13 +318,11 @@ struct PlanSeite: View {
                 } label: {
                     Label("Gehe zu Datum", systemImage: "calendar")
                 }
-                if istReiter {
-                    Section {
-                        Button {
-                            zustand.mehrOffen = true
-                        } label: {
-                            Label("Profil und Einstellungen", systemImage: "person.crop.circle")
-                        }
+                Section {
+                    Button {
+                        legendeOffen = true
+                    } label: {
+                        Label("Legende", systemImage: "info.circle")
                     }
                 }
             } label: {
@@ -296,7 +336,7 @@ struct PlanSeite: View {
     private func titelBlock(mitPfeil: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 3) {
-                Text(modell.planname)
+                Text(mehrfachAktiv ? "\(mehrfach.auswahl.count) Pläne" : modell.planname)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Farben.text)
                     .lineLimit(1)
@@ -351,7 +391,7 @@ struct PlanSeite: View {
                 Label("Weitere Pläne …", systemImage: "list.bullet")
             }
             Button {
-                zustand.reiter = .suche
+                zustand.sucheOffen = true
             } label: {
                 Label("Suchen", systemImage: "magnifyingglass")
             }
@@ -403,6 +443,7 @@ struct PlanSeite: View {
             modusRoh = Planmodus.woche.rawValue
         }
         modell.einrichten(zustand: zustand)
+        if istReiter { mehrfach.einrichten(zustand: zustand) }
         if let fest { modell.waehlen(fest) }
         if !bereit {
             bereit = true
@@ -476,17 +517,19 @@ struct PlanSeite: View {
         }
     }
 
-    /// Stunde groß öffnen – mit allen Stunden zur selben Zeit.
-    private func oeffnen(_ k: Kachel, in t: Tagesansicht, quelle: String) {
+    /// Stunde groß öffnen – mit allen Stunden zur selben Zeit (Mehrfachansicht: im Plan der Spalte).
+    private func oeffnen(_ k: Kachel, in t: Tagesansicht, quelle: String, plan: PlanAuswahl? = nil) {
         Haptik.tippen()
+        let typ = plan?.typ ?? modell.typ
+        let element = plan?.element ?? modell.element
         if let a = k.aufsicht {
-            wahl = Stundenwahl(quelle: quelle, karten: [], aufsicht: a, typ: modell.typ, element: modell.element)
+            wahl = Stundenwahl(quelle: quelle, karten: [], aufsicht: a, typ: typ, element: element)
             return
         }
         let karten = Kachelbau.parallele(k, in: t.kacheln + t.ganztags)
         let start = karten.firstIndex { $0.id == k.karte?.id } ?? 0
         guard !karten.isEmpty else { return }
-        wahl = Stundenwahl(quelle: quelle, karten: karten, start: start, typ: modell.typ, element: modell.element)
+        wahl = Stundenwahl(quelle: quelle, karten: karten, start: start, typ: typ, element: element)
     }
 }
 

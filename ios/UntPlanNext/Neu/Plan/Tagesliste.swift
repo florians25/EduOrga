@@ -362,7 +362,7 @@ struct ListenKachel: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(kachel.fachText(darstellung))
                     .font(.headline)
-                    .foregroundStyle(entfall ? Farben.entfall : w.titel)
+                    .foregroundStyle(entfall ? Farben.text3 : w.titel)
                     .strikethrough(entfall, color: Farben.entfall)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -374,12 +374,9 @@ struct ListenKachel: View {
                 }
                 Spacer(minLength: 6)
                 if let r = raumZeile {
-                    kachelText(r, karte: kachel.karte)
-                        .font(.subheadline.weight(.semibold))
+                    Kartenwert(zeile: r, karte: kachel.karte, entfall: entfall, schrift: .subheadline.weight(.semibold),
+                               farbe: w.gedaempft ? Farben.text2 : Farben.text)
                         .monospacedDigit()
-                        .foregroundStyle(w.gedaempft ? Farben.text2 : Farben.text)
-                        .strikethrough(entfall, color: Farben.entfall)
-                        .lineLimit(1)
                         .layoutPriority(1)
                 } else if kachel.online {
                     Image(systemName: "video.fill")
@@ -410,6 +407,7 @@ struct ListenKachel: View {
         .padding(.bottom, abstand)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 60, alignment: .topLeading)
+        .clipped()
         .klassikKarte(w, radius: 6)
         .overlay {
             if laeuft {
@@ -445,17 +443,13 @@ struct ListenKachel: View {
         }
     }
 
+    /// Lehrkraft bzw. Klasse: geänderte Werte als violettes Feld „neu (alt)“ wie im Wochenraster.
     private var personenText: some View {
-        var t = Text("")
-        for (i, z) in personen.enumerated() {
-            if i > 0 { t = t + Text("  ·  ") }
-            t = t + kachelText(z, karte: kachel.karte)
+        HStack(spacing: 10) {
+            ForEach(Array(personen.enumerated()), id: \.offset) { _, z in
+                Kartenwert(zeile: z, karte: kachel.karte, entfall: entfall, schrift: .subheadline, farbe: Farben.text2)
+            }
         }
-        return t
-            .font(.subheadline)
-            .foregroundStyle(Farben.text2)
-            .strikethrough(entfall, color: Farben.entfall)
-            .lineLimit(2)
     }
 
     /// Statuswort und kleine Zeichen rechts unten (Online, Hausaufgabe, Info).

@@ -430,7 +430,7 @@ struct AnmeldungView: View {
                     .tint(Farben.akzent)
             }
             if hinzufuegen {
-                Text("Das bisherige Konto bleibt angemeldet; unter „Profil“ (Avatar oben rechts) → „Konten und Schulen“ wechseln Sie jederzeit zurück.")
+                Text("Das bisherige Konto bleibt angemeldet; im Reiter „Profil“ → „Konten und Schulen“ wechseln Sie jederzeit zurück.")
                     .font(.footnote)
                     .foregroundStyle(Farben.text3)
             }

@@ -121,12 +121,19 @@ enum Farben {
     /// Vertretung, Raum- und Lehrerwechsel, Verlegung (Violett – deutlich anders als das Petrol der Marke)
     static let aenderung = Color(hell: 0x6D4FC2, dunkel: 0xB3A1F5)
     static let aenderungFlaeche = Color(hell: 0xF1EDFB, dunkel: 0x241D3D)
+    /// Geänderter Wert auf der Stundenkarte („+Ara (Abr)“): kräftigere violette Fläche mit dunkelvioletter Schrift
+    static let aenderungChip = Color(hell: 0xE3DBFA, dunkel: 0x3A2E66)
+    static let aenderungText = Color(hell: 0x46309A, dunkel: 0xD9CFFF)
     /// Klausur, Prüfung
     static let pruefung = Color(hell: 0xA15C07, dunkel: 0xE3A54B)
     static let pruefungFlaeche = Color(hell: 0xFDF4E3, dunkel: 0x2A2010)
     /// Veranstaltung, Termin, Raumbuchung (Magenta – unterscheidbar von Änderung und Entfall)
     static let termin = Color(hell: 0xA3347C, dunkel: 0xEE8CC9)
     static let terminFlaeche = Color(hell: 0xFAEEF5, dunkel: 0x341A2C)
+    /// Veranstaltungen im Wochenraster (AG, Schulfest …): warmes, ruhiges Neutral als eigener Block über die Spalte
+    static let ereignisFlaeche = Color(hell: 0xF7F1E3, dunkel: 0x2A2519)
+    static let ereignisRand = Color(hell: 0xE2D6BB, dunkel: 0x4A4130)
+    static let ereignisText = Color(hell: 0x5C4A22, dunkel: 0xE6D7B0)
     /// Ferien, unterrichtsfrei
     static let frei = Color(hell: 0x2F6F9F, dunkel: 0x79B0DC)
     static let freiFlaeche = Color(hell: 0xEDF4FA, dunkel: 0x132231)

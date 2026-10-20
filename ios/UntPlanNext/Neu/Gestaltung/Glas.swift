@@ -112,18 +112,18 @@ enum Glasstil {
 // MARK: - Werkzeug mit eigener Glasfläche
 
 extension View {
-    /// Profilknopf als eigenes Werkzeug oben rechts (ab iOS 26 mit festem Abstand zu den übrigen Knöpfen, damit er
-    /// eine eigene Glasfläche bekommt).
+    /// Lupe als eigenes Werkzeug oben rechts: öffnet die Suche nach Plänen als Blatt (ab iOS 26 mit festem Abstand zu
+    /// den übrigen Knöpfen, damit sie eine eigene Glasfläche bekommt). Profil und Einstellungen sind ein eigener Reiter.
     @ViewBuilder
-    func profilWerkzeug() -> some View {
+    func suchWerkzeug() -> some View {
         if #available(iOS 26.0, *) {
             self.toolbar {
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                ToolbarItem(placement: .topBarTrailing) { ProfilKnopf() }
+                ToolbarItem(placement: .topBarTrailing) { SuchKnopf() }
             }
         } else {
             self.toolbar {
-                ToolbarItem(placement: .topBarTrailing) { ProfilKnopf() }
+                ToolbarItem(placement: .topBarTrailing) { SuchKnopf() }
             }
         }
     }

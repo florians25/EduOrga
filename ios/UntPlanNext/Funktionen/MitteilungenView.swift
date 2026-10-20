@@ -106,7 +106,7 @@ struct MitteilungenView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { neuKnopf }
             }
-            .profilWerkzeug()
+            .suchWerkzeug()
             .task(id: ordner) { await laden() }
             .navigationDestination(for: Int.self) { id in
                 if let m = liste.first(where: { $0.id == id }) {

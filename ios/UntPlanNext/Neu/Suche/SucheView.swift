@@ -25,11 +25,13 @@ enum Suchverlauf {
     }
 }
 
-/// Reiter „Suche“ (Rolle „Suche“ der Tab-Leiste): Pläne von Klassen, Lehrkräften und Räumen schnell finden. Oben
+/// Suche als Blatt (Lupe oben rechts in jedem Reiter, Kurzbefehl „Plan suchen“): Pläne von Klassen, Lehrkräften und Räumen schnell finden. Oben
 /// Filterchips aus Glas (Alle · Klassen · Lehrkräfte · Räume), ohne Suchbegriff Favoriten (Stern, umsortieren, per
 /// Wischen entfernen), zuletzt geöffnete Pläne und alle Pläne nach Art mit Buchstabenregister. Ein Treffer öffnet den
 /// Plan direkt hier (mit Wochenleiste, Stundenansicht und Stern); „Plan“ bleibt beim eigenen Plan.
 struct SucheView: View {
+    /// Als Blatt gezeigt (mit „Fertig“)
+    var alsBlatt: Bool = false
     @EnvironmentObject var zustand: AppZustand
     @EnvironmentObject var favoriten: Favoriten
     @State private var pfad = NavigationPath()
@@ -79,7 +81,14 @@ struct SucheView: View {
                     }
                 }
             }
-            .profilWerkzeug()
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    if alsBlatt {
+                        Button("Fertig") { zustand.sucheOffen = false }
+                            .fontWeight(.semibold)
+                    }
+                }
+            }
             .navigationDestination(for: PlanAuswahl.self) { plan in
                 PlanSeite(fest: plan)
             }
