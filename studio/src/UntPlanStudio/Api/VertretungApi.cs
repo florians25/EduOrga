@@ -124,6 +124,7 @@ public sealed partial class VertretungApi : IStudioModul
         OnlineRegistrieren(g);
         EinstellungenRegistrieren(g);
         TagesablaufRegistrieren(g);
+        MatrixRegistrieren(g);
     }
 
     // =============================================================================================

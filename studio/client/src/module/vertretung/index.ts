@@ -35,6 +35,7 @@ const modul: StudioModul = {
     // Bausteine der Tagesplanung (auch als eigene Seiten)
     'vertretung.erfassen': { titel: 'Abwesenheiten erfassen', pfad: 'vertretung/abwesenheiten-erfassen', modus: V, komponente: lazy(() => import('./ablauf/Erfassen')) },
     'vertretung.arbeitsliste': { titel: 'Offene Stunden', pfad: 'vertretung/offene-stunden', modus: V, komponente: lazy(() => import('./ablauf/Arbeitsliste')) },
+    'vertretung.matrix': { titel: 'Tagesübersicht', pfad: 'vertretung/tagesuebersicht', modus: V, schluessel: (p) => String(p.art || 'klasse'), komponente: lazy(() => import('./ablauf/Matrix')) },
     'vertretung.entscheidung': { titel: 'Entscheidung', pfad: 'vertretung/entscheidung', modus: V, komponente: lazy(() => import('./ablauf/Entscheidung')) },
     'vertretung.frei': { titel: 'Wer ist frei?', pfad: 'vertretung/wer-ist-frei', modus: V, komponente: lazy(() => import('./ablauf/WerIstFrei')) },
     'vertretung.tagesbilanz': { titel: 'Prüfen und veröffentlichen', pfad: 'vertretung/tagesbilanz', modus: V, komponente: lazy(() => import('./ablauf/Pruefen')) },

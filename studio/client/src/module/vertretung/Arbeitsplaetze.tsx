@@ -1,4 +1,4 @@
-// Arbeitsplätze der Vertretungsplanung: Tagesplanung (Liste mit Entscheidung bzw. Tabelle), Verlegen und Tauschen, Kompaktpläne.
+// Arbeitsplätze der Vertretungsplanung: Tagesplanung (Tagesübersicht nach Klassen bzw. Lehrkräften, offene Stunden mit Entscheidung bzw. Tabelle), Verlegen und Tauschen, Kompaktpläne.
 import { Button, Tooltip, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Dismiss20Regular, MoreHorizontal20Regular } from '@fluentui/react-icons';
 import { OverlayDrawer, DrawerBody } from '@fluentui/react-components';
@@ -17,6 +17,7 @@ import {
 } from './kern';
 import { sendeStatus, useDirekt, direktBeobachten } from '../untplanweb/Senden';
 import { blockSetzen, useKandidaten } from './ablauf/daten';
+import { Miniplaene, miniplaeneUmschalten, useMiniplaene } from './ablauf/Miniplan';
 import { Umschalter } from './steuer';
 import './ablauf/ablauf.css';
 
@@ -90,6 +91,8 @@ export function TagesplanungKopf() {
   const kontextOffen = useTagesplanung((x) => x.kontextOffen);
   const seite = useTagesplanung((x) => x.seite);
   const block = useKandidaten((x) => x.block);
+  const matrix = ansicht === 'klassen' || ansicht === 'lehrer';
+  const miniFolgt = useMiniplaene((x) => x.fenster.some((f) => f.folgt));
   const direkt = useDirekt((x) => x.stand);
   const sendet = useDirekt((x) => x.sendet);
   useEffect(() => { direktBeobachten(); }, []);
@@ -104,7 +107,8 @@ export function TagesplanungKopf() {
   const mehr = (): MenueListe => [
     { text: 'Wer ist frei?', taste: 'F', aktion: () => tpKontextSetzen('frei') },
     { text: 'Alle Kandidaten der Stunde', taste: 'V', aktion: () => tpKontextSetzen('vorschlag') },
-    { text: 'Pläne von Klasse und Lehrkraft', taste: 'P', haken: kontextOffen, aktion: () => tpKontextUmschalten() },
+    { text: 'Pläne von Klasse und Lehrkraft', taste: matrix ? undefined : 'P', haken: kontextOffen, aktion: () => tpKontextUmschalten() },
+    matrix ? { text: 'Miniplan (folgt der Auswahl)', taste: 'P', haken: miniFolgt, aktion: () => miniplaeneUmschalten(ansicht === 'lehrer' ? 'klasse' : 'lehrer') } : null,
     null,
     { text: 'Ganze Woche', haken: seite === 'woche', hinweis: 'Tabelle und Pläne zeigen die ganze Woche, dazu der Wochenstreifen', aktion: () => seitenansichtSetzen(seite === 'woche' ? 'tag' : 'woche') },
     { text: 'Blöcke gemeinsam besetzen', haken: block, hinweis: 'Doppel- und Blockstunden gemeinsam besetzen (Kandidaten müssen in allen Stunden frei sein)', aktion: () => blockSetzen(!block) },
@@ -132,10 +136,20 @@ export function TagesplanungKopf() {
       </span>
       {seite === 'woche' && daten && datum ? <Wochenstreifen woche={daten.woche} datum={datum} /> : null}
       <span className="tp-kopf-rechts">
-        <Umschalter<TpAnsicht> wert={ansicht} titel="Ruhige Liste mit Entscheidung oder dichte Tabelle" testid="tp-modus" beiWahl={tpAnsichtSetzen}
-          optionen={[{ wert: 'liste', text: 'Liste', titel: 'Eine offene Stunde nach der anderen: Empfehlung, Alternativen, Entfall' }, { wert: 'tabelle', text: 'Tabelle', titel: 'Alle Vertretungen als Tabelle mit direkter Eingabe und Mehrfachauswahl' }]} />
-        <Button size="small" appearance={kontextOffen ? 'secondary' : 'subtle'} aria-pressed={kontextOffen} className={mergeClasses('tp-schalter', kontextOffen && 'an')} onClick={() => tpKontextUmschalten()}
-          title="Pläne von Klasse und Lehrkraft, Wer ist frei? und alle Kandidaten neben der Entscheidung (P)" data-testid="tp-plaene">Pläne</Button>
+        <Umschalter<TpAnsicht> wert={ansicht} titel="Tagesübersicht nach Klassen bzw. Lehrkräften, offene Stunden eine nach der anderen oder Tabelle" testid="tp-modus" beiWahl={tpAnsichtSetzen}
+          optionen={[
+            { wert: 'klassen', text: 'Klassen', titel: 'Tagesübersicht: Klassen × Stunden – was in jeder Klasse heute passiert, offene Stunden direkt lösen' },
+            { wert: 'lehrer', text: 'Lehrkräfte', titel: 'Tagesübersicht: Lehrkräfte × Stunden – Abwesende zuerst, Vertretungen und Bereitschaften' },
+            { wert: 'liste', text: 'Offene Stunden', titel: 'Eine offene Stunde nach der anderen: Empfehlung, Alternativen, Entfall' },
+            { wert: 'tabelle', text: 'Tabelle', titel: 'Alle Vertretungen als Tabelle mit direkter Eingabe und Mehrfachauswahl' },
+          ]} />
+        {matrix ? (
+          <Button size="small" appearance={miniFolgt ? 'secondary' : 'subtle'} aria-pressed={miniFolgt} className={mergeClasses('tp-schalter', miniFolgt && 'an')} onClick={() => miniplaeneUmschalten(ansicht === 'lehrer' ? 'klasse' : 'lehrer')}
+            title="Kleiner verschiebbarer Plan der Lehrkraft (bzw. Klasse) der gewählten Stunde, folgt der Auswahl (P) – weitere über das Kontextmenü einer Zelle oder eines Kandidaten" data-testid="tp-miniplan">Miniplan</Button>
+        ) : (
+          <Button size="small" appearance={kontextOffen ? 'secondary' : 'subtle'} aria-pressed={kontextOffen} className={mergeClasses('tp-schalter', kontextOffen && 'an')} onClick={() => tpKontextUmschalten()}
+            title="Pläne von Klasse und Lehrkraft, Wer ist frei? und alle Kandidaten neben der Entscheidung (P)" data-testid="tp-plaene">Pläne</Button>
+        )}
         <Button size="small" appearance="subtle" onClick={() => tpBlattSetzen('abwesenheiten')} title="Abwesenheiten des Tages ansehen und erfassen" data-testid="tp-abwesenheiten">
           Abwesenheiten<span className="tp-zahl">{abw}</span>
         </Button>
@@ -250,7 +264,8 @@ function useNavEinklappen(grenze = 1440) {
 }
 
 /**
- * Tagesplanung: eine ruhige Seite, eine Aufgabe nach der anderen. Liste (Standard): links die offenen Stunden des Tages, rechts
+ * Tagesplanung: Klassen (Standard) bzw. Lehrkräfte – die Tagesübersicht als Matrix × Stunden mit der Entscheidung rechts und
+ * frei verschiebbaren Miniplänen; Offene Stunden: links die offenen Stunden des Tages, rechts
  * die Entscheidung zur gewählten Stunde (Empfehlung, Alternativen, Entfall, weitere Möglichkeiten). Tabelle: alle Vertretungen
  * als dichte Tabelle (direkte Eingabe, Mehrfachauswahl, Kandidaten in der Auswahlliste) mit derselben Entscheidung daneben.
  * „Pläne“ blendet rechts die Tagespläne von Klasse und Lehrkraft, „Wer ist frei?“ und alle Kandidaten ein; Abwesenheiten und
@@ -291,7 +306,16 @@ export function Tagesplanung() {
   const nurKontext = gross ? 1 : null;
   const kontext = <Kontext woche={woche} gross={gross} />;
   let inhalt;
-  if (ansicht === 'liste') {
+  if (ansicht === 'klassen' || ansicht === 'lehrer') {
+    const art = ansicht === 'lehrer' ? 'lehrer' : 'klasse';
+    const m = <Bereich key={art} id={`matrix-${art}`} typ="vertretung.matrix" p={{ art }} />;
+    inhalt = kontextOffen ? (
+      <Teilung schluessel="tagesplanung.matrix.kontext" anteile={[66, 34]} nur={nurKontext}>
+        {m}
+        {kontext}
+      </Teilung>
+    ) : m;
+  } else if (ansicht === 'liste') {
     inhalt = kontextOffen ? (
       <Teilung schluessel={woche ? 'tagesplanung.liste.kontext.woche' : 'tagesplanung.liste.kontext'} anteile={woche ? [44, 56] : [56, 44]} nur={nurKontext}>
         <Bereich id="arbeitsliste" typ="vertretung.arbeitsliste" />
@@ -319,6 +343,7 @@ export function Tagesplanung() {
     <div className={s.seite} data-ansicht-art={woche ? 'woche' : 'tag'} data-tp-ansicht={ansicht} data-kontext-offen={kontextOffen || undefined}>
       {inhalt}
       <Blaetter />
+      <Miniplaene />
     </div>
   );
 }

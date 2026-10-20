@@ -99,8 +99,12 @@ export async function blaettern(richtung: number, woche = false): Promise<void> 
 // Tag- bzw. Wochenansicht der Tagesplanung (je Benutzer im Browser gemerkt)
 
 export type Zeitansicht = 'tag' | 'woche';
-/** Darstellung der Tagesplanung: ruhige Liste der offenen Stunden mit Entscheidung oder die dichte Tabelle. */
-export type TpAnsicht = 'liste' | 'tabelle';
+/** Darstellung der Tagesplanung: Tagesübersicht nach Klassen (Standard) bzw. Lehrkräften (Matrix × Stunden), Liste der offenen
+ *  Stunden mit Entscheidung oder die dichte Tabelle. */
+export type TpAnsicht = 'klassen' | 'lehrer' | 'liste' | 'tabelle';
+const TP_ANSICHTEN: TpAnsicht[] = ['klassen', 'lehrer', 'liste', 'tabelle'];
+/** gespeicherte bzw. frühere Werte lesen: „ablauf“ = Liste, „experte“ = Tabelle */
+const ansichtVon = (w: string | undefined): TpAnsicht => (w === 'experte' ? 'tabelle' : w === 'ablauf' ? 'liste' : TP_ANSICHTEN.includes(w as TpAnsicht) ? w as TpAnsicht : 'klassen');
 /** Blatt über der Tagesplanung: Abwesenheiten erfassen bzw. prüfen und veröffentlichen (null = keins). */
 export type TpBlatt = 'abwesenheiten' | 'veroeffentlichen' | null;
 /** Frühere Schritte des Tagesablaufs (Kompatibilität): erfassen → Blatt Abwesenheiten, prüfen → Blatt Veröffentlichen. */
@@ -120,7 +124,7 @@ interface TagesplanungZustand {
   /** vergrößerter Tagesplan (klasse, lehrer) oder null */
   gross: string | null;
 }
-const TP_STANDARD: TagesplanungZustand = { ansicht: 'liste', kontextOffen: false, kontext: 'plaene', blatt: null, seite: 'tag', plaene: { klasse: 'tag', lehrer: 'tag' }, gross: null };
+const TP_STANDARD: TagesplanungZustand = { ansicht: 'klassen', kontextOffen: false, kontext: 'plaene', blatt: null, seite: 'tag', plaene: { klasse: 'tag', lehrer: 'tag' }, gross: null };
 const TP_KONTEXTE: TpKontext[] = ['plaene', 'frei', 'vorschlag'];
 const tpSchluessel = () => `vertretung.tagesplanung.${useStudio.getState().benutzer?.name || ''}`;
 function tpLesen(): TagesplanungZustand {
@@ -128,8 +132,7 @@ function tpLesen(): TagesplanungZustand {
     const w = JSON.parse(localStorage.getItem(tpSchluessel()) || 'null') as (Omit<Partial<TagesplanungZustand>, 'ansicht'> & { ansicht?: string }) | null;
     if (w) {
       return {
-        // frühere Werte: „ablauf“ = Liste, „experte“ = Tabelle
-        ansicht: w.ansicht === 'tabelle' || w.ansicht === 'experte' ? 'tabelle' : 'liste',
+        ansicht: ansichtVon(w.ansicht),
         kontextOffen: w.kontextOffen === true, kontext: TP_KONTEXTE.includes(w.kontext as TpKontext) ? w.kontext! : 'plaene', blatt: null,
         seite: w.seite === 'woche' ? 'woche' : 'tag', plaene: { ...TP_STANDARD.plaene, ...(w.plaene || {}) }, gross: null,
       };
@@ -143,9 +146,9 @@ function tpSetzen(n: Partial<TagesplanungZustand>) {
   const { ansicht, kontextOffen, kontext, seite, plaene } = useTagesplanung.getState();
   try { localStorage.setItem(tpSchluessel(), JSON.stringify({ ansicht, kontextOffen, kontext, seite, plaene })); } catch { /* privat */ }
 }
-/** Liste oder Tabelle der Tagesplanung (je Benutzer im Browser gemerkt); „experte“/„ablauf“ wie früher. */
+/** Ansicht der Tagesplanung (je Benutzer im Browser gemerkt); „experte“/„ablauf“ wie früher. */
 export const tpAnsichtSetzen = (ansicht: TpAnsicht | 'experte' | 'ablauf') => {
-  const a: TpAnsicht = ansicht === 'tabelle' || ansicht === 'experte' ? 'tabelle' : 'liste';
+  const a = ansichtVon(ansicht);
   if (useTagesplanung.getState().ansicht !== a) tpSetzen({ ansicht: a, gross: null });
 };
 /** Blatt öffnen bzw. schließen (Abwesenheiten, Veröffentlichen). */

@@ -31,7 +31,7 @@ const useStile = makeStyles({
 });
 
 /** Prüfung der automatischen Vorschläge: Liste mit Auswahl, alle oder einzeln übernehmen. */
-function Pruefung({ probe, schreiben, schliessen, uebernommen, nurIds }: { probe: Probe; schreiben: boolean; schliessen: () => void; uebernommen: (ids: number[]) => void; nurIds: Set<number> | null }) {
+export function Pruefung({ probe, schreiben, schliessen, uebernommen, nurIds }: { probe: Probe; schreiben: boolean; schliessen: () => void; uebernommen: (ids: number[]) => void; nurIds: Set<number> | null }) {
   // ist die Liste gefiltert (Stunde, Jahrgang …), sind zunächst nur die Vorschläge der gefilterten Stunden gewählt
   const [aus, setAus] = useState<Set<number>>(() => new Set(nurIds ? probe.vorschlaege.filter((v) => !nurIds.has(v.id)).map((v) => v.id) : []));
   const [laeuft, setLaeuft] = useState(false);

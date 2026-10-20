@@ -4,8 +4,9 @@
 //
 // Ablauf: Beispielschule → Vertretungsmodus mit Planungsdatum → Abwesenheit direkt in der Liste erfassen (Entwurf, Strg+Enter)
 // → Vertretungen mit offenen Stunden (Plakette „Offen“) → Vorschlag (Enter) und ersten Kandidaten übernehmen → Entfall mit „-“ →
-// Kontextmenü → Kalender → Arbeitsplatz „Verlegen und Tauschen“ → Veranstaltung „Alle Lehrkräfte“ → Tagesplanung als Liste
-// (Abwesenheit im Blatt erfassen, offene Stunden mit Entscheidung: Enter übernimmt die Empfehlung, E Entfall, Mehrfachauswahl,
+// Kontextmenü → Kalender → Arbeitsplatz „Verlegen und Tauschen“ → Veranstaltung „Alle Lehrkräfte“ → Tagesplanung (Standard: Tagesübersicht
+// nach Klassen; Abwesenheit im Blatt erfassen; Matrix: J, Enter, Rückgängig, Pfeile, Miniplan, Klasse abwesend, Mehrfachauswahl,
+// 1280×720, Lehrkräfte) → Offene Stunden mit Entscheidung: Enter übernimmt die Empfehlung, E Entfall, Mehrfachauswahl,
 // Wer ist frei? und Pläne im Seitenbereich, Empfehlungen für alle prüfen, gelöste Stunde zurücksetzen, Blatt Veröffentlichen
 // mit Belastung) → Tabelle (schlanke Liste, Filter, Entscheidung und gemeinsame Kandidaten, Pläne als Tagesansicht) → Tag
 // blättern (Strg+Bild↓) → Wochenansicht (Umschalter Tag | Woche im Plan, „Ganze Woche“ mit Wochenstreifen, Strg+Umschalt+Bild↓/↑,
@@ -126,6 +127,9 @@ const h = require('./hilfe.cjs');
     await page.click('[data-nav="nav:Tagesplanung"]');
     const tp = '[data-arbeitsplatz=tagesplanung]';
     await page.waitForSelector(`${tp} [data-testid=tp-modus]`, { timeout: 15000 });
+    // Standard ist die Tagesübersicht nach Klassen
+    await page.waitForSelector(`${tp} [data-testid=tp-modus] [data-wert=klassen][aria-checked=true]`, { timeout: 10000 });
+    await page.waitForSelector(`${tp} [data-ansicht="vertretung.matrix"] [data-testid=matrix] .mx-zelle`, { timeout: 15000 });
     await page.click(`${tp} [data-testid=tp-modus] [data-wert=liste]`);
     if (await page.locator(`${tp} [data-testid=tp-schritte], ${tp} [data-testid=wochenstreifen]`).count()) throw new Error('Schritte bzw. Wochenstreifen gehören nicht mehr in die Tagesansicht');
     const offenStand = async () => Number(((await page.textContent(`${tp} [data-testid=tagessumme]`)) || '').match(/(\d+) offen/)?.[1] || 0);
@@ -153,6 +157,109 @@ const h = require('./hilfe.cjs');
     schritt(`Tagesplanung: Abwesenheit ${kurz2} im Blatt erfasst (vorher ${offen0} offen)`);
     await page.click(`${blattA} [data-testid=weiter-loesen]`);
     await page.waitForSelector(blattA, { state: 'detached', timeout: 5000 });
+
+    // Tagesübersicht nach Klassen (Matrix Klassen × Stunden): J wählt die erste offene Stunde, Enter übernimmt die Empfehlung (Rückgängig),
+    // Pfeiltasten, Miniplan (P, verschieben, einklappen, gemerkt), Kontextmenü, Klasse abwesend (Band) und wieder entfernen,
+    // Mehrfachauswahl (Umschalt+Klick), Lehrkräfte-Variante; 1280×720 ohne waagrechtes Blättern der Seite
+    {
+      const mx = `${tp} [data-ansicht="vertretung.matrix"]`;
+      await page.click(`${tp} [data-testid=tp-modus] [data-wert=klassen]`);
+      await page.waitForSelector(`${mx} [data-testid=matrix] .mx-zelle[data-status=o]`, { timeout: 15000 });
+      if (!(await page.locator(`${mx} [data-testid=mx-frei]`).count())) throw new Error('Spaltenkopf ohne verfügbare Lehrkräfte');
+      await page.locator(`${mx} [data-testid=matrix]`).focus();
+      await page.keyboard.press('j');
+      await page.waitForSelector(`${mx} .mx-zelle.gewaehlt[data-status=o]`, { timeout: 10000 });
+      await page.waitForSelector(`${mx} [data-testid=entscheidung] [data-testid=empfehlung] :is(button, .tp-leise:not(.tp-laedt))`, { timeout: 15000 });
+      await foto('09a-tagesuebersicht-klassen');
+      const v1 = await page.getAttribute(`${mx} .mx-zelle.gewaehlt`, 'data-v');
+      if (await page.locator(`${mx} [data-testid=empfehlung-uebernehmen][data-art=lehrer]`).count()) {
+        const k1 = await page.getAttribute(`${mx} [data-testid=empfehlung-uebernehmen]`, 'data-lehrer');
+        await page.keyboard.press('Enter');
+        await page.waitForFunction(([s, v]) => document.querySelector(`${s} .mx-zelle[data-v="${v}"]`)?.dataset.status === 'v', [mx, v1], { timeout: 15000 });
+        await page.waitForFunction(([s, k]) => (document.querySelector(`${s} [data-testid=zuletzt]`)?.textContent || '').includes(k), [mx, k1], { timeout: 10000 });
+        await foto('09b-tagesuebersicht-nach-enter');
+        await page.locator(`${mx} [data-testid=zuletzt] button`, { hasText: 'Rückgängig' }).click();
+        await page.waitForFunction(([s, v]) => document.querySelector(`${s} .mx-zelle[data-v="${v}"]`)?.dataset.status === 'o', [mx, v1], { timeout: 15000 });
+        schritt(`Tagesübersicht: Enter trägt ${k1} ein (Nr. ${v1}), Rückgängig stellt die offene Stunde wieder her`);
+      } else schritt('Tagesübersicht: keine Empfehlung mit Lehrkraft');
+      // Pfeiltasten
+      await page.locator(`${mx} .mx-zelle[data-v="${v1}"]`).click();
+      const c0 = Number(await page.getAttribute(`${mx} .mx-zelle.gewaehlt`, 'data-col'));
+      await page.keyboard.press(c0 > 0 ? 'ArrowLeft' : 'ArrowRight');
+      await page.waitForFunction(([s, c]) => Number(document.querySelector(`${s} .mx-zelle.gewaehlt`)?.dataset.col ?? c) !== c, [mx, c0], { timeout: 5000 });
+      await page.keyboard.press(c0 > 0 ? 'ArrowRight' : 'ArrowLeft');
+      // Miniplan: P öffnet den Plan der Lehrkraft (folgt der Auswahl), verschieben, einklappen, nach dem Neuladen wieder da
+      await page.keyboard.press('p');
+      const mini = page.locator('[data-testid=miniplan]').first();
+      await mini.waitFor({ timeout: 10000 });
+      await page.waitForSelector('[data-testid=miniplan] .mp-raster', { timeout: 10000 });
+      const m0 = await mini.boundingBox();
+      await page.mouse.move(m0.x + 40, m0.y + 14); await page.mouse.down(); await page.mouse.move(m0.x - 160, m0.y - 100, { steps: 8 }); await page.mouse.up();
+      const m1 = await mini.boundingBox();
+      if (!(m1.x < m0.x - 100 && m1.y < m0.y - 50)) throw new Error('Miniplan lässt sich nicht verschieben');
+      await foto('09c-tagesuebersicht-miniplan');
+      await mini.locator('[data-testid=miniplan-min]').click();
+      await page.waitForFunction(() => (document.querySelector('[data-testid=miniplan]')?.getBoundingClientRect().height || 0) < 40, null, { timeout: 5000 });
+      await page.reload();
+      await page.waitForSelector(`${mx} [data-testid=matrix] .mx-zelle`, { timeout: 20000 });
+      await page.waitForSelector('[data-testid=miniplan]', { timeout: 10000 });
+      const m2 = await page.locator('[data-testid=miniplan]').first().boundingBox();
+      if (Math.abs(m2.x - m1.x) > 2 || m2.height > 40) throw new Error('Lage bzw. Zustand des Miniplans nicht gemerkt');
+      await page.locator('[data-testid=miniplan] [data-testid=miniplan-zu]').first().click();
+      await page.waitForSelector('[data-testid=miniplan]', { state: 'detached', timeout: 5000 });
+      schritt('Miniplan: P öffnet, verschieben, einklappen, gemerkt, schließen');
+      // Kontextmenü einer Zelle: Plan der Klasse als Miniplan
+      await page.locator(`${mx} .mx-zelle[data-status=o]`).first().click({ button: 'right' });
+      await page.locator('[role=menuitem]', { hasText: /^Plan von .* anzeigen$/ }).first().click();
+      await page.waitForSelector('[data-testid=miniplan] .mp-raster', { timeout: 10000 });
+      await page.locator('[data-testid=miniplan] [data-testid=miniplan-zu]').first().click();
+      // Klasse abwesend (Ausflug) über das Kontextmenü der Zeile: Band über den Tag, danach wieder entfernen
+      const kl = await page.getAttribute(`${mx} .mx-reihe[data-zeile]`, "data-zeile");
+      await page.locator(`${mx} .mx-reihe[data-zeile="${kl}"] .mx-name`).click({ button: 'right' });
+      await page.locator('[role=menuitem]', { hasText: 'ganztägig abwesend' }).click();
+      await page.waitForSelector('[role=dialog]');
+      await page.locator('[role=dialog] input').last().fill('Ausflug');
+      await page.locator('[role=dialog] button', { hasText: 'Speichern' }).click();
+      for (let i = 0; i < 4; i++) {
+        await page.waitForTimeout(400);
+        const ja = page.locator('[role=dialog] button', { hasText: /^(Ja|OK)$/ });
+        if (await ja.count()) await ja.first().click(); else break;
+      }
+      await page.waitForSelector(`${mx} .mx-reihe[data-zeile="${kl}"] .mx-abwband`, { timeout: 15000 });
+      if (!(await page.locator(`${mx} .mx-reihe[data-zeile="${kl}"] .mx-abwband`).textContent()).includes('Ausflug')) throw new Error('Band ohne Text');
+      await foto('09d-tagesuebersicht-klasse-abwesend');
+      await page.locator(`${mx} .mx-reihe[data-zeile="${kl}"] .mx-abwband`).first().click({ button: 'right' });
+      await page.locator('[role=menuitem]', { hasText: 'Abwesenheit entfernen' }).click();
+      await page.waitForSelector(`${mx} .mx-reihe[data-zeile="${kl}"] .mx-abwband`, { state: 'detached', timeout: 15000 });
+      schritt(`Klasse ${kl} abwesend (Ausflug) als Band, wieder entfernt`);
+      // Mehrfachauswahl: Umschalt+Klick über zwei offene Stunden → gemeinsame Kandidaten
+      const offeneZ = page.locator(`${mx} .mx-zelle[data-status=o]`);
+      if ((await offeneZ.count()) > 1) {
+        await offeneZ.nth(0).click();
+        await offeneZ.nth(1).click({ modifiers: ['Shift'] });
+        await page.waitForSelector(`${mx} [data-testid=sammelleiste]`, { timeout: 15000 });
+        if ((await page.locator(`${mx} .mx-zelle.markiert`).count()) < 2) throw new Error('Umschalt+Klick markiert nicht mehrere Stunden');
+        await page.keyboard.press('Escape');
+        await page.waitForSelector(`${mx} [data-testid=sammelleiste]`, { state: 'detached', timeout: 5000 });
+        schritt('Tagesübersicht: Mehrfachauswahl mit gemeinsamen Kandidaten');
+      }
+      // 13-Zoll-Bildschirm: kein waagrechtes Blättern der Seite, Matrix und Entscheidung nebeneinander
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await page.waitForTimeout(500);
+      if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error('Waagrechtes Blättern bei 1280×720');
+      const eb = await page.locator(`${mx} [data-testid=entscheidung-flaeche]`).boundingBox();
+      if (!eb || eb.x + eb.width > 1281) throw new Error('Entscheidung bei 1280×720 abgeschnitten');
+      await foto('09e-tagesuebersicht-1280');
+      await page.setViewportSize({ width: 1600, height: 950 });
+      // Lehrkräfte: abwesende zuerst
+      await page.click(`${tp} [data-testid=tp-modus] [data-wert=lehrer]`);
+      await page.waitForSelector(`${tp} [data-ansicht="vertretung.matrix"][data-art=lehrer] .mx-reihe[data-zeile="${kurz2}"]`, { timeout: 15000 });
+      const ersteZeile = await page.getAttribute(`${tp} [data-ansicht="vertretung.matrix"][data-art=lehrer] .mx-reihe[data-zeile]`, 'data-zeile');
+      if (!(await page.locator(`${tp} [data-ansicht="vertretung.matrix"][data-art=lehrer] .mx-gruppe`, { hasText: 'Abwesend' }).count())) throw new Error('Gruppe „Abwesend“ fehlt');
+      await foto('09f-tagesuebersicht-lehrkraefte');
+      schritt(`Tagesübersicht Lehrkräfte: erste Zeile ${ersteZeile}`);
+      await page.click(`${tp} [data-testid=tp-modus] [data-wert=liste]`);
+    }
 
     // Liste: eine Zeile je offener Stunde, rechts die Entscheidung (Empfehlung, Alternativen, Entfall)
     const zeilen = `${tp} [data-testid=arbeitsliste] .tp-zeile`;

@@ -1,0 +1,210 @@
+/* Tagesübersicht (Matrix Klassen bzw. Lehrkräfte × Stunden) und Minipläne der Tagesplanung. Sachlich nach design/DESIGN.md:
+   1-px-Linien, Radius ≤ 3 px für Kacheln, Status über Linie, Schraffur, Durchstreichung und Textfarbe, keine Verläufe, Schatten nur für
+   die schwebenden Minipläne. Reguläre Stunden bleiben ruhig (grauer Text auf heller Fläche), Änderungen heben sich ab. */
+
+.mx-flaeche { display: flex; flex: 1; min-width: 0; min-height: 0; background: var(--colorNeutralBackground1); }
+.mx-haupt { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; container-type: inline-size; }
+
+/* Werkzeugleiste: Suche, Jahrgang, Nur mit Änderungen, Zahlen, Legende */
+.mx-werkzeuge { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 8px 0 12px; flex-shrink: 0; border-bottom: 1px solid var(--colorNeutralStroke2); box-sizing: border-box; font-size: 13px; min-width: 0; }
+.mx-suche { width: 176px; min-width: 120px; }
+.mx-jg { width: 148px; min-width: 120px; }
+.mx-werkzeuge .fui-Checkbox { white-space: nowrap; }
+.mx-werkzeuge .fui-Checkbox__label { padding-left: 4px; }
+.mx-summe { display: inline-flex; align-items: baseline; color: var(--colorNeutralForeground2); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; }
+.mx-summe > * + *::before { content: '·'; margin: 0 8px; color: var(--colorNeutralForeground4); font-weight: 400; text-decoration: none; display: inline-block; }
+.mx-ohne { padding: 0; font-size: 13px; }
+.mx-rechts { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+@container (max-width: 1000px) { .mx-breit { display: none; } }
+@container (max-width: 860px) { .mx-suche { width: 132px; } }
+@container (max-width: 720px) { .mx-summe { display: none; } }
+
+.mx-legende { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; font-size: 12px; color: var(--colorNeutralForeground2); max-width: 300px; }
+.mx-lg { display: flex; align-items: center; gap: 8px; }
+.mx-lg-text { color: var(--colorNeutralForeground3); margin-top: 4px; }
+.mx-muster { width: 22px; height: 12px; border-radius: 2px; flex-shrink: 0; box-sizing: border-box; border: 1px solid transparent; display: inline-block; }
+
+/* Raster: Kopf (Stunden, Bereitschaft) und Klassenspalte bleiben stehen, die Fläche scrollt in sich */
+.mx-scroll {
+  flex: 1; min-height: 0; overflow: auto; outline: none; position: relative; font-size: 12px; font-variant-numeric: tabular-nums;
+  background: var(--colorNeutralBackground1);
+}
+.mx-scroll:focus-visible .mx-zelle.gewaehlt { outline-color: var(--colorStrokeFocus2); }
+.mx-reihe { display: grid; grid-template-columns: var(--mx-spalten); box-sizing: border-box; border-bottom: 1px solid var(--colorNeutralStroke3); }
+.mx-kopfzeilen { position: sticky; top: 0; z-index: 4; width: var(--mx-breite); }
+.mx-kopfreihe { background: var(--colorNeutralBackground3); border-bottom: 1px solid var(--colorNeutralStroke1); height: 40px; }
+.mx-ecke {
+  position: sticky; left: 0; z-index: 2; display: flex; align-items: center; padding: 0 8px; box-sizing: border-box; font-size: 12px; font-weight: 500;
+  color: var(--colorNeutralForeground3); background: var(--colorNeutralBackground3); border-right: 1px solid var(--colorNeutralStroke2); white-space: nowrap; overflow: hidden;
+}
+.mx-kopf {
+  all: unset; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 0 6px; cursor: pointer; min-width: 0;
+  border-right: 1px solid var(--colorNeutralStroke3); white-space: nowrap; overflow: hidden;
+}
+.mx-kopf:hover { background: var(--colorNeutralBackground3Hover); }
+.mx-kopf:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.mx-kopf.gewaehlt { box-shadow: inset 0 -2px 0 var(--edo-modus); }
+.mx-kopf-std { display: flex; align-items: baseline; gap: 6px; }
+.mx-kopf-std b { font-size: 13px; font-weight: 600; color: var(--colorNeutralForeground1); }
+.mx-kopf-std span { color: var(--colorNeutralForeground3); font-size: 11px; }
+.mx-kopf-zahl { display: flex; gap: 6px; font-size: 11px; color: var(--colorNeutralForeground3); overflow: hidden; }
+.mx-kopf-offen { color: var(--up-entfall); font-weight: 600; }
+.mx-kopf-frei.knapp { color: var(--up-pruefung); font-weight: 600; }
+.mx-bereitreihe { background: var(--colorNeutralBackground2); border-bottom: 1px solid var(--colorNeutralStroke2); height: 24px; }
+.mx-bereitreihe .mx-ecke { background: var(--colorNeutralBackground2); font-weight: 400; font-size: 11px; }
+.mx-bereit { display: flex; align-items: center; gap: 4px; padding: 0 6px; overflow: hidden; white-space: nowrap; font-size: 11px; border-right: 1px solid var(--colorNeutralStroke3); color: var(--colorNeutralForeground2); }
+.mx-b-frei { color: var(--colorNeutralForeground1); font-weight: 500; }
+.mx-b-eingesetzt { color: var(--colorNeutralForeground3); text-decoration: line-through; }
+.mx-b-abwesend { color: var(--up-entfall); text-decoration: line-through; }
+
+/* Gruppen (Jahrgänge) */
+.mx-gruppe { display: flex; align-items: flex-end; box-sizing: border-box; border-bottom: 1px solid var(--colorNeutralStroke2); background: var(--colorNeutralBackground1); }
+.mx-gruppe-knopf {
+  all: unset; position: sticky; left: 0; display: inline-flex; align-items: baseline; gap: 8px; padding: 0 12px 4px 8px; cursor: pointer; font-size: 12px;
+  color: var(--colorNeutralForeground2); font-variant-numeric: tabular-nums;
+}
+.mx-gruppe-knopf:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+.mx-chevron { width: 10px; display: inline-block; color: var(--colorNeutralForeground3); }
+.mx-gruppe-text { font-weight: 600; color: var(--colorNeutralForeground1); }
+.mx-gruppe-zahl { color: var(--colorNeutralForeground3); }
+.mx-gruppe-offen { color: var(--up-entfall); font-weight: 600; }
+
+/* Zeilen */
+.mx-reihe.gewaehlt .mx-name { box-shadow: inset 3px 0 0 var(--edo-modus); }
+.mx-name {
+  position: sticky; left: 0; z-index: 2; display: flex; align-items: center; gap: 6px; padding: 0 6px 0 8px; box-sizing: border-box; background: var(--colorNeutralBackground1);
+  border-right: 1px solid var(--colorNeutralStroke2); white-space: nowrap; overflow: hidden; cursor: default; font-size: 13px;
+}
+.mx-name b { font-weight: 600; color: var(--colorNeutralForeground1); overflow: hidden; text-overflow: ellipsis; }
+.mx-name-offen { margin-left: auto; color: var(--up-entfall); font-weight: 600; font-size: 11px; }
+.mx-name-abw { margin-left: auto; color: var(--colorNeutralForeground3); font-size: 11px; }
+
+/* Zellen: Fach und Raum oben, Lehrkraft (bzw. Klasse) darunter */
+.mx-zelle {
+  position: relative; display: flex; flex-direction: column; justify-content: center; gap: 1px; min-width: 0; margin: 2px; padding: 0 5px; box-sizing: border-box;
+  border: 1px solid transparent; border-radius: 3px; cursor: pointer; overflow: hidden; white-space: nowrap; user-select: none; line-height: 15px;
+}
+.mx-zelle:hover { background: var(--colorNeutralBackground1Hover); }
+.mx-z1, .mx-z2 { display: flex; align-items: baseline; gap: 4px; min-width: 0; overflow: hidden; }
+.mx-f { font-weight: 600; color: var(--colorNeutralForeground1); overflow: hidden; text-overflow: ellipsis; }
+.mx-r { margin-left: auto; color: var(--colorNeutralForeground3); font-size: 11px; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+.mx-r.neu { color: var(--up-aenderung); font-weight: 600; }
+.mx-mehr { color: var(--colorNeutralForeground3); font-size: 11px; }
+.mx-z2 { color: var(--colorNeutralForeground2); }
+.mx-l { overflow: hidden; text-overflow: ellipsis; }
+.mx-alt { color: var(--colorNeutralForeground3); text-decoration-color: color-mix(in srgb, var(--up-entfall) 60%, transparent); }
+.mx-neu { color: var(--up-aenderung); font-weight: 600; }
+.mx-frage { color: var(--up-entfall); font-weight: 700; }
+
+/* regulär: ruhige graue Kachel */
+.mx-st-n, .mx-st-b { background: var(--colorNeutralBackground2); }
+.mx-st-n .mx-f { font-weight: 500; color: var(--colorNeutralForeground2); }
+.mx-st-b .mx-f { font-weight: 400; color: var(--colorNeutralForeground3); }
+.mx-st-n:hover, .mx-st-b:hover { background: var(--colorNeutralBackground2Hover); }
+/* offen: rote Linie und „?“ */
+.mx-st-o { background: var(--colorNeutralBackground1); border: 1.5px solid var(--up-entfall); }
+.mx-st-ro { background: var(--colorNeutralBackground1); border: 1.5px dashed var(--up-entfall); }
+.mx-st-ro .mx-r { color: var(--up-entfall); font-weight: 700; }
+/* vertreten, Raumänderung, zusätzlich: Linie in der Änderungsfarbe */
+.mx-st-v, .mx-st-r, .mx-st-z { background: var(--colorNeutralBackground1); border-color: var(--up-aenderung); }
+.mx-st-x { background: var(--colorNeutralBackground1); border: 1px dashed var(--up-aenderung); }
+/* Entfall: fein schraffiert, Fach rot durchgestrichen */
+.mx-st-e {
+  border-color: color-mix(in srgb, var(--up-entfall) 35%, transparent);
+  background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--up-entfall) 9%, transparent) 0 1px, transparent 1px 6px), var(--colorNeutralBackground1);
+}
+.mx-st-e .mx-f { color: var(--up-entfall); text-decoration: line-through; }
+.mx-st-e .mx-z2, .mx-st-e .mx-r { color: var(--colorNeutralForeground3); }
+/* Termin, Klausur */
+.mx-st-t { background: var(--colorNeutralBackground1); border: 1px dashed var(--up-termin); }
+.mx-st-k { background: var(--colorNeutralBackground1); border-color: var(--up-pruefung); }
+/* Klasse abwesend (Ausflug): ein Band über die Stunden */
+.mx-abwband {
+  border: 1px dashed var(--up-termin); color: var(--up-termin);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--up-termin) 7%, transparent) 0 1px, transparent 1px 7px), var(--colorNeutralBackground1);
+}
+.mx-abwtext { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; color: var(--up-termin); }
+/* Lehrkraft abwesend: Zellen auf schraffiertem Grund */
+.mx-zelle.mx-abw:not(.mx-st-o):not(.mx-st-v):not(.mx-st-e) { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--up-entfall) 7%, transparent) 0 1px, transparent 1px 7px); }
+.mx-leer.mx-abw .mx-abwtext { color: var(--up-entfall); font-weight: 400; font-size: 11px; }
+.mx-leer { cursor: default; }
+.mx-leer:hover { background: transparent; }
+/* Auswahl */
+.mx-zelle.gewaehlt { outline: 2px solid var(--edo-modus); outline-offset: 0; z-index: 1; }
+.mx-zelle.markiert { background: color-mix(in srgb, var(--edo-modus-flaeche) 85%, var(--colorNeutralBackground1)); }
+.mx-reihe.mit-offen .mx-name b { color: var(--colorNeutralForeground1); }
+
+/* Muster der Legende */
+.mx-muster.mx-st-o { border-width: 1.5px; }
+
+/* Seitenleiste: Entscheidung zur gewählten Zelle */
+.mx-seite.tp-entscheidung-flaeche { flex: 0 0 340px; width: 340px; border-left: 1px solid var(--colorNeutralStroke2); }
+.mx-seite.tp-entscheidung-flaeche.breit { flex-basis: min(560px, 46%); width: min(560px, 46%); }
+@media (min-width: 1600px) { .mx-seite.tp-entscheidung-flaeche:not(.breit) { flex-basis: 400px; width: 400px; } }
+.mx-seite .tp-entscheidung { padding: 12px 16px 24px 16px; gap: 16px; }
+.mx-seite .tp-zuletzt { padding: 8px 16px; }
+.mx-seite .tp-etitel { font-size: 18px; }
+.mx-seite .tp-empfehlung { gap: 8px; }
+.mx-seite .tp-alt { grid-template-columns: 20px 44px minmax(0, 1fr) auto; }
+.mx-seite .tp-alt-name { display: none; }
+.mx-seite .ta-sammel { padding: 12px 16px; }
+.mx-ort { display: flex; align-items: baseline; gap: 8px; padding: 10px 16px 0 16px; font-size: 12px; color: var(--colorNeutralForeground3); flex-wrap: wrap; }
+.mx-ort-text { font-weight: 600; color: var(--colorNeutralForeground2); }
+.mx-ort-plaene { display: inline-flex; align-items: baseline; gap: 12px; margin-left: auto; flex-wrap: wrap; }
+.mx-ort-link { padding: 0; font-size: 12px; }
+.mx-auswahl { display: flex; flex-direction: column; gap: 4px; padding: 8px 16px 0 16px; }
+.mx-auswahl-e { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 1px; padding: 3px 6px; border: 1px solid var(--colorNeutralStroke3); border-radius: 3px; cursor: pointer; font-size: 12px; }
+.mx-auswahl-e.gewaehlt { outline: 2px solid var(--edo-modus); }
+.mx-info { font-size: 16px; font-weight: 600; color: var(--colorNeutralForeground1); margin-bottom: 4px; }
+
+/* ---- Minipläne: schwebende, verschiebbare Fenster ---- */
+.mp-ebene { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+.mp-fenster {
+  position: fixed; pointer-events: auto; display: flex; flex-direction: column; box-sizing: border-box; background: var(--colorNeutralBackground1);
+  border: 1px solid var(--colorNeutralStroke1); border-radius: 6px; box-shadow: var(--shadow16); overflow: hidden; font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.mp-kopf {
+  display: flex; align-items: center; gap: 2px; height: 30px; flex-shrink: 0; padding: 0 2px 0 10px; box-sizing: border-box; cursor: grab; touch-action: none; user-select: none;
+  background: var(--colorNeutralBackground3); border-bottom: 1px solid var(--colorNeutralStroke2);
+}
+.mp-fenster.min .mp-kopf { border-bottom: 0; }
+.mp-kopf:active { cursor: grabbing; }
+.mp-titel { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; overflow: hidden; white-space: nowrap; }
+.mp-titel b { font-size: 13px; font-weight: 600; color: var(--colorNeutralForeground1); }
+.mp-titel span { color: var(--colorNeutralForeground3); }
+.mp-umschalter {
+  all: unset; box-sizing: border-box; height: 22px; padding: 0 6px; border: 1px solid var(--colorNeutralStroke1); border-radius: 4px; cursor: pointer; font-size: 11px;
+  color: var(--colorNeutralForeground2); margin-right: 2px;
+}
+.mp-umschalter:hover { background: var(--colorNeutralBackground1Hover); }
+.mp-umschalter:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+.mp-knopf { min-width: 24px; width: 24px; height: 24px; padding: 0; }
+.mp-knopf[aria-pressed=true] { color: var(--edo-modus); }
+.mp-inhalt { flex: 1; min-height: 0; overflow: auto; }
+.mp-leer { padding: 8px 10px; color: var(--colorNeutralForeground3); }
+.mp-raster { display: grid; grid-auto-rows: minmax(26px, auto); }
+.mp-ecke, .mp-tag { position: sticky; top: 0; z-index: 1; background: var(--colorNeutralBackground2); border-bottom: 1px solid var(--colorNeutralStroke2); }
+.mp-tag { padding: 4px 6px; font-size: 11px; font-weight: 600; color: var(--colorNeutralForeground2); white-space: nowrap; overflow: hidden; border-left: 1px solid var(--colorNeutralStroke3); }
+.mp-tag.heute { color: var(--edo-modus); box-shadow: inset 0 -2px 0 var(--edo-modus); }
+.mp-tag.frei { color: var(--colorNeutralForeground3); font-weight: 400; }
+.mp-std { display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--colorNeutralForeground2); border-bottom: 1px solid var(--colorNeutralStroke3); background: var(--colorNeutralBackground2); }
+.mp-zelle { display: flex; flex-direction: column; gap: 2px; padding: 2px; min-width: 0; border-bottom: 1px solid var(--colorNeutralStroke3); border-left: 1px solid var(--colorNeutralStroke3); }
+.mp-zelle.heute { background: color-mix(in srgb, var(--edo-modus-flaeche) 40%, transparent); }
+.mp-e {
+  all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: 4px; padding: 1px 4px; min-width: 0;
+  border: 1px solid transparent; border-radius: 3px; white-space: nowrap; overflow: hidden; line-height: 16px;
+}
+.mp-e:not(:disabled) { cursor: pointer; }
+.mp-e:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+.mp-e > span { overflow: hidden; text-overflow: ellipsis; }
+.mp-fach { font-weight: 600; color: var(--colorNeutralForeground1); }
+.mp-zweit { color: var(--colorNeutralForeground2); }
+.mp-zweit s { color: var(--colorNeutralForeground3); }
+.mp-raum { color: var(--colorNeutralForeground3); font-size: 11px; }
+.mp-e.mx-st-n { background: var(--colorNeutralBackground2); }
+.mp-e.mx-st-e .mp-fach { color: var(--up-entfall); text-decoration: line-through; }
+.mp-e.mx-st-o .mp-zweit { color: var(--up-entfall); font-weight: 700; }
+.mp-e.mx-st-v .mp-zweit { color: var(--up-aenderung); font-weight: 600; }
+.mp-mehr { color: var(--colorNeutralForeground3); font-size: 11px; padding-left: 4px; }
+.mp-griff { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none; }
+.mp-griff::after { content: ''; position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px; border-right: 1.5px solid var(--colorNeutralStroke1); border-bottom: 1.5px solid var(--colorNeutralStroke1); }

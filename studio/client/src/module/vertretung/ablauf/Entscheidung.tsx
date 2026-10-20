@@ -18,6 +18,7 @@ import {
   QUELLE, arbeitslisteLaden, betreuen, entfallen, gruendeText, kandidatenAnfordern, lastTitel, ohneLehrkraft, raumZuweisen, stundenText,
   useKandidaten, vormerken, zuruecksetzen, zuweisen, type BearbeiteteStunde, type Kandidat, type KandidatenInfo, type OffeneStunde,
 } from './daten';
+import { miniplanOeffnen } from './Miniplan';
 import { Sammelleiste } from './Sammelleiste';
 import './ablauf.css';
 
@@ -118,6 +119,13 @@ export function entscheidungsTaste(e: KeyboardEvent, { o, b, info, block, schrei
   return false;
 }
 
+/** Kontextmenü eines Kandidaten: Plan der Lehrkraft als Miniplan (frei verschiebbar). */
+function kandidatMenue(ev: React.MouseEvent, k: Kandidat | null | undefined) {
+  if (!k) return;
+  ev.preventDefault();
+  menue(ev.clientX, ev.clientY, [{ titel: `${k.k} – ${k.name}` }, { text: `Plan von ${k.k} anzeigen`, hinweis: 'Als Miniplan – frei verschiebbar', aktion: () => miniplanOeffnen('lehrer', k.lehrer, k.k) }]);
+}
+
 /** Entscheidungsfläche der gewählten Stunde. */
 export function Entscheidung(props: EntscheidungProps & { mehrRef?: React.Ref<HTMLSpanElement> }) {
   const { o, b, info, block, schreiben, aktion, stand, mehrRef } = props;
@@ -156,7 +164,8 @@ export function Entscheidung(props: EntscheidungProps & { mehrRef?: React.Ref<HT
           : l.primaer ? (
             <div className="tp-empfehlung">
               <Button appearance="primary" className="tp-empfehlung-knopf" disabled={!schreiben} title={l.primaer.titel} data-testid="empfehlung-uebernehmen" data-art={l.primaer.art}
-                data-lehrer={l.primaer.art === 'lehrer' ? info?.kandidaten[0]?.k : undefined} onClick={() => aktion(o.id, l.primaer!.ausfuehren, `${beschreibung(o)}: ${l.primaer!.erledigt}`)}>
+                data-lehrer={l.primaer.art === 'lehrer' ? info?.kandidaten[0]?.k : undefined} onClick={() => aktion(o.id, l.primaer!.ausfuehren, `${beschreibung(o)}: ${l.primaer!.erledigt}`)}
+                onContextMenu={(ev) => { if (l.primaer!.art === 'lehrer') kandidatMenue(ev, info?.kandidaten[0]); }}>
                 {l.primaer.text}<kbd className="tp-taste-hell">Enter</kbd>
               </Button>
               <span className="tp-begruendung">{l.primaer.beschreibung}</span>
@@ -169,8 +178,8 @@ export function Entscheidung(props: EntscheidungProps & { mehrRef?: React.Ref<HT
           <div className="tp-label">Alternativen</div>
           <div className="tp-alternativen" role="list">
             {l.alternativen.map((x, i) => (
-              <button key={x.kurz} type="button" role="listitem" className={mergeClasses('tp-alt', x.k?.rot && 'rot')} disabled={!schreiben} title={`${x.titel}\n(Taste ${i + 2})`} data-lehrer={x.kurz}
-                onClick={() => aktion(o.id, x.ausfuehren, `${beschreibung(o)}: ${x.kurz} eingetragen`)}>
+              <button key={x.kurz} type="button" role="listitem" className={mergeClasses('tp-alt', x.k?.rot && 'rot')} disabled={!schreiben} title={`${x.titel}\n(Taste ${i + 2}; Rechtsklick: Plan als Miniplan)`} data-lehrer={x.kurz}
+                onClick={() => aktion(o.id, x.ausfuehren, `${beschreibung(o)}: ${x.kurz} eingetragen`)} onContextMenu={(ev) => kandidatMenue(ev, x.k)}>
                 <kbd>{i + 2}</kbd><span className="tp-alt-kurz">{x.kurz}</span><span className="tp-alt-name">{x.name}</span><span className="tp-alt-grund">{x.grund}</span>
                 {x.k ? <span className="tp-alt-last">{`Woche ${x.k.woche} · Monat ${x.k.monat}`}</span> : null}
               </button>
