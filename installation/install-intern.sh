@@ -8,12 +8,12 @@
 #
 # Auf einem Server ohne Repository:
 #   mkdir -p /opt/eduorga-website && cd /opt/eduorga-website
-#   curl -fsSL -H "Accept: application/vnd.github.raw" -o install-intern.sh "https://api.github.com/repos/florians25/UntPlanNext/contents/installation/install-intern.sh?ref=master"
+#   curl -fsSL -H "Accept: application/vnd.github.raw" -o install-intern.sh "https://api.github.com/repos/florians25/EduOrga/contents/installation/install-intern.sh?ref=master"
 #   sh install-intern.sh
 set -eu
 
-QUELLE=${UNTPLAN_QUELLE:-https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation}
-API=${UNTPLAN_API:-https://api.github.com/repos/florians25/UntPlanNext/contents/installation}
+QUELLE=${UNTPLAN_QUELLE:-https://raw.githubusercontent.com/florians25/EduOrga/master/installation}
+API=${UNTPLAN_API:-https://api.github.com/repos/florians25/EduOrga/contents/installation}
 COMPOSE_DATEI=docker-compose.website.yml
 DIENST=untplannext-website
 NEU=0; UPDATE=0

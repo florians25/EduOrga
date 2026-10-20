@@ -17,7 +17,7 @@ RUN dotnet publish mobile/src/UntPlanMobile/UntPlanMobile.csproj -c Release -o /
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 LABEL org.opencontainers.image.title="UntPlanMobile" \
       org.opencontainers.image.description="Stundenplan-App fürs Telefon (PWA) – Mobilbegleiter zu UntPlanWeb" \
-      org.opencontainers.image.source="https://github.com/florians25/UntPlanNext"
+      org.opencontainers.image.source="https://github.com/florians25/EduOrga"
 ENV ASPNETCORE_HTTP_PORTS=8081 \
     UNTPLANWEB_URL=http://untplanweb:8080 \
     UNTPLANMOBILE_DATEN=/data \

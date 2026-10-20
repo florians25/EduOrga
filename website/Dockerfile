@@ -38,7 +38,7 @@ RUN dotnet publish website/src/EduOrgaWebsite/EduOrgaWebsite.csproj -c Release -
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 LABEL org.opencontainers.image.title="EduOrga Website" \
       org.opencontainers.image.description="Produkt-Website von EduOrga" \
-      org.opencontainers.image.source="https://github.com/florians25/UntPlanNext"
+      org.opencontainers.image.source="https://github.com/florians25/EduOrga"
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     TZ=Europe/Berlin \
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false

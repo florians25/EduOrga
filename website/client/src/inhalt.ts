@@ -1,4 +1,4 @@
-export const REPO = "https://github.com/florians25/UntPlanNext";
+export const REPO = "https://github.com/florians25/EduOrga";
 export const RELEASES = `${REPO}/releases`;
 export const ISSUES = `${REPO}/issues`;
 export const DISCUSSIONS = `${REPO}/discussions`;
@@ -178,7 +178,7 @@ export const INSTALLATION = {
     "für HTTPS: je Programm eine Domain (z. B. studio.meine-schule.de, plan.meine-schule.de, app.meine-schule.de), die auf den Server zeigt; Ports 80 und 443 erreichbar",
   ],
   installieren: `mkdir -p /opt/untplannext && cd /opt/untplannext
-curl -fsSL -H "Accept: application/vnd.github.raw" -o install.sh "https://api.github.com/repos/florians25/UntPlanNext/contents/installation/install.sh?ref=master"
+curl -fsSL -H "Accept: application/vnd.github.raw" -o install.sh "https://api.github.com/repos/florians25/EduOrga/contents/installation/install.sh?ref=master"
 sh install.sh`,
   aktualisieren: `cd /opt/untplannext
 ./update.sh              # alles: Studio und Web sichern, neue Images laden, neu starten

@@ -325,7 +325,7 @@ Für größere bzw. produktive Installationen kann stattdessen MariaDB oder MySQ
 
 ```bash
 mkdir untplanweb && cd untplanweb
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/docker-compose.yml
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/web/docker-compose.yml
 docker compose up -d
 ```
 
@@ -335,8 +335,8 @@ Dann im Browser `http://<server>:8080` öffnen. Der Einrichtungsassistent legt d
 **Mit HTTPS** (empfohlen, automatisches Let's-Encrypt-Zertifikat über Caddy). Voraussetzung: ein DNS-Name, der auf den Server zeigt, und die Ports 80 und 443:
 
 ```bash
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/docker-compose.https.yml
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/Caddyfile
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/web/docker-compose.https.yml
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/web/Caddyfile
 UNTPLANWEB_DOMAIN=plan.meine-schule.de docker compose -f docker-compose.https.yml up -d
 ```
 
@@ -365,7 +365,7 @@ Anmeldung als `admin` / `admin12345`. Die Beispielwoche wird automatisch auf die
 | `UNTPLANWEB_DB_CONNECTION` | Verbindung zu MySQL/MariaDB: `Server=…;Port=3306;Database=…;User ID=…;Password=…` oder `mysql://benutzer:passwort@host:3306/datenbank` | – |
 | `UNTPLANWEB_DB_WARTEN` | Sekunden, die beim Start auf den Datenbankserver gewartet wird | `60` |
 | `UNTPLANWEB_UPDATE_PRUEFEN` | `0` = nicht nach neuen Versionen suchen | an |
-| `UNTPLANWEB_UPDATE_URL` | Quelle der neuesten Version (GitHub-API `…/releases/latest`, `…/releases`, `…/tags`, `ghcr://besitzer/image` oder eigene Adresse mit `{"version":"…"}` bzw. Text) | GitHub-Releases von florians25/UntPlanNext (`https://api.github.com/repos/florians25/UntPlanNext/releases/latest`) |
+| `UNTPLANWEB_UPDATE_URL` | Quelle der neuesten Version (GitHub-API `…/releases/latest`, `…/releases`, `…/tags`, `ghcr://besitzer/image` oder eigene Adresse mit `{"version":"…"}` bzw. Text) | GitHub-Releases von florians25/EduOrga (`https://api.github.com/repos/florians25/EduOrga/releases/latest`) |
 | `UNTPLANWEB_UPDATE_TAG_PRAEFIX` | nur Tags mit diesem Präfix berücksichtigen (z. B. `web-v`) | – |
 | `UNTPLANWEB_UPDATE_MODUS` | „Update installieren“: `aus`, `watchtower` oder `datei` | `watchtower`, wenn eine Watchtower-Adresse gesetzt ist, sonst `aus` |
 | `UNTPLANWEB_UPDATE_WATCHTOWER_URL`, `…_TOKEN` | HTTP-API von Watchtower, z. B. `http://watchtower:8080/v1/update`, und deren Token | – |
@@ -383,8 +383,8 @@ startet erst, wenn die Datenbank bereit ist):
 
 ```bash
 mkdir untplanweb && cd untplanweb
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/docker-compose.mariadb.yml
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/update.sh && chmod +x update.sh
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/web/docker-compose.mariadb.yml
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/web/update.sh && chmod +x update.sh
 cat > .env <<'EOF'
 MARIADB_PASSWORT=ein-langes-passwort
 MARIADB_ROOT_PASSWORT=ein-anderes-langes-passwort
@@ -427,7 +427,7 @@ Danach lädt es die neuen Images und startet neu; die letzten 14 Sicherungen ble
 Für EduOrga Mobile gibt es dasselbe als `mobile/update.sh` (aktualisiert EduOrga Web und EduOrga Mobile gemeinsam).
 
 **Updateanzeige:** Unter *Administration → Übersicht* zeigt die Karte *Version & Updates* die laufende Version, die Datenbank
-mit Schemastand und die neueste veröffentlichte Version (Standard: GitHub-Releases von florians25/UntPlanNext – Entwürfe und
+mit Schemastand und die neueste veröffentlichte Version (Standard: GitHub-Releases von florians25/EduOrga – Entwürfe und
 Vorabversionen zählen nicht, aus dem Tag zählt die Versionsnummer, z. B. `v1.5.0` oder `web-v1.5.0` –, alle 6 Stunden geprüft;
 abschaltbar mit `UNTPLANWEB_UPDATE_PRUEFEN=0`, andere Quelle mit `UNTPLANWEB_UPDATE_URL`, z. B. die Image-Tags
 `ghcr://florians25/untplannext-web`). Netzwerk- oder Proxyfehler führen nur dazu, dass kein Hinweis erscheint. Ist ein Update
@@ -478,7 +478,7 @@ Umstieg einer Docker-Installation (im selben Ordner, damit das Volume `untplanwe
 
 ```bash
 docker compose down                                                   # SQLite-Installation stoppen (Volume bleibt)
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/web/docker-compose.mariadb.yml
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/web/docker-compose.mariadb.yml
 # .env mit MARIADB_PASSWORT, MARIADB_ROOT_PASSWORT, WATCHTOWER_TOKEN anlegen (siehe oben)
 docker compose -f docker-compose.mariadb.yml run --rm untplanweb --migrieren-nach-mysql
 docker compose -f docker-compose.mariadb.yml up -d

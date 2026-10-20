@@ -141,9 +141,9 @@ fi
 [ "$AKTUALISIEREN" = 1 ] || { echo "Sicherung fertig."; exit 0; }
 
 # aktuelle docker-compose.yml laden (die eigene .env bleibt unverändert; die bisherige Datei wird beiseitegelegt)
-QUELLE=${UNTPLAN_QUELLE:-https://raw.githubusercontent.com/florians25/UntPlanNext/master/installation}
+QUELLE=${UNTPLAN_QUELLE:-https://raw.githubusercontent.com/florians25/EduOrga/master/installation}
 # Datei aus dem Repository laden – über die GitHub-API (nicht zwischengespeichert), sonst über raw.githubusercontent.com
-API=${UNTPLAN_API:-https://api.github.com/repos/florians25/UntPlanNext/contents/installation}
+API=${UNTPLAN_API:-https://api.github.com/repos/florians25/EduOrga/contents/installation}
 laden() { # laden <Datei> <Ziel>
   curl -fsSL -H "Accept: application/vnd.github.raw" "$API/$1?ref=master" -o "$2" 2>/dev/null \
     || curl -fsSL "$QUELLE/$1" -o "$2" 2>/dev/null

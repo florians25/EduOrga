@@ -6,8 +6,8 @@ Hinweis folgen [`design/MARKE.md`](../design/MARKE.md).
 
 Die Website ist **nicht Teil der Installation an Schulen**. Betrieben wird sie getrennt mit
 [`installation/intern/`](../installation/intern/README.md) (nur für den Betreiber des Projekts). Fehler, Wünsche und
-Ideen laufen über GitHub: [Issues](https://github.com/florians25/UntPlanNext/issues) und
-[Discussions](https://github.com/florians25/UntPlanNext/discussions) – ein eigenes Portal gibt es nicht.
+Ideen laufen über GitHub: [Issues](https://github.com/florians25/EduOrga/issues) und
+[Discussions](https://github.com/florians25/EduOrga/discussions) – ein eigenes Portal gibt es nicht.
 
 ![Startseite](docs/bilder/start-desktop.png)
 

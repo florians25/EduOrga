@@ -161,7 +161,7 @@ EduOrga Mobile läuft neben EduOrga Web, als eigener Container auf **Port 8081**
 
 ```bash
 mkdir untplan && cd untplan
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/mobile/docker-compose.yml
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/mobile/docker-compose.yml
 docker compose up -d
 ```
 
@@ -205,7 +205,7 @@ EduOrga Mobile wertet `X-Forwarded-Proto` und `X-Forwarded-Host` aus und setzt d
 | `UNTPLANMOBILE_ZEITZONE` | Zeitzone der Schule (heutiger Tag, aktuelle Woche) | `Europe/Berlin` |
 | `ASPNETCORE_HTTP_PORTS` | Port im Container | `8081` |
 | `UNTPLANMOBILE_UPDATE_PRUEFEN` | `0` = nicht nach neuen Versionen suchen | an |
-| `UNTPLANMOBILE_UPDATE_URL` | Quelle der neuesten Version (wie `UNTPLANWEB_UPDATE_URL`, z. B. `ghcr://florians25/untplannext-mobile`) | GitHub-Releases von florians25/UntPlanNext |
+| `UNTPLANMOBILE_UPDATE_URL` | Quelle der neuesten Version (wie `UNTPLANWEB_UPDATE_URL`, z. B. `ghcr://florians25/untplannext-mobile`) | GitHub-Releases von florians25/EduOrga |
 | `UNTPLANMOBILE_UPDATE_TAG_PRAEFIX` | nur Tags mit diesem Präfix berücksichtigen | – |
 | `UNTPLANMOBILE_PUSH_DETAILS` | `1` = Einzelheiten (Tag, Stunde, Fach, Klasse, Raum, Profilname) in Push-Nachrichten | aus (datensparsam) |
 
@@ -216,8 +216,8 @@ EduOrga Mobile selbst speichert keine Daten – es ist ein Proxy vor EduOrga Web
 
 ```bash
 mkdir untplan && cd untplan
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/mobile/docker-compose.mariadb.yml
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/mobile/update.sh && chmod +x update.sh
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/mobile/docker-compose.mariadb.yml
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/mobile/update.sh && chmod +x update.sh
 printf 'MARIADB_PASSWORT=…\nMARIADB_ROOT_PASSWORT=…\nWATCHTOWER_TOKEN=…\nCOMPOSE_FILE=docker-compose.mariadb.yml\n' > .env
 docker compose up -d
 ```
@@ -252,7 +252,7 @@ EduOrga Mobile hat keine eigenen Daten. Für den Umstieg von EduOrga Web von SQL
 
 ```bash
 docker compose down
-curl -O https://raw.githubusercontent.com/florians25/UntPlanNext/master/mobile/docker-compose.mariadb.yml   # .env wie oben
+curl -O https://raw.githubusercontent.com/florians25/EduOrga/master/mobile/docker-compose.mariadb.yml   # .env wie oben
 docker compose -f docker-compose.mariadb.yml run --rm untplanweb --migrieren-nach-mysql
 docker compose -f docker-compose.mariadb.yml up -d
 ```

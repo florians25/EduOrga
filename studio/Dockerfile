@@ -35,7 +35,7 @@ RUN dotnet publish studio/src/UntPlanStudio/UntPlanStudio.csproj -c Release -o /
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 LABEL org.opencontainers.image.title="UntPlan Studio" \
       org.opencontainers.image.description="Stunden- und Vertretungsplanung für Schulen im Browser" \
-      org.opencontainers.image.source="https://github.com/florians25/UntPlanNext"
+      org.opencontainers.image.source="https://github.com/florians25/EduOrga"
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     STUDIO_DATEN=/data \
     TZ=Europe/Berlin \

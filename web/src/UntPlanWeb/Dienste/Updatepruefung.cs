@@ -39,7 +39,7 @@ public sealed record Releaseinfo(string Version, string? Url, string? Name = nul
 /// <summary>
 /// Fragt die neueste veröffentlichte Version ab und vergleicht sie mit der laufenden. Quellen (<c>…_UPDATE_URL</c>):
 /// <list type="bullet">
-/// <item>GitHub-API: <c>https://api.github.com/repos/florians25/UntPlanNext/releases/latest</c> (Standard), <c>…/releases</c> oder <c>…/tags</c>.</item>
+/// <item>GitHub-API: <c>https://api.github.com/repos/florians25/EduOrga/releases/latest</c> (Standard), <c>…/releases</c> oder <c>…/tags</c>.</item>
 /// <item>Container-Registry: <c>ghcr://florians25/untplannext-web</c> – Tags des (öffentlichen) Images, passt genau zu <c>docker compose pull</c>.</item>
 /// <item>Eigene Adresse mit JSON <c>{"version":"1.2.3","url":"…"}</c> oder reinem Text <c>1.2.3</c>.</item>
 /// </list>
@@ -49,7 +49,7 @@ public sealed record Releaseinfo(string Version, string? Url, string? Name = nul
 /// </summary>
 public sealed class Updatepruefung
 {
-    public const string StandardUrl = "https://api.github.com/repos/florians25/UntPlanNext/releases/latest";
+    public const string StandardUrl = "https://api.github.com/repos/florians25/EduOrga/releases/latest";
     /// <summary>Versionshinweise werden auf so viele Zeichen gekürzt.</summary>
     public const int HinweiseMaxLaenge = 4000;
 

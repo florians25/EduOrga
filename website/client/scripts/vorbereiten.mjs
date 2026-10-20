@@ -48,7 +48,7 @@ for (const [von, nach] of dateien) {
 console.log(`Website: ${dateien.length - fehlend} Dateien nach public/ übernommen.`);
 
 // --- Stand des Projekts ---------------------------------------------------------------------------------------------
-const REPO_API = "https://api.github.com/repos/florians25/UntPlanNext";
+const REPO_API = "https://api.github.com/repos/florians25/EduOrga";
 const lesen = (datei) => (existsSync(join(wurzel, datei)) ? readFileSync(join(wurzel, datei), "utf8") : "");
 const git = (...args) => {
   try {

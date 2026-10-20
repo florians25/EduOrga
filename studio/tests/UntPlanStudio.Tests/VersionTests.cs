@@ -24,7 +24,7 @@ public class VersionTests
     }
 
     private const string Release = """
-        {"tag_name":"v99.5.0","name":"UntPlan 99.5","html_url":"https://github.com/florians25/UntPlanNext/releases/tag/v99.5.0",
+        {"tag_name":"v99.5.0","name":"UntPlan 99.5","html_url":"https://github.com/florians25/EduOrga/releases/tag/v99.5.0",
          "draft":false,"prerelease":false,"published_at":"2026-10-01T08:00:00Z","body":"## Neu\r\n- Updatehinweis im Studio"}
         """;
 
@@ -65,7 +65,7 @@ public class VersionTests
         Assert.True(v["updateVerfuegbar"]!.GetValue<bool>());
         Assert.Equal("99.5.0", v["neueste"]!.GetValue<string>());
         Assert.Equal("UntPlan 99.5", v["releaseName"]!.GetValue<string>());
-        Assert.Equal("https://github.com/florians25/UntPlanNext/releases/tag/v99.5.0", v["releaseUrl"]!.GetValue<string>());
+        Assert.Equal("https://github.com/florians25/EduOrga/releases/tag/v99.5.0", v["releaseUrl"]!.GetValue<string>());
         Assert.Contains("Updatehinweis im Studio", v["hinweise"]!.GetValue<string>());
         Assert.NotNull(v["veroeffentlicht"]);
         Assert.Equal(VersionApi.Befehl, v["befehl"]!.GetValue<string>());

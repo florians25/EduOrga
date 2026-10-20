@@ -31,7 +31,7 @@ in einem eigenen Volume – Studio kann ohne Web betrieben, gesichert und aktual
 
 ```sh
 mkdir -p /opt/untplannext && cd /opt/untplannext
-curl -fsSL -H "Accept: application/vnd.github.raw" -o install.sh "https://api.github.com/repos/florians25/UntPlanNext/contents/installation/install.sh?ref=master"
+curl -fsSL -H "Accept: application/vnd.github.raw" -o install.sh "https://api.github.com/repos/florians25/EduOrga/contents/installation/install.sh?ref=master"
 sh install.sh
 ```
 
@@ -128,7 +128,7 @@ Update installieren* in UntPlan Web das Update von Web und Mobile; alternativ oh
 **Bestimmte Version:** `UNTPLAN_VERSION=1.4.0` in `.env` statt `latest`, dann `./update.sh`.
 
 **Hinweis auf neue Versionen:** UntPlan Studio und UntPlan Web prüfen alle 6 Stunden die
-[GitHub-Releases](https://github.com/florians25/UntPlanNext/releases) und zeigen Administratoren „Neue Version … verfügbar“ mit
+[GitHub-Releases](https://github.com/florians25/EduOrga/releases) und zeigen Administratoren „Neue Version … verfügbar“ mit
 den Versionshinweisen (Studio unter der Kopfleiste, Web auf *Heute*/*Übersicht*). Aktualisiert wird wie oben, z. B.
 `./update.sh studio`. Abschalten mit `STUDIO_UPDATE_PRUEFEN=0` bzw. `UNTPLANWEB_UPDATE_PRUEFEN=0` (z. B. ohne Internetzugang).
 

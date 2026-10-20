@@ -236,7 +236,7 @@ public sealed class Vapid
 
     public Vapid(Datenordner ordner, IConfiguration konfig)
     {
-        Kontakt = konfig["UNTPLANMOBILE_VAPID_KONTAKT"] is { Length: > 0 } k ? k : "https://github.com/florians25/UntPlanNext";
+        Kontakt = konfig["UNTPLANMOBILE_VAPID_KONTAKT"] is { Length: > 0 } k ? k : "https://github.com/florians25/EduOrga";
         var datei = Path.Combine(ordner.Pfad, "vapid.json");
         ECParameters? p = null;
         try

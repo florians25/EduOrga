@@ -6,8 +6,8 @@
 
 Die Website ([`website/`](../../website/README.md)) besteht aus statischen Seiten und einem kleinen Server, der sie
 ausliefert. Sie hat keine Datenbank, kein Volume, keine Anmeldung und setzt keine Cookies. Fehler und Ideen laufen über
-GitHub ([Issues](https://github.com/florians25/UntPlanNext/issues),
-[Discussions](https://github.com/florians25/UntPlanNext/discussions)).
+GitHub ([Issues](https://github.com/florians25/EduOrga/issues),
+[Discussions](https://github.com/florians25/EduOrga/discussions)).
 
 | Datei | Aufgabe |
 |---|---|
@@ -18,7 +18,7 @@ GitHub ([Issues](https://github.com/florians25/UntPlanNext/issues),
 
 ```sh
 mkdir -p /opt/eduorga-website && cd /opt/eduorga-website
-curl -fsSL -H "Accept: application/vnd.github.raw" -o install-intern.sh "https://api.github.com/repos/florians25/UntPlanNext/contents/installation/install-intern.sh?ref=master"
+curl -fsSL -H "Accept: application/vnd.github.raw" -o install-intern.sh "https://api.github.com/repos/florians25/EduOrga/contents/installation/install-intern.sh?ref=master"
 sh install-intern.sh
 ```
 

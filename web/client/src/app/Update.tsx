@@ -1,4 +1,4 @@
-// Updatehinweis für die Administration: GET /api/app/admin/update (Standard: GitHub-Releases von florians25/UntPlanNext, am Server
+// Updatehinweis für die Administration: GET /api/app/admin/update (Standard: GitHub-Releases von florians25/EduOrga, am Server
 // 6 Stunden zwischengespeichert). Ist eine neuere Version veröffentlicht, zeigen „Heute“ und „Übersicht“ einen schließbaren Hinweis
 // (je Version ausblendbar, Gerätespeicher) und der Bereich „Administration“ in der Navigation einen Punkt. Der Dialog zeigt die
 // Versionshinweise, den Link zum Release und – wenn ein Updater eingerichtet ist – „Update installieren“, sonst den Befehl.

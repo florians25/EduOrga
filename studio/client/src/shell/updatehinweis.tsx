@@ -1,4 +1,4 @@
-// Updatehinweis für Administratoren: GET /api/version (GitHub-Releases von florians25/UntPlanNext, serverseitig 6 Stunden
+// Updatehinweis für Administratoren: GET /api/version (GitHub-Releases von florians25/EduOrga, serverseitig 6 Stunden
 // zwischengespeichert). Ist eine neuere Version veröffentlicht, erscheint unter der Kopfleiste eine schließbare Leiste
 // („Neue Version 1.5.0 verfügbar – Versionshinweise ansehen“); geschlossen wird je Version (localStorage), ein Punkt am
 // Konto-Symbol und ein Eintrag im Kontomenü bleiben. Der Dialog zeigt die Versionshinweise und den Update-Befehl.

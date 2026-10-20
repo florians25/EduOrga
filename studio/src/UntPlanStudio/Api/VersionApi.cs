@@ -5,7 +5,7 @@ namespace UntPlanStudio.Api;
 
 /// <summary>
 /// Versionsanzeige und Updatehinweis für Administratoren: <c>GET /api/version[?neu=1]</c> liefert die laufende Version und – falls
-/// aktiviert – die neueste veröffentlichte Version (GitHub-Releases von florians25/UntPlanNext) mit Versionshinweisen.
+/// aktiviert – die neueste veröffentlichte Version (GitHub-Releases von florians25/EduOrga) mit Versionshinweisen.
 /// Gleiche Prüflogik wie UntPlan Web und Mobile (eingebundene Datei <c>web/src/UntPlanWeb/Dienste/Updatepruefung.cs</c>),
 /// Ergebnis 6 Stunden zwischengespeichert; Netzwerkfehler führen nur zu „kein Hinweis“.
 /// Umgebungsvariablen: <c>STUDIO_UPDATE_PRUEFEN</c> (0 = aus), <c>STUDIO_UPDATE_URL</c>, <c>STUDIO_UPDATE_TAG_PRAEFIX</c>.
