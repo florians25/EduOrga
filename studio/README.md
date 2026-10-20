@@ -40,24 +40,33 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   Abschneiden.
 * **Plantafel** (*Planung → Plantafel*): die Stundenplanung auf einer Tafel, in zwei Darstellungen.
   * **Steckbrett:** Zeilen = alle Klassen (umschaltbar: Lehrkräfte, Räume; einschränkbar nach Jahrgang, Abteilung, Raumart),
-    Spalten = Tage × Stunden, je Block eine kompakte Karte (Fach, bei genug Platz darunter Lehrkraft bzw. Klasse; alles Weitere in
-    der Kurzinfo). Unten der **Vorrat**: offene Blöcke aller Unterrichte (Doppelstunden doppelt breit), gruppiert nach Klasse bzw.
-    Lehrkraft, mit Suche und *Neuer Unterricht*. Karten aus dem Vorrat in das Brett ziehen, im Brett verschieben, zurück in den
+    Spalten = Tage × Stunden (Tage durch kräftige Linien getrennt, Kopf und Zeilenköpfe bleiben beim Rollen stehen), je Block eine
+    kompakte Karte: das Fach, bei breiten Spalten darunter Lehrkraft bzw. Klasse (*Weitere → Immer zwei Zeilen* verbreitert die
+    Spalten); Kopplungen schmal als „KR+“ statt abgeschnitten, alles Weitere in der Kurzinfo. Unten der **Vorrat** (einklappbar):
+    offene Blöcke aller Unterrichte (Doppelstunden doppelt breit), gruppiert nach Klasse bzw. Lehrkraft mit der Zahl offener Stunden
+    je Gruppe, mit Suche und *Neuer Unterricht*. Karten aus dem Vorrat in das Brett ziehen, im Brett verschieben, zurück in den
     Vorrat ziehen = entplanen. **Blöcke und Kopplungen** wandern als Ganzes: eine Doppelstunde belegt zwei Spalten und zieht beide
     Stunden mit (Umschalt: nur die gegriffene Stunde); ein gekoppelter Unterricht (mehrere Klassen bzw. Lehrkräfte gleichzeitig,
-    Ecke oben rechts) steht in jeder beteiligten Zeile, beim Wählen sind alle diese Zeilen hervorgehoben. **Beim Ziehen** färben
+    Ecke oben rechts) steht in jeder beteiligten Zeile, beim Wählen sind alle diese Zeilen hervorgehoben. **Bänder** (parallele
+    Kurse einer Schiene, gleiches *Band*) wandern ebenfalls als Ganzes – aus dem Vorrat, im Brett, zurück in den Vorrat und per
+    Tastatur: alle Kurse des Bandes, die parallel liegen bzw. einen offenen Block dieser Länge haben; ihre Karten werden beim Ziehen
+    blass, die Zielfarben gelten für das ganze Band (rot, sobald ein Kurs nicht passt; der Grund nennt den Kurs, z. B. „Band EF-1:
+    U-Nr. 230 M EF: Kollision …“). Die gewählte Stunde steht in der Fußzeile („Gewählt: D EF · FIS · Mo 3.–4. · Band EF-1 (2 Kurse)“),
+    die übrigen Karten treten zurück. **Beim Ziehen** färben
     sich die Zeilen des Unterrichts und der Stundenkopf nach der Prüfung des Servers: grün frei, grün umrandet Tausch möglich,
     bernstein mit Hinweis (negativer Zeitwunsch, kein Raum frei), rot belegt bzw. gesperrt (Lehrkraft, Klasse, Sperrzeit −3,
-    außerhalb des Zeitrasters); der Grund steht am Mauszeiger. Die Prüfung wird je Ziehbeginn einmal geladen und bis zur nächsten
+    außerhalb des Zeitrasters); der Grund steht am Mauszeiger, die Legende der Farben unten im Brett nur während des Ziehens. Die Prüfung wird je Ziehbeginn einmal geladen und bis zur nächsten
     Änderung wiederverwendet. **Tastatur:** Pfeile bewegen den Cursor, Enter nimmt eine Karte auf bzw. legt sie ab (auch aus dem
     Vorrat), Esc bricht ab, Entf entplant, F fixiert, Umschalt+F10 Kontextmenü. Für große Schulen gebaut: nur sichtbare Zeilen
     werden gezeichnet, das Brett ist eine einzige Ablage (60 Klassen × 50 Stunden: Tafel in unter einer Sekunde, Prüfung ≈ 15 ms).
   * **Klasse:** der Wochenplan einer Klasse (Ziehen, Kontextmenü, Tastatur wie im Stundenplan), rechts ihre offenen Blöcke, darunter
-    die **verknüpften Pläne** der gewählten bzw. gezogenen Stunde – nur die Lehrkräfte dieses Unterrichts und seine Räume, mit
-    derselben Färbung beim Ziehen.
-  * Werkzeuge: *Fixieren* und *Entplanen* (gewählte Stunde, ganze Zeile mit Rückfrage, alle), *Optimierung* (automatische Planung),
-    *Ansicht* (zwei Zeilen je Karte, Fachfarben, Vorrat). Fachfarben nur, wenn sie in den Stammdaten stehen, sonst neutrale
-    Karten (Leiste 5 px, Kontur 1,5 px, Radius 4). Rückgängig/Wiederholen in der Kopfleiste (Strg+Z/Strg+Y).
+    die **verknüpften Pläne** der gewählten bzw. gezogenen Stunde – nur die Lehrkräfte dieses Unterrichts, seine verplanten Räume und
+    seine **bevorzugten Räume** (Fachraum, Stammraum bzw. die Räume der Raumgruppe; gestrichelt und „bevorzugt · Fachraum“ beschriftet,
+    auch wenn er dort noch nicht liegt), alle mit derselben Färbung beim Ziehen.
+  * Werkzeuge: *Fixieren* und *Entplanen* (gewählte Stunde, ganze Zeile mit Rückfrage), *Optimierung* (automatische Planung) und
+    *Weitere* (…): Kartendichte, Fachfarben, Vorrat, Diagnose, Zeitwünsche, alle fixieren/lösen, alle entplanen. Karten nach
+    Stundenkarte v7: Radius 2, keine Leiste, neutral weiß mit feiner Linie; Fachfarben nur, wenn sie in den Stammdaten stehen (dann
+    leicht getönt). Rückgängig/Wiederholen in der Kopfleiste (Strg+Z/Strg+Y).
 
   | Steckbrett (1440 × 900) | Ziehen aus dem Vorrat | Klasse mit verknüpften Plänen |
   |---|---|---|
@@ -66,6 +75,10 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   | 60 Klassen (1280 × 800) | Doppelstunde verschieben | Neuer Unterricht |
   |---|---|---|
   | ![Große Schule](docs/bilder/plantafel-1280-gross.png) | ![Block](docs/bilder/plantafel-1280-block-verschieben.png) | ![Dialog](docs/bilder/plantafel-1280-neuer-unterricht.png) |
+
+  | Band ziehen (alle Kurse) | Band aus dem Vorrat | Bevorzugter Raum |
+  |---|---|---|
+  | ![Band](docs/bilder/plantafel-1440-band-ziehen.png) | ![Band Vorrat](docs/bilder/plantafel-1440-band-vorrat.png) | ![Bevorzugt](docs/bilder/plantafel-1280-klasse-bevorzugt.png) |
 * **Neuer Unterricht im Dialog** (*Unterricht → Neu*, Plantafel *Neuer Unterricht*, Befehlssuche): Fach, Klasse(n), Lehrkraft,
   Raum oder Raumgruppe, Kopplung (je weitere Lehrkraft eine Zeile mit eigenem Fach bzw. eigenen Klassen), Stunden je Woche,
   Doppelstunden, Block, Woche (A/B), Band und Bemerkung; die Vorschau zeigt, als welche Blöcke er im Vorrat erscheint. Pflichtfelder
@@ -182,7 +195,7 @@ STUDIO_TEST_MYSQL="Server=127.0.0.1;Port=3306;User ID=root;Password=…" dotnet 
 # Oberflächentests (Server muss laufen, Playwright + Chromium nötig; STUDIO_URL Standard http://127.0.0.1:5501):
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke.cjs            # Rundgang über alle Seiten
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/planung.cjs          # Planen, Ziehen, Optimierung
-NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/plantafel.cjs        # Plantafel: Vorrat, Blöcke, Zielfarben, Tastatur, Klasse, Neuer Unterricht
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/plantafel.cjs        # Plantafel: Vorrat, Blöcke, Bänder, Zielfarben, Tastatur, Klasse, Neuer Unterricht
 # (mit STUDIO_GROSSSCHULE=/tmp/gross.up zusätzlich das Steckbrett mit 60 Klassen bei 1280×800 und 1440×900)
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs       # Vertretungsplanung
 # Tagesplanung „Fall für Fall“ mit großer Schule (300 Lehrkräfte, 60 Klassen, Gruppen und Kopplungen, 15 Abwesenheiten) bei

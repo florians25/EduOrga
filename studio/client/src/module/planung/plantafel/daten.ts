@@ -13,11 +13,15 @@ export interface TafelUZeile { fach: string; farbe: string | null; lehrer: numbe
 export interface TafelUnterricht {
   u: number; fach: string; fachLang: string; farbe: string | null; zeilen: TafelUZeile[]; lehrer: number[]; klassen: number[];
   wst: number; offen: number[]; text: string; woche: string | null; band: string; fix: boolean;
+  /** bevorzugte Räume bzw. Raumgruppen je Kopplungszeile (Fachraum vor Stammraum) */
+  wunsch?: { art: string; raum: number | null; gruppe: number | null }[];
 }
 export interface TafelStunde { u: number; tag: number; stunde: number; fix: boolean; raeume: number[] }
 export interface TafelDaten {
   typ: TafelTyp; periode: string; zeitraster: Zeitraster; zeilen: TafelZeile[];
-  namen: { klassen: Record<string, string>; lehrer: Record<string, string>; raeume: Record<string, string> };
+  namen: { klassen: Record<string, string>; lehrer: Record<string, string>; raeume: Record<string, string>; raumgruppen?: Record<string, string> };
+  /** Räume je Raumgruppe */
+  raumgruppen?: Record<string, number[]>;
   unterrichte: TafelUnterricht[]; stunden: TafelStunde[];
 }
 
@@ -33,6 +37,10 @@ export interface Aufbereitet {
   spuren: Map<number, number>;
   /** Zeilen (Ids), in denen ein Unterricht steht – Klassen bzw. Lehrkräfte des Unterrichts, Räume seiner verplanten Stunden */
   zeilenVon: (u: number) => number[];
+  /** Kurse desselben Bandes (der Unterricht selbst zuerst); ohne Band nur er */
+  bandVon: (u: number) => number[];
+  /** Zeilen aller Kurse des Bandes */
+  zeilenVonBand: (u: number) => number[];
   stundenProTag: number;
   tage: number;
   verplant: number;
@@ -103,7 +111,15 @@ export function aufbereiten(d: TafelDaten, typ: TafelTyp): Aufbereitet {
     spuren.set(z, Math.max(1, ende.length));
   }
   const offen = d.unterrichte.reduce((x, u) => x + u.offen.reduce((a, b) => a + b, 0), 0);
-  return { uMap, karten, kartenVon, jeZeile, spuren, zeilenVon, stundenProTag: S, tage: d.zeitraster.tage.length, verplant: d.stunden.length, offen };
+  const baender = new Map<string, number[]>();
+  for (const u of d.unterrichte) { const b = u.band?.trim(); if (!b) continue; const l = baender.get(b); if (l) l.push(u.u); else baender.set(b, [u.u]); }
+  const bandVon = (uid: number): number[] => {
+    const b = uMap.get(uid)?.band?.trim();
+    const l = b ? baender.get(b) : undefined;
+    return l && l.length > 1 ? [uid, ...l.filter((x) => x !== uid)] : [uid];
+  };
+  const zeilenVonBand = (uid: number) => [...new Set(bandVon(uid).flatMap(zeilenVon))];
+  return { uMap, karten, kartenVon, jeZeile, spuren, zeilenVon, bandVon, zeilenVonBand, stundenProTag: S, tage: d.zeitraster.tage.length, verplant: d.stunden.length, offen };
 }
 
 const kurzListe = (ids: number[], namen: Record<string, string>) => ids.map((i) => namen[String(i)] || '?').join(', ');
@@ -128,15 +144,15 @@ export function kartenText(u: TafelUnterricht, typ: TafelTyp, zeile: number | nu
     k ? `Raum: ${kurzListe(k.raeume, d.namen.raeume) || '–'}` : '',
     k ? `${d.zeitraster.tage[k.tag]?.lang ?? ''} ${k.von}.${k.laenge > 1 ? `–${k.von + k.laenge - 1}.` : ''} Stunde${k.laenge === 2 ? ' (Doppelstunde)' : k.laenge > 2 ? ` (${k.laenge}er-Block)` : ''}` : '',
     gekoppelt ? 'gekoppelt' : '',
+    u.band ? `Band ${u.band} – wandert mit den übrigen Kursen` : '',
     u.woche ? `Woche ${u.woche}` : '',
-    u.band ? `Band ${u.band}` : '',
     k?.fix ? 'fixiert' : '',
     u.text,
   ].filter(Boolean);
-  return { fach, zweit, farbe, gekoppelt, titel: zeilenTitel.join('\n') };
+  return { fach, zweit, farbe, gekoppelt: gekoppelt || !!u.band?.trim(), titel: zeilenTitel.join('\n') };
 }
 
-export interface Ziele { u: number; stufen: Stufe[][]; gruende: string[][]; laenge: number; versatz: number }
+export interface Ziele { u: number; stufen: Stufe[][]; gruende: string[][]; laenge: number; versatz: number; /** mitziehende Kurse des Bandes */ band?: number[] }
 export interface ZiehAngabe { u: number; tag?: number; stunde?: number; einzeln?: boolean; laenge?: number }
 
 let cacheVersion = -1;

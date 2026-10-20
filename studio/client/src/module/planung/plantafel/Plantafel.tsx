@@ -2,7 +2,9 @@
 // Blöcke) und „Klasse“ (Wochenplan einer Klasse mit den verknüpften Plänen der Lehrkräfte und Räume der gewählten Stunde).
 // Werkzeuge: Fixieren, Entplanen (Stunde, Zeile, alle), Automatische Planung, Ansicht; Neuer Unterricht im Vorrat. Rückgängig und
 // Wiederholen (Strg+Z, Strg+Y) über die Kopfleiste – die Plantafel lädt danach neu.
-// Server: GET /planung/plantafel, /planung/plantafel/ziele; Ändern über /planung/verschieben, /verplanen, /entplanen, /fixieren.
+// Bänder (parallele Kurse) wandern als Ganzes (band.ts). Server: GET /planung/plantafel, /planung/plantafel/ziele; Ändern über
+// /planung/verschieben, /verplanen, /band/verschieben, /band/verplanen, /entplanen, /fixieren.
+import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
@@ -16,6 +18,7 @@ import { MenueKnopf, menue, type MenueListe } from '@/komponenten/menue';
 import type { PlanEintrag } from '@/komponenten/raster/Stundenplanraster';
 import * as planung from '../aktionen';
 import { neuerUnterrichtDialog } from '../neuerUnterricht';
+import { ablegen as bandAblegen, bandStunden } from './band';
 import { aufbereiten, kartenText, type Karte, type TafelDaten, type TafelTyp, type TafelUnterricht } from './daten';
 import { Klassentafel, type KlassenAuswahl } from './Klassentafel';
 import { Steckbrett, type SteckbrettApi, type TafelAblage, type TafelAuswahl, type TafelZug } from './Steckbrett';
@@ -27,21 +30,6 @@ const ZEILEN: Record<TafelTyp, { einzahl: string; mehrzahl: string; gruppe: stri
   lehrer: { einzahl: 'Lehrkraft', mehrzahl: 'Lehrkräfte', gruppe: 'Abteilung' },
   raum: { einzahl: 'Raum', mehrzahl: 'Räume', gruppe: 'Raumart' },
 };
-
-type StundenRef = { u: number; tag: number; stunde: number; e?: PlanEintrag };
-const stundenVon = (k: Karte, nur?: number): StundenRef[] =>
-  (nur ? [nur] : Array.from({ length: k.laenge }, (_, i) => k.von + i)).map((s) => ({ u: k.u, tag: k.tag, stunde: s, e: { fix: k.teilFix } as PlanEintrag }));
-
-function Legende() {
-  return (
-    <span className="pt-legende" aria-label="Zielfarben beim Ziehen">
-      <span><i className="frei" />frei</span>
-      <span><i className="tausch" />Tausch</span>
-      <span><i className="weich" />mit Hinweis</span>
-      <span><i className="hart" />belegt, gesperrt</span>
-    </span>
-  );
-}
 
 export default function Plantafel({ p }: AnsichtProps) {
   const a = useAnsicht();
@@ -70,7 +58,7 @@ export default function Plantafel({ p }: AnsichtProps) {
 
   const zeilen = useMemo(() => (daten?.zeilen || []).filter((z) => !gruppe || z.gruppe === gruppe), [daten, gruppe]);
   // Dichte: gewählt, sonst bei vielen Zeilen kompakt (eine Zeile je Karte)
-  const dichte: 'kompakt' | 'normal' = p.dichte === 'kompakt' || p.dichte === 'normal' ? p.dichte : zeilen.length > 24 ? 'kompakt' : 'normal';
+  const dichte: 'kompakt' | 'normal' | 'auto' = p.dichte === 'kompakt' || p.dichte === 'normal' ? p.dichte : 'auto';
   const gruppen = useMemo(() => [...new Set((daten?.zeilen || []).map((z) => z.gruppe).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'de', { numeric: true })), [daten]);
   const offenJeZeile = useMemo(() => {
     const m = new Map<number, number>();
@@ -94,8 +82,11 @@ export default function Plantafel({ p }: AnsichtProps) {
     const d = zug.art === 'karte'
       ? { u: zug.u, tag: zug.tag, stunde: zug.stunde, einzeln: !!zug.einzeln, laenge: zug.laenge, zielTag: x.zielTag, zielStunde: x.zielStunde }
       : { u: zug.u, laenge: zug.laenge, zielTag: x.zielTag, zielStunde: x.zielStunde };
-    planung.ablegen(d, a.id).then(nachAenderung).then(() => brett.current?.fokus()).catch(fehlerMelden);
+    if (!auf) return;
+    bandAblegen(auf, d, a.id).then(nachAenderung).then(() => brett.current?.fokus()).catch(fehlerMelden);
   };
+  // Stunden einer Karte samt parallel liegender Kurse ihres Bandes (ohne Band nur die Karte)
+  const stundenVon = (k: Karte, nur?: number) => (auf ? bandStunden(auf, k, nur) : []);
   const entplanenKarte = (k: Karte, nur?: number) => los(() => planung.entplanen(stundenVon(k, nur), a.id))();
   const fixierenKarte = (k: Karte) => los(() => planung.fixieren(stundenVon(k).map((s) => ({ ...s, e: { fix: k.fix } as PlanEintrag })), a.id))();
   const gewaehlteKarte = (): Karte | null => {
@@ -172,6 +163,16 @@ export default function Plantafel({ p }: AnsichtProps) {
 
   const k = gewaehlteKarte();
   const z = ZEILEN[typ];
+  // Klare Auswahl: in der Fußzeile steht, was gewählt ist (Fach, Klassen, Lehrkräfte, Zeit, Band)
+  const auswahlU = modus === 'klasse' ? kAuswahl?.u : auswahl?.u;
+  const auswahlText = (() => {
+    if (auswahlU == null || !auf || !daten) return '';
+    const u = auf.uMap.get(auswahlU);
+    if (!u) return '';
+    const zeit = k ? `${daten.zeitraster.tage[k.tag]?.kurz ?? ''} ${k.von}.${k.laenge > 1 ? `–${k.von + k.laenge - 1}.` : ''}` : 'offen';
+    const band = auf.bandVon(u.u).length > 1 ? ` · Band ${u.band} (${auf.bandVon(u.u).length} Kurse)` : '';
+    return `${u.fach} ${u.klassen.map((x) => daten.namen.klassen[x]).join(', ')} · ${u.lehrer.map((x) => daten.namen.lehrer[x]).join(', ') || 'ohne Lehrkraft'} · ${zeit}${band}`;
+  })();
   const titel = modus === 'klasse' && element != null ? `Plantafel – Klasse ${daten?.zeilen.find((x) => x.id === element)?.kurz ?? ''}` : 'Plantafel';
 
   return (
@@ -195,36 +196,40 @@ export default function Plantafel({ p }: AnsichtProps) {
             { text: k ? (k.fix ? 'Gewählte Stunde lösen' : 'Gewählte Stunde fixieren') : 'Gewählte Stunde fixieren', taste: 'F', deaktiviert: !k, aktion: () => { if (k) fixierenKarte(k); } },
             { text: zeileName ? `Alle Stunden von ${zeileName} fixieren` : `${z.einzahl} wählen, um sie zu fixieren`, deaktiviert: zeileFuerAktion == null, aktion: los(() => zeileFixieren(true)) },
             { text: zeileName ? `Fixierungen von ${zeileName} lösen` : 'Fixierungen einer Zeile lösen', deaktiviert: zeileFuerAktion == null, aktion: los(() => zeileFixieren(false)) },
-            null,
-            { text: 'Alle Stunden fixieren', aktion: los(async () => { await befehl('planung.alleFixieren', { fixieren: true }); }) },
-            { text: 'Alle Fixierungen aufheben', aktion: los(async () => { await befehl('planung.alleFixieren', { fixieren: false }); }) },
           ]} />
           <MenueKnopf text="Entplanen" titel="Stunden zurück in den Vorrat" eintraege={() => [
             { text: k ? (k.laenge > 1 ? 'Gewählten Block entplanen' : 'Gewählte Stunde entplanen') : 'Gewählte Stunde entplanen', taste: 'Entf', deaktiviert: !k, aktion: () => { if (k) entplanenKarte(k); } },
             { text: zeileName ? `Alle Stunden von ${zeileName} entplanen …` : `${z.einzahl} wählen (Zeilenkopf), um sie zu entplanen`, deaktiviert: zeileFuerAktion == null, aktion: los(zeileEntplanen) },
-            null,
-            { text: 'Alle Stunden entplanen …', aktion: los(async () => { await befehl('planung.alleEntplanen'); }) },
           ]} />
         </> : null}
         <Trenner />
         <Werkzeug text="Optimierung" titel="Automatische Planung (läuft im Hintergrund)" aktion={() => seiteOeffnen('optimierung.lauf')} />
-        <MenueKnopf text="Ansicht" titel="Darstellung der Plantafel" eintraege={() => [
-          { text: 'Zwei Zeilen je Karte', haken: dichte === 'normal', aktion: () => a.parameterSetzen({ dichte: dichte === 'normal' ? 'kompakt' : 'normal' }) },
+        <MenueKnopf text="" icon={<MoreHorizontal20Regular />} titel="Weitere Aktionen und Darstellung" eintraege={() => [
+          { titel: 'Darstellung' },
+          { text: 'Karten automatisch (zwei Zeilen, wenn Platz ist)', haken: dichte === 'auto', aktion: () => a.parameterSetzen({ dichte: undefined }) },
+          { text: 'Immer zwei Zeilen (breitere Spalten)', haken: dichte === 'normal', aktion: () => a.parameterSetzen({ dichte: 'normal' }) },
+          { text: 'Immer eine Zeile', haken: dichte === 'kompakt', aktion: () => a.parameterSetzen({ dichte: 'kompakt' }) },
           { text: 'Fachfarben', haken: farben, aktion: () => a.parameterSetzen({ farben: !farben }) },
           { text: 'Vorrat zeigen', haken: vorratOffen, aktion: () => a.parameterSetzen({ vorrat: !vorratOffen }) },
           null,
           { text: 'Diagnose', aktion: () => befehl('optimierung.diagnose') },
           { text: 'Zeitwünsche', aktion: () => a.oeffnen('zeitwuensche', { typ, element: zeileFuerAktion ?? undefined }) },
+          schreiben ? null : undefined,
+          schreiben ? { text: 'Alle Stunden fixieren', aktion: los(async () => { await befehl('planung.alleFixieren', { fixieren: true }); }) } : undefined,
+          schreiben ? { text: 'Alle Fixierungen aufheben', aktion: los(async () => { await befehl('planung.alleFixieren', { fixieren: false }); }) } : undefined,
+          schreiben ? { text: 'Alle Stunden entplanen …', aktion: los(async () => { await befehl('planung.alleEntplanen'); }) } : undefined,
         ]} />
       </>}
       fuss={<>
         <span>{auf ? `${auf.verplant} Stunden verplant` : ''}</span>
         <span>{auf ? `${auf.offen} offen` : ''}</span>
         {modus === 'steckbrett' ? <span>{`${zeilen.length} ${zeilen.length === 1 ? z.einzahl : z.mehrzahl}`}</span> : null}
-        <span title={modus === 'steckbrett' ? 'Ziehen: verschieben bzw. setzen · in den Vorrat ziehen: entplanen · Umschalt beim Ziehen: nur diese Stunde eines Blocks · Pfeile und Enter: per Tastatur · Entf entplant · F fixiert' : 'Stunde wählen: Pläne der Lehrkräfte und Räume darunter · Ziehen wie im Stundenplan'}>
-          {modus === 'steckbrett' ? 'Ziehen, in den Vorrat: entplanen, Pfeile und Enter' : 'Stunde wählen: Pläne der Lehrkräfte und Räume'}
-        </span>
-        <FussText rechts><Legende /><span className="pt-periode">{daten?.periode}</span></FussText>
+        {auswahlText ? <span className="pt-auswahltext" data-testid="pt-auswahl">Gewählt: {auswahlText}</span> : (
+          <span title={modus === 'steckbrett' ? 'Ziehen: verschieben bzw. setzen · in den Vorrat ziehen: entplanen · Umschalt beim Ziehen: nur diese Stunde eines Blocks · Pfeile und Enter: per Tastatur · Entf entplant · F fixiert' : 'Stunde wählen: Pläne der Lehrkräfte und Räume darunter · Ziehen wie im Stundenplan'}>
+            {modus === 'steckbrett' ? 'Ziehen, in den Vorrat: entplanen, Pfeile und Enter' : 'Stunde wählen: Pläne der Lehrkräfte und Räume'}
+          </span>
+        )}
+        <FussText rechts>{daten?.periode}</FussText>
       </>}>
       {daten && auf ? (modus === 'steckbrett' ? (
         <div className="pt-flaeche">

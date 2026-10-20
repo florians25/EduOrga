@@ -27,6 +27,17 @@ async function warten(f, text, ms = 10000) {
   }
 }
 
+/** Lage eines Elements; wartet, bis es nach einem Neuzeichnen (neue Karten nach dem Laden) wieder sichtbar und messbar ist. */
+async function kasten(loc, ms = 10000) {
+  const ende = Date.now() + ms;
+  for (;;) {
+    const b = await loc.first().boundingBox().catch(() => null);
+    if (b) return b;
+    if (Date.now() > ende) throw new Error('Element nicht messbar');
+    await new Promise((r) => setTimeout(r, 150));
+  }
+}
+
 /** Mitte eines Elements bzw. einer Zielzelle (Seite) */
 const mitte = (b) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
 
@@ -109,7 +120,7 @@ async function lauf(breite, hoehe) {
     // Doppelstunde aus dem Vorrat ziehen: Zielfarben, Grund, Ablage auf „frei“
     const zeile = page.locator(`[data-testid=steckbrett] .pt-zeile[data-zeile="${neu.klassen[0]}"]`);
     const zb = await zeile.boundingBox();
-    await ziehenBis(page, mitte(await doppel.boundingBox()), { x: zb.x + 300, y: zb.y + zb.height / 2 });
+    await ziehenBis(page, mitte(await kasten(doppel)), { x: zb.x + 300, y: zb.y + zb.height / 2 });
     await page.waitForSelector('.pt-zielzeile .pt-ziel.frei', { timeout: 10000 });
     const hart = await page.locator('.pt-zielzeile .pt-ziel.hart').count();
     const frei = await page.locator('.pt-zielzeile .pt-ziel.frei').count();
@@ -138,7 +149,7 @@ async function lauf(breite, hoehe) {
     // Block als Ganzes verschieben
     const chip = page.locator(`[data-testid=steckbrett] .pt-chip[data-u="${neu.u}"]`).first();
     await chip.waitFor();
-    const cb = await chip.boundingBox();
+    const cb = await kasten(chip);
     await ziehenBis(page, { x: cb.x + cb.width * 0.25, y: cb.y + cb.height / 2 }, null);
     await page.mouse.move(cb.x + cb.width * 0.25 + 40, cb.y + cb.height / 2, { steps: 4 });
     await page.waitForSelector('.pt-zielzeile .pt-ziel.eigen', { timeout: 10000 });
@@ -160,7 +171,7 @@ async function lauf(breite, hoehe) {
     const chip2 = page.locator(`[data-testid=steckbrett] .pt-chip[data-u="${neu.u}"]`).first();
     await page.waitForFunction((u) => document.querySelectorAll(`[data-testid=steckbrett] .pt-chip[data-u="${u}"]`).length > 0, neu.u);
     const vb = await page.locator('[data-testid=vorrat]').boundingBox();
-    await ziehenBis(page, mitte(await chip2.boundingBox()), { x: vb.x + vb.width / 2, y: vb.y + vb.height / 2 });
+    await ziehenBis(page, mitte(await kasten(chip2)), { x: vb.x + vb.width / 2, y: vb.y + vb.height / 2 });
     await page.waitForSelector('[data-testid=vorrat].drueber');
     await foto(n('in-vorrat'));
     await page.mouse.up();
@@ -191,13 +202,79 @@ async function lauf(breite, hoehe) {
     await page.waitForFunction((u) => document.querySelector(`[data-testid=steckbrett] .pt-chip[data-u="${u}"]`), neu.u, { timeout: 10000 });
 
     // gekoppelte Stunde: alle beteiligten Zeilen hervorgehoben
-    const gek = page.locator('[data-testid=steckbrett] .pt-chip.gekoppelt').first();
+    const kopplung = d.unterrichte.find((u) => u.klassen.length > 1 && u.zeilen.length > 1 && d.stunden.some((x) => x.u === u.u));
+    const gek = page.locator(`[data-testid=steckbrett] .pt-chip[data-u="${kopplung ? kopplung.u : -1}"]`).first();
     if (await gek.count()) {
       await gek.click();
       const beteiligt = await page.locator('[data-testid=steckbrett] .pt-zeile.beteiligt').count();
       if (beteiligt < 2) throw new Error(`Kopplung: ${beteiligt} Zeilen hervorgehoben`);
       await foto(n('kopplung'));
     }
+
+
+    // Band (parallele Kurse einer Schiene): Ziehen im Brett, zurück in den Vorrat, aus dem Vorrat, per Tastatur – immer alle Kurse
+    const lage = (x, u) => x.stunden.filter((st) => st.u === u).map((st) => `${st.tag}:${st.stunde}`).sort().join(',');
+    const baender = {};
+    for (const u of d.unterrichte) if (u.band) (baender[u.band] = baender[u.band] || []).push(u.u);
+    const band = Object.values(baender).find((l) => l.length >= 2 && lage(d, l[0]) && lage(d, l[0]) === lage(d, l[1]));
+    if (!band) throw new Error('Beispielschule ohne Band mit parallelen Kursen');
+    const [leit, partner] = band;
+    if (await page.locator('[data-testid=pt-legende]').count()) throw new Error('Legende ohne Ziehen sichtbar');
+    const bandChip = page.locator(`[data-testid=steckbrett] .pt-chip[data-u="${leit}"]`).first();
+    await bandChip.scrollIntoViewIfNeeded();
+    const bc = await kasten(bandChip);
+    await ziehenBis(page, { x: bc.x + 4, y: bc.y + bc.height / 2 }, null);
+    await page.mouse.move(bc.x + 30, bc.y + bc.height / 2, { steps: 4 });
+    await page.waitForSelector('[data-testid=pt-legende]:has-text("Band")');
+    await page.waitForSelector(`[data-testid=steckbrett] .pt-chip.zieht[data-u="${partner}"]`);
+    await page.waitForSelector('.pt-zielzeile .pt-ziel.eigen');
+    const bz = await zielzelle(page, 'frei', [Math.round(bc.x - 1)]);
+    if (!bz) throw new Error('Band: kein freies Ziel');
+    await page.mouse.move(bz.x, bz.y, { steps: 8 });
+    await page.waitForSelector('[data-testid=pt-grund]:has-text("Band")');
+    await foto(n('band-ziehen'));
+    await page.mouse.up();
+    const bandVorher = lage(d, leit);
+    d = await warten(async () => { const x = await tafel(dok, cookie); return lage(x, leit) !== bandVorher && lage(x, leit) === lage(x, partner) ? x : null; }, 'Band verschoben (beide Kurse)');
+    if (await page.locator('[data-testid=pt-legende]').count()) throw new Error('Legende nach dem Ziehen noch sichtbar');
+    // zurück in den Vorrat: beide Kurse entplant
+    await page.waitForFunction((u) => document.querySelector(`[data-testid=steckbrett] .pt-chip[data-u="${u}"]`), leit);
+    const bc2 = await kasten(page.locator(`[data-testid=steckbrett] .pt-chip[data-u="${leit}"]`));
+    const vb2 = await page.locator('[data-testid=vorrat]').boundingBox();
+    await ziehenBis(page, mitte(bc2), { x: vb2.x + vb2.width / 2, y: vb2.y + vb2.height / 2 });
+    await page.waitForSelector('[data-testid=vorrat].drueber');
+    await page.mouse.up();
+    d = await warten(async () => { const x = await tafel(dok, cookie); const a = x.unterrichte.find((u) => u.u === leit), b = x.unterrichte.find((u) => u.u === partner); return a.offen.length && b.offen.length && JSON.stringify(a.offen) === JSON.stringify(b.offen) ? x : null; }, 'Band in den Vorrat');
+    const bl = Math.max(...d.unterrichte.find((u) => u.u === leit).offen);
+    // aus dem Vorrat: beide Kurse gemeinsam setzen
+    const vchip = page.locator(`[data-testid=vorrat] [data-vorrat="${leit}"][data-laenge="${bl}"]`).first();
+    await vchip.waitFor();
+    const efZeile = await page.locator(`[data-testid=steckbrett] .pt-zeile[data-zeile="${d.unterrichte.find((u) => u.u === leit).klassen[0]}"]`).boundingBox();
+    await ziehenBis(page, mitte(await kasten(vchip)), { x: efZeile.x + 300, y: efZeile.y + efZeile.height / 2 });
+    await page.waitForSelector(`[data-testid=vorrat] .pt-vchip.zieht[data-vorrat="${partner}"]`);
+    await page.waitForSelector('.pt-zielzeile .pt-ziel.frei');
+    const bz2 = await zielzelle(page, 'frei');
+    await page.mouse.move(bz2.x, bz2.y, { steps: 6 });
+    await page.waitForSelector('.pt-marke.frei');
+    await foto(n('band-vorrat'));
+    await page.mouse.up();
+    d = await warten(async () => { const x = await tafel(dok, cookie); return lage(x, leit) && lage(x, leit) === lage(x, partner) && lage(x, leit).split(',').length >= bl ? x : null; }, 'Band aus dem Vorrat gesetzt');
+    // per Tastatur: Karte wählen, Enter, Pfeile auf ein freies Feld, Enter – der Partner wandert mit
+    const kb = d.stunden.filter((x) => x.u === leit).sort((a2, b2) => a2.tag - b2.tag || a2.stunde - b2.stunde)[0];
+    const zk = await (await h.api(`${dok}/planung/plantafel/ziele?unterricht=${leit}&tag=${kb.tag}&stunde=${kb.stunde}`, { headers: { cookie } })).json();
+    const SB = zk.stufen[0].length;
+    let zs = -1;
+    zk.stufen.forEach((tg, ti) => tg.forEach((x, si) => { if (zs < 0 && x === 'frei') zs = ti * SB + si; }));
+    await page.locator(`[data-testid=steckbrett] .pt-chip[data-karte="${leit}:${kb.tag}:${kb.stunde}"]`).first().click({ position: { x: 3, y: 5 } });
+    await page.waitForSelector('[data-testid=pt-auswahl]:has-text("Band")');
+    const vorTaste = lage(d, leit);
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('.pt-cursor.zug');
+    const vonSlot = kb.tag * SB + kb.stunde - 1;
+    for (let i = 0; i < Math.abs(zs - vonSlot); i++) await page.keyboard.press(zs > vonSlot ? 'ArrowRight' : 'ArrowLeft');
+    await page.waitForSelector('.pt-marke.frei');
+    await page.keyboard.press('Enter');
+    d = await warten(async () => { const x = await tafel(dok, cookie); return lage(x, leit) !== vorTaste && lage(x, leit) === lage(x, partner) ? x : null; }, 'Band per Tastatur');
 
     // Zeilen umschalten: Lehrkräfte (eine Zeile je Lehrkraft, gekoppelte Stunden in jeder beteiligten Zeile)
     await page.locator('[data-testid=pt-zeilen] [data-wert=lehrer]').click();
@@ -212,12 +289,38 @@ async function lauf(breite, hoehe) {
     await page.locator('[data-testid=klassentafel] .pt-k-plan .ra-eintrag:not(.gekoppelt)').first().click();
     await page.waitForSelector('[data-testid=verknuepft] [data-verknuepft^="lehrer:"] .ra-eintrag');
     await foto(n('klasse'));
-    const q = await page.locator('[data-testid=klassentafel] .pt-k-plan .ra-eintrag.ziehbar').first().boundingBox();
+    const q = await kasten(page.locator('[data-testid=klassentafel] .pt-k-plan .ra-eintrag.ziehbar'));
     await ziehenBis(page, mitte(q), { x: q.x + q.width / 2 + 60, y: q.y + q.height / 2 + 60 });
     await page.waitForFunction(() => document.querySelectorAll('.pt-k-plan .ra-feld[class*="ziel-"]').length > 0 && document.querySelectorAll('[data-verknuepft] .ra-feld[class*="pt-zf-"]').length > 0, null, { timeout: 10000 });
     await foto(n('klasse-ziehen'));
     await page.keyboard.press('Escape');
     await page.mouse.up();
+
+    // bevorzugter Raum: ein Unterricht, dessen Fach-/Stammraum (bzw. Raum der Raumgruppe) nicht sein verplanter Raum ist
+    d = await tafel(dok, cookie);
+    const wunschRaeume = (u) => (u.wunsch || []).flatMap((w) => (w.raum != null ? [w.raum] : (d.raumgruppen[w.gruppe] || []).slice(0, 2)));
+    let bev = null;
+    for (const u of d.unterrichte) {
+      const st = d.stunden.find((x) => x.u === u.u);
+      if (!st || !u.klassen.length) continue;
+      const ra = d.stunden.filter((x) => x.u === u.u && x.tag === st.tag).flatMap((x) => x.raeume);
+      if (wunschRaeume(u).some((r) => !ra.includes(r))) { bev = { u: u.u, klasse: u.klassen[0] }; break; }
+    }
+    if (!bev) throw new Error('Kein Unterricht mit abweichendem bevorzugtem Raum');
+    await h.seite(page, `/plantafel?modus=klasse&element=${bev.klasse}`);
+    await page.waitForSelector(`[data-testid=klassentafel] .pt-k-plan .ra-eintrag[data-u="${bev.u}"]`);
+    await page.locator(`[data-testid=klassentafel] .pt-k-plan .ra-eintrag[data-u="${bev.u}"]`).first().click();
+    await page.waitForSelector('[data-testid=verknuepft] [data-bevorzugt="1"] .ra-gitter');
+    if (!(await page.locator('[data-testid=verknuepft] [data-bevorzugt="1"]').first().textContent()).includes('bevorzugt')) throw new Error('Bevorzugter Raum ohne Kennzeichnung');
+    await page.locator('[data-testid=verknuepft] [data-bevorzugt="1"]').first().scrollIntoViewIfNeeded();
+    await foto(n('klasse-bevorzugt'));
+    const qb = await kasten(page.locator(`[data-testid=klassentafel] .pt-k-plan .ra-eintrag.ziehbar[data-u="${bev.u}"]`));
+    if (qb) {
+      await ziehenBis(page, mitte(qb), { x: qb.x + qb.width / 2 + 60, y: qb.y + qb.height / 2 + 40 });
+      await page.waitForFunction(() => document.querySelectorAll('[data-bevorzugt="1"] .ra-feld[class*="pt-zf-"]').length > 0, null, { timeout: 10000 });
+      await page.keyboard.press('Escape');
+      await page.mouse.up();
+    }
 
     // Unterricht: „Neu“ öffnet den Dialog
     await h.eintrag(page, 'eingabe.unterricht.klassen');

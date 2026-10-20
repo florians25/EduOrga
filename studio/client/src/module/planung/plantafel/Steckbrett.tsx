@@ -1,8 +1,8 @@
 // Steckbrett der Plantafel: Zeilen = Klassen, Lehrkräfte oder Räume, Spalten = Tage × Stunden, je Block eine kompakte Karte
 // (Fach, darunter Lehrkraft bzw. Klasse in der Dichte „Normal“). Für viele Zeilen gebaut: nur sichtbare Zeilen werden gezeichnet,
 // das Brett ist EINE Ablage (dnd-kit), das Zielfeld ergibt sich aus der Mausposition. Beim Ziehen färben sich die Zeilen des
-// gezogenen Unterrichts (bei Kopplung alle beteiligten Zeilen) und der Stundenkopf nach der Zielstufe (frei, Tausch, Hinweis, hart),
-// der Grund steht am Mauszeiger. Tastatur: Pfeile bewegen den Cursor, Enter nimmt eine Karte auf bzw. legt sie ab, Esc bricht ab,
+// gezogenen Unterrichts (bei Kopplung alle beteiligten Zeilen, bei einem Band die Zeilen aller Kurse, die mitwandern) und der
+// Stundenkopf nach der Zielstufe (frei, Tausch, Hinweis, hart), der Grund steht am Mauszeiger, die Legende nur während des Ziehens. Tastatur: Pfeile bewegen den Cursor, Enter nimmt eine Karte auf bzw. legt sie ab, Esc bricht ab,
 // Entf entplant, F fixiert, Umschalt+F10 öffnet das Kontextmenü.
 import { useDndMonitor, useDraggable, useDroppable, type DragStartEvent } from '@dnd-kit/core';
 import {
@@ -10,6 +10,7 @@ import {
   type KeyboardEvent, type MouseEvent,
 } from 'react';
 import { useZiehen, type AblageDaten, type ZiehDaten } from '@/komponenten/ziehen';
+import { mitziehend } from './band';
 import {
   STUFENTEXT, kartenText, slot, zieleLaden, type Aufbereitet, type Karte, type Stufe, type TafelDaten, type TafelTyp, type TafelZeile, type Ziele,
 } from './daten';
@@ -26,7 +27,8 @@ interface Props {
   auf: Aufbereitet;
   typ: TafelTyp;
   zeilen: TafelZeile[];
-  dichte: 'kompakt' | 'normal';
+  /** auto: zwei Zeilen je Karte nur, wenn die Spalten breit genug sind und höchstens 24 Zeilen; normal: immer zwei Zeilen (Spalten mindestens 30 px, Brett rollt seitlich) */
+  dichte: 'kompakt' | 'normal' | 'auto';
   /** Fachfarben aus den Stammdaten zeigen (sonst neutral) */
   farben: boolean;
   version: number;
@@ -51,8 +53,10 @@ const KOPF_STUNDE = 20;
 const KOPF = KOPF_TAG + KOPF_STUNDE;
 const LABEL = 64;
 const MIN_SPALTE = 18;
+/** Mindestbreite einer Spalte für zwei lesbare Zeilen (Fach, Lehrkraft mit drei Buchstaben) */
+const MIN_SPALTE_ZWEI = 30;
 
-interface Geometrie { spalte: number; breite: number; S: number; T: number; spur: number; oben: number[]; hoehe: number[]; gesamt: number }
+interface Geometrie { spalte: number; breite: number; S: number; T: number; spur: number; zwei: boolean; oben: number[]; hoehe: number[]; gesamt: number }
 
 const zugAus = (d: ZiehDaten | null | undefined): TafelZug | null =>
   d && (d.art === 'tafel-karte' || d.art === 'tafel-vorrat') ? (d.zug as TafelZug) : null;
@@ -63,7 +67,7 @@ const zugAus = (d: ZiehDaten | null | undefined): TafelZug | null =>
 interface ChipProps {
   karte: Karte; zeile: number; x: number; w: number; y: number; h: number; dichte: 'kompakt' | 'normal';
   fach: string; zweit: string; farbe: string | null; gekoppelt: boolean; titel: string; woche: string | null;
-  gewaehlt: boolean; verbunden: boolean; ziehbar: boolean; spalte: number;
+  gewaehlt: boolean; verbunden: boolean; ziehbar: boolean; spalte: number; mitzug: boolean;
   klick: (k: Karte, zeile: number, ev: MouseEvent) => void;
   doppelklick: (zeile: number) => void;
   kontext: (k: Karte, zeile: number, ev: MouseEvent) => void;
@@ -88,15 +92,19 @@ const Chip = memo(function Chip(p: ChipProps) {
   }, [karte, p.fach, p.zweit]);
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: `tk|${zeile}|${karte.key}`, data: daten, disabled: !p.ziehbar });
   const schmal = p.w < 26;
+  // lesbare Kürzel statt abgeschnittener Texte: bei schmalen Karten erstes Fach bzw. erste Lehrkraft mit „+“
+  const knapp = p.w < 40;
+  const fach = knapp && p.fach.includes('/') ? `${p.fach.split('/')[0]}+` : p.fach;
+  const zweit = knapp && p.zweit.includes(',') ? `${p.zweit.split(',')[0]!.trim()}+` : p.zweit;
   return (
     <div ref={setNodeRef} {...(p.ziehbar ? listeners : {})} {...(p.ziehbar ? attributes : {})} tabIndex={-1} role="button"
       aria-roledescription="Stunde" aria-label={p.titel.replace(/\n/g, ', ')}
-      className={`pt-chip${p.gekoppelt ? ' gekoppelt' : ''}${karte.fix ? ' fix' : ''}${p.gewaehlt ? ' gewaehlt' : ''}${p.verbunden ? ' verbunden' : ''}${isDragging ? ' zieht' : ''}${p.ziehbar ? ' ziehbar' : ''}${schmal ? ' schmal' : ''}`}
+      className={`pt-chip${p.gekoppelt ? ' gekoppelt' : ''}${karte.fix ? ' fix' : ''}${p.gewaehlt ? ' gewaehlt' : ''}${p.verbunden ? ' verbunden' : ''}${isDragging || p.mitzug ? ' zieht' : ''}${p.ziehbar ? ' ziehbar' : ''}${schmal ? ' schmal' : ''}`}
       style={{ left: p.x, top: p.y, width: p.w, height: p.h, ...(p.farbe ? { ['--fachfarbe' as string]: p.farbe } : {}) }}
       title={p.titel} data-u={karte.u} data-karte={karte.key} data-zeile={zeile}
       onClick={(ev) => p.klick(karte, zeile, ev)} onDoubleClick={() => p.doppelklick(zeile)} onContextMenu={(ev) => p.kontext(karte, zeile, ev)}>
-      <span className="f">{p.fach}{p.woche && !schmal ? <span className="w">{p.woche}</span> : null}</span>
-      {p.dichte === 'normal' && p.h >= 30 && p.w >= 34 ? <span className="z">{p.zweit}</span> : null}
+      <span className="f">{fach}{p.woche && !knapp ? <span className="w">{p.woche}</span> : null}</span>
+      {p.dichte === 'normal' && p.h >= 30 ? <span className="z">{zweit}</span> : null}
     </div>
   );
 });
@@ -167,15 +175,17 @@ export const Steckbrett = forwardRef<SteckbrettApi, Props>(function Steckbrett(p
   }, []);
   const geo = useMemo<Geometrie>(() => {
     const S = daten.zeitraster.stunden.length, T = daten.zeitraster.tage.length;
-    const spalte = Math.max(MIN_SPALTE, (breiteAussen - LABEL - 1) / Math.max(1, S * T));
-    const spur = dichte === 'normal' ? 34 : 22;
+    const passend = (breiteAussen - LABEL - 1) / Math.max(1, S * T);
+    const zwei = dichte === 'normal' || (dichte === 'auto' && passend >= 28 && zeilen.length <= 24);
+    const spalte = Math.max(dichte === 'normal' ? MIN_SPALTE_ZWEI : MIN_SPALTE, passend);
+    const spur = zwei ? 34 : 22;
     const oben: number[] = [], hoehe: number[] = [];
     let y = 0;
     for (const z of zeilen) {
       const h = (auf.spuren.get(z.id) ?? 1) * spur + 4;
       oben.push(y); hoehe.push(h); y += h;
     }
-    return { spalte, breite: LABEL + spalte * S * T, S, T, spur, oben, hoehe, gesamt: y };
+    return { spalte, breite: LABEL + spalte * S * T, S, T, spur, zwei, oben, hoehe, gesamt: y };
   }, [daten.zeitraster, breiteAussen, dichte, zeilen, auf.spuren]);
 
   const sichtbar = useMemo(() => {
@@ -243,8 +253,13 @@ export const Steckbrett = forwardRef<SteckbrettApi, Props>(function Steckbrett(p
     }
   }, [tastZug]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const zugZeilen = useMemo(() => (zug ? auf.zeilenVon(zug.u).map((id) => zeileIndex.get(id)).filter((x): x is number => x !== undefined) : []), [zug, auf, zeileIndex]);
-  const auswahlZeilen = useMemo(() => new Set(auswahl ? auf.zeilenVon(auswahl.u) : []), [auswahl, auf]);
+  // Zeilen des Zugs: bei einem Band die Zeilen aller Kurse, die mitwandern (laut Server) bzw. aller Kurse des Bandes
+  const zugKurse = useMemo(() => (zug ? (ziele && ziele.u === zug.u && ziele.band?.length ? ziele.band : auf.bandVon(zug.u)) : []), [zug, ziele, auf]);
+  const zugZeilen = useMemo(() => [...new Set(zugKurse.flatMap((u) => auf.zeilenVon(u)))].map((id) => zeileIndex.get(id)).filter((x): x is number => x !== undefined), [zugKurse, auf, zeileIndex]);
+  const auswahlKurse = useMemo(() => new Set(auswahl ? auf.bandVon(auswahl.u) : []), [auswahl, auf]);
+  const auswahlZeilen = useMemo(() => new Set(auswahl ? auf.zeilenVonBand(auswahl.u) : []), [auswahl, auf]);
+  // Karten, die beim Ziehen einer Karte mitwandern (parallele Kurse des Bandes) – im Brett blass wie die gezogene
+  const mitKarten = useMemo(() => new Set(zug?.karte ? mitziehend(auf, zug.karte).map((k) => k.key) : []), [zug, auf]);
 
   // ---- Ablage: das ganze Brett ----
   const zielAus = (x: number): { tag: number; stunde: number } | null => {
@@ -383,7 +398,7 @@ export const Steckbrett = forwardRef<SteckbrettApi, Props>(function Steckbrett(p
   }, [zeitraster, S]);
 
   return (
-    <div ref={rollen} className={`pt-brett${zug ? ' zieht' : ''}`} tabIndex={0} role="application" data-testid="steckbrett"
+    <div ref={rollen} className={`pt-brett${zug ? ' zieht' : ''}${auswahl ? ' mit-auswahl' : ''}`} tabIndex={0} role="application" data-testid="steckbrett"
       aria-label={`Steckbrett: ${zeilen.length} Zeilen, ${zeitraster.tage.length} Tage mit je ${S} Stunden`}
       aria-describedby="pt-hilfe" onKeyDown={taste}
       onScroll={(e) => { const el = e.currentTarget; setFenster({ oben: el.scrollTop, hoehe: el.clientHeight }); }}
@@ -432,11 +447,11 @@ export const Steckbrett = forwardRef<SteckbrettApi, Props>(function Steckbrett(p
                 const t = kartenText(u, typ, z.id, daten, karte);
                 const gewaehlt = !!auswahl && auswahl.karte === karte.key && (auswahl.zeile === undefined || auswahl.zeile === z.id);
                 return (
-                  <Chip key={karte.key} karte={karte} zeile={z.id} dichte={dichte} spalte={geo.spalte}
+                  <Chip key={karte.key} karte={karte} zeile={z.id} dichte={geo.zwei ? 'normal' : 'kompakt'} spalte={geo.spalte}
                     x={LABEL + slot(karte.tag, karte.von, S) * geo.spalte + 1} w={karte.laenge * geo.spalte - 2}
                     y={2 + spur * geo.spur + 1} h={geo.spur - 2}
                     fach={t.fach} zweit={t.zweit} farbe={props.farben ? t.farbe : null} gekoppelt={t.gekoppelt} titel={t.titel} woche={u.woche}
-                    gewaehlt={gewaehlt} verbunden={!!auswahl && auswahl.u === karte.u && !gewaehlt}
+                    gewaehlt={gewaehlt} verbunden={auswahlKurse.has(karte.u) && !gewaehlt} mitzug={mitKarten.has(karte.key) && zug?.karte?.key !== karte.key}
                     ziehbar={props.schreiben && !karte.fix} klick={klick} doppelklick={doppelklick} kontext={kontext} />
                 );
               })}
@@ -455,6 +470,13 @@ export const Steckbrett = forwardRef<SteckbrettApi, Props>(function Steckbrett(p
         ) : null}
         <Zielmarke koerper={koerper} geo={geo} zug={zug} ziele={ziele && zug && ziele.u === zug.u ? ziele : null} zeilenIdx={zugZeilen} cursor={tastZug ? cursor : null} zeilen={zeilen} tage={tagKurz} />
       </div>
+      {zug ? (
+        <div className="pt-ziehlegende" data-testid="pt-legende" aria-hidden>
+          <span><i className="frei" />frei</span><span><i className="tausch" />Tausch</span><span><i className="weich" />mit Hinweis</span><span><i className="hart" />belegt, gesperrt</span>
+          {zugKurse.length > 1 ? <span className="band">Band {auf.uMap.get(zug.u)?.band}: {zugKurse.length} Kurse wandern gemeinsam</span> : null}
+          <span className="leise">{tastZug ? 'Pfeile: Ziel · Enter: ablegen · Esc: abbrechen' : 'in den Vorrat ziehen: entplanen'}</span>
+        </div>
+      ) : null}
     </div>
   );
 });

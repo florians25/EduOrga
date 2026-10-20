@@ -1,12 +1,15 @@
-/* Plantafel der Stundenplanung (Steckbrett, Vorrat, Klasse mit verknüpften Plänen). Karten nach design/DESIGN.md Abschnitt 10:
-   Leiste links 5 px (Fachfarbe, sonst grau), Kontur 1,5 px innen, Radius 4; Fläche nur mit Fachfarbe leicht getönt (12 %). */
+/* Plantafel der Stundenplanung (Steckbrett, Vorrat, Klasse mit verknüpften Plänen). Karten nach „Stundenkarte v7“
+   (design/DESIGN.md Abschnitt 10): nahezu eckig (Radius 2), keine Leiste links, neutral weiß mit feiner 1-px-Linie; nur mit Fachfarbe
+   leicht getönt (14 %) und die Linie in der Fachfarbe. Statusstreifen oben gibt es in der Planung nicht (keine Änderungen).
+   Raster ruhig: Stundenlinien sehr hell, Tage durch 2-px-Linien getrennt, Kopf und Zeilenköpfe bleiben stehen. */
 .pt-flaeche { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
 
 /* ---- Steckbrett ---- */
 .pt-brett {
   position: relative; flex: 1 1 auto; min-height: 120px; overflow: auto; outline: none; background: var(--colorNeutralBackground1);
   font-size: 12px; color: var(--colorNeutralForeground1); overscroll-behavior: contain;
-  --pt-linie: var(--colorNeutralStroke3); --pt-tag-linie: var(--colorNeutralStroke1);
+  --pt-linie: color-mix(in srgb, var(--colorNeutralStroke3) 55%, transparent); --pt-tag-linie: var(--colorNeutralStroke1);
+  --pt-karte-linie: var(--up-karte-linie, #b7c2c8);
 }
 .pt-brett:focus-visible { box-shadow: inset 0 0 0 2px var(--colorStrokeFocus2); }
 .pt-kopf { position: sticky; top: 0; z-index: 6; height: 42px; background: var(--edo-bereich-kopf, var(--colorNeutralBackground3)); border-bottom: 1px solid var(--colorNeutralStroke1); }
@@ -16,13 +19,13 @@
 }
 .pt-tag {
   position: absolute; top: 0; height: 22px; line-height: 22px; text-align: center; font-weight: 600; font-size: 12px; box-sizing: border-box;
-  border-left: 1px solid var(--colorNeutralStroke1); border-bottom: 1px solid var(--colorNeutralStroke2); white-space: nowrap; overflow: hidden;
+  border-left: 2px solid var(--colorNeutralStroke1); border-bottom: 1px solid var(--colorNeutralStroke2); white-space: nowrap; overflow: hidden;
 }
 .pt-std {
   position: absolute; top: 22px; height: 20px; line-height: 20px; text-align: center; font-size: 11px; color: var(--colorNeutralForeground2);
-  font-variant-numeric: tabular-nums; box-sizing: border-box; border-left: 1px solid var(--colorNeutralStroke3); transition: background-color 120ms;
+  font-variant-numeric: tabular-nums; box-sizing: border-box; border-left: 1px solid var(--pt-linie); transition: background-color 120ms;
 }
-.pt-std.tagbeginn { border-left-color: var(--colorNeutralStroke1); }
+.pt-std.tagbeginn { border-left: 2px solid var(--colorNeutralStroke1); }
 .pt-std.frei { background: color-mix(in srgb, var(--up-ok) 30%, transparent); color: var(--colorNeutralForeground1); font-weight: 600; }
 .pt-std.tausch { box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--up-ok) 70%, transparent); }
 .pt-std.weich { background: color-mix(in srgb, var(--up-warnung) 26%, transparent); }
@@ -35,11 +38,11 @@
 .pt-frei.nachmittag { background: var(--colorNeutralBackground2); }
 
 .pt-zeile {
-  position: absolute; left: 0; box-sizing: border-box; border-bottom: 1px solid var(--colorNeutralStroke3);
-  background-image: linear-gradient(to right, var(--pt-tag-linie) 1px, transparent 1px), linear-gradient(to right, var(--pt-linie) 1px, transparent 1px);
+  position: absolute; left: 0; box-sizing: border-box; border-bottom: 1px solid var(--pt-linie);
+  background-image: linear-gradient(to right, var(--pt-tag-linie) 2px, transparent 2px), linear-gradient(to right, var(--pt-linie) 1px, transparent 1px);
   background-size: var(--pt-tag) 100%, var(--pt-spalte) 100%; background-position: var(--pt-label) 0, var(--pt-label) 0; background-repeat: repeat-x;
 }
-.pt-zeile.gruppe { border-top: 1px solid var(--colorNeutralStroke1); }
+.pt-zeile.gruppe { border-top: 1px solid var(--colorNeutralStroke2); }
 .pt-label {
   position: sticky; left: 0; z-index: 4; height: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 4px; padding: 0 6px 0 8px;
   margin: 0; border: none; border-right: 1px solid var(--colorNeutralStroke1); background: var(--colorNeutralBackground2); color: var(--colorNeutralForeground1);
@@ -56,28 +59,27 @@
 
 .pt-chip {
   position: absolute; box-sizing: border-box; z-index: 1; display: flex; flex-direction: column; justify-content: center; gap: 0;
-  padding: 0 2px 0 8px; border-radius: 4px; overflow: hidden; user-select: none; touch-action: none; cursor: default;
-  background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1.5px var(--up-karte-linie, #b7c2c8);
+  padding: 0 3px; border-radius: 2px; overflow: hidden; user-select: none; touch-action: none; cursor: default;
+  background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--pt-karte-linie);
   font-size: 11.5px; line-height: 14px; color: var(--colorNeutralForeground1); transition: background-color 120ms;
 }
-.pt-chip::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--up-karte-balken, #b4bec4); }
-.pt-chip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 12%, var(--colorNeutralBackground1)); }
-.pt-chip[style*="--fachfarbe"]::before { background: var(--fachfarbe); }
+.pt-chip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 14%, var(--colorNeutralBackground1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fachfarbe) 55%, var(--pt-karte-linie)); }
 .pt-chip.ziehbar { cursor: grab; }
 .pt-chip .f { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: clip; display: flex; gap: 3px; align-items: baseline; }
 .pt-chip .f .w { font-weight: 500; font-size: 10px; color: var(--colorNeutralForeground3); }
-.pt-chip .z { font-size: 11px; color: var(--colorNeutralForeground2); white-space: nowrap; overflow: hidden; text-overflow: clip; }
-.pt-chip.schmal { padding-left: 4px; padding-right: 0; font-size: 10.5px; }
-.pt-chip.schmal::before { width: 3px; }
+.pt-chip .z { font-size: 10.5px; color: var(--colorNeutralForeground2); white-space: nowrap; overflow: hidden; text-overflow: clip; letter-spacing: -0.01em; }
+.pt-chip.schmal { padding: 0 1px 0 2px; font-size: 10.5px; }
 .pt-chip:hover { background: var(--edo-karte-neutral-hover, var(--colorNeutralBackground1Hover)); }
-.pt-chip[style*="--fachfarbe"]:hover { background: color-mix(in srgb, var(--fachfarbe) 20%, var(--colorNeutralBackground1)); }
+.pt-chip[style*="--fachfarbe"]:hover { background: color-mix(in srgb, var(--fachfarbe) 22%, var(--colorNeutralBackground1)); }
 .pt-chip.gekoppelt::after {
   content: ''; position: absolute; top: 0; right: 0; width: 0; height: 0; border-style: solid; border-width: 0 6px 6px 0;
   border-color: transparent var(--colorNeutralForeground3) transparent transparent;
 }
 .pt-chip.fix { background-image: linear-gradient(var(--colorNeutralForeground3), var(--colorNeutralForeground3)); background-size: 4px 4px; background-position: right 3px bottom 3px; background-repeat: no-repeat; }
-.pt-chip.verbunden { box-shadow: inset 0 0 0 2px var(--colorBrandStroke1); }
-.pt-chip.gewaehlt { box-shadow: inset 0 0 0 1.5px var(--colorBrandStroke1), 0 0 0 2px var(--colorBrandStroke1); z-index: 3; }
+.pt-chip.verbunden, .pt-chip.verbunden[style*="--fachfarbe"] { box-shadow: inset 0 0 0 2px var(--colorBrandStroke1); }
+.pt-chip.gewaehlt, .pt-chip.gewaehlt[style*="--fachfarbe"] { box-shadow: inset 0 0 0 1px var(--colorBrandStroke1), 0 0 0 2px var(--colorBrandStroke1); z-index: 3; }
+/* Zeile mit Auswahl: übrige Karten treten zurück, die Karten des gewählten Unterrichts bleiben klar */
+.pt-brett.mit-auswahl .pt-chip:not(.verbunden):not(.gewaehlt) { opacity: .62; }
 .pt-chip.zieht { opacity: .35; }
 .pt-brett.zieht .pt-chip { cursor: grabbing; }
 
@@ -88,11 +90,11 @@
 .pt-ziel.weich { background: color-mix(in srgb, var(--up-warnung) 26%, transparent); }
 .pt-ziel.hart { background: color-mix(in srgb, var(--up-entfall) 16%, transparent); }
 .pt-ziel.eigen { box-shadow: inset 0 0 0 1.5px var(--colorNeutralForeground3); }
-.pt-marke { position: absolute; z-index: 5; pointer-events: none; box-sizing: border-box; border: 2px solid var(--colorNeutralForeground2); border-radius: 4px; }
+.pt-marke { position: absolute; z-index: 5; pointer-events: none; box-sizing: border-box; border: 2px solid var(--colorNeutralForeground2); border-radius: 2px; }
 .pt-marke.frei, .pt-marke.tausch { border-color: var(--up-ok); }
 .pt-marke.weich { border-color: var(--up-warnung); }
 .pt-marke.hart { border-color: var(--up-entfall); }
-.pt-cursor { position: absolute; z-index: 5; pointer-events: none; box-sizing: border-box; border: 2px solid var(--colorStrokeFocus2); border-radius: 4px; display: none; }
+.pt-cursor { position: absolute; z-index: 5; pointer-events: none; box-sizing: border-box; border: 2px solid var(--colorStrokeFocus2); border-radius: 2px; display: none; }
 .pt-brett:focus .pt-cursor, .pt-cursor.zug { display: block; }
 .pt-grund {
   position: fixed; z-index: 1000001; max-width: 320px; padding: 6px 8px; font-size: 12px; border-radius: 4px; pointer-events: none;
@@ -102,15 +104,21 @@
 .pt-vorschau b { font-weight: 600; }
 .pt-unsichtbar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Legende in der Fußzeile: Text mit 10-px-Mustern */
-.pt-periode { margin-left: 16px; }
-.pt-legende { display: inline-flex; gap: 12px; font-size: 12px; color: var(--colorNeutralForeground2); white-space: nowrap; }
-.pt-legende span { display: inline-flex; align-items: center; gap: 4px; }
-.pt-legende i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--colorNeutralStroke1); }
-.pt-legende i.frei { background: color-mix(in srgb, var(--up-ok) 45%, var(--colorNeutralBackground1)); }
-.pt-legende i.tausch { background: color-mix(in srgb, var(--up-ok) 10%, var(--colorNeutralBackground1)); border: 1.5px solid var(--up-ok); }
-.pt-legende i.weich { background: color-mix(in srgb, var(--up-warnung) 45%, var(--colorNeutralBackground1)); }
-.pt-legende i.hart { background: color-mix(in srgb, var(--up-entfall) 35%, var(--colorNeutralBackground1)); }
+/* Legende der Zielfarben – nur während des Ziehens, unten links im Brett (bleibt beim Rollen stehen); Text mit 10-px-Mustern */
+.pt-ziehlegende {
+  position: sticky; left: 0; bottom: 0; z-index: 7; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; width: max-content; max-width: 100%;
+  box-sizing: border-box; padding: 5px 12px; font-size: 12px; color: var(--colorNeutralForeground2); white-space: nowrap; pointer-events: none;
+  background: var(--colorNeutralBackground1); border-top: 1px solid var(--colorNeutralStroke1); border-right: 1px solid var(--colorNeutralStroke1); border-top-right-radius: 4px;
+}
+.pt-ziehlegende span { display: inline-flex; align-items: center; gap: 4px; }
+.pt-ziehlegende .band { color: var(--colorNeutralForeground1); font-weight: 600; }
+.pt-ziehlegende .leise { color: var(--colorNeutralForeground3); }
+.pt-ziehlegende i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--colorNeutralStroke1); }
+.pt-ziehlegende i.frei { background: color-mix(in srgb, var(--up-ok) 45%, var(--colorNeutralBackground1)); }
+.pt-ziehlegende i.tausch { background: color-mix(in srgb, var(--up-ok) 10%, var(--colorNeutralBackground1)); border: 1.5px solid var(--up-ok); }
+.pt-ziehlegende i.weich { background: color-mix(in srgb, var(--up-warnung) 45%, var(--colorNeutralBackground1)); }
+.pt-ziehlegende i.hart { background: color-mix(in srgb, var(--up-entfall) 35%, var(--colorNeutralBackground1)); }
+.pt-auswahltext { color: var(--colorNeutralForeground1); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; }
 
 /* ---- Vorrat ---- */
 .pt-vorrat {
@@ -120,36 +128,36 @@
 .pt-vorrat.zu { max-height: none; }
 .pt-vorrat.ablage { box-shadow: inset 0 2px 0 var(--colorNeutralStroke1); }
 .pt-vorrat.drueber { background: color-mix(in srgb, var(--colorBrandBackground2) 70%, var(--colorNeutralBackground2)); box-shadow: inset 0 0 0 2px var(--colorBrandStroke1); }
-.pt-vkopf { display: flex; align-items: center; gap: 8px 12px; padding: 4px 12px 4px 4px; flex-wrap: wrap; min-height: 36px; box-sizing: border-box; }
+.pt-vkopf { display: flex; align-items: center; gap: 6px 12px; padding: 2px 12px 2px 4px; flex-wrap: wrap; min-height: 32px; box-sizing: border-box; }
 .pt-vtitel { margin: 0; font-size: 14px; font-weight: 600; }
 .pt-vzahl { color: var(--colorNeutralForeground2); font-size: 12px; }
 .pt-vzahl b { color: var(--colorNeutralForeground1); font-weight: 600; font-variant-numeric: tabular-nums; }
 .pt-vhinweis { font-size: 12px; font-weight: 600; color: var(--colorBrandForeground1); }
 .pt-vsuche { width: 220px; }
 .pt-vneu { margin-left: auto; }
-.pt-vliste { overflow: auto; padding: 0 12px 10px 12px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-content: flex-start; }
-.pt-vgruppe { display: flex; align-items: flex-start; gap: 6px; min-width: 0; padding: 2px 0; }
+.pt-vliste { overflow: auto; padding: 0 12px 8px 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-content: flex-start; }
+.pt-vgruppe { display: flex; align-items: flex-start; gap: 4px; min-width: 0; padding: 0 12px 0 0; border-right: 1px solid var(--colorNeutralStroke2); }
+.pt-vgruppe:last-child { border-right: none; }
 .pt-vgruppe.gewaehlt .pt-vgname { box-shadow: inset 0 -2px 0 var(--edo-modus); }
 .pt-vgname {
-  flex: 0 0 auto; min-width: 34px; height: 24px; padding: 0 4px; margin: 0; border: none; background: none; font: inherit; font-size: 12px; font-weight: 600;
-  color: var(--colorNeutralForeground2); text-align: left; cursor: pointer;
+  flex: 0 0 auto; min-width: 34px; height: 22px; padding: 0 4px; margin: 0; border: none; background: none; font: inherit; font-size: 12px; font-weight: 600;
+  color: var(--colorNeutralForeground2); text-align: left; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
 }
+.pt-vgname .n { font-weight: 500; font-size: 11px; color: var(--up-warnung); font-variant-numeric: tabular-nums; }
 .pt-vgname:hover { color: var(--colorNeutralForeground1); text-decoration: underline; }
 .pt-vchips { display: flex; flex-wrap: wrap; gap: 3px; }
 .pt-vchip {
-  position: relative; height: 24px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 2px; padding: 0 3px 0 8px; margin: 0; border: none;
-  border-radius: 4px; overflow: hidden; background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1.5px var(--up-karte-linie, #b7c2c8);
+  position: relative; height: 22px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 2px; padding: 0 3px 0 4px; margin: 0; border: none;
+  border-radius: 2px; overflow: hidden; background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--up-karte-linie, #b7c2c8);
   font: inherit; font-size: 11.5px; color: var(--colorNeutralForeground1); cursor: grab; user-select: none; touch-action: none;
 }
-.pt-vchip::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--up-karte-balken, #b4bec4); }
-.pt-vchip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 12%, var(--colorNeutralBackground1)); }
-.pt-vchip[style*="--fachfarbe"]::before { background: var(--fachfarbe); }
+.pt-vchip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 14%, var(--colorNeutralBackground1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fachfarbe) 55%, var(--up-karte-linie, #b7c2c8)); }
 .pt-vchip .f { font-weight: 600; white-space: nowrap; overflow: hidden; flex: 1; text-align: left; }
 .pt-vchip .n { font-size: 10.5px; color: var(--colorNeutralForeground3); font-variant-numeric: tabular-nums; }
 .pt-vchip.gekoppelt::after { content: ''; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 6px 6px 0; border-color: transparent var(--colorNeutralForeground3) transparent transparent; }
 .pt-vchip:hover { background: var(--edo-karte-neutral-hover, var(--colorNeutralBackground1Hover)); }
 .pt-vchip:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: 1px; }
-.pt-vchip.gewaehlt { box-shadow: inset 0 0 0 1.5px var(--colorBrandStroke1), 0 0 0 2px var(--colorBrandStroke1); }
+.pt-vchip.gewaehlt, .pt-vchip.gewaehlt[style*="--fachfarbe"] { box-shadow: inset 0 0 0 1px var(--colorBrandStroke1), 0 0 0 2px var(--colorBrandStroke1); }
 .pt-vchip.zieht { opacity: .4; }
 .pt-vleer { margin: 4px 0; font-size: 13px; color: var(--colorNeutralForeground2); }
 
@@ -164,12 +172,10 @@
 .pt-k-vliste { flex: 1; overflow: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
 .pt-k-vfuss { padding: 8px 12px; border-top: 1px solid var(--colorNeutralStroke2); }
 .pt-kchip {
-  position: relative; display: grid; grid-template-columns: 1fr auto; column-gap: 8px; padding: 5px 8px 5px 11px; border-radius: 4px; overflow: hidden;
-  background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1.5px var(--up-karte-linie, #b7c2c8); cursor: grab; user-select: none; touch-action: none; font-size: 12px;
+  position: relative; display: grid; grid-template-columns: 1fr auto; column-gap: 8px; padding: 5px 8px; border-radius: 2px; overflow: hidden;
+  background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--up-karte-linie, #b7c2c8); cursor: grab; user-select: none; touch-action: none; font-size: 12px;
 }
-.pt-kchip::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--up-karte-balken, #b4bec4); }
-.pt-kchip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 12%, var(--colorNeutralBackground1)); }
-.pt-kchip[style*="--fachfarbe"]::before { background: var(--fachfarbe); }
+.pt-kchip[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 14%, var(--colorNeutralBackground1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fachfarbe) 55%, var(--up-karte-linie, #b7c2c8)); }
 .pt-kchip .f { font-weight: 600; font-size: 13px; }
 .pt-kchip .z { color: var(--colorNeutralForeground2); text-align: right; }
 .pt-kchip .l { grid-column: 1 / -1; color: var(--colorNeutralForeground3); font-size: 11px; }
@@ -177,14 +183,16 @@
 .pt-k-verknuepft { flex: 1 1 42%; min-height: 160px; overflow: auto; padding: 8px 12px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
 .pt-k-vtitel { font-size: 13px; color: var(--colorNeutralForeground2); }
 .pt-k-vtitel b { color: var(--colorNeutralForeground1); font-weight: 600; }
-.pt-k-vplaene { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+.pt-k-vplaene { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
 .pt-vk { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--colorNeutralStroke1); border-radius: 4px; overflow: hidden; background: var(--colorNeutralBackground1); }
 .pt-vk-kopf { margin: 0; padding: 5px 10px; font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--colorNeutralStroke2); background: var(--edo-bereich-kopf, var(--colorNeutralBackground3)); display: flex; gap: 6px; align-items: baseline; }
 .pt-vk-kopf .art { font-weight: 400; color: var(--colorNeutralForeground3); font-size: 12px; }
 .pt-vk-kopf .lang { font-weight: 400; color: var(--colorNeutralForeground2); font-size: 12px; margin-left: 4px; }
+.pt-vk-kopf .bev { margin-left: auto; font-weight: 500; font-size: 12px; color: var(--colorNeutralForeground2); }
+.pt-vk.bevorzugt { border-style: dashed; }
 .pt-vk .ra { flex: 0 0 auto; overflow: visible; }
-.pt-klasse .ra.kompakt .ra-eintrag { padding-left: 8px; }
-.pt-vk .ra-gitter { min-width: 0; }
+.pt-klasse .ra.kompakt .ra-eintrag { padding-left: 4px; }
+.pt-vk .ra-gitter, .pt-vk .ra.kompakt .ra-gitter { min-width: 0; }
 
 /* Zielstufen im Klassenplan (Stundenplanraster: Klasse ziel-<stufe>) und in den verknüpften Plänen (pt-zf-<stufe>) */
 .pt-klasse .ra-feld.ziel-frei, .pt-klasse .ra-feld.pt-zf-frei { background: color-mix(in srgb, var(--up-ok) 22%, transparent); box-shadow: none; }
@@ -194,17 +202,14 @@
 .pt-klasse .ra-feld.ziel-hart, .pt-klasse .ra-feld.pt-zf-hart { background: color-mix(in srgb, var(--up-entfall) 14%, transparent); box-shadow: none; }
 .pt-klasse .ra-feld.ziel-eigen, .pt-klasse .ra-feld.pt-zf-eigen { box-shadow: inset 0 0 0 1.5px var(--colorNeutralForeground3); }
 .pt-klasse .ra-feld.drueber { box-shadow: inset 0 0 0 2px var(--colorBrandStroke1) !important; }
-/* Stundenkarte v6 im Klassenplan der Plantafel: Leiste 5, Kontur 1,5, Radius 4 */
-.pt-klasse .ra-eintrag { border: none; border-radius: 4px; padding-left: 9px; box-shadow: inset 0 0 0 1.5px var(--up-karte-linie, #b7c2c8); background: var(--colorNeutralBackground1); }
-.pt-klasse .ra-eintrag::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--up-karte-balken, #b4bec4); }
-.pt-klasse .ra-eintrag[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 12%, var(--colorNeutralBackground1)); }
-.pt-klasse .ra-eintrag[style*="--fachfarbe"]::before { background: var(--fachfarbe); }
-.pt-klasse .ra-eintrag.gewaehlt, .pt-klasse .ra-eintrag.markiert { box-shadow: inset 0 0 0 1.5px var(--colorBrandStroke1), 0 0 0 2px var(--colorBrandStroke1); }
+/* Stundenkarte v7 im Klassenplan der Plantafel: Radius 2, keine Leiste, feine 1-px-Linie; Fachfarbe nur als Tönung und Linie */
+.pt-klasse .ra-eintrag { border: none; border-radius: 2px; padding-left: 6px; box-shadow: inset 0 0 0 1px var(--up-karte-linie, #b7c2c8); background: var(--colorNeutralBackground1); }
+.pt-klasse .ra-eintrag[style*="--fachfarbe"] { background: color-mix(in srgb, var(--fachfarbe) 14%, var(--colorNeutralBackground1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fachfarbe) 55%, var(--up-karte-linie, #b7c2c8)); }
+.pt-klasse .ra-eintrag.gewaehlt, .pt-klasse .ra-eintrag.markiert { box-shadow: inset 0 0 0 1px var(--colorBrandStroke1), 0 0 0 2px var(--colorBrandStroke1); }
 
 @media (prefers-reduced-motion: reduce) {
   .pt-chip, .pt-std, .pt-vorrat { transition: none; }
 }
 
 /* Fachfarben ausgeschaltet (Ansicht): neutrale Karten im Klassenplan und in den verknüpften Plänen */
-.pt-klasse.ohne-farben .ra-eintrag[style*="--fachfarbe"] { background: var(--colorNeutralBackground1); }
-.pt-klasse.ohne-farben .ra-eintrag[style*="--fachfarbe"]::before { background: var(--up-karte-balken, #b4bec4); }
+.pt-klasse.ohne-farben .ra-eintrag[style*="--fachfarbe"] { background: var(--colorNeutralBackground1); box-shadow: inset 0 0 0 1px var(--up-karte-linie, #b7c2c8); }

@@ -1,6 +1,8 @@
 // Plantafel „Klasse“: Wochenplan einer Klasse (Ziehen, Kontextmenü, Tastatur wie im Stundenplan), rechts die offenen Blöcke der
 // Klasse, darunter die verknüpften Pläne der gewählten bzw. gezogenen Stunde: nur die Lehrkräfte dieses Unterrichts und seine
-// Räume. Beim Ziehen zeigen Klassenplan und verknüpfte Pläne dieselben Zielstufen (frei, Tausch, Hinweis, hart).
+// Räume, dazu die bevorzugten Räume (Fachraum, Stammraum bzw. Räume der Raumgruppe) als „bevorzugt“, auch wenn der Unterricht dort
+// noch nicht liegt. Beim Ziehen zeigen Klassenplan und verknüpfte Pläne dieselben Zielstufen (frei, Tausch, Hinweis, hart).
+// Bänder wandern als Ganzes (band.ts).
 import { useDndMonitor, useDraggable, useDroppable } from '@dnd-kit/core';
 import { Button } from '@fluentui/react-components';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -14,6 +16,7 @@ import {
 } from '@/komponenten/raster/Stundenplanraster';
 import type { AblageDaten, ZiehDaten } from '@/komponenten/ziehen';
 import * as planung from '../aktionen';
+import { ablegen as bandAblegen, bandStunden } from './band';
 import { kartenText, zieleLaden, type Aufbereitet, type Karte, type TafelDaten, type TafelUnterricht, type Ziele } from './daten';
 
 export interface KlassenAuswahl { u: number; tag?: number; stunde?: number }
@@ -33,13 +36,13 @@ function KlassenVorratChip({ rasterId, u, laenge, anzahl, daten, klasse, ziehbar
 }
 
 /** Kleiner, verknüpfter Plan (Lehrkraft bzw. Raum) mit hervorgehobenem Unterricht und den Zielstufen des laufenden Zugs. */
-function VerknuepfterPlan({ typ, id, name, u, ziele, version }: { typ: 'lehrer' | 'raum'; id: number; name: string; u: number; ziele: Ziele | null; version: number }) {
+function VerknuepfterPlan({ typ, id, name, u, ziele, version, bevorzugt }: { typ: 'lehrer' | 'raum'; id: number; name: string; u: number; ziele: Ziele | null; version: number; bevorzugt?: string }) {
   const { daten: plan } = useDaten(() => api.get<Stundenplan>(api.dok(`/stundenplan/${typ}/${id}`)), [typ, id, version]);
   const rid = `pt-vk-${typ}-${id}`;
   return (
-    <section className="pt-vk" aria-label={`${typ === 'lehrer' ? 'Lehrkraft' : 'Raum'} ${name}`} data-verknuepft={`${typ}:${id}`}>
+    <section className={`pt-vk${bevorzugt ? ' bevorzugt' : ''}`} aria-label={`${typ === 'lehrer' ? 'Lehrkraft' : 'Raum'} ${name}${bevorzugt ? ' (bevorzugt)' : ''}`} data-verknuepft={`${typ}:${id}`} data-bevorzugt={bevorzugt ? '1' : undefined}>
       <style>{`[data-raster="${rid}"] .ra-eintrag[data-u="${u}"] { box-shadow: 0 0 0 2px var(--colorBrandStroke1); z-index: 2; }`}</style>
-      <h3 className="pt-vk-kopf"><span className="art">{typ === 'lehrer' ? 'Lehrkraft' : 'Raum'}</span> {name}{plan?.element.lang && plan.element.lang !== name ? <span className="lang">{plan.element.lang}</span> : null}</h3>
+      <h3 className="pt-vk-kopf"><span className="art">{typ === 'lehrer' ? 'Lehrkraft' : 'Raum'}</span> {name}{plan?.element.lang && plan.element.lang !== name ? <span className="lang">{plan.element.lang}</span> : null}{bevorzugt ? <span className="bev" title="Bevorzugter Raum des Unterrichts – noch nicht dort verplant">bevorzugt · {bevorzugt}</span> : null}</h3>
       <Stundenplanraster id={rid} plan={plan ?? null} typ={typ} kompakt
         feldKlasse={ziele ? (tag, stunde) => { const s = ziele.stufen[tag]?.[stunde - 1]; return s ? `pt-zf-${s}` : null; } : undefined} />
     </section>
@@ -93,6 +96,17 @@ export function Klassentafel({ daten, auf, farben, element, version, schreiben, 
     const k = auswahl?.tag !== undefined ? karten.find((x) => x.tag === auswahl.tag && auswahl.stunde! >= x.von && auswahl.stunde! < x.von + x.laenge) : undefined;
     return [...new Set((k ? k.raeume : karten.flatMap((x) => x.raeume)))].slice(0, 2);
   }, [u, auf, auswahl]);
+  // bevorzugte Räume: Fachraum vor Stammraum, bei Raumgruppen deren erste Räume; ohne die schon gezeigten (höchstens drei)
+  const bevorzugt = useMemo(() => {
+    if (!u) return [] as { id: number; text: string }[];
+    const erg: { id: number; text: string }[] = [];
+    for (const w of u.wunsch || []) {
+      if (w.raum != null) erg.push({ id: w.raum, text: w.art });
+      else if (w.gruppe != null) for (const r of (daten.raumgruppen?.[String(w.gruppe)] || []).slice(0, 2)) erg.push({ id: r, text: `${w.art}, Raumgruppe ${daten.namen.raumgruppen?.[String(w.gruppe)] ?? ''}`.trim() });
+    }
+    const gesehen = new Set(raeume);
+    return erg.filter((x) => (gesehen.has(x.id) ? false : (gesehen.add(x.id), true))).slice(0, 3);
+  }, [u, daten, raeume]);
 
   // Ablage rechts: Stunde aus dem Plan hierher ziehen = entplanen
   const ablage: AblageDaten = {
@@ -100,8 +114,7 @@ export function Klassentafel({ daten, auf, farben, element, version, schreiben, 
     ablegen: (d) => {
       const karte: Karte | undefined = (auf.kartenVon.get(d.u as number) || []).find((k) => k.tag === d.tag && (d.stunde as number) >= k.von && (d.stunde as number) < k.von + k.laenge);
       if (!karte) return;
-      const stunden = d.einzeln ? [d.stunde as number] : Array.from({ length: karte.laenge }, (_, i) => karte.von + i);
-      void planung.entplanen(stunden.map((s) => ({ u: karte.u, tag: karte.tag, stunde: s, e: { fix: karte.teilFix } as never })), a.id).then((ok) => (ok ? nachAenderung() : undefined)).catch(fehlerMelden);
+      void planung.entplanen(bandStunden(auf, karte, d.einzeln ? (d.stunde as number) : undefined), a.id).then((ok) => (ok ? nachAenderung() : undefined)).catch(fehlerMelden);
     },
   };
   const { setNodeRef: ablageRef, isOver } = useDroppable({ id: `pt-kvorrat-${a.id}`, data: ablage, disabled: !schreiben });
@@ -112,7 +125,7 @@ export function Klassentafel({ daten, auf, farben, element, version, schreiben, 
         <div className="pt-k-plan" onFocus={() => planung.planAktivieren(ctx)}>
           <Stundenplanraster ref={raster} id={rasterId} plan={plan ?? null} typ="klasse" ziehen={schreiben} mehrfach
             zielstatus={async (d) => { const z = await zieleLaden(zielAngabe(d), version); return { status: z.stufen, gruende: z.gruende }; }}
-            beiAblegen={(d) => { void planung.ablegen(d, a.id).then((ok) => (ok ? nachAenderung() : undefined)).catch(fehlerMelden); }}
+            beiAblegen={(d) => { void bandAblegen(auf, d, a.id).then((ok) => (ok ? nachAenderung() : undefined)).catch(fehlerMelden); }}
             beiKlick={(e, tag, stunde) => setAuswahl({ u: e.u, tag, stunde })}
             beiDoppelklick={() => a.oeffnen('unterricht', { sicht: 'klasse', element })}
             kontextmenue={(e, tag, stunde, ev) => { setAuswahl({ u: e.u, tag, stunde }); menue(ev.clientX, ev.clientY, planung.kontextEintraege(ctx, e, tag, stunde)); }}
@@ -139,7 +152,8 @@ export function Klassentafel({ daten, auf, farben, element, version, schreiben, 
           <div className="pt-k-vplaene">
             {u.lehrer.map((l) => <VerknuepfterPlan key={`l${l}`} typ="lehrer" id={l} name={daten.namen.lehrer[l] ?? '?'} u={u.u} ziele={ziehU === u.u ? ziehZiele : null} version={version} />)}
             {raeume.map((r) => <VerknuepfterPlan key={`r${r}`} typ="raum" id={r} name={daten.namen.raeume[r] ?? '?'} u={u.u} ziele={ziehU === u.u ? ziehZiele : null} version={version} />)}
-            {!u.lehrer.length && !raeume.length ? <p className="pt-vleer">Der Unterricht hat weder Lehrkraft noch Raum.</p> : null}
+            {bevorzugt.map((r) => <VerknuepfterPlan key={`b${r.id}`} typ="raum" id={r.id} name={daten.namen.raeume[r.id] ?? '?'} u={u.u} ziele={ziehU === u.u ? ziehZiele : null} version={version} bevorzugt={r.text} />)}
+            {!u.lehrer.length && !raeume.length && !bevorzugt.length ? <p className="pt-vleer">Der Unterricht hat weder Lehrkraft noch Raum.</p> : null}
           </div>
         </> : <p className="pt-vleer">Eine Stunde anklicken oder ziehen: hier erscheinen die Pläne ihrer Lehrkräfte und Räume.</p>}
       </div>

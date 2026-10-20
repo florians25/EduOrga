@@ -1,6 +1,7 @@
 // Vorrat der Plantafel: offene Blöcke aller Unterrichte (Doppelstunden doppelt so breit), gruppiert nach Klasse bzw. Lehrkraft,
 // filterbar. Karten aus dem Vorrat in das Steckbrett ziehen (oder mit Enter aufnehmen und mit den Pfeiltasten setzen); eine Karte
 // aus dem Brett hierher ziehen entplant sie. „Neuer Unterricht“ öffnet den Dialog, der neue Unterricht erscheint sofort hier.
+// Je Gruppe steht die Zahl der offenen Stunden; beim Ziehen eines Bandes sind die mitwandernden Kurse blass.
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Button, Input, Switch } from '@fluentui/react-components';
 import { ChevronDown16Regular, ChevronUp16Regular, Search16Regular } from '@fluentui/react-icons';
@@ -9,10 +10,10 @@ import { useZiehen, type AblageDaten, type ZiehDaten } from '@/komponenten/ziehe
 import { kartenText, type Aufbereitet, type TafelDaten, type TafelTyp, type TafelUnterricht } from './daten';
 import type { TafelZug } from './Steckbrett';
 
-interface Gruppe { id: number; name: string; eintraege: { u: TafelUnterricht; laenge: number; anzahl: number }[] }
+interface Gruppe { id: number; name: string; stunden: number; eintraege: { u: TafelUnterricht; laenge: number; anzahl: number }[] }
 
-const VorratChip = memo(function VorratChip({ u, laenge, anzahl, gruppe, typ, daten, farben, ziehbar, gewaehlt, aufnehmen, waehlen, kontext }: {
-  u: TafelUnterricht; farben: boolean; laenge: number; anzahl: number; gruppe: number; typ: TafelTyp; daten: TafelDaten; ziehbar: boolean; gewaehlt: boolean;
+const VorratChip = memo(function VorratChip({ u, laenge, anzahl, gruppe, typ, daten, farben, ziehbar, gewaehlt, mitzug, aufnehmen, waehlen, kontext }: {
+  u: TafelUnterricht; farben: boolean; mitzug: boolean; laenge: number; anzahl: number; gruppe: number; typ: TafelTyp; daten: TafelDaten; ziehbar: boolean; gewaehlt: boolean;
   aufnehmen: (z: TafelZug) => void; waehlen: (u: number) => void; kontext: (u: TafelUnterricht, ev: MouseEvent) => void;
 }) {
   const gtyp: TafelTyp = typ === 'lehrer' ? 'lehrer' : 'klasse';
@@ -26,7 +27,7 @@ const VorratChip = memo(function VorratChip({ u, laenge, anzahl, gruppe, typ, da
   const titel = `${t.titel}\n${anzahl > 1 ? `${anzahl} × ` : ''}${laenge === 1 ? 'Einzelstunde' : laenge === 2 ? 'Doppelstunde' : `${laenge}er-Block`} offen${ziehbar ? '\nIn das Steckbrett ziehen oder Enter drücken' : ''}`;
   return (
     <button ref={setNodeRef} type="button" {...(ziehbar ? listeners : {})} {...(ziehbar ? attributes : {})}
-      className={`pt-vchip${t.gekoppelt ? ' gekoppelt' : ''}${isDragging ? ' zieht' : ''}${gewaehlt ? ' gewaehlt' : ''}`}
+      className={`pt-vchip${t.gekoppelt ? ' gekoppelt' : ''}${isDragging || mitzug ? ' zieht' : ''}${gewaehlt ? ' gewaehlt' : ''}`}
       style={{ width: 30 * laenge + (laenge - 1) * 2 + (anzahl > 1 ? 18 : 0), ...(t.farbe && farben ? { ['--fachfarbe' as string]: t.farbe } : {}) }}
       title={titel} aria-label={titel.replace(/\n/g, ', ')} data-vorrat={u.u} data-laenge={laenge}
       onClick={() => waehlen(u.u)} onContextMenu={(ev) => { ev.preventDefault(); kontext(u, ev); }}
@@ -61,8 +62,9 @@ export function Vorrat({ daten, auf, typ, farben, schreiben, filter, setFilter, 
       for (const id of ids.length ? ids : [-1]) {
         if (nurZeile && zeileGewaehlt != null && typ === gtyp && id !== zeileGewaehlt) continue;
         let g = m.get(id);
-        if (!g) m.set(id, g = { id, name: id < 0 ? (gtyp === 'klasse' ? 'ohne Klasse' : 'ohne Lehrkraft') : namen[id] || '?', eintraege: [] });
+        if (!g) m.set(id, g = { id, name: id < 0 ? (gtyp === 'klasse' ? 'ohne Klasse' : 'ohne Lehrkraft') : namen[id] || '?', stunden: 0, eintraege: [] });
         g.eintraege.push(...laengen);
+        g.stunden += u.offen.reduce((x, b) => x + b, 0);
       }
     }
     return [...m.values()].sort((a, b) => (reihenfolge.get(a.id) ?? 1e9) - (reihenfolge.get(b.id) ?? 1e9) || a.name.localeCompare(b.name, 'de', { numeric: true }));
@@ -71,6 +73,10 @@ export function Vorrat({ daten, auf, typ, farben, schreiben, filter, setFilter, 
   const stunden = auf.offen;
   const anzahlU = daten.unterrichte.filter((u) => u.offen.length).length;
   const ziehtKarte = useZiehen((z) => z.aktiv?.art === 'tafel-karte');
+  // beim Ziehen eines Vorratsblocks mit Band: die übrigen Kurse des Bandes wandern mit
+  const ziehU = useZiehen((z) => (z.aktiv?.art === 'tafel-vorrat' ? (z.aktiv.zug as TafelZug).u : null));
+  const ziehL = useZiehen((z) => (z.aktiv?.art === 'tafel-vorrat' ? (z.aktiv.zug as TafelZug).laenge : null));
+  const mitBand = useMemo(() => new Set(ziehU != null ? auf.bandVon(ziehU).filter((x) => x !== ziehU) : []), [ziehU, auf]);
   const ablage: AblageDaten = {
     annehmen: (d) => d.art === 'tafel-karte' && schreiben,
     ablegen: (d) => beiEntplanen(d.zug as TafelZug),
@@ -95,10 +101,12 @@ export function Vorrat({ daten, auf, typ, farben, schreiben, filter, setFilter, 
           {!gruppen.length ? <p className="pt-vleer">{filter ? 'Keine offenen Stunden für diesen Filter.' : stunden ? 'Keine offenen Stunden für diese Auswahl.' : 'Keine offenen Stunden. Neuer Unterricht erscheint hier.'}</p> : null}
           {gruppen.map((g) => (
             <div key={g.id} className={`pt-vgruppe${zeileGewaehlt === g.id ? ' gewaehlt' : ''}`} data-gruppe={g.id}>
-              <button type="button" className="pt-vgname" title={typ === gtyp && g.id >= 0 ? 'Zur Zeile im Steckbrett' : undefined} onClick={() => { if (g.id >= 0) beiGruppe(g.id); }}>{g.name}</button>
+              <button type="button" className="pt-vgname" title={`${g.stunden} ${g.stunden === 1 ? 'Stunde' : 'Stunden'} offen${typ === gtyp && g.id >= 0 ? ' – zur Zeile im Steckbrett' : ''}`} onClick={() => { if (g.id >= 0) beiGruppe(g.id); }}>
+                {g.name}<span className="n">{g.stunden}</span>
+              </button>
               <div className="pt-vchips">
                 {g.eintraege.map((e) => (
-                  <VorratChip key={`${e.u.u}-${e.laenge}`} u={e.u} laenge={e.laenge} anzahl={e.anzahl} gruppe={g.id} typ={typ} daten={daten} farben={farben} ziehbar={schreiben}
+                  <VorratChip key={`${e.u.u}-${e.laenge}`} u={e.u} laenge={e.laenge} anzahl={e.anzahl} gruppe={g.id} typ={typ} daten={daten} farben={farben} ziehbar={schreiben} mitzug={mitBand.has(e.u.u) && e.laenge === ziehL}
                     gewaehlt={auswahlU === e.u.u} aufnehmen={aufnehmen} waehlen={waehlen} kontext={kontext} />
                 ))}
               </div>

@@ -343,18 +343,27 @@ stehen unter dem Plan (z. B. „2× D 5a“, Blöcke mit Länge).
 *Planung → Plantafel* zeigt die Stundenplanung auf einer Tafel. Oben wählen Sie die Darstellung **Steckbrett** oder **Klasse**.
 
 **Steckbrett.** Jede Zeile ist eine Klasse (umschaltbar: **Lehrkräfte**, **Räume**; über *Alle Klassen* auf einen Jahrgang
-einschränkbar), die Spalten sind die Tage mit ihren Stunden. Jeder Block steht als kompakte Karte im Brett: das Fach, bei genug
-Platz darunter die Lehrkraft (bzw. die Klasse); alles Weitere zeigt die Kurzinfo. Eine **Doppelstunde** ist eine Karte über zwei
+einschränkbar), die Spalten sind die Tage mit ihren Stunden; kräftige Linien trennen die Tage, Kopf und Zeilenköpfe bleiben beim
+Rollen stehen. Jeder Block steht als kompakte Karte im Brett: das Fach, bei breiten Spalten darunter die Lehrkraft (bzw. die Klasse)
+– *Weitere → Immer zwei Zeilen* verbreitert die Spalten dafür; alles Weitere zeigt die Kurzinfo. Eine **Doppelstunde** ist eine Karte über zwei
 Spalten. Ein **gekoppelter Unterricht** (mehrere Klassen bzw. Lehrkräfte gleichzeitig) hat eine kleine Ecke oben rechts und steht in
 jeder beteiligten Zeile; wählen Sie ihn, sind alle diese Zeilen hervorgehoben. Die Zahl am Zeilenkopf nennt die offenen Stunden.
+Was gewählt ist, steht in der Fußzeile („Gewählt: M 5a · MUE · Di 3.–4.“); die übrigen Karten treten so lange zurück.
 
-Unten liegt der **Vorrat**: die noch nicht verplanten Blöcke aller Unterrichte, nach Klasse (bzw. Lehrkraft) gruppiert und über das
-Suchfeld filterbar. *Neuer Unterricht* legt einen Unterricht im Dialog an (siehe Abschnitt 4); er erscheint sofort im Vorrat.
+**Bänder.** Kurse mit gleichem *Band* (z. B. die Kurse einer Schiene in der Oberstufe) liegen gleichzeitig und wandern gemeinsam:
+Ziehen Sie einen Kurs im Brett, ziehen die parallel liegenden Kurse mit (ihre Karten werden blass); aus dem Vorrat werden alle Kurse
+des Bandes mit einem offenen Block derselben Länge gesetzt; zurück in den Vorrat entplant alle. Die Farben gelten für das ganze
+Band – rot, sobald auch nur ein Kurs nicht passt, und der Grund nennt ihn („Band EF-1: U-Nr. 230 M EF: Kollision …“). Per Tastatur
+gilt dasselbe.
+
+Unten liegt der **Vorrat** (einklappbar): die noch nicht verplanten Blöcke aller Unterrichte, nach Klasse (bzw. Lehrkraft) gruppiert
+mit der Zahl offener Stunden je Gruppe und über das Suchfeld filterbar. *Neuer Unterricht* legt einen Unterricht im Dialog an (siehe Abschnitt 4); er erscheint sofort im Vorrat.
 
 - **Setzen:** Karte aus dem Vorrat auf eine Spalte ziehen. Die Zeile ist dabei gleich – zählt nur die Stunde.
 - **Verschieben:** Karte im Brett ziehen; ein Block wandert als Ganzes. Mit **Umschalt** beim Ziehen nur die gegriffene Stunde.
 - **Entplanen:** Karte zurück in den Vorrat ziehen, **Entf** oder *Entplanen*.
-- **Beim Ziehen** zeigen die Zeilen des Unterrichts und der Stundenkopf für jede Stunde, was dort geschähe:
+- **Beim Ziehen** zeigen die Zeilen des Unterrichts und der Stundenkopf für jede Stunde, was dort geschähe (die Legende erscheint
+  unten im Brett, solange Sie ziehen):
 
 | Farbe | Bedeutung |
 |---|---|
@@ -374,19 +383,25 @@ Suchfeld filterbar. *Neuer Unterricht* legt einen Unterricht im Dialog an (siehe
 
 **Klasse.** Der Wochenplan einer Klasse – Ziehen, Mehrfachauswahl, Kontextmenü und Tasten wie im Stundenplan –, rechts ihre offenen
 Blöcke (in den Plan ziehen bzw. eine Stunde des Plans hierher ziehen = entplanen). Darunter stehen die **verknüpften Pläne** der
-gewählten Stunde: nur die Lehrkräfte dieses Unterrichts und seine Räume, der Unterricht ist darin hervorgehoben. Beim Ziehen zeigen
-auch sie die Farben oben – so sehen Sie, wann die Lehrkraft frei ist.
+gewählten Stunde: nur die Lehrkräfte dieses Unterrichts und seine Räume, der Unterricht ist darin hervorgehoben. Dazu kommen die
+**bevorzugten Räume** (Fachraum, Stammraum bzw. Räume der Raumgruppe), auch wenn der Unterricht dort noch nicht liegt – gestrichelt
+umrandet und mit „bevorzugt · Fachraum“ bzw. „bevorzugt · Stammraum“ beschriftet. Beim Ziehen zeigen alle diese Pläne die Farben
+oben – so sehen Sie, wann die Lehrkraft frei ist und ob der Wunschraum passt.
 
-**Werkzeuge.** *Fixieren* (gewählte Stunde, alle Stunden der Zeile, alle bzw. alle lösen), *Entplanen* (gewählte Stunde, alle Stunden
-der Zeile mit Rückfrage – fixierte bleiben –, alle Stunden), *Optimierung* (automatische Planung, Abschnitt 5) und *Ansicht* (zwei
-Zeilen je Karte, Fachfarben, Vorrat zeigen, Diagnose, Zeitwünsche). Fachfarben erscheinen nur, wenn sie in den Stammdaten der Fächer
-stehen; sonst sind die Karten neutral. Jede Änderung ist eine Rückgängig-Stufe (Strg+Z, Strg+Y bzw. Kopfleiste).
+**Werkzeuge.** *Fixieren* (gewählte Stunde, alle Stunden der Zeile bzw. lösen), *Entplanen* (gewählte Stunde, alle Stunden der Zeile
+mit Rückfrage – fixierte bleiben), *Optimierung* (automatische Planung, Abschnitt 5) und *Weitere* (…): Karten automatisch, immer
+zwei bzw. eine Zeile, Fachfarben, Vorrat zeigen, Diagnose, Zeitwünsche, alle Stunden fixieren bzw. lösen, alle Stunden entplanen.
+Die Karten sind schlicht (fast eckig, weiß mit feiner Linie); Fachfarben erscheinen nur, wenn sie in den Stammdaten der Fächer stehen. Jede Änderung ist eine Rückgängig-Stufe (Strg+Z, Strg+Y bzw. Kopfleiste).
 
 ![Plantafel – Steckbrett](../studio/docs/bilder/plantafel-1440-steckbrett.png)
 
 ![Plantafel – Ziehen aus dem Vorrat](../studio/docs/bilder/plantafel-1440-ziehen-vorrat.png)
 
 ![Plantafel – Klasse mit verknüpften Plänen](../studio/docs/bilder/plantafel-1440-klasse.png)
+
+![Plantafel – Band ziehen: beide Kurse wandern](../studio/docs/bilder/plantafel-1440-band-ziehen.png)
+
+![Plantafel – bevorzugter Raum in der Darstellung Klasse](../studio/docs/bilder/plantafel-1280-klasse-bevorzugt.png)
 
 ### Verplanen, Verschieben, Tauschen
 
