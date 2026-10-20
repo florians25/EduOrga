@@ -51,7 +51,8 @@ ios/
     ├── Neu/Plan                  Planmodell, Wochenraster (Standard), Tagesliste, Zeitachse, Kartengestaltung,
     │                             Wochenleiste, Kontextmenü, Plan-Reiter
     ├── Neu/Stunde                große Stundenansicht mit Klassenbuch
-    ├── Neu/Klassenbuch           offene Stunden, Einträge, Hausaufgaben, Dienste, Befreiungen, Sitzplan
+    ├── Neu/Klassenbuch           „Stunde jetzt“ (Schnellerfassung), Kursverlauf, offene Stunden, Einträge,
+    │                             Hausaufgaben, Dienste, Befreiungen, Sitzplan
     ├── Neu/Schule                Reiter „Schule“, Prüfungen, Vertretungsplan, Neuigkeiten, Melden, Buchen, Sprechtage
     ├── Neu/Heute, Neu/Suche, Neu/Mehr
     └── Assets.xcassets           App-Symbol (hell, dunkel, getönt), AccentColor
@@ -61,24 +62,34 @@ ios/
 
 - **Farben der Marke:** Primärfarbe Petrol `#164C55` (Monogramm, Primärknöpfe der Einrichtung), Akzent `#28747A`
   (`AccentColor`, Knöpfe, Auswahl, Links, Jetzt-Linie – 5,4 : 1 auf Weiß; Dunkelmodus `#5FB0B5`, 6,8 : 1),
-  Hintergrund `#F5F7F8`, Text `#24363B`. Statusfarben wie `design/tokens.css`: **Änderung/Vertretung Violett**
-  `#6d4fc2`, **Termin Magenta** `#a3347c`, Prüfung Bernstein `#a15c07`, Entfall Rot `#b42318`, Ferien Blau `#2f6f9f`.
-- **Planraster und Stundenkarten (Woche, Tag, Zeitachse)** – „Stundenkarte mobil (v3)“, verbindlich beschrieben in
-  `design/DESIGN.md` (Abschnitt 10; Web/PWA sollen später folgen): hellgraue Rasterfläche (`#edf1f2`, dunkel `#0b0f13`),
-  **eine Zeile je Stunde, alle gleich hoch** (verfügbare Höhe ÷ Stunden bis zur letzten belegten, mindestens der 6.,
-  begrenzt auf 52–112 pt), Pausen als Band (ab 15 Minuten 12 pt, kürzere 3 pt), Doppel- und Blockstunden über ihre
+  Hintergrund `#F5F7F8`, Text `#24363B`. Statusfarben (EduOrga-Anpassung der Enbrea-Legende): **jede Änderung
+  Grün** `#2f855a` (Feld `#e6f4ea`, Schrift `#1d5c3a`; dunkel `#5fc48c`/`#1e3a29`/`#a8e6c1`), **Entfall und Fehlendes Rot**
+  `#b42318` (Feld `#fdecea`), Mitteilung Hellgelb, **Termin Magenta** `#a3347c`, Prüfung Bernstein `#a15c07`, Ferien Blau
+  `#2f6f9f`.
+- **Planraster und Stundenkarten (Woche, Tag, Zeitachse)** – „Stundenkarte mobil (v4)“ (gleiche Karte wie Web/PWA,
+  `design/DESIGN.md`): hellgraue Rasterfläche (`#edf1f2`, dunkel `#0b0f13`), **eine kompakte Zeile je Stunde, alle
+  gleich hoch** (verfügbare Höhe ÷ Stunden bis zur letzten belegten, mindestens der 6. – aber nie höher als nötig:
+  iPhone hochkant 52–62 pt, breite Flächen bis 88 pt; die Dichte Kompakt/Normal/Komfortabel skaliert), Pausen als Band (ab 15 Minuten 12 pt, kürzere 3 pt), Doppel- und Blockstunden über ihre
   Zeilen samt Band.
   - **Zeitspalte** (38 pt, mit Dynamic Type): Beginn oben, **Stundennummer groß in der Mitte**, Ende unten.
   - **Tageskopf:** Datum groß „17.11“, darunter der Wochentag „Mo“, zentriert; heute in Petrol mit 2-pt-Linie; ein
-    Punkt zeigt Änderungen (violett) bzw. Entfall (rot). Antippen öffnet den Tag.
+    Punkt zeigt Änderungen (grün) bzw. Entfall (rot). Antippen öffnet den Tag.
   - **Karte:** füllt die Zelle mit gleichmäßigen Abständen (1,5 pt oben/unten, 3 pt zwischen den Spalten), **feste
-    Breite und Höhe, Inhalt beschnitten – nie breiter als die Spalte**. Radius 6, leichte Tönung der Fachfarbe
-    (Deckkraft nach Kartendarstellung), 4-pt-Balken in der Fachfarbe bündig links, kein Schatten. Oben links das **Fach
-    fett** (14,5 pt), darunter je eine Zeile **Klasse, Lehrkraft, Raum** (12,5 pt).
-  - **Änderungen sofort erkennbar:** schraffierter violetter Balken, feine violette Linie (mit Statusfläche helles
-    Violett) und der geänderte Wert als **violettes Feld „neu (alt)“**, z. B. „Ara (Abr)“, „+B070“. **Entfall:** grau,
-    schraffiert, Fach durchgestrichen, darunter „Entfall“ in Rot. **Offen:** gestrichelt violett mit „?“. Prüfung
-    Bernstein. Die **Legende** steht im Blatt „Auswahl und Filter“. Weicht die Uhrzeit vom Raster ab (14:05 statt
+    Breite und Höhe, Inhalt beschnitten – nie breiter als die Spalte**. Radius 6, **standardmäßig neutral** (weiß, grauer
+    4-pt-Balken links) – Fachfarbe (Balken, leichte Tönung) nur, wenn die Schule dem Fach eine Farbe gegeben hat; kein
+    Schatten. Oben links das **Fach fett** (13 pt), darunter je eine Zeile **Klasse, Lehrkraft, Raum** (11 pt, Zeilenhöhe
+    12,5 pt) – vier kurze Zeilen in rund 60 pt.
+  - **Änderungen wie in der Enbrea-Legende** („Änderungstyp | Darstellung“): schraffierter linker Rand in der
+    Statusfarbe und ein kleines Feld auf der betroffenen Zeile (`Kartengestaltung.swift`: `Kartenwert`, `Kartenfach`,
+    `Statuschip`, `Kachel.statusChip`):
+    Klasse fehlt „(5b)“ + „× entfällt“ · Lehrer fehlt ohne Vertretung „(Abr)“ (rot, gestrichelt) · Vertretungsentfall
+    „× entfällt“ · Lehrervertretung „+Gal (Gor)“ · Raumänderung „+105 (303)“ · Fachänderung „+BI (MU)“ · verschoben auf
+    „× auf Di 21.10. 6 | 12:20“ · verschoben von „⊕ von Mo 20.10. 3 | 09:45“ · Zusatzunterricht „⊕ Zusatz“ · Mitteilung
+    bzw. Veranstaltung als hellgelber Block. EduOrga-Anpassungen: alle Änderungen grün, Entfall/Fehlendes rot, bei
+    Entfall ist **alles auf der Karte durchgestrichen**. Quelle der Typen: `klassen`/`abwesendeKlassen`, `lehrer` und
+    `raeume` (`k`/`alt`/`neu`/`plus`), `fachAlt`, `verlegung` mit `verlegungVon`/`verlegungNach`, `zusaetzlich`,
+    `vertretungOffen`, `status` (wie `Plandienst.cs`). Prüfung Bernstein. Die **Legende** (Blatt „Auswahl und Filter“)
+    zeigt jeden Änderungstyp mit Musterkarte. Weicht die Uhrzeit vom Raster ab (14:05 statt
     14:00), steht die Karte genau nach der Uhrzeit versetzt mit einer Zeile „14:05–14:45“.
   - **Gleichzeitige Stunden:** bis zur eingestellten Zahl („Parallele Stunden nebeneinander“, 1–4, Standard 1)
     nebeneinander (Änderungen zuerst); die übrigen hinter einem weichen Reiter **„+N“** (Petrol hell) innen am rechten
@@ -167,6 +178,24 @@ Plan auf dem iPad oben rechts, auf dem iPhone im Menü des Plannamens) und über
   - **Erinnerungen** als lokale Mitteilungen (beide Seiten): je Termin 10/15/30/60 Minuten vorher (Menü „Erinnerung an
     Termine“, Standard 15), Lehrkräfte zusätzlich ein Überblick vor dem ersten Termin; bei jedem Laden neu geplant
     (`Kern/Dienste/Sprechtagerinnerung.swift`).
+- **Klassenbuch „Stunde jetzt“** (`Neu/Klassenbuch/StundeJetzt.swift`): auf „Heute“ ein Tippen für Lehrkräfte
+  (laufende eigene Stunde ab 10 Minuten vorher, sonst die nächste, sonst bis 45 Minuten danach zum Nachtragen), auch als
+  „Schnellerfassung“ in den Stundendetails. Eine Seite: **Anwesenheit** als Liste (nach rechts wischen = anwesend,
+  nach links = abwesend, lange drücken = verspätet mit Minuten 5–45 bzw. Stepper) oder als **Raster großer
+  Namensfelder** (Antippen schaltet um), Zähler da/fehlen/verspätet, „Anwesenheit bestätigen“; **Thema** mit
+  Vorschlägen (nächstes Thema des persönlichen Themenplans, „Fortsetzung: …“, frühere Themen aus
+  `GET /klassenbuch/lehrstoff/vorstunden`); **Hausaufgabe** mit Fälligkeit „Nächste Stunde“ (aus dem eigenen Plan),
+  „In 1 Woche“, Datum, ohne; **Klassenbucheinträge** über Vorlagen (Material vergessen, Hausaufgabe fehlt, Lob, Störung,
+  Handy, Elterngespräch; für mehrere Personen bzw. die Klasse); **Kursverlauf** (`Kursverlauf.swift`, Themen der
+  letzten acht Wochen je KW mit Kontrolle, Fehlzeiten, Hausaufgaben und Themenplan-Haken, über
+  `GET /klassenbuch/uebersicht`). Haptik bei jeder Erfassung, alles offline-fähig über den Schreibpuffer. Der
+  Themenplan liegt nur auf dem Gerät (der Server kennt keinen Lehrplan). Offene Stunden stehen als Plakette am Reiter
+  „Schule“.
+- **Aktualität der Plandaten:** Plan und Heute laden beim Erscheinen, beim Ziehen zum Aktualisieren, wenn die App in
+  den Vordergrund kommt, bei einer (stillen) Push- bzw. lokalen Mitteilung und beim Antippen einer Mitteilung sofort
+  neu (`AppZustand.frischLaden`, `Kachelspeicher.veralten`). Zwischengespeicherte Wochen sind nur Platzhalter: bis die
+  frische Antwort da ist, steht oben „Stand hh:mm“. Kein HTTP-Cache (`urlCache = nil`, `reloadIgnoringLocalCacheData`,
+  `Cache-Control: no-cache` je Anfrage).
 - **Offline:** Lehrstoff, Hausaufgaben, Klassenbucheinträge und Anwesenheit, die ohne Verbindung gespeichert werden,
   landen im **Schreibpuffer** (je Konto) und werden gesendet, sobald das Netz zurück ist (Netzbeobachtung), die App in
   den Vordergrund kommt oder „Senden“ gewählt wird; bis dahin zeigt die App den lokalen Stand („wartet auf
