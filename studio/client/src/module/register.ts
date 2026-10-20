@@ -11,6 +11,7 @@ import vertretung from './vertretung';
 import optimierung from './optimierung';
 import zeitwuensche from './zeitwuensche';
 import abrechnung from './abrechnung';
+import deputat from './deputat';
 import austausch from './austausch';
 import kommentare from './kommentare';
 import kursplanung from './kursplanung';
@@ -34,6 +35,7 @@ export const module: StudioModul[] = [
   optimierung,
   zeitwuensche,
   abrechnung,
+  deputat,
   austausch,
   kommentare,
   kursplanung,

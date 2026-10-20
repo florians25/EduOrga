@@ -81,6 +81,7 @@ export const NAVIGATION: NavGruppe[] = [
       { ref: 'planung.uzeitwuensche', text: 'Zeitwünsche je Unterricht' },
       { ref: 'eingabe.ugruppen', text: 'Unterrichtsgruppen' },
       { ref: 'eingabe.stundentafel', text: 'Stundentafel' },
+      { ref: 'deputat.uebersicht', text: 'Deputat und Verteilung' },
     ],
   },
   {

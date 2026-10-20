@@ -37,7 +37,9 @@ public static class Wertrechnung
             var ist = Ist(d, ix, l);
             var wst = d.Unterrichte.Where(u => !u.Ignorieren).Sum(u => u.Zeilen.Count(z => z.LehrerId == l.Id) > 0 ? u.Wochenstunden : 0);
             var verplant = ix.PlanVon(ElementTyp.Lehrer, l.Id).Count();
-            return new LehrerWerte(l, l.Wochensoll, l.SummeErmaessigungen, l.Soll, ist, ist - l.Soll, wst, verplant);
+            // Soll aus der Deputatsrechnung (ohne Geburtsdatum, GdB und Mehrarbeit = Wochensoll − Ermäßigungen wie bisher)
+            var soll = Deputat.Soll(d, ix, l);
+            return new LehrerWerte(l, l.Wochensoll, l.Wochensoll - soll, soll, ist, ist - soll, wst, verplant);
         }).ToList();
     }
 
@@ -61,7 +63,7 @@ public static class Wertrechnung
     {
         var ix = new DatenIndex(d);
         return d.Lehrer.Where(l => !l.Ignorieren)
-            .Select(l => (l, Frei: l.Soll - Ist(d, ix, l), Kennt: d.Unterrichte.Any(x => x.Zeilen.Any(y => y.LehrerId == l.Id && y.KlassenIds.Intersect(z.KlassenIds).Any())),
+            .Select(l => (l, Frei: Deputat.Soll(d, ix, l) - Ist(d, ix, l), Kennt: d.Unterrichte.Any(x => x.Zeilen.Any(y => y.LehrerId == l.Id && y.KlassenIds.Intersect(z.KlassenIds).Any())),
                 Fach: z.FachId.HasValue && l.FaecherIds.Contains(z.FachId.Value)))
             .OrderByDescending(x => x.Fach).ThenByDescending(x => x.Frei >= u.Wochenstunden).ThenByDescending(x => x.Kennt).ThenByDescending(x => x.Frei)
             .ToList();
@@ -76,7 +78,7 @@ public static class Wertrechnung
     {
         var ix = new DatenIndex(d);
         var lehrer = d.Lehrer.Where(l => !l.Ignorieren).ToList();
-        var frei = lehrer.ToDictionary(l => l.Id, l => l.Soll - Ist(d, ix, l));
+        var frei = lehrer.ToDictionary(l => l.Id, l => Deputat.Soll(d, ix, l) - Ist(d, ix, l));
         var faecherVon = lehrer.ToDictionary(l => l.Id, l => l.FaecherIds.Concat(d.Unterrichte.SelectMany(u => u.Zeilen).Where(z => z.LehrerId == l.Id && z.FachId.HasValue).Select(z => z.FachId!.Value)).ToHashSet());
         var klassenVon = lehrer.ToDictionary(l => l.Id, l => d.Unterrichte.SelectMany(u => u.Zeilen).Where(z => z.LehrerId == l.Id).SelectMany(z => z.KlassenIds).ToHashSet());
         var ergebnis = new List<(Unterricht, int, Lehrer)>();

@@ -1,0 +1,57 @@
+/* Deputat und Unterrichtsverteilung – sachlich: Linien statt Flächen, Statusfarben nur als Text (DESIGN.md §9). */
+.dep-kennzahlen { display: flex; flex-wrap: wrap; gap: 4px 24px; padding: 8px 16px; border-bottom: 1px solid var(--colorNeutralStroke2);
+  font-size: 13px; color: var(--colorNeutralForeground2); font-variant-numeric: tabular-nums; }
+.dep-kennzahlen b { font-weight: 600; color: var(--colorNeutralForeground1); }
+.dep-ueber, .dep-kennzahlen b.dep-ueber { color: var(--up-entfall); }
+.dep-unter, .dep-kennzahlen b.dep-unter { color: var(--up-warnung); }
+.dep-zweit { color: var(--colorNeutralForeground3); font-size: 12px; }
+.tb-zelle.dep-ueber { color: var(--up-entfall); }
+.tb-zelle.dep-unter { color: var(--up-warnung); }
+
+.dep-hinweise { list-style: none; margin: 0; padding: 8px 12px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.dep-abschnitt { padding: 12px 12px 0; font-weight: 600; font-size: 13px; border-top: 1px solid var(--colorNeutralStroke2); margin-top: 8px; }
+.dep-text { padding: 8px 12px; font-size: 13px; color: var(--colorNeutralForeground2); }
+
+.dep-rechnung { padding: 8px 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.dep-rechnung-zeile { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+.dep-rechnung-summe { border-top: 1px solid var(--colorNeutralStroke2); margin-top: 4px; padding-top: 4px; font-weight: 600; }
+
+.dep-posten { display: flex; flex-direction: column; gap: 8px; }
+.dep-posten-auto { padding-bottom: 8px; border-bottom: 1px solid var(--colorNeutralStroke2); font-size: 13px; }
+.dep-posten-kopf, .dep-posten-zeile { display: grid; grid-template-columns: 170px 1fr 80px 88px; gap: 8px; align-items: center; }
+.dep-posten-kopf { font-size: 12px; color: var(--colorNeutralForeground3); }
+
+/* Matrix */
+.dep-matrix-rahmen { overflow: auto; }
+.dep-matrix { border-collapse: separate; border-spacing: 0; font-size: 13px; font-variant-numeric: tabular-nums; }
+.dep-matrix th, .dep-matrix td { border-right: 1px solid var(--colorNeutralStroke2); border-bottom: 1px solid var(--colorNeutralStroke2);
+  padding: 0 8px; height: 32px; text-align: right; white-space: nowrap; background: var(--colorNeutralBackground1); box-sizing: border-box; }
+.dep-matrix thead th { position: sticky; top: 0; z-index: 2; background: var(--colorNeutralBackground3); font-weight: 600; text-align: center; min-width: 40px; }
+.dep-matrix tfoot td, .dep-matrix tfoot th { position: sticky; bottom: 0; background: var(--colorNeutralBackground3); font-weight: 600; z-index: 1; }
+.dep-matrix .dep-fest { position: sticky; z-index: 1; }
+.dep-matrix thead .dep-fest, .dep-matrix tfoot .dep-fest { z-index: 3; }
+.dep-matrix .dep-f1 { left: 0; width: 80px; min-width: 80px; max-width: 80px; text-align: left; font-weight: 500; }
+.dep-matrix .dep-f2 { left: 80px; width: 56px; min-width: 56px; max-width: 56px; }
+.dep-matrix .dep-f3 { left: 136px; width: 56px; min-width: 56px; max-width: 56px; }
+.dep-matrix .dep-f4 { left: 192px; width: 64px; min-width: 64px; max-width: 64px; border-right: 1px solid var(--colorNeutralStroke1); }
+.dep-matrix thead th.dep-f1 { text-align: left; }
+.dep-matrix thead th.dep-fest:not(.dep-f1) { text-align: right; }
+.dep-matrix td:not(.dep-fest) { cursor: default; min-width: 40px; }
+.dep-matrix td.dep-ohne { color: var(--up-entfall); text-decoration: underline dotted; }
+.dep-matrix td.dep-zelle-an { box-shadow: inset 0 0 0 2px var(--colorBrandStroke1); }
+.dep-matrix tr.dep-kandidat th.dep-f1 { box-shadow: inset 3px 0 0 var(--colorBrandStroke1); }
+.dep-matrix tr.dep-gesperrt { color: var(--colorNeutralForeground4); }
+.dep-zuweisen { border: none; background: none; padding: 0; font: inherit; font-weight: 500; color: var(--colorBrandForeground1); cursor: pointer; text-decoration: underline; }
+.dep-zuweisen:focus-visible { outline: 2px solid var(--colorStrokeFocus2); }
+
+/* Liste der offenen Unterrichte */
+.dep-liste { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.dep-liste > li { border-bottom: 1px solid var(--colorNeutralStroke2); display: flex; flex-direction: column; }
+.dep-liste > li:has(> span) { flex-direction: row; justify-content: space-between; align-items: center; padding: 4px 12px; gap: 8px; }
+.dep-liste > li.dep-an { box-shadow: inset 3px 0 0 var(--colorBrandStroke1); background: var(--colorNeutralBackground2); }
+.dep-offen { border: none; background: none; text-align: left; font: inherit; color: inherit; padding: 6px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.dep-offen:hover { background: var(--colorNeutralBackground1Hover); }
+.dep-offen:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline-offset: -2px; }
+.dep-kandidaten { padding: 4px 12px 8px; display: flex; flex-direction: column; gap: 4px; }
+.dep-kandidat-zeile { display: grid; grid-template-columns: 1fr 64px 1fr auto; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+.dep-fusszeile { border-top: 1px solid var(--colorNeutralStroke2); padding: 4px 8px; }

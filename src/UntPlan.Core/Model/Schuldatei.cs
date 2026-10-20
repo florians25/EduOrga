@@ -106,6 +106,8 @@ public sealed class Einstellungen
     public Dictionary<string, int> Vertretungsgewichtung { get; set; } = new();
     public PortalEinstellungen Portal { get; set; } = new();
     public string Farbschema { get; set; } = "Blau";
+    /// <summary>Deputat und Unterrichtsverteilung: Landesprofil, Grundstellen, Anrechnungstopf (Model/Deputatmodell.cs).</summary>
+    public DeputatEinstellungen Deputat { get; set; } = new();
 }
 
 public sealed class PortalEinstellungen

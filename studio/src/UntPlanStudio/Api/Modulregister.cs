@@ -31,6 +31,7 @@ public static class Modulregister
         new VertretungApi(),
         new VeranstaltungenApi(),
         new AbrechnungApi(),
+        new DeputatApi(),
         new AustauschApi(),
         new KommentareApi(),
         new KursplanungApi(),

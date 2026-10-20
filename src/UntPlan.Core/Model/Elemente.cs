@@ -109,6 +109,8 @@ public sealed class Ermaessigung
     public string Grund { get; set; } = "";
     public decimal Wert { get; set; }
     public string Text { get; set; } = "";
+    /// <summary>Art für die Deputatsrechnung: "" (nach Grund erkannt), "Ermaessigung", "Anrechnung" (Anrechnungstopf), "Leitung" (Leitungszeit).</summary>
+    public string Art { get; set; } = "";
 }
 
 public sealed class Lehrer : Element
@@ -154,6 +156,17 @@ public sealed class Lehrer : Element
     public string ExtName { get; set; } = "";
     public DateOnly? Eintritt { get; set; }
     public DateOnly? Austritt { get; set; }
+    // Deputat (Module/Deputat.cs) – alle Felder optional, ältere Dateien behalten ihr Soll
+    /// <summary>Geburtsjahr, falls kein Geburtsdatum bekannt ist (Altersermäßigung).</summary>
+    public int? Geburtsjahr { get; set; }
+    /// <summary>Grad der Behinderung (0 = keiner; ab 50 Ermäßigung nach Landesprofil).</summary>
+    public int Gdb { get; set; }
+    /// <summary>Abweichende Pflichtstunden einer Vollzeitkraft (z. B. Werkstattlehrkraft am Berufskolleg 30, Abendgymnasium 22); null = Schulform.</summary>
+    public decimal? PflichtstundenAbweichend { get; set; }
+    /// <summary>Regelmäßige Mehrarbeit bzw. Vorgriffsstunden je Woche (+ erhöht, − mindert das Soll, z. B. Ausgleich aus dem Vorjahr).</summary>
+    public decimal Mehrarbeit { get; set; }
+    /// <summary>Keine Altersermäßigung (z. B. Verzicht bei Altersteilzeit).</summary>
+    public bool OhneAltersermaessigung { get; set; }
 
     [JsonIgnore] public decimal SummeErmaessigungen => Ermaessigungen.Sum(e => e.Wert);
     [JsonIgnore] public decimal Soll => Wochensoll - SummeErmaessigungen;
