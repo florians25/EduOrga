@@ -53,12 +53,13 @@ export function Klassentafel({ daten, auf, farben, element, version, schreiben, 
   const a = useAnsicht();
   const raster = useRef<StundenplanrasterApi>(null);
   const rasterId = `pt-klasse-${a.id}`;
-  const { daten: plan, neuLaden: planNeu } = useDaten(() => api.get<Stundenplan>(api.dok(`/stundenplan/klasse/${element}`)), [element, version]);
+  // Klassenplan und verknüpfte Pläne laden mit jeder neuen Fassung der Plantafel neu (eigene und fremde Änderungen)
+  const { daten: plan } = useDaten(() => api.get<Stundenplan>(api.dok(`/stundenplan/klasse/${element}`)), [element, version]);
   const planRef = useRef(plan); planRef.current = plan;
   const [ziehZiele, setZiehZiele] = useState<Ziele | null>(null);
   const [ziehU, setZiehU] = useState<number | null>(null);
 
-  const nachAenderung = async () => { await neuLaden(); await planNeu(true); };
+  const nachAenderung = () => neuLaden();
   const ctx = useMemo<planung.PlanKontext>(() => ({
     id: a.id, typ: 'klasse', schreiben, raster: () => raster.current, plan: () => planRef.current ?? null, element: () => element,
     planen: () => schreiben, neuLaden: nachAenderung, oeffnen: (t, x) => a.oeffnen(t, x as never),

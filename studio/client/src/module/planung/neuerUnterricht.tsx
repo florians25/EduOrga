@@ -15,7 +15,7 @@ import { SuchAuswahl, type SuchOption } from '@/komponenten/suchauswahl';
 
 const useStile = makeStyles({
   raster: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '12px 16px', alignItems: 'start' },
-  drei: { gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '120px minmax(0, 1fr) minmax(0, 1fr)', gap: '12px 16px', alignItems: 'start' },
+  drei: { gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '150px minmax(0, 1fr) minmax(0, 1fr)', gap: '12px 16px', alignItems: 'start' },
   kFuss: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' },
   ganz: { gridColumn: '1 / -1' },
   abschnitt: {

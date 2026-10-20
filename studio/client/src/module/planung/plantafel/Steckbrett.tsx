@@ -50,7 +50,7 @@ const KOPF_TAG = 22;
 const KOPF_STUNDE = 20;
 const KOPF = KOPF_TAG + KOPF_STUNDE;
 const LABEL = 64;
-const MIN_SPALTE = 22;
+const MIN_SPALTE = 18;
 
 interface Geometrie { spalte: number; breite: number; S: number; T: number; spur: number; oben: number[]; hoehe: number[]; gesamt: number }
 
@@ -87,7 +87,7 @@ const Chip = memo(function Chip(p: ChipProps) {
     return d;
   }, [karte, p.fach, p.zweit]);
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: `tk|${zeile}|${karte.key}`, data: daten, disabled: !p.ziehbar });
-  const schmal = p.w < 30;
+  const schmal = p.w < 26;
   return (
     <div ref={setNodeRef} {...(p.ziehbar ? listeners : {})} {...(p.ziehbar ? attributes : {})} tabIndex={-1} role="button"
       aria-roledescription="Stunde" aria-label={p.titel.replace(/\n/g, ', ')}

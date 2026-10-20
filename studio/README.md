@@ -38,6 +38,40 @@ Die Oberfläche ist eine React-Anwendung (TypeScript, Fluent UI v9) in `studio/c
   Statuspunkt, Stand in der Kurzinfo), Rückgängig/Wiederholen mit Speicherstand („Gespeichert · 14:32“, unter 1500 px nur
   das Symbol), aktive Benutzer, Suche (Strg+K – findet jede Funktion) und Konto. Bis 1366 px Breite passt alles ohne
   Abschneiden.
+* **Plantafel** (*Planung → Plantafel*): die Stundenplanung auf einer Tafel, in zwei Darstellungen.
+  * **Steckbrett:** Zeilen = alle Klassen (umschaltbar: Lehrkräfte, Räume; einschränkbar nach Jahrgang, Abteilung, Raumart),
+    Spalten = Tage × Stunden, je Block eine kompakte Karte (Fach, bei genug Platz darunter Lehrkraft bzw. Klasse; alles Weitere in
+    der Kurzinfo). Unten der **Vorrat**: offene Blöcke aller Unterrichte (Doppelstunden doppelt breit), gruppiert nach Klasse bzw.
+    Lehrkraft, mit Suche und *Neuer Unterricht*. Karten aus dem Vorrat in das Brett ziehen, im Brett verschieben, zurück in den
+    Vorrat ziehen = entplanen. **Blöcke und Kopplungen** wandern als Ganzes: eine Doppelstunde belegt zwei Spalten und zieht beide
+    Stunden mit (Umschalt: nur die gegriffene Stunde); ein gekoppelter Unterricht (mehrere Klassen bzw. Lehrkräfte gleichzeitig,
+    Ecke oben rechts) steht in jeder beteiligten Zeile, beim Wählen sind alle diese Zeilen hervorgehoben. **Beim Ziehen** färben
+    sich die Zeilen des Unterrichts und der Stundenkopf nach der Prüfung des Servers: grün frei, grün umrandet Tausch möglich,
+    bernstein mit Hinweis (negativer Zeitwunsch, kein Raum frei), rot belegt bzw. gesperrt (Lehrkraft, Klasse, Sperrzeit −3,
+    außerhalb des Zeitrasters); der Grund steht am Mauszeiger. Die Prüfung wird je Ziehbeginn einmal geladen und bis zur nächsten
+    Änderung wiederverwendet. **Tastatur:** Pfeile bewegen den Cursor, Enter nimmt eine Karte auf bzw. legt sie ab (auch aus dem
+    Vorrat), Esc bricht ab, Entf entplant, F fixiert, Umschalt+F10 Kontextmenü. Für große Schulen gebaut: nur sichtbare Zeilen
+    werden gezeichnet, das Brett ist eine einzige Ablage (60 Klassen × 50 Stunden: Tafel in unter einer Sekunde, Prüfung ≈ 15 ms).
+  * **Klasse:** der Wochenplan einer Klasse (Ziehen, Kontextmenü, Tastatur wie im Stundenplan), rechts ihre offenen Blöcke, darunter
+    die **verknüpften Pläne** der gewählten bzw. gezogenen Stunde – nur die Lehrkräfte dieses Unterrichts und seine Räume, mit
+    derselben Färbung beim Ziehen.
+  * Werkzeuge: *Fixieren* und *Entplanen* (gewählte Stunde, ganze Zeile mit Rückfrage, alle), *Optimierung* (automatische Planung),
+    *Ansicht* (zwei Zeilen je Karte, Fachfarben, Vorrat). Fachfarben nur, wenn sie in den Stammdaten stehen, sonst neutrale
+    Karten (Leiste 5 px, Kontur 1,5 px, Radius 4). Rückgängig/Wiederholen in der Kopfleiste (Strg+Z/Strg+Y).
+
+  | Steckbrett (1440 × 900) | Ziehen aus dem Vorrat | Klasse mit verknüpften Plänen |
+  |---|---|---|
+  | ![Steckbrett](docs/bilder/plantafel-1440-steckbrett.png) | ![Ziehen](docs/bilder/plantafel-1440-ziehen-vorrat.png) | ![Klasse](docs/bilder/plantafel-1440-klasse.png) |
+
+  | 60 Klassen (1280 × 800) | Doppelstunde verschieben | Neuer Unterricht |
+  |---|---|---|
+  | ![Große Schule](docs/bilder/plantafel-1280-gross.png) | ![Block](docs/bilder/plantafel-1280-block-verschieben.png) | ![Dialog](docs/bilder/plantafel-1280-neuer-unterricht.png) |
+* **Neuer Unterricht im Dialog** (*Unterricht → Neu*, Plantafel *Neuer Unterricht*, Befehlssuche): Fach, Klasse(n), Lehrkraft,
+  Raum oder Raumgruppe, Kopplung (je weitere Lehrkraft eine Zeile mit eigenem Fach bzw. eigenen Klassen), Stunden je Woche,
+  Doppelstunden, Block, Woche (A/B), Band und Bemerkung; die Vorschau zeigt, als welche Blöcke er im Vorrat erscheint. Pflichtfelder
+  werden sofort geprüft, der Server prüft dieselben Regeln (Blöcke und Doppelstunden passen in die Wochenstunden). Der neue Unterricht
+  steht sofort im Vorrat bzw. in der Tabelle; Strg+Z nimmt das Anlegen zurück. Die Eingabezeile am Tabellenende bleibt für schnelles
+  Erfassen.
 * **Deputat und Unterrichtsverteilung** (*Unterricht → Deputat und Verteilung*): Deputatsrechnung je Lehrkraft nach
   Landesprofil (NRW voreingestellt: Pflichtstunden je Schulform × Beschäftigungsumfang, Alters- und Schwerbehindertenermäßigung,
   Anrechnungen aus dem Topf, Leitungszeit, Mehrarbeit/Vorgriff → Soll; Ist aus der Wertrechnung), Summen der Schule (Stellen,
@@ -148,6 +182,8 @@ STUDIO_TEST_MYSQL="Server=127.0.0.1;Port=3306;User ID=root;Password=…" dotnet 
 # Oberflächentests (Server muss laufen, Playwright + Chromium nötig; STUDIO_URL Standard http://127.0.0.1:5501):
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/smoke.cjs            # Rundgang über alle Seiten
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/planung.cjs          # Planen, Ziehen, Optimierung
+NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/plantafel.cjs        # Plantafel: Vorrat, Blöcke, Zielfarben, Tastatur, Klasse, Neuer Unterricht
+# (mit STUDIO_GROSSSCHULE=/tmp/gross.up zusätzlich das Steckbrett mit 60 Klassen bei 1280×800 und 1440×900)
 NODE_PATH=$(npm root -g) STUDIO_PASSWORT=geheim123 node studio/tests/smoke/vertretung.cjs       # Vertretungsplanung
 # Tagesplanung „Fall für Fall“ mit großer Schule (300 Lehrkräfte, 60 Klassen, Gruppen und Kopplungen, 15 Abwesenheiten) bei
 # 1280×800 und 1440×900 – Doppelstunde, Verlegen, Gruppen gemeinsam/einzeln lösen, Verlegen per Ziehen mit Lehrerplan:
@@ -317,6 +353,8 @@ Die Prüflogik teilt sich das Studio mit UntPlan Web und Mobile (`web/src/UntPla
 * **Stundenplan**: Stunden per Drag & Drop verschieben oder tauschen; nicht verplante Stunden in den Plan ziehen.
   Beim Ziehen zeigt jedes Feld seinen Status (frei, Tausch möglich, Vorgabe verletzt, belegt), der Grund steht am
   Mauszeiger. Rechtsklick: fixieren, entplanen, Raum zuordnen, Tauschvorschläge.
+* **Plantafel**: Karten aus dem Vorrat ins Steckbrett ziehen, verschieben, zurück in den Vorrat = entplanen; Pfeile/Enter/Esc
+  per Tastatur, Entf entplant, F fixiert, Umschalt beim Ziehen: nur diese Stunde eines Blocks.
 * **Tastatur**: Strg+K Befehlssuche, Strg+S Sicherungspunkt anlegen (gespeichert wird ohnehin sofort), Strg+Z/Strg+Y Rückgängig/Wiederholen, Strg+Umschalt+V Modus
   wechseln, Strg+B Seitenleiste, Strg+Bild↑/↓ Planungsdatum (Vertretungsmodus).
 

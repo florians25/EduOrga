@@ -1,16 +1,15 @@
 // Plantafel der Stundenplanung: „Steckbrett“ (alle Klassen, Lehrkräfte oder Räume × Tage und Stunden mit Vorrat der offenen
 // Blöcke) und „Klasse“ (Wochenplan einer Klasse mit den verknüpften Plänen der Lehrkräfte und Räume der gewählten Stunde).
-// Werkzeuge: Rückgängig/Wiederholen, Fixieren, Entplanen (Stunde, Zeile, alle), Automatische Planung, Neuer Unterricht.
+// Werkzeuge: Fixieren, Entplanen (Stunde, Zeile, alle), Automatische Planung, Ansicht; Neuer Unterricht im Vorrat. Rückgängig und
+// Wiederholen (Strg+Z, Strg+Y) über die Kopfleiste – die Plantafel lädt danach neu.
 // Server: GET /planung/plantafel, /planung/plantafel/ziele; Ändern über /planung/verschieben, /verplanen, /entplanen, /fixieren.
-import { ArrowRedo20Regular, ArrowUndo20Regular } from '@fluentui/react-icons';
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { api } from '@/api/client';
 import { useAnsicht, type AnsichtProps } from '@/kern/ansichten';
 import { befehl, seiteOeffnen } from '@/kern/befehle';
-import { rueckgaengig, wiederholen } from '@/kern/dokument';
 import { useDaten } from '@/kern/laden';
-import { useDarfSchreiben, useStudio } from '@/kern/zustand';
-import { AnsichtRahmen, ElementAuswahl, FussText, Rechts, Segmente, Trenner, Werkzeug } from '@/komponenten/ansicht';
+import { useDarfSchreiben } from '@/kern/zustand';
+import { AnsichtRahmen, ElementAuswahl, FussText, Segmente, Trenner, Werkzeug } from '@/komponenten/ansicht';
 import { frage } from '@/komponenten/dialoge';
 import { fehlerMelden, hinweis } from '@/komponenten/hinweise';
 import { MenueKnopf, menue, type MenueListe } from '@/komponenten/menue';
@@ -47,11 +46,9 @@ function Legende() {
 export default function Plantafel({ p }: AnsichtProps) {
   const a = useAnsicht();
   const schreiben = useDarfSchreiben();
-  const dok = useStudio((x) => x.dokument);
   const modus = p.modus === 'klasse' ? 'klasse' : 'steckbrett';
   const zeilenTyp: TafelTyp = p.zeilen === 'lehrer' || p.zeilen === 'raum' ? p.zeilen : 'klasse';
   const typ: TafelTyp = modus === 'klasse' ? 'klasse' : zeilenTyp;
-  const dichte = p.dichte === 'kompakt' ? 'kompakt' : 'normal';
   const gruppe = p.gruppe == null ? '' : String(p.gruppe);
   const vorratOffen = p.vorrat !== false;
   const farben = p.farben !== false;
@@ -72,6 +69,8 @@ export default function Plantafel({ p }: AnsichtProps) {
   useEffect(() => { setZeileGewaehlt(null); setAuswahl(null); setTastZug(null); }, [typ]);
 
   const zeilen = useMemo(() => (daten?.zeilen || []).filter((z) => !gruppe || z.gruppe === gruppe), [daten, gruppe]);
+  // Dichte: gewählt, sonst bei vielen Zeilen kompakt (eine Zeile je Karte)
+  const dichte: 'kompakt' | 'normal' = p.dichte === 'kompakt' || p.dichte === 'normal' ? p.dichte : zeilen.length > 24 ? 'kompakt' : 'normal';
   const gruppen = useMemo(() => [...new Set((daten?.zeilen || []).map((z) => z.gruppe).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'de', { numeric: true })), [daten]);
   const offenJeZeile = useMemo(() => {
     const m = new Map<number, number>();
@@ -191,10 +190,6 @@ export default function Plantafel({ p }: AnsichtProps) {
           ]} />
         </> : <ElementAuswahl typ="klasse" liste={klassen} wert={element} beiWahl={(id) => { setKAuswahl(null); a.parameterSetzen({ element: id }); }} />}
         <Trenner />
-        <Werkzeug icon={<ArrowUndo20Regular />} titel={dok?.rueckgaengigText ? `Rückgängig: ${dok.rueckgaengigText} (Strg+Z)` : 'Rückgängig (Strg+Z)'} deaktiviert={!schreiben || !dok?.kannRueckgaengig}
-          aktion={() => rueckgaengig().then(() => neuLaden(true))} />
-        <Werkzeug icon={<ArrowRedo20Regular />} titel={dok?.wiederholenText ? `Wiederholen: ${dok.wiederholenText} (Strg+Y)` : 'Wiederholen (Strg+Y)'} deaktiviert={!schreiben || !dok?.kannWiederholen}
-          aktion={() => wiederholen().then(() => neuLaden(true))} />
         {schreiben ? <>
           <MenueKnopf text="Fixieren" titel="Stunden fixieren bzw. lösen (F)" eintraege={() => [
             { text: k ? (k.fix ? 'Gewählte Stunde lösen' : 'Gewählte Stunde fixieren') : 'Gewählte Stunde fixieren', taste: 'F', deaktiviert: !k, aktion: () => { if (k) fixierenKarte(k); } },
@@ -221,14 +216,15 @@ export default function Plantafel({ p }: AnsichtProps) {
           { text: 'Diagnose', aktion: () => befehl('optimierung.diagnose') },
           { text: 'Zeitwünsche', aktion: () => a.oeffnen('zeitwuensche', { typ, element: zeileFuerAktion ?? undefined }) },
         ]} />
-        <Rechts><Legende /></Rechts>
       </>}
       fuss={<>
         <span>{auf ? `${auf.verplant} Stunden verplant` : ''}</span>
         <span>{auf ? `${auf.offen} offen` : ''}</span>
         {modus === 'steckbrett' ? <span>{`${zeilen.length} ${zeilen.length === 1 ? z.einzahl : z.mehrzahl}`}</span> : null}
-        <span>{modus === 'steckbrett' ? 'Ziehen: verschieben bzw. setzen · in den Vorrat: entplanen · Umschalt: nur diese Stunde · Pfeile und Enter: per Tastatur' : 'Stunde wählen: Pläne der Lehrkräfte und Räume darunter'}</span>
-        <FussText rechts>{daten?.periode}</FussText>
+        <span title={modus === 'steckbrett' ? 'Ziehen: verschieben bzw. setzen · in den Vorrat ziehen: entplanen · Umschalt beim Ziehen: nur diese Stunde eines Blocks · Pfeile und Enter: per Tastatur · Entf entplant · F fixiert' : 'Stunde wählen: Pläne der Lehrkräfte und Räume darunter · Ziehen wie im Stundenplan'}>
+          {modus === 'steckbrett' ? 'Ziehen, in den Vorrat: entplanen, Pfeile und Enter' : 'Stunde wählen: Pläne der Lehrkräfte und Räume'}
+        </span>
+        <FussText rechts><Legende /><span className="pt-periode">{daten?.periode}</span></FussText>
       </>}>
       {daten && auf ? (modus === 'steckbrett' ? (
         <div className="pt-flaeche">

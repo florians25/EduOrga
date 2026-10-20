@@ -67,7 +67,7 @@
 .pt-chip .f { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: clip; display: flex; gap: 3px; align-items: baseline; }
 .pt-chip .f .w { font-weight: 500; font-size: 10px; color: var(--colorNeutralForeground3); }
 .pt-chip .z { font-size: 11px; color: var(--colorNeutralForeground2); white-space: nowrap; overflow: hidden; text-overflow: clip; }
-.pt-chip.schmal { padding-left: 6px; padding-right: 0; }
+.pt-chip.schmal { padding-left: 4px; padding-right: 0; font-size: 10.5px; }
 .pt-chip.schmal::before { width: 3px; }
 .pt-chip:hover { background: var(--edo-karte-neutral-hover, var(--colorNeutralBackground1Hover)); }
 .pt-chip[style*="--fachfarbe"]:hover { background: color-mix(in srgb, var(--fachfarbe) 20%, var(--colorNeutralBackground1)); }
@@ -102,7 +102,8 @@
 .pt-vorschau b { font-weight: 600; }
 .pt-unsichtbar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Legende in der Werkzeugleiste: Text mit 10-px-Mustern */
+/* Legende in der Fußzeile: Text mit 10-px-Mustern */
+.pt-periode { margin-left: 16px; }
 .pt-legende { display: inline-flex; gap: 12px; font-size: 12px; color: var(--colorNeutralForeground2); white-space: nowrap; }
 .pt-legende span { display: inline-flex; align-items: center; gap: 4px; }
 .pt-legende i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--colorNeutralStroke1); }
@@ -182,11 +183,13 @@
 .pt-vk-kopf .art { font-weight: 400; color: var(--colorNeutralForeground3); font-size: 12px; }
 .pt-vk-kopf .lang { font-weight: 400; color: var(--colorNeutralForeground2); font-size: 12px; margin-left: 4px; }
 .pt-vk .ra { flex: 0 0 auto; overflow: visible; }
+.pt-klasse .ra.kompakt .ra-eintrag { padding-left: 8px; }
 .pt-vk .ra-gitter { min-width: 0; }
 
 /* Zielstufen im Klassenplan (Stundenplanraster: Klasse ziel-<stufe>) und in den verknüpften Plänen (pt-zf-<stufe>) */
 .pt-klasse .ra-feld.ziel-frei, .pt-klasse .ra-feld.pt-zf-frei { background: color-mix(in srgb, var(--up-ok) 22%, transparent); box-shadow: none; }
-.pt-klasse .ra-feld.ziel-tausch, .pt-klasse .ra-feld.pt-zf-tausch { background: color-mix(in srgb, var(--up-ok) 8%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--up-ok) 75%, transparent); }
+.pt-klasse .ra-feld.pt-zf-tausch { background: color-mix(in srgb, var(--up-ok) 12%, transparent); box-shadow: none; }
+.pt-klasse .ra-feld.ziel-tausch { background: color-mix(in srgb, var(--up-ok) 8%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--up-ok) 75%, transparent); }
 .pt-klasse .ra-feld.ziel-weich, .pt-klasse .ra-feld.pt-zf-weich { background: color-mix(in srgb, var(--up-warnung) 24%, transparent); box-shadow: none; }
 .pt-klasse .ra-feld.ziel-hart, .pt-klasse .ra-feld.pt-zf-hart { background: color-mix(in srgb, var(--up-entfall) 14%, transparent); box-shadow: none; }
 .pt-klasse .ra-feld.ziel-eigen, .pt-klasse .ra-feld.pt-zf-eigen { box-shadow: inset 0 0 0 1.5px var(--colorNeutralForeground3); }

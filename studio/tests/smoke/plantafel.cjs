@@ -183,6 +183,13 @@ async function lauf(breite, hoehe) {
     const perTaste = d.stunden.filter((s) => s.u === neu.u).sort((a, b) => a.stunde - b.stunde);
     if (perTaste[0].tag * S + perTaste[0].stunde - 1 !== freiSlot) throw new Error(`Tastatur: gesetzt ${JSON.stringify(perTaste)} statt Feld ${freiSlot}`);
 
+    // Rückgängig (Kopfleiste) nimmt das Setzen zurück, das Brett zeigt es sofort
+    await page.locator('[data-testid=rueckgaengig]').click();
+    await warten(async () => JSON.stringify((await tafel(dok, cookie)).unterrichte.find((u) => u.u === neu.u).offen) === '[2,1]', 'Rückgängig');
+    await page.waitForFunction((u) => !document.querySelector(`[data-testid=steckbrett] .pt-chip[data-u="${u}"]`), neu.u, { timeout: 10000 });
+    await page.locator('[data-testid=wiederholen]').click();
+    await page.waitForFunction((u) => document.querySelector(`[data-testid=steckbrett] .pt-chip[data-u="${u}"]`), neu.u, { timeout: 10000 });
+
     // gekoppelte Stunde: alle beteiligten Zeilen hervorgehoben
     const gek = page.locator('[data-testid=steckbrett] .pt-chip.gekoppelt').first();
     if (await gek.count()) {
@@ -191,6 +198,13 @@ async function lauf(breite, hoehe) {
       if (beteiligt < 2) throw new Error(`Kopplung: ${beteiligt} Zeilen hervorgehoben`);
       await foto(n('kopplung'));
     }
+
+    // Zeilen umschalten: Lehrkräfte (eine Zeile je Lehrkraft, gekoppelte Stunden in jeder beteiligten Zeile)
+    await page.locator('[data-testid=pt-zeilen] [data-wert=lehrer]').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid=steckbrett] .pt-ecke')?.textContent === 'Lehrkraft' && document.querySelectorAll('[data-testid=steckbrett] .pt-chip').length > 0);
+    await foto(n('lehrkraefte'));
+    await page.locator('[data-testid=pt-zeilen] [data-wert=klasse]').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid=steckbrett] .pt-ecke')?.textContent === 'Klasse');
 
     // Darstellung „Klasse“: verknüpfte Pläne der gewählten Stunde, Zielfarben beim Ziehen
     await page.locator('[data-testid=pt-modus] [data-wert=klasse]').click();
@@ -211,8 +225,23 @@ async function lauf(breite, hoehe) {
     await h.werkzeug(page, 'unterricht', 'Neu');
     await page.waitForSelector('[role=dialog] [data-testid=neuer-unterricht]');
     if (!(await page.locator('[role=dialog] [role=combobox][aria-label=Klassen]').inputValue())) throw new Error('Dialog: Klasse der Sicht nicht vorbelegt');
+    await page.locator('[role=dialog]').getByRole('button', { name: 'Anlegen', exact: true }).click();
+    await page.waitForSelector('[role=dialog] :text("Bitte ein Fach wählen.")');
+    await foto(n('unterricht-neu'));
     await page.keyboard.press('Escape');
     await page.waitForSelector('[role=dialog]', { state: 'detached' });
+
+    // dunkles Thema
+    if (breite === 1440) {
+      await page.evaluate(() => localStorage.setItem('studio.thema', 'dunkel'));
+      await page.reload();
+      await page.waitForFunction(() => document.body.dataset.bereit === '1', null, { timeout: 20000 });
+      await h.eintrag(page, 'planung.plantafel');
+      await page.locator('[data-testid=pt-modus] [data-wert=steckbrett]').click();
+      await page.waitForSelector('[data-testid=steckbrett] .pt-chip');
+      await foto(n('dunkel'));
+      await page.evaluate(() => localStorage.setItem('studio.thema', 'hell'));
+    }
   });
   return t;
 }
@@ -240,8 +269,15 @@ async function gross(breite, hoehe) {
     // rollen und ziehen bleibt flüssig
     await page.locator('[data-testid=steckbrett]').evaluate((el) => { el.scrollTop = el.scrollHeight; });
     await page.waitForTimeout(300);
-    const chip = page.locator('[data-testid=steckbrett] .pt-chip.ziehbar').last();
-    const b = await chip.boundingBox();
+    // eine sichtbare, ziehbare Karte im unteren Teil des Bretts
+    const b = await page.evaluate(() => {
+      const r = document.querySelector('[data-testid=steckbrett]').getBoundingClientRect();
+      const k = [...document.querySelectorAll('[data-testid=steckbrett] .pt-chip.ziehbar')].map((e) => e.getBoundingClientRect())
+        .filter((x) => x.top > r.top + 60 && x.bottom < r.bottom - 4 && x.left > r.left + 70 && x.right < r.right - 140);
+      const x = k[k.length - 1];
+      return x ? { x: x.left, y: x.top, width: x.width, height: x.height } : null;
+    });
+    if (!b) throw new Error('Keine sichtbare Karte im Steckbrett');
     const t0 = Date.now();
     await ziehenBis(page, mitte(b), { x: b.x + 120, y: b.y + 4 });
     await page.waitForSelector('.pt-zielzeile .pt-ziel', { timeout: 10000 });
@@ -257,6 +293,9 @@ async function gross(breite, hoehe) {
   for (const [b, hh] of GROESSEN) {
     await lauf(b, hh);
     if (process.exitCode) return;
+  }
+  // große Schule zuletzt (sie wird beim Hochladen zum zuletzt geöffneten Dokument)
+  for (const [b, hh] of GROESSEN) {
     await gross(b, hh);
     if (process.exitCode) return;
   }

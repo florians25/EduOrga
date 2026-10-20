@@ -243,7 +243,12 @@ Zeitwünsche für einzelne Unterrichte: *Unterricht → Zeitwünsche je Unterric
   verplante Stunden), Wst (Wochenstunden), Jst (Jahresstunden), Fach, Lehrer, Klasse(n), Fachraum, Stammraum,
   Dopp.Std., Block, Text, Fix, Ignore. Weitere Spalten (Band, Kursname, Schülergruppe, Werte, Woche A/B,
   Unterrichtsgruppe, von/bis, Statistik …) blenden Sie über **Spalten** ein.
-- **Neuer Unterricht:** in die letzte Zeile schreiben oder **Neu** wählen.
+- **Neuer Unterricht:** **Neu** öffnet den Dialog *Neuer Unterricht* (vorbelegt mit der Klasse, Lehrkraft bzw. dem Fach der
+  Ansicht): Fach, Klasse(n), Lehrkraft, Raum oder Raumgruppe, Stunden je Woche, Doppelstunden, Block, Woche (jede, A, B), Band und
+  Bemerkung. **Lehrkraft koppeln** fügt je weitere Lehrkraft eine Kopplungszeile hinzu (Fach und Klassen wie oben oder eigene).
+  Unten zeigt die Vorschau, als welche Blöcke der Unterricht im Vorrat der Plantafel erscheint („1 Doppelstunde, 1 Einzelstunde“).
+  Fehlt etwas oder passen Doppelstunden bzw. Blöcke nicht in die Wochenstunden, steht der Hinweis am Feld. **Anlegen und neu**
+  legt an und öffnet den Dialog gleich wieder. Schnell geht es auch in der letzten Zeile der Tabelle.
 - **Raumvorschlag:** Beim Eintragen werden der Fachraum (aus dem Fach) und der Stammraum (aus der Klasse bzw.
   Lehrkraft) übernommen.
 
@@ -329,8 +334,59 @@ Zur Mittagspause: Mit *fix* ist eine Stunde immer frei. Mit *flexibel* bleibt in
 
 ## 6. Manuelles Planen
 
+*Planung → Plantafel* zeigt alle Klassen auf einen Blick (Steckbrett) bzw. eine Klasse mit den Plänen ihrer Lehrkräfte und Räume.
 *Planung → Manuell planen* öffnet den Stundenplan einer Klasse mit eingeschaltetem **Planen**. Nicht verplante Stunden
 stehen unter dem Plan (z. B. „2× D 5a“, Blöcke mit Länge).
+
+### Plantafel
+
+*Planung → Plantafel* zeigt die Stundenplanung auf einer Tafel. Oben wählen Sie die Darstellung **Steckbrett** oder **Klasse**.
+
+**Steckbrett.** Jede Zeile ist eine Klasse (umschaltbar: **Lehrkräfte**, **Räume**; über *Alle Klassen* auf einen Jahrgang
+einschränkbar), die Spalten sind die Tage mit ihren Stunden. Jeder Block steht als kompakte Karte im Brett: das Fach, bei genug
+Platz darunter die Lehrkraft (bzw. die Klasse); alles Weitere zeigt die Kurzinfo. Eine **Doppelstunde** ist eine Karte über zwei
+Spalten. Ein **gekoppelter Unterricht** (mehrere Klassen bzw. Lehrkräfte gleichzeitig) hat eine kleine Ecke oben rechts und steht in
+jeder beteiligten Zeile; wählen Sie ihn, sind alle diese Zeilen hervorgehoben. Die Zahl am Zeilenkopf nennt die offenen Stunden.
+
+Unten liegt der **Vorrat**: die noch nicht verplanten Blöcke aller Unterrichte, nach Klasse (bzw. Lehrkraft) gruppiert und über das
+Suchfeld filterbar. *Neuer Unterricht* legt einen Unterricht im Dialog an (siehe Abschnitt 4); er erscheint sofort im Vorrat.
+
+- **Setzen:** Karte aus dem Vorrat auf eine Spalte ziehen. Die Zeile ist dabei gleich – zählt nur die Stunde.
+- **Verschieben:** Karte im Brett ziehen; ein Block wandert als Ganzes. Mit **Umschalt** beim Ziehen nur die gegriffene Stunde.
+- **Entplanen:** Karte zurück in den Vorrat ziehen, **Entf** oder *Entplanen*.
+- **Beim Ziehen** zeigen die Zeilen des Unterrichts und der Stundenkopf für jede Stunde, was dort geschähe:
+
+| Farbe | Bedeutung |
+|---|---|
+| grün | frei – Lehrkraft, Klasse und Raum passen |
+| grün umrandet | Tausch mit dem Unterricht dort möglich |
+| bernstein | möglich mit Hinweis: negativer Zeitwunsch, kein passender Raum frei |
+| rot | belegt bzw. gesperrt: Lehrkraft oder Klasse unterrichtet schon, Sperrzeit (−3), außerhalb des Zeitrasters |
+
+  Der Grund steht am Mauszeiger („Kollision: U-Nr. 108 (Klasse 5a)“, „Zeitwunsch MUE −1“). Legen Sie auf ein rotes Feld ab, fragt
+  Studio wie gewohnt, ob der behindernde Unterricht entplant werden soll.
+- **Tastatur:** Klicken Sie in das Brett (oder Tab). Die Pfeile bewegen den Cursor, Bild↑/↓ springt zehn Zeilen, Pos1/Ende an
+  den Rand. **Enter** nimmt die Karte unter dem Cursor auf – das Brett färbt sich wie beim Ziehen –, Pfeile wählen das Ziel, **Enter**
+  legt ab, **Esc** bricht ab. Im Vorrat nimmt **Enter** einen Block auf. **F** fixiert, **Entf** entplant, **Umschalt+F10** öffnet
+  das Kontextmenü (fixieren, entplanen, Raum zuordnen, Tauschvorschläge, Klasse öffnen, Unterricht, Zeitwünsche).
+- **Zeile:** Klick auf den Zeilenkopf wählt die Klasse (für *Entplanen → Alle Stunden von 5a* und den Filter des Vorrats),
+  Doppelklick öffnet sie in der Darstellung *Klasse*.
+
+**Klasse.** Der Wochenplan einer Klasse – Ziehen, Mehrfachauswahl, Kontextmenü und Tasten wie im Stundenplan –, rechts ihre offenen
+Blöcke (in den Plan ziehen bzw. eine Stunde des Plans hierher ziehen = entplanen). Darunter stehen die **verknüpften Pläne** der
+gewählten Stunde: nur die Lehrkräfte dieses Unterrichts und seine Räume, der Unterricht ist darin hervorgehoben. Beim Ziehen zeigen
+auch sie die Farben oben – so sehen Sie, wann die Lehrkraft frei ist.
+
+**Werkzeuge.** *Fixieren* (gewählte Stunde, alle Stunden der Zeile, alle bzw. alle lösen), *Entplanen* (gewählte Stunde, alle Stunden
+der Zeile mit Rückfrage – fixierte bleiben –, alle Stunden), *Optimierung* (automatische Planung, Abschnitt 5) und *Ansicht* (zwei
+Zeilen je Karte, Fachfarben, Vorrat zeigen, Diagnose, Zeitwünsche). Fachfarben erscheinen nur, wenn sie in den Stammdaten der Fächer
+stehen; sonst sind die Karten neutral. Jede Änderung ist eine Rückgängig-Stufe (Strg+Z, Strg+Y bzw. Kopfleiste).
+
+![Plantafel – Steckbrett](../studio/docs/bilder/plantafel-1440-steckbrett.png)
+
+![Plantafel – Ziehen aus dem Vorrat](../studio/docs/bilder/plantafel-1440-ziehen-vorrat.png)
+
+![Plantafel – Klasse mit verknüpften Plänen](../studio/docs/bilder/plantafel-1440-klasse.png)
 
 ### Verplanen, Verschieben, Tauschen
 
@@ -1231,6 +1287,10 @@ Die Tabellen bedienen sich wie eine Tabellenkalkulation.
 | Entf (Stundenplan) | markierte Stunden entplanen |
 | F (Stundenplan) | markierte Stunden fixieren / Fixierung lösen |
 | Strg+A / Esc (Stundenplan) | alle Stunden markieren / Markierung aufheben |
+| Pfeile, Bild↑/↓, Pos1/Ende (Plantafel) | Cursor im Steckbrett bewegen |
+| Enter / Esc (Plantafel) | Karte aufnehmen bzw. ablegen / abbrechen (auch im Vorrat) |
+| Entf, F, Umschalt+F10 (Plantafel) | entplanen, fixieren, Kontextmenü |
+| Umschalt beim Ziehen (Plantafel, Stundenplan) | nur die gegriffene Stunde eines Blocks |
 | Entf (Stammdaten) | markierte Einträge löschen |
 | Enter, F2 (Tabellen) | Zelle bearbeiten |
 | Alt+↓, F4 (Tabellen) | Auswahlliste öffnen |
