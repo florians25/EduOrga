@@ -2714,3 +2714,7 @@ body.show-card-times .card__times{ display:flex; }
 .sw--change{ background:var(--up-aenderung-flaeche); box-shadow:inset 3px 0 0 var(--st-aenderung), inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 40%, transparent); }
 .sw--change u{ text-decoration:none; color:var(--up-aenderung-text); font-weight:600; }
 .sw--event{ background:var(--up-ereignis-flaeche); border:1px solid var(--up-ereignis-rand); }
+/* Kürzen statt Umbrechen: jede Zeile einer Karte, eines Termins und einer Mitteilung einzeilig mit „…“ */
+.card .card__line, .card--standby .card__line, .card--gs .card__line, .card--event .card__line, .card--absence .card__line{
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}

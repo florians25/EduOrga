@@ -42,10 +42,11 @@ Grundwerte in `design/tokens.css` (Präfix `--up-`). Marke **Marine** `#234f96` 
 
 | Status | Farbe | Darstellung |
 |---|---|---|
-| Entfall | `--up-entfall` #b42318 | Kachel weiß, fein schraffiert (45°, 1 px, 9 % Deckkraft), rötliche Linie, Fach rot und durchgestrichen (ohne Wort auf der Kachel) |
-| Vertretung / Änderung / Raumwechsel | `--up-aenderung` #0b7a75 | Kachel weiß mit 1-px-Linie in Petrol; neues Kürzel als gefüllte Petrol-Plakette, bisheriges als graue durchgestrichene Plakette davor, hinzugefügtes umrandet, offene Vertretung als gestrichelte „?“-Plakette – keine Wörter wie „Vertretung“ oder „offen“ auf der Kachel |
+| Entfall | `--up-entfall` #b42318, Fläche #fdecea, Feld #f7d3cf / Schrift #8f1d14 | **alles durchgestrichen**, rote Fläche, rot schraffierte Kante links, Feld „× entfällt“ (Abschnitt 10) |
+| Jede Änderung (Vertretung, Raum-, Fach-, Lehrerwechsel, Verlegung, Zusatz) | `--up-aenderung` **Grün #2f855a**, Fläche #e6f4ea, Feld #c9e8d4 / Schrift #1d5c3a (dunkel #5cbf86, #15281d, #1f4630 / #b5e6c8) | grüne Fläche, grün schraffierte Kante links, der geänderte Wert im Feld „+neu (bisher)“ (Abschnitt 10) |
 | Prüfung / Klausur | `--up-pruefung` #a15c07 | Kachel weiß, 1-px-Linie in Bernstein, Plakette „Prüfung“ |
-| Veranstaltung / Termin | `--up-termin` #5a4fb3 | weiße Kachel mit gestrichelter neutraler Linie, Plakette „Termin“ |
+| Veranstaltung / Termin | `--up-termin` #a3347c; Block `--up-ereignis-*` (#f7f1e3 / #e2d6bb / #5c4a22) | warmer Block im Raster über seine Stunden, ohne Kante |
+| Mitteilung | `--up-mitteilung-*` (#fdf5c9 / #eddc8c / #5c4a0f) | helle gelbe Notiz im Tageskopf bzw. über der ersten Stunde |
 | Ferien / unterrichtsfrei | `--up-frei` #2f6f9f | ganzflächig hellblau mit Name und Zeitraum |
 
 Dunkelmodus über `:root[data-thema="dunkel"]` bzw. `data-thema="auto"`; nur die Rollen-Variablen wechseln.
@@ -86,18 +87,19 @@ Leitbild: nüchterner Fachkalender – gerade Linien, weiße Flächen, Farbe nur
   Kürzel-Plakette (11 px/600, Radius 3 px, Linie #c9d1db, tabellarische Ziffern; in sehr schmalen Kacheln ausgeblendet). Zweite Zeile (unter dem Kürzel eingerückt): Lehrkraft bzw. Klasse
   12 px `--up-text-2`.
 * **Stundenkarten konfigurierbar (Web):** Die Administration kann die Kachel schulweit anpassen (Verwaltung | Darstellung
-  der Stundenkarten, mit Live-Vorschau). **Standard in Web ist „Klassisch“:** weiße, kompakte Karte (Radius 2 px) ohne Linie mit
+  der Stundenkarten, mit Live-Vorschau). **Standard ist „EduOrga Standard“ (Abschnitt 10, alle Plattformen).** Die frühere Vorlage „Klassisch“: weiße, kompakte Karte (Radius 2 px) ohne Linie mit
   sehr flachem Schatten auf hellgrauem Raster (#edf1f2), Fachfarbe als 4-px-Streifen innen links mit 4 px Abstand zum Rand und
   runden Enden (grau ohne Fachfarbe), drei kurze Zeilen untereinander: Lehrkraft bzw. Klasse 13 px/600 · Fach 12 px · Raum
   12 px `--up-text-2`; Karten füllen die Rasterzelle (1 px Abstand), Doppelstunden als eine Karte. Änderungen und Prüfungen
-  zusätzlich in der hellen Statusfläche (Vertretung violett). Eigene Proportionen, Schrift und Statusformen – nur im Grundsatz an
+  zusätzlich in der hellen Statusfläche (Änderung grün). Eigene Proportionen, Schrift und Statusformen – nur im Grundsatz an
   klassische Stundenplanraster angelehnt, keine übernommenen Maße, Farben, Symbole oder Legenden. Wählbar: Fachfarbe als Streifen
   innen, Balken links (auch mit Tönung), Balken oben (2–6 px), Quadrat, Tönung (6–30 %) oder keine; Fläche neutral, weiß oder
   getönt; Rahmen Schatten, fein, kräftig oder keiner; Radius 0–8 px; Raster hellgrau oder weiß; Dichte kompakt/normal/großzügig;
   Reihenfolge „Lehrkraft/Klasse · Fach · Raum“ oder „Fach und Raum oben“; Fach als Kürzel oder Name, Raum und Lehrkraft/Klasse
   ein-/ausblendbar (Änderungen bleiben sichtbar), Kürzel gefüllt, umrandet oder als Text; Statusfläche und Statuswörter. Vorlagen:
   „Klassisch (Standard)“, „Kompakt“, „Sachlich“ (die oben beschriebene Kachel), „Akzentbalken“, „Farbfläche“, „Minimal“.
-  Statuslinien, Schraffur, Durchstreichung und Kürzel-Plaketten sind fest; Listenzeilen und der Kopf der Stundendetails zeigen die
+  Vorlagen jetzt: „EduOrga Standard“, „Klassisch“, „Kompakt“, „Sachlich“, „Akzentbalken“, „Farbfläche“, „Minimal“; Reihenfolge zusätzlich
+  „Fach · Klasse · Lehrkraft · Raum“. Die Statusdarstellung nach Abschnitt 10 (Kante, Felder, Durchstreichung, Statusfeld) ist fest; Listenzeilen und der Kopf der Stundendetails zeigen die
   Fachfarbe passend. Farben kommen aus den Thema-Variablen, damit hell und dunkel ohne Neuladen stimmen.
 * **Status** wie in Abschnitt 2 – abzulesen an Linie, Schraffur, Durchstreichung und Kürzel-Plaketten, **nicht an Wörtern**.
   Als Wort (unten links, 10–11 px/600 Großbuchstaben, Laufweite +0,04 em, Statusfarbe, ohne Fläche) erscheint nur, was sich
@@ -131,9 +133,9 @@ Leitbild: nüchterner Fachkalender – gerade Linien, weiße Flächen, Farbe nur
 | Produkt | Navigation |
 |---|---|
 | **Studio** | **EduOrga Studio**: React 18 + TypeScript + Fluent UI v9 (`studio/client`). Fluent-Thema aus der Petrol-Rampe (`studio/client/src/theme.ts`, Stufe 80 = Primär #164C55, 100 = Akzent #28747A), Neutraltöne Schiefer mit kräftigen Linien (#c9d1db, Stroke1 #b4bec8), Seitenhintergrund #F5F7F8, Text #24363B; eigenes dunkles Thema (Schiefer mit Petrolstich, Flächen #10161a/#141b1f/#182126, Linien #37434b, Text #e7ecee), Thema wird vor dem ersten Zeichnen gesetzt (`public/thema.js`, kein weißes Aufblitzen). Studio-Ergänzungen zu den Tokens in `studio/client/src/stile/thema.css`. Seitenbasierte Web-Anwendung (eine Seite je Aufgabe, Adresse in der URL). **Seitenleiste in Primärfarbe** (dunkel: #0e2a2f) mit weißer Schrift, Linien-Symbolen nur vor den Bereichen; Zeilen über die ganze Breite, eckig, gewählt = leicht hellere Zeile + 3-px-Kante links in der Modusfarbe + Schrift 600, keine Pillen. **Kopfleiste** weiß: Monogramm + Wortmarke „**Edu**Orga Studio“, Schuldatei, Modus als zwei schlichte Textreiter mit 3-px-Unterstrich in der Modusfarbe (keine Symbole, kein Rahmen), Rückgängig/Speicherstand, Suche (Strg+K), Konto. **Modusfarbe:** Stundenplanung Petrol #28747a, Vertretungsplanung Indigo #3b4a8f (dunkel #4f9298 / #7f8fe0) – Unterstrich des Modusreiters, 2-px-Linie über dem Seitenkopf, Kante des gewählten Navigationspunkts; sonst keine Flächen in Modusfarbe. **Seitenkopf** grau (#eef1f4) mit Bereich als schlichter Text (12 px, `--up-text-3`, ohne Quadrat/Großbuchstaben) und Titel 20 px, darunter die Werkzeugleiste auf derselben Fläche; Inhalt weiß; Kopfzeilen der Bereiche (#e6eaee) und Tabellenköpfe (#e9edf0) deutlich grau; Karten weiß mit 1-px-Linie auf grauem Grund. Umschalter (Tag/Woche) flach: 1-px-Rahmen, gewählt grau mit 2-px-Linie in Modusfarbe; Wochenstreifen als Text, Planungstag unterstrichen. Datumsfelder als Fluent DatePicker (deutsch, Woche ab Montag, Kalenderwochen, Eingabe „19.10.2026“), lange Auswahllisten als durchsuchbare Combobox. Rechteverwaltung als Matrix Gruppe × Bereich mit farbigen Stufen-Kennzeichen (Text, ohne Symbole). Arbeitsplätze (Tagesplanung, manuelles Planen, Verlegen und Tauschen) sind fest gestaltete Seiten mit verschiebbaren Trennern. Keine Verläufe, keine Symbolkacheln, keine Großbuchstaben-Plaketten als Dekoration. |
-| **Web** (EduOrga Web) | React 18 + TypeScript + MUI v7 (`web/client`), Thema nach `MARKE.md`: Primär Petrol #164C55 (Logo, Navigation, Knöpfe), Akzent #28747A (aktive Bereiche, Links, Fokus), Hintergrund #F5F7F8, Text #24363B, Statusfarben aus diesen Tokens (Änderung Violett #6d4fc2, Termin #a3347c), hell und dunkel (Petrol-Palette, wählbar im Kontomenü). Sachlich wie ein Schulsystem: Knöpfe und Felder Radius 6 px (Höhe 32 px), Karten 6 px mit schlichter Kopfzeile (Titel als Text, 1-px-Linie darunter, keine Tönung), Tabellenköpfe neutral grau, Seitenkopf mit Linie, Segmentschalter mit 1-px-Rahmen, Bearbeiten in Dialogen. **Seitenleiste in Petrol** mit Monogramm und Wortmarke „EduOrga Web“, Linien-Symbolen vor den Bereichen und Unterpunkten als eingerücktem Text; Zeilen über die volle Breite, eckig, aktive Zeile leicht getönt mit 3-px-Kante links und Schrift 600 (keine Pillen, kein Einzug); einklappbar zur Symbolleiste; mobil als Schublade unter einer Petrol-Kopfleiste. Eigene Gliederung: Start · Mein Tag · Stundenpläne · Vertretungen · Unterricht & Prüfungen · Klassenbuch · Kommunikation · Termine & Buchungen · Stammdaten · Verwaltung (alte Adressen bleiben, sprechende Aliase). Datums-/Zeitfelder nur als MUI-Picker mit Beschriftung oben und Mindestbreite. Anmeldung zweigeteilt mit Slogan „Einfach mehr Schulalltag.“ und „Über EduOrga“ (rechtlicher Hinweis). Eigener Stundenplan (Abschnitt 5, Standard „Klassisch“; ohne Fachfarbe immer grauer Balken – Themenfarbe `kachel.balken`, hell #a9b6bb, dunkel #6b8287; gleichzeitige Stunden: erste Stunde über die volle Breite mit kleinem „+X“ rechts oben, Klick listet alle – keine Zählerkarten). Klassenbuch als eigener Bereich mit Unternavigation (Unterricht · Schüler*innen · Klasse; am Desktop Spalte links, sonst Reiterleiste) und Fenster „Unterrichtsstunde“: großes zentriertes Fenster (≈ 94 % × 90 %, Telefon Vollbild), weißer Kopf mit Angaben als Schlüssel/Wert nebeneinander, Stand der Dokumentation als Text („Thema eingetragen · Anwesenheit offen“, Fehlendes in Bernstein, keine Häkchen-Symbole), Reiter Stunde · Anwesenheit · Einträge · Prüfungen · Verlauf (Anzahl als Zweittext-Ziffer, keine Plakette), Inhalt auf grauer Fläche in Bereichen mit schlichter Kopfzeile, Fuß mit Speicherstand (automatisches Speichern, als Text). Anwesenheit als Liste ohne Initialen-Avatare, je Schüler*in ein Segmentschalter mit Text (Anwesend/Abwesend/Verspätet/Früher weg; „Anwesend“ gewählt = neutral grau, nur Abweichungen in Statusfarbe; Symbole nur auf schmalen Bildschirmen statt der nicht gewählten Wörter). Online-Unterricht nur als Schild mit Link. Keine Namen, Symbole oder Grafiken anderer Produkte. |
+| **Web** (EduOrga Web) | React 18 + TypeScript + MUI v7 (`web/client`), Thema nach `MARKE.md`: Primär Petrol #164C55 (Logo, Navigation, Knöpfe), Akzent #28747A (aktive Bereiche, Links, Fokus), Hintergrund #F5F7F8, Text #24363B, Statusfarben aus diesen Tokens (Änderung Grün #2f855a, Entfall Rot #b42318, Termin #a3347c), hell und dunkel (Petrol-Palette, wählbar im Kontomenü). Sachlich wie ein Schulsystem: Knöpfe und Felder Radius 6 px (Höhe 32 px), Karten 6 px mit schlichter Kopfzeile (Titel als Text, 1-px-Linie darunter, keine Tönung), Tabellenköpfe neutral grau, Seitenkopf mit Linie, Segmentschalter mit 1-px-Rahmen, Bearbeiten in Dialogen. **Seitenleiste in Petrol** mit Monogramm und Wortmarke „EduOrga Web“, Linien-Symbolen vor den Bereichen und Unterpunkten als eingerücktem Text; Zeilen über die volle Breite, eckig, aktive Zeile leicht getönt mit 3-px-Kante links und Schrift 600 (keine Pillen, kein Einzug); einklappbar zur Symbolleiste; mobil als Schublade unter einer Petrol-Kopfleiste. Eigene Gliederung: Start · Mein Tag · Stundenpläne · Vertretungen · Unterricht & Prüfungen · Klassenbuch · Kommunikation · Termine & Buchungen · Stammdaten · Verwaltung (alte Adressen bleiben, sprechende Aliase). Datums-/Zeitfelder nur als MUI-Picker mit Beschriftung oben und Mindestbreite. Anmeldung zweigeteilt mit Slogan „Einfach mehr Schulalltag.“ und „Über EduOrga“ (rechtlicher Hinweis). Eigener Stundenplan (Abschnitt 10, Standard „EduOrga Standard“; ohne Fachfarbe immer graue Kante – Themenfarbe `kachel.balken`, hell #b4bec4, dunkel #56626c; gleichzeitige Stunden: erste Stunde über die volle Breite mit Reiter „+N“ innen am rechten Rand, Klick listet alle – keine Zählerkarten). Klassenbuch als eigener Bereich mit Unternavigation (Unterricht · Schüler*innen · Klasse; am Desktop Spalte links, sonst Reiterleiste) und Fenster „Unterrichtsstunde“: großes zentriertes Fenster (≈ 94 % × 90 %, Telefon Vollbild), weißer Kopf mit Angaben als Schlüssel/Wert nebeneinander, Stand der Dokumentation als Text („Thema eingetragen · Anwesenheit offen“, Fehlendes in Bernstein, keine Häkchen-Symbole), Reiter Stunde · Anwesenheit · Einträge · Prüfungen · Verlauf (Anzahl als Zweittext-Ziffer, keine Plakette), Inhalt auf grauer Fläche in Bereichen mit schlichter Kopfzeile, Fuß mit Speicherstand (automatisches Speichern, als Text). Anwesenheit als Liste ohne Initialen-Avatare, je Schüler*in ein Segmentschalter mit Text (Anwesend/Abwesend/Verspätet/Früher weg; „Anwesend“ gewählt = neutral grau, nur Abweichungen in Statusfarbe; Symbole nur auf schmalen Bildschirmen statt der nicht gewählten Wörter). Online-Unterricht nur als Schild mit Link. Keine Namen, Symbole oder Grafiken anderer Produkte. |
 | **Mobile (PWA)** | Untere Leiste *Heute · Plan · Postfach · Mehr* (Linien-Symbol + Beschriftung, das ist auf Telefonen Standard), große Seitentitel, Listen statt Karten-Kacheln, keine Logo-Kachel. |
-| **iOS** (EduOrga, `ios/`; technisch UntPlanNext) | Tab-Leiste des Systems mit wenigen, festen Reitern *Heute · Plan · Postfach · Schule · Profil* (Profil = Konten, Einstellungen, Abmelden), Suche nach Plänen als Blatt über die Lupe oben rechts. Marke EduOrga: Monogramm und Wortmarke, Primär **Petrol** `#164C55`, Akzent/`AccentColor` `#28747A` (dunkel `#5FB0B5`), Hintergrund `#F5F7F8`, Text `#24363B`; Statusfarben wie `tokens.css` (Änderung/Vertretung Violett `#6d4fc2`, Termin Magenta `#a3347c`, Prüfung Bernstein, Entfall Rot, Ferien Blau). Einrichtung als ruhige Einstiegsseite (Logo, Slogan, Adresse mit Prüfung beim Tippen, QR-Code, zuletzt verwendete Schulen). **Plan öffnet mit der Woche als Raster** über die ganze Breite (Mo–Fr, schmale Stundenspalte, Zeilen passen den Schultag in die Bildschirmhöhe, Jetzt-Linie, wischen = Woche, Aufziehen = Dichte); Karten nach „Stundenkarte mobil (v3)“ (Abschnitt 10); Termine im Raster nach ihrer echten Uhrzeit; Ansichten **Agenda | Woche | Tag** in der schwebenden Planleiste unten (dazu „Nur Änderungen“ und „Auswahl und Filter“), oben nur Planname mit Zeitraum und ein Kalenderknopf; Mehrfachauswahl (mehrere Pläne nebeneinander) auf iPhone und iPad; Inhalte nach der schulweiten Kartendarstellung. Tag als Raster (Standard), Liste bzw. Zeitachse mit denselben Karten. **Liquid Glass** (iOS 26) nur auf der Bedienebene; iOS 18 mit Material. Systemschrift SF Pro mit Dynamic Type, 8-pt-Raster. Die frühere App „UntPlan für iOS“ liegt nur noch als Archiv in `archiv/ios-alt/`. |
+| **iOS** (EduOrga, `ios/`; technisch UntPlanNext) | Tab-Leiste des Systems mit wenigen, festen Reitern *Heute · Plan · Postfach · Schule · Profil* (Profil = Konten, Einstellungen, Abmelden), Suche nach Plänen als Blatt über die Lupe oben rechts. Marke EduOrga: Monogramm und Wortmarke, Primär **Petrol** `#164C55`, Akzent/`AccentColor` `#28747A` (dunkel `#5FB0B5`), Hintergrund `#F5F7F8`, Text `#24363B`; Statusfarben wie `tokens.css` (jede Änderung Grün `#2f855a`, Termin Magenta `#a3347c`, Prüfung Bernstein, Entfall Rot, Ferien Blau). Einrichtung als ruhige Einstiegsseite (Logo, Slogan, Adresse mit Prüfung beim Tippen, QR-Code, zuletzt verwendete Schulen). **Plan öffnet mit der Woche als Raster** über die ganze Breite (Mo–Fr, schmale Stundenspalte, Zeilen passen den Schultag in die Bildschirmhöhe, Jetzt-Linie, wischen = Woche, Aufziehen = Dichte); Karten nach „Stundenkarte (alle Plattformen)“ (Abschnitt 10); Termine im Raster nach ihrer echten Uhrzeit; Ansichten **Agenda | Woche | Tag** in der schwebenden Planleiste unten (dazu „Nur Änderungen“ und „Auswahl und Filter“), oben nur Planname mit Zeitraum und ein Kalenderknopf; Mehrfachauswahl (mehrere Pläne nebeneinander) auf iPhone und iPad; Inhalte nach der schulweiten Kartendarstellung. Tag als Raster (Standard), Liste bzw. Zeitachse mit denselben Karten. **Liquid Glass** (iOS 26) nur auf der Bedienebene; iOS 18 mit Material. Systemschrift SF Pro mit Dynamic Type, 8-pt-Raster. Die frühere App „UntPlan für iOS“ liegt nur noch als Archiv in `archiv/ios-alt/`. |
 
 ## 8. Sprache und Abgrenzung
 
@@ -205,20 +207,75 @@ Schulsoftware), nicht wie ein generiertes Dashboard. Jede neue Seite und jede Ü
 - [ ] Keine Verläufe, kein Glas/Weichzeichner, keine Animation über 120 ms (Farbe/Deckkraft).
 - [ ] Dunkelmodus: Farben ausschließlich über Thema-Variablen (`theme.vars`/Palettenpfade in `sx`), nie feste Hellwerte.
 
-## 10. Stundenkarte mobil (v3)
+## 10. Stundenkarte (alle Plattformen)
 
-Verbindlich für iOS (umgesetzt in `ios/UntPlanNext/Neu/Plan/Kartengestaltung.swift`, `Wochenraster.swift`,
-`Mehrfachplan.swift`, `Agenda.swift`, `Planauswahlblatt.swift`, `Wochenansichten.swift` und `PlanView.swift`); die PWA
-und die mobile Ansicht von EduOrga Web übernehmen sie später mit denselben Werten (px statt pt). Ziel: ein ruhiges,
-sofort lesbares Wochenraster, in dem Änderungen ohne Suchen auffallen. Eigene Gestaltung – Grundsätze, keine
-übernommenen Maße, Farben, Symbole oder Texte anderer Produkte.
+Verbindlich für **EduOrga Web** (`web/client/src/components/plan/aenderung.ts`, `Kachel.tsx`, `Wochenraster.tsx`, `Legende.tsx`),
+**EduOrga Mobile** (PWA, `mobile/.../assets/js/app.js` Abschnitt `AENDERUNG`, `app.css` Abschnitt „Stundenkarte (alle Plattformen)“)
+und **EduOrga iOS** (`ios/UntPlanNext/Neu/Plan/Kartengestaltung.swift` u. a.). Dieselben Regeln, dieselben Farben, dieselben Texte;
+Maße in px (Web/PWA) bzw. pt (iOS). Vorbild für die Änderungsarten ist die Legende des Enbrea-Leitfadens („Änderungstyp |
+Darstellung“) – übernommen werden nur die Arten und die Schreibweise der Felder, Farben und Formen sind EduOrga.
+
+**Grundkarte („EduOrga Standard“, Standard der Kartendarstellung)**
+* Kompakt, füllt die Rasterzelle (1–1,5 px Luft), nie breiter als ihre Spalte; Radius 4 (iOS 6); flacher Schatten bzw. feine Kontur.
+* **Neutral, weil Schulen nicht alle Fächer färben:** Fläche weiß bzw. hellgrau, **Kante links 4 px grau** (`--up-karte-balken`
+  #b4bec4, dunkel #56626c). Nur wenn das Fach eine Farbe hat: Kante in der Fachfarbe und Fläche leicht getönt (12 %, dunkel × 1,8).
+* Zeilen oben links, Einzug nach der Kante: **Fach 13–14,5/600**, darunter je eine Zeile 12–12,5/400 `--up-text-2`:
+  **Klasse, Lehrkraft, Raum**. Die Zeile des gezeigten Elements (Klasse im Klassenplan, Lehrkraft im Lehrerplan, Raum im
+  Raumplan) entfällt, solange sie unverändert ist. Passt nicht alles, entfallen **unveränderte** Zeilen von unten – das Fach,
+  geänderte Zeilen und das Statusfeld bleiben.
+* **Zeitspalte:** je Stunde Beginn oben (10,5), **Stundennummer mittig** (14–15/600), Ende unten; tabellarische Ziffern.
+* **Tageskopf:** zentriert **„17.11“** (600) über dem Wochentag **„Mo“**; heute Petrol mit 2-px-Linie unten.
+* **Gleichzeitige Stunden:** in der Woche die erste Karte (Änderung vor regulär), die übrigen hinter dem **Reiter „+N“** innen
+  am rechten Rand der Zelle, senkrecht mittig (Fläche `--up-primaer-flaeche`, Linie `--up-primaer-rand`, links Radius 4, rechts
+  bündig); Antippen bzw. Klick listet alle.
+* **Termine/Veranstaltungen** als Block im Raster über ihre Stunden (warmes Neutral `--up-ereignis-*`, ohne Kante, Titel 600,
+  Beteiligte, unten die Uhrzeit); ganztägige im Tageskopf bzw. als Block über den Tag. **Mitteilungen** (Tagestexte aus EduOrga
+  Studio, Feld `mitteilungen` im Tageskopf des Plans) als **helle gelbe Notiz** (`--up-mitteilung-*`) im Tageskopf (Web) bzw. über
+  der ersten Stunde (PWA, iOS); Tippen/Überfahren zeigt den ganzen Text.
+
+**Farbregeln (fest, in jeder Vorlage)**
+* **Jede Änderung grün** (`--up-aenderung` #2f855a, Fläche #e6f4ea, Feld #c9e8d4, Schrift #1d5c3a; dunkel #5cbf86 / #15281d /
+  #1f4630 / #b5e6c8): grüne Fläche, **schräg schraffierte Kante** (45°, 2 px Farbe / 2,5 px 28 %), feine Linie 40 %, der
+  geänderte Wert als **Feld** (Radius 3, 3 px seitlich, 600) auf seiner Zeile.
+* **Entfall rot** (`--up-entfall` #b42318, Fläche #fdecea, Feld #f7d3cf, Schrift #8f1d14; dunkel #f07167 / #2e1916 / #4a2420 /
+  #ffc9c3): rote Fläche, rot schraffierte Kante, **alles auf der Karte durchgestrichen**, Fach rot; das Feld unten bleibt lesbar.
+* Status nie nur über Farbe: Schraffur, Durchstreichung, Klammern, „+“, „×“, „⊕“ und Wörter tragen ihn mit; der zugängliche Name
+  der Karte nennt ihn ausgeschrieben. Prüfung bleibt Bernstein (Linie, helle Fläche, Wort „Prüfung“), Buchung blau gestrichelt.
+
+**Änderungstypen** (Daten: `Plandienst.cs` → `/api/app/plan`; PWA über `Kachelbau.cs`)
+
+| Änderungstyp | Darstellung | Erkennung in den Plandaten |
+|---|---|---|
+| Klasse fehlt | Klassenzeile **„(5b)“** im Feld, unten **„× entfällt“** (rot) | `abwesendeKlassen` (PWA `classAbsent`), Status `entfall` |
+| Lehrkraft fehlt, keine Vertretung | Lehrkraftzeile **„(Abr)“** im grünen Feld | Wert `{ k: "", alt: "Abr" }`, `vertretungOffen` (PWA `teacherOpen`) |
+| Vertretungsentfall / Entfall | alles durchgestrichen, **„× entfällt“** | Status `entfall` bzw. `abwesend` ohne `lehrerAbwesend` (PWA `cancelled`) |
+| Lehrervertretung | **„+Gal (Gor)“** | Wert `{ k: "Gal", alt: "Gor" }` |
+| Raumänderung | **„+105 (303)“** | Raum `{ k: "105", alt: "303" }` |
+| hinzugekommener Wert | **„+B070“** | Wert `{ k: "B070", neu: true }` ohne `alt` |
+| Fachänderung | Fachzeile **„+BI (MU)“** | `fachAlt` (PWA `subjectOrig`) |
+| verschoben auf | rot, **„× auf Di 21.10. 6 \| 12:20“** (Wochentag Datum Stunde \| Beginn) | `verlegung = "von"`, `verlegungNach { datum, stunde, beginn }` (PWA `movedTo.lesson`) |
+| verschoben von | grün, **„⊕ von Mo 20.10. 3 \| 09:45“** | `verlegung = "nach"`, `verlegungVon { … }` (PWA `movedFrom`) |
+| Zusatz | grün, **„⊕ Zusatz“** | `zusaetzlich` bzw. Art Zusatz/Sondereinsatz (PWA `extra`) |
+| Mitteilung | helle gelbe Notiz | `tage[].mitteilungen` (PWA `notes`) – neu, abwärtskompatibel |
+
+**Legende** in allen Oberflächen als Tabelle „Änderungstyp | Darstellung“ mit je einer Musterkarte (Web: Knopf „Legende“ und
+Hilfe zum Stundenplan; PWA: Blatt „Zeichenerklärung“; iOS: Legende im Blatt „Auswahl und Filter“).
+
+**Aktualität:** Plandaten kommen immer frisch vom Server (`Cache-Control: no-store`, Abruf mit `cache: "no-store"`); Web und PWA
+laden beim Zurückkehren zum Fenster (Fokus/Sichtbarkeit), beim Wiederverbinden und alle zwei Minuten nach. Der Service Worker der
+PWA fragt Plandaten immer zuerst beim Netz an; die Kopie im Cache dient nur als Rückfall ohne Netz und wird als **„Offline — Stand
+hh:mm“** gekennzeichnet.
+
+### 10.1 iOS im Einzelnen (v3)
+
+Die folgenden Maße gelten für iOS; Abweichungen von den Regeln oben (Farben, Felder, Änderungstypen) gehen den Regeln oben nach.
 
 **Raster**
 * Zeitspalte 38 pt: Beginn oben (10,5/400, `--up-text-3`), **Stundennummer mittig** (15/600, `--up-text`), Ende unten;
   tabellarische Ziffern. Zeilen gleich hoch (52–112 pt, Schultag passt in die Höhe), Pausen als Band (≥ 15 min 12 pt,
   sonst 3 pt) in `--up-schiefer`-Grau, Rastergrund #edf1f2 (dunkel #0b0f13).
 * Tageskopf 42 pt, zentriert: **Datum „17.11“ 15,5/700**, darunter Wochentag „Mo“ 12/400 `--up-text-2`. Heute: Petrol
-  (Akzent) mit 2-pt-Linie unten und ≈ 6 % Petrol-Tönung der Spalte. Punkt 5 pt neben dem Wochentag: violett =
+  (Akzent) mit 2-pt-Linie unten und ≈ 6 % Petrol-Tönung der Spalte. Punkt 5 pt neben dem Wochentag: grün =
   Änderungen, rot = Entfall am Tag.
 
 **Karte**
@@ -231,14 +288,14 @@ sofort lesbares Wochenraster, in dem Änderungen ohne Suchen auffallen. Eigene G
   Klasse, Lehrkraft, Raum (bzw. Anlass). Unter 56 pt Breite: 12,5 bzw. 11. Zeilen, die nicht passen, entfallen von
   unten; Änderungen stehen immer da, auch wenn die Schule Raum bzw. Zeile 2 ausblendet.
 
-**Status – sofort erkennbar**
-* **Änderung** (Vertretung, Raum-/Lehrerwechsel, Zusatzstunde): Balken **schräg schraffiert in Violett** #6d4fc2,
-  1-pt-Linie Violett 55 %, mit Statusfläche helles Violett #f1edfb statt der Fachtönung. Der geänderte Wert steht als
-  **Feld „neu (bisher)“**: Fläche #e3dbfa (dunkel #3a2e66), Schrift #46309a (dunkel #d9cfff), neuer Wert 600, Radius 3,
-  Innenabstand 3 pt seitlich – z. B. „Ara (Abr)“; hinzugekommen „+B070“; weggefallen durchgestrichen; offen „ABR ?“.
-* **Entfall**: Fläche grau (`--up-flaeche-2`), feine rote Schraffur (10 %), Linie Rot 35 %, Fach `--up-text-3` rot
-  durchgestrichen, darunter **„Entfall“ 11,5/600 in Rot**; übrige Zeilen grau durchgestrichen.
-* **Offene Vertretung**: gestrichelte violette Linie (3/2), schraffierter Balken, „?“ unten rechts.
+**Status (iOS-Maße; Farben und Felder nach den Regeln oben – Änderung grün, Entfall rot)**
+* **Änderung** (Vertretung, Raum-/Lehrerwechsel, Zusatzstunde): Balken **schräg schraffiert in Grün** #2f855a,
+  1-pt-Linie Grün 40–55 %, mit Statusfläche helles Grün #e6f4ea statt der Fachtönung. Der geänderte Wert steht als
+  **Feld „+neu (bisher)“**: Fläche #c9e8d4 (dunkel #1f4630), Schrift #1d5c3a (dunkel #b5e6c8), 600, Radius 3,
+  Innenabstand 3 pt seitlich – z. B. „+Gal (Gor)“; hinzugekommen „+B070“; fehlend ohne Vertretung „(Abr)“.
+* **Entfall**: Fläche hellrot #fdecea, rot schraffierte Kante, Linie Rot 30 %, **alles durchgestrichen**, Fach rot,
+  unten das Feld **„× entfällt“** (bzw. „× auf …“ bei Verlegung).
+* **Offene Vertretung**: gestrichelte grüne Linie (3/2), schraffierter Balken, „?“ unten rechts.
 * **Prüfung**: Bernstein-Linie und helle Bernstein-Fläche, Wort „Prüfung“ unten links (wenn Platz).
 * **Termin / Raumbuchung**: ohne Balken, gestrichelt (Termin Magenta-Titel, Buchung Blau).
 * Vergangene Stunden 62 % Deckkraft.
@@ -246,6 +303,9 @@ sofort lesbares Wochenraster, in dem Änderungen ohne Suchen auffallen. Eigene G
 * **Abweichende Uhrzeit**: beginnt bzw. endet eine Stunde nicht mit ihrer Rasterzeile (z. B. 14:05 statt 14:00), steht
   die Karte genau nach der Uhrzeit versetzt (mindestens 22 pt hoch) und trägt unter dem Raum eine zusätzliche Zeile
   „14:05–14:45“ (11,5/400 `--up-text-2`).
+
+**Kürzen statt Umbrechen (alle Plattformen):** jede Textzeile einer Stundenkarte, eines Termin-Blocks und einer Mitteilung steht
+in **einer Zeile** und wird mit „…“ gekürzt (kein Zeilenumbruch); der ganze Text steht in der Kurzinfo bzw. in den Details.
 
 **Gleichzeitige Stunden**
 * Reihenfolge: Änderung vor regulär, dann die längere, dann der Rang. Bis zur Einstellung **„Parallele Stunden

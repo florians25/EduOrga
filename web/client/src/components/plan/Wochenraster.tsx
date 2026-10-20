@@ -141,14 +141,14 @@ export function Wochenraster({ plan, onOpen, optionen = {}, kopfZusatz }: { plan
                       slotProps={{ tooltip: { sx: { whiteSpace: 'pre-line' } } }}>
                       <Box data-termin="ganztaegig" sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, px: 0.75, py: '3px', borderRadius: '4px', bgcolor: 'kachel.ereignis', color: 'kachel.ereignisText', border: 1, borderColor: 'kachel.ereignisRand' }}>
                         <Box component="span" sx={{ fontSize: 12, fontWeight: 600, lineHeight: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.titel}</Box>
-                        <Box component="span" sx={{ fontSize: 10.5, lineHeight: '13px', opacity: 0.85 }}>ganztägig{x.klassen.length ? ` · ${x.klassen.length > 3 ? `${x.klassen.length} Klassen` : x.klassen.join(', ')}` : ''}</Box>
+                        <Box component="span" sx={{ fontSize: 10.5, lineHeight: '13px', opacity: 0.85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>ganztägig{x.klassen.length ? ` · ${x.klassen.length > 3 ? `${x.klassen.length} Klassen` : x.klassen.join(', ')}` : ''}</Box>
                       </Box>
                     </Tooltip>
                   ))}
                   {(tag.mitteilungen ?? []).map((m, j) => (
                     <Tooltip key={`m${j}`} title={m} slotProps={{ tooltip: { sx: { whiteSpace: 'pre-line' } } }}>
                       <Box role="note" aria-label={`Mitteilung: ${m}`} data-mitteilung="" sx={{ px: 0.75, py: '3px', borderRadius: '3px', bgcolor: 'kachel.notiz', color: 'kachel.notizText', border: 1, borderColor: 'kachel.notizRand',
-                        fontSize: 11.5, lineHeight: '14px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>{m}</Box>
+                        fontSize: 11.5, lineHeight: '15px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{m}</Box>
                     </Tooltip>
                   ))}
                   {hinweise.map((h, j) => (

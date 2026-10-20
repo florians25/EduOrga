@@ -222,7 +222,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
         {erste && quadrat && <FachQuadrat farbe={k.farbe} />}
         <Typography component="div" noWrap data-zeile={z.art}
           sx={{ minWidth: 0, flex: '0 1 auto', fontSize: erste ? fachGroesse : dichte.zeile, lineHeight: `${erste ? dichte.kopf : zh}px`, fontWeight: erste ? 600 : 400,
-            color: erste ? (entfall ? 'status.entfall.main' : termin ? 'kachel.ereignisText' : 'text.primary') : textFarbe, textDecoration: durch, whiteSpace: termin && erste ? 'normal' : 'nowrap' }}>
+            color: erste ? (entfall ? 'status.entfall.main' : termin ? 'kachel.ereignisText' : 'text.primary') : textFarbe, textDecoration: durch, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {erste && fachName && z.art === 'fach' ? fachName : <Teile teile={z.teile} anzeige={anzeige(z)} />}
         </Typography>
         {raumRechts && (
