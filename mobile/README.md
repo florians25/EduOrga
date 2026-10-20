@@ -138,6 +138,10 @@ nach mehr als 24 Stunden an Schultagen mit „Daten evtl. nicht aktuell“.
 „Prüfung eintragen“ (vorbelegt aus der Stunde). In „Schule › Prüfungen“ lassen sich Prüfungen eintragen, ändern und löschen
 (über EduOrga Web, mit Rechteprüfung und Konfliktmeldung).
 
+| Klassenbuch-Reiter | Schüleransicht (Vertretung folgt) |
+|---|---|
+| ![Klassenbuch-Reiter](docs/bilder/stundendetails-klassenbuch.png) | ![Schüleransicht](docs/bilder/plan-woche-schueler.png) |
+
 **Parallele Stunden („+X“)** – keine Zählkarte: Liegen in einer Rasterzelle mehr Stunden, als nebeneinander passen (jede
 mindestens 40 px breit), steht die erste Stunde in voller Breite, und **oben rechts in der Zelle** (3 px vom oberen und
 rechten Rand) sitzt der Reiter **„+X“** innen am rechten Rand, senkrecht mittig: 20 px hoch, mindestens 22 px breit, links Radius

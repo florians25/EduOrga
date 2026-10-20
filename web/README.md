@@ -238,6 +238,8 @@ Im Einzelnen:
 |---|---|---|
 | ![Stundenplan](docs/bilder/stundenplan.png) | ![Übersicht](docs/bilder/uebersicht.png) | ![Lehrerplan](docs/bilder/lehrerplan.png) |
 
+![Kennzeichnungen im Stundenplan](docs/bilder/kennzeichnungen.png)
+
 | Vertretungsplan | Tag - Räume | Abwesenheiten |
 |---|---|---|
 | ![Vertretungsplan](docs/bilder/vertretungsplan.png) | ![Tag - Räume](docs/bilder/tagesuebersicht.png) | ![Abwesenheiten](docs/bilder/abwesenheiten.png) |
