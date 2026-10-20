@@ -11,7 +11,7 @@ enum Stilmass {
     /// Grundraster (alle Abstände sind Vielfache davon bzw. die halbe Stufe 4)
     static let raster: CGFloat = 8
     /// Radius von Inhaltsflächen (Bereiche, Fokuskarte, Listenflächen) – nüchtern, nicht pillenförmig
-    static let radius: CGFloat = 10
+    static let radius: CGFloat = 6
     /// Radius der Stundenkacheln (wie `Kartenmass.radius`)
     static let kachelRadius: CGFloat = Kartenmass.radius
     /// Seitenrand

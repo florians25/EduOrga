@@ -8,6 +8,7 @@ import SwiftUI
 /// „entfällt“, „zusätzlich“, „verlegt auf/von …“ –, Titel und Mitteilungen einzeilig mit „…“.
 struct PlanLegende: View {
     @Environment(\.dismiss) private var schliessen
+    @Environment(\.kartendarstellung) private var darstellung
 
     /// Eine Zeile der Musterkarte: Text bzw. Kennzeichen.
     fileprivate enum Musterzeile {
@@ -78,8 +79,8 @@ struct PlanLegende: View {
     private static var pruefung: Klassikstil {
         var s = neutral()
         s.flaeche = Farben.pruefungFlaeche
-        s.rand = Farben.pruefung
-        s.balken = Farben.pruefung
+        s.rand = Farben.pruefungStreifen.opacity(0.5)
+        s.balken = Farben.pruefungStreifen
         return s
     }
 
@@ -94,13 +95,13 @@ struct PlanLegende: View {
 
     fileprivate static let gruppen: [Gruppe] = [
         Gruppe(id: "unterricht", titel: "Unterricht", eintraege: [
-            Eintrag(id: "regulaer", titel: "Wie geplant", text: "Weiße Karte mit grauem Balken: Fach, Klasse, Lehrkraft, Raum.",
+            Eintrag(id: "regulaer", titel: "Wie geplant", text: "Weiße Karte mit feiner grauer Linie, ohne Streifen: Fach, Klasse, Lehrkraft, Raum.",
                     stil: neutral(), fach: .text("D"), zeilen: [.text("5a"), .text("Mül"), .text("204")]),
-            Eintrag(id: "fachfarbe", titel: "Mit Fachfarbe", text: "Nur wenn die Schule dem Fach eine Farbe gegeben hat: Balken und leichte Tönung.",
+            Eintrag(id: "fachfarbe", titel: "Mit Fachfarbe", text: "Nur wenn die Schule dem Fach eine Farbe gegeben hat: schmaler Streifen oben in der Fachfarbe.",
                     stil: fachfarbe(Color(hexWert: 0x3E7CC9)), fach: .text("M"), zeilen: [.text("5a"), .text("Rth"), .text("126")]),
         ]),
         Gruppe(id: "aenderungen", titel: "Geändert (grün)", eintraege: [
-            Eintrag(id: "vertretung", titel: "Vertretung", text: "Grüner Balken und Marke; auf der Lehrerzeile die neue Lehrkraft, dahinter die bisherige in Klammern durchgestrichen.",
+            Eintrag(id: "vertretung", titel: "Vertretung", text: "Grüner Streifen oben, hellgrüne Fläche; auf der Lehrerzeile die neue Lehrkraft in Grün, dahinter die bisherige in Klammern durchgestrichen.",
                     stil: aenderung, fach: .text("SP1"), zeilen: [.text("6b"), .wechsel("Gal", "Gor"), .text("UH")]),
             Eintrag(id: "raum", titel: "Anderer Raum", text: "Neuer Raum, dahinter der bisherige in Klammern durchgestrichen; ein zusätzlicher Raum als „neu B070“.",
                     stil: aenderung, fach: .text("BILI"), zeilen: [.text("6b"), .text("Abr"), .wechsel("105", "303")]),
@@ -114,11 +115,11 @@ struct PlanLegende: View {
                     chip: Kartenchip(text: "zusätzlich", ton: .aenderung)),
         ]),
         Gruppe(id: "offen", titel: "Offen (grau)", eintraege: [
-            Eintrag(id: "lehrer-fehlt", titel: "Vertretung folgt", text: "Die Lehrkraft fehlt, die Vertretung ist noch nicht eingeteilt – die Stunde fällt nicht aus. Schüler*innen und Eltern sehen „Vertretung folgt“.",
+            Eintrag(id: "lehrer-fehlt", titel: "Vertretung folgt", text: "Gestrichelter grauer Rand, kein Streifen: die Lehrkraft fehlt, die Vertretung ist noch nicht eingeteilt – die Stunde fällt nicht aus. Schüler*innen und Eltern sehen „Vertretung folgt“.",
                     stil: offen, fach: .text("E4"), zeilen: [.text("12"), .feld("Abr fehlt", .offen), .text("21")]),
         ]),
         Gruppe(id: "entfall", titel: "Entfällt (rot)", eintraege: [
-            Eintrag(id: "entfall", titel: "Entfall", text: "Roter Balken und Marke, alles durchgestrichen, unten „entfällt“.",
+            Eintrag(id: "entfall", titel: "Entfall", text: "Roter Streifen oben, hellrote Fläche, alles durchgestrichen, unten „entfällt“.",
                     stil: entfall, fach: .text("E"), zeilen: [.text("7c"), .text("Had"), .text("403")],
                     chip: Kartenchip(text: "entfällt", ton: .entfall), entfall: true),
             Eintrag(id: "verlegt-nach", titel: "Verlegt", text: "Findet hier nicht statt – unten der neue Termin.",
@@ -129,7 +130,7 @@ struct PlanLegende: View {
                     chip: Kartenchip(text: "entfällt", ton: .entfall), entfall: true),
         ]),
         Gruppe(id: "hinweise", titel: "Hinweise", eintraege: [
-            Eintrag(id: "pruefung", titel: "Prüfung", text: "Bernsteinfarbene Kontur und helle Fläche.",
+            Eintrag(id: "pruefung", titel: "Prüfung", text: "Gelber Streifen oben, hellgelbe Fläche und das Wort „Prüfung“.",
                     stil: pruefung, fach: .text("D"), zeilen: [.text("9a"), .text("Mül"), .text("204")]),
             Eintrag(id: "mitteilung", titel: "Mitteilung, Veranstaltung", text: "Hellgelber Block über die echte Uhrzeit; zu lange Titel enden mit „…“ (ganz in den Details).",
                     stil: notiz, fach: .text(""), zeilen: [], notiz: "Aufbau der Bühne für das Schulfest ab 16:00 Uhr"),
@@ -209,7 +210,7 @@ struct PlanLegende: View {
         case .text(let t):
             Text(t)
                 .font(schrift)
-                .foregroundStyle(entfall ? Farben.text3 : (titel ? Farben.text : Farben.text2))
+                .foregroundStyle(entfall ? (titel ? Farben.entfallChipText : Farben.text2) : (titel ? Farben.text : Farben.text2))
                 .strikethrough(entfall, color: Farben.entfall.opacity(0.8))
                 .lineLimit(1)
         case .feld(let t, let ton):
@@ -222,6 +223,30 @@ struct PlanLegende: View {
                     .font(titel ? .system(size: 13.5) : .system(size: 12))
             }
         }
+    }
+
+    /// Musterkarte in der Kartendarstellung der Schule: v7 (Streifen oben) bzw. „Klassisch“ (Leiste links).
+    private func stilFuer(_ e: Eintrag) -> Klassikstil {
+        var s = e.stil
+        guard darstellung.balkenOben, e.notiz == nil else { return s }
+        s.oben = true
+        s.mitBalken = false
+        s.marke = nil
+        s.ton = nil
+        switch e.id {
+        case "regulaer", "lehrer-fehlt": s.streifen = nil
+        case "fachfarbe": s.streifen = Color(hexWert: 0x3E7CC9)
+        case "entfall", "verlegt-nach", "klasse-fehlt":
+            s.streifen = Farben.entfall
+            s.flaeche = Farben.entfallFlaeche
+            s.rand = Farben.entfall.opacity(0.35)
+        case "pruefung": s.streifen = Farben.pruefungStreifen
+        default:
+            s.streifen = Farben.aenderung
+            s.rand = Farben.aenderung.opacity(0.45)
+        }
+        if s.strich.dash.isEmpty { s.strich = StrokeStyle(lineWidth: Kartenmass.linie) }
+        return s
     }
 
     private func muster(_ e: Eintrag) -> some View {
@@ -248,16 +273,21 @@ struct PlanLegende: View {
                 if let chip = e.chip {
                     Statuschip(chip: chip, schrift: .system(size: 12, weight: .semibold))
                         .frame(height: 13.5, alignment: .leading)
+                } else if e.id == "pruefung" {
+                    Text("PRÜFUNG")
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .tracking(0.3)
+                        .foregroundStyle(Farben.pruefung)
                 }
             }
         }
-        .padding(.leading, e.stil.mitBalken ? Kartenmass.leiste + 4 : 6)
+        .padding(.leading, stilFuer(e).mitBalken ? Kartenmass.leiste + 4 : 6)
         .padding(.trailing, 4)
-        .padding(.top, 4)
+        .padding(.top, 4 + stilFuer(e).obenEinzug)
         .padding(.bottom, 3)
         .frame(width: PlanLegende.musterBreite, height: e.notiz == nil ? 82 : 44, alignment: .topLeading)
         .clipped()
-        .klassikKarte(e.stil)
+        .klassikKarte(stilFuer(e))
         .accessibilityHidden(true)
     }
 }

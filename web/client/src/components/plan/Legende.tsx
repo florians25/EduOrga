@@ -9,9 +9,9 @@ import { Feld, leiste, mischen, StatusFeld } from './Kachel';
 import { KENNZEICHNUNGEN, type Kennzeichengruppe } from './aenderung';
 
 export const ARTEN: { art: Art; text: string; hinweis: string }[] = [
-  { art: 'aenderung', text: 'Änderung', hinweis: 'Vertretung, Raum- oder Fachwechsel, Verlegung, Zusatzstunde – grüne Fläche, schraffierte Kante, der neue Wert im grünen Feld „+neu (bisher)“' },
-  { art: 'entfall', text: 'Entfall', hinweis: 'Die Stunde fällt aus – rote Fläche, alles durchgestrichen, Feld „× entfällt“' },
-  { art: 'pruefung', text: 'Prüfung', hinweis: 'Klausur, Klassenarbeit oder Test' },
+  { art: 'aenderung', text: 'Änderung', hinweis: 'Vertretung, Raum- oder Fachwechsel, Verlegung, Zusatzstunde – grüner Streifen, hellgrüne Fläche, der neue Wert grün „neu (b̶i̶s̶h̶e̶r̶)“' },
+  { art: 'entfall', text: 'Entfall', hinweis: 'Die Stunde fällt aus – roter Streifen, hellrote Fläche, alles durchgestrichen, „entfällt“' },
+  { art: 'pruefung', text: 'Prüfung', hinweis: 'Klausur, Klassenarbeit oder Test – gelber Streifen, hellgelbe Fläche, „Prüfung“' },
   { art: 'termin', text: 'Termin', hinweis: 'Veranstaltung oder Aktivität' },
   { art: 'abwesend', text: 'Vertreten', hinweis: 'Die Lehrkraft ist abwesend, andere halten die Stunde (grün, Vertretung im Feld)' },
   { art: 'buchung', text: 'Buchung', hinweis: 'Raumbuchung bzw. vorgemerkte Meldung' },
@@ -22,7 +22,7 @@ export function unterrichtHinweis(d: Kartendarstellung) {
   const flaeche = d.flaeche === 'neutral' ? 'helle Kachel' : d.flaeche === 'getoent' ? 'leicht getönte Kachel' : 'weiße Kachel';
   const fach = {
     'balken-innen': 'die Fachfarbe steht als schmaler Streifen innen links', quadrat: 'die Fachfarbe steht als kleines Quadrat vor dem Fachkürzel', 'balken-links': 'die Fachfarbe steht als Balken am linken Rand',
-    'balken-flaeche': 'die Fachfarbe steht als Balken am linken Rand, die Kachel ist leicht getönt', 'balken-oben': 'die Fachfarbe steht als Balken am oberen Rand', flaeche: 'die Kachel ist leicht in der Fachfarbe getönt', keine: 'ohne Fachfarbe',
+    'balken-flaeche': 'die Fachfarbe steht als Balken am linken Rand, die Kachel ist leicht getönt', 'balken-oben': 'ohne Farbstreifen (hat das Fach eine Farbe, steht sie als schmaler Streifen oben)', flaeche: 'die Kachel ist leicht in der Fachfarbe getönt', keine: 'ohne Fachfarbe',
   }[d.fachfarbe];
   return `${flaeche}, ${fach}`;
 }
@@ -35,18 +35,20 @@ export function Muster({ art, gross = false }: { art: Art | 'regulaer'; gross?: 
   const alpha = mischen;
   const s = pal.status;
   const papier = pal.background.paper;
+  const v7 = d.fachfarbe === 'balken-oben';
+  const kante = (farbe: string) => (v7 ? `inset 0 3px 0 ${farbe}` : `inset 3px 0 0 ${farbe}`);
   const stil: Record<string, object> = {
     regulaer: {
       background: d.fachfarbe === 'flaeche' || d.fachfarbe === 'balken-flaeche' ? alpha(pal.primary.main, d.deckkraft / 100) : d.flaeche === 'neutral' ? pal.kachel.flaeche : papier,
       border: `1px solid ${d.rahmen === 'keiner' || d.rahmen === 'schatten' ? alpha(pal.text.primary, 0.12) : d.rahmen === 'kraeftig' ? alpha(pal.text.primary, 0.42) : pal.kachel.rand}`,
       ...(d.fachfarbe === 'balken-innen' ? { boxShadow: `inset 3px 0 0 ${papier}, inset 5px 0 0 ${pal.primary.main}` }
         : d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-flaeche' ? { boxShadow: `inset ${Math.min(3, d.balkenbreite)}px 0 0 ${pal.primary.main}` }
-        : d.fachfarbe === 'balken-oben' ? { boxShadow: `inset 0 ${Math.min(3, d.balkenbreite)}px 0 ${pal.primary.main}` } : {}) },
-    aenderung: { background: s.aenderung.flaeche, boxShadow: `inset 3px 0 0 ${s.aenderung.main}`, border: `1px solid ${alpha(s.aenderung.main, 0.5)}` },
-    entfall: { background: s.entfall.flaeche, boxShadow: `inset 3px 0 0 ${s.entfall.main}`, border: `1px solid ${alpha(s.entfall.main, 0.5)}` },
-    pruefung: { background: d.statusflaeche ? s.pruefung.flaeche : papier, border: `1px solid ${s.pruefung.main}` },
+        : {}) },
+    aenderung: { background: s.aenderung.flaeche, boxShadow: kante(s.aenderung.main), border: `1px solid ${alpha(s.aenderung.main, 0.5)}` },
+    entfall: { background: s.entfall.flaeche, boxShadow: kante(s.entfall.main), border: `1px solid ${alpha(s.entfall.main, 0.5)}` },
+    pruefung: { background: d.statusflaeche ? s.pruefung.flaeche : papier, boxShadow: kante(s.pruefung.streifen ?? s.pruefung.main), border: `1px solid ${alpha(s.pruefung.streifen ?? s.pruefung.main, 0.6)}` },
     termin: { background: pal.kachel.ereignis, border: `1px solid ${pal.kachel.ereignisRand}` },
-    abwesend: { background: s.aenderung.flaeche, boxShadow: `inset 3px 0 0 ${s.aenderung.main}`, border: `1px dashed ${alpha(s.aenderung.main, 0.6)}` },
+    abwesend: { background: s.aenderung.flaeche, boxShadow: kante(s.aenderung.main), border: `1px dashed ${alpha(s.aenderung.main, 0.6)}` },
     buchung: { background: papier, border: `1px dashed ${s.frei.main}` },
   };
   return <Box component="span" aria-hidden sx={{ display: 'inline-block', width: gross ? 20 : 10, height: gross ? 14 : 10, borderRadius: '1px', flex: 'none', ...stil[art] }} />;
@@ -88,17 +90,23 @@ export function Legende({ karten, typ, fokus, setFokus }: { karten: Karte[]; typ
 /** Musterkarte einer Gruppe: dieselbe Fläche, Leiste, Kennzeichen, Zeilen, Tags und Durchstreichung wie die Stundenkarte. */
 export function Musterkarte({ g }: { g: Kennzeichengruppe }) {
   const t = useTheme();
+  const { d } = useDarstellung();
+  const v7 = d.fachfarbe === 'balken-oben';
   const pal = (t.vars ?? t).palette;
   const entfall = g.ton === 'entfall';
   const flaeche = g.ton && g.ton !== 'offen' ? pal.status[g.ton].flaeche : pal.background.paper;
   const offen = g.ton === 'offen';
   const kante = g.ton ? pal.status[g.ton].main : pal.kachel.balken;
+  const breite = v7 ? 1 : 1.5;
+  // v7: Streifen oben (nur geändert/Entfall), sonst Leiste links und Kennzeichen
+  const streifen = v7 && (g.ton === 'aenderung' || g.ton === 'entfall');
   return (
-    <Box aria-hidden data-muster={g.id} sx={{ position: 'relative', width: 132, flex: 'none', pl: '11px', pr: '12px', py: '4px', borderRadius: '4px', bgcolor: flaeche, overflow: 'hidden',
-      ...(offen ? { outline: `1.5px dashed ${mischen(kante, 0.9)}`, outlineOffset: '-1.5px' } : {}),
-      boxShadow: offen ? 'none' : `inset 0 0 0 1.5px ${g.ton ? mischen(kante, g.ton === 'entfall' ? 0.55 : 0.8) : pal.kachel.linie}`, fontVariantNumeric: 'tabular-nums' }}>
-      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: leiste(kante) }} />
-      {g.ton && <Box sx={{ position: 'absolute', top: 4, right: 4, width: 5, height: 5, borderRadius: 0, bgcolor: kante }} />}
+    <Box aria-hidden data-muster={g.id} sx={{ position: 'relative', width: 132, flex: 'none', pl: v7 ? '8px' : '11px', pr: '12px', pt: v7 ? '7px' : '4px', pb: '4px', borderRadius: v7 ? '2px' : '4px', bgcolor: flaeche, overflow: 'hidden',
+      ...(offen ? { outline: `${breite}px dashed ${mischen(kante, 0.9)}`, outlineOffset: `-${breite}px` } : {}),
+      boxShadow: offen ? 'none' : `inset 0 0 0 ${breite}px ${g.ton ? mischen(kante, v7 ? (g.ton === 'entfall' ? 0.35 : 0.45) : g.ton === 'entfall' ? 0.55 : 0.8) : pal.kachel.linie}`, fontVariantNumeric: 'tabular-nums' }}>
+      {!v7 && <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: leiste(kante) }} />}
+      {streifen && <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: 3, bgcolor: kante }} />}
+      {g.ton && !v7 && <Box sx={{ position: 'absolute', top: 4, right: 4, width: 5, height: 5, borderRadius: 0, bgcolor: kante }} />}
       {g.muster.map((z, i) => (
         <Typography key={i} component="div" noWrap sx={{ fontSize: i ? 12 : 13, lineHeight: i ? '17px' : '18px', fontWeight: i ? 400 : 600, textDecoration: entfall ? 'line-through' : 'none',
           color: entfall ? (i ? 'status.entfall.text' : 'status.entfall.main') : i ? 'text.secondary' : 'text.primary' }}>

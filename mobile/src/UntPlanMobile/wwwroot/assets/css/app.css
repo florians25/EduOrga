@@ -2865,3 +2865,72 @@ body.show-card-times .card__times{ display:flex; }
 .kennz .muster.card--change{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--st-aenderung) 80%, transparent); padding-left:11px; }
 .kennz .muster.card--cancelled{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--st-entfall) 55%, transparent); padding-left:11px; }
 .sw--change{ box-shadow:inset 4px 0 0 var(--st-aenderung), inset 0 0 0 1.5px color-mix(in srgb, var(--st-aenderung) 80%, transparent); }
+
+/* =====================================================================
+   Stundenkarte v7 (design/DESIGN.md, Abschnitt 10 „Stundenkarte v7“) –
+   dieselben Maße wie EduOrga Web (Kachel.tsx) und iOS (Kartenmass):
+   „EduOrga Standard“ = Fachfarbe „balken-oben“. Fast rechteckig (Radius
+   2 px, höchstens 3), feine 1-px-Linie --kachel-linie (#c9d2d7), regulär
+   KEIN Farbstreifen (nur mit Fachfarbe der Schule); Status als 3-px-
+   Streifen oben über die ganze Breite, bündig und eckig: geändert grün +
+   hellgrüne Fläche, Entfall rot + hellrote Fläche + alles durchgestrichen,
+   Prüfung gelb (#b7791f) + hellgelbe Fläche + „Prüfung“; offen ohne
+   Streifen, grau gestrichelt. Tags als reiner farbiger Text (600) ohne
+   Fläche und Rahmen; kein Kennzeichen oben rechts. „Klassisch“ (Leiste
+   links) bleibt über die übrigen Fachfarb-Varianten erhalten.
+   ===================================================================== */
+.card--exam::before{ background:var(--up-pruefung-streifen, #b7791f); }
+[data-fachfarbe="balken-oben"]{ --kachel-linie:var(--up-karte-linie, #c9d2d7); --karte-rahmen:inset 0 0 0 1px var(--kachel-linie); }
+[data-fachfarbe="balken-oben"] .card{
+  border-radius:min(var(--kradius, 2px), 3px);
+  padding:6px 4px 3px 6px;
+  box-shadow:inset 0 0 0 1px var(--kachel-linie);
+}
+[data-fachfarbe="balken-oben"] .card::before{
+  display:block; left:0; right:0; top:0; bottom:auto; width:auto; height:3px; border-radius:0; opacity:1; background:var(--fach);
+}
+[data-fachfarbe="balken-oben"] .card.ohne-fach::before,
+[data-fachfarbe="balken-oben"] .card.is-offen::before,
+[data-fachfarbe="balken-oben"] .card--supervision::before, [data-fachfarbe="balken-oben"] .card--standby::before,
+[data-fachfarbe="balken-oben"] .card--gs::before, [data-fachfarbe="balken-oben"] .card--absence::before,
+[data-fachfarbe="balken-oben"] .card--event::before, [data-fachfarbe="balken-oben"] .card--holiday::before{ display:none; }
+[data-fachfarbe="balken-oben"] .card::after{ display:none; }
+[data-fachfarbe="balken-oben"] .card--change, [data-fachfarbe="balken-oben"] .card--released,
+[data-fachfarbe="balken-oben"] .card--cancelled, [data-fachfarbe="balken-oben"] .card--class-absent{ padding-left:6px; }
+[data-fachfarbe="balken-oben"] .card.card--change::before, [data-fachfarbe="balken-oben"] .card.card--released::before{ display:block; width:auto; background:var(--st-aenderung); }
+[data-fachfarbe="balken-oben"] .card--change, [data-fachfarbe="balken-oben"] .card--released{
+  background-color:var(--up-aenderung-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 45%, transparent);
+}
+[data-fachfarbe="balken-oben"] .card.card--cancelled::before, [data-fachfarbe="balken-oben"] .card.card--class-absent::before{ display:block; width:auto; background:var(--st-entfall); }
+[data-fachfarbe="balken-oben"] .card--cancelled, [data-fachfarbe="balken-oben"] .card--class-absent{
+  background-color:var(--up-entfall-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-entfall) 35%, transparent);
+}
+[data-fachfarbe="balken-oben"] .card.card--exam::before{ display:block; background:var(--up-pruefung-streifen, #b7791f); }
+[data-fachfarbe="balken-oben"] .card--exam{
+  background-color:var(--up-pruefung-flaeche); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--up-pruefung-streifen, #b7791f) 50%, transparent);
+}
+[data-fachfarbe="balken-oben"] .card--exam .card__status{ color:var(--up-pruefung-text, #7a4f05); }
+[data-fachfarbe="balken-oben"] .card--change.is-offen{
+  background-color:var(--karte); box-shadow:none; outline:1px dashed var(--up-offen); outline-offset:-1px;
+}
+[data-fachfarbe="balken-oben"] .card.is-past{ opacity:.72; }
+[data-fachfarbe="balken-oben"] .card--gs, [data-fachfarbe="balken-oben"] .card--event, [data-fachfarbe="balken-oben"] .card--absence{ border-radius:2px; }
+/* Tags: reiner farbiger Text (Grün #267349 bzw. dunkel #b5e6c8, Rot, Grau) ohne Fläche und Rahmen */
+.badge, .badge.badge--removed.badge--open, .feld,
+.feld--entfall, .card--cancelled .feld, .card--cancelled .feld--entfall, .feld--offen{
+  background:none; box-shadow:none; outline:none; padding:0; border-radius:0; font-weight:600;
+}
+.badge, .badge.badge--removed.badge--open, .feld{ color:var(--up-aenderung-text); }
+.feld--entfall, .card--cancelled .feld, .card--cancelled .feld--entfall{ color:var(--up-entfall-text); }
+.feld--offen{ color:var(--up-offen-text); }
+/* Legende: Musterkarten v7 */
+.kennz .muster, .legende-tab .muster{ border-radius:2px; padding:7px 8px 4px; box-shadow:inset 0 0 0 1px var(--kachel-linie); }
+.kennz .muster::before, .legende-tab .muster::before{ display:none; }
+.kennz .muster.card--change, .kennz .muster.card--cancelled{ padding-left:8px; }
+.kennz .muster.card--change::before, .kennz .muster.card--cancelled::before{ display:block; left:0; right:0; top:0; bottom:auto; width:auto; height:3px; }
+.kennz .muster.card--change{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 45%, transparent); }
+.kennz .muster.card--cancelled{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--st-entfall) 35%, transparent); }
+.kennz .muster.card--change.is-offen::before{ display:none; }
+.kennz .muster.card--change.is-offen{ outline-width:1px; outline-offset:-1px; }
+.sw--change{ box-shadow:inset 0 3px 0 var(--st-aenderung), inset 0 0 0 1px color-mix(in srgb, var(--st-aenderung) 45%, transparent); }
+[data-fachfarbe="balken-oben"] .card.card--change.is-offen::before{ display:none; }

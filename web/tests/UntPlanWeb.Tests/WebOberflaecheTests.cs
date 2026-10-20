@@ -104,7 +104,7 @@ public class WebOberflaecheTests
             Assert.Contains(muster, aenderung);
         var darstellung = Lesen("src", "components", "plan", "darstellung.tsx");
         // Standard „EduOrga Standard“: helle Karte auf hellgrauem Raster, Kante links (Fachfarbe mit Tönung), Fach · Klasse · Lehrkraft · Raum
-        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'balken-flaeche', balkenbreite: 5,[^}]*flaeche: 'weiss', rahmen: 'fein', eckenradius: 4, dichte: 'kompakt',[^}]*kuerzel: 'text', statuswoerter: false, statusflaeche: true,\s*reihenfolge: 'zeilen', raster: 'grau'", darstellung);
+        Assert.Matches(@"STANDARD: Kartendarstellung = \{\s*fachfarbe: 'balken-oben', balkenbreite: 3,[^}]*flaeche: 'weiss', rahmen: 'fein', eckenradius: 2, dichte: 'kompakt',[^}]*kuerzel: 'text', statuswoerter: false, statusflaeche: true,\s*reihenfolge: 'zeilen', raster: 'grau'", darstellung);
         Assert.Contains("data-fachbalken={innen && !bild.ton ? 'innen'", kachel);
         Assert.Contains("d.reihenfolge !== 'element'", kachel);
         Assert.Contains("d.raster === 'grau'", Lesen("src", "components", "plan", "Wochenraster.tsx"));

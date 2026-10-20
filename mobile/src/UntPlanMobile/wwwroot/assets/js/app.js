@@ -229,7 +229,7 @@ function rasterMasse(verfuegbar, letzte){
 function darstellungSetzen(pane){
   if (!pane) return;
   const d = state.darstellung || {};
-  pane.dataset.fachfarbe = d.fachfarbe || 'balken-innen';
+  pane.dataset.fachfarbe = d.fachfarbe || 'balken-oben';
   pane.dataset.flaeche = d.flaeche || 'weiss';
   pane.dataset.rahmen = d.rahmen || 'fein';
   pane.dataset.dichte = d.dichte || 'kompakt';
@@ -239,8 +239,8 @@ function darstellungSetzen(pane){
   if (plan) plan.dataset.raster = d.raster || 'grau';
   pane.classList.toggle('mit-statusflaeche', d.statusflaeche !== false);
   pane.style.setProperty('--balken', (d.balkenbreite || 5) + 'px');
-  /* Ecken (Stundenkarte v6): Standard 4 px, die Schule wählt zwischen 2 und 6 px */
-  pane.style.setProperty('--kradius', Math.min(6, Math.max(2, d.eckenradius ?? 4)) + 'px');
+  /* Ecken (Stundenkarte v7): Standard 2 px, die Schule wählt zwischen 2 und 6 px (v7 höchstens 3) */
+  pane.style.setProperty('--kradius', Math.min(6, Math.max(2, d.eckenradius ?? 2)) + 'px');
   pane.style.setProperty('--toenung', (d.deckkraft || 12) + '%');
 }
 
@@ -805,12 +805,13 @@ if (typeof window !== 'undefined') window.UntPlanRaum = { raumTokens };
 /* DARSTELLUNG-BEGINN (wird von den Tests ausgeführt) */
 /* Darstellung der Stundenkarten (schulweit, Administration von EduOrga Web,
    kommt mit den Startdaten als `darstellung`). Standard „EduOrga Standard“
-   (design/DESIGN.md, Abschnitt 10 – gleich auf allen Plattformen): helle
-   Karten auf hellgrauem Raster, Stundenkarte v6: 5-px-Leiste links bündig am
-   Rand (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), Kontur
-   1,5 px, Radius 4 px, je eine Zeile Fach · Klasse · Lehrkraft · Raum. */
+   (design/DESIGN.md, Abschnitt 10 – gleich auf allen Plattformen), Stundenkarte
+   v7: weiße, fast rechteckige Karten (Radius 2 px) mit feiner 1-px-Linie auf
+   hellgrauem Raster, regulär ohne Farbstreifen; Status als 3-px-Streifen oben
+   (geändert grün, Entfall rot, Prüfung gelb; Fachfarbe, falls gesetzt), je
+   eine Zeile Fach · Klasse · Lehrkraft · Raum. */
 const DARSTELLUNG_STANDARD = {
-  fachfarbe:'balken-flaeche', balkenbreite:5, deckkraft:12, flaeche:'weiss', rahmen:'fein', eckenradius:4, dichte:'kompakt',
+  fachfarbe:'balken-oben', balkenbreite:3, deckkraft:12, flaeche:'weiss', rahmen:'fein', eckenradius:2, dichte:'kompakt',
   fach:'kuerzel', raum:true, zeile2:true, zeile2Text:'kuerzel', kuerzel:'text', statuswoerter:false, statusflaeche:true,
   reihenfolge:'zeilen', raster:'grau'
 };

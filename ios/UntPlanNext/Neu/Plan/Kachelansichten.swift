@@ -107,9 +107,10 @@ struct ZeitKachel: View {
             mittel
             klein
         }
-        .padding(.leading, Kartenmass.leiste + 6)
+        .padding(.leading, (w.mitBalken ? Kartenmass.leiste : 0) + 6)
         .padding(.trailing, 8)
         .padding(.vertical, hoehe < 30 ? 2 : 6)
+        .padding(.top, w.obenEinzug)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .klassikKarte(w)
         .overlay(alignment: .topTrailing) {

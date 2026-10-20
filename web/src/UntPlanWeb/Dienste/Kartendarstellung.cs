@@ -7,18 +7,19 @@ namespace UntPlanWeb.Dienste;
 /// Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten): schulweit gültig für Wochenraster, Tagesansicht,
 /// Tagesseiten, Startseite und Stundendetails. Gespeichert als JSON in der Tabelle einstellungen (Schlüssel
 /// <see cref="Kartendarstellungen.Schluessel"/>); fehlende Angaben erhalten ihren Standard. Standard ist die Vorlage „EduOrga Standard“
-/// (design/DESIGN.md, Abschnitt 10 „Stundenkarte v6“, gleich auf allen Plattformen): kompakte helle Karten auf hellgrauem Raster mit
-/// 1,5-px-Kontur („fein“), 5-px-Leiste links bündig am Rand (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), je eine Zeile
-/// Fach · Klasse · Lehrkraft · Raum, Radius 4 px, Änderungen grün und Prüfungen bernstein in der hellen Statusfläche, Entfall rot. Die Statusdarstellung (Linie, Schraffur,
+/// (design/DESIGN.md, Abschnitt 10 „Stundenkarte v7“, gleich auf allen Plattformen): fast rechteckige weiße Karten (Radius 2 px) mit feiner
+/// 1-px-Linie („fein“) auf hellgrauem Raster, regulärer Unterricht ohne Farbstreifen; der Status steht als 3-px-Streifen oben über die ganze
+/// Breite (Fachfarbe „balken-oben“: geändert grün, Entfall rot, Prüfung gelb; mit Fachfarbe der Streifen in der Fachfarbe), je eine Zeile
+/// Fach · Klasse · Lehrkraft · Raum, Änderungen grün und Prüfungen gelb in der hellen Statusfläche. „Klassisch“ behält die Leiste links. Die Statusdarstellung (Linie, Schraffur,
 /// Durchstreichung, Kürzel-Plaketten) bleibt in jeder Variante erhalten; optional stehen zusätzlich die Statuswörter auf den Kacheln.
 /// </summary>
 public sealed record Kartendarstellung
 {
     /// <summary>Fachfarbe: balken-innen (Streifen innen links, grau ohne Fachfarbe) | balken-flaeche (Balken links und Tönung) | balken-links |
     /// balken-oben | quadrat | flaeche | keine.</summary>
-    public string Fachfarbe { get; init; } = "balken-flaeche";
+    public string Fachfarbe { get; init; } = "balken-oben";
     /// <summary>Breite des Fachfarbbalkens in px (2–6).</summary>
-    public int Balkenbreite { get; init; } = 5;
+    public int Balkenbreite { get; init; } = 3;
     /// <summary>Deckkraft der Fachfarb-Tönung in Prozent (6–30), bei <see cref="Fachfarbe"/> = flaeche bzw. balken-flaeche.</summary>
     public int Deckkraft { get; init; } = 12;
     /// <summary>Kartenfläche: neutral (#f6f8fa) | weiss | getoent (leichte Marine-Tönung).</summary>
@@ -26,7 +27,7 @@ public sealed record Kartendarstellung
     /// <summary>Rahmen: fein (1,5-px-Kontur, Standard) | kraeftig (2 px) | schatten (keine Linie, leicht abgehoben) | keiner.</summary>
     public string Rahmen { get; init; } = "fein";
     /// <summary>Eckenradius in px (0–8).</summary>
-    public int Eckenradius { get; init; } = 4;
+    public int Eckenradius { get; init; } = 2;
     /// <summary>Dichte: kompakt | normal | grosszuegig (Innenabstand, Schriftgrößen).</summary>
     public string Dichte { get; init; } = "kompakt";
     /// <summary>Zeile 1: Fach als kuerzel | name.</summary>

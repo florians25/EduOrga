@@ -14,16 +14,16 @@ export const farben = {
   // Stundenkarte (design/DESIGN.md, Abschnitt 10): Entfall rot mit allem durchgestrichen, jede Änderung grün (Feld „+neu (bisher)“)
   entfall: '#b42318', entfallFlaeche: '#fdecea', entfallText: '#8f1d14', entfallFeld: '#f7d3cf',
   aenderung: '#2f855a', aenderungFlaeche: '#e6f4ea', aenderungText: '#267349', aenderungFeld: '#c9e8d4',
-  pruefung: '#a15c07', pruefungFlaeche: '#fdf4e3',
+  pruefung: '#a15c07', pruefungFlaeche: '#fdf6d8', pruefungStreifen: '#b7791f', pruefungText: '#7a4f05',
   termin: '#a3347c', terminFlaeche: '#faeef5',
   frei: '#2f6f9f', freiFlaeche: '#edf4fa',
   ok: '#1d7a46', okFlaeche: '#e9f6ee',
 } as const;
 
 /** Statusfarbe: Linie/Schrift, helle Fläche; Entfall und Änderung zusätzlich Schrift und Fläche des Felds (Chip) auf der Stundenkarte. */
-export interface StatusFarbe { main: string; flaeche: string; text?: string; feld?: string }
+export interface StatusFarbe { main: string; flaeche: string; text?: string; feld?: string; /** Streifen oben (Stundenkarte v7), z. B. Prüfung gelb */ streifen?: string }
 /** Flächen des Stundenplans: Kachel, kräftigere Kachellinie, Kopf/Zeitspalte, Überfahren, Pausenband. */
-export interface KachelFarben { flaeche: string; rand: string; /** Kontur der Stundenkarte (1,5 px, Stundenkarte v6). */ linie: string; kopf: string; hover: string; pause: string; raster: string; /** Balken links ohne Fachfarbe (grau, hell und dunkel deutlich sichtbar). */ balken: string;
+export interface KachelFarben { flaeche: string; rand: string; /** Kontur der Stundenkarte (1 px, Stundenkarte v7). */ linie: string; kopf: string; hover: string; pause: string; raster: string; /** Balken links ohne Fachfarbe (grau, hell und dunkel deutlich sichtbar). */ balken: string;
   /** Mitteilung im Plan: helle gelbe Notiz (Fläche, Linie, Schrift). */ notiz: string; notizRand: string; notizText: string;
   /** Veranstaltung/Termin als Block im Raster: warmes Neutral (Fläche, Linie, Titel). */ ereignis: string; ereignisRand: string; ereignisText: string }
 /** Seitenleiste in der Primärfarbe: Fläche, Text, Zweittext, Überfahren, aktive Zeile (leichte Tönung), 3-px-Kante der aktiven Zeile, Linie. */
@@ -54,7 +54,7 @@ const status = (dunkel: boolean) => ({
   aenderung: { main: dunkel ? '#5cbf86' : farben.aenderung, flaeche: dunkel ? '#15281d' : farben.aenderungFlaeche, text: dunkel ? '#b5e6c8' : farben.aenderungText, feld: dunkel ? '#1f4630' : farben.aenderungFeld },
   // offene Vertretung: neutral grau (nie rot), Kante gestrichelt, Feld „(Abr)“ bzw. „Vertretung folgt“
   offen: { main: dunkel ? '#8a9aa0' : '#7d8b90', flaeche: dunkel ? '#26363b' : '#ebeef2', text: dunkel ? '#d3dde0' : '#4d5866', feld: dunkel ? '#26363b' : '#ebeef2' },
-  pruefung: { main: dunkel ? '#e9a640' : farben.pruefung, flaeche: dunkel ? '#2b2111' : farben.pruefungFlaeche },
+  pruefung: { main: dunkel ? '#e9a640' : farben.pruefung, flaeche: dunkel ? '#2b2412' : farben.pruefungFlaeche, text: dunkel ? '#f1cf86' : farben.pruefungText, streifen: dunkel ? '#e0a93a' : farben.pruefungStreifen },
   termin: { main: dunkel ? '#e27bbd' : farben.termin, flaeche: dunkel ? '#331a2b' : farben.terminFlaeche },
   frei: { main: dunkel ? '#78b3e0' : farben.frei, flaeche: dunkel ? '#132331' : farben.freiFlaeche },
   ok: { main: dunkel ? '#5ccf8c' : farben.ok, flaeche: dunkel ? '#12271b' : farben.okFlaeche },
@@ -79,7 +79,7 @@ export const theme = createTheme({
         divider: S[200],
         action: { hover: alpha(M[700], 0.06), selected: M[50] },
         status: status(false),
-        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', linie: '#b7c2c8', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2', balken: '#b4bec4',
+        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', linie: '#c9d2d7', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2', balken: '#b4bec4',
           notiz: '#fdf5c9', notizRand: '#eddc8c', notizText: '#5c4a0f', ereignis: '#f7f1e3', ereignisRand: '#e2d6bb', ereignisText: '#5c4a22' },
         nav: { flaeche: M[700], text: '#ffffff', text2: 'rgba(255,255,255,.72)', hover: 'rgba(255,255,255,.05)', aktiv: 'rgba(255,255,255,.12)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.14)' },
         flaechen: { kopf: '#f1f3f4', band: '#f7f8f9', rand: '#d3dbde' },
@@ -99,7 +99,7 @@ export const theme = createTheme({
         divider: '#26393e',
         action: { hover: 'rgba(255,255,255,.06)', selected: '#173a3f' },
         status: status(true),
-        kachel: { flaeche: '#172a2e', rand: '#33494e', linie: '#3c4e55', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20', balken: '#56626c',
+        kachel: { flaeche: '#172a2e', rand: '#33494e', linie: '#34464c', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20', balken: '#56626c',
           notiz: '#2e2a14', notizRand: '#5a5020', notizText: '#efe2a8', ereignis: '#2a2519', ereignisRand: '#4a4130', ereignisText: '#e6d7b0' },
         nav: { flaeche: '#0c2a2f', text: '#e8f1f2', text2: 'rgba(232,241,242,.66)', hover: 'rgba(255,255,255,.04)', aktiv: 'rgba(255,255,255,.09)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.10)' },
         flaechen: { kopf: '#17262a', band: '#152327', rand: '#2c3f44' },

@@ -12,9 +12,9 @@ import Foundation
 /// Kontur 1,5 px („fein“), Radius 4, Änderungen und Prüfungen in der hellen Statusfläche.
 struct Kartendarstellung: Decodable, Equatable, Sendable {
     /// balken-flaeche | balken-links | balken-oben | quadrat | flaeche | keine
-    var fachfarbe = "balken-flaeche"
+    var fachfarbe = "balken-oben"
     /// 2–6 px
-    var balkenbreite = 5
+    var balkenbreite = 3
     /// 6–30 % (bei Fachfarbe „flaeche“ bzw. „balken-flaeche“)
     var deckkraft = 12
     /// neutral | weiss | getoent
@@ -22,7 +22,7 @@ struct Kartendarstellung: Decodable, Equatable, Sendable {
     /// fein | kraeftig | keiner
     var rahmen = "fein"
     /// 0–8 px
-    var eckenradius = 4
+    var eckenradius = 2
     /// kompakt | normal | grosszuegig
     var dichte = "kompakt"
     /// kuerzel | name

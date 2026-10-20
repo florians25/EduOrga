@@ -36,7 +36,7 @@ export interface Kartenbild {
 }
 
 /** Block einer Veranstaltung bzw. eines Termins (warmes Neutral, ohne Kante): Status Veranstaltung oder Stunde ohne Fach und Unterricht mit Anlass. */
-export const istTerminBlock = (k: Karte) => k.status === 'veranstaltung' || (!k.fach && !k.unterricht && !!(k.text || '').trim() && k.status !== 'entfall');
+export const istTerminBlock = (k: Karte) => k.status === 'veranstaltung' || (!k.fach && !k.unterricht && !!(k.text || '').trim() && k.status !== 'entfall' && k.status !== 'klausur');
 
 /** Verlegungsziel bzw. -ursprung: „Di 21.10., 6. Std“ (ohne Stunde mit Uhrzeit „Di 21.10., 12:20“). */
 export function verlegungKurz(v: Verlegungszeit | null | undefined): string {
@@ -146,9 +146,9 @@ export interface Kennzeichen { tag: Teil; satz: string }
 export interface Kennzeichengruppe { id: 'unterricht' | 'aenderung' | 'entfall' | 'offen' | 'hinweis'; titel: string; satz: string; ton: Ton | null; muster: Teil[][]; status?: Statusfeld; eintraege: Kennzeichen[] }
 
 export const KENNZEICHNUNGEN: Kennzeichengruppe[] = [
-  { id: 'unterricht', titel: 'Unterricht', satz: 'Helle Karte mit grauer Leiste; hat das Fach eine Farbe, sind Leiste und Fläche leicht in der Fachfarbe.', ton: null,
+  { id: 'unterricht', titel: 'Unterricht', satz: 'Weiße Karte mit feiner grauer Linie, ohne Farbstreifen; hat das Fach eine Farbe, steht sie als schmaler Streifen oben.', ton: null,
     muster: [[{ text: 'D' }], [{ text: '6b' }], [{ text: 'Kre' }], [{ text: '023' }]], eintraege: [] },
-  { id: 'aenderung', titel: 'Geändert', satz: 'Grüne Leiste und Kennzeichen, helle grüne Fläche; das Geänderte steht als Tag auf seiner Zeile.', ton: 'aenderung',
+  { id: 'aenderung', titel: 'Geändert', satz: 'Grüner Streifen oben, hellgrüne Fläche; das Geänderte steht grün auf seiner Zeile, der bisherige Wert durchgestrichen in Klammern.', ton: 'aenderung',
     muster: [[{ text: 'SP' }], [{ text: '6b' }], [{ text: 'Gal', alt: 'Gor', feld: 'aenderung' }], [{ text: 'TH1' }]],
     eintraege: [
       { tag: { text: 'Gal', alt: 'Gor', feld: 'aenderung' }, satz: 'Vertretung: Gal übernimmt für Gor.' },
@@ -158,25 +158,25 @@ export const KENNZEICHNUNGEN: Kennzeichengruppe[] = [
       { tag: { text: 'verlegt von Mo 20.10., 3. Std', feld: 'aenderung' }, satz: 'Die Stunde wurde hierher verlegt.' },
       { tag: { text: 'zusätzlich', feld: 'aenderung' }, satz: 'Zusätzliche Stunde außerhalb des Regelplans.' },
     ] },
-  { id: 'offen', titel: 'Offen', satz: 'Graue Leiste, gestrichelter Rand: die Vertretung ist noch nicht vergeben – die Stunde entfällt nicht.', ton: 'offen',
+  { id: 'offen', titel: 'Offen', satz: 'Gestrichelter grauer Rand, kein Streifen: die Vertretung ist noch nicht vergeben – die Stunde entfällt nicht.', ton: 'offen',
     muster: [[{ text: 'E' }], [{ text: '7c' }], [{ text: 'Abr fehlt', feld: 'offen' }], [{ text: '403' }]],
     eintraege: [
       { tag: { text: 'Abr fehlt', feld: 'offen' }, satz: 'So sehen es Lehrkräfte.' },
       { tag: { text: 'Vertretung folgt', feld: 'offen' }, satz: 'So steht es für Schüler*innen und Eltern.' },
     ] },
-  { id: 'entfall', titel: 'Entfällt', satz: 'Rote Leiste und Kennzeichen, helle rote Fläche, der ganze Inhalt durchgestrichen.', ton: 'entfall',
+  { id: 'entfall', titel: 'Entfällt', satz: 'Roter Streifen oben, hellrote Fläche, der ganze Inhalt durchgestrichen.', ton: 'entfall',
     muster: [[{ text: 'M' }], [{ text: '10e' }], [{ text: 'Rth' }], [{ text: '126' }]], status: { text: 'entfällt', ton: 'entfall', titel: '' },
     eintraege: [
       { tag: { text: 'entfällt', feld: 'entfall' }, satz: 'Die Stunde findet nicht statt.' },
       { tag: { text: '5b fehlt', feld: 'entfall' }, satz: 'Die Klasse ist abwesend, deshalb entfällt die Stunde.' },
       { tag: { text: 'verlegt auf Di 21.10., 6. Std', feld: 'entfall' }, satz: 'Die Stunde findet stattdessen am genannten Termin statt.' },
     ] },
-  { id: 'hinweis', titel: 'Hinweise', satz: 'Ohne Leiste, über die betroffenen Stunden.', ton: null,
+  { id: 'hinweis', titel: 'Hinweise', satz: 'Ohne Streifen, über die betroffenen Stunden.', ton: null,
     muster: [],
     eintraege: [
       { tag: { text: 'Termin' }, satz: 'Veranstaltung oder Termin als ruhiger beiger Block (Titel, Beteiligte, Uhrzeit).' },
       { tag: { text: 'Mitteilung' }, satz: 'Hinweis der Schule zum Tag als helle gelbe Notiz.' },
-      { tag: { text: 'Prüfung' }, satz: 'Bernsteinfarbene Linie und Wort „Prüfung“.' },
+      { tag: { text: 'Prüfung' }, satz: 'Gelber Streifen oben, hellgelbe Fläche und das Wort „Prüfung“.' },
       { tag: { text: '+2' }, satz: 'Weitere Stunden zur selben Zeit – anklicken zeigt alle.' },
     ] },
 ];

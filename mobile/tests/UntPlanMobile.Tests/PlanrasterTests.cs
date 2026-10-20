@@ -46,7 +46,7 @@ public class PlanrasterTests
             + Abschnitt(AppJs, "DARSTELLUNG") + """
             const D = window.EduOrgaDarstellung;
             const std = D.mitStandard(null);
-            pruefe([std.fachfarbe, std.reihenfolge, std.raster, std.statusflaeche], ['balken-flaeche', 'zeilen', 'grau', true]);
+            pruefe([std.fachfarbe, std.reihenfolge, std.raster, std.statusflaeche], ['balken-oben', 'zeilen', 'grau', true]);
             const zeilen = [{ key:'class', text:'5a', primary:true }, { key:'subject', text:'M' }, { key:'room', text:'R101' }];
             const txt = l => l.map(x => x.key + ':' + x.text + (x.primary ? '*' : ''));
             // Standard „EduOrga Standard“: Fach · Klasse · Lehrkraft · Raum, erste Zeile fett
@@ -119,6 +119,11 @@ public class PlanrasterTests
         // Stundenkarte v6: Leiste 5 px, Kontur 1,5 px, Radius 4 px (gleich in Web und iOS)
         Assert.Contains(".card--change::before, .card--released::before, .card--cancelled::before{ width:max(5px, var(--balken, 5px)); border-radius:0; }", AppCss);
         Assert.Contains("[data-rahmen=\"fein\"]{ --karte-rahmen:inset 0 0 0 1.5px var(--kachel-linie); }", AppCss);
+        // Stundenkarte v7: Streifen oben (3 px) statt Leiste, Prüfung gelb, Tags als reiner Text, Radius höchstens 3 px
+        Assert.Contains("[data-fachfarbe=\"balken-oben\"] .card.card--exam::before{ display:block; background:var(--up-pruefung-streifen, #b7791f); }", AppCss);
+        Assert.Contains("border-radius:min(var(--kradius, 2px), 3px);", AppCss);
+        Assert.Contains(".card--exam::before{ background:var(--up-pruefung-streifen, #b7791f); }", AppCss);
+        Assert.Contains("background:none; box-shadow:none; outline:none; padding:0; border-radius:0; font-weight:600;", AppCss);
         Assert.Contains("<div class=\"kennz\" role=\"list\"", Datei("Vorlagen", "index.html"));
         Assert.Contains("class=\"notiz\"", AppJs);
     }

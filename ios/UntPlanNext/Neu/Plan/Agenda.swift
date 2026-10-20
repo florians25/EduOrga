@@ -342,9 +342,10 @@ struct Agendazeile: View {
                 Statuswort(merkmal: m)
             }
         }
-        .padding(.leading, stil.mitBalken ? Kartenmass.leiste + 6 : 6)
+        .padding(.leading, stil.mitBalken ? Kartenmass.leiste + 6 : 8)
         .padding(.trailing, 10)
         .padding(.vertical, 4)
+        .padding(.top, stil.obenEinzug)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .klassikKarte(stil)
         .opacity(vergangen ? 0.62 : (stil.gedaempft && !entfall ? 0.8 : 1))

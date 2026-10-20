@@ -98,9 +98,9 @@ enum Farben {
     /// Feiner Schatten der Karte (hell) bzw. Kontur (dunkel)
     static let karteSchatten = Color(hell: 0x0C2C31, dunkel: 0x000000, deckkraftHell: 0.16, deckkraftDunkel: 0)
     static let karteKontur = Color(hell: 0x0C2C31, dunkel: 0x262F38, deckkraftHell: 0.06, deckkraftDunkel: 1)
-    /// Kontur der Stundenkarten (1,5 pt, Stundenkarte v6): kräftigeres Neutralgrau – wie im Web `kachel.linie` (#b7c2c8 /
-    /// dunkel #3c4e55)
-    static let karteLinie = Color(hell: 0xB7C2C8, dunkel: 0x3C4E55)
+    /// Kontur der Stundenkarten (1 pt, Stundenkarte v7): feines Neutralgrau – wie im Web `kachel.linie` (#c9d2d7 /
+    /// dunkel #34464c)
+    static let karteLinie = Color(hell: 0xC9D2D7, dunkel: 0x34464C)
     /// Feine Stundenlinien im Wochenraster
     static let rasterLinie = Color(hell: 0xD7DDE1, dunkel: 0x26313A)
     /// Eigene Abwesenheit hinter den Stunden
@@ -142,7 +142,9 @@ enum Farben {
     static let offenChipText = Color(hell: 0x4D5866, dunkel: 0xC7CED8)
     /// Klausur, Prüfung
     static let pruefung = Color(hell: 0xA15C07, dunkel: 0xE3A54B)
-    static let pruefungFlaeche = Color(hell: 0xFDF4E3, dunkel: 0x2A2010)
+    static let pruefungFlaeche = Color(hell: 0xFDF6D8, dunkel: 0x2B2412)
+    /// Streifen bzw. Leiste einer Prüfung (Bernstein-Gelb #b7791f, 3,4 : 1 auf der Prüfungsfläche – nie grau)
+    static let pruefungStreifen = Color(hell: 0xB7791F, dunkel: 0xE0A93A)
     /// Veranstaltung, Termin, Raumbuchung (Magenta – unterscheidbar von Änderung und Entfall)
     static let termin = Color(hell: 0xA3347C, dunkel: 0xEE8CC9)
     static let terminFlaeche = Color(hell: 0xFAEEF5, dunkel: 0x341A2C)

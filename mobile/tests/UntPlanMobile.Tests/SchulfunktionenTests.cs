@@ -185,7 +185,7 @@ public class SchulfunktionenTests
         Assert.Equal("eltern", meta["user"]!["rolle"]!.GetValue<string>());
         Assert.True(meta["user"]!["familie"]!.GetValue<bool>());
         Assert.Equal(kind.Id, meta["user"]!["schuelerIds"]![0]!.GetValue<int>());
-        Assert.Equal("balken-flaeche", meta["darstellung"]!["fachfarbe"]!.GetValue<string>());
+        Assert.Equal("balken-oben", meta["darstellung"]!["fachfarbe"]!.GetValue<string>());
         Assert.Equal("zeilen", meta["darstellung"]!["reihenfolge"]!.GetValue<string>());
 
         using var l = await u.AngemeldetAsync("sne");

@@ -332,6 +332,7 @@ public static class AppApi
             var element = b.KlassenKuerzel ?? b.LehrerKuerzel;
             var karten = element is null || gesperrt ? new List<Karte>() : kb.Anreichern(plan.Karten(s, tag, typ, element, r.Vorgemerkt(tag, s)), b.Kollegium);
             var aufsichten = element is not null && !gesperrt && typ == Elementtyp.Lehrer ? plan.Aufsichten(s, tag, element) : new List<Aufsicht>();
+            var kalender = plan.Kalender(s, heute, tag);
             var termine = s.Paket.Termine.Where(t => DateOnly.TryParse(t.Von, out var v) && v >= heute && v <= heute.AddDays(14) &&
                     (element is null || (typ == Elementtyp.Klasse ? t.Klassen.Contains(element, StringComparer.OrdinalIgnoreCase) : t.Lehrer.Contains(element, StringComparer.OrdinalIgnoreCase))))
                 .OrderBy(t => t.Von).Take(8).Select(t => new { t.Art, t.Titel, t.Von, t.Bis, t.StundeVon, t.StundeBis, klassen = t.Klassen });
@@ -357,6 +358,9 @@ public static class AppApi
                 offeneStunden = b.LehrerKuerzel is string l ? kb.OffeneStunden(s, l).Count : 0,
                 hausaufgaben = b.KlassenKuerzel is string k ? kb.Hausaufgaben(k).Take(10).ToList() : new List<Klassenbucheintrag>(),
                 sprechtage,
+                // Ferien und freie Tage (Heute-Seite): heute frei, nächste Ferien, nächste Feiertage/freie Tage, nächster Schultag
+                kalender,
+                ferien = kalender.Frei is { Art: "ferien" } f ? new { titel = f.Name, von = f.Von, bis = f.Bis } : null,
             });
         });
 

@@ -61,9 +61,11 @@
   --up-ereignis-rand: #e2d6bb;
   --up-ereignis-text: #5c4a22;
   --up-karte-balken: #b4bec4;      /* Kartenbalken ohne Fachfarbe */
-  --up-karte-linie: #b7c2c8;       /* Kontur der Stundenkarte (1,5 px, Stundenkarte v6) */
+  --up-karte-linie: #c9d2d7;       /* Kontur der Stundenkarte (1 px, Stundenkarte v7) */
   --up-pruefung: #a15c07;         /* Klausur, Prüfung */
-  --up-pruefung-flaeche: #fdf4e3;
+  --up-pruefung-flaeche: #fdf6d8;
+  --up-pruefung-streifen: #b7791f;  /* Streifen oben einer Prüfung (Stundenkarte v7, nie grau) */
+  --up-pruefung-text: #7a4f05;
   --up-termin: #a3347c;           /* Veranstaltung, Termin */
   --up-termin-flaeche: #faeef5;
   --up-frei: #2f6f9f;             /* Ferien, unterrichtsfrei */
@@ -158,8 +160,10 @@
     --up-ereignis-rand: #4a4130;
     --up-ereignis-text: #e6d7b0;
     --up-karte-balken: #56626c;
-    --up-karte-linie: #3c4e55;
-    --up-pruefung-flaeche: #2a2010;
+    --up-karte-linie: #34464c;
+    --up-pruefung-flaeche: #2b2412;
+    --up-pruefung-streifen: #e0a93a;
+    --up-pruefung-text: #f1cf86;
     --up-termin-flaeche: #2e1626;
     --up-frei-flaeche: #132231;
     --up-ok-flaeche: #11261a;
@@ -200,8 +204,10 @@
   --up-ereignis-rand: #4a4130;
   --up-ereignis-text: #e6d7b0;
   --up-karte-balken: #56626c;
-  --up-karte-linie: #3c4e55;
-  --up-pruefung-flaeche: #2a2010;
+  --up-karte-linie: #34464c;
+  --up-pruefung-flaeche: #2b2412;
+    --up-pruefung-streifen: #e0a93a;
+    --up-pruefung-text: #f1cf86;
   --up-termin-flaeche: #2e1626;
   --up-frei-flaeche: #132231;
   --up-ok-flaeche: #11261a;

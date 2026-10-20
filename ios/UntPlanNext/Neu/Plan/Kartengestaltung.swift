@@ -36,17 +36,26 @@ import SwiftUI
 
 // MARK: - Maße
 
-/// Maße der Stundenkarte (design/DESIGN.md, Abschnitt 10 „Stundenkarte v6“) – dieselben Werte in px für EduOrga Web
-/// (`web/client/src/components/plan/Kachel.tsx`) und die PWA (`app.css`, Abschnitt „Stundenkarte v6“).
+/// Maße der Stundenkarte (design/DESIGN.md, Abschnitt 10 „Stundenkarte v7“) – dieselben Werte in px für EduOrga Web
+/// (`web/client/src/components/plan/Kachel.tsx`) und die PWA (`app.css`, Abschnitt „Stundenkarte v7“).
+///
+/// v7 („EduOrga Standard“, Fachfarbe „balken-oben“): fast rechteckige Karte (Radius 2), feine neutrale 1-pt-Linie, **kein
+/// Streifen bei regulärem Unterricht**; der Status steht als **Streifen oben** (3 pt, volle Breite, bündig, eckig): geändert
+/// Grün, Entfall Rot, Prüfung Bernstein; Fachfarbe (falls die Schule eine gesetzt hat) als Streifen der neutralen Karte.
+/// Die Vorlage „Klassisch“ (Fachfarbe „balken-links“ usw.) behält die Leiste links (`leiste`).
 enum Kartenmass {
-    /// Eckenradius (nüchtern, nie pillenförmig)
-    static let radius: CGFloat = 4
-    /// Leiste links: bündig am Kartenrand, volle Höhe, innen eckig (Fach-, Status- bzw. Grau)
+    /// Eckenradius (fast rechteckig, nie mehr als 3)
+    static let radius: CGFloat = 2
+    /// Statusstreifen oben (v7): volle Breite, bündig im Rand, eckig
+    static let streifen: CGFloat = 3
+    /// Leiste links der Vorlage „Klassisch“: bündig am Kartenrand, volle Höhe, innen eckig (Fach-, Status- bzw. Grau)
     static let leiste: CGFloat = 5
-    /// Kontur der Karte (neutral `Farben.karteLinie`, geändert grün, Entfall rot, Prüfung bernstein)
-    static let linie: CGFloat = 1.5
-    /// Kennzeichen oben rechts (Quadrat)
+    /// Kontur der Karte (neutral `Farben.karteLinie`; Status in der leicht getönten Statusfarbe)
+    static let linie: CGFloat = 1
+    /// Kennzeichen oben rechts (Quadrat, nur „Klassisch“)
     static let kennzeichen: CGFloat = 5
+    /// Abstand zwischen Karten im Raster
+    static let abstand: CGFloat = 2
 }
 
 // MARK: - Umgebung
@@ -223,6 +232,13 @@ struct Klassikstil {
     var offen: Bool = false
     /// Farbe der ersten Zeile
     var titel: Color = Farben.text
+    /// Stundenkarte v7: Status- bzw. Fachfarbe als Streifen oben statt der Leiste links
+    var oben: Bool = false
+    /// Farbe des Streifens oben (nil = kein Streifen – reguläre Stunde ohne Fachfarbe, offene Vertretung, Termin)
+    var streifen: Color? = nil
+
+    /// Abstand des Inhalts vom oberen Rand, damit alle v7-Karten dieselbe Grundlinie haben (mit oder ohne Streifen).
+    var obenEinzug: CGFloat { oben ? Kartenmass.streifen : 0 }
 
     /// Tönung einer Fachfarbe mit der Deckkraft der Kartendarstellung (6–30 %, dunkel etwas kräftiger).
     static func toenung(_ hex: String, prozent: Int) -> Color? {
@@ -305,6 +321,10 @@ struct Klassikstil {
                 s.strich = StrokeStyle(lineWidth: Kartenmass.linie, dash: [3, 2])
             }
         }
+        if art == .pruefung {
+            // Prüfung: Leiste bzw. Streifen immer Bernstein (nie grau)
+            s.balken = Farben.pruefungStreifen
+        }
         if offen && art != .entfall {
             // Lehrkraft fehlt, Vertretung noch nicht erstellt: bewusst neutral (nicht rot – das hieße „Entfall“) – normale
             // Karte, grauer Balken, gestrichelter grauer Rand, „(Abr)“ bzw. „Vertretung folgt“ als graues Feld
@@ -318,7 +338,42 @@ struct Klassikstil {
                 s.flaeche = Farben.karte
             }
         }
+        if d.balkenOben {
+            v7(&s, art: art, offen: offen, fach: fach)
+        }
         return s
+    }
+
+    /// Stundenkarte v7: Streifen oben statt Leiste links, keine Marke; neutral ohne Streifen (außer mit Fachfarbe).
+    private static func v7(_ s: inout Klassikstil, art: Kartenart, offen: Bool, fach: Color?) {
+        s.oben = true
+        s.mitBalken = false
+        s.marke = nil
+        s.streifen = nil
+        switch art {
+        case .normal:
+            s.streifen = fach
+            if offen { s.streifen = nil }
+        case .aenderung:
+            s.streifen = offen ? nil : Farben.aenderung
+            if !offen { s.rand = Farben.aenderung.opacity(0.45) }
+        case .entfall:
+            s.streifen = Farben.entfall
+            s.flaeche = Farben.entfallFlaeche
+            s.rand = Farben.entfall.opacity(0.35)
+            s.titel = Farben.entfallChipText
+            s.gedaempft = false
+        case .pruefung:
+            s.streifen = Farben.pruefungStreifen
+            s.ton = nil
+            s.flaeche = Farben.pruefungFlaeche
+            s.rand = Farben.pruefungStreifen.opacity(0.5)
+        case .termin, .buchung, .abwesend, .neutral:
+            break
+        }
+        if s.rand != nil, s.strich.dash.isEmpty {
+            s.strich = StrokeStyle(lineWidth: Kartenmass.linie)
+        }
     }
 }
 
@@ -350,7 +405,7 @@ extension View {
     /// Kartenform beschnitten (außen der Radius, innen eckig). Geänderte, entfallene und offene Karten (mit Kennzeichen)
     /// haben immer mindestens die Standardleiste von 5 pt.
     func klassikKarte(_ s: Klassikstil, radius: CGFloat = Kartenmass.radius, balkenBreite: CGFloat = Kartenmass.leiste) -> some View {
-        let form = RoundedRectangle(cornerRadius: radius, style: .circular)
+        let form = RoundedRectangle(cornerRadius: s.oben ? min(radius, 3) : radius, style: .circular)
         let leiste: CGFloat = s.marke != nil ? max(balkenBreite, Kartenmass.leiste) : balkenBreite
         return self
             .background {
@@ -366,6 +421,17 @@ extension View {
                     form.strokeBorder(rand, style: s.strich)
                 } else {
                     form.strokeBorder(Farben.karteLinie, lineWidth: Kartenmass.linie)
+                }
+            }
+            .overlay(alignment: .top) {
+                if s.oben, let streifen = s.streifen {
+                    Rectangle()
+                        .fill(streifen)
+                        .frame(height: Kartenmass.streifen)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .clipShape(form)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
             }
             .overlay(alignment: .leading) {
@@ -421,7 +487,7 @@ enum Chipton: Hashable {
 
     var schrift: Color {
         switch self {
-        case .aenderung: return Farben.aenderungText
+        case .aenderung: return Farben.aenderungSchrift
         case .entfall: return Farben.entfallChipText
         case .offen: return Farben.offenChipText
         }
@@ -485,25 +551,20 @@ struct Kartenchip: Hashable {
     }
 }
 
-/// Kennzeichen auf der Karte (EduOrga-Stil): Radius 3, getönte Fläche mit feiner Kontur (offen: gestrichelt), Schrift in der
-/// Statusfarbe – eine Zeile, notfalls leicht verkleinert bzw. mit „…“ gekürzt, nie breiter als die Karte.
+/// Kennzeichen auf der Karte (Stundenkarte v7): **reiner Text in der Statusschrift**, halbfett – ohne Fläche und ohne
+/// Rahmen (die Karte trägt den Status im Streifen oben). Eine Zeile, notfalls leicht verkleinert bzw. mit „…“ gekürzt, nie
+/// breiter als die Karte.
 struct Chipfeld<Inhalt: View>: View {
     let ton: Chipton
     @ViewBuilder let inhalt: () -> Inhalt
 
     var body: some View {
         inhalt()
+            .fontWeight(.semibold)
             .foregroundStyle(ton.schrift)
             .lineLimit(1)
             .truncationMode(.tail)
             .minimumScaleFactor(0.85)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 0.5)
-            .background(ton.flaeche, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .strokeBorder(ton.rand, style: StrokeStyle(lineWidth: ton.gestrichelt ? 1 : 0.75, dash: ton.gestrichelt ? [2, 1.5] : []))
-            }
     }
 }
 
@@ -541,7 +602,7 @@ struct Kartenfach: View {
         } else {
             Text(text)
                 .font(schrift)
-                .foregroundStyle(entfall ? Farben.text3 : farbe)
+                .foregroundStyle(entfall ? Farben.entfallChipText : farbe)
                 .strikethrough(entfall, color: Farben.entfall)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -643,7 +704,7 @@ struct Kartenwert: View {
         } else {
             Text(zeile.text)
                 .font(schrift)
-                .foregroundStyle(entfall ? Farben.text3 : farbe)
+                .foregroundStyle(entfall ? Farben.text2 : farbe)
                 .strikethrough(entfall, color: Farben.entfall.opacity(0.8))
                 .lineLimit(1)
                 .truncationMode(.tail)

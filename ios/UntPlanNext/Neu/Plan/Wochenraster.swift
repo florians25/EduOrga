@@ -164,7 +164,7 @@ enum Rastermass {
     /// Abstand zwischen nebeneinanderstehenden Karten bzw. Terminen einer Spalte
     static let innenLuecke: CGFloat = 2
     /// Abstand zwischen den Tagesspalten
-    static let spaltenLuecke: CGFloat = 3
+    static let spaltenLuecke: CGFloat = Kartenmass.abstand
     /// Band für kurze Pausen bzw. große Pausen (ab 15 Minuten)
     static let bandKlein: CGFloat = 3
     static let bandGross: CGFloat = 12
@@ -174,7 +174,7 @@ enum Rastermass {
     static let zeileMaxSchmal: CGFloat = 62
     static let zeileMax: CGFloat = 88
     /// Abstand der Karte zum Zeilenrand (oben und unten) – zusammen mit der Spaltenlücke gleichmäßige Abstände
-    static let einzug: CGFloat = 1.5
+    static let einzug: CGFloat = Kartenmass.abstand / 2
 
     /// Sichtbare parallele Stunden in einer Spalte: die Einstellung (1–4), höchstens so viele, wie mit mindestens 44 pt
     /// nebeneinander passen; in der Tagesansicht (eine breite Spalte) mindestens so viele, wie mit 96 pt passen.
@@ -912,7 +912,7 @@ struct Tagesspalte: View {
         .foregroundStyle(Farben.frei)
         .padding(4)
         .frame(width: max(0, breite), height: geo.lage.hoehe)
-        .background(Farben.freiFlaeche, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .background(Farben.freiFlaeche, in: RoundedRectangle(cornerRadius: Kartenmass.radius, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
@@ -1043,7 +1043,7 @@ struct RasterKarte: View {
         let zeileGroesse: CGFloat = (schmal ? 11 : 12) * f
         let titelHoehe: CGFloat = titelGroesse + 2
         let zeileHoehe: CGFloat = zeileGroesse + 1.5
-        let platz = max(0, Int((hoehe - 5 - titelHoehe) / zeileHoehe))
+        let platz = max(0, Int((hoehe - 5 - stil.obenEinzug - titelHoehe) / zeileHoehe))
         let chip = kachel.statusChip
         let mitChip = chip != nil && platz >= 1
         let mitZeit = zeit != nil && platz - (mitChip ? 1 : 0) >= 2
@@ -1083,7 +1083,7 @@ struct RasterKarte: View {
         .monospacedDigit()
         .padding(.leading, (stil.mitBalken ? (stil.marke != nil ? max(balken, Kartenmass.leiste) : balken) : 0) + (schmal ? 3 : 5))
         .padding(.trailing, 2)
-        .padding(.top, 3)
+        .padding(.top, 3 + stil.obenEinzug)
         .padding(.bottom, 2)
         .frame(width: max(0, breite), height: max(0, hoehe), alignment: .topLeading)
         .clipped()
@@ -1236,8 +1236,8 @@ struct ParalleleStundenBlatt: View {
         let raum = k.zeile("raum").flatMap { $0.text.isEmpty ? nil : $0 }
         let personen = k.personenzeilen.filter { !$0.text.isEmpty }
         return HStack(alignment: .center, spacing: 12) {
-            Kartenbalken(farbe: stil.mitBalken ? stil.balken : Farben.balkenGrau, gestreift: stil.gestreift)
-                .frame(width: Kartenmass.leiste)
+            Kartenbalken(farbe: stil.oben ? (stil.streifen ?? Farben.balkenGrau) : (stil.mitBalken ? stil.balken : Farben.balkenGrau), gestreift: stil.gestreift)
+                .frame(width: Kartenmass.streifen)
                 .padding(.vertical, 2)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {

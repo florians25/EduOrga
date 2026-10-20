@@ -161,6 +161,12 @@ public sealed record Ereignis(string Titel, string Art, int Von, int Bis, bool G
 
 public sealed record Zeit(int Nr, string Bezeichnung, string Beginn, string Ende);
 
+/// <summary>Freier Zeitraum (Ferien, Feiertag, freier Tag) mit ISO-Datum; Art ferien | feiertag | frei.</summary>
+public sealed record Freizeitraum(string Name, string Von, string Bis, string Art);
+
+/// <summary>Kalenderlage für „Heute“: heute frei (oder null), nächste Ferien, nächste freie Tage, nächster Schultag.</summary>
+public sealed record Kalenderlage(string Heute, Freizeitraum? Frei, Freizeitraum? NaechsteFerien, List<Freizeitraum> FreieTage, string NaechsterSchultag);
+
 /// <summary>Eigene Abwesenheit an einem Tag (Uhrzeiten HH:mm), Grund (Kürzel bzw. Name, sofern freigegeben) und Art (fehlt, verspaetet, vorzeitig).</summary>
 public sealed record PlanAbwesenheit(string Datum, string Von, string Bis, string Grund, string Art);
 
@@ -258,6 +264,32 @@ public sealed class Plandienst
         if (n == 1 || s.SchuljahrVon == DateOnly.MinValue) return "";
         var wochen = (Montag(d).DayNumber - Montag(s.SchuljahrVon).DayNumber) / 7;
         return ((char)('A' + ((wochen % n) + n) % n)).ToString();
+    }
+
+    /// <summary>
+    /// Kalenderlage für „Heute“ (App, PWA): ist heute unterrichtsfrei (Ferien, Feiertag, freier Tag), die nächsten Ferien und die
+    /// nächsten einzelnen freien Tage (Feiertage, bewegliche Ferientage) innerhalb von 60 Tagen. Ferien = zusammenhängender Zeitraum
+    /// ab drei Tagen ohne Feiertag-Kennzeichen; kürzere Zeiträume und Feiertage zählen als freie Tage (nur an Schultagen der Woche).
+    /// </summary>
+    public Kalenderlage Kalender(Stand s, DateOnly heute, DateOnly naechsterSchultag)
+    {
+        var tageProWoche = Math.Max(1, s.Paket.Zeitraster.TageProWoche);
+        var alle = s.Zusatzferien.Concat(s.Paket.Ferien)
+            .Select(f => (f, von: DateOnly.TryParse(f.Von, out var v) ? v : DateOnly.MinValue, bis: DateOnly.TryParse(f.Bis, out var b) ? b : DateOnly.MinValue))
+            .Where(x => x.von != DateOnly.MinValue && x.bis >= x.von).ToList();
+        bool IstFerien((WebFerien f, DateOnly von, DateOnly bis) x) => !x.f.Feiertag && x.bis.DayNumber - x.von.DayNumber >= 2;
+        Freizeitraum Raum((WebFerien f, DateOnly von, DateOnly bis) x) => new(x.f.Name, Iso(x.von), Iso(x.bis), x.f.Feiertag ? "feiertag" : IstFerien(x) ? "ferien" : "frei");
+        var heuteListe = alle.Where(x => heute >= x.von && heute <= x.bis).OrderByDescending(IstFerien).ThenByDescending(x => x.bis.DayNumber - x.von.DayNumber).ToList();
+        Freizeitraum? frei = heuteListe.Count > 0 ? Raum(heuteListe[0]) : null;
+        if (frei is null && TagIndex(heute) < tageProWoche && Frei(s, heute) is { Frei: true, Grund: { Length: > 0 } grund })
+            frei = new Freizeitraum(grund, Iso(heute), Iso(heute), "frei");
+        var ferienBis = heuteListe.Where(IstFerien).Select(x => x.bis).DefaultIfEmpty(heute).Max();
+        var naechste = alle.Where(x => IstFerien(x) && x.von > ferienBis).OrderBy(x => x.von).Select(Raum).FirstOrDefault();
+        var ferienZeiten = alle.Where(IstFerien).ToList();
+        var freieTage = alle.Where(x => !IstFerien(x) && x.von > heute && x.von <= heute.AddDays(60) && TagIndex(x.von) < tageProWoche
+                && !ferienZeiten.Any(f => x.von >= f.von && x.von <= f.bis))
+            .OrderBy(x => x.von).GroupBy(x => x.von).Select(g => Raum(g.First())).Take(3).ToList();
+        return new Kalenderlage(Iso(heute), frei, naechste, freieTage, Iso(naechsterSchultag));
     }
 
     public WebFerien? Ferien(Stand s, DateOnly d) =>

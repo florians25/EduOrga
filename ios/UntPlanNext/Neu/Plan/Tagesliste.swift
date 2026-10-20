@@ -398,9 +398,9 @@ struct ListenKachel: View {
                     .accessibilityHidden(true)
             }
         }
-        .padding(.leading, Kartenmass.leiste + 11)
+        .padding(.leading, (w.mitBalken ? Kartenmass.leiste : 0) + 11)
         .padding(.trailing, 12)
-        .padding(.top, abstand)
+        .padding(.top, abstand + w.obenEinzug)
         .padding(.bottom, abstand)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 46, alignment: .topLeading)
