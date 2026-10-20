@@ -11,14 +11,17 @@
 set -eu
 
 QUELLE=${UNTPLAN_QUELLE:-https://raw.githubusercontent.com/florians25/EduOrga/master/installation}
-NEU=0
+NEU=0; BETRIEB=0; BETRIEB_ARGS=""
 for a in "$@"; do
   case "$a" in
-    --neu) NEU=1 ;;
+    --neu) NEU=1; BETRIEB_ARGS="$BETRIEB_ARGS --neu" ;;
+    --edo-betrieb) BETRIEB=1 ;;
+    --update) BETRIEB_ARGS="$BETRIEB_ARGS --update" ;;
     -h|--hilfe) sed -n '2,10p' "$0"; exit 0 ;;
     *) echo "Unbekannte Option: $a" >&2; exit 2 ;;
   esac
 done
+case "$BETRIEB_ARGS" in *--update*) [ "$BETRIEB" = 1 ] || { echo "Unbekannte Option: --update" >&2; exit 2; } ;; esac
 
 fehler() { echo "Fehler: $*" >&2; exit 1; }
 frage() { # frage <Text> <Vorschlag> → Antwort auf stdout
@@ -43,6 +46,17 @@ laden() { # laden <Datei> <Ziel>
   curl -fsSL -H "Accept: application/vnd.github.raw" "$API/$1?ref=master" -o "$2" 2>/dev/null \
     || curl -fsSL "$QUELLE/$1" -o "$2" 2>/dev/null
 }
+
+# Nicht dokumentiert: Betreiber-Website über install-intern.sh, getrennt im Unterordner website/ (eigene .env)
+if [ "$BETRIEB" = 1 ]; then
+  mkdir -p website
+  laden install-intern.sh website/install-intern.sh.neu && mv website/install-intern.sh.neu website/install-intern.sh \
+    || { rm -f website/install-intern.sh.neu; [ -f website/install-intern.sh ] || cp "$(dirname "$0")/install-intern.sh" website/ 2>/dev/null \
+      || fehler "install-intern.sh konnte nicht geladen werden."; }
+  cd website
+  # shellcheck disable=SC2086
+  exec sh install-intern.sh $BETRIEB_ARGS
+fi
 
 # docker-compose.yml, update.sh und passwort.sh immer in der aktuellen Fassung verwenden (ältere oder fremde Dateien, z. B. aus
 # früheren UntPlan-Installationen, werden als *.alt-<Datum> beiseitegelegt)
