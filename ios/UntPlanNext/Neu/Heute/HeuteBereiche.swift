@@ -323,10 +323,11 @@ struct HeuteFokuslage {
     }
 }
 
-/// Fokuskarte oben auf „Heute“: „Jetzt“ bzw. „Als Nächstes“ mit Fach groß, Raum, Lehrkraft bzw. Klasse, Uhrzeit und
-/// Stunde; Änderungen als Kennzeichen („Gal (G̶o̶r̶)“, „verlegt von …“); bei der laufenden Stunde eine dünne Linie für die
-/// verstrichene Zeit und „noch 23 Min.“. Eine Fläche, ein Akzent (Petrol), keine Symbol-Kacheln. Lehrkräfte: unten
-/// „Klassenbuch erfassen“, wenn „Stunde jetzt“ genau diese Stunde ist.
+/// Fokuskarte oben auf „Heute“ (Stundenkarte v6 im Großen): links die 5-pt-Leiste in der Fach- bzw. Statusfarbe, oben
+/// „Jetzt“ bzw. „Als Nächstes“ mit der Stunde, darunter das Fach groß, Raum und Lehrkraft bzw. Klasse (Änderungen als
+/// Kennzeichen „Gal (G̶o̶r̶)“); rechts groß die Restzeit („noch 23 Min.“, „in 12 Min.“, „ab 7:45“). Bei der laufenden
+/// Stunde ein Fortschrittsbalken (6 pt, Petrol) mit Beginn und Ende darunter. Lehrkräfte: unten „Klassenbuch erfassen“
+/// (diese Stunde) bzw. „Klassenbuch nachtragen“ (zuletzt beendete Stunde). Eine Fläche, ein Akzent, keine Symbol-Kacheln.
 struct HeuteFokus: View {
     let kacheln: [Kachel]
     let istHeute: Bool
@@ -336,6 +337,8 @@ struct HeuteFokus: View {
     var klassenbuchZiel: Kachel? = nil
     var klassenbuch: (() -> Void)? = nil
     let oeffnen: (Kachel, String) -> Void
+
+    @Environment(\.kartendarstellung) private var darstellung
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 15)) { kontext in
@@ -350,17 +353,18 @@ struct HeuteFokus: View {
         return Double(k.component(.hour, from: d) * 60 + k.component(.minute, from: d)) + Double(k.component(.second, from: d)) / 60
     }
 
-    /// „noch 23 Min.“, „in 12 Min.“, „ab 7:45“ bzw. „Mittwoch, 7:45“.
-    private func zusatz(_ f: HeuteFokuslage, jetzt: Date) -> String {
+    /// Rechts in der Karte: kleines Wort über dem großen Wert – „noch“ / „23 Min.“, „in“ / „12 Min.“, „ab“ / „7:45“,
+    /// „Mittwoch“ / „7:45“.
+    private func restzeit(_ f: HeuteFokuslage, jetzt: Date) -> (wort: String, wert: String) {
         if let d = f.anderesDatum {
-            return "\(Datumsformat.anzeige(d, "EEEE")), \(Uhr.uhrzeit(f.von))"
+            return (Datumsformat.anzeige(d, "EEEE"), Uhr.uhrzeit(f.von))
         }
         let m = genau(jetzt)
         if f.laeuft {
-            return "noch \(Uhr.dauer(Int((Double(f.bis) - m).rounded(.up))))"
+            return ("noch", Uhr.dauer(Int((Double(f.bis) - m).rounded(.up))))
         }
         let bis = Int((Double(f.von) - m).rounded(.up))
-        return bis <= 90 ? "in \(Uhr.dauer(bis))" : "ab \(Uhr.uhrzeit(f.von))"
+        return bis <= 90 ? ("in", Uhr.dauer(bis)) : ("ab", Uhr.uhrzeit(f.von))
     }
 
     private func gesprochenerZusatz(_ f: HeuteFokuslage, jetzt: Date) -> String {
@@ -384,84 +388,175 @@ struct HeuteFokus: View {
         k.fachname.isEmpty ? k.anzeigeTitel : k.fachname
     }
 
+    private func kopfzeile(_ f: HeuteFokuslage) -> some View {
+        let k = f.kachel
+        let wort: String = f.laeuft ? "Jetzt" : "Als Nächstes"
+        let stunde: String = k.von > 0 ? k.stundenText : ""
+        return HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(wort)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(f.laeuft ? Farben.akzent : Farben.text)
+            if !stunde.isEmpty {
+                Text("· " + stunde)
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .foregroundStyle(Farben.text2)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private func restblock(_ f: HeuteFokuslage, jetzt: Date) -> some View {
+        let r = restzeit(f, jetzt: jetzt)
+        return VStack(alignment: .trailing, spacing: 0) {
+            Text(r.wort)
+                .font(.caption)
+                .foregroundStyle(Farben.text2)
+                .lineLimit(1)
+            Text(r.wert)
+                .font(.title2.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(f.laeuft ? Farben.akzent : Farben.text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .fixedSize()
+    }
+
+    @ViewBuilder
+    private func angaben(_ k: Kachel) -> some View {
+        let personen: [Kachelzeile] = k.personenzeilen.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
+        let raumZeile: Kachelzeile? = k.zeile("raum").flatMap { $0.text.isEmpty ? nil : $0 }
+        if raumZeile != nil || !personen.isEmpty {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                if let r = raumZeile {
+                    Kartenwert(zeile: r, karte: k.karte, schrift: .body.weight(.semibold), farbe: Farben.text)
+                }
+                ForEach(Array(personen.enumerated()), id: \.offset) { _, z in
+                    Kartenwert(zeile: z, karte: k.karte, schrift: .body, farbe: Farben.text2)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func fusszeile(_ f: HeuteFokuslage, jetzt: Date) -> some View {
+        let k = f.kachel
+        if f.laeuft {
+            VStack(alignment: .leading, spacing: 4) {
+                Fortschrittslinie(anteil: anteil(f, jetzt: jetzt))
+                HStack {
+                    Text(Uhr.uhrzeit(f.von))
+                    Spacer(minLength: 8)
+                    Text(Uhr.uhrzeit(f.bis))
+                }
+                .font(.caption)
+                .monospacedDigit()
+                .foregroundStyle(Farben.text2)
+            }
+            .padding(.top, 2)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(k.zeitText)
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .foregroundStyle(Farben.text2)
+                    .lineLimit(1)
+                if let alt = k.fachVorher {
+                    Chipfeld(ton: .aenderung) {
+                        (Text("Fach ") + Wertwechsel.text(k.anzeigeTitel, statt: alt))
+                            .font(.footnote)
+                    }
+                }
+                if let chip = k.statusChip {
+                    Statuschip(chip: chip, schrift: .footnote.weight(.semibold))
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private func hauptteil(_ f: HeuteFokuslage, jetzt: Date) -> some View {
+        let k = f.kachel
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    kopfzeile(f)
+                    Text(titel(k))
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Farben.text)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+                    angaben(k)
+                }
+                Spacer(minLength: 4)
+                restblock(f, jetzt: jetzt)
+            }
+            fusszeile(f, jetzt: jetzt)
+        }
+        .padding(.leading, Kartenmass.leiste + 12)
+        .padding(.trailing, 14)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    /// Leiste links in der Sprache der Stundenkarte (Fachfarbe, Änderung grün, sonst grau).
+    private func leistenfarbe(_ k: Kachel) -> Color {
+        let stil = Klassikstil.fuer(k, darstellung)
+        return stil.mitBalken ? stil.balken : Farben.balkenGrau
+    }
+
+    @ViewBuilder
+    private func aktionszeile(_ k: Kachel) -> some View {
+        if let klassenbuch, let ziel = klassenbuchZiel {
+            let jetzt: Bool = ziel.id == k.id
+            Rectangle()
+                .fill(Farben.rand)
+                .frame(height: 1)
+                .padding(.leading, Kartenmass.leiste + 12)
+            Button {
+                Haptik.fest()
+                klassenbuch()
+            } label: {
+                HStack(spacing: 8) {
+                    Text(jetzt ? "Klassenbuch erfassen" : "Klassenbuch nachtragen")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Farben.akzent)
+                    if !jetzt {
+                        Text("\(ziel.anzeigeTitel) · \(Uhr.uhrzeit(ziel.beginn))")
+                            .font(.subheadline)
+                            .monospacedDigit()
+                            .foregroundStyle(Farben.text2)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Farben.pfeil)
+                        .accessibilityHidden(true)
+                }
+                .padding(.leading, Kartenmass.leiste + 12)
+                .padding(.trailing, 14)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(ZeilenKnopfStil())
+            .accessibilityHint("Thema, Anwesenheit und Hausaufgabe dieser Stunde")
+        }
+    }
+
     private func karte(_ f: HeuteFokuslage, jetzt: Date) -> some View {
         let k = f.kachel
         let quelle = "fokus-\(k.id.uuidString)"
-        let kopf = f.laeuft ? "Jetzt" : "Als Nächstes"
-        let mitKlassenbuch = klassenbuch != nil && klassenbuchZiel?.id == k.id
+        let kopf: String = f.laeuft ? "Jetzt" : "Als Nächstes"
+        let form = RoundedRectangle(cornerRadius: Stilmass.radius, style: .continuous)
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 oeffnen(k, quelle)
             } label: {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(kopf)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(f.laeuft ? Farben.akzent : Farben.text)
-                        Text("· " + zusatz(f, jetzt: jetzt))
-                            .font(.subheadline)
-                            .monospacedDigit()
-                            .foregroundStyle(Farben.text2)
-                            .lineLimit(1)
-                        Spacer(minLength: 4)
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(Farben.pfeil)
-                            .accessibilityHidden(true)
-                    }
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(titel(k))
-                            .font(.title.weight(.semibold))
-                            .foregroundStyle(Farben.text)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.75)
-                        if let r = k.zeile("raum"), !r.text.isEmpty {
-                            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                Text("Raum")
-                                    .font(.title3)
-                                    .foregroundStyle(Farben.text2)
-                                Kartenwert(zeile: r, karte: k.karte, schrift: .title3.weight(.semibold), farbe: Farben.text)
-                            }
-                        }
-                        let personen = k.personenzeilen.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
-                        if !personen.isEmpty {
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                ForEach(Array(personen.enumerated()), id: \.offset) { i, z in
-                                    if i > 0 {
-                                        Text("·").foregroundStyle(Farben.text3)
-                                    }
-                                    Kartenwert(zeile: z, karte: k.karte, schrift: .body, farbe: Farben.text2)
-                                }
-                            }
-                            .font(.body)
-                        }
-                    }
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(k.von > 0 ? "\(k.zeitText) · \(k.stundenText)" : k.zeitText)
-                            .font(.subheadline)
-                            .monospacedDigit()
-                            .foregroundStyle(Farben.text2)
-                            .lineLimit(1)
-                        if let alt = k.fachVorher {
-                            Chipfeld(ton: .aenderung) {
-                                (Text("Fach ") + Wertwechsel.text(k.anzeigeTitel, statt: alt))
-                                    .font(.footnote)
-                            }
-                        }
-                        if let chip = k.statusChip {
-                            Statuschip(chip: chip, schrift: .footnote.weight(.semibold))
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    if f.laeuft {
-                        Fortschrittslinie(anteil: anteil(f, jetzt: jetzt))
-                            .padding(.top, 2)
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .zoomQuelle(quelle, in: raum)
+                hauptteil(f, jetzt: jetzt)
+                    .zoomQuelle(quelle, in: raum)
             }
             .buttonStyle(KachelDruckStil())
             .accessibilityElement(children: .ignore)
@@ -469,60 +564,47 @@ struct HeuteFokus: View {
             .accessibilityHint("Öffnet die Stunde")
             .accessibilityAddTraits(.isButton)
 
-            if mitKlassenbuch, let klassenbuch {
-                Divider().padding(.leading, 16)
-                Button {
-                    Haptik.fest()
-                    klassenbuch()
-                } label: {
-                    HStack {
-                        Text("Klassenbuch erfassen")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Farben.akzent)
-                        Spacer(minLength: 4)
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(Farben.pfeil)
-                            .accessibilityHidden(true)
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(ZeilenKnopfStil())
-                .accessibilityHint("Thema, Anwesenheit und Hausaufgabe dieser Stunde")
-            }
+            aktionszeile(k)
         }
         .kartenflaeche()
-        .clipShape(RoundedRectangle(cornerRadius: Stilmass.radius, style: .continuous))
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(leistenfarbe(k))
+                .frame(width: Kartenmass.leiste)
+                .frame(maxHeight: .infinity)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .clipShape(form)
     }
 }
 
-/// Dünne Linie für die verstrichene Zeit der laufenden Stunde (3 pt, Petrol auf neutralem Grau).
+/// Fortschritt der laufenden Stunde: 6-pt-Balken in Petrol auf neutralem Grau, eckig mit kleinem Radius.
 struct Fortschrittslinie: View {
     let anteil: Double
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                RoundedRectangle(cornerRadius: 2, style: .circular)
                     .fill(Farben.neutralFlaeche)
-                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                RoundedRectangle(cornerRadius: 2, style: .circular)
                     .fill(Farben.akzent)
                     .frame(width: max(0, min(1, anteil)) * geo.size.width)
             }
         }
-        .frame(height: 3)
-        .animation(.easeOut(duration: 0.4), value: anteil)
+        .frame(height: 6)
+        .animation(.easeOut(duration: 0.12), value: anteil)
         .accessibilityHidden(true)
     }
 }
 
 // MARK: - Der Tag als kompakte Liste
 
-/// Eine Zeile der Liste „Heute“: Beginn · Fach · Raum, geänderte Werte und Statuskennzeichen direkt in der Zeile
-/// („105 (3̶0̶3̶)“, „Gal (G̶o̶r̶)“, „entfällt“). Vergangene Stunden blass, die laufende mit Uhrzeit in Petrol und „jetzt“.
-/// Bei sehr großer Schrift (Bedienungshilfen) untereinander statt nebeneinander.
+/// Eine Stunde der Liste „Heute“ als kompakte Stundenkarte (v6: Leiste 5 pt, Kontur 1,5 pt, Radius 4): links außerhalb
+/// der Karte Beginn und Ende, in der Karte Fach · Raum und geänderte Werte als Kennzeichen („105 (3̶0̶3̶)“, „Gal (G̶o̶r̶)“,
+/// „Vertretung folgt“), rechts das Statuskennzeichen („entfällt“, „verlegt auf …“) bzw. „jetzt“. Vergangene Stunden blass,
+/// die laufende mit Petrol-Rahmen. Bei sehr großer Schrift (Bedienungshilfen) untereinander statt nebeneinander.
 struct HeuteStundenzeile: View {
     let kachel: Kachel
     var vergangen: Bool = false
@@ -531,7 +613,7 @@ struct HeuteStundenzeile: View {
 
     @Environment(\.kartendarstellung) private var darstellung
     @Environment(\.dynamicTypeSize) private var schriftgroesse
-    @ScaledMetric(relativeTo: .subheadline) private var zeitBreite: CGFloat = 44
+    @ScaledMetric(relativeTo: .subheadline) private var zeitBreite: CGFloat = 42
 
     private var entfall: Bool { kachel.kartenart == .entfall }
     private var ereignis: Bool { Rastergeometrie.istEreignis(kachel) }
@@ -547,50 +629,72 @@ struct HeuteStundenzeile: View {
             Haptik.tippen()
             oeffnen()
         } label: {
-            Group {
-                if schriftgroesse.isAccessibilitySize {
-                    VStack(alignment: .leading, spacing: 4) {
-                        zeit
-                        hauptteil
-                        rechts
-                    }
-                } else {
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        zeit
-                        hauptteil
-                        Spacer(minLength: 4)
-                        rechts
-                    }
-                }
+            HStack(alignment: .center, spacing: 8) {
+                zeit
+                karte
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .opacity(vergangen ? 0.6 : 1)
+            .opacity(vergangen ? 0.55 : 1)
             .contentShape(Rectangle())
         }
-        .buttonStyle(ZeilenKnopfStil())
+        .buttonStyle(KachelDruckStil())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel((laeuft ? "Läuft gerade. " : (vergangen ? "Vorbei. " : "")) + Kachel.ereignisArt(kachel) + kachel.vorlesetext)
         .accessibilityHint("Öffnet die Stunde")
         .accessibilityAddTraits(.isButton)
     }
 
+    /// Beginn (über Ende) links neben der Karte.
     private var zeit: some View {
-        Text(kachel.art == .ganztagTermin ? "ganztags" : Uhr.uhrzeit(kachel.beginn))
-            .font(.subheadline.weight(laeuft ? .semibold : .regular))
-            .monospacedDigit()
-            .foregroundStyle(laeuft ? Farben.akzent : Farben.text2)
-            .lineLimit(1)
-            .frame(minWidth: zeitBreite, alignment: .leading)
+        VStack(alignment: .trailing, spacing: 0) {
+            Text(kachel.art == .ganztagTermin ? "ganzt." : Uhr.uhrzeit(kachel.beginn))
+                .font(.subheadline.weight(laeuft ? .semibold : .regular))
+                .foregroundStyle(laeuft ? Farben.akzent : Farben.text)
+            if kachel.art != .ganztagTermin {
+                Text(Uhr.uhrzeit(kachel.ende))
+                    .font(.caption2)
+                    .foregroundStyle(Farben.text3)
+            }
+        }
+        .monospacedDigit()
+        .lineLimit(1)
+        .frame(width: zeitBreite, alignment: .trailing)
+    }
+
+    private var karte: some View {
+        let stil = Klassikstil.fuer(kachel, darstellung)
+        return Group {
+            if schriftgroesse.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) {
+                    hauptteil
+                    rechts
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    hauptteil
+                    Spacer(minLength: 4)
+                    rechts
+                }
+            }
+        }
+        .padding(.leading, (stil.mitBalken ? Kartenmass.leiste : 0) + 9)
+        .padding(.trailing, 12)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .klassikKarte(stil)
+        .overlay {
+            if laeuft {
+                RoundedRectangle(cornerRadius: Kartenmass.radius, style: .circular)
+                    .strokeBorder(Farben.akzent, lineWidth: 2)
+            }
+        }
     }
 
     @ViewBuilder
     private var hauptteil: some View {
         if ereignis {
             Text(kachel.anzeigeTitel)
-                .font(.body)
-                .foregroundStyle(Farben.text)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Farben.ereignisText)
                 .lineLimit(1)
                 .truncationMode(.tail)
         } else {

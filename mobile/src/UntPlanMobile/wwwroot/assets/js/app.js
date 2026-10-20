@@ -231,16 +231,16 @@ function darstellungSetzen(pane){
   const d = state.darstellung || {};
   pane.dataset.fachfarbe = d.fachfarbe || 'balken-innen';
   pane.dataset.flaeche = d.flaeche || 'weiss';
-  pane.dataset.rahmen = d.rahmen || 'schatten';
+  pane.dataset.rahmen = d.rahmen || 'fein';
   pane.dataset.dichte = d.dichte || 'kompakt';
   const flaeche = $('#gridScroll');
   if (flaeche) flaeche.dataset.raster = d.raster || 'grau';
   const plan = $('#screenPlan');
   if (plan) plan.dataset.raster = d.raster || 'grau';
   pane.classList.toggle('mit-statusflaeche', d.statusflaeche !== false);
-  pane.style.setProperty('--balken', (d.balkenbreite || 4) + 'px');
-  /* Weiche Ecken (4–6 px) – Vorgabe der App, die Schule wählt innerhalb */
-  pane.style.setProperty('--kradius', Math.min(6, Math.max(4, d.eckenradius ?? 5)) + 'px');
+  pane.style.setProperty('--balken', (d.balkenbreite || 5) + 'px');
+  /* Ecken (Stundenkarte v6): Standard 4 px, die Schule wählt zwischen 2 und 6 px */
+  pane.style.setProperty('--kradius', Math.min(6, Math.max(2, d.eckenradius ?? 4)) + 'px');
   pane.style.setProperty('--toenung', (d.deckkraft || 12) + '%');
 }
 
@@ -806,17 +806,17 @@ if (typeof window !== 'undefined') window.UntPlanRaum = { raumTokens };
 /* Darstellung der Stundenkarten (schulweit, Administration von EduOrga Web,
    kommt mit den Startdaten als `darstellung`). Standard „EduOrga Standard“
    (design/DESIGN.md, Abschnitt 10 – gleich auf allen Plattformen): helle
-   Karten auf hellgrauem Raster, 4-px-Kante links (grau, mit Fachfarbe in der
-   Fachfarbe samt leichter Tönung), je eine Zeile Fach · Klasse · Lehrkraft ·
-   Raum. */
+   Karten auf hellgrauem Raster, Stundenkarte v6: 5-px-Leiste links bündig am
+   Rand (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), Kontur
+   1,5 px, Radius 4 px, je eine Zeile Fach · Klasse · Lehrkraft · Raum. */
 const DARSTELLUNG_STANDARD = {
-  fachfarbe:'balken-flaeche', balkenbreite:4, deckkraft:12, flaeche:'weiss', rahmen:'schatten', eckenradius:4, dichte:'kompakt',
+  fachfarbe:'balken-flaeche', balkenbreite:5, deckkraft:12, flaeche:'weiss', rahmen:'fein', eckenradius:4, dichte:'kompakt',
   fach:'kuerzel', raum:true, zeile2:true, zeile2Text:'kuerzel', kuerzel:'text', statuswoerter:false, statusflaeche:true,
   reihenfolge:'zeilen', raster:'grau'
 };
 function darstellungMitStandard(d){
   const x = Object.assign({}, DARSTELLUNG_STANDARD, d && typeof d === 'object' ? d : {});
-  x.balkenbreite = Math.min(6, Math.max(2, +x.balkenbreite || 4));
+  x.balkenbreite = Math.min(6, Math.max(2, +x.balkenbreite || 5));
   x.eckenradius = Math.min(8, Math.max(0, +x.eckenradius || 0));
   x.deckkraft = Math.min(30, Math.max(6, +x.deckkraft || 12));
   return x;

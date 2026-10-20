@@ -7,9 +7,9 @@ namespace UntPlanWeb.Dienste;
 /// Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten): schulweit gültig für Wochenraster, Tagesansicht,
 /// Tagesseiten, Startseite und Stundendetails. Gespeichert als JSON in der Tabelle einstellungen (Schlüssel
 /// <see cref="Kartendarstellungen.Schluessel"/>); fehlende Angaben erhalten ihren Standard. Standard ist die Vorlage „EduOrga Standard“
-/// (design/DESIGN.md, Abschnitt 10, gleich auf allen Plattformen): kompakte helle Karten mit flachem Schatten auf hellgrauem Raster,
-/// 4-px-Kante links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), je eine Zeile Fach · Klasse · Lehrkraft · Raum,
-/// Radius 4 px, Änderungen grün und Prüfungen bernstein in der hellen Statusfläche, Entfall rot. Die Statusdarstellung (Linie, Schraffur,
+/// (design/DESIGN.md, Abschnitt 10 „Stundenkarte v6“, gleich auf allen Plattformen): kompakte helle Karten auf hellgrauem Raster mit
+/// 1,5-px-Kontur („fein“), 5-px-Leiste links bündig am Rand (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), je eine Zeile
+/// Fach · Klasse · Lehrkraft · Raum, Radius 4 px, Änderungen grün und Prüfungen bernstein in der hellen Statusfläche, Entfall rot. Die Statusdarstellung (Linie, Schraffur,
 /// Durchstreichung, Kürzel-Plaketten) bleibt in jeder Variante erhalten; optional stehen zusätzlich die Statuswörter auf den Kacheln.
 /// </summary>
 public sealed record Kartendarstellung
@@ -18,13 +18,13 @@ public sealed record Kartendarstellung
     /// balken-oben | quadrat | flaeche | keine.</summary>
     public string Fachfarbe { get; init; } = "balken-flaeche";
     /// <summary>Breite des Fachfarbbalkens in px (2–6).</summary>
-    public int Balkenbreite { get; init; } = 4;
+    public int Balkenbreite { get; init; } = 5;
     /// <summary>Deckkraft der Fachfarb-Tönung in Prozent (6–30), bei <see cref="Fachfarbe"/> = flaeche bzw. balken-flaeche.</summary>
     public int Deckkraft { get; init; } = 12;
     /// <summary>Kartenfläche: neutral (#f6f8fa) | weiss | getoent (leichte Marine-Tönung).</summary>
     public string Flaeche { get; init; } = "weiss";
-    /// <summary>Rahmen: schatten (keine Linie, leicht abgehoben) | fein | kraeftig | keiner.</summary>
-    public string Rahmen { get; init; } = "schatten";
+    /// <summary>Rahmen: fein (1,5-px-Kontur, Standard) | kraeftig (2 px) | schatten (keine Linie, leicht abgehoben) | keiner.</summary>
+    public string Rahmen { get; init; } = "fein";
     /// <summary>Eckenradius in px (0–8).</summary>
     public int Eckenradius { get; init; } = 4;
     /// <summary>Dichte: kompakt | normal | grosszuegig (Innenabstand, Schriftgrößen).</summary>

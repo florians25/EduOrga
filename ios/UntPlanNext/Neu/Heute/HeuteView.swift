@@ -1,18 +1,19 @@
 import SwiftUI
 
-/// Reiter „Heute“ – radikal reduziert, ruhig und sachlich (design/DESIGN.md Abschnitt 9):
+/// Reiter „Heute“ – ruhig, sachlich und grafisch statt wortreich (design/DESIGN.md, Abschnitte 9 und 10.1 „Heute“):
 /// 1. Unter dem großen Titel eine Tageszeile („Dienstag, 20. Oktober · A-Woche“).
-/// 2. **Fokuskarte** „Jetzt“ bzw. „Als Nächstes“: Fach groß, Raum, Lehrkraft bzw. Klasse, Uhrzeit, bei der laufenden
-///    Stunde „noch 23 Min.“ mit dünner Fortschrittslinie, Änderungen als Kennzeichen („Gal (G̶o̶r̶)“); Lehrkräfte darunter
-///    „Klassenbuch erfassen“. Nach Schulschluss die erste Stunde des nächsten Schultags.
-/// 3. **Heute** – alle Stunden des Tages, je eine Zeile (Beginn · Fach · Raum, Kennzeichen direkt in der Zeile).
-/// 4. Höchstens zwei weitere Abschnitte, nur wenn es etwas gibt: **Hinweise der Schule** (zwei Zeilen, „Alle“) und ein
-///    Block je Rolle (Lehrkräfte: „2 Klassenbuch-Einträge offen“, Aufsicht; Schüler*innen und Eltern: „1 Hausaufgabe für
-///    morgen“, „1 Prüfung diese Woche“) – jede Zeile führt zur Detailseite.
-/// 5. Alles Weitere (Änderungen als Liste, nächster Schultag, Übersicht mit Terminen, Abwesenheiten, Sprechtagen …)
-///    hinter **„Mehr anzeigen“**; Mitteilungen im Reiter „Postfach“.
-/// 6. Ganz unten klein „Stand EduOrga Studio“ und die Schule.
-/// Eine Ebene (keine Karten in Karten), keine Symbol-Kacheln, ein Akzent (Petrol für „Jetzt“, Fortschritt und Links).
+/// 2. **Tagesband**: der ganze Schultag als schmale Leiste (Stunden nach ihrer Dauer, Pausen als Lücken, Farben wie die
+///    Stundenkarten, Jetzt-Linie mit Uhrzeit, Aufsichten als kleine Marke). Antippen öffnet den Tag im Plan.
+/// 3. **Fokuskarte** „Jetzt“ bzw. „Als Nächstes“: Fach groß, Raum, Lehrkraft bzw. Klasse, rechts groß die Restzeit, bei
+///    der laufenden Stunde ein Fortschrittsbalken; Lehrkräfte unten „Klassenbuch erfassen“ bzw. „nachtragen“. Nach
+///    Schulschluss die erste Stunde des nächsten Schultags.
+/// 4. **Tageszahlen** (nur Werte über null, höchstens vier): Änderungen, Klassenbuch offen bzw. Hausaufgaben und
+///    Prüfungen, Aufsichten, neue Nachrichten, Termine – jede Zahl führt zu ihrer Seite. Ersetzt die früheren Textblöcke
+///    „Zu erledigen“ und „Demnächst“.
+/// 5. **Notizen der Schule** (Mitteilungen, Veranstaltungen, Hinweise) als stille gelbe Notizen, höchstens zwei.
+/// 6. **Stunden** – alle Stunden des Tages als kompakte Stundenkarten (v6) mit Beginn und Ende links.
+/// 7. Nächster Schultag und Übersicht hinter **„Mehr anzeigen“**; ganz unten klein „Stand EduOrga Studio“ und die Schule.
+/// Eine Ebene (keine Karten in Karten), keine Symbol-Kacheln, keine Verläufe, ein Akzent (Petrol für „Jetzt“).
 /// Der letzte Stand bleibt im Speicher (`Heutespeicher`); neu geladen wird im Hintergrund.
 struct HeuteView: View {
     @EnvironmentObject var zustand: AppZustand
@@ -52,12 +53,6 @@ struct HeuteView: View {
                     if let h = heute {
                         if h.paket {
                             tagesbereich(h)
-                            hinweisbereich(h)
-                            if zustand.istKollegium {
-                                kollegiumsbereich(h)
-                            } else {
-                                familienbereich(h)
-                            }
                             mehrbereich(h)
                         } else {
                             HeuteHinweiskarte(titel: "Noch keine Plandaten", text: "Die Schule hat noch keinen Plan veröffentlicht.")
@@ -201,35 +196,68 @@ struct HeuteView: View {
                 HeuteHinweiskarte(titel: "Kein Unterricht",
                                   text: istHeute ? "Heute ist kein Unterricht geplant." : "An diesem Tag ist kein Unterricht geplant.")
             }
+            if !stunden.isEmpty {
+                tagesbandKnopf(alle, h: h, istHeute: istHeute)
+            }
             HeuteFokus(kacheln: alle, istHeute: istHeute, naechsterTag: morgen, raum: zoom,
                        klassenbuchZiel: ziel,
                        klassenbuch: klassenbuchAktion(ziel)) { k, quelle in
                 oeffnenAusFokus(k, alle: alle, h: h, quelle: quelle)
             }
+            Tageszahlen(zahlen: tageszahlen(h, alle: alle)) {
+                zustand.reiter = .postfach
+            }
+            hinweisbereich(h)
             if !stunden.isEmpty {
-                HeuteAbschnitt(titel: istHeute ? "Heute" : Datumsformat.anzeige(h.datum, "EEEE")) {
-                    Button {
-                        Haptik.tippen()
-                        zustand.tagAnfrage = h.datum
-                        zustand.reiter = .plan
-                    } label: {
-                        Text("Im Plan")
-                    }
-                    .accessibilityHint("Öffnet den Tag im Reiter „Plan“")
-                } inhalt: {
-                    TimelineView(.periodic(from: .now, by: 60)) { kontext in
-                        let m = Uhr.minuten(kontext.date)
-                        VStack(alignment: .leading, spacing: 0) {
-                            ForEach(Array(stunden.enumerated()), id: \.element.id) { i, k in
-                                if i > 0 { HeuteTrenner() }
-                                HeuteStundenzeile(kachel: k,
-                                                  vergangen: istHeute && k.ende <= m,
-                                                  laeuft: istHeute && Statuslehre.findetStatt(k) && k.beginn <= m && m < k.ende) {
-                                    oeffnen(k, alle: alle, h: h, quelle: "heute-\(k.id.uuidString)")
-                                }
-                                .zoomQuelle("heute-\(k.id.uuidString)", in: zoom)
-                            }
+                stundenliste(stunden, alle: alle, h: h, istHeute: istHeute)
+            }
+        }
+    }
+
+    /// Tagesband; Antippen öffnet den Tag im Reiter „Plan“.
+    private func tagesbandKnopf(_ alle: [Kachel], h: Heute, istHeute: Bool) -> some View {
+        Button {
+            Haptik.tippen()
+            zustand.tagAnfrage = h.datum
+            zustand.reiter = .plan
+        } label: {
+            Tagesband(kacheln: alle, istHeute: istHeute, familie: !zustand.istKollegium)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Öffnet den Tag im Reiter „Plan“")
+    }
+
+    /// Überschrift „Stunden“ (bzw. der Wochentag) mit „Im Plan“, darunter die Stunden als kompakte Karten – ohne Fläche
+    /// dahinter (keine Karten in Karten).
+    private func stundenliste(_ stunden: [Kachel], alle: [Kachel], h: Heute, istHeute: Bool) -> some View {
+        VStack(alignment: .leading, spacing: Stilmass.raster) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(istHeute ? "Stunden" : Datumsformat.anzeige(h.datum, "EEEE"))
+                    .font(.headline)
+                    .foregroundStyle(Farben.text)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: Stilmass.raster)
+                Button {
+                    Haptik.tippen()
+                    zustand.tagAnfrage = h.datum
+                    zustand.reiter = .plan
+                } label: {
+                    Text("Im Plan")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .accessibilityHint("Öffnet den Tag im Reiter „Plan“")
+            }
+            TimelineView(.periodic(from: .now, by: 60)) { kontext in
+                let m = Uhr.minuten(kontext.date)
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(stunden, id: \.id) { k in
+                        HeuteStundenzeile(kachel: k,
+                                          vergangen: istHeute && k.ende <= m,
+                                          laeuft: istHeute && Statuslehre.findetStatt(k) && k.beginn <= m && m < k.ende) {
+                            oeffnen(k, alle: alle, h: h, quelle: "heute-\(k.id.uuidString)")
                         }
+                        .zoomQuelle("heute-\(k.id.uuidString)", in: zoom)
                     }
                 }
             }
@@ -249,113 +277,52 @@ struct HeuteView: View {
         wahl = Stundenwahl(quelle: quelle, karten: karten, start: start, typ: typ, element: h.element ?? "")
     }
 
-    // MARK: - Änderungen heute
-
-    @ViewBuilder
-    private func aenderungsbereich(_ alle: [Kachel], h: Heute, istHeute: Bool) -> some View {
-        let familie = !zustand.istKollegium
-        let liste = alle.compactMap { k in k.aenderung(familie: familie).map { (k, $0) } }
-        if !liste.isEmpty {
-            HeuteGruppe(titel: istHeute ? "Änderungen heute" : "Änderungen",
-                        zusatz: liste.count == 1 ? "1 Stunde" : "\(liste.count) Stunden") {
-                ForEach(Array(liste.enumerated()), id: \.offset) { i, e in
-                    if i > 0 { HeuteTrenner() }
-                    AenderungZeile(kachel: e.0, aenderung: e.1) {
-                        oeffnen(e.0, alle: alle, h: h, quelle: "aenderung-\(e.0.id.uuidString)")
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Lehrkräfte: zu erledigen
-
-    /// Ein Block aus Einzeilern, nur wenn es etwas gibt: „2 Klassenbuch-Einträge offen“ (offene Stunden), die Aufsicht(en)
-    /// des Tages und – wenn „Stunde jetzt“ nicht die Fokusstunde ist – das Nachtragen der zuletzt beendeten Stunde.
-    @ViewBuilder
-    private func kollegiumsbereich(_ h: Heute) -> some View {
-        let offen = zustand.offeneStunden
-        let aufsichten = h.aufsichten.sorted { $0.beginn < $1.beginn }
-        let alle = kacheln(h)
-        let istHeute = Datumsformat.istHeute(h.datum)
-        let ziel = istHeute ? StundeJetztWahl.ziel(alle) : nil
-        let fokus = HeuteFokuslage.berechnen(alle, istHeute: istHeute, naechsterTag: nil, jetzt: Date())
-        let nachtragen: Kachel? = (ziel != nil && ziel?.id != fokus?.kachel.id) ? ziel : nil
-        if offen > 0 || !aufsichten.isEmpty || nachtragen != nil {
-            HeuteGruppe(titel: "Zu erledigen") {
-                if let z = nachtragen, let karte = z.karte {
-                    HeuteZeile(titel: "Klassenbuch erfassen", wert: "\(z.anzeigeTitel) · \(Uhr.uhrzeit(z.beginn))") {
-                        jetztKarte = karte
-                    }
-                }
-                if offen > 0 {
-                    if nachtragen != nil { HeuteTrenner() }
-                    NavigationLink(value: Schulziel.offeneStunden) {
-                        HeuteZeilenInhalt(titel: offen == 1 ? "1 Klassenbuch-Eintrag offen" : "\(offen) Klassenbuch-Einträge offen",
-                                          titelZeilen: 1)
-                    }
-                    .buttonStyle(ZeilenKnopfStil())
-                    .accessibilityHint("Öffnet die offenen Stunden")
-                }
-                if aufsichten.count == 1, let a = aufsichten.first {
-                    if offen > 0 || nachtragen != nil { HeuteTrenner() }
-                    let ort = a.gangName.isEmpty ? (a.gang.isEmpty ? "Aufsicht" : a.gang) : a.gangName
-                    let astand = Kachelbau.aufsichtsstand(a.status)
-                    HeuteZeile(titel: ort == "Aufsicht" ? "1 Aufsicht" : "1 Aufsicht · \(ort)",
-                               wert: astand == .entfall ? "entfällt" : "\(a.beginn)–\(a.ende)",
-                               wertFarbe: astand == .entfall ? Farben.entfall : (astand == .vertretung ? Farben.aenderungSchrift : Farben.text2)) {
-                        wahl = Stundenwahl(quelle: "aufsicht-\(a.id.uuidString)", karten: [], aufsicht: a,
-                                           typ: h.typ.isEmpty ? "lehrer" : h.typ, element: h.element ?? "")
-                    }
-                } else if aufsichten.count > 1 {
-                    if offen > 0 || nachtragen != nil { HeuteTrenner() }
-                    NavigationLink(value: Startziel.aufsichten) {
-                        HeuteZeilenInhalt(titel: "\(aufsichten.count) Aufsichten",
-                                          wert: "ab \(aufsichten[0].beginn)", titelZeilen: 1)
-                    }
-                    .buttonStyle(ZeilenKnopfStil())
-                }
-            }
-        }
-    }
-
-    // MARK: - Schüler*innen und Eltern: demnächst
+    // MARK: - Tageszahlen
 
     private var morgenIso: String {
         Datumsformat.iso(Datumsformat.tage(1, nach: Date()))
     }
 
-    /// Einzeiler, nur wenn es etwas gibt: „1 Hausaufgabe für morgen“, „1 Prüfung diese Woche“ – je zur Detailseite.
-    @ViewBuilder
-    private func familienbereich(_ h: Heute) -> some View {
-        let faellig = h.hausaufgaben.filter { ($0.faellig ?? "").prefix(10) == morgenIso.prefix(10) }
-        let heuteIso = Datumsformat.iso(Date())
-        let woche = pruefungen.filter { $0.datum >= heuteIso }.sorted { ($0.datum, $0.stundeVon) < ($1.datum, $1.stundeVon) }
-        if !faellig.isEmpty || !woche.isEmpty {
-            HeuteGruppe(titel: "Demnächst") {
-                if !faellig.isEmpty {
-                    NavigationLink(value: Startziel.hausaufgaben) {
-                        HeuteZeilenInhalt(titel: faellig.count == 1 ? "1 Hausaufgabe für morgen" : "\(faellig.count) Hausaufgaben für morgen",
-                                          wert: faellig.count == 1 ? faellig[0].fach : nil, titelZeilen: 1)
-                    }
-                    .buttonStyle(ZeilenKnopfStil())
-                }
-                if let erste = woche.first {
-                    if !faellig.isEmpty { HeuteTrenner() }
-                    NavigationLink(value: Schulziel.pruefungen) {
-                        HeuteZeilenInhalt(titel: woche.count == 1 ? "1 Prüfung diese Woche" : "\(woche.count) Prüfungen diese Woche",
-                                          wert: Datumsformat.anzeige(erste.datum, "EE d.M."), wertFarbe: Farben.pruefung,
-                                          titelZeilen: 1)
-                    }
-                    .buttonStyle(ZeilenKnopfStil())
-                }
-            }
+    /// Zahlen für die Zahlenleiste (nur Werte über null werden gezeigt, höchstens vier – in dieser Reihenfolge).
+    private func tageszahlen(_ h: Heute, alle: [Kachel]) -> [Tageszahl] {
+        let familie = !zustand.istKollegium
+        let geaendert: Int = alle.filter { $0.aenderung(familie: familie) != nil }.count
+        var liste: [Tageszahl] = []
+        liste.append(Tageszahl(id: "aenderungen", zahl: geaendert, titel: geaendert == 1 ? "Änderung" : "Änderungen",
+                               farbe: Farben.aenderungSchrift, ziel: .start(.aenderungen),
+                               vorlesen: geaendert == 1 ? "1 geänderte Stunde" : "\(geaendert) geänderte Stunden"))
+        if zustand.istKollegium {
+            let offen = zustand.offeneStunden
+            liste.append(Tageszahl(id: "klassenbuch", zahl: offen, titel: "Klassenbuch offen", farbe: Farben.warnung,
+                                   ziel: .schule(.offeneStunden),
+                                   vorlesen: offen == 1 ? "1 Klassenbuch-Eintrag offen" : "\(offen) Klassenbuch-Einträge offen"))
+            let aufsichten = h.aufsichten.count
+            liste.append(Tageszahl(id: "aufsichten", zahl: aufsichten, titel: aufsichten == 1 ? "Aufsicht" : "Aufsichten",
+                                   ziel: .start(.aufsichten),
+                                   vorlesen: aufsichten == 1 ? "1 Pausenaufsicht heute" : "\(aufsichten) Pausenaufsichten heute"))
+        } else {
+            let faellig = h.hausaufgaben.filter { ($0.faellig ?? "").prefix(10) == morgenIso.prefix(10) }.count
+            liste.append(Tageszahl(id: "hausaufgaben", zahl: faellig, titel: "Hausaufgaben morgen", ziel: .start(.hausaufgaben),
+                                   vorlesen: faellig == 1 ? "1 Hausaufgabe für morgen" : "\(faellig) Hausaufgaben für morgen"))
+            let heuteIso = Datumsformat.iso(Date())
+            let woche = pruefungen.filter { $0.datum >= heuteIso }.count
+            liste.append(Tageszahl(id: "pruefungen", zahl: woche, titel: woche == 1 ? "Prüfung diese Woche" : "Prüfungen diese Woche",
+                                   farbe: Farben.pruefung, ziel: .schule(.pruefungen),
+                                   vorlesen: woche == 1 ? "1 Prüfung diese Woche" : "\(woche) Prüfungen diese Woche"))
         }
+        let neu = zustand.ungelesen
+        liste.append(Tageszahl(id: "postfach", zahl: neu, titel: neu == 1 ? "Neue Nachricht" : "Neue Nachrichten",
+                               farbe: Farben.akzent, ziel: .postfach,
+                               vorlesen: neu == 1 ? "1 neue Nachricht" : "\(neu) neue Nachrichten"))
+        let termine = h.termine.count
+        liste.append(Tageszahl(id: "termine", zahl: termine, titel: termine == 1 ? "Termin" : "Termine", ziel: .start(.termine),
+                               vorlesen: termine == 1 ? "1 Termin" : "\(termine) Termine"))
+        return liste
     }
 
     // MARK: - Mehr anzeigen
 
-    /// Alles Weitere hinter „Mehr anzeigen“: Änderungen als Liste, nächster Schultag, Übersicht.
+    /// Alles Weitere hinter „Mehr anzeigen“: nächster Schultag, Übersicht.
     @ViewBuilder
     private func mehrbereich(_ h: Heute) -> some View {
         VStack(alignment: .leading, spacing: 3 * Stilmass.raster) {
@@ -376,12 +343,9 @@ struct HeuteView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityHint(mehrOffen ? "Blendet Änderungen, nächsten Schultag und Übersicht aus"
-                                         : "Zeigt Änderungen, nächsten Schultag und Übersicht")
+            .accessibilityHint(mehrOffen ? "Blendet nächsten Schultag und Übersicht aus"
+                                         : "Zeigt nächsten Schultag und Übersicht")
             if mehrOffen {
-                if !h.gesperrt {
-                    aenderungsbereich(kacheln(h), h: h, istHeute: Datumsformat.istHeute(h.datum))
-                }
                 morgenbereich(h)
                 uebersicht(h)
             }
@@ -445,27 +409,29 @@ struct HeuteView: View {
         return liste
     }
 
-    /// Höchstens zwei Zeilen; „Alle“ zeigt alles vollständig.
+    /// Höchstens zwei stille Notizen; „Alle … Hinweise“ zeigt alles vollständig.
     @ViewBuilder
     private func hinweisbereich(_ h: Heute) -> some View {
         let liste = infos(h)
         if !liste.isEmpty {
-            HeuteAbschnitt(titel: "Hinweise der Schule") {
-                NavigationLink {
-                    HeuteHinweiseSeite(infos: liste)
-                } label: {
-                    Text(liste.count > 2 ? "Alle \(liste.count)" : "Alle")
-                }
-                .accessibilityLabel("Alle Hinweise der Schule")
-            } inhalt: {
-                ForEach(Array(liste.prefix(2).enumerated()), id: \.element.id) { i, info in
-                    if i > 0 { HeuteTrenner() }
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(liste.prefix(2))) { info in
                     NavigationLink {
                         HeuteHinweiseSeite(infos: liste)
                     } label: {
-                        HinweisKurzzeile(info: info)
+                        HeuteNotiz(info: info)
                     }
-                    .buttonStyle(ZeilenKnopfStil())
+                    .buttonStyle(KachelDruckStil())
+                }
+                if liste.count > 2 {
+                    NavigationLink {
+                        HeuteHinweiseSeite(infos: liste)
+                    } label: {
+                        Text("Alle \(liste.count) Hinweise der Schule")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Farben.akzent)
+                            .frame(minHeight: 44, alignment: .leading)
+                    }
                 }
             }
         }

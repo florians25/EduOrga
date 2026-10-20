@@ -23,7 +23,7 @@ export const farben = {
 /** Statusfarbe: Linie/Schrift, helle Fläche; Entfall und Änderung zusätzlich Schrift und Fläche des Felds (Chip) auf der Stundenkarte. */
 export interface StatusFarbe { main: string; flaeche: string; text?: string; feld?: string }
 /** Flächen des Stundenplans: Kachel, kräftigere Kachellinie, Kopf/Zeitspalte, Überfahren, Pausenband. */
-export interface KachelFarben { flaeche: string; rand: string; kopf: string; hover: string; pause: string; raster: string; /** Balken links ohne Fachfarbe (grau, hell und dunkel deutlich sichtbar). */ balken: string;
+export interface KachelFarben { flaeche: string; rand: string; /** Kontur der Stundenkarte (1,5 px, Stundenkarte v6). */ linie: string; kopf: string; hover: string; pause: string; raster: string; /** Balken links ohne Fachfarbe (grau, hell und dunkel deutlich sichtbar). */ balken: string;
   /** Mitteilung im Plan: helle gelbe Notiz (Fläche, Linie, Schrift). */ notiz: string; notizRand: string; notizText: string;
   /** Veranstaltung/Termin als Block im Raster: warmes Neutral (Fläche, Linie, Titel). */ ereignis: string; ereignisRand: string; ereignisText: string }
 /** Seitenleiste in der Primärfarbe: Fläche, Text, Zweittext, Überfahren, aktive Zeile (leichte Tönung), 3-px-Kante der aktiven Zeile, Linie. */
@@ -79,7 +79,7 @@ export const theme = createTheme({
         divider: S[200],
         action: { hover: alpha(M[700], 0.06), selected: M[50] },
         status: status(false),
-        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2', balken: '#b4bec4',
+        kachel: { flaeche: '#f7f9fa', rand: '#c3ced2', linie: '#b7c2c8', kopf: '#eef3f4', hover: '#f3f7f8', pause: '#e2e8ea', raster: '#edf1f2', balken: '#b4bec4',
           notiz: '#fdf5c9', notizRand: '#eddc8c', notizText: '#5c4a0f', ereignis: '#f7f1e3', ereignisRand: '#e2d6bb', ereignisText: '#5c4a22' },
         nav: { flaeche: M[700], text: '#ffffff', text2: 'rgba(255,255,255,.72)', hover: 'rgba(255,255,255,.05)', aktiv: 'rgba(255,255,255,.12)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.14)' },
         flaechen: { kopf: '#f1f3f4', band: '#f7f8f9', rand: '#d3dbde' },
@@ -99,7 +99,7 @@ export const theme = createTheme({
         divider: '#26393e',
         action: { hover: 'rgba(255,255,255,.06)', selected: '#173a3f' },
         status: status(true),
-        kachel: { flaeche: '#172a2e', rand: '#33494e', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20', balken: '#56626c',
+        kachel: { flaeche: '#172a2e', rand: '#33494e', linie: '#3c4e55', kopf: '#152629', hover: '#1d3337', pause: '#0b1719', raster: '#0f1d20', balken: '#56626c',
           notiz: '#2e2a14', notizRand: '#5a5020', notizText: '#efe2a8', ereignis: '#2a2519', ereignisRand: '#4a4130', ereignisText: '#e6d7b0' },
         nav: { flaeche: '#0c2a2f', text: '#e8f1f2', text2: 'rgba(232,241,242,.66)', hover: 'rgba(255,255,255,.04)', aktiv: 'rgba(255,255,255,.09)', marke: farben.logoAkzent, linie: 'rgba(255,255,255,.10)' },
         flaechen: { kopf: '#17262a', band: '#152327', rand: '#2c3f44' },

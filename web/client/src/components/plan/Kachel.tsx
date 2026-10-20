@@ -1,7 +1,8 @@
 // Stundenkarte (design/DESIGN.md, Abschnitt 10 „Stundenkarte (alle Plattformen)“) nach der schulweiten Kartendarstellung
 // (Administration | Darstellung der Stundenkarten, siehe darstellung.tsx). Standard „EduOrga Standard“: kompakte helle Karte, die ihre
-// Rasterzelle füllt, 4-px-Leiste links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), darunter je eine Zeile Fach (600),
-// Klasse, Lehrkraft, Raum. Kennzeichnung nach den gemeinsamen Regeln (aenderung.ts): durchgehende 3-px-Leiste und 5-px-Kennzeichen in der
+// Rasterzelle füllt, Stundenkarte v6: 5-px-Leiste links bündig am Rand (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), Kontur
+// 1,5 px, Radius 4 px, darunter je eine Zeile Fach (600), Klasse, Lehrkraft, Raum. Kennzeichnung nach den gemeinsamen Regeln (aenderung.ts):
+// durchgehende 5-px-Leiste, 1,5-px-Kontur und 5-px-Kennzeichen in der
 // Statusfarbe, Tags „Gal (G̶o̶r̶)“, „105 (3̶0̶3̶)“, „neu B070“; Entfall rot und durchgestrichen („entfällt“, „verlegt auf …“); offen grau. Prüfung Bernstein, Veranstaltung als warmer Block ohne Kante, Buchung gestrichelt. Die übrigen Vorlagen
 // (Klassisch, Kompakt, Sachlich …) ändern Fachfarbe, Fläche, Rahmen, Radius, Dichte und Zeilenfolge – die Statusdarstellung bleibt gleich.
 // Die Bedeutung steht im aria-label und in der Kurzinfo beim Überfahren; Klick öffnet die Stundendetails.
@@ -36,7 +37,7 @@ export function FachQuadrat({ farbe, groesse = 8, sx }: { farbe: string | null |
 /** Farbe mit Deckkraft – auch für CSS-Variablen (var(--…)), die alpha() nicht zerlegen kann. */
 export const mischen = (farbe: string, wert: number) => (farbe.startsWith('var(') ? `color-mix(in srgb, ${farbe} ${Math.round(wert * 1000) / 10}%, transparent)` : alpha(farbe, wert));
 
-/** Leiste links in der Statusfarbe (Änderung grün, Entfall rot, offen grau) – durchgehend, 3 px. */
+/** Leiste links in der Statusfarbe (Änderung grün, Entfall rot, offen grau) – durchgehend, mindestens 5 px (Stundenkarte v6). */
 export const leiste = (farbe: string, offen = false) => (offen ? `repeating-linear-gradient(180deg, ${farbe} 0 4px, transparent 4px 7px)` : farbe);
 
 /** Tag auf der Karte: „Gal (G̶o̶r̶)“, „105 (3̶0̶3̶)“, „neu B070“, „entfällt“ – getönt mit feiner Linie (offen gestrichelt), Radius 3, Schrift ≥ 5:1 (WCAG AA), nie durchgestrichen. */
@@ -72,30 +73,37 @@ function Teile({ teile, anzeige }: { teile: Teil[]; anzeige?: (t: string) => str
 /**
  * Fläche und Rahmen je Art nach der Kartendarstellung: Grundfläche (neutral, weiß, getönt), Rahmen (fein, kräftig, Schatten, keiner),
  * optional leichte Tönung in der Fachfarbe. Änderung: grüne Statusfläche, Entfall: rote Fläche – nie in der Fachfarbe getönt.
+ * Stundenkarte v6: die Kontur (1,5 px, kräftig 2 px) ist eine innere Linie (`box-shadow: inset`) bzw. bei gestrichelten Arten eine
+ * Kontur nach innen (`outline` mit negativem Abstand) – so liegt die Leiste links bündig am Kartenrand über der Linie.
  */
 export function kachelStil(k: Karte, typ: Typ, t: Theme, d: Kartendarstellung = STANDARD, bild: Kartenbild = kartenbild(k, typ)): CSSProperties & Record<string, unknown> {
   const art = artVon(k, typ);
   const pal = (t.vars ?? t).palette;
   const papier = pal.background.paper;
   const kraeftig = d.rahmen === 'kraeftig';
-  const breite = kraeftig ? 2 : 1;
-  const linie = d.rahmen === 'keiner' || d.rahmen === 'schatten' ? 'transparent' : kraeftig ? mischen(pal.text.primary, 0.42) : pal.kachel.rand;
+  const breite = kraeftig ? 2 : 1.5;
+  const linie = d.rahmen === 'keiner' || d.rahmen === 'schatten' ? null : kraeftig ? mischen(pal.text.primary, 0.42) : pal.kachel.linie;
   // „Schatten“: helle Karte ohne Linie, leicht abgehoben (eigene, sehr flache Schattenkante)
-  const schatten = d.rahmen === 'schatten' ? { boxShadow: '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)' } : {};
+  const schatten = d.rahmen === 'schatten' ? '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)' : null;
+  const rahmen = (farbe: string | null, stil: 'solid' | 'dashed' = 'solid', mitSchatten = true): Record<string, string> => {
+    const schattenTeil = mitSchatten ? schatten : null;
+    if (farbe && stil === 'dashed') return { outline: `${breite}px dashed ${farbe}`, outlineOffset: `-${breite}px`, ...(schattenTeil ? { boxShadow: schattenTeil } : {}) };
+    const teile = [farbe ? `inset 0 0 0 ${breite}px ${farbe}` : null, schattenTeil].filter(Boolean);
+    return teile.length ? { boxShadow: teile.join(', ') } : {};
+  };
   const grund = d.flaeche === 'neutral' ? pal.kachel.flaeche : papier;
   const bilder: string[] = [];
   const fach = gueltigeFarbe(k.farbe);
   const s = pal.status;
-  const statusLinie = (farbe: string, stil: 'solid' | 'dashed' = 'solid') => `${breite}px ${stil} ${farbe}`;
-  if (bild.ton === 'entfall') return { backgroundColor: s.entfall.flaeche, border: statusLinie(mischen(s.entfall.main, 0.3)), ...schatten };
-  if (istTerminBlock(k)) return { backgroundColor: pal.kachel.ereignis, border: `1px solid ${pal.kachel.ereignisRand}`, color: pal.kachel.ereignisText };
-  if (art === 'pruefung') return { backgroundColor: d.statusflaeche ? s.pruefung.flaeche : grund, border: statusLinie(s.pruefung.main), ...schatten };
-  if (art === 'buchung') return { backgroundColor: papier, border: statusLinie(s.frei.main, 'dashed') };
-  if (bild.ton === 'aenderung') return { backgroundColor: d.statusflaeche ? s.aenderung.flaeche : grund, border: statusLinie(mischen(s.aenderung.main, 0.4)), ...schatten };
-  if (bild.ton === 'offen') return { backgroundColor: grund, border: `1px dashed ${mischen(s.offen.main, 0.9)}` };
+  if (bild.ton === 'entfall') return { backgroundColor: s.entfall.flaeche, ...rahmen(mischen(s.entfall.main, 0.55)) };
+  if (istTerminBlock(k)) return { backgroundColor: pal.kachel.ereignis, boxShadow: `inset 0 0 0 1px ${pal.kachel.ereignisRand}`, color: pal.kachel.ereignisText };
+  if (art === 'pruefung') return { backgroundColor: d.statusflaeche ? s.pruefung.flaeche : grund, ...rahmen(s.pruefung.main) };
+  if (art === 'buchung') return { backgroundColor: papier, ...rahmen(s.frei.main, 'dashed', false) };
+  if (bild.ton === 'aenderung') return { backgroundColor: d.statusflaeche ? s.aenderung.flaeche : grund, ...rahmen(mischen(s.aenderung.main, 0.8)) };
+  if (bild.ton === 'offen') return { backgroundColor: grund, ...rahmen(mischen(s.offen.main, 0.9), 'dashed', false) };
   if (mitToenung(d.fachfarbe) && fach) { const ton = mischen(fach, d.deckkraft / 100); bilder.push(`linear-gradient(${ton}, ${ton})`); }
   if (d.flaeche === 'getoent') { const ton = mischen(pal.primary.main, 0.05); bilder.push(`linear-gradient(${ton}, ${ton})`); }
-  return { backgroundColor: grund, border: `1px solid ${linie}`, ...schatten, ...(bilder.length ? { backgroundImage: bilder.join(', ') } : {}) };
+  return { backgroundColor: grund, ...rahmen(linie), ...(bilder.length ? { backgroundImage: bilder.join(', ') } : {}) };
 }
 
 /** Kurzinfo beim Überfahren: alle Angaben der Stunde. */
@@ -184,7 +192,7 @@ export const Kachel = memo(function Kachel({ k, typ, hoehe = 64, onOpen, gedimmt
   // Kante links: Unterricht immer (grau ohne Fachfarbe), Änderung grün und Entfall rot schraffiert – auch bei Vorlagen ohne Balken
   const balkenVorlage = (d.fachfarbe === 'balken-links' || d.fachfarbe === 'balken-flaeche' || d.fachfarbe === 'balken-innen') && stunde;
   const kante = !termin && (bild.ton !== null || balkenVorlage);
-  const kantenBreite = bild.ton ? 3 : Math.max(3, d.balkenbreite);
+  const kantenBreite = bild.ton ? Math.max(5, d.balkenbreite) : Math.max(3, d.balkenbreite);
   const innen = d.fachfarbe === 'balken-innen';
   const balkenOben = d.fachfarbe === 'balken-oben' && stunde && !termin && !bild.ton ? d.balkenbreite : 0;
   const quadrat = d.fachfarbe === 'quadrat' && !!k.fach && !termin;

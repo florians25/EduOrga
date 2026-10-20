@@ -21,9 +21,9 @@ public class StundenkartenDarstellungTests
         var schueler = await s.AlsAsync("6a", "schueler", "6a");
         var d = await Testserver.HolenAsync(schueler, Url);
         Assert.Equal("balken-flaeche", d["fachfarbe"]!.GetValue<string>());
-        Assert.Equal(4, d["balkenbreite"]!.GetValue<int>());
+        Assert.Equal(5, d["balkenbreite"]!.GetValue<int>());
         Assert.Equal("weiss", d["flaeche"]!.GetValue<string>());
-        Assert.Equal("schatten", d["rahmen"]!.GetValue<string>());
+        Assert.Equal("fein", d["rahmen"]!.GetValue<string>());
         Assert.Equal("zeilen", d["reihenfolge"]!.GetValue<string>());
         Assert.Equal("grau", d["raster"]!.GetValue<string>());
         Assert.Equal(4, d["eckenradius"]!.GetValue<int>());

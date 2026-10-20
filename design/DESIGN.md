@@ -16,8 +16,8 @@ Gestaltung anderer Stundenplanprogramme.
   keine dunkle Seitenleiste mit Symbolspalte. Vorbild sind nüchterne Fachanwendungen (Verwaltung, Finanzen, ERP).
 * **Keine Effekte um der Effekte willen:** keine Farbverläufe, kein Glas/Blur, keine Emojis, keine Illustrationen,
   keine „Hero“-Flächen, keine verspielten Animationen. Übergänge höchstens 120 ms (Farbe/Deckkraft).
-* **Klare Kanten:** Radius höchstens 6 px – 6 px (Steuerelemente, Karten, Dialoge, Menüs), 4 px (Rasterrahmen), 3 px
-  (Schilder, Stundenkacheln). Keine Pillenform für Knöpfe, Felder oder Plaketten. Prüfliste: Abschnitt 9.
+* **Klare Kanten:** Radius höchstens 6 px – 6 px (Steuerelemente, Karten, Dialoge, Menüs), 4 px (Rasterrahmen, Stundenkarten
+  nach Abschnitt 10), 3 px (Schilder). iOS: Inhaltsflächen 10 pt (Systemlisten behalten den Radius des Systems). Keine Pillenform für Knöpfe, Felder oder Plaketten. Prüfliste: Abschnitt 9.
   1-px-Linien statt Schatten; Schatten nur für schwebende Ebenen (Menüs, Dialoge).
 * **Typografie trägt die Hierarchie**, nicht Farbe: IBM Plex Sans 400/500/600, Ziffern tabellarisch
   (`font-variant-numeric: tabular-nums`) in Tabellen, Zeiten und Rastern.
@@ -42,8 +42,8 @@ Grundwerte in `design/tokens.css` (Präfix `--up-`). Marke **Marine** `#234f96` 
 
 | Status | Farbe | Darstellung |
 |---|---|---|
-| Entfall | `--up-entfall` #b42318, Fläche #fdecea, Schrift #8f1d14 | **alles durchgestrichen**, rote Fläche, rote 3-px-Leiste, Tag „entfällt“ (Abschnitt 10) |
-| Jede Änderung (Vertretung, Raum-, Fach-, Lehrerwechsel, Verlegung, Zusatz) | `--up-aenderung` **Grün #2f855a**, Fläche #e6f4ea, Schrift #1d5c3a (dunkel #5cbf86, #15281d / #b5e6c8) | grüne Fläche, grüne 3-px-Leiste, Tag „neu statt bisher“ (Abschnitt 10); offene Vertretung neutral |
+| Entfall | `--up-entfall` #b42318, Fläche #fdecea, Schrift #8f1d14 | **alles durchgestrichen**, rote Fläche, rote 5-px-Leiste, Tag „entfällt“ (Abschnitt 10) |
+| Jede Änderung (Vertretung, Raum-, Fach-, Lehrerwechsel, Verlegung, Zusatz) | `--up-aenderung` **Grün #2f855a**, Fläche #e6f4ea, Schrift #1d5c3a (dunkel #5cbf86, #15281d / #b5e6c8) | grüne Fläche, grüne 5-px-Leiste, Tag „neu statt bisher“ (Abschnitt 10); offene Vertretung neutral |
 | Prüfung / Klausur | `--up-pruefung` #a15c07 | Kachel weiß, 1-px-Linie in Bernstein, Plakette „Prüfung“ |
 | Veranstaltung / Termin | `--up-termin` #a3347c; Block `--up-ereignis-*` (#f7f1e3 / #e2d6bb / #5c4a22) | warmer Block im Raster über seine Stunden, ohne Kante |
 | Mitteilung | `--up-mitteilung-*` (#fdf5c9 / #eddc8c / #5c4a0f) | helle gelbe Notiz im Tageskopf bzw. über der ersten Stunde |
@@ -171,7 +171,8 @@ Schulsoftware), nicht wie ein generiertes Dashboard. Jede neue Seite und jede Ü
       (`Abschnitt`, `Bereichskarte`, `Karte`). Tabellenköpfe neutral grau (`flaechen.kopf`), keine Petrol-/Pastelltönung.
 - [ ] Keine Karten in Karten; Filterleisten sind eine Zeile über der Tabelle, keine eigene Karte (`Seite filter`).
 - [ ] Keine Kennzahl-Kacheln (große Zahl in Kasten). Zahlen als Textzeile über der Tabelle: „**5** alle · **2** Lehrkraft“
-      (`Kennzahl`/`Kennzahlen`), klickbar als Filter mit 2-px-Unterstrich für die Auswahl.
+      (`Kennzahl`/`Kennzahlen`), klickbar als Filter mit 2-px-Unterstrich für die Auswahl. Einzige Ausnahme: die **Tageszahlen**
+      auf iOS „Heute“ (Abschnitt 10.1) – eine Fläche mit höchstens vier Werten über null, ohne Symbole und ohne Farbflächen.
 - [ ] Keine Startkacheln mit Symbol, Titel und Pfeil („Was möchten Sie tun?“) – stattdessen eine Linkliste mit Beschreibung.
 - [ ] Keine Kalenderblatt-Datumskacheln („19 / Okt“) in Listen; Datum als Text in fester Spalte („Mo 19.10.“, `DatumKachel`).
 - [ ] 8-px-Raster: Abstände 4 / 8 / 12 / 16 / 24 px (MUI-Einheiten 0,5 / 1 / 1,5 / 2 / 3); keine 5-, 10-, 20-px-Werte.
@@ -217,9 +218,19 @@ Raum, Fach, Entfall, Verlegung, Zusatz, Mitteilung) – Formen, Wortwahl, Reihen
 nicht an andere Stundenplanprogramme an (keine Schraffur, keine runden Plus-/Kreuz-Pillen, keine übernommenen Legendentabellen).
 Sachlich und ruhig: eine Leiste, ein Kennzeichen, kurze Tags. Barrierefreiheit im Einzelnen auch in `ios/README.md`.
 
+**Maße „Stundenkarte v6“ (einzige Quelle; Web `Kachel.tsx`, PWA `app.css` Abschnitt „Stundenkarte v6“, iOS `Kartenmass`)**
+
+| Maß | Wert (px bzw. pt) |
+|---|---|
+| Eckenradius | **4** (Schule wählbar 2–6; nie pillenförmig) |
+| Leiste links | **5**, volle Höhe, **bündig am Kartenrand** (liegt über der Kontur), außen vom Radius beschnitten, innen eckig; geänderte, entfallene und offene Karten mindestens 5 |
+| Kontur | **1,5** innen (`box-shadow: inset` bzw. `strokeBorder`), neutral `--up-karte-linie` #b7c2c8 (dunkel #3c4e55); geändert Grün #2f855a 80 %, Entfall Rot 55 %, Prüfung Bernstein 100 %, offen Grau gestrichelt; Rahmen „kräftig“ 2 |
+| Kennzeichen | Quadrat 5 × 5, eckig, oben rechts mit 4 Abstand |
+| Einzug des Inhalts | Leiste + 6 (Web/PWA), iOS Raster Leiste + 5 |
+
 **Grundkarte („EduOrga Standard“, Standard der Kartendarstellung)**
-* Kompakt, füllt die Rasterzelle (1–1,5 px Luft), nie breiter als ihre Spalte; Radius 4 (iOS 6); flacher Schatten bzw. feine Kontur.
-* **Neutral, weil Schulen nicht alle Fächer färben:** Fläche weiß, **Leiste links 4 px grau** (`--up-karte-balken` #b4bec4, dunkel
+* Kompakt, füllt die Rasterzelle (1–1,5 px Luft), nie breiter als ihre Spalte; Maße wie oben, kein Schatten (Rahmen „fein“).
+* **Neutral, weil Schulen nicht alle Fächer färben:** Fläche weiß, **Leiste links 5 px grau** (`--up-karte-balken` #b4bec4, dunkel
   #56626c). Nur wenn das Fach eine Farbe hat: Leiste in der Fachfarbe und Fläche leicht getönt (12 %, dunkel × 1,8).
 * Zeilen oben links nach der Leiste: **Fach 13–14,5/600**, darunter je eine Zeile 12–12,5/400 `--up-text-2`: **Klasse, Lehrkraft,
   Raum**. Die Zeile des gezeigten Elements (Klasse im Klassenplan, Lehrkraft im Lehrerplan, Raum im Raumplan) entfällt, solange sie
@@ -235,8 +246,8 @@ Sachlich und ruhig: eine Leiste, ein Kennzeichen, kurze Tags. Barrierefreiheit i
 
 **Kennzeichnung (fest, in jeder Vorlage)**
 * **Geändert – Grün** (`--up-aenderung` #2f855a für Leiste/Linie/Kennzeichen, Fläche #e6f4ea, **Schrift #267349** (≥ 5:1); dunkel
-  #5cbf86 / #15281d / #b5e6c8): **durchgehende 3-px-Leiste** links, helle grüne Fläche, feine Linie (40 %), **Kennzeichen** (Quadrat
-  5 × 5 px) oben rechts, das Geänderte als **Tag** auf seiner Zeile; geänderte Zeilen 600.
+  #5cbf86 / #15281d / #b5e6c8): **durchgehende 5-px-Leiste** links, helle grüne Fläche, grüne Kontur 1,5 px (80 %), **Kennzeichen**
+  (Quadrat 5 × 5 px) oben rechts, das Geänderte als **Tag** auf seiner Zeile; geänderte Zeilen 600.
 * **Entfällt – Rot** (`--up-entfall` #b42318, Fläche #fdecea, Schrift #8f1d14; dunkel #f07167 / #2e1916 / #ffc9c3): rote Leiste, rote
   Fläche, Kennzeichen, **der ganze Inhalt durchgestrichen**, Fach rot; der Status-Tag bleibt lesbar (nicht durchgestrichen).
 * **Offen – Grau:** offene Vertretung ist **kein Entfall und nie rot** – weiße Karte, **graue Leiste und gestrichelter Rand**, grauer
@@ -315,15 +326,15 @@ Die folgenden Maße gelten für iOS; Abweichungen von den Regeln oben (Farben, F
 **Karte**
 * Füllt die Zelle: 1,5 pt Abstand oben/unten, 3 pt zwischen den Spalten. **Feste Breite = Spaltenbreite**, Inhalt wird
   beschnitten – eine Karte ist nie breiter als ihre Spalte.
-* Radius 6, keine Schatten, feine Kontur (0,5 pt, 6 % Petrol-Schwarz). Fläche weiß mit **Tönung der Fachfarbe**
-  (Deckkraft nach Kartendarstellung, Standard 12 %; dunkel × 1,8, höchstens 40 %). **Balken 4 pt** in der Fachfarbe,
-  bündig am linken Rand, von der Kartenform beschnitten (ohne Fachfarbe grau #b4bec4).
+* Maße nach „Stundenkarte v6“ oben (`Kartenmass`): Radius 4, keine Schatten, Kontur 1,5 pt `Farben.karteLinie`. Fläche weiß
+  mit **Tönung der Fachfarbe** (Deckkraft nach Kartendarstellung, Standard 12 %; dunkel × 1,8, höchstens 40 %). **Balken 5 pt**
+  in der Fachfarbe, bündig am linken Rand über der Kontur, von der Kartenform beschnitten (ohne Fachfarbe grau #b4bec4).
 * Inhalt oben links, Einzug 6 pt nach dem Balken: **Fach 14,5/700**, darunter je eine Zeile 12,5/400 `--up-text-2`:
   Klasse, Lehrkraft, Raum (bzw. Anlass). Unter 56 pt Breite: 12,5 bzw. 11. Zeilen, die nicht passen, entfallen von
   unten; Änderungen stehen immer da, auch wenn die Schule Raum bzw. Zeile 2 ausblendet.
 
 **Status (iOS-Maße; Farben und Felder nach den Regeln oben – Änderung grün, Entfall rot)**
-* **Änderung, Entfall, offene Vertretung, Tags:** wie in der „Kennzeichnung“ oben (3-pt-Leiste, Kennzeichen, umrandete Tags in
+* **Änderung, Entfall, offene Vertretung, Tags:** wie in der „Kennzeichnung“ oben (5-pt-Leiste, Kennzeichen, umrandete Tags in
   eigener Wortwahl; offene Vertretung neutral, grau gestrichelt).
 * **Prüfung**: Bernstein-Linie und helle Bernstein-Fläche, Wort „Prüfung“ unten links (wenn Platz).
 * **Termin / Raumbuchung**: ohne Balken, gestrichelt (Termin Magenta-Titel, Buchung Blau).
@@ -404,3 +415,30 @@ ausgeschrieben.
 Zeit, Status als Wort), dann – nur bei Änderungen – Abschnitt „Änderung“ bzw. „Entfall“ mit „neu (bisher durchgestrichen)“ je Angabe,
 Verlegung und Vertretungstext/Grund, danach die geltenden Angaben (Zeit, Raum, Lehrkraft, Klasse), Hinweis, Online,
 Thema, Hausaufgaben, Notizen, Klassenbuch.
+
+**Heute (iOS, `Neu/Heute/HeuteView.swift`, `HeuteBereiche.swift`, `HeuteGrafik.swift`)** – Grafik ersetzt Text, nichts kommt dazu:
+* Reihenfolge: Tageszeile („Dienstag, 20. Oktober · A-Woche“) · **Tagesband** · **Fokuskarte** · **Tageszahlen** · Notizen der Schule ·
+  **Stunden** (kompakte Karten) · „Mehr anzeigen“ (nächster Schultag, Übersicht) · „Stand EduOrga Studio“ und Schule. Inhaltsflächen
+  Radius 10 pt, 1-pt-Rand, keine Karten in Karten.
+* **Tagesband:** der Schultag als Leiste über die ganze Breite (Höhe 20 pt, mit Dynamic Type), je Stunde ein Abschnitt nach seiner
+  echten Dauer (Radius 3, 2 pt Luft, Pausen als Lücken), gleichzeitige Stunden zusammengefasst (Änderung vor regulär). Farben der
+  Stundenkarte: regulär Grau #b4bec4, geändert Grün #2f855a, entfällt helles Rot mit roter Linie und **durchgestrichen**, offene
+  Vertretung weiß und grau gestrichelt, Prüfung Bernstein, Termin warm, Bereitschaft neutral gestrichelt. Vergangenes 42 % Deckkraft,
+  die laufende Stunde mit 2-pt-Petrol-Rahmen, **Jetzt-Linie** 2 pt Petrol mit der Uhrzeit darüber (11/600); oben links Beginn, rechts
+  Ende des Tages (die Jetzt-Uhrzeit verdrängt sie), unter den Abschnitten die Stundennummern, wenn sie hineinpassen; Aufsichten als
+  4 pt hohe Marke in ihrer Pause. Ein Element für VoiceOver („Schultag 7:45 bis 13:10 Uhr, 6 Abschnitte, 1 geändert, 1 entfällt.
+  Jetzt 3. Stunde.“); Antippen öffnet den Tag im Plan.
+* **Fokuskarte** „Jetzt“ / „Als Nächstes“: links die 5-pt-Leiste der Stunde (Fach- bzw. Statusfarbe), oben „Jetzt · 3. Std.“, Fach
+  title2/600, darunter Raum und Lehrkraft bzw. Klasse mit Kennzeichen („Gal (G̶o̶r̶)“, für Schüler*innen und Eltern „Vertretung folgt“);
+  rechts groß die Restzeit („noch / 23 Min.“, „in / 12 Min.“, „ab / 7:45“, „Mittwoch / 7:45“). Laufende Stunde: Fortschrittsbalken
+  6 pt Petrol auf Neutralgrau (Radius 2) mit Beginn und Ende darunter. Lehrkräfte unten „Klassenbuch erfassen“ bzw.
+  „Klassenbuch nachtragen · M · 8:00“.
+* **Tageszahlen:** höchstens vier Werte über null in einer Fläche, getrennt durch 1-pt-Linien: Zahl title2/600 tabellarisch, darunter
+  die Beschriftung 12 pt `--up-text-2`. Kollegium: Änderungen (Grün-Schrift #267349), Klassenbuch offen (Bernstein), Aufsichten,
+  neue Nachrichten (Petrol), Termine; Schüler*innen und Eltern: Änderungen, Hausaufgaben morgen, Prüfungen diese Woche (Bernstein),
+  neue Nachrichten, Termine. Jede Zahl führt zu ihrer Seite; bei Bedienungshilfen-Schriftgrößen untereinander.
+* **Notizen der Schule** (Mitteilungen, Veranstaltungen, Hinweise): höchstens zwei helle gelbe Notizen (Radius 4, 1-pt-Linie, Titel
+  600, Text höchstens zwei Zeilen), darunter „Alle n Hinweise der Schule“.
+* **Stunden:** je Stunde links Beginn (15) über Ende (11), rechts eine kompakte Stundenkarte v6 (Fach · Raum, geänderte Werte als
+  Kennzeichen, rechts „entfällt“/„verlegt …“ bzw. „jetzt“), 6 pt Abstand; laufende Stunde mit 2-pt-Petrol-Rahmen, vergangene 55 %.
+

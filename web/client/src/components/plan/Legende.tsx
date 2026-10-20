@@ -94,9 +94,10 @@ export function Musterkarte({ g }: { g: Kennzeichengruppe }) {
   const offen = g.ton === 'offen';
   const kante = g.ton ? pal.status[g.ton].main : pal.kachel.balken;
   return (
-    <Box aria-hidden data-muster={g.id} sx={{ position: 'relative', width: 132, flex: 'none', pl: '9px', pr: '12px', py: '4px', borderRadius: '4px', bgcolor: flaeche, overflow: 'hidden',
-      border: offen ? `1px dashed ${mischen(kante, 0.9)}` : 0, boxShadow: g.ton && !offen ? `inset 0 0 0 1px ${mischen(kante, 0.35)}` : '0 1px 1.5px rgba(12,44,49,.14), 0 0 0 0.5px rgba(12,44,49,.07)', fontVariantNumeric: 'tabular-nums' }}>
-      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: leiste(kante) }} />
+    <Box aria-hidden data-muster={g.id} sx={{ position: 'relative', width: 132, flex: 'none', pl: '11px', pr: '12px', py: '4px', borderRadius: '4px', bgcolor: flaeche, overflow: 'hidden',
+      ...(offen ? { outline: `1.5px dashed ${mischen(kante, 0.9)}`, outlineOffset: '-1.5px' } : {}),
+      boxShadow: offen ? 'none' : `inset 0 0 0 1.5px ${g.ton ? mischen(kante, g.ton === 'entfall' ? 0.55 : 0.8) : pal.kachel.linie}`, fontVariantNumeric: 'tabular-nums' }}>
+      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: leiste(kante) }} />
       {g.ton && <Box sx={{ position: 'absolute', top: 4, right: 4, width: 5, height: 5, borderRadius: 0, bgcolor: kante }} />}
       {g.muster.map((z, i) => (
         <Typography key={i} component="div" noWrap sx={{ fontSize: i ? 12 : 13, lineHeight: i ? '17px' : '18px', fontWeight: i ? 400 : 600, textDecoration: entfall ? 'line-through' : 'none',

@@ -2835,3 +2835,33 @@ body.show-card-times .card__times{ display:flex; }
 }
 /* Schmale Telefone: „Klasse“ entfällt im Titel, wenn „Mein Plan“ daneben steht (ganzer Name im title/aria) */
 @media (max-width:430px){ .topbar:has(#btnMeinPlan:not([hidden])) .topbar__art{ display:none; } }
+
+/* =====================================================================
+   Stundenkarte v6 (design/DESIGN.md, Abschnitt 10) – dieselben Maße wie
+   EduOrga Web (Kachel.tsx) und iOS (Kartenmass): Leiste links 5 px bündig
+   am Rand (volle Höhe, innen eckig, liegt über der Kontur), Kontur 1,5 px
+   (neutral --kachel-linie, geändert grün 80 %, Entfall rot 55 %, Prüfung
+   bernstein, offen grau gestrichelt), Radius 4 px, Kennzeichen 5 × 5 px.
+   ===================================================================== */
+:root{ --kachel-linie:var(--up-karte-linie, #b7c2c8); }
+:root[data-thema="dunkel"]{ --kachel-linie:var(--up-karte-linie, #3c4e55); }
+[data-rahmen="fein"]{ --karte-rahmen:inset 0 0 0 1.5px var(--kachel-linie); }
+[data-rahmen="kraeftig"]{ --karte-rahmen:inset 0 0 0 2px color-mix(in srgb, var(--up-text) 42%, transparent); }
+.card{ border-radius:var(--kradius, 4px); }
+[data-fachfarbe="balken-links"] .card::before, [data-fachfarbe="balken-flaeche"] .card::before{ width:var(--balken, 5px); border-radius:0; }
+[data-fachfarbe="balken-links"] .card, [data-fachfarbe="balken-flaeche"] .card{ padding-left:calc(var(--balken, 5px) + 6px); }
+.card--change::before, .card--released::before, .card--cancelled::before{ width:max(5px, var(--balken, 5px)); border-radius:0; }
+.card--change, .card--released, .card--cancelled, .card--class-absent{ padding-left:calc(max(5px, var(--balken, 5px)) + 6px); }
+.card--change, .card--released{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--st-aenderung) 80%, transparent); }
+.card--change.is-past, .card--released.is-past{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--st-aenderung) 50%, transparent); }
+.card--cancelled, .card--class-absent{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--st-entfall) 55%, transparent); }
+.card--exam{ box-shadow:inset 0 0 0 1.5px var(--st-pruefung); }
+.card--exam.is-past{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--st-pruefung) 45%, transparent); }
+.card--change.is-offen, .kennz .muster.card--change.is-offen{ box-shadow:none; outline:1.5px dashed var(--up-offen); outline-offset:-1.5px; }
+.card--gs, .card--absence, .card--event{ border-radius:var(--kradius, 4px); }
+/* Legende: Musterkarten wie die Stundenkarte */
+.kennz .muster, .legende-tab .muster{ border-radius:4px; padding-left:11px; box-shadow:inset 0 0 0 1.5px var(--kachel-linie); }
+.kennz .muster::before, .legende-tab .muster::before{ width:5px; }
+.kennz .muster.card--change{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--st-aenderung) 80%, transparent); padding-left:11px; }
+.kennz .muster.card--cancelled{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--st-entfall) 55%, transparent); padding-left:11px; }
+.sw--change{ box-shadow:inset 4px 0 0 var(--st-aenderung), inset 0 0 0 1.5px color-mix(in srgb, var(--st-aenderung) 80%, transparent); }

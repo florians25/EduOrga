@@ -116,6 +116,9 @@ public class PlanrasterTests
         Assert.Contains(".feld--entfall{ background:var(--up-entfall-feld);", AppCss);
         Assert.Contains("background-color:var(--up-entfall-flaeche);", AppCss);
         Assert.Contains(".card--change::before, .card--released::before{ background:var(--st-aenderung); width:3px; }", AppCss);
+        // Stundenkarte v6: Leiste 5 px, Kontur 1,5 px, Radius 4 px (gleich in Web und iOS)
+        Assert.Contains(".card--change::before, .card--released::before, .card--cancelled::before{ width:max(5px, var(--balken, 5px)); border-radius:0; }", AppCss);
+        Assert.Contains("[data-rahmen=\"fein\"]{ --karte-rahmen:inset 0 0 0 1.5px var(--kachel-linie); }", AppCss);
         Assert.Contains("<div class=\"kennz\" role=\"list\"", Datei("Vorlagen", "index.html"));
         Assert.Contains("class=\"notiz\"", AppJs);
     }
@@ -137,8 +140,8 @@ public class PlanrasterTests
         // Tag | Woche ohne Untermenü, Aufziehen/Zusammenziehen
         Assert.Contains("id=\"planSeg\"", html);
         Assert.Contains("setView('day', pickDefaultDay())", js);
-        // weiche Ecken 4–6 px, grauer Balken ohne Fachfarbe (hell und dunkel)
-        Assert.Contains("Math.min(6, Math.max(4, d.eckenradius ?? 5))", js);
+        // Ecken 2–6 px (Standard 4), grauer Balken ohne Fachfarbe (hell und dunkel)
+        Assert.Contains("Math.min(6, Math.max(2, d.eckenradius ?? 4))", js);
         Assert.Contains(".card.ohne-fach::before{ background:var(--balken-grau); }", css);
         Assert.Contains("--balken-grau:      #b4bec4;", css);
         Assert.Contains("--balken-grau:      #56626c;", css);

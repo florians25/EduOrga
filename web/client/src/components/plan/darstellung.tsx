@@ -1,6 +1,7 @@
 // Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten): schulweite Einstellung aus der Sitzung, als Kontext für
-// Kachel, Legende, Startseite, Übersicht und Stundendetails. Standard ist „EduOrga Standard“ (design/DESIGN.md, Abschnitt 10): kompakte
-// helle Karten auf hellgrauem Raster, 4-px-Kante links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), je eine Zeile Fach (600)
+// Kachel, Legende, Startseite, Übersicht und Stundendetails. Standard ist „EduOrga Standard“ (design/DESIGN.md, Abschnitt 10, Stundenkarte v6):
+// kompakte helle Karten auf hellgrauem Raster, 5-px-Leiste links (grau, mit Fachfarbe in der Fachfarbe samt leichter Tönung), Kontur 1,5 px,
+// Radius 4 px, je eine Zeile Fach (600)
 // · Klasse · Lehrkraft · Raum; Änderungen grün, Entfall rot (aenderung.ts). Die Statusdarstellung (schraffierte Kante, Felder „+neu
 // (bisher)“, Durchstreichung, Statusfeld) bleibt in jeder Variante erhalten.
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -48,15 +49,16 @@ export interface Kartendarstellung {
   raster: Raster;
 }
 
-/** „EduOrga Standard“ (alle Plattformen gleich): helle Karte, Kante links grau bzw. in der Fachfarbe mit leichter Tönung, Fach · Klasse · Lehrkraft · Raum. */
+/** „EduOrga Standard“ (alle Plattformen gleich, Stundenkarte v6): helle Karte, 5-px-Leiste links grau bzw. in der Fachfarbe mit leichter Tönung,
+ * Kontur 1,5 px („fein“), Radius 4 px, Fach · Klasse · Lehrkraft · Raum. */
 export const STANDARD: Kartendarstellung = {
-  fachfarbe: 'balken-flaeche', balkenbreite: 4, deckkraft: 12, flaeche: 'weiss', rahmen: 'schatten', eckenradius: 4, dichte: 'kompakt',
+  fachfarbe: 'balken-flaeche', balkenbreite: 5, deckkraft: 12, flaeche: 'weiss', rahmen: 'fein', eckenradius: 4, dichte: 'kompakt',
   fach: 'kuerzel', raum: true, zeile2: true, zeile2Text: 'kuerzel', kuerzel: 'text', statuswoerter: false, statusflaeche: true,
   reihenfolge: 'zeilen', raster: 'grau',
 };
 
 /** Bisheriger Standard „Klassisch“ (Streifen innen links, Lehrkraft bzw. Klasse oben) – als Vorlage weiter wählbar. */
-const KLASSISCH: Kartendarstellung = { ...STANDARD, fachfarbe: 'balken-innen', eckenradius: 2, reihenfolge: 'element' };
+const KLASSISCH: Kartendarstellung = { ...STANDARD, fachfarbe: 'balken-innen', balkenbreite: 4, rahmen: 'schatten', eckenradius: 2, reihenfolge: 'element' };
 
 /** Bisherige Grunddarstellung „Sachlich“ (Fachfarbe als Quadrat, neutrale Fläche) – als Vorlage weiter wählbar. */
 const SACHLICH: Kartendarstellung = {
@@ -66,7 +68,7 @@ const SACHLICH: Kartendarstellung = {
 };
 
 export const VORLAGEN: { id: string; name: string; hinweis: string; werte: Kartendarstellung }[] = [
-  { id: 'standard', name: 'EduOrga Standard', hinweis: 'Helle Karten auf hellgrauem Raster, Kante links grau bzw. in der Fachfarbe mit leichter Tönung, je eine Zeile: Fach · Klasse · Lehrkraft · Raum', werte: STANDARD },
+  { id: 'standard', name: 'EduOrga Standard', hinweis: 'Helle Karten auf hellgrauem Raster, kräftige Leiste links (5 px) grau bzw. in der Fachfarbe mit leichter Tönung, Kontur 1,5 px, Radius 4 px, je eine Zeile: Fach · Klasse · Lehrkraft · Raum', werte: STANDARD },
   { id: 'klassisch', name: 'Klassisch', hinweis: 'Weiße Karten auf hellgrauem Raster, Fachfarbe als schmaler Streifen innen links, drei kurze Zeilen: Lehrkraft bzw. Klasse · Fach · Raum', werte: KLASSISCH },
   { id: 'kompakt', name: 'Kompakt', hinweis: 'Kompakte Karten mit Fachfarbe als Balken links und leichter Tönung, Fach fett, Raum rechts', werte: { ...KLASSISCH, fachfarbe: 'balken-flaeche', rahmen: 'fein', reihenfolge: 'fach', raster: 'weiss' } },
   { id: 'sachlich', name: 'Sachlich', hinweis: 'Neutrale Fläche, Fachfarbe als kleines Quadrat', werte: SACHLICH },
