@@ -150,4 +150,70 @@ public sealed class PlantafelTests : IClassFixture<StudioFabrik>
         // nichts angelegt
         Assert.DoesNotContain("Neuer Unterricht", (await c.GetJsonAsync(basis))["rueckgaengigText"]?.GetValue<string>() ?? "");
     }
+
+    /// <summary>Band (parallele Kurse einer Schiene): Zielstufen für alle Kurse, Verschieben, Entplanen und Setzen als Ganzes.</summary>
+    [Fact]
+    public async Task BandWandertAlsGanzes()
+    {
+        var (c, basis) = await BeispielAsync();
+        var t = await c.GetJsonAsync($"{basis}/planung/plantafel?typ=klasse");
+        var bandU = t["unterrichte"]!.AsArray().Where(u => S(u!["band"]).Length > 0).GroupBy(u => S(u!["band"])).First(gr => gr.Count() >= 2);
+        var ids = bandU.Select(u => I(u!["u"])).OrderBy(x => x).ToList();
+        int leit = ids[0], partner = ids[1];
+        List<(int Tag, int Stunde)> Lage(JsonNode tafel, int u) => tafel["stunden"]!.AsArray().Where(x => I(x!["u"]) == u).Select(x => (I(x!["tag"]), I(x!["stunde"]))).OrderBy(x => x).ToList();
+        var vorher = Lage(t, leit);
+        Assert.Equal(vorher, Lage(t, partner)); // die Kurse des Bandes liegen parallel
+        var (tag, stunde) = vorher[0];
+
+        // Zielstufen nennen alle Kurse des Bandes
+        var z = await c.GetJsonAsync($"{basis}/planung/plantafel/ziele?unterricht={leit}&tag={tag}&stunde={stunde}");
+        Assert.Equal(ids.Count, z["band"]!.AsArray().Count);
+        Assert.Equal("eigen", S(z["stufen"]![tag]![stunde - 1]));
+        var stufen = z["stufen"]!.AsArray();
+        var freie = Enumerable.Range(0, 5).SelectMany(x => Enumerable.Range(0, stufen[x]!.AsArray().Count).Select(s => (x, s))).Where(q => S(stufen[q.x]![q.s]) == "frei").ToList();
+        Assert.True(freie.Count >= 2);
+
+        // Sperrzeit der Lehrkraft des PARTNERS macht das Feld hart, der Grund nennt den Partner
+        var lehrerPartner = I(bandU.First(u => I(u!["u"]) == partner)!["lehrer"]![0]);
+        var sperre = freie[0];
+        var n = z["laenge"]!.GetValue<int>();
+        await c.PutAsJsonAsync($"{basis}/zeitwuensche/lehrer/{lehrerPartner}", new { aenderungen = Enumerable.Range(0, n).Select(i => new { tag = sperre.x, stunde = sperre.s + 1 + i - z["versatz"]!.GetValue<int>(), wert = -3 }).ToArray() });
+        z = await c.GetJsonAsync($"{basis}/planung/plantafel/ziele?unterricht={leit}&tag={tag}&stunde={stunde}");
+        Assert.Equal("hart", S(z["stufen"]![sperre.x]![sperre.s]));
+        Assert.Contains($"U-Nr. {partner}", S(z["gruende"]![sperre.x]![sperre.s]));
+
+        // Verschieben: beide Kurse wandern um denselben Versatz
+        var ziel = Enumerable.Range(0, 5).SelectMany(x => Enumerable.Range(0, z["stufen"]![x]!.AsArray().Count).Select(s => (x, s))).First(q => S(z["stufen"]![q.x]![q.s]) == "frei");
+        var erg = await c.PostJsonAsync($"{basis}/planung/band/verschieben", new { unterricht = leit, tag, stunde, zielTag = ziel.x, zielStunde = ziel.s + 1 });
+        Assert.True(erg["ok"]!.GetValue<bool>());
+        t = await c.GetJsonAsync($"{basis}/planung/plantafel?typ=klasse");
+        var nachher = Lage(t, leit);
+        Assert.NotEqual(vorher, nachher);
+        Assert.Equal(nachher, Lage(t, partner));
+        Assert.Contains("Band", S((await c.GetJsonAsync(basis))["rueckgaengigText"]));
+
+        // Entplanen des Blocks beider Kurse, dann aus dem Vorrat gemeinsam setzen
+        var block = nachher.Where(x => x.Tag == ziel.x).ToList();
+        await c.PostJsonAsync($"{basis}/planung/entplanen", new { stunden = ids.Take(2).SelectMany(u => block.Select(b => new { unterricht = u, tag = b.Tag, stunde = b.Stunde })).ToArray() });
+        var zv = await c.GetJsonAsync($"{basis}/planung/plantafel/ziele?unterricht={leit}&laenge={block.Count}");
+        Assert.True(zv["band"]!.AsArray().Count >= 2);
+        var st = zv["stufen"]!.AsArray();
+        var frei = Enumerable.Range(0, 5).SelectMany(x => Enumerable.Range(0, st[x]!.AsArray().Count).Select(s => (x, s))).First(q => S(st[q.x]![q.s]) == "frei");
+        await c.PostJsonAsync($"{basis}/planung/band/verplanen", new { unterricht = leit, tag = frei.x, stunde = frei.s + 1, laenge = block.Count });
+        t = await c.GetJsonAsync($"{basis}/planung/plantafel?typ=klasse");
+        Assert.Equal(Lage(t, leit), Lage(t, partner));
+        Assert.Contains((frei.x, frei.s + 1), Lage(t, partner));
+    }
+
+    [Fact]
+    public async Task PlantafelNenntBevorzugteRaeume()
+    {
+        var (c, basis) = await BeispielAsync();
+        var t = await c.GetJsonAsync($"{basis}/planung/plantafel?typ=klasse");
+        var mitWunsch = t["unterrichte"]!.AsArray().Where(u => u!["wunsch"]!.AsArray().Count > 0).ToList();
+        Assert.NotEmpty(mitWunsch);
+        Assert.All(mitWunsch.SelectMany(u => u!["wunsch"]!.AsArray()), w => Assert.Contains(S(w!["art"]), new[] { "Fachraum", "Stammraum" }));
+        Assert.NotNull(t["raumgruppen"]);
+        Assert.NotNull(t["namen"]!["raumgruppen"]);
+    }
 }
