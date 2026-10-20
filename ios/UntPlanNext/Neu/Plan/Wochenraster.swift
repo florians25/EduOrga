@@ -1001,10 +1001,10 @@ struct RasterKarte: View {
     @Environment(\.dynamicTypeSize) private var schriftgroesse
 
     private var entfall: Bool { kachel.kartenart == .entfall }
-    /// Radius 6 (Schulwert 5 und mehr), kleiner nur, wenn die Schule es so eingestellt hat
-    private var radius: CGFloat { CGFloat(min(6, max(3, darstellung.eckenradius + 1))) }
-    /// Durchgehender Balken: 3 pt (die Schule kann ihn bis 5 pt verbreitern)
-    private var balken: CGFloat { CGFloat(min(5, max(3, darstellung.balkenbreite - 1))) }
+    /// Radius nach der Kartendarstellung (Standard 4, höchstens 6)
+    private var radius: CGFloat { CGFloat(min(6, max(2, darstellung.eckenradius))) }
+    /// Leiste links (Standard 5 pt, Schulwert 3–6; geänderte und entfallene Karten mindestens 5 pt)
+    private var balken: CGFloat { CGFloat(min(6, max(3, darstellung.balkenbreite))) }
 
     /// Zeilen unter dem Fach: Klasse, Lehrkraft, Anlass, Raum – ausgeblendete Angaben erscheinen, sobald sie sich ändern.
     private var nebenzeilen: [Kachelzeile] {
@@ -1081,7 +1081,7 @@ struct RasterKarte: View {
             }
         }
         .monospacedDigit()
-        .padding(.leading, (stil.mitBalken ? balken : 0) + (schmal ? 3 : 5))
+        .padding(.leading, (stil.mitBalken ? (stil.marke != nil ? max(balken, Kartenmass.leiste) : balken) : 0) + (schmal ? 3 : 5))
         .padding(.trailing, 2)
         .padding(.top, 3)
         .padding(.bottom, 2)
@@ -1170,7 +1170,7 @@ struct Ereigniskarte: View {
         .padding(.vertical, streifen ? 0 : 5)
         .frame(width: max(0, breite), height: max(0, hoehe), alignment: .topLeading)
         .clipped()
-        .klassikKarte(stil, radius: streifen ? 4 : 6)
+        .klassikKarte(stil, radius: streifen ? 3 : Kartenmass.radius)
         .opacity(vergangen ? 0.62 : 1)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
@@ -1237,8 +1237,7 @@ struct ParalleleStundenBlatt: View {
         let personen = k.personenzeilen.filter { !$0.text.isEmpty }
         return HStack(alignment: .center, spacing: 12) {
             Kartenbalken(farbe: stil.mitBalken ? stil.balken : Farben.balkenGrau, gestreift: stil.gestreift)
-                .frame(width: 4)
-                .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+                .frame(width: Kartenmass.leiste)
                 .padding(.vertical, 2)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {

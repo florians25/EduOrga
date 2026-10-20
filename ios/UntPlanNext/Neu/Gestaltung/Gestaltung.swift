@@ -10,10 +10,10 @@ import UIKit
 enum Stilmass {
     /// Grundraster (alle Abstände sind Vielfache davon bzw. die halbe Stufe 4)
     static let raster: CGFloat = 8
-    /// Radius von Karten und Flächen
-    static let radius: CGFloat = 16
-    /// Radius der Stundenkacheln
-    static let kachelRadius: CGFloat = 12
+    /// Radius von Inhaltsflächen (Bereiche, Fokuskarte, Listenflächen) – nüchtern, nicht pillenförmig
+    static let radius: CGFloat = 10
+    /// Radius der Stundenkacheln (wie `Kartenmass.radius`)
+    static let kachelRadius: CGFloat = Kartenmass.radius
     /// Seitenrand
     static let rand: CGFloat = 16
     /// Breite der Zeitspalte links neben der Zeitachse
@@ -262,7 +262,7 @@ struct Streifenmuster: Shape {
 // MARK: - Flächen
 
 extension View {
-    /// Karte: Fläche, Radius 14, feiner Rand.
+    /// Inhaltsfläche: Fläche, Radius 10, 1-pt-Rand.
     func kartenflaeche(_ flaeche: Color = Farben.flaeche, radius: CGFloat = Stilmass.radius) -> some View {
         background(flaeche, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay {

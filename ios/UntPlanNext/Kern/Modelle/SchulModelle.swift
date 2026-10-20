@@ -8,13 +8,13 @@ import Foundation
 
 /// Darstellung der Stundenkarten (Administration | Darstellung der Stundenkarten, Feld `darstellung` der Sitzung;
 /// Server: web/src/UntPlanWeb/Dienste/Kartendarstellung.cs). Fehlende Angaben erhalten ihren Standard – den der Vorlage
-/// „Klassisch“ wie im Web: kompakte weiße Karten, Fachfarbe als 4-px-Balken links mit leichter Tönung, Fach fett oben
-/// links, Raum oben rechts als Text, Radius 2, Änderungen und Prüfungen in der hellen Statusfläche.
+/// „EduOrga Standard“ wie im Web: kompakte weiße Karten, Leiste links 5 px (grau bzw. Fachfarbe mit leichter Tönung),
+/// Kontur 1,5 px („fein“), Radius 4, Änderungen und Prüfungen in der hellen Statusfläche.
 struct Kartendarstellung: Decodable, Equatable, Sendable {
     /// balken-flaeche | balken-links | balken-oben | quadrat | flaeche | keine
     var fachfarbe = "balken-flaeche"
     /// 2–6 px
-    var balkenbreite = 4
+    var balkenbreite = 5
     /// 6–30 % (bei Fachfarbe „flaeche“ bzw. „balken-flaeche“)
     var deckkraft = 12
     /// neutral | weiss | getoent
@@ -22,7 +22,7 @@ struct Kartendarstellung: Decodable, Equatable, Sendable {
     /// fein | kraeftig | keiner
     var rahmen = "fein"
     /// 0–8 px
-    var eckenradius = 5
+    var eckenradius = 4
     /// kompakt | normal | grosszuegig
     var dichte = "kompakt"
     /// kuerzel | name

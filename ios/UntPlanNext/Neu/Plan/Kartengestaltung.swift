@@ -4,7 +4,10 @@ import SwiftUI
 // (nie breiter als die Spalte), standardmäßig neutral (weiß bzw. hellgrau mit grauem Balken links; Fachfarbe nur, wenn die
 // Schule eine gesetzt hat), Fach fett oben links, darunter Klasse, Lehrkraft und Raum je eine kurze Zeile.
 //
-// Kennzeichnung von Änderungen (EduOrga-eigene Formensprache, sachlich): ein durchgehender 3-pt-Balken links in der
+// Maße (v6, gleich in Web und PWA, siehe `Kartenmass`): Radius 4, Leiste links 5 pt bündig am Rand (innen eckig), Kontur
+// 1,5 pt in kräftigerem Neutralgrau bzw. in der Statusfarbe.
+//
+// Kennzeichnung von Änderungen (EduOrga-eigene Formensprache, sachlich): ein durchgehender 5-pt-Balken links in der
 // Statusfarbe, eine kleine Statusmarke oben rechts und ein kompaktes Kennzeichen (Radius 3, getönt mit feiner Kontur) auf
 // der betroffenen Zeile – in Worten, ohne Pfeile: der neue Wert, dahinter der bisherige in Klammern und durchgestrichen
 // („Gal (G̶o̶r̶)“, `Wertwechsel`). Grün (#2f855a für Balken/Linien, Kennzeichen #e6f4ea
@@ -30,6 +33,21 @@ import SwiftUI
 //
 // Die schulweite Kartendarstellung (Feld `darstellung` der Sitzung) steuert Fach als Kürzel/Name, Raum, Zeile 2,
 // Statuswörter, Fachfarbe an/aus, Tönung und Statusfläche.
+
+// MARK: - Maße
+
+/// Maße der Stundenkarte (design/DESIGN.md, Abschnitt 10 „Stundenkarte v6“) – dieselben Werte in px für EduOrga Web
+/// (`web/client/src/components/plan/Kachel.tsx`) und die PWA (`app.css`, Abschnitt „Stundenkarte v6“).
+enum Kartenmass {
+    /// Eckenradius (nüchtern, nie pillenförmig)
+    static let radius: CGFloat = 4
+    /// Leiste links: bündig am Kartenrand, volle Höhe, innen eckig (Fach-, Status- bzw. Grau)
+    static let leiste: CGFloat = 5
+    /// Kontur der Karte (neutral `Farben.karteLinie`, geändert grün, Entfall rot, Prüfung bernstein)
+    static let linie: CGFloat = 1.5
+    /// Kennzeichen oben rechts (Quadrat)
+    static let kennzeichen: CGFloat = 5
+}
 
 // MARK: - Umgebung
 
@@ -180,12 +198,12 @@ extension Statuslehre {
 
 // MARK: - Grundstil v3 (Wochenraster, Tagesliste, Zeitachse)
 
-/// Stundenkarte mobil (v5, EduOrga-Kennzeichnung): die Karte füllt ihre Zelle, Radius 6, neutral (weiß, grauer Balken),
-/// Fachfarbe nur, wenn die Schule eine gesetzt hat (Balken und leichte Tönung). Änderung: durchgehender grüner 3-pt-Balken,
-/// feine grüne Kontur, grüne Statusmarke und das Kennzeichen „neu (b̶i̶s̶h̶e̶r̶)“ auf der Zeile; Entfall: roter Balken und rote
+/// Stundenkarte mobil (v6, EduOrga-Kennzeichnung): die Karte füllt ihre Zelle, Radius 4, neutral (weiß, grauer Balken
+/// 5 pt, Kontur 1,5 pt), Fachfarbe nur, wenn die Schule eine gesetzt hat (Balken und leichte Tönung). Änderung: durchgehender
+/// grüner 5-pt-Balken, grüne Kontur 1,5 pt, grüne Statusmarke und das Kennzeichen „neu (b̶i̶s̶h̶e̶r̶)“ auf der Zeile; Entfall: roter Balken und rote
 /// Marke, alles grau durchgestrichen, „entfällt“ rot; offene Vertretung neutral (grauer Balken, gestrichelte graue Kontur,
 /// „Abr fehlt“ bzw. „Vertretung folgt“); Prüfung Bernstein; Termin/Buchung gestrichelt; Mitteilung bzw. Veranstaltung als
-/// hellgelber Block. Kein Schatten – eine feine Kontur trennt die Karte vom Raster.
+/// hellgelber Block. Kein Schatten – die Kontur trennt die Karte vom Raster.
 struct Klassikstil {
     var balken: Color
     var flaeche: Color
@@ -220,7 +238,7 @@ struct Klassikstil {
         let art = k.kartenart
         let offen = k.karte?.istOffeneVertretung == true
         let fach = d.ohneFachfarbe ? nil : Fachfarbe.voll(k.balkenHex)
-        var s = Klassikstil(balken: fach ?? Farben.balkenGrau, flaeche: Farben.karte, rand: nil, strich: StrokeStyle(lineWidth: 1),
+        var s = Klassikstil(balken: fach ?? Farben.balkenGrau, flaeche: Farben.karte, rand: nil, strich: StrokeStyle(lineWidth: Kartenmass.linie),
                             schraffur: false, gedaempft: false)
         if d.mitToenung && !d.ohneFachfarbe {
             s.ton = toenung(k.balkenHex, prozent: d.deckkraft)
@@ -236,13 +254,13 @@ struct Klassikstil {
             s.gestreift = true
             s.schraffur = false
             s.gedaempft = true
-            s.rand = Farben.entfall.opacity(0.35)
+            s.rand = Farben.entfall.opacity(0.55)
             s.titel = Farben.text3
             s.marke = Farben.entfall
         case .aenderung:
             s.balken = Farben.aenderung
             s.gestreift = true
-            s.rand = Farben.aenderung.opacity(0.55)
+            s.rand = Farben.aenderung.opacity(0.8)
             s.marke = Farben.aenderung
             if d.statusflaeche {
                 s.ton = nil
@@ -263,20 +281,20 @@ struct Klassikstil {
                 s.titel = Farben.ereignisText
             } else {
                 s.rand = Farben.text2.opacity(0.6)
-                s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+                s.strich = StrokeStyle(lineWidth: Kartenmass.linie, dash: [3, 2])
                 s.titel = Farben.termin
             }
         case .buchung:
             s.ton = nil
             s.mitBalken = false
             s.rand = Farben.frei.opacity(0.8)
-            s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+            s.strich = StrokeStyle(lineWidth: Kartenmass.linie, dash: [3, 2])
             s.titel = Farben.frei
         case .abwesend:
             s.ton = nil
             s.mitBalken = false
             s.rand = Farben.text3
-            s.strich = StrokeStyle(lineWidth: 1, dash: [2, 2])
+            s.strich = StrokeStyle(lineWidth: Kartenmass.linie, dash: [2, 2])
             s.gedaempft = true
         case .neutral:
             s.ton = nil
@@ -284,7 +302,7 @@ struct Klassikstil {
             s.mitBalken = false
             if k.art == .bereitschaft {
                 s.rand = Farben.randStark
-                s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+                s.strich = StrokeStyle(lineWidth: Kartenmass.linie, dash: [3, 2])
             }
         }
         if offen && art != .entfall {
@@ -293,7 +311,7 @@ struct Klassikstil {
             s.balken = Farben.balkenGrau
             s.gestreift = false
             s.rand = Farben.text3
-            s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+            s.strich = StrokeStyle(lineWidth: Kartenmass.linie, dash: [3, 2])
             s.marke = Farben.text3
             if d.statusflaeche {
                 s.ton = nil
@@ -315,49 +333,56 @@ struct Kartenbalken: View {
     }
 }
 
-/// Kleine Statusmarke oben rechts auf der Karte: ein Quadrat 5 × 5 pt mit Radius 1 in der Statusfarbe.
+/// Kleine Statusmarke oben rechts auf der Karte: ein eckiges Quadrat 5 × 5 pt in der Statusfarbe.
 struct Kartenmarke: View {
     let farbe: Color
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 1, style: .continuous)
+        Rectangle()
             .fill(farbe)
-            .frame(width: 5, height: 5)
+            .frame(width: Kartenmass.kennzeichen, height: Kartenmass.kennzeichen)
             .accessibilityHidden(true)
     }
 }
 
 extension View {
-    /// Fläche, Tönung, Schraffur, Balken (bündig links, von der Kartenform beschnitten), Linie bzw. gestrichelter Rand.
-    func klassikKarte(_ s: Klassikstil, radius: CGFloat = 6, balkenBreite: CGFloat = 3) -> some View {
-        let form = RoundedRectangle(cornerRadius: radius, style: .continuous)
+    /// Fläche, Tönung, Kontur (1,5 pt bzw. gestrichelt) und darüber die Leiste – bündig am linken Rand, volle Höhe, von der
+    /// Kartenform beschnitten (außen der Radius, innen eckig). Geänderte, entfallene und offene Karten (mit Kennzeichen)
+    /// haben immer mindestens die Standardleiste von 5 pt.
+    func klassikKarte(_ s: Klassikstil, radius: CGFloat = Kartenmass.radius, balkenBreite: CGFloat = Kartenmass.leiste) -> some View {
+        let form = RoundedRectangle(cornerRadius: radius, style: .circular)
+        let leiste: CGFloat = s.marke != nil ? max(balkenBreite, Kartenmass.leiste) : balkenBreite
         return self
             .background {
-                ZStack(alignment: .leading) {
+                ZStack {
                     form.fill(s.flaeche)
                     if let ton = s.ton {
                         form.fill(ton)
                     }
-                    if s.mitBalken {
-                        Kartenbalken(farbe: s.balken, gestreift: s.gestreift)
-                            .frame(width: balkenBreite)
-                            .frame(maxHeight: .infinity)
-                    }
                 }
-                .clipShape(form)
             }
             .overlay {
                 if let rand = s.rand {
                     form.strokeBorder(rand, style: s.strich)
                 } else {
-                    form.strokeBorder(Farben.karteKontur, lineWidth: 0.5)
+                    form.strokeBorder(Farben.karteLinie, lineWidth: Kartenmass.linie)
+                }
+            }
+            .overlay(alignment: .leading) {
+                if s.mitBalken {
+                    Kartenbalken(farbe: s.balken, gestreift: s.gestreift)
+                        .frame(width: leiste)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                        .clipShape(form)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
             }
             .overlay(alignment: .topTrailing) {
                 if let marke = s.marke {
                     Kartenmarke(farbe: marke)
-                        .padding(.top, 3)
-                        .padding(.trailing, 3)
+                        .padding(.top, 4)
+                        .padding(.trailing, 4)
                 }
             }
             .overlay(alignment: .bottomTrailing) {
@@ -367,7 +392,7 @@ extension View {
                         .foregroundStyle(Farben.text2)
                         .frame(width: 13, height: 13)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            RoundedRectangle(cornerRadius: 2, style: .circular)
                                 .strokeBorder(Farben.text3, style: StrokeStyle(lineWidth: 1, dash: [2, 1.5]))
                         }
                         .padding(3)

@@ -101,17 +101,17 @@ struct ZeitKachel: View {
     private var entfall: Bool { kachel.kartenart == .entfall && kachel.art != .aufsicht || (kachel.art == .aufsicht && kachel.aufsichtsstand == .entfall) }
     var body: some View {
         let w = Klassikstil.fuer(kachel, darstellung)
-        let form = RoundedRectangle(cornerRadius: 4, style: .continuous)
+        let form = RoundedRectangle(cornerRadius: Kartenmass.radius, style: .circular)
         ViewThatFits(in: .vertical) {
             gross
             mittel
             klein
         }
-        .padding(.leading, 11)
+        .padding(.leading, Kartenmass.leiste + 6)
         .padding(.trailing, 8)
         .padding(.vertical, hoehe < 30 ? 2 : 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .klassikKarte(w, radius: 5)
+        .klassikKarte(w)
         .overlay(alignment: .topTrailing) {
             if laeuft {
                 Circle()

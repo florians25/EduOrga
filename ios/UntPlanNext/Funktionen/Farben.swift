@@ -98,6 +98,9 @@ enum Farben {
     /// Feiner Schatten der Karte (hell) bzw. Kontur (dunkel)
     static let karteSchatten = Color(hell: 0x0C2C31, dunkel: 0x000000, deckkraftHell: 0.16, deckkraftDunkel: 0)
     static let karteKontur = Color(hell: 0x0C2C31, dunkel: 0x262F38, deckkraftHell: 0.06, deckkraftDunkel: 1)
+    /// Kontur der Stundenkarten (1,5 pt, Stundenkarte v6): kräftigeres Neutralgrau – wie im Web `kachel.linie` (#b7c2c8 /
+    /// dunkel #3c4e55)
+    static let karteLinie = Color(hell: 0xB7C2C8, dunkel: 0x3C4E55)
     /// Feine Stundenlinien im Wochenraster
     static let rasterLinie = Color(hell: 0xD7DDE1, dunkel: 0x26313A)
     /// Eigene Abwesenheit hinter den Stunden

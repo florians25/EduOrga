@@ -37,7 +37,7 @@ struct PlanLegende: View {
     }
 
     private static func neutral() -> Klassikstil {
-        Klassikstil(balken: Farben.balkenGrau, flaeche: Farben.karte, rand: nil, strich: StrokeStyle(lineWidth: 1),
+        Klassikstil(balken: Farben.balkenGrau, flaeche: Farben.karte, rand: nil, strich: StrokeStyle(lineWidth: Kartenmass.linie),
                     schraffur: false, gedaempft: false)
     }
 
@@ -51,7 +51,7 @@ struct PlanLegende: View {
     private static var aenderung: Klassikstil {
         var s = neutral()
         s.balken = Farben.aenderung
-        s.rand = Farben.aenderung.opacity(0.55)
+        s.rand = Farben.aenderung.opacity(0.8)
         s.flaeche = Farben.aenderungFlaeche
         s.marke = Farben.aenderung
         return s
@@ -61,7 +61,7 @@ struct PlanLegende: View {
         var s = neutral()
         s.flaeche = Farben.flaeche2
         s.balken = Farben.entfall
-        s.rand = Farben.entfall.opacity(0.35)
+        s.rand = Farben.entfall.opacity(0.55)
         s.titel = Farben.text3
         s.marke = Farben.entfall
         return s
@@ -70,7 +70,7 @@ struct PlanLegende: View {
     private static var offen: Klassikstil {
         var s = neutral()
         s.rand = Farben.text3
-        s.strich = StrokeStyle(lineWidth: 1, dash: [3, 2])
+        s.strich = StrokeStyle(lineWidth: Kartenmass.linie, dash: [3, 2])
         s.marke = Farben.text3
         return s
     }
@@ -251,13 +251,13 @@ struct PlanLegende: View {
                 }
             }
         }
-        .padding(.leading, e.stil.mitBalken ? 8 : 6)
+        .padding(.leading, e.stil.mitBalken ? Kartenmass.leiste + 4 : 6)
         .padding(.trailing, 4)
         .padding(.top, 4)
         .padding(.bottom, 3)
         .frame(width: PlanLegende.musterBreite, height: e.notiz == nil ? 82 : 44, alignment: .topLeading)
         .clipped()
-        .klassikKarte(e.stil, radius: 6)
+        .klassikKarte(e.stil)
         .accessibilityHidden(true)
     }
 }

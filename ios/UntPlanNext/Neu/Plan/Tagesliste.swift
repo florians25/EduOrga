@@ -398,22 +398,22 @@ struct ListenKachel: View {
                     .accessibilityHidden(true)
             }
         }
-        .padding(.leading, 17)
+        .padding(.leading, Kartenmass.leiste + 11)
         .padding(.trailing, 12)
         .padding(.top, abstand)
         .padding(.bottom, abstand)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 46, alignment: .topLeading)
         .clipped()
-        .klassikKarte(w, radius: 6)
+        .klassikKarte(w)
         .overlay {
             if laeuft {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: Kartenmass.radius, style: .circular)
                     .strokeBorder(Farben.akzent, lineWidth: 2)
             }
         }
         .opacity(vorbei ? 0.55 : 1)
-        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: Kartenmass.radius, style: .circular))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(kachel.vorlesetext + (laeuft ? ", läuft gerade" : (vorbei ? ", vorbei" : "")))
         .accessibilityAddTraits(.isButton)
